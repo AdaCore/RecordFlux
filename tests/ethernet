@@ -1,0 +1,29 @@
+package Ethernet is
+
+type TwoOctets is mod 2**16;
+type FourOctets is mod 2**32;
+type SixOctets is mod 2**48;
+type Byte is mod 2**8;
+type Bytes is array(Natural range <>) of Byte;
+type PayloadBytes is new Bytes(1 .. 1500);
+
+type Frame is
+    record
+        Destination : FourOctets;
+        Source : FourOctets;
+        L1 : TwoOctets is abstract;
+        case L1 is
+            when 0x8100 =>
+                Dot1q : FourOctets;
+                L2 : TwoOctets is abstract;
+        end case;
+        case L2 is
+            when 0x8100 =>
+                Dot1q2 : FourOctets;
+        end case;
+        Length : TwoOctets;
+        Payload : PayloadBytes (1 .. Length);
+    end record
+        with Type_Invariant => Frame.Length >= 46;
+
+end Ethernet;

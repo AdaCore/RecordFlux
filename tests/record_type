@@ -1,0 +1,7 @@
+package Ethernet is
+
+type Frame is
+    record
+    end record;
+
+end Ethernet;

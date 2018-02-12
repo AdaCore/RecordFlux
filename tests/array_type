@@ -1,0 +1,5 @@
+package Ethernet is
+
+type Bytes is array(Natural range <>) of Byte;
+
+end Ethernet;

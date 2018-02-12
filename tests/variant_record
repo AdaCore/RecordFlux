@@ -1,0 +1,17 @@
+package Ethernet is
+
+type TwoOctets is mod 2**16;
+type FourOctets is mod 2**32;
+
+type Frame is
+    record
+        Destination : FourOctets;
+        Source : FourOctets;
+        case L1 is
+            when 0x8100 =>
+                Dot1q : FourOctets;
+        end case;
+        Length : TwoOctets;
+    end record;
+
+end Ethernet;

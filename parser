@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+# pylint: disable=missing-docstring
+# pylint: disable=too-few-public-methods
+
+import sys
+import unittest
+
+from pyparsing import alphanums, nums, Word, Literal, Optional, OneOrMore, StringEnd, QuotedString, Forward, ZeroOrMore, ParseException, Regex
+
+
+#
+# Parser
+#
+class Parser:
+    def __init__(self, basedir='.'):
+        # pylint: disable=too-many-locals
+        self.__data = []
+        self.__basedir = basedir
+
+        # Generic
+        name = Word(alphanums + "_")
+        comma = Literal(',')
+        semicolon = Literal(';')
+
+        # Comments
+        comment = Regex(r"--.*")
+
+        # Boolean Types
+        true = Literal('True')
+        false = Literal('False')
+        boolean = true | false
+
+        # Declarations
+        identifier = name
+        defining_identifier = identifier
+
+        # Expressions
+        numeric_literal = Word(nums)
+        string_literal = QuotedString('"')
+        relational_operator = Literal('=') | Literal('/=') | Literal('<') | Literal('<=') | Literal('>') | Literal('>=')
+        simple_expression = Forward()
+        relation = simple_expression + Optional(relational_operator + simple_expression)
+        expression = relation + ZeroOrMore(Literal('and') + relation) \
+                   | relation + ZeroOrMore(Literal('or') + relation) \
+                   | relation + ZeroOrMore(Literal('xor') + relation) \
+                   | relation + ZeroOrMore(Literal('and then') + relation) \
+                   | relation + ZeroOrMore(Literal('or else') + relation)
+        choice_relation = simple_expression + Optional(relational_operator + simple_expression)
+        choice_expression = choice_relation + ZeroOrMore(Literal('and') + choice_relation) \
+                          | choice_relation + ZeroOrMore(Literal('or') + choice_relation) \
+                          | choice_relation + ZeroOrMore(Literal('xor') + choice_relation) \
+                          | choice_relation + ZeroOrMore(Literal('and then') + choice_relation) \
+                          | choice_relation + ZeroOrMore(Literal('or else') + choice_relation)
+        primary = numeric_literal | Literal('null') | string_literal | name | expression
+        factor = primary + Optional(Literal('**') + primary) | Literal('abs') + primary | Literal('not') + primary
+        multiplying_operator = Forward()
+        term = factor + ZeroOrMore(multiplying_operator + factor)
+        unary_adding_operator = Forward()
+        binary_adding_operator = Forward()
+        simple_expression << (Optional(unary_adding_operator) + term + ZeroOrMore(binary_adding_operator + term))
+        static_simple_expression = simple_expression
+        static_expression = expression
+        default_expression = expression
+
+        # Derived Types
+        parent_subtype_indication = name
+        record_extension_part = Forward()
+        derived_type_definition = Literal('new') + parent_subtype_indication + Optional(record_extension_part)
+
+
+        # Integer Types
+        signed_integer_type_definition = Literal('range') + static_simple_expression + Literal('..') + static_simple_expression
+        modular_type_definition = Literal('mod') + static_expression
+        integer_type_definition = signed_integer_type_definition | modular_type_definition
+
+        # Enumeration Types
+        enumeration_literal_specification = name
+        enumeration_type_definition = Literal('(') + enumeration_literal_specification + ZeroOrMore(comma + enumeration_literal_specification) + Literal(')')
+
+        # Range
+        range_ = simple_expression + Literal('..') + simple_expression
+        range_constraint = Literal('range') + range_
+
+        # Real Types
+        real_range_specification = Literal('range') + static_simple_expression + Literal('..') + static_simple_expression
+        floating_point_definition = Literal('digits') + static_expression + Optional(real_range_specification)
+
+        digits_constraint = Literal('digits') + static_expression + Optional(range_constraint)
+        decimal_fixed_point_definition = Literal('delta') + static_expression + Literal('digits') + static_expression + Optional(real_range_specification)
+        ordinary_fixed_point_definition = Literal('delta') + static_expression + real_range_specification
+        fixed_point_definition = ordinary_fixed_point_definition | decimal_fixed_point_definition
+
+        real_type_definition = floating_point_definition | fixed_point_definition
+
+        # Array Types
+        subtype_indication = name
+        discrete_subtype_indication = name
+        component_definition = subtype_indication
+        index_subtype_definition = name + Literal('range <>')
+        discrete_subtype_definition = discrete_subtype_indication | range_
+        unconstrained_array_definition = Literal('array') + Literal('(') + index_subtype_definition + ZeroOrMore(comma + index_subtype_definition) + Literal(')') + Literal('of') + component_definition
+        constrained_array_definition = Literal('array') + Literal('(') + discrete_subtype_definition + ZeroOrMore(comma + discrete_subtype_definition) + Literal(')') + Literal('of') + component_definition
+        array_type_definition = unconstrained_array_definition | constrained_array_definition
+
+        # Operators
+        binary_adding_operator = Literal('+') | Literal('–') | Literal('&')
+        unary_adding_operator = Literal('+') | Literal('–')
+        multiplying_operator = Literal('*') | Literal('/') | Literal('mod') | Literal('rem')
+
+        # Object Declarations
+        defining_identifier_list = defining_identifier + ZeroOrMore(comma + defining_identifier)
+
+        # Variant Parts
+        discrete_choice = choice_expression | discrete_subtype_indication | range_ | Literal('others')
+        discrete_choice_list = discrete_choice + ZeroOrMore(Literal('|') + discrete_choice)
+        component_list = Forward()
+        variant = Literal('when') + discrete_choice_list + Literal('=>') + component_list
+        variant_part = Literal('case') + name + Literal('is') + variant + ZeroOrMore(variant) + Literal('end case;')
+
+        # Record Type
+        record_definition = Literal('record') + component_list + Literal('end record') | Literal('null record')
+        component_declaration = defining_identifier_list + Literal(':') + component_definition + Optional(Literal(':=') + default_expression)
+        component_item = component_declaration
+        component_list << (component_item + ZeroOrMore(component_item) | ZeroOrMore(component_item) + variant_part | Literal('null'))
+        record_type_definition = record_definition
+
+        # Type Extensions
+        record_extension_part << (Literal('with') + record_definition)
+
+        # Types
+        type_definition = enumeration_type_definition | real_type_definition | record_type_definition | derived_type_definition | integer_type_definition | array_type_definition
+        type_declaration = Literal('type') + name + Literal('is') + type_definition + semicolon
+        basic_declaration = type_declaration
+
+        # Package
+        package_declaration = Literal('package') + name + Literal('is') + ZeroOrMore(basic_declaration) + Literal('end') + name + semicolon
+
+        # Declaration
+        basic_declaration = package_declaration
+
+        # Parser file
+        self._grammar = ZeroOrMore(basic_declaration) + StringEnd()
+        self._grammar.setParseAction(self.default_action)
+
+        # Ignore comments
+        self._grammar.ignore(comment)
+
+    def default_action(self, tokens):
+        self.__data.extend(tokens)
+
+    def parse(self, infile):
+        filepath = self.__basedir + "/" + infile
+        with open(filepath, 'r') as filehandle:
+            self._grammar.parseFile(filehandle)
+
+    def data(self):
+        return self.__data
+
+
+#
+# Parser test cases
+#
+class TestParser(unittest.TestCase):
+    # pylint: disable=too-many-public-methods
+    def setUp(self):
+        self.testdir = "tests"
+
+    def fullpath(self, testfile):
+        return self.testdir + "/" + testfile
+
+    def parse(self, filename):
+        parser = Parser()
+        parser.parse(self.fullpath(filename))
+        return parser
+
+    def assert_data(self, filename, data):
+        parser = self.parse(filename)
+        self.assertEqual(parser.data(), data, self.fullpath(filename))
+
+    def test_empty_file(self):
+        self.assert_data("empty_file", [])
+
+    def test_comment_only(self):
+        self.assert_data("comment_only", [])
+
+    def test_package(self):
+        self.assert_data("package", [])
+
+    def test_derived_type(self):
+        self.assert_data("derived_type", [])
+
+    def test_modular_type(self):
+        self.assert_data("modular_type", [])
+
+    def test_array_type(self):
+        self.assert_data("array_type", [])
+
+    def test_record_type(self):
+        self.assert_data("record_type", [])
+
+    def test_variant_record(self):
+        self.assert_data("variant_record", [])
+
+    def test_ethernet(self):
+        self.assert_data("ethernet", [])
+
+
+if __name__ == "__main__":
+    SUITE = unittest.TestLoader().loadTestsFromTestCase(TestParser)
+    TESTRESULT = unittest.TextTestRunner().run(SUITE)
+
+    if len(TESTRESULT.failures) > 0 or len(TESTRESULT.errors) > 0:
+        sys.exit(1)
