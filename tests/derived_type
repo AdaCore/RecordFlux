@@ -1,5 +1,6 @@
-package Ethernet is
+package Test is
 
-type PayloadBytes is new Bytes(1 .. 1500);
+type Local_Coordinate is new Coordinate;
+type Midweek is new Day range Tue .. Thu;
 
-end Ethernet;
+end Test;

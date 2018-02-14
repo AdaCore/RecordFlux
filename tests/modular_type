@@ -1,5 +1,0 @@
-package Ethernet is
-
-type TwoOctets is mod 2**16;
-
-end Ethernet;

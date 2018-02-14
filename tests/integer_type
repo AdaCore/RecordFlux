@@ -1,0 +1,9 @@
+package Test is
+
+type Page_Num is range 1 .. 2_000;
+type Line_Size is range 1 .. Max_Line_Size;
+
+type Byte is mod 256;
+type Hash_Index is mod 97;
+
+end Test;

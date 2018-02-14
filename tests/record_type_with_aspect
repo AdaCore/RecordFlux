@@ -5,6 +5,7 @@ type Date is
         Day : Integer range 1 .. 31;
         Month : Month_Name;
         Year : Integer range 0 .. 4000;
-    end record;
+    end record
+        with Type_Invariant => Year < 3000;
 
 end Test;

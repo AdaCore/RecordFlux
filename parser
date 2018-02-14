@@ -5,7 +5,7 @@
 import sys
 import unittest
 
-from pyparsing import alphanums, nums, Word, Literal, Optional, OneOrMore, StringEnd, QuotedString, Forward, ZeroOrMore, ParseException, Regex
+from pyparsing import alphanums, nums, Word, Keyword, Literal, Optional, OneOrMore, StringEnd, QuotedString, Forward, ZeroOrMore, ParseException, Regex
 
 
 #
@@ -18,41 +18,52 @@ class Parser:
         self.__basedir = basedir
 
         # Generic
-        name = Word(alphanums + "_")
         comma = Literal(',')
         semicolon = Literal(';')
 
         # Comments
-        comment = Regex(r"--.*")
+        comment = Regex(r'--.*')
 
         # Boolean Types
-        true = Literal('True')
-        false = Literal('False')
+        true = Keyword('True')
+        false = Keyword('False')
         boolean = true | false
 
-        # Declarations
-        identifier = name
+        # Identifiers
+        identifier = Word(alphanums + '_')
         defining_identifier = identifier
 
-        # Expressions
-        numeric_literal = Word(nums)
+        # Names
+        direct_name = identifier
+        slice_ = Forward()
+        name = direct_name | slice_
+
+        # Literals
+        numeral = Word(nums) + ZeroOrMore(Optional(Word('_')) + Word(nums))
+        base = numeral
+        extended_digit = Word(nums + 'ABCDEF')
+        based_numeral = extended_digit + ZeroOrMore(Optional('_') + extended_digit)
+        based_literal = base + Literal('#') + based_numeral + Literal('#')
+        numeric_literal = based_literal | numeral
         string_literal = QuotedString('"')
-        relational_operator = Literal('=') | Literal('/=') | Literal('<') | Literal('<=') | Literal('>') | Literal('>=')
+
+        # Expressions
+        relational_operator = Literal('<=') | Literal('>=') | Literal('=') | Literal('/=') | Literal('<') | Literal('>')
         simple_expression = Forward()
         relation = simple_expression + Optional(relational_operator + simple_expression)
-        expression = relation + ZeroOrMore(Literal('and') + relation) \
-                   | relation + ZeroOrMore(Literal('or') + relation) \
-                   | relation + ZeroOrMore(Literal('xor') + relation) \
-                   | relation + ZeroOrMore(Literal('and then') + relation) \
-                   | relation + ZeroOrMore(Literal('or else') + relation)
-        choice_relation = simple_expression + Optional(relational_operator + simple_expression)
-        choice_expression = choice_relation + ZeroOrMore(Literal('and') + choice_relation) \
-                          | choice_relation + ZeroOrMore(Literal('or') + choice_relation) \
-                          | choice_relation + ZeroOrMore(Literal('xor') + choice_relation) \
-                          | choice_relation + ZeroOrMore(Literal('and then') + choice_relation) \
-                          | choice_relation + ZeroOrMore(Literal('or else') + choice_relation)
-        primary = numeric_literal | Literal('null') | string_literal | name | expression
-        factor = primary + Optional(Literal('**') + primary) | Literal('abs') + primary | Literal('not') + primary
+        expression = relation + ZeroOrMore(Keyword('and then') + relation) \
+                   | relation + ZeroOrMore(Keyword('or else') + relation) \
+                   | relation + ZeroOrMore(Keyword('xor') + relation) \
+                   | relation + ZeroOrMore(Keyword('and') + relation) \
+                   | relation + ZeroOrMore(Keyword('or') + relation)
+        choice_relation = simple_expression + Optional(~Literal('=>') + relational_operator + simple_expression)
+        choice_expression = choice_relation + ZeroOrMore(Keyword('and then') + choice_relation) \
+                          | choice_relation + ZeroOrMore(Keyword('or else') + choice_relation) \
+                          | choice_relation + ZeroOrMore(Keyword('xor') + choice_relation) \
+                          | choice_relation + ZeroOrMore(Keyword('and') + choice_relation) \
+                          | choice_relation + ZeroOrMore(Keyword('or') + choice_relation)
+        primary = Keyword('null') | numeric_literal | string_literal | name | expression
+        factor = primary + Optional(Literal('**') + primary) | Keyword('abs') + primary | Keyword('not') + primary
         multiplying_operator = Forward()
         term = factor + ZeroOrMore(multiplying_operator + factor)
         unary_adding_operator = Forward()
@@ -62,15 +73,23 @@ class Parser:
         static_expression = expression
         default_expression = expression
 
-        # Derived Types
-        parent_subtype_indication = name
-        record_extension_part = Forward()
-        derived_type_definition = Literal('new') + parent_subtype_indication + Optional(record_extension_part)
+        # Subtypes
+        range_constraint = Forward()
+        digits_constraint = Forward()
+        scalar_constraint = range_constraint | digits_constraint
+        index_constraint = Forward()
+        composite_constraint = index_constraint
+        constraint = scalar_constraint | composite_constraint
+        subtype_indication = name + Optional(constraint)
 
+        # Derived Types
+        parent_subtype_indication = subtype_indication
+        record_extension_part = Forward()
+        derived_type_definition = Keyword('new') + parent_subtype_indication + Optional(record_extension_part)
 
         # Integer Types
-        signed_integer_type_definition = Literal('range') + static_simple_expression + Literal('..') + static_simple_expression
-        modular_type_definition = Literal('mod') + static_expression
+        signed_integer_type_definition = Keyword('range') + static_simple_expression + Literal('..') + static_simple_expression
+        modular_type_definition = Keyword('mod') + static_expression
         integer_type_definition = signed_integer_type_definition | modular_type_definition
 
         # Enumeration Types
@@ -79,27 +98,16 @@ class Parser:
 
         # Range
         range_ = simple_expression + Literal('..') + simple_expression
-        range_constraint = Literal('range') + range_
-
-        # Real Types
-        real_range_specification = Literal('range') + static_simple_expression + Literal('..') + static_simple_expression
-        floating_point_definition = Literal('digits') + static_expression + Optional(real_range_specification)
-
-        digits_constraint = Literal('digits') + static_expression + Optional(range_constraint)
-        decimal_fixed_point_definition = Literal('delta') + static_expression + Literal('digits') + static_expression + Optional(real_range_specification)
-        ordinary_fixed_point_definition = Literal('delta') + static_expression + real_range_specification
-        fixed_point_definition = ordinary_fixed_point_definition | decimal_fixed_point_definition
-
-        real_type_definition = floating_point_definition | fixed_point_definition
+        range_constraint << (Keyword('range') + range_)
 
         # Array Types
-        subtype_indication = name
-        discrete_subtype_indication = name
+        discrete_range = range_ | subtype_indication
+        index_constraint << (Literal('(') + discrete_range + ZeroOrMore(comma + discrete_range) + Literal(')'))
         component_definition = subtype_indication
-        index_subtype_definition = name + Literal('range <>')
-        discrete_subtype_definition = discrete_subtype_indication | range_
-        unconstrained_array_definition = Literal('array') + Literal('(') + index_subtype_definition + ZeroOrMore(comma + index_subtype_definition) + Literal(')') + Literal('of') + component_definition
-        constrained_array_definition = Literal('array') + Literal('(') + discrete_subtype_definition + ZeroOrMore(comma + discrete_subtype_definition) + Literal(')') + Literal('of') + component_definition
+        index_subtype_definition = name + Keyword('range <>')
+        discrete_subtype_definition = range_ | subtype_indication
+        unconstrained_array_definition = Keyword('array') + Literal('(') + index_subtype_definition + ZeroOrMore(comma + index_subtype_definition) + Literal(')') + Keyword('of') + component_definition
+        constrained_array_definition = Keyword('array') + Literal('(') + discrete_subtype_definition + ZeroOrMore(comma + discrete_subtype_definition) + Literal(')') + Keyword('of') + component_definition
         array_type_definition = unconstrained_array_definition | constrained_array_definition
 
         # Operators
@@ -111,29 +119,38 @@ class Parser:
         defining_identifier_list = defining_identifier + ZeroOrMore(comma + defining_identifier)
 
         # Variant Parts
-        discrete_choice = choice_expression | discrete_subtype_indication | range_ | Literal('others')
+        discrete_choice = Keyword('others') | choice_expression | subtype_indication | range_
         discrete_choice_list = discrete_choice + ZeroOrMore(Literal('|') + discrete_choice)
         component_list = Forward()
-        variant = Literal('when') + discrete_choice_list + Literal('=>') + component_list
-        variant_part = Literal('case') + name + Literal('is') + variant + ZeroOrMore(variant) + Literal('end case;')
+        variant = Keyword('when') + discrete_choice_list + Literal('=>') + component_list
+        variant_part = Keyword('case') + name + Keyword('is') + variant + ZeroOrMore(variant) + Keyword('end case;')
 
         # Record Type
-        record_definition = Literal('record') + component_list + Literal('end record') | Literal('null record')
-        component_declaration = defining_identifier_list + Literal(':') + component_definition + Optional(Literal(':=') + default_expression)
+        record_definition = Keyword('record') + component_list + Keyword('end record') | Keyword('null record')
+        aspect_specification = Forward()
+        component_declaration = defining_identifier_list + Literal(':') + component_definition + Optional(Literal(':=') + default_expression) + Optional(aspect_specification) + Optional(Keyword('is abstract')) + semicolon
         component_item = component_declaration
-        component_list << (component_item + ZeroOrMore(component_item) | ZeroOrMore(component_item) + variant_part | Literal('null'))
+        component_list << (ZeroOrMore(component_item) + ZeroOrMore(variant_part) + ZeroOrMore(component_item) | component_item + ZeroOrMore(component_item) | Keyword('null'))
         record_type_definition = record_definition
 
         # Type Extensions
-        record_extension_part << (Literal('with') + record_definition)
+        record_extension_part << (Keyword('with') + record_definition)
+
+        # Aspect Specification
+        aspect_definition = expression | identifier
+        aspect_mark = identifier
+        aspect_specification << (Keyword('with') + aspect_mark + Optional(Keyword('=>') + aspect_definition) + ZeroOrMore(comma + aspect_mark + Optional(Keyword('=>') + aspect_definition)))
+
+        # Slices
+        slice_ << (name + Literal('(') + discrete_range + Literal(')'))
 
         # Types
-        type_definition = enumeration_type_definition | real_type_definition | record_type_definition | derived_type_definition | integer_type_definition | array_type_definition
-        type_declaration = Literal('type') + name + Literal('is') + type_definition + semicolon
+        type_definition = enumeration_type_definition | record_type_definition | derived_type_definition | integer_type_definition | array_type_definition
+        type_declaration = Keyword('type') + name + Keyword('is') + type_definition + Optional(aspect_specification) + semicolon
         basic_declaration = type_declaration
 
         # Package
-        package_declaration = Literal('package') + name + Literal('is') + ZeroOrMore(basic_declaration) + Literal('end') + name + semicolon
+        package_declaration = Keyword('package') + name + Keyword('is') + ZeroOrMore(basic_declaration) + Keyword('end') + name + semicolon
 
         # Declaration
         basic_declaration = package_declaration
@@ -189,8 +206,11 @@ class TestParser(unittest.TestCase):
     def test_derived_type(self):
         self.assert_data("derived_type", [])
 
-    def test_modular_type(self):
-        self.assert_data("modular_type", [])
+    def test_integer_type(self):
+        self.assert_data("integer_type", [])
+
+    def test_enumeration_type(self):
+        self.assert_data("enumeration_type", [])
 
     def test_array_type(self):
         self.assert_data("array_type", [])
@@ -198,8 +218,14 @@ class TestParser(unittest.TestCase):
     def test_record_type(self):
         self.assert_data("record_type", [])
 
-    def test_variant_record(self):
-        self.assert_data("variant_record", [])
+    def test_record_type_with_slice(self):
+        self.assert_data("record_type_with_slice", [])
+
+    def test_record_type_with_variant(self):
+        self.assert_data("record_type_with_variant", [])
+
+    def test_record_type_with_aspect(self):
+        self.assert_data("record_type_with_aspect", [])
 
     def test_ethernet(self):
         self.assert_data("ethernet", [])

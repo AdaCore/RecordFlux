@@ -1,5 +1,8 @@
-package Ethernet is
+package Test is
 
-type Bytes is array(Natural range <>) of Byte;
+type Table is array(1 .. 10) of Integer;
+type Schedule is array(Day) of Boolean;
+type Vector is array(Integer range <>) of Real;
+type Matrix is array(Integer range <>, Integer range <>) of Real;
 
-end Ethernet;
+end Test;
