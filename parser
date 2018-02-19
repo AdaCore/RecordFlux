@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring, line-too-long
 
 import sys
 import unittest
 
-from pyparsing import alphanums, nums, Word, Keyword, Literal, Optional, StringEnd, QuotedString, Forward, ZeroOrMore, Regex
+from pyparsing import alphanums, nums, Word, Keyword, Literal, Optional, StringEnd, QuotedString, Forward, ZeroOrMore, Regex, WordStart, WordEnd
 
 
 #
@@ -24,13 +25,14 @@ class Parser:
         comment = Regex(r'--.*')
 
         # Identifiers
-        identifier = Word(alphanums + '_')
+        identifier = WordStart(alphanums) + Word(alphanums + '_') + WordEnd(alphanums + '_')
         defining_identifier = identifier
 
         # Names
         direct_name = identifier
         slice_ = Forward()
-        name = direct_name | slice_
+        attribute_reference = Forward()
+        name = attribute_reference | slice_ | direct_name
 
         # Literals
         numeral = Word(nums) + ZeroOrMore(Optional(Word('_')) + Word(nums))
@@ -43,19 +45,12 @@ class Parser:
 
         # Expressions
         relational_operator = Literal('<=') | Literal('>=') | Literal('=') | Literal('/=') | Literal('<') | Literal('>')
+        conjunctive_operator = Keyword('and then') | Keyword('or else') | Keyword('xor') | Keyword('and') | Keyword('or')
         simple_expression = Forward()
         relation = simple_expression + Optional(relational_operator + simple_expression)
-        expression = relation + ZeroOrMore(Keyword('and then') + relation) \
-                   | relation + ZeroOrMore(Keyword('or else') + relation) \
-                   | relation + ZeroOrMore(Keyword('xor') + relation) \
-                   | relation + ZeroOrMore(Keyword('and') + relation) \
-                   | relation + ZeroOrMore(Keyword('or') + relation)
+        expression = relation + ZeroOrMore(conjunctive_operator + relation)
         choice_relation = simple_expression + Optional(~Literal('=>') + relational_operator + simple_expression)
-        choice_expression = choice_relation + ZeroOrMore(Keyword('and then') + choice_relation) \
-                          | choice_relation + ZeroOrMore(Keyword('or else') + choice_relation) \
-                          | choice_relation + ZeroOrMore(Keyword('xor') + choice_relation) \
-                          | choice_relation + ZeroOrMore(Keyword('and') + choice_relation) \
-                          | choice_relation + ZeroOrMore(Keyword('or') + choice_relation)
+        choice_expression = choice_relation + ZeroOrMore(conjunctive_operator + choice_relation)
         primary = Keyword('null') | numeric_literal | string_literal | name | expression
         factor = primary + Optional(Literal('**') + primary) | Keyword('abs') + primary | Keyword('not') + primary
         multiplying_operator = Forward()
@@ -113,7 +108,7 @@ class Parser:
         defining_identifier_list = defining_identifier + ZeroOrMore(comma + defining_identifier)
 
         # Variant Parts
-        discrete_choice = Keyword('others') | choice_expression | subtype_indication | range_
+        discrete_choice = Keyword('others') | range_ | choice_expression | subtype_indication
         discrete_choice_list = discrete_choice + ZeroOrMore(Literal('|') + discrete_choice)
         component_list = Forward()
         variant = Keyword('when') + discrete_choice_list + Literal('=>') + component_list
@@ -123,8 +118,8 @@ class Parser:
         record_definition = Keyword('record') + component_list + Keyword('end record') | Keyword('null record')
         aspect_specification = Forward()
         component_declaration = defining_identifier_list + Literal(':') + component_definition + Optional(Literal(':=') + default_expression) + Optional(aspect_specification) + Optional(Keyword('is abstract')) + semicolon
-        component_item = component_declaration
-        component_list << (ZeroOrMore(component_item) + ZeroOrMore(variant_part) + ZeroOrMore(component_item) | component_item + ZeroOrMore(component_item) | Keyword('null'))
+        component_item = variant_part | component_declaration
+        component_list << (Keyword('null') + semicolon | Keyword('invalid') + semicolon | component_item + ZeroOrMore(component_item))
         record_type_definition = record_definition
 
         # Type Extensions
@@ -136,11 +131,15 @@ class Parser:
         aspect_specification << (Keyword('with') + aspect_mark + Optional(Keyword('=>') + aspect_definition) + ZeroOrMore(comma + aspect_mark + Optional(Keyword('=>') + aspect_definition)))
 
         # Slices
-        slice_ << (name + Literal('(') + discrete_range + Literal(')'))
+        slice_ << (identifier + Literal('(') + discrete_range + Literal(')'))
+
+        # Attributes
+        attribute_designator = identifier
+        attribute_reference << (identifier + Literal('\'') + attribute_designator)
 
         # Types
         type_definition = enumeration_type_definition | record_type_definition | derived_type_definition | integer_type_definition | array_type_definition
-        type_declaration = Keyword('type') + name + Keyword('is') + type_definition + Optional(aspect_specification) + semicolon
+        type_declaration = Keyword('type') + identifier + Keyword('is') + type_definition + Optional(aspect_specification) + semicolon
         basic_declaration = type_declaration
 
         # Package

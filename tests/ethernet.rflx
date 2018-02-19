@@ -1,29 +1,42 @@
 package Ethernet is
 
-type TwoOctets is mod 2**16;
-type FourOctets is mod 2**32;
-type SixOctets is mod 2**48;
+type Two_Octets is mod 2**16;
+type Four_Octets is mod 2**32;
+type Six_Octets is mod 2**48;
 type Byte is mod 2**8;
 type Bytes is array (Natural range <>) of Byte;
-type PayloadBytes is array (1 ..1500) of Byte;
+type Payload_Bytes is array (1 .. 1500) of Byte;
 
 type Frame is
     record
-        Destination : FourOctets;
-        Source : FourOctets;
-        L1 : TwoOctets is abstract;
-        case L1 is
+        Destination : Four_Octets;
+        Source : Four_Octets;
+        EtherType_Length_1 : Two_Octets is abstract;
+        case EtherType_Length_1 is
             when 16#8100# =>
-                Dot1q : FourOctets;
-                L2 : TwoOctets is abstract;
+                Dot1q_1 : Four_Octets;
+            when 16#88A8# =>
+                Dot1q_1 : Four_Octets;
+                EtherType_Length_2 : Two_Octets is abstract;
+                case EtherType_Length_2 is
+                    when 16#8100# =>
+                        Dot1q_2 : Four_Octets;
+                    when others =>
+                        invalid;
+                end case;
         end case;
-        case L2 is
-            when 16#8100# =>
-                Dot1q2 : FourOctets;
+        EtherType_Length_3 : Two_Octets is abstract;
+        case EtherType_Length_3 is
+            when 0 .. 1500 =>
+                Length : Two_Octets;
+                Payload : PayloadBytes (1 .. Length);
+            when 1501 .. 1535 =>
+                invalid;
+            when 1536 .. 65535 =>
+                EtherType : Two_Octets;
+                Payload : Payload_Bytes;
         end case;
-        Length : TwoOctets;
-        Payload : PayloadBytes (1 .. Length);
     end record
-        with Type_Invariant => Length >= 46;
+        with Type_Invariant => Payload'Length >= 46 and Payload'Length <= 1500;
 
 end Ethernet;
