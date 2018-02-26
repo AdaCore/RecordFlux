@@ -5,4 +5,18 @@ project dissector is
     for Create_Missing_Dirs use "True";
     for Main use ("test_dissector.adb");
 
+    package Builder is
+        for Global_Configuration_Pragmas use "default.adc";
+    end Builder;
+
+    package Prove  is
+        for Switches use
+        (
+            "-j0",              -- Use all cores
+            "--level=4",        -- Many provers, longer timeout
+            "--warnings=error", -- Treat warnings as errors
+            "-U"                -- Analyze all files
+        );
+    end Prove;
+
 end dissector;
