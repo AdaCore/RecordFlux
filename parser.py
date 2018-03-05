@@ -159,3 +159,8 @@ class Parser:
 
     def data(self):
         return self.__data
+
+if __name__ == "__main__":
+    import sys
+    Parser().parse(sys.argv[1])
+    print ("OK");
