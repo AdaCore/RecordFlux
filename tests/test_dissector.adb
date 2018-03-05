@@ -30,42 +30,42 @@ begin
 
     Ada.Text_IO.Put_Line("-- Test: Ethernet IEEE 802.3");
     Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_802.3.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Matched'Image & (if Matched /= 60 then " /= 60 FAILED" else ""));
+    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 60 then " /= 60 FAILED" else ""));
     Ada.Text_IO.New_Line;
 
     Ada.Text_IO.Put_Line("-- Test: Ethernet II");
     Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Matched'Image & (if Matched /= 60 then " /= 60 FAILED" else ""));
+    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 60 then " /= 60 FAILED" else ""));
     Ada.Text_IO.New_Line;
 
     Ada.Text_IO.Put_Line("-- Test: Ethernet II, VLAN tag");
     Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_vlan_tag.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Matched'Image & (if Matched /= 64 then " /= 64 FAILED" else ""));
+    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 64 then " /= 64 FAILED" else ""));
     Ada.Text_IO.New_Line;
 
     Ada.Text_IO.Put_Line("-- Test: Ethernet II, double VLAN tag");
     Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_double_vlan_tag.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Matched'Image & (if Matched /= 68 then " /= 68 FAILED" else ""));
+    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 68 then " /= 68 FAILED" else ""));
     Ada.Text_IO.New_Line;
 
     Ada.Text_IO.Put_Line("-- Test: Ethernet, undefined");
     Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_undefined.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Matched'Image & (if Matched /= 0 then " /= 0 FAILED" else ""));
+    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 0 then " /= 0 FAILED" else ""));
     Ada.Text_IO.New_Line;
 
     Ada.Text_IO.Put_Line("-- Test: Ethernet, invalid, too long");
     Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_invalid_too_long.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Matched'Image & (if Matched /= 0 then " /= 0 FAILED" else ""));
+    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 0 then " /= 0 FAILED" else ""));
     Ada.Text_IO.New_Line;
 
     Ada.Text_IO.Put_Line("-- Test: Ethernet, invalid, too short");
     Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_invalid_too_short.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Matched'Image & (if Matched /= 0 then " /= 0 FAILED" else ""));
+    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 0 then " /= 0 FAILED" else ""));
     Ada.Text_IO.New_Line;
 
     Ada.Text_IO.Put_Line("-- Test: Ethernet IEEE 802.3, invalid length");
     Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_802.3_invalid_length.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Matched'Image & (if Matched /= 0 then " /= 0 FAILED" else ""));
+    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 0 then " /= 0 FAILED" else ""));
     Ada.Text_IO.New_Line;
 
 end Test_Dissector;

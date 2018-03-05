@@ -28,7 +28,7 @@ package body Ethernet_Dissector is
             return 0;
         end if;
 
-        Ada.Text_IO.Put_Line("Buffer Length: " & L'Image);
+        Ada.Text_IO.Put_Line("Buffer Length: " & Integer'Image (L));
         Destination := Buffer (1 .. 6);
         Ada.Text_IO.Put ("Destination: ");
         Bytes_Put (Destination);
