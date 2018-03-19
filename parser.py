@@ -105,7 +105,9 @@ class Parser:
         discrete_choice = Keyword('others') | range_ | choice_expression | subtype_indication
         discrete_choice_list = discrete_choice + ZeroOrMore(Literal('|') + discrete_choice)
         component_list = Forward()
-        variant = Keyword('when') + discrete_choice_list + Literal('=>') + component_list
+        condition = expression
+        variant_if_statement = Literal('if') + condition + Literal('then') + component_list + Optional(Literal('else') + component_list) + Literal('end if;')
+        variant = Keyword('when') + discrete_choice_list + Literal('=>') + (variant_if_statement | component_list)
         variant_part = Keyword('case') + name + Keyword('is') + variant + ZeroOrMore(variant) + Keyword('end case;')
 
         # Record Type
@@ -124,6 +126,14 @@ class Parser:
         aspect_mark = identifier
         aspect_specification << (Keyword('with') + aspect_mark + Optional(Keyword('=>') + aspect_definition) + ZeroOrMore(comma + aspect_mark + Optional(Keyword('=>') + aspect_definition)))
 
+        # Representation Aspects
+        array_component_association = discrete_choice_list + Literal('=>') + (Literal('<>') | expression)
+        named_array_aggregate = Literal('(') + array_component_association + ZeroOrMore(comma + array_component_association) + Literal(')')
+        array_aggregate = named_array_aggregate
+        enum_aggregate = array_aggregate
+        enum_representation_clause = Literal('for') + name + Literal('use') + enum_aggregate + semicolon
+        aspect_clause = enum_representation_clause
+
         # Slices
         slice_ << (identifier + Literal('(') + discrete_range + Literal(')'))
 
@@ -136,7 +146,7 @@ class Parser:
         type_declaration = Keyword('type') + identifier + Keyword('is') + type_definition + Optional(aspect_specification) + semicolon
 
         # Package
-        basic_declaration = type_declaration
+        basic_declaration = type_declaration | aspect_clause
         package_declaration = Keyword('package') + name + Keyword('is') + ZeroOrMore(basic_declaration) + Keyword('end') + name + semicolon
 
         # Parser file
