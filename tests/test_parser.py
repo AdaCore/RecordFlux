@@ -59,6 +59,9 @@ class TestParser(unittest.TestCase):
     def test_ethernet(self):
         self.assert_data("ethernet.rflx", [])
 
+    def test_mqtt(self):
+        self.assert_data("mqtt.rflx", [])
+
 
 if __name__ == "__main__":
     unittest.main()
