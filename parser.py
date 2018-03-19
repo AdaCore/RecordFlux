@@ -94,7 +94,7 @@ class Parser:
         array_type_definition = unconstrained_array_definition | constrained_array_definition
 
         # Operators
-        binary_adding_operator = Literal('+') | Literal('–') | Literal('&')
+        binary_adding_operator << (Literal('+') | Literal('–') | Literal('&'))
         unary_adding_operator = Literal('+') | Literal('–')
         multiplying_operator = Literal('*') | Literal('/') | Literal('mod') | Literal('rem')
 
@@ -134,16 +134,13 @@ class Parser:
         # Types
         type_definition = enumeration_type_definition | record_type_definition | derived_type_definition | integer_type_definition | array_type_definition
         type_declaration = Keyword('type') + identifier + Keyword('is') + type_definition + Optional(aspect_specification) + semicolon
-        basic_declaration = type_declaration
 
         # Package
+        basic_declaration = type_declaration
         package_declaration = Keyword('package') + name + Keyword('is') + ZeroOrMore(basic_declaration) + Keyword('end') + name + semicolon
 
-        # Declaration
-        basic_declaration = package_declaration
-
         # Parser file
-        self._grammar = ZeroOrMore(basic_declaration) + StringEnd()
+        self._grammar = Optional(package_declaration) + StringEnd()
         self._grammar.setParseAction(self.default_action)
 
         # Ignore comments
