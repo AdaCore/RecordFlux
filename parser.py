@@ -163,4 +163,4 @@ class Parser:
 if __name__ == "__main__":
     import sys
     Parser().parse(sys.argv[1])
-    print ("OK");
+    print("OK")
