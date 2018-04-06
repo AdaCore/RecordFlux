@@ -1,31 +1,157 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# pylint: disable=missing-docstring, line-too-long
+# pylint: disable=line-too-long
 
-from pyparsing import alphanums, nums, Forward, Keyword, Literal, Optional, QuotedString, Regex, StringEnd, Word, WordEnd, WordStart, ZeroOrMore
+from pyparsing import (alphanums, nums, Forward, Group, Keyword, Literal, Optional, QuotedString,
+                       Regex, StringEnd, Suppress, Word, WordEnd, WordStart, ZeroOrMore)
+
+
+class SyntaxTree:
+    def __eq__(self, other):
+        if not hasattr(other, '__dict__'):
+            return False
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return "\n%s %s" % (self.__class__.__name__, self.__dict__)
+
+
+class Name(SyntaxTree):
+    def __init__(self, identifier):
+        self.identifier: str = identifier
+
+
+class Attribute(Name):
+    def __init__(self, identifier, attribute):
+        super().__init__(identifier)
+        self.attribute: str = attribute
+
+
+class ActualType(SyntaxTree):
+    pass
+
+
+class Modular(ActualType):
+    def __init__(self, expression):
+        self.expression: str = expression
+
+
+class Signed(ActualType):
+    def __init__(self, first, last):
+        self.first = first
+        self.last = last
+
+
+class Record(ActualType):
+    def __init__(self, components):
+        self.components: list = components
+
+
+class Enumeration(ActualType):
+    def __init__(self, literals):
+        self.literals: list = literals
+
+
+class Type(SyntaxTree):
+    def __init__(self, name, type_, aspects=None):
+        self.name: Name = name
+        self.type: ActualType = type_
+        self.aspects: list = aspects or []
+
+
+class Relation(SyntaxTree):
+    pass
+
+
+class Less(Relation):
+    def __init__(self, left, right):
+        self.left: Name = left
+        self.right: Name = right
+
+
+class LessEqual(Relation):
+    def __init__(self, left, right):
+        self.left: Name = left
+        self.right: Name = right
+
+
+class Equal(Relation):
+    def __init__(self, left, right):
+        self.left: Name = left
+        self.right: Name = right
+
+
+class GreaterEqual(Relation):
+    def __init__(self, left, right):
+        self.left: Name = left
+        self.right: Name = right
+
+
+class Greater(Relation):
+    def __init__(self, left, right):
+        self.left: Name = left
+        self.right: Name = right
+
+
+class NotEqual(Relation):
+    def __init__(self, left, right):
+        self.left: Name = left
+        self.right: Name = right
+
+
+class Disjunction(SyntaxTree):
+    def __init__(self, conjunctions):
+        self.conjunctions: list = conjunctions
+
+
+class Conjunction(SyntaxTree):
+    def __init__(self, relations):
+        self.relations: list = relations
+
+
+class Aspect(SyntaxTree):
+    def __init__(self, identifier, disjunction):
+        self.identifier: Name = identifier
+        self.disjunction: Disjunction = disjunction
+
+
+class Component(SyntaxTree):
+    def __init__(self, name, type_):
+        self.name: Name = name
+        self.type: Type = type_
+
+
+class Package(SyntaxTree):
+    def __init__(self, identifier, types):
+        self.identifier: str = identifier
+        self.types: list = types
 
 
 class Parser:
+    # pylint: disable=too-many-locals, too-many-statements, expression-not-assigned
     def __init__(self, basedir='.'):
-        # pylint: disable=too-many-locals, too-many-statements, expression-not-assigned
-        self.__data = []
         self.__basedir = basedir
+        self.__syntax_tree = []
 
         # Generic
-        comma = Literal(',')
-        semicolon = Literal(';')
+        comma = Suppress(Literal(','))
+        semicolon = Suppress(Literal(';'))
 
         # Comments
         comment = Regex(r'--.*')
 
-        # Identifiers
+        # Names
         identifier = WordStart(alphanums) + Word(alphanums + '_') + WordEnd(alphanums + '_')
         defining_identifier = identifier
 
         # Names
-        direct_name = identifier
-        slice_ = Forward()
         attribute_reference = Forward()
+        slice_ = Forward()
+        direct_name = identifier.copy()
+        direct_name.setParseAction(lambda t: Name(t[0]))
         name = attribute_reference | slice_ | direct_name
 
         # Literals
@@ -39,12 +165,17 @@ class Parser:
 
         # Expressions
         relational_operator = Literal('<=') | Literal('>=') | Literal('=') | Literal('/=') | Literal('<') | Literal('>')
-        conjunctive_operator = Keyword('and then') | Keyword('or else') | Keyword('xor') | Keyword('and') | Keyword('or')
+        logical_operator = Keyword('and') | Keyword('or') | Keyword('xor')
         simple_expression = Forward()
-        relation = simple_expression + Optional(relational_operator + simple_expression)
-        expression = relation + ZeroOrMore(conjunctive_operator + relation)
+        relation = simple_expression + relational_operator + simple_expression
+        relation.setParseAction(parse_relation)
+        conjunction = relation + ZeroOrMore(Suppress(Keyword('and')) + relation)
+        conjunction.setParseAction(lambda t: Conjunction(t.asList()))
+        disjunction = conjunction + ZeroOrMore(Suppress(Keyword('or')) + conjunction)
+        disjunction.setParseAction(lambda t: Disjunction(t.asList()))
+        expression = disjunction
         choice_relation = simple_expression + Optional(~Literal('=>') + relational_operator + simple_expression)
-        choice_expression = choice_relation + ZeroOrMore(conjunctive_operator + choice_relation)
+        choice_expression = choice_relation + ZeroOrMore(logical_operator + choice_relation)
         primary = Keyword('null') | numeric_literal | string_literal | name | expression
         factor = primary + Optional(Literal('**') + primary) | Keyword('abs') + primary | Keyword('not') + primary
         multiplying_operator = Forward()
@@ -52,9 +183,7 @@ class Parser:
         unary_adding_operator = Forward()
         binary_adding_operator = Forward()
         simple_expression << (Optional(unary_adding_operator) + term + ZeroOrMore(binary_adding_operator + term))
-        static_simple_expression = simple_expression
-        static_expression = expression
-        default_expression = expression
+        simple_expression.setParseAction(lambda t: ''.join(t.asList()) if all(isinstance(e, str) for e in t.asList()) else t.asList())
 
         # Subtypes
         range_constraint = Forward()
@@ -71,13 +200,16 @@ class Parser:
         derived_type_definition = Keyword('new') + parent_subtype_indication + Optional(record_extension_part)
 
         # Integer Types
-        signed_integer_type_definition = Keyword('range') + static_simple_expression + Literal('..') + static_simple_expression
-        modular_type_definition = Keyword('mod') + static_expression
+        signed_integer_type_definition = Suppress(Keyword('range')) + simple_expression + Suppress(Literal('..')) + simple_expression
+        signed_integer_type_definition.setParseAction(lambda t: Signed(*t.asList()))
+        modular_type_definition = Suppress(Keyword('mod')) + simple_expression
+        modular_type_definition.setParseAction(lambda t: Modular(''.join(t.asList())))
         integer_type_definition = signed_integer_type_definition | modular_type_definition
 
         # Enumeration Types
-        enumeration_literal_specification = name  # pylint: disable=invalid-name
-        enumeration_type_definition = Literal('(') + enumeration_literal_specification + ZeroOrMore(comma + enumeration_literal_specification) + Literal(')')
+        enumeration_literal = name
+        enumeration_type_definition = Suppress(Literal('(')) + enumeration_literal + ZeroOrMore(comma + enumeration_literal) + Suppress(Literal(')'))
+        enumeration_type_definition.setParseAction(lambda t: Enumeration(t.asList()))
 
         # Range
         range_ = simple_expression + Literal('..') + simple_expression
@@ -112,10 +244,13 @@ class Parser:
 
         # Record Type
         record_definition = Keyword('record') + component_list + Keyword('end record') | Keyword('null record')
+        record_definition.setParseAction(lambda t: Record(t[1]))
         aspect_specification = Forward()
-        component_declaration = defining_identifier_list + Literal(':') + component_definition + Optional(Literal(':=') + default_expression) + Optional(aspect_specification) + Optional(Keyword('is abstract')) + semicolon
+        component_declaration = defining_identifier_list + Literal(':') + component_definition + Optional(Literal(':=') + simple_expression) + Optional(aspect_specification) + Optional(Keyword('is abstract')) + semicolon
         component_item = variant_part | component_declaration
-        component_list << (Keyword('null') + semicolon | Keyword('invalid') + semicolon | component_item + ZeroOrMore(component_item))
+        component_item.setParseAction(lambda t: Component(t[0], t[2]))
+        component_list << (Keyword('null') + semicolon | Keyword('invalid') + semicolon | Group(component_item + ZeroOrMore(component_item)))
+        component_list.setParseAction(lambda t: t.asList())
         record_type_definition = record_definition
 
         # Type Extensions
@@ -123,8 +258,10 @@ class Parser:
 
         # Aspect Specification
         aspect_definition = expression | identifier
-        aspect_mark = identifier
-        aspect_specification << (Keyword('with') + aspect_mark + Optional(Keyword('=>') + aspect_definition) + ZeroOrMore(comma + aspect_mark + Optional(Keyword('=>') + aspect_definition)))
+        aspect_definition.setParseAction(lambda t: t.asList())
+        aspect_mark = Keyword('Type_Invariant')
+        aspect_specification << (Suppress(Keyword('with')) + Group(aspect_mark + Optional(Keyword('=>') + aspect_definition)))
+        aspect_specification.setParseAction(lambda t: [Aspect(a[0], a[2]) for a in t])
 
         # Representation Aspects
         array_component_association = discrete_choice_list + Literal('=>') + (Literal('<>') | expression)
@@ -138,34 +275,52 @@ class Parser:
         slice_ << (identifier + Literal('(') + discrete_range + Literal(')'))
 
         # Attributes
-        attribute_designator = identifier
+        attribute_designator = Keyword('Length')
         attribute_reference << (identifier + Literal('\'') + attribute_designator)
+        attribute_reference.setParseAction(lambda t: Attribute(t[0], t[2]))
 
         # Types
         type_definition = enumeration_type_definition | record_type_definition | derived_type_definition | integer_type_definition | array_type_definition
         type_declaration = Keyword('type') + identifier + Keyword('is') + type_definition + Optional(aspect_specification) + semicolon
+        type_declaration.setParseAction(lambda t: Type(t[1], t[3], t[4:]))
 
         # Package
         basic_declaration = type_declaration | aspect_clause
-        package_declaration = Keyword('package') + name + Keyword('is') + ZeroOrMore(basic_declaration) + Keyword('end') + name + semicolon
+        package_declaration = Keyword('package') + identifier + Keyword('is') + Group(ZeroOrMore(basic_declaration)) + Keyword('end') + name + semicolon
+        package_declaration.setParseAction(lambda t: Package(t[1], t[3].asList()))
 
-        # Parser file
-        self._grammar = Optional(package_declaration) + StringEnd()
-        self._grammar.setParseAction(self.default_action)
-
-        # Ignore comments
-        self._grammar.ignore(comment)
+        # Grammar
+        self.__grammar = Optional(package_declaration) + StringEnd()
+        self.__grammar.setParseAction(self.default_action)
+        self.__grammar.ignore(comment)
 
     def default_action(self, tokens):
-        self.__data.extend(tokens)
+        self.__syntax_tree.extend(tokens)
 
     def parse(self, infile):
         filepath = self.__basedir + "/" + infile
         with open(filepath, 'r') as filehandle:
-            self._grammar.parseFile(filehandle)
+            self.__grammar.parseFile(filehandle)
 
-    def data(self):
-        return self.__data
+    def syntax_tree(self):
+        return self.__syntax_tree
+
+
+def parse_relation(tokens):
+    if tokens[1] == '<':
+        return Less(tokens[0], tokens[2])
+    elif tokens[1] == '<=':
+        return LessEqual(tokens[0], tokens[2])
+    elif tokens[1] == '==':
+        return Equal(tokens[0], tokens[2])
+    elif tokens[1] == '>=':
+        return GreaterEqual(tokens[0], tokens[2])
+    elif tokens[1] == '>':
+        return Greater(tokens[0], tokens[2])
+    elif tokens[1] == '/=':
+        return NotEqual(tokens[0], tokens[2])
+    return None
+
 
 if __name__ == "__main__":
     import sys

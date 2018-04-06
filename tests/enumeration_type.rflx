@@ -1,8 +1,6 @@
-package Ethernet is
+package Test is
 
 type Day is (Mon, Tue, Wed, Thu, Fri, Sat, Sun);
-type Suit is (Clubs, Diamonds, Hearts, Spades);
 type Gender is (M, F);
-type Level is (Low, Medium, Urgent);
 
-end Ethernet;
+end Test;
