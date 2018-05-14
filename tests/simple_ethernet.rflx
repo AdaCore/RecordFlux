@@ -9,6 +9,6 @@ package Simple_Ethernet is
             EtherType : U16;
             Payload : Payload_Type;
         end record
-            with Type_Invariant => Payload'Length >= 46 and Payload'Length <= 1500 and EtherType <= 1500 and EtherType >= 1536;
+            with Type_Invariant => Payload'Length >= 46 and Payload'Length <= 1500 and (EtherType <= 1500 or EtherType >= 1536);
 
 end Simple_Ethernet;

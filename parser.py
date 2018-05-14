@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=line-too-long
 
-from pyparsing import (alphanums, nums, Forward, Group, Keyword, Literal, Optional, QuotedString,
-                       Regex, StringEnd, Suppress, Word, WordEnd, WordStart, ZeroOrMore)
+from pyparsing import (alphanums, infixNotation, nums, opAssoc, Forward, Group, Keyword, Literal,
+                       Optional, QuotedString, Regex, StringEnd, Suppress, Word, WordEnd, WordStart,
+                       ZeroOrMore)
 
 
 class SyntaxTree:
@@ -62,7 +63,29 @@ class Type(SyntaxTree):
         self.aspects: list = aspects or []
 
 
-class Relation(SyntaxTree):
+class Expression(SyntaxTree):
+    pass
+
+
+class And(Expression):
+    def __init__(self, left, right):
+        self.left: Expression = left
+        self.right: Expression = right
+
+
+class Or(Expression):
+    def __init__(self, left, right):
+        self.left: Expression = left
+        self.right: Expression = right
+
+
+class Xor(Expression):
+    def __init__(self, left, right):
+        self.left: Expression = left
+        self.right: Expression = right
+
+
+class Relation(Expression):
     pass
 
 
@@ -102,20 +125,10 @@ class NotEqual(Relation):
         self.right: Name = right
 
 
-class Disjunction(SyntaxTree):
-    def __init__(self, conjunctions):
-        self.conjunctions: list = conjunctions
-
-
-class Conjunction(SyntaxTree):
-    def __init__(self, relations):
-        self.relations: list = relations
-
-
 class Aspect(SyntaxTree):
-    def __init__(self, identifier, disjunction):
+    def __init__(self, identifier, expression):
         self.identifier: Name = identifier
-        self.disjunction: Disjunction = disjunction
+        self.expression: Expression = expression
 
 
 class Component(SyntaxTree):
@@ -169,14 +182,10 @@ class Parser:
         simple_expression = Forward()
         relation = simple_expression + relational_operator + simple_expression
         relation.setParseAction(parse_relation)
-        conjunction = relation + ZeroOrMore(Suppress(Keyword('and')) + relation)
-        conjunction.setParseAction(lambda t: Conjunction(t.asList()))
-        disjunction = conjunction + ZeroOrMore(Suppress(Keyword('or')) + conjunction)
-        disjunction.setParseAction(lambda t: Disjunction(t.asList()))
-        expression = disjunction
+        expression = infixNotation(relation, [(logical_operator, 2, opAssoc.LEFT, parse_expression)])
         choice_relation = simple_expression + Optional(~Literal('=>') + relational_operator + simple_expression)
         choice_expression = choice_relation + ZeroOrMore(logical_operator + choice_relation)
-        primary = Keyword('null') | numeric_literal | string_literal | name | expression
+        primary = Keyword('null') | numeric_literal | string_literal | name
         factor = primary + Optional(Literal('**') + primary) | Keyword('abs') + primary | Keyword('not') + primary
         multiplying_operator = Forward()
         term = factor + ZeroOrMore(multiplying_operator + factor)
@@ -320,6 +329,22 @@ def parse_relation(tokens):
     elif tokens[1] == '/=':
         return NotEqual(tokens[0], tokens[2])
     return None
+
+
+def parse_expression(tokens):
+    result = tokens[0]
+    while len(result) > 1:
+        left = result.pop(0)
+        operator = result.pop(0)
+        right = result.pop(0)
+        if operator == 'and':
+            expression = And(left, right)
+        elif operator == 'or':
+            expression = Or(left, right)
+        elif operator == 'xor':
+            expression = Xor(left, right)
+        result.insert(0, expression)
+    return result
 
 
 if __name__ == "__main__":

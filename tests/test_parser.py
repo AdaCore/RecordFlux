@@ -3,9 +3,8 @@
 
 import unittest
 
-from parser import (Aspect, Attribute, Component, Conjunction, Disjunction, Enumeration,
-                    GreaterEqual, Less, LessEqual, Modular, Name, Package, Parser, Record, Signed,
-                    Type)
+from parser import (And, Aspect, Attribute, Component, Enumeration, GreaterEqual, Less, LessEqual,
+                    Modular, Name, Package, Parser, Or, Record, Signed, Type)
 
 
 class TestParser(unittest.TestCase):
@@ -84,9 +83,7 @@ class TestParser(unittest.TestCase):
                                         Component('Month', Name('Month_Name')),
                                         Component('Year', Name('Integer'))]),
                                 [Aspect('Type_Invariant',
-                                        Disjunction(
-                                            [Conjunction(
-                                                [Less(Name('Year'), '3000')])]))])])
+                                        Less(Name('Year'), '3000'))])])
         self.assert_data("record_type_with_aspect.rflx", [package])
 
     def test_simple_ethernet(self):
@@ -99,12 +96,10 @@ class TestParser(unittest.TestCase):
                                         Component('EtherType', Name('U16')),
                                         Component('Payload', Name('Payload_Type'))]),
                                 [Aspect('Type_Invariant',
-                                        Disjunction(
-                                            [Conjunction(
-                                                [GreaterEqual(Attribute('Payload', 'Length'), '46'),
-                                                 LessEqual(Attribute('Payload', 'Length'), '1500'),
-                                                 LessEqual(Name('EtherType'), '1500'),
-                                                 GreaterEqual(Name('EtherType'), '1536')])]))])])
+                                        And(And(GreaterEqual(Attribute('Payload', 'Length'), '46'),
+                                                LessEqual(Attribute('Payload', 'Length'), '1500')),
+                                            Or(LessEqual(Name('EtherType'), '1500'),
+                                               GreaterEqual(Name('EtherType'), '1536'))))])])
         self.assert_data("simple_ethernet.rflx", [package])
 
     # def test_ethernet(self):
