@@ -4,7 +4,7 @@
 import unittest
 
 from parser import (And, Aspect, Attribute, Component, Enumeration, GreaterEqual, Less, LessEqual,
-                    Modular, Name, Package, Parser, Or, Record, Signed, Type)
+                    Modular, Name, Package, Parser, Or, Record, Signed, Type, Value)
 
 
 class TestParser(unittest.TestCase):
@@ -38,10 +38,10 @@ class TestParser(unittest.TestCase):
 
     def test_integer_type(self):
         package = Package('Test',
-                          [Type('Page_Num', Signed('1', '2_000')),
-                           Type('Line_Size', Signed('1', Name('Max_Line_Size'))),
-                           Type('Byte', Modular('2**8')),
-                           Type('Hash_Index', Modular('97'))])
+                          [Type('Page_Num', Signed(Value('1'), Value('2_000'))),
+                           Type('Line_Size', Signed(Value('1'), Name('Max_Line_Size'))),
+                           Type('Byte', Modular(Value('2**8'))),
+                           Type('Hash_Index', Modular(Value('97')))])
         self.assert_data("integer_type.rflx", [package])
 
     def test_enumeration_type(self):
@@ -83,23 +83,23 @@ class TestParser(unittest.TestCase):
                                         Component('Month', Name('Month_Name')),
                                         Component('Year', Name('Integer'))]),
                                 [Aspect('Type_Invariant',
-                                        Less(Name('Year'), '3000'))])])
+                                        Less(Name('Year'), Value('3000')))])])
         self.assert_data("record_type_with_aspect.rflx", [package])
 
     def test_simple_ethernet(self):
         package = Package('Simple_Ethernet',
                           [Type('U48',
-                                Modular('2**48')),
+                                Modular(Value('2**48'))),
                            Type('PDU',
                                 Record([Component('Destination', Name('U48')),
                                         Component('Source', Name('U48')),
                                         Component('EtherType', Name('U16')),
                                         Component('Payload', Name('Payload_Type'))]),
                                 [Aspect('Type_Invariant',
-                                        And(And(GreaterEqual(Attribute('Payload', 'Length'), '46'),
-                                                LessEqual(Attribute('Payload', 'Length'), '1500')),
-                                            Or(LessEqual(Name('EtherType'), '1500'),
-                                               GreaterEqual(Name('EtherType'), '1536'))))])])
+                                        And(And(GreaterEqual(Attribute('Payload', 'Length'), Value('46')),
+                                                LessEqual(Attribute('Payload', 'Length'), Value('1500'))),
+                                            Or(LessEqual(Name('EtherType'), Value('1500')),
+                                               GreaterEqual(Name('EtherType'), Value('1536')))))])])
         self.assert_data("simple_ethernet.rflx", [package])
 
     # def test_ethernet(self):

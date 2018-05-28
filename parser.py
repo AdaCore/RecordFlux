@@ -31,6 +31,11 @@ class Attribute(Name):
         self.attribute: str = attribute
 
 
+class Value(SyntaxTree):
+    def __init__(self, literal):
+        self.literal: str = literal
+
+
 class ActualType(SyntaxTree):
     pass
 
@@ -175,6 +180,8 @@ class Parser:
         based_literal = base + Literal('#') + based_numeral + Literal('#')
         numeric_literal = based_literal | numeral
         string_literal = QuotedString('"')
+        literal = numeric_literal | string_literal
+        literal.setParseAction(lambda t: Value(''.join(t.asList())))
 
         # Expressions
         relational_operator = Literal('<=') | Literal('>=') | Literal('=') | Literal('/=') | Literal('<') | Literal('>')
@@ -185,14 +192,14 @@ class Parser:
         expression = infixNotation(relation, [(logical_operator, 2, opAssoc.LEFT, parse_expression)])
         choice_relation = simple_expression + Optional(~Literal('=>') + relational_operator + simple_expression)
         choice_expression = choice_relation + ZeroOrMore(logical_operator + choice_relation)
-        primary = Keyword('null') | numeric_literal | string_literal | name
+        primary = Keyword('null') | literal | name
         factor = primary + Optional(Literal('**') + primary) | Keyword('abs') + primary | Keyword('not') + primary
         multiplying_operator = Forward()
         term = factor + ZeroOrMore(multiplying_operator + factor)
         unary_adding_operator = Forward()
         binary_adding_operator = Forward()
         simple_expression << (Optional(unary_adding_operator) + term + ZeroOrMore(binary_adding_operator + term))
-        simple_expression.setParseAction(lambda t: ''.join(t.asList()) if all(isinstance(e, str) for e in t.asList()) else t.asList())
+        simple_expression.setParseAction(parse_simple_expression)
 
         # Subtypes
         range_constraint = Forward()
@@ -212,7 +219,7 @@ class Parser:
         signed_integer_type_definition = Suppress(Keyword('range')) + simple_expression + Suppress(Literal('..')) + simple_expression
         signed_integer_type_definition.setParseAction(lambda t: Signed(*t.asList()))
         modular_type_definition = Suppress(Keyword('mod')) + simple_expression
-        modular_type_definition.setParseAction(lambda t: Modular(''.join(t.asList())))
+        modular_type_definition.setParseAction(lambda t: Modular(*t.asList()))
         integer_type_definition = signed_integer_type_definition | modular_type_definition
 
         # Enumeration Types
@@ -345,6 +352,22 @@ def parse_expression(tokens):
             expression = Xor(left, right)
         result.insert(0, expression)
     return result
+
+
+def parse_simple_expression(tokens):
+    result = []
+    if len(tokens) == 1:
+        return tokens[0]
+    for t in tokens:
+        if isinstance(t, str):
+            result += [t]
+        elif isinstance(t, Value):
+            result += [t.literal]
+        elif isinstance(t, Attribute):
+            result += ['{}\'{}'.format(t.identifier, t.attribute)]
+        elif isinstance(t, Name):
+            result += [t.identifier]
+    return Value(''.join(result))
 
 
 if __name__ == "__main__":
