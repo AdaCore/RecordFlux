@@ -1,7 +1,14 @@
 [MESSAGES CONTROL]
 
 # Disable the message, report, category or checker with the given id(s).
-disable=missing-docstring
+disable=missing-docstring, bad-continuation
+
+[BASIC]
+
+# Regular expression matching correct variable names. Overrides variable-
+# naming-style
+variable-rgx=[a-z0-9_]{1,30}$
+
 
 [DESIGN]
 
