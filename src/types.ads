@@ -2,6 +2,10 @@ package Types is
 
     type Byte is mod 2**8;
     type Bytes is array (Positive range <>) of Byte;
+    type Payload_Type is new Bytes;
+
+    type U16 is mod 2**16;
+    type U32 is mod 2**32;
 
     procedure Bytes_Put (Buffer : Bytes);
 
