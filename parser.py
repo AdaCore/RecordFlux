@@ -25,9 +25,9 @@ class Name(SyntaxTree):
         self.identifier: str = identifier
 
 
-class Attribute(Name):
+class Attribute(SyntaxTree):
     def __init__(self, identifier, attribute):
-        super().__init__(identifier)
+        self.identifier: str = identifier
         self.attribute: str = attribute
 
 
