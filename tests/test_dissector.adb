@@ -1,71 +1,44 @@
-with Ada.Directories;
-with Ada.Text_IO;
-with Ada.Sequential_IO;
+with SPARK.File_IO;
+with SPARK.Text_IO;
 
+with Simple_Ethernet; use Simple_Ethernet;
 with Types; use Types;
-with Ethernet_Dissector;
 
 procedure Test_Dissector is
-
-    function Read_File (Name : in String) return Bytes is
-        package Byte_IO is new Ada.Sequential_IO (Byte);
-        Input_File : Byte_IO.File_Type;
-        Buffer : Bytes (1 .. Integer(Ada.Directories.Size(Name)));
-        Value : Byte;
-        I : Natural := 0;
-    begin
-        Byte_IO.Open (Input_File, Byte_IO.In_File, Name);
-        while not Byte_IO.End_Of_File (Input_File) loop
-            I := I + 1;
-            Byte_IO.Read (Input_File, Value);
-            Buffer (I) := Value;
-        end loop;
-        Byte_IO.Close (Input_File);
-        return Buffer;
-    end Read_File;
-
-    Matched : Natural;
-
 begin
-
-    Ada.Text_IO.Put_Line("-- Test: Ethernet IEEE 802.3");
-    Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_802.3.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 60 then " /= 60 FAILED" else ""));
-    Ada.Text_IO.New_Line;
-
-    Ada.Text_IO.Put_Line("-- Test: Ethernet II");
-    Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 60 then " /= 60 FAILED" else ""));
-    Ada.Text_IO.New_Line;
-
-    Ada.Text_IO.Put_Line("-- Test: Ethernet II, VLAN tag");
-    Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_vlan_tag.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 64 then " /= 64 FAILED" else ""));
-    Ada.Text_IO.New_Line;
-
-    Ada.Text_IO.Put_Line("-- Test: Ethernet II, double VLAN tag");
-    Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_double_vlan_tag.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 68 then " /= 68 FAILED" else ""));
-    Ada.Text_IO.New_Line;
-
-    Ada.Text_IO.Put_Line("-- Test: Ethernet, undefined");
-    Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_undefined.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 0 then " /= 0 FAILED" else ""));
-    Ada.Text_IO.New_Line;
-
-    Ada.Text_IO.Put_Line("-- Test: Ethernet, invalid, too long");
-    Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_invalid_too_long.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 0 then " /= 0 FAILED" else ""));
-    Ada.Text_IO.New_Line;
-
-    Ada.Text_IO.Put_Line("-- Test: Ethernet, invalid, too short");
-    Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_invalid_too_short.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 0 then " /= 0 FAILED" else ""));
-    Ada.Text_IO.New_Line;
-
-    Ada.Text_IO.Put_Line("-- Test: Ethernet IEEE 802.3, invalid length");
-    Matched := Ethernet_Dissector.Match (Read_File ("tests/ethernet_802.3_invalid_length.raw"));
-    Ada.Text_IO.Put_Line("-- Matched: " & Natural'Image (Matched) & (if Matched /= 0 then " /= 0 FAILED" else ""));
-    Ada.Text_IO.New_Line;
-
+   SPARK.Text_IO.Put_Line("-- Test: Ethernet II");
+   declare
+      Buffer : Bytes := SPARK.File_IO.Read_File ("tests/ethernet.raw");
+      Valid : Boolean;
+      Destination : Simple_Ethernet.U48;
+      Source : Simple_Ethernet.U48;
+      EtherType : U16;
+   begin
+      Valid := Simple_Ethernet.Is_Valid (Buffer);
+      SPARK.Text_IO.Put_Line("Valid: " & (if Valid then "OK" else "FAILED"));
+      if Buffer'Length >= 6 and then Simple_Ethernet.Valid_Destination (Buffer) then
+         Destination := Simple_Ethernet.Destination (Buffer);
+         SPARK.Text_IO.Put_Line("Destination: " & (if Destination = 16#FFFFFFFFFFFF# then "OK" else "FAILED"));
+         if Buffer'Length >= 12 and then Simple_Ethernet.Valid_Source (Buffer) then
+            Source := Simple_Ethernet.Source (Buffer);
+            SPARK.Text_IO.Put_Line("Source: " & (if Source = 16#000000000000# then "OK" else "FAILED"));
+            if Buffer'Length >= 14 and then Simple_Ethernet.Valid_EtherType (Buffer) then
+               EtherType := Simple_Ethernet.EtherType (Buffer);
+               SPARK.Text_IO.Put_Line("EtherType: " & (if EtherType = 16#0800# then "OK" else "FAILED"));
+               if Buffer'Length >= 60 and then Buffer'Length <= 1514
+                     and then (Simple_Ethernet.EtherType (Buffer) <= 1500 or Simple_Ethernet.EtherType (Buffer) >= 1536)
+                     and then Simple_Ethernet.Valid_Payload (Buffer) then
+                  declare
+                     Payload : Payload_Type := Simple_Ethernet.Payload (Buffer);
+                     A : Bytes := Bytes (Payload);
+                  begin
+                     SPARK.Text_IO.Put("Payload: ");
+                     Bytes_Put (Bytes (Payload));
+                  end;
+               end if;
+            end if;
+         end if;
+      end if;
+      SPARK.Text_IO.New_Line;
+   end;
 end Test_Dissector;
