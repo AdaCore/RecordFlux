@@ -2,7 +2,9 @@ with Ada.Text_IO;
 
 package body Types is
 
-    procedure Bytes_Put (Buffer : in Bytes) is
+    procedure Bytes_Put (Buffer : Bytes) with
+        SPARK_Mode => Off
+    is
         package Modular_Text_IO is new Ada.Text_IO.Modular_IO (Byte);
         S : String (1 .. 6);
     begin
