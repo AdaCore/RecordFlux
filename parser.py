@@ -58,8 +58,9 @@ class Signed(ActualType):
 
 
 class Record(ActualType):
-    def __init__(self, components):
+    def __init__(self, components, abstract=False):
         self.components: list = components
+        self.abstract: bool = abstract
 
 
 class Enumeration(ActualType):
@@ -267,8 +268,8 @@ class Parser:
         variant_part = Keyword('case') + name + Keyword('is') + variant + ZeroOrMore(variant) + Keyword('end case;')
 
         # Record Type
-        record_definition = Keyword('record') + component_list + Keyword('end record') | Keyword('null record')
-        record_definition.setParseAction(lambda t: Record(t[1]))
+        record_definition = Optional(Keyword('abstract')) + Keyword('record') + component_list + Keyword('end record')
+        record_definition.setParseAction(lambda t: Record(t[1]) if t[0] != 'abstract' else Record(t[2], True))
         aspect_specification = Forward()
         component_declaration = defining_identifier_list + Literal(':') + component_definition + Optional(Literal(':=') + simple_expression) + Optional(aspect_specification) + Optional(Keyword('is abstract')) + semicolon
         component_item = variant_part | component_declaration

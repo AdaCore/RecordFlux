@@ -69,11 +69,17 @@ class TestParser(unittest.TestCase):
     #     self.assert_data("array_type.rflx", [])
 
     def test_record_type(self):
-        package = Package('Test', [
-            Type('Date', Record([
-                Component('Day', Name('Integer')),
-                Component('Month', Name('Month_Name')),
-                Component('Year', Name('Integer'))]))])
+        package = Package('Test',
+                          [Type('Date',
+                                Record([Component('Day', Name('Integer')),
+                                        Component('Month', Name('Month_Name')),
+                                        Component('Year', Name('Natural'))])),
+                           Type('PDU',
+                                Record([Component('Destination', Name('U48')),
+                                        Component('Source', Name('U48')),
+                                        Component('EtherType', Name('U16')),
+                                        Component('Payload', Name('Payload_Type'))],
+                                       True))])
         self.assert_data("record_type.rflx", [package])
 
     # def test_record_type_with_slice(self):

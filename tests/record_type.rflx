@@ -1,10 +1,18 @@
 package Test is
 
-type Date is
-    record
-        Day : Integer range 1 .. 31;
-        Month : Month_Name;
-        Year : Integer range 0 .. 4000;
-    end record;
+   type Date is
+      record
+         Day : Integer range 1 .. 31;
+         Month : Month_Name;
+         Year : Natural;
+      end record;
+
+   type PDU is abstract
+      record
+         Destination : U48;
+         Source : U48;
+         EtherType : U16;
+         Payload : Payload_Type;
+      end record;
 
 end Test;
