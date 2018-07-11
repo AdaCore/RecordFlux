@@ -4,8 +4,8 @@
 import unittest
 
 from parser import (And, Aspect, Attribute, Component, Derived, Enumeration, Equal, Greater,
-                    GreaterEqual, Less, LessEqual, Modular, Name, Package, Parser, Or, Record,
-                    Signed, Type, Value)
+                    GreaterEqual, Less, LessEqual, Modular, Name, NotEqual, Package, Parser, Or,
+                    Record, Signed, Type, Value)
 
 
 class TestParser(unittest.TestCase):
@@ -82,15 +82,26 @@ class TestParser(unittest.TestCase):
     # def test_record_type_with_variant(self):
     #     self.assert_data("record_type_with_variant.rflx", [])
 
-    def test_record_type_with_aspect(self):
+    def test_aspect(self):
         package = Package('Test',
                           [Type('Date',
                                 Record([Component('Day', Name('Integer')),
                                         Component('Month', Name('Month_Name')),
-                                        Component('Year', Name('Integer'))]),
+                                        Component('Year', Name('Natural'))]),
                                 [Aspect('Type_Invariant',
-                                        Less(Name('Year'), Value('3000')))])])
-        self.assert_data("record_type_with_aspect.rflx", [package])
+                                        GreaterEqual(Attribute('Month', 'Length'), Value('3')))]),
+                           Type('Short_Date',
+                                Derived(Name('Date')),
+                                [Aspect('Type_Invariant',
+                                        LessEqual(Attribute('Month', 'Length'), Value('3')))]),
+                           Type('PDU_X',
+                                Derived(Name('PDU'), {'Payload_Type': 'X'}),
+                                [Aspect('Type_Invariant',
+                                        And(And(Equal(Name('X_Type'), Value('42')),
+                                                Or(Greater(Name('Foo'), Value('1')),
+                                                   Less(Name('Bar'), Value('2')))),
+                                            NotEqual(Name('Baz'), Name('Foo'))))])])
+        self.assert_data("aspect.rflx", [package])
 
     def test_simple_ethernet(self):
         package = Package('Simple_Ethernet',
