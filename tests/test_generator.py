@@ -80,6 +80,9 @@ class TestGenerator(unittest.TestCase):
     def test_simple_ethernet_def(self):
         self.assert_definition('simple_ethernet')
 
+    def test_ethernet(self):
+        self.assert_code('ethernet')
+
 
 if __name__ == "__main__":
     unittest.main()
