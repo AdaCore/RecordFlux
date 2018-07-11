@@ -3,8 +3,9 @@
 
 import unittest
 
-from parser import (And, Aspect, Attribute, Component, Enumeration, GreaterEqual, Less, LessEqual,
-                    Modular, Name, Package, Parser, Or, Record, Signed, Type, Value)
+from parser import (And, Aspect, Attribute, Component, Derived, Enumeration, Equal, Greater,
+                    GreaterEqual, Less, LessEqual, Modular, Name, Package, Parser, Or, Record,
+                    Signed, Type, Value)
 
 
 class TestParser(unittest.TestCase):
@@ -33,8 +34,13 @@ class TestParser(unittest.TestCase):
     def test_package(self):
         self.assert_data("package.rflx", [Package('Test', [])])
 
-    # def test_derived_type(self):
-    #     self.assert_data("derived_type.rflx", [])
+    def test_derived_type(self):
+        package = Package('Test',
+                          [Type('Counter',
+                                Derived(Name('Positive'))),
+                           Type('PDU_X',
+                                Derived(Name('PDU'), {'Payload_Type': 'X'}))])
+        self.assert_data("derived_type.rflx", [package])
 
     def test_integer_type(self):
         package = Package('Test',

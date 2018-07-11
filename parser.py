@@ -3,7 +3,7 @@
 # pylint: disable=line-too-long
 
 from pyparsing import (alphanums, infixNotation, nums, opAssoc, Forward, Group, Keyword, Literal,
-                       Optional, QuotedString, Regex, StringEnd, Suppress, Word, WordEnd, WordStart,
+                       OneOrMore, Optional, QuotedString, Regex, StringEnd, Suppress, Word, WordEnd, WordStart,
                        ZeroOrMore)
 
 
@@ -38,6 +38,12 @@ class Value(SyntaxTree):
 
 class ActualType(SyntaxTree):
     pass
+
+
+class Derived(ActualType):
+    def __init__(self, parent, refinements=None):
+        self.parent: Name = parent
+        self.refinements: dict = refinements
 
 
 class Modular(ActualType):
@@ -212,8 +218,10 @@ class Parser:
 
         # Derived Types
         parent_subtype_indication = subtype_indication
-        record_extension_part = Forward()
-        derived_type_definition = Keyword('new') + parent_subtype_indication + Optional(record_extension_part)
+        type_refinement_part = Suppress(Literal('(')) + OneOrMore(identifier + Suppress(Literal('=>')) + identifier) + Suppress(Literal(')'))
+        type_refinement_part.setParseAction(lambda t: dict(zip(t[::2], t[1::2])))
+        derived_type_definition = Suppress(Keyword('new')) + parent_subtype_indication + Optional(type_refinement_part)
+        derived_type_definition.setParseAction(lambda t: Derived(*t.asList()))
 
         # Integer Types
         signed_integer_type_definition = Suppress(Keyword('range')) + simple_expression + Suppress(Literal('..')) + simple_expression
@@ -268,9 +276,6 @@ class Parser:
         component_list << (Keyword('null') + semicolon | Keyword('invalid') + semicolon | Group(component_item + ZeroOrMore(component_item)))
         component_list.setParseAction(lambda t: t.asList())
         record_type_definition = record_definition
-
-        # Type Extensions
-        record_extension_part << (Keyword('with') + record_definition)
 
         # Aspect Specification
         aspect_definition = expression | identifier

@@ -1,6 +1,7 @@
 package Test is
 
-type Local_Coordinate is new Coordinate;
-type Midweek is new Day range Tue .. Thu;
+   type Counter is new Positive;
+
+   type PDU_X is new PDU (Payload_Type => X);
 
 end Test;
