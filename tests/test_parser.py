@@ -125,8 +125,32 @@ class TestParser(unittest.TestCase):
                                                GreaterEqual(Name('EtherType'), Value('1536')))))])])
         self.assert_data("simple_ethernet.rflx", [package])
 
-    # def test_ethernet(self):
-    #     self.assert_data("ethernet.rflx", [])
+    def test_ethernet(self):
+        package = Package('Ethernet',
+                          [Type('U48',
+                                Modular(Value('2**48'))),
+                           Type('PDU',
+                                Record([Component('Destination', Name('U48')),
+                                        Component('Source', Name('U48')),
+                                        Component('EtherType', Name('U16')),
+                                        Component('Payload', Name('Payload_Type'))],
+                                       True),
+                                [Aspect('Type_Invariant',
+                                        And(GreaterEqual(Attribute('Payload', 'Length'),
+                                                         Value('46')),
+                                            LessEqual(Attribute('Payload', 'Length'),
+                                                      Value('1500'))))]),
+                           Type('IEEE_802_3',
+                                Derived(Name('PDU')),
+                                [Aspect('Type_Invariant',
+                                        And(LessEqual(Name('EtherType'), Value('1500')),
+                                            Equal(Attribute('Payload', 'Length'),
+                                                  Name('EtherType'))))]),
+                           Type('Version_2',
+                                Derived(Name('PDU')),
+                                [Aspect('Type_Invariant',
+                                        GreaterEqual(Name('EtherType'), Value('1536')))])])
+        self.assert_data("ethernet.rflx", [package])
 
     # def test_mqtt(self):
     #     self.assert_data("mqtt.rflx", [])

@@ -1,42 +1,20 @@
 package Ethernet is
 
-type Two_Octets is mod 2**16;
-type Four_Octets is mod 2**32;
-type Six_Octets is mod 2**48;
-type Byte is mod 2**8;
-type Bytes is array (Natural range <>) of Byte;
-type Payload_Bytes is array (1 .. 1500) of Byte;
+   type U48 is mod 2**48;
 
-type Frame is
-    record
-        Destination : Four_Octets;
-        Source : Four_Octets;
-        EtherType_Length_1 : Two_Octets is abstract;
-        case EtherType_Length_1 is
-            when 16#8100# =>
-                Dot1q_1 : Four_Octets;
-            when 16#88A8# =>
-                Dot1q_1 : Four_Octets;
-                EtherType_Length_2 : Two_Octets is abstract;
-                case EtherType_Length_2 is
-                    when 16#8100# =>
-                        Dot1q_2 : Four_Octets;
-                    when others =>
-                        invalid;
-                end case;
-        end case;
-        EtherType_Length_3 : Two_Octets is abstract;
-        case EtherType_Length_3 is
-            when 0 .. 1500 =>
-                Length : Two_Octets;
-                Payload : PayloadBytes (1 .. Length);
-            when 1501 .. 1535 =>
-                invalid;
-            when 1536 .. 65535 =>
-                EtherType : Two_Octets;
-                Payload : Payload_Bytes;
-        end case;
-    end record
-        with Type_Invariant => Payload'Length >= 46 and Payload'Length <= 1500;
+   type PDU is abstract
+      record
+         Destination : U48;
+         Source : U48;
+         EtherType : U16;
+         Payload : Payload_Type;
+      end record
+         with Type_Invariant => Payload'Length >= 46 and Payload'Length <= 1500;
+
+   type IEEE_802_3 is new PDU
+      with Type_Invariant => EtherType <= 1500 and Payload'Length = EtherType;
+
+   type Version_2 is new PDU
+      with Type_Invariant => EtherType >= 1536;
 
 end Ethernet;
