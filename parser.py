@@ -327,7 +327,7 @@ def parse_relation(tokens):
         return Less(tokens[0], tokens[2])
     elif tokens[1] == '<=':
         return LessEqual(tokens[0], tokens[2])
-    elif tokens[1] == '==':
+    elif tokens[1] == '=':
         return Equal(tokens[0], tokens[2])
     elif tokens[1] == '>=':
         return GreaterEqual(tokens[0], tokens[2])
