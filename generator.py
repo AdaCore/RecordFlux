@@ -55,16 +55,30 @@ class Package(SparkRepresentation):
         self.functions: list = functions
 
     def specification(self):
-        return 'package {name} is\n\n{types}\n\n{functions}\n\nend {name};'.format(
+        types = '\n\n'.join([t.specification() for t in self.types if t.specification()])
+        if types:
+            types += '\n\n'
+        functions = '\n\n'.join([f.specification() for f in self.functions])
+        if functions:
+            functions += '\n\n'
+        return 'package {name} is\n\n{types}{functions}end {name};'.format(
             name=self.name,
-            types='\n\n'.join([t.specification() for t in self.types if t.specification()]),
-            functions='\n\n'.join([f.specification() for f in self.functions]))
+            types=types,
+            functions=functions)
 
     def definition(self):
-        return 'package body {name} is\n\n{types}\n\n{functions}\n\nend {name};'.format(
+        if not self.functions:
+            return ''
+        types = '\n\n'.join([t.definition() for t in self.types if t.definition()])
+        if types:
+            types += '\n\n'
+        functions = '\n\n'.join([f.definition() for f in self.functions])
+        if functions:
+            functions += '\n\n'
+        return 'package body {name} is\n\n{types}{functions}end {name};'.format(
             name=self.name,
-            types='\n'.join([t.definition() for t in self.types]),
-            functions='\n\n'.join([f.definition() for f in self.functions]))
+            types=types,
+            functions=functions)
 
 
 class Type(SparkRepresentation):
@@ -73,15 +87,17 @@ class Type(SparkRepresentation):
         self.type_definition: str = type_definition
 
     def specification(self):
-        if self.type_definition is None:
-            return ''
-        return '   type {name} is {type_definition};'.format(
+        type_declaration = ''
+        if self.type_definition:
+            type_declaration = '   type {name} is {type_definition};\n'.format(
+                name=self.name,
+                type_definition=self.type_definition)
+        return '{type_declaration}   function Convert_To_{name} is new Convert_To ({name});'.format(
             name=self.name,
-            type_definition=self.type_definition)
+            type_declaration=type_declaration)
 
-    def definition(self):
-        return '   function Convert_To_{name} is new Convert_To ({name});'.format(
-            name=self.name)
+    def definition(self):  # pylint: disable=no-self-use
+        return ''
 
 
 class Function(SparkRepresentation):
@@ -340,16 +356,24 @@ class Generator:
         self.__units = []
 
     def generate(self, syntax_tree):
-        package = syntax_tree[0]
-        if not isinstance(package, parser.Package):
-            assert False, 'found {}, expected Package'.format(type(package).__name__)
+        parser_package = syntax_tree[0]
+        if not isinstance(parser_package, parser.Package):
+            assert False, 'found {}, expected Package'.format(type(parser_package).__name__)
 
-        types = []
-        functions = []
-        for t in package.types:
+        top_context = [ContextItem('Types', True)]
+        top_package = Package(parser_package.identifier, [], [])
+        self.__units += [Unit(top_context, top_package)]
+
+        for t in parser_package.types:
             if isinstance(t.type, parser.Modular):
-                types += [Type(t.name, 'mod {}'.format(t.type.expression.literal))]
+                top_package.types += [Type(t.name, 'mod {}'.format(t.type.expression.literal))]
             elif isinstance(t.type, parser.Record):
+                types = []
+                functions = []
+                unit = Unit([ContextItem(top_package.name, True)],
+                            Package('{}.{}'.format(top_package.name, t.name), types, functions))
+                self.__units += [unit]
+
                 for a in t.aspects:
                     if a.identifier != 'Type_Invariant':
                         assert False, 'found {}, expected Type_Invariant'.format(a.identifier)
@@ -420,10 +444,6 @@ class Generator:
                         functions += [Function('Is_Valid', 'Boolean', None, validator_body)]
 
                     previous_components += [c]
-
-        context = [ContextItem('Types', True)]
-        package = Package(package.identifier, types, functions)
-        self.__units += [Unit(context, package)]
 
     def units(self):
         return self.__units

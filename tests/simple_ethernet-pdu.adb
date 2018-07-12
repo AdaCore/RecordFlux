@@ -1,7 +1,4 @@
-package body Simple_Ethernet is
-
-   function Convert_To_U48 is new Convert_To (U48);
-   function Convert_To_U16 is new Convert_To (U16);
+package body Simple_Ethernet.PDU is
 
    function Valid_Destination (Buffer : Bytes) return Boolean is
    begin
@@ -48,4 +45,4 @@ package body Simple_Ethernet is
       return (Buffer'Length >= 14 and then ((Buffer'Length >= 60 and then Buffer'Length <= 1514) and then (EtherType (Buffer) <= 1500 or EtherType (Buffer) >= 1536)));
    end Is_Valid;
 
-end Simple_Ethernet;
+end Simple_Ethernet.PDU;
