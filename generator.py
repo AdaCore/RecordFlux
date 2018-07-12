@@ -3,6 +3,7 @@
 
 from abc import ABC, abstractmethod
 
+import copy
 import sys
 
 import parser
@@ -351,6 +352,88 @@ def convert_expression(expression):
     return None
 
 
+def process_aspects(aspects):
+    for a in aspects:
+        if a.identifier != 'Type_Invariant':
+            assert False, 'found {}, expected Type_Invariant'.format(a.identifier)
+        return convert_expression(a.expression)
+
+
+def process_record(name, record, type_invariant, parent_name):
+    types = []
+    functions = []
+    unit = Unit([ContextItem(parent_name, True)],
+                Package('{}.{}'.format(parent_name, name), types, functions))
+
+    component_last = 0
+    previous_components = []
+    for c in record.components:
+        # Calculate bounds of component
+        component_first = component_last
+        if c.type.identifier in BUILTIN_TYPES:
+            component_last += BUILTIN_TYPES[c.type.identifier]
+            if c.type.identifier.startswith('U'):
+                type_ = Type(c.type.identifier, None)
+                if type_ not in types:
+                    types += [type_]
+        else:
+            # TODO: determine size of custom type
+            if c.type.identifier.startswith('U'):
+                component_last += int(c.type.identifier[1:]) // 8
+            else:
+                assert False, 'unable to determine size of type {}'.format(
+                    c.type.identifier)
+
+        # Common precondition
+        length_precondition = GreaterEqual(Length('Buffer'), Value(str(component_last)))
+        precondition = And(length_precondition,
+                           type_invariant.transformed(
+                               c.name,
+                               [k.name for k in previous_components],
+                               component_last)).simplified()
+        for field in previous_components:
+            precondition.replace_field(field.name, '{} (Buffer)'.format(field.name))
+
+        # Field accessor
+        if c.type.identifier == 'Payload_Type':
+            # TODO: determine payload length
+            slice_ = 'Buffer\'First + {first} .. Buffer\'Last'.format(
+                first=component_first)
+            field_accessor = 'Payload_Type (Buffer ({slice_}))'.format(slice_=slice_)
+        else:
+            slice_ = 'Buffer\'First + {first} .. Buffer\'First + {last}'.format(
+                first=component_first, last=component_last - 1)
+            field_accessor = 'Convert_To_{type_} (Buffer ({slice_}))'.format(
+                type_=c.type.identifier, slice_=slice_)
+
+        # Validator function
+        condition = And(length_precondition,
+                        type_invariant.transformed(
+                            c.name,
+                            [k.name for k in previous_components + [c]],
+                            component_last)).simplified()
+        for field in previous_components:
+            condition.replace_field(field.name, '{} (Buffer)'.format(field.name))
+        condition.replace_field(c.name, field_accessor)
+        validator_body = [Statement('return {}'.format(condition.specification()))]
+
+        functions += [Function('Valid_{}'.format(c.name), 'Boolean', precondition,
+                               validator_body)]
+
+        # Accessor function
+        accessor_body = [Statement('return {}'.format(field_accessor))]
+        functions += [Function('{}'.format(c.name), c.type.identifier, precondition,
+                               accessor_body)]
+
+        # General validator function
+        if c is record.components[-1]:
+            functions += [Function('Is_Valid', 'Boolean', None, validator_body)]
+
+        previous_components += [c]
+
+    return unit
+
+
 class Generator:
     def __init__(self):
         self.__units = []
@@ -364,86 +447,27 @@ class Generator:
         top_package = Package(parser_package.identifier, [], [])
         self.__units += [Unit(top_context, top_package)]
 
+        parser_types = {}
+
         for t in parser_package.types:
             if isinstance(t.type, parser.Modular):
                 top_package.types += [Type(t.name, 'mod {}'.format(t.type.expression.literal))]
             elif isinstance(t.type, parser.Record):
-                types = []
-                functions = []
-                unit = Unit([ContextItem(top_package.name, True)],
-                            Package('{}.{}'.format(top_package.name, t.name), types, functions))
-                self.__units += [unit]
-
-                for a in t.aspects:
-                    if a.identifier != 'Type_Invariant':
-                        assert False, 'found {}, expected Type_Invariant'.format(a.identifier)
-                    type_invariant = convert_expression(a.expression)
-
-                component_last = 0
-                previous_components = []
-                for c in t.type.components:
-                    # Calculate bounds of component
-                    component_first = component_last
-                    if c.type.identifier in BUILTIN_TYPES:
-                        component_last += BUILTIN_TYPES[c.type.identifier]
-                        if c.type.identifier.startswith('U'):
-                            type_ = Type(c.type.identifier, None)
-                            if type_ not in types:
-                                types += [type_]
-                    else:
-                        # TODO: determine size of custom type
-                        if c.type.identifier.startswith('U'):
-                            component_last += int(c.type.identifier[1:]) // 8
-                        else:
-                            assert False, 'unable to determine size of type {}'.format(
-                                c.type.identifier)
-
-                    # Common precondition
-                    length_precondition = GreaterEqual(Length('Buffer'), Value(str(component_last)))
-                    precondition = And(length_precondition,
-                                       type_invariant.transformed(
-                                           c.name,
-                                           [k.name for k in previous_components],
-                                           component_last)).simplified()
-                    for field in previous_components:
-                        precondition.replace_field(field.name, '{} (Buffer)'.format(field.name))
-
-                    # Field accessor
-                    if c.type.identifier == 'Payload_Type':
-                        # TODO: determine payload length
-                        slice_ = 'Buffer\'First + {first} .. Buffer\'Last'.format(
-                            first=component_first)
-                        field_accessor = 'Payload_Type (Buffer ({slice_}))'.format(slice_=slice_)
-                    else:
-                        slice_ = 'Buffer\'First + {first} .. Buffer\'First + {last}'.format(
-                            first=component_first, last=component_last - 1)
-                        field_accessor = 'Convert_To_{type_} (Buffer ({slice_}))'.format(
-                            type_=c.type.identifier, slice_=slice_)
-
-                    # Validator function
-                    condition = And(length_precondition,
-                                    type_invariant.transformed(
-                                        c.name,
-                                        [k.name for k in previous_components + [c]],
-                                        component_last)).simplified()
-                    for field in previous_components:
-                        condition.replace_field(field.name, '{} (Buffer)'.format(field.name))
-                    condition.replace_field(c.name, field_accessor)
-                    validator_body = [Statement('return {}'.format(condition.specification()))]
-
-                    functions += [Function('Valid_{}'.format(c.name), 'Boolean', precondition,
-                                           validator_body)]
-
-                    # Accessor function
-                    accessor_body = [Statement('return {}'.format(field_accessor))]
-                    functions += [Function('{}'.format(c.name), c.type.identifier, precondition,
-                                           accessor_body)]
-
-                    # General validator function
-                    if c is t.type.components[-1]:
-                        functions += [Function('Is_Valid', 'Boolean', None, validator_body)]
-
-                    previous_components += [c]
+                if t.type.abstract:
+                    parser_types[t.name] = t
+                    continue
+                type_invariant = process_aspects(t.aspects)
+                self.__units += [process_record(t.name, t.type, type_invariant, top_package.name)]
+            elif isinstance(t.type, parser.Derived):
+                assert t.type.parent.identifier in parser_types, \
+                    'unknown parent {} for derived type {}'.format(t.type.parent.identifier, t.name)
+                parent = copy.deepcopy(parser_types[t.type.parent.identifier])
+                type_invariant = And(process_aspects(parent.aspects),
+                                     process_aspects(t.aspects))
+                self.__units += [process_record(t.name,
+                                                parent.type,
+                                                type_invariant,
+                                                top_package.name)]
 
     def units(self):
         return self.__units
