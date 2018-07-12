@@ -75,12 +75,12 @@ class Type(SparkRepresentation):
     def specification(self):
         if self.type_definition is None:
             return ''
-        return '    type {name} is {type_definition};'.format(
+        return '   type {name} is {type_definition};'.format(
             name=self.name,
             type_definition=self.type_definition)
 
     def definition(self):
-        return '    function Convert_To_{name} is new Convert_To ({name});'.format(
+        return '   function Convert_To_{name} is new Convert_To ({name});'.format(
             name=self.name)
 
 
@@ -94,18 +94,18 @@ class Function(SparkRepresentation):
     def specification(self):
         with_clause = ''
         if self.precondition and self.precondition is not True:
-            with_clause = ' with\n        Pre => {}'.format(
+            with_clause = ' with\n      Pre => {}'.format(
                 self.precondition.specification())
-        return '    function {name} (Buffer : Bytes) return {return_type}{with_clause};'.format(
+        return '   function {name} (Buffer : Bytes) return {return_type}{with_clause};'.format(
             name=self.name,
             return_type=self.return_type,
             with_clause=with_clause)
 
     def definition(self):
-        return ('    function {name} (Buffer : Bytes) return {return_type} is\n'
-                '    begin\n'
+        return ('   function {name} (Buffer : Bytes) return {return_type} is\n'
+                '   begin\n'
                 '{body}\n'
-                '    end {name};').format(
+                '   end {name};').format(
                     name=self.name,
                     return_type=self.return_type,
                     body='\n'.join([s.definition() for s in self.body]))
@@ -116,7 +116,7 @@ class Statement(SparkRepresentation):
         self.body: str = body
 
     def definition(self):
-        return '        {};'.format(self.body)
+        return '      {};'.format(self.body)
 
 
 class Expression(SparkRepresentation, ABC):
