@@ -337,7 +337,7 @@ def convert_expression(expression):
 
 class Generator:
     def __init__(self):
-        self.__representation = None
+        self.__units = []
 
     def generate(self, syntax_tree):
         package = syntax_tree[0]
@@ -423,13 +423,10 @@ class Generator:
 
         context = [ContextItem('Types', True)]
         package = Package(package.identifier, types, functions)
-        self.__representation = Unit(context, package)
+        self.__units += [Unit(context, package)]
 
-    def specification(self):
-        return self.__representation.specification()
-
-    def definition(self):
-        return self.__representation.definition()
+    def units(self):
+        return self.__units
 
 
 def main():

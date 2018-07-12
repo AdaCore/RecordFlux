@@ -22,15 +22,14 @@ class TestGenerator(unittest.TestCase):
         generator.generate(parser.syntax_tree())
         return generator
 
-    def assert_specification(self, stem):
+    def assert_code(self, stem):
         generator = self.generate(stem + '.rflx')
-        with open(self.fullpath(stem + '.ads'), 'r') as f:
-            self.assertEqual(generator.specification(), f.read())
-
-    def assert_definition(self, stem):
-        generator = self.generate(stem + '.rflx')
-        with open(self.fullpath(stem + '.adb'), 'r') as f:
-            self.assertEqual(generator.definition(), f.read())
+        for unit in generator.units():
+            unit_name = unit.package.name.lower().replace('.', '-')
+            with open(self.fullpath(unit_name + '.ads'), 'r') as f:
+                self.assertEqual(unit.specification(), f.read())
+            with open(self.fullpath(unit_name + '.adb'), 'r') as f:
+                self.assertEqual(unit.definition(), f.read())
 
     def test_transformed_simplified_0(self):
         expression = And(And(GreaterEqual(Length('Payload'), Value('46')),
@@ -74,11 +73,8 @@ class TestGenerator(unittest.TestCase):
                                                 14).simplified(),
                          expected)
 
-    def test_simple_ethernet_decl(self):
-        self.assert_specification('simple_ethernet')
-
-    def test_simple_ethernet_def(self):
-        self.assert_definition('simple_ethernet')
+    def test_simple_ethernet(self):
+        self.assert_code('simple_ethernet')
 
     def test_ethernet(self):
         self.assert_code('ethernet')
