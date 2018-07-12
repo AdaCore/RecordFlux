@@ -231,8 +231,8 @@ class Field(Element):
         return [self.identifier]
 
     def replace_field(self, identifier, statement):
-        if self.identifier == identifier:
-            self.identifier = statement
+        if self.identifier == identifier or self.identifier.startswith('{} '.format(identifier)):
+            self.identifier = self.identifier.replace(identifier, statement)
 
     def transformed(self, current, previous, offset):  # pylint: disable=unused-argument
         return Field(self.identifier)
@@ -280,6 +280,14 @@ class Relation(Expression, ABC):
         if (isinstance(self.right, Length) and isinstance(self.left, Value)
                 and self.right.identifier == current):
             return self.__class__(Length('Buffer'), Value(str(int(self.left.literal) + offset)))
+        if (isinstance(self.left, Length) and isinstance(self.right, Field)
+                and self.left.identifier == current):
+            return self.__class__(Length('Buffer'),
+                                  Field('{} + {}'.format(self.right.identifier, offset)))
+        if (isinstance(self.right, Length) and isinstance(self.left, Field)
+                and self.right.identifier == current):
+            return self.__class__(Length('Buffer'),
+                                  Field('{} + {}'.format(self.left.identifier, offset)))
         return self.__class__(self.left.transformed(current, previous, offset),
                               self.right.transformed(current, previous, offset))
 
