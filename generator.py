@@ -112,7 +112,7 @@ class Function(SparkRepresentation):
 
     def specification(self):
         with_clause = ''
-        if self.precondition and self.precondition is not True:
+        if self.precondition and not isinstance(self.precondition, TrueExpr):
             with_clause = ' with\n      Pre => {}'.format(
                 self.precondition.specification())
         return '   function {name} (Buffer : Bytes) return {return_type}{with_clause};'.format(
@@ -164,20 +164,32 @@ class Expression(SparkRepresentation, ABC):
         return self
 
 
+class TrueExpr(Expression):
+    def __init__(self):
+        super().__init__(None, None)
+
+    def specification(self):
+        return 'True'
+
+    def replace_field(self, identifier, statement):
+        pass
+
+    def transformed(self, current, previous, offset):  # pylint: disable=unused-argument
+        return self
+
+
 class And(Expression):
     def specification(self):
         return '({} and then {})'.format(self.left.specification(), self.right.specification())
 
     def simplified(self):
-        if self.left is not True:
-            self.left = self.left.simplified()
-        if self.right is not True:
-            self.right = self.right.simplified()
-        if self.left is True and self. right is True:
-            return True
-        if self.left is True:
+        self.left = self.left.simplified()
+        self.right = self.right.simplified()
+        if isinstance(self.left, TrueExpr) and isinstance(self.right, TrueExpr):
+            return TrueExpr()
+        if isinstance(self.left, TrueExpr):
             return self.right
-        if self.right is True:
+        if isinstance(self.right, TrueExpr):
             return self.left
         return self
 
@@ -191,12 +203,10 @@ class Or(Expression):
         return '({} or {})'.format(self.left.specification(), self.right.specification())
 
     def simplified(self):
-        if self.left is not True:
-            self.left = self.left.simplified()
-        if self.right is not True:
-            self.right = self.right.simplified()
-        if self.left is True or self. right is True:
-            return True
+        self.left = self.left.simplified()
+        self.right = self.right.simplified()
+        if isinstance(self.left, TrueExpr) or isinstance(self.right, TrueExpr):
+            return TrueExpr()
         return self
 
     def transformed(self, current, previous, offset):
@@ -269,13 +279,13 @@ class Relation(Expression, ABC):
 
     def transformed(self, current, previous, offset):
         if isinstance(self.left, Length) and self.left.identifier not in [current] + previous:
-            return True
+            return TrueExpr()
         if isinstance(self.right, Length) and self.right.identifier not in [current] + previous:
-            return True
+            return TrueExpr()
         if isinstance(self.left, Field) and self.left.identifier not in previous:
-            return True
+            return TrueExpr()
         if isinstance(self.right, Field) and self.right.identifier not in previous:
-            return True
+            return TrueExpr()
         if (isinstance(self.left, Length) and isinstance(self.right, Value)
                 and self.left.identifier == current):
             return self.__class__(Length('Buffer'), Value(str(int(self.right.literal) + offset)))
@@ -365,6 +375,7 @@ def process_aspects(aspects):
         if a.identifier != 'Type_Invariant':
             assert False, 'found {}, expected Type_Invariant'.format(a.identifier)
         return convert_expression(a.expression)
+    return TrueExpr()
 
 
 def process_record(name, record, type_invariant, parent_name, type_sizes):

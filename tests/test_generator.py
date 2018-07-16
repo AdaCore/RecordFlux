@@ -4,7 +4,7 @@
 import unittest
 
 from parser import Parser
-from generator import And, Field, Generator, GreaterEqual, Length, LessEqual, Or, Value
+from generator import And, Field, Generator, GreaterEqual, Length, LessEqual, Or, TrueExpr, Value
 
 
 class TestGenerator(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestGenerator(unittest.TestCase):
                              LessEqual(Length('Payload'), Value('1500'))),
                          Or(LessEqual(Field('EtherType'), Value('1500')),
                             GreaterEqual(Field('EtherType'), Value('1536'))))
-        expected = True
+        expected = TrueExpr()
         self.assertEqual(expression.transformed('Source', [], 0).simplified(), expected)
 
     def test_transformed_simplified_1(self):
@@ -45,7 +45,7 @@ class TestGenerator(unittest.TestCase):
                              LessEqual(Length('Payload'), Value('1500'))),
                          Or(LessEqual(Field('EtherType'), Value('1500')),
                             GreaterEqual(Field('EtherType'), Value('1536'))))
-        expected = True
+        expected = TrueExpr()
         self.assertEqual(expression.transformed('EtherType', ['Source'], 0).simplified(), expected)
 
     def test_transformed_simplified_2(self):
