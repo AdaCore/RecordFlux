@@ -2,8 +2,6 @@ with Simple_Ethernet; use Simple_Ethernet;
 
 package Simple_Ethernet.PDU is
 
-   function Convert_To_U16 is new Convert_To (U16);
-
    function Valid_Destination (Buffer : Bytes) return Boolean with
       Pre => Buffer'Length >= 6;
 

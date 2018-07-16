@@ -111,7 +111,9 @@ class TestParser(unittest.TestCase):
 
     def test_simple_ethernet(self):
         package = Package('Simple_Ethernet',
-                          [Type('U48',
+                          [Type('U16',
+                                Modular(Value('2**16'))),
+                           Type('U48',
                                 Modular(Value('2**48'))),
                            Type('PDU',
                                 Record([Component('Destination', Name('U48')),
@@ -127,7 +129,9 @@ class TestParser(unittest.TestCase):
 
     def test_ethernet(self):
         package = Package('Ethernet',
-                          [Type('U48',
+                          [Type('U16',
+                                Modular(Value('2**16'))),
+                           Type('U48',
                                 Modular(Value('2**48'))),
                            Type('PDU',
                                 Record([Component('Destination', Name('U48')),

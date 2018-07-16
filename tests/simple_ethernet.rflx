@@ -1,5 +1,6 @@
 package Simple_Ethernet is
 
+    type U16 is mod 2**16;
     type U48 is mod 2**48;
 
     type PDU is

@@ -16,7 +16,7 @@ begin
       Valid : Boolean;
       Destination : Simple_Ethernet.U48;
       Source : Simple_Ethernet.U48;
-      EtherType : U16;
+      EtherType : Simple_Ethernet.U16;
    begin
       Valid := Simple_Ethernet.PDU.Is_Valid (Buffer);
       SPARK.Text_IO.Put_Line("Valid: " & (if Valid then "OK" else "FAILED"));
@@ -52,7 +52,7 @@ begin
       Valid : Boolean;
       Destination : Ethernet.U48;
       Source : Ethernet.U48;
-      EtherType : U16;
+      EtherType : Ethernet.U16;
    begin
       Valid := Ethernet.Version_2.Is_Valid (Buffer);
       SPARK.Text_IO.Put_Line("Valid: " & (if Valid then "OK" else "FAILED"));
@@ -87,7 +87,7 @@ begin
       Valid : Boolean;
       Destination : Ethernet.U48;
       Source : Ethernet.U48;
-      EtherType : U16;
+      EtherType : Ethernet.U16;
    begin
       Valid := Ethernet.IEEE_802_3.Is_Valid (Buffer);
       SPARK.Text_IO.Put_Line("Valid: " & (if Valid then "OK" else "FAILED"));

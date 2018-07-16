@@ -327,8 +327,6 @@ class NotEqual(Relation):
 BUILTIN_TYPES = {
     'Payload_Type': 0,
     'Byte': 1,
-    'U16': 2,
-    'U32': 4,
 }
 
 

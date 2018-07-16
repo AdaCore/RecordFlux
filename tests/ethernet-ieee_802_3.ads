@@ -2,8 +2,6 @@ with Ethernet; use Ethernet;
 
 package Ethernet.IEEE_802_3 is
 
-   function Convert_To_U16 is new Convert_To (U16);
-
    function Valid_Destination (Buffer : Bytes) return Boolean with
       Pre => Buffer'Length >= 6;
 
