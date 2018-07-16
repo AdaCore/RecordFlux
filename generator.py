@@ -4,6 +4,8 @@
 from abc import ABC, abstractmethod
 
 import copy
+import math
+import re
 import sys
 
 import parser
@@ -367,7 +369,7 @@ def process_aspects(aspects):
         return convert_expression(a.expression)
 
 
-def process_record(name, record, type_invariant, parent_name):
+def process_record(name, record, type_invariant, parent_name, type_sizes):
     types = []
     functions = []
     unit = Unit([ContextItem(parent_name, True)],
@@ -384,13 +386,10 @@ def process_record(name, record, type_invariant, parent_name):
                 type_ = Type(c.type.identifier, None)
                 if type_ not in types:
                     types += [type_]
+        elif c.type.identifier in type_sizes:
+            component_last += type_sizes[c.type.identifier]
         else:
-            # TODO: determine size of custom type
-            if c.type.identifier.startswith('U'):
-                component_last += int(c.type.identifier[1:]) // 8
-            else:
-                assert False, 'unable to determine size of type {}'.format(
-                    c.type.identifier)
+            assert False, 'unable to determine size of {}'.format(c.type.identifier)
 
         # Common precondition
         length_precondition = GreaterEqual(Length('Buffer'), Value(str(component_last)))
@@ -456,16 +455,32 @@ class Generator:
         self.__units += [Unit(top_context, top_package)]
 
         parser_types = {}
+        type_sizes = {}
 
         for t in parser_package.types:
             if isinstance(t.type, parser.Modular):
+                literal = t.type.expression.literal
+                match = re.match(r'^2\*\*([0-9]+)$', literal)
+                if match:
+                    size = math.ceil(int(match.group(1)) / 8)
+                else:
+                    match = re.match(r'^[0-9]+$', literal)
+                    if match:
+                        size = math.ceil(math.log2(int(match.group())))
+                    else:
+                        assert False, 'unsupported definition of modular type {}'.format(literal)
+                type_sizes[t.name] = size
                 top_package.types += [Type(t.name, 'mod {}'.format(t.type.expression.literal))]
             elif isinstance(t.type, parser.Record):
                 if t.type.abstract:
                     parser_types[t.name] = t
                     continue
                 type_invariant = process_aspects(t.aspects)
-                self.__units += [process_record(t.name, t.type, type_invariant, top_package.name)]
+                self.__units += [process_record(t.name,
+                                                t.type,
+                                                type_invariant,
+                                                top_package.name,
+                                                type_sizes)]
             elif isinstance(t.type, parser.Derived):
                 assert t.type.parent.identifier in parser_types, \
                     'unknown parent {} for derived type {}'.format(t.type.parent.identifier, t.name)
@@ -475,7 +490,8 @@ class Generator:
                 self.__units += [process_record(t.name,
                                                 parent.type,
                                                 type_invariant,
-                                                top_package.name)]
+                                                top_package.name,
+                                                type_sizes)]
 
     def units(self):
         return self.__units
