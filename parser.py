@@ -374,9 +374,3 @@ def parse_simple_expression(tokens):
         elif isinstance(t, Name):
             result += [t.identifier]
     return Value(''.join(result))
-
-
-if __name__ == "__main__":
-    import sys
-    Parser().parse(sys.argv[1])
-    print("OK")

@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+import sys
+
+import pyparsing
+
+from generator import Generator
+from parser import Parser
+
+
+def main():
+    arg_parser = argparse.ArgumentParser(description='RecordFlux')
+    arg_parser.add_argument('-g', '--generate', action='store_true', help='generate dissector code')
+    arg_parser.add_argument('files', metavar='FILE', type=str, nargs='+')
+    args = arg_parser.parse_args()
+
+    parser = Parser()
+    for f in args.files:
+        try:
+            print('Parsing {}... '.format(f), end='')
+            parser.parse(f)
+            print('OK')
+        except pyparsing.ParseException as e:
+            print('Syntax error: {}'.format(e))
+            sys.exit(1)
+
+    if args.generate:
+        generator = Generator()
+        try:
+            print('Generating... ', end='')
+            generator.generate(parser.syntax_tree())
+            print('OK')
+        except AssertionError as e:
+            print('Generation error: {}'.format(e))
+            sys.exit(1)
+        for unit in generator.units():
+            unit_name = unit.package.name.lower().replace('.', '-')
+            filename = unit_name + '.ads'
+            print('Creating {}'.format(filename))
+            with open(filename, 'w') as f:
+                f.write(unit.specification())
+            if unit.definition().strip():
+                filename = unit_name + '.adb'
+                print('Creating {}'.format(filename))
+                with open(filename, 'w') as f:
+                    f.write(unit.definition())
+
+
+if __name__ == '__main__':
+    main()

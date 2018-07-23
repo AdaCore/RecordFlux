@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 import copy
 import math
 import re
-import sys
 
 import parser
 
@@ -455,6 +454,8 @@ class Generator:
         self.__units = []
 
     def generate(self, syntax_tree):
+        if not syntax_tree:
+            assert False, 'empty syntax tree'
         parser_package = syntax_tree[0]
         if not isinstance(parser_package, parser.Package):
             assert False, 'found {}, expected Package'.format(type(parser_package).__name__)
@@ -504,14 +505,3 @@ class Generator:
 
     def units(self):
         return self.__units
-
-
-def main():
-    p = parser.Parser()
-    p.parse(sys.argv[1])
-    generator = Generator()
-    generator.generate(p.syntax_tree())
-
-
-if __name__ == "__main__":
-    main()
