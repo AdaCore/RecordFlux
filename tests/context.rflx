@@ -1,0 +1,6 @@
+with Foo;
+with Bar;
+
+package Test is
+
+end Test;

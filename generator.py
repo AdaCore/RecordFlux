@@ -456,18 +456,15 @@ class Generator:
     def generate(self, syntax_tree):
         if not syntax_tree:
             assert False, 'empty syntax tree'
-        parser_package = syntax_tree[0]
-        if not isinstance(parser_package, parser.Package):
-            assert False, 'found {}, expected Package'.format(type(parser_package).__name__)
 
         top_context = [ContextItem('Types', True)]
-        top_package = Package(parser_package.identifier, [], [])
+        top_package = Package(syntax_tree.package.identifier, [], [])
         self.__units += [Unit(top_context, top_package)]
 
         parser_types = {}
         type_sizes = {}
 
-        for t in parser_package.types:
+        for t in syntax_tree.package.types:
             if isinstance(t.type, parser.Modular):
                 literal = t.type.expression.literal
                 match = re.match(r'^2\*\*([0-9]+)$', literal)

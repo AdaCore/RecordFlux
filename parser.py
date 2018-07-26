@@ -155,11 +155,22 @@ class Package(SyntaxTree):
         self.types: list = types
 
 
+class Context(SyntaxTree):
+    def __init__(self, items):
+        self.items: list = items
+
+
+class Specification(SyntaxTree):
+    def __init__(self, context, package):
+        self.context: Context = context
+        self.package: Package = package
+
+
 class Parser:
     # pylint: disable=too-many-locals, too-many-statements, expression-not-assigned
     def __init__(self, basedir='.'):
         self.__basedir = basedir
-        self.__syntax_tree = []
+        self.__syntax_tree = None
 
         # Generic
         comma = Suppress(Literal(','))
@@ -311,13 +322,24 @@ class Parser:
         package_declaration = Keyword('package') + identifier + Keyword('is') + Group(ZeroOrMore(basic_declaration)) + Keyword('end') + name + semicolon
         package_declaration.setParseAction(lambda t: Package(t[1], t[3].asList()))
 
+        # Context
+        context_item = Keyword('with') + identifier + semicolon
+        context_item.setParseAction(lambda t: t[1])
+        context_clause = ZeroOrMore(context_item)
+        context_clause.setParseAction(lambda t: Context(t.asList()))
+
+        # Specification
+        specification = Optional(context_clause + package_declaration)
+        specification.setParseAction(lambda t: Specification(t[0], t[1]) if len(t) == 2 else None)
+
         # Grammar
-        self.__grammar = Optional(package_declaration) + StringEnd()
-        self.__grammar.setParseAction(self.default_action)
+        self.__grammar = specification + StringEnd()
+        self.__grammar.setParseAction(self.__store_syntax_tree)
         self.__grammar.ignore(comment)
 
-    def default_action(self, tokens):
-        self.__syntax_tree.extend(tokens)
+    def __store_syntax_tree(self, tokens):
+        if len(tokens) == 1:
+            self.__syntax_tree = tokens[0]
 
     def parse(self, infile):
         filepath = self.__basedir + "/" + infile
