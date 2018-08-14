@@ -5,7 +5,7 @@ import unittest
 
 from parser import (And, Aspect, Attribute, Component, Context, Derived, Enumeration, Equal,
                     Greater, GreaterEqual, Less, LessEqual, Modular, Name, NotEqual, Package,
-                    Parser, Or, Record, Signed, Specification, Type, Value)
+                    Parser, ParserError, Or, Record, Signed, Specification, Type, Value)
 
 
 class TestParser(unittest.TestCase):
@@ -16,51 +16,57 @@ class TestParser(unittest.TestCase):
     def fullpath(self, testfile):
         return self.testdir + "/" + testfile
 
-    def parse(self, filename):
+    def assert_data(self, filenames, data):
         parser = Parser()
-        parser.parse(self.fullpath(filename))
-        return parser
+        for filename in filenames:
+            parser.parse(self.fullpath(filename))
+        self.assertEqual(parser.specifications(), data, filenames)
 
-    def assert_data(self, filename, data):
-        parser = self.parse(filename)
-        self.assertEqual(parser.syntax_tree(), data, self.fullpath(filename))
+    def assert_parser_error(self, filenames):
+        with self.assertRaises(ParserError):
+            parser = Parser()
+            for filename in filenames:
+                parser.parse(self.fullpath(filename))
 
     def test_empty_file(self):
-        self.assert_data("empty_file.rflx", None)
+        self.assert_data(['empty_file.rflx'], {})
 
     def test_comment_only(self):
-        self.assert_data("comment_only.rflx", None)
+        self.assert_data(['comment_only.rflx'], {})
 
     def test_package(self):
-        self.assert_data("package.rflx", Specification(Context([]),
-                                                       Package('Test', [])))
+        self.assert_data(['package.rflx'], {'Test': Specification(Context([]),
+                                                                  Package('Test', []))})
 
     def test_context(self):
-        self.assert_data("context.rflx", Specification(Context(['Foo', 'Bar']),
-                                                       Package('Test', [])))
+        self.assert_data(['context.rflx'], {'Test': Specification(Context(['Foo', 'Bar']),
+                                                                  Package('Test', []))})
+
+    def test_duplicate_package(self):
+        self.assert_parser_error(["package.rflx", "package.rflx"])
 
     def test_derived_type(self):
-        spec = Specification(
+        spec = {'Test': Specification(
             Context([]),
             Package('Test',
                     [Type('Counter',
                           Derived(Name('Positive'))),
                      Type('PDU_X',
-                          Derived(Name('PDU'), {'Payload_Type': 'X'}))]))
-        self.assert_data("derived_type.rflx", spec)
+                          Derived(Name('PDU'), {'Payload_Type': 'X'}))]))}
+        self.assert_data(['derived_type.rflx'], spec)
 
     def test_integer_type(self):
-        spec = Specification(
+        spec = {'Test': Specification(
             Context([]),
             Package('Test',
                     [Type('Page_Num', Signed(Value('1'), Value('2_000'))),
                      Type('Line_Size', Signed(Value('1'), Name('Max_Line_Size'))),
                      Type('Byte', Modular(Value('2**8'))),
-                     Type('Hash_Index', Modular(Value('97')))]))
-        self.assert_data("integer_type.rflx", spec)
+                     Type('Hash_Index', Modular(Value('97')))]))}
+        self.assert_data(['integer_type.rflx'], spec)
 
     def test_enumeration_type(self):
-        spec = Specification(
+        spec = {'Test': Specification(
             Context([]),
             Package('Test',
                     [Type('Day',
@@ -73,14 +79,14 @@ class TestParser(unittest.TestCase):
                                        Name('Sun')])),
                      Type('Gender',
                           Enumeration([Name('M'),
-                                       Name('F')]))]))
-        self.assert_data("enumeration_type.rflx", spec)
+                                       Name('F')]))]))}
+        self.assert_data(['enumeration_type.rflx'], spec)
 
     # def test_array_type(self):
-    #     self.assert_data("array_type.rflx", [])
+    #     self.assert_data(['array_type.rflx'], [])
 
     def test_record_type(self):
-        spec = Specification(
+        spec = {'Test': Specification(
             Context([]),
             Package('Test',
                     [Type('Date',
@@ -92,17 +98,17 @@ class TestParser(unittest.TestCase):
                                   Component('Source', Name('U48')),
                                   Component('EtherType', Name('U16')),
                                   Component('Payload', Name('Payload_Type'))],
-                                 True))]))
-        self.assert_data("record_type.rflx", spec)
+                                 True))]))}
+        self.assert_data(['record_type.rflx'], spec)
 
     # def test_record_type_with_slice(self):
-    #     self.assert_data("record_type_with_slice.rflx", [])
+    #     self.assert_data(['record_type_with_slice.rflx'], [])
 
     # def test_record_type_with_variant(self):
-    #     self.assert_data("record_type_with_variant.rflx", [])
+    #     self.assert_data(['record_type_with_variant.rflx'], [])
 
     def test_aspect(self):
-        spec = Specification(
+        spec = {'Test': Specification(
             Context([]),
             Package('Test',
                     [Type('Date',
@@ -121,11 +127,11 @@ class TestParser(unittest.TestCase):
                                   And(And(Equal(Name('X_Type'), Value('42')),
                                           Or(Greater(Name('Foo'), Value('1')),
                                              Less(Name('Bar'), Value('2')))),
-                                      NotEqual(Name('Baz'), Name('Foo'))))])]))
-        self.assert_data("aspect.rflx", spec)
+                                      NotEqual(Name('Baz'), Name('Foo'))))])]))}
+        self.assert_data(['aspect.rflx'], spec)
 
     def test_simple_ethernet(self):
-        spec = Specification(
+        spec = {'Simple_Ethernet': Specification(
             Context([]),
             Package('Simple_Ethernet',
                     [Type('U16',
@@ -141,11 +147,11 @@ class TestParser(unittest.TestCase):
                                   And(And(GreaterEqual(Attribute('Payload', 'Length'), Value('46')),
                                           LessEqual(Attribute('Payload', 'Length'), Value('1500'))),
                                       Or(LessEqual(Name('EtherType'), Value('1500')),
-                                         GreaterEqual(Name('EtherType'), Value('1536')))))])]))
-        self.assert_data("simple_ethernet.rflx", spec)
+                                         GreaterEqual(Name('EtherType'), Value('1536')))))])]))}
+        self.assert_data(['simple_ethernet.rflx'], spec)
 
     def test_ethernet(self):
-        spec = Specification(
+        spec = {'Ethernet': Specification(
             Context([]),
             Package('Ethernet',
                     [Type('U16',
@@ -172,11 +178,11 @@ class TestParser(unittest.TestCase):
                      Type('Version_2',
                           Derived(Name('PDU')),
                           [Aspect('Type_Invariant',
-                                  GreaterEqual(Name('EtherType'), Value('1536')))])]))
-        self.assert_data("ethernet.rflx", spec)
+                                  GreaterEqual(Name('EtherType'), Value('1536')))])]))}
+        self.assert_data(['ethernet.rflx'], spec)
 
     # def test_mqtt(self):
-    #     self.assert_data("mqtt.rflx", [])
+    #     self.assert_data(['mqtt.rflx'], [])
 
 
 if __name__ == "__main__":

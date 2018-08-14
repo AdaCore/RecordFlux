@@ -166,11 +166,15 @@ class Specification(SyntaxTree):
         self.package: Package = package
 
 
+class ParserError(Exception):
+    pass
+
+
 class Parser:
     # pylint: disable=too-many-locals, too-many-statements, expression-not-assigned
     def __init__(self, basedir='.'):
         self.__basedir = basedir
-        self.__syntax_tree = None
+        self.__specifications = {}
 
         # Generic
         comma = Suppress(Literal(','))
@@ -334,20 +338,24 @@ class Parser:
 
         # Grammar
         self.__grammar = specification + StringEnd()
-        self.__grammar.setParseAction(self.__store_syntax_tree)
+        self.__grammar.setParseAction(self.__store_specification)
         self.__grammar.ignore(comment)
 
-    def __store_syntax_tree(self, tokens):
+    def __store_specification(self, tokens):
         if len(tokens) == 1:
-            self.__syntax_tree = tokens[0]
+            specification = tokens[0]
+            identifier = specification.package.identifier
+            if identifier in self.__specifications:
+                raise ParserError('Duplicate package {}'.format(identifier))
+            self.__specifications[identifier] = specification
 
     def parse(self, infile):
         filepath = self.__basedir + "/" + infile
         with open(filepath, 'r') as filehandle:
             self.__grammar.parseFile(filehandle)
 
-    def syntax_tree(self):
-        return self.__syntax_tree
+    def specifications(self):
+        return self.__specifications
 
 
 def parse_relation(tokens):

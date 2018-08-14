@@ -19,7 +19,7 @@ class TestGenerator(unittest.TestCase):
         parser = Parser()
         parser.parse(self.fullpath(filename))
         generator = Generator()
-        generator.generate(parser.syntax_tree())
+        generator.generate(parser.specifications())
         return generator
 
     def assert_code(self, stem):

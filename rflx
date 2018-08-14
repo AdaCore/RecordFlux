@@ -7,7 +7,7 @@ import sys
 import pyparsing
 
 from generator import Generator
-from parser import Parser
+from parser import Parser, ParserError
 
 
 def main():
@@ -25,12 +25,15 @@ def main():
         except pyparsing.ParseException as e:
             print('Syntax error: {}'.format(e))
             sys.exit(1)
+        except ParserError as e:
+            print('Parser error: {}'.format(e))
+            sys.exit(1)
 
     if args.generate:
         generator = Generator()
         try:
             print('Generating... ', end='')
-            generator.generate(parser.syntax_tree())
+            generator.generate(parser.specifications())
             print('OK')
         except AssertionError as e:
             print('Generation error: {}'.format(e))

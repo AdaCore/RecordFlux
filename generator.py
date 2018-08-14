@@ -453,52 +453,52 @@ class Generator:
     def __init__(self):
         self.__units = []
 
-    def generate(self, syntax_tree):
-        if not syntax_tree:
-            assert False, 'empty syntax tree'
+    def generate(self, specifications):
+        for specification in specifications.values():
+            top_context = [ContextItem('Types', True)]
+            top_package = Package(specification.package.identifier, [], [])
+            self.__units += [Unit(top_context, top_package)]
 
-        top_context = [ContextItem('Types', True)]
-        top_package = Package(syntax_tree.package.identifier, [], [])
-        self.__units += [Unit(top_context, top_package)]
+            parser_types = {}
+            type_sizes = {}
 
-        parser_types = {}
-        type_sizes = {}
-
-        for t in syntax_tree.package.types:
-            if isinstance(t.type, parser.Modular):
-                literal = t.type.expression.literal
-                match = re.match(r'^2\*\*([0-9]+)$', literal)
-                if match:
-                    size = math.ceil(int(match.group(1)) / 8)
-                else:
-                    match = re.match(r'^[0-9]+$', literal)
+            for t in specification.package.types:
+                if isinstance(t.type, parser.Modular):
+                    literal = t.type.expression.literal
+                    match = re.match(r'^2\*\*([0-9]+)$', literal)
                     if match:
-                        size = math.ceil(math.log2(int(match.group())))
+                        size = math.ceil(int(match.group(1)) / 8)
                     else:
-                        assert False, 'unsupported definition of modular type {}'.format(literal)
-                type_sizes[t.name] = size
-                top_package.types += [Type(t.name, 'mod {}'.format(t.type.expression.literal))]
-            elif isinstance(t.type, parser.Record):
-                if t.type.abstract:
-                    parser_types[t.name] = t
-                    continue
-                type_invariant = process_aspects(t.aspects)
-                self.__units += [process_record(t.name,
-                                                t.type,
-                                                type_invariant,
-                                                top_package.name,
-                                                type_sizes)]
-            elif isinstance(t.type, parser.Derived):
-                assert t.type.parent.identifier in parser_types, \
-                    'unknown parent {} for derived type {}'.format(t.type.parent.identifier, t.name)
-                parent = copy.deepcopy(parser_types[t.type.parent.identifier])
-                type_invariant = And(process_aspects(parent.aspects),
-                                     process_aspects(t.aspects))
-                self.__units += [process_record(t.name,
-                                                parent.type,
-                                                type_invariant,
-                                                top_package.name,
-                                                type_sizes)]
+                        match = re.match(r'^[0-9]+$', literal)
+                        if match:
+                            size = math.ceil(math.log2(int(match.group())))
+                        else:
+                            assert False, \
+                                'unsupported definition of modular type {}'.format(literal)
+                    type_sizes[t.name] = size
+                    top_package.types += [Type(t.name, 'mod {}'.format(t.type.expression.literal))]
+                elif isinstance(t.type, parser.Record):
+                    if t.type.abstract:
+                        parser_types[t.name] = t
+                        continue
+                    type_invariant = process_aspects(t.aspects)
+                    self.__units += [process_record(t.name,
+                                                    t.type,
+                                                    type_invariant,
+                                                    top_package.name,
+                                                    type_sizes)]
+                elif isinstance(t.type, parser.Derived):
+                    assert t.type.parent.identifier in parser_types, \
+                        'unknown parent {} for derived type {}'.format(t.type.parent.identifier,
+                                                                       t.name)
+                    parent = copy.deepcopy(parser_types[t.type.parent.identifier])
+                    type_invariant = And(process_aspects(parent.aspects),
+                                         process_aspects(t.aspects))
+                    self.__units += [process_record(t.name,
+                                                    parent.type,
+                                                    type_invariant,
+                                                    top_package.name,
+                                                    type_sizes)]
 
     def units(self):
         return self.__units
