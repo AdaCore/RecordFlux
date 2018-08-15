@@ -361,15 +361,15 @@ class Parser:
 def parse_relation(tokens):
     if tokens[1] == '<':
         return Less(tokens[0], tokens[2])
-    elif tokens[1] == '<=':
+    if tokens[1] == '<=':
         return LessEqual(tokens[0], tokens[2])
-    elif tokens[1] == '=':
+    if tokens[1] == '=':
         return Equal(tokens[0], tokens[2])
-    elif tokens[1] == '>=':
+    if tokens[1] == '>=':
         return GreaterEqual(tokens[0], tokens[2])
-    elif tokens[1] == '>':
+    if tokens[1] == '>':
         return Greater(tokens[0], tokens[2])
-    elif tokens[1] == '/=':
+    if tokens[1] == '/=':
         return NotEqual(tokens[0], tokens[2])
     return None
 
