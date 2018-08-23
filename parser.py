@@ -51,10 +51,11 @@ class Modular(ActualType):
         self.expression: str = expression
 
 
-class Signed(ActualType):
-    def __init__(self, first, last):
+class Range(ActualType):
+    def __init__(self, first, last, size):
         self.first = first
         self.last = last
+        self.size = size
 
 
 class Record(ActualType):
@@ -196,6 +197,7 @@ class Parser:
 
         # Literals
         numeral = Word(nums) + ZeroOrMore(Optional(Word('_')) + Word(nums))
+        numeral.setParseAction(lambda t: ''.join(t.asList()).replace('_', ''))
         base = numeral
         extended_digit = Word(nums + 'ABCDEF')
         based_numeral = extended_digit + ZeroOrMore(Optional('_') + extended_digit)
@@ -240,11 +242,11 @@ class Parser:
         derived_type_definition.setParseAction(lambda t: Derived(*t.asList()))
 
         # Integer Types
-        signed_integer_type_definition = Suppress(Keyword('range')) + simple_expression + Suppress(Literal('..')) + simple_expression
-        signed_integer_type_definition.setParseAction(lambda t: Signed(*t.asList()))
+        range_integer_type_definition = Suppress(Keyword('range')) + numeric_literal + Suppress(Literal('..')) + numeric_literal + Suppress(Keyword('with Size =>')) + numeric_literal
+        range_integer_type_definition.setParseAction(lambda t: Range(Value(t[0]), Value(t[1]), Value(t[2])))
         modular_type_definition = Suppress(Keyword('mod')) + simple_expression
         modular_type_definition.setParseAction(lambda t: Modular(*t.asList()))
-        integer_type_definition = signed_integer_type_definition | modular_type_definition
+        integer_type_definition = range_integer_type_definition | modular_type_definition
 
         # Enumeration Types
         enumeration_literal = name

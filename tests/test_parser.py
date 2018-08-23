@@ -5,7 +5,7 @@ import unittest
 
 from parser import (And, Aspect, Attribute, Component, Context, Derived, Enumeration, Equal,
                     Greater, GreaterEqual, Less, LessEqual, Modular, Name, NotEqual, Package,
-                    Parser, ParserError, Or, Record, Signed, Specification, Type, Value)
+                    Parser, ParserError, Or, Range, Record, Specification, Type, Value)
 
 
 class TestParser(unittest.TestCase):
@@ -59,8 +59,8 @@ class TestParser(unittest.TestCase):
         spec = {'Test': Specification(
             Context([]),
             Package('Test',
-                    [Type('Page_Num', Signed(Value('1'), Value('2_000'))),
-                     Type('Line_Size', Signed(Value('1'), Name('Max_Line_Size'))),
+                    [Type('Page_Num', Range(Value('1'), Value('2000'), Value('16'))),
+                     Type('Line_Size', Range(Value('0'), Value('255'), Value('8'))),
                      Type('Byte', Modular(Value('2**8'))),
                      Type('Hash_Index', Modular(Value('97')))]))}
         self.assert_data(['integer_type.rflx'], spec)
