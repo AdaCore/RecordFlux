@@ -84,19 +84,52 @@ class Package(SparkRepresentation):
 
 
 class Type(SparkRepresentation):
-    def __init__(self, name, type_definition):
+    def __init__(self, name):
         self.name: str = name
-        self.type_definition: str = type_definition
 
     def specification(self):
         type_declaration = ''
-        if self.type_definition:
-            type_declaration = '   type {name} is {type_definition};\n'.format(
-                name=self.name,
-                type_definition=self.type_definition)
         return '{type_declaration}   function Convert_To_{name} is new Convert_To ({name});'.format(
             name=self.name,
             type_declaration=type_declaration)
+
+    def definition(self):  # pylint: disable=no-self-use
+        return ''
+
+
+class ModularType(Type):
+    def __init__(self, name: str, modulus: str) -> None:
+        super().__init__(name)
+        self.modulus = modulus
+
+    def specification(self) -> str:
+        declaration = '   type {name} is mod {modulus};\n'.format(
+            name=self.name,
+            modulus=self.modulus)
+        return '{declaration}   function Convert_To_{name} is new Convert_To_Mod ({name});'.format(
+            name=self.name,
+            declaration=declaration)
+
+    def definition(self) -> str:  # pylint: disable=no-self-use
+        return ''
+
+
+class RangeType(Type):
+    def __init__(self, name: str, first: int, last: int, size: int) -> None:
+        super().__init__(name)
+        self.first = first
+        self.last = last
+        self.size = size
+
+    def specification(self) -> str:
+        declaration = '   type {name} is range {first} .. {last} with Size => {size};\n'.format(
+            name=self.name,
+            first=self.first,
+            last=self.last,
+            size=self.size)
+        return '{declaration}   function Convert_To_{name} is new Convert_To_Int ({name});'.format(
+            name=self.name,
+            declaration=declaration)
 
     def definition(self):  # pylint: disable=no-self-use
         return ''
@@ -391,7 +424,7 @@ def process_record(name, record, type_invariant, parent_name, type_sizes):
         if c.type.identifier in BUILTIN_TYPES:
             component_last += BUILTIN_TYPES[c.type.identifier]
             if c.type.identifier.startswith('U'):
-                type_ = Type(c.type.identifier, None)
+                type_ = Type(c.type.identifier)
                 if type_ not in types:
                     types += [type_]
         elif c.type.identifier in type_sizes:
@@ -463,7 +496,21 @@ class Generator:
             type_sizes = {}
 
             for t in specification.package.types:
-                if isinstance(t.type, parser.Modular):
+                if isinstance(t.type, parser.Range):
+                    first = int(t.type.first.literal)
+                    last = int(t.type.last.literal)
+                    size = int(t.type.size.literal)
+                    if first > last:
+                        assert False, \
+                            'unsupported definition of range type: ' \
+                            'first ({}) greater than last ({})'.format(first, last)
+                    if last - first > 2**size:
+                        assert False, \
+                            'unsupported definition of range type: ' \
+                            'size ({}) too small for range ({} .. {})'.format(size, first, last)
+                    type_sizes[t.name] = size
+                    top_package.types += [RangeType(t.name, first, last, size)]
+                elif isinstance(t.type, parser.Modular):
                     literal = t.type.expression.literal
                     match = re.match(r'^2\*\*([0-9]+)$', literal)
                     if match:
@@ -476,7 +523,7 @@ class Generator:
                             assert False, \
                                 'unsupported definition of modular type {}'.format(literal)
                     type_sizes[t.name] = size
-                    top_package.types += [Type(t.name, 'mod {}'.format(t.type.expression.literal))]
+                    top_package.types += [ModularType(t.name, t.type.expression.literal)]
                 elif isinstance(t.type, parser.Record):
                     if t.type.abstract:
                         parser_types[t.name] = t
