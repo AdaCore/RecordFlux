@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 from abc import ABC, abstractmethod
+from copy import copy
+from math import log
+from pprint import pformat
 from typing import Dict, List, Tuple
 
 
@@ -323,9 +326,61 @@ class NotEqual(Relation):
         return '!='
 
 
-class Node:
-    def __init__(self, name: str, edges: List['Edge'] = None) -> None:
+class Type(ABC):
+    def __init__(self, name: str) -> None:
         self.name = name
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return 'Type({})'.format(self.name)
+
+    @abstractmethod
+    def size(self) -> Number:
+        raise NotImplementedError
+
+
+class ModularInteger(Type):
+    def __init__(self, name: str, modulus: int) -> None:
+        if modulus == 0 or (modulus & (modulus - 1)) != 0:
+            raise ModelError('invalid type {}: {} is not a power of two'.format(name, modulus))
+        super().__init__(name)
+        self.modulus = modulus
+        self.__size = int(log(self.modulus) / log(2))
+
+    def size(self) -> Number:
+        return Number(self.__size)
+
+
+class RangeInteger(Type):
+    def __init__(self, name: str, first: int, last: int, size: int) -> None:
+        if first < 0:
+            raise ModelError('invalid type {}: negative first'.format(name))
+        if first > last:
+            raise ModelError('invalid type {}: negative range'.format(name))
+        if log(last + 1) / log(2) > size:
+            raise ModelError('invalid type {}: size too small for given range'.format(name))
+        super().__init__(name)
+        self.first = first
+        self.last = last
+        self.__size = size
+
+    def size(self) -> Number:
+        return Number(self.__size)
+
+
+class Array(Type):
+    def size(self) -> Number:
+        raise RuntimeError('array type has no fixed size')
+
+
+class Node:
+    def __init__(self, name: str, data_type: Type, edges: List['Edge'] = None) -> None:
+        self.name = name
+        self.type = data_type
         self.edges = edges or []
 
     def __eq__(self, other: object) -> bool:
@@ -338,7 +393,7 @@ class Node:
             self.name, self.type, self.edges).replace('\t', '\t  ')
 
 
-FINAL = Node('', [])
+FINAL = Node('', Array(''))
 
 
 class Edge:
@@ -357,6 +412,23 @@ class Edge:
     def __repr__(self) -> str:
         return 'Edge(\n\t{},\n\t{},\n\t{},\n\t{}\n\t)'.format(
             self.target, self.condition, self.length, self.first).replace('\t', '\t  ')
+
+
+class Field:
+    def __init__(self, name: str, data_type: Type,
+                 variants: List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]) -> None:
+        self.name = name
+        self.type = data_type
+        self.variants = variants
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return 'Field(\n\t{},\n\t{},\n\t{}\n)'.format(
+            self.name, self.type, pformat(self.variants, indent=2))
 
 
 class ModelError(Exception):
@@ -389,8 +461,7 @@ def filter_fields(fields: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr
 
 
 def evaluate(facts: Dict[Attribute, MathExpr], all_cond: LogExpr, in_edge: Edge,
-             visited: List[Edge] = None
-             ) -> Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]]:
+             visited: List[Edge] = None) -> List[Field]:
     node = in_edge.target
 
     facts = dict(facts)
@@ -401,8 +472,8 @@ def evaluate(facts: Dict[Attribute, MathExpr], all_cond: LogExpr, in_edge: Edge,
                               in_edge.condition,
                               [e.condition for e in node.edges]).simplified()
 
-    fields: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]] = {node.name:
-                                                                          [(cond, facts)]}
+    fields = [Field(node.name, node.type, [(cond, facts)])]
+
     for out_edge in node.edges:
         if out_edge.target is FINAL:
             continue
@@ -413,19 +484,25 @@ def evaluate(facts: Dict[Attribute, MathExpr], all_cond: LogExpr, in_edge: Edge,
             raise ModelError('cyclic')
         visited = list(visited + [out_edge])
 
-        edge = out_edge
+        edge = copy(out_edge)
         if edge.first is UNDEFINED:
-            edge = Edge(edge.target,
-                        edge.condition,
-                        edge.length,
-                        Add(in_edge.first, in_edge.length))
-        edge_fields = evaluate(facts,
-                               combine_conditions(all_cond, in_edge.condition, []),
-                               edge,
-                               visited)
-        for field in edge_fields:
-            if field not in fields:
-                fields[field] = []
-            fields[field] += edge_fields[field]
+            edge.first = Add(in_edge.first, in_edge.length)
+        if edge.length is UNDEFINED:
+            edge.length = edge.target.type.size()
+        new_fields = evaluate(facts,
+                              combine_conditions(all_cond, in_edge.condition, []),
+                              edge,
+                              visited)
+        for new_field in new_fields:
+            found = False
+            for field in fields:
+                if field.name == new_field.name:
+                    if field.type != new_field.type:
+                        raise ModelError('duplicate node {} with different types ({} != {})'.format(
+                            field.name, field.type.name, new_field.type.name))
+                    field.variants += new_field.variants
+                    found = True
+            if not found:
+                fields.append(new_field)
 
     return fields

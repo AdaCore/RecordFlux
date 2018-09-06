@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from typing import Dict, List, Tuple
+from typing import List
 
-from model import (evaluate, Add, And, Attribute, Div, Edge, Equal, FINAL, First, Greater,
-                   GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModelError,
-                   Mul, Node, NotEqual, Number, Or, Sub, TRUE, UNDEFINED, Value)
+from model import (evaluate, Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater,
+                   GreaterEqual, Last, Length, Less, LessEqual, ModelError, ModularInteger, Mul,
+                   Node, NotEqual, Number, Or, RangeInteger, Sub, TRUE, UNDEFINED, Value)
 
 
 SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
@@ -112,9 +112,37 @@ class TestModel(unittest.TestCase):
         self.assertEqual(NotEqual(Value('X'), Number(42)).simplified(),
                          NotEqual(Value('X'), Number(42)))
 
-    def test_evaluate_invalid(self) -> None:
-        n1 = Node('X')
-        n2 = Node('Y')
+    def test_modular_size(self) -> None:
+        self.assertEqual(ModularInteger('UINT64', 2**64).size(), Number(64))
+
+    def test_modular_invalid_modulus(self) -> None:
+        with self.assertRaises(ModelError):
+            ModularInteger('X', 255)
+
+    def test_range_size(self) -> None:
+        self.assertEqual(RangeInteger('UINT32', 0, 2**32 - 1, 32).size(), Number(32))
+
+    def test_range_invalid_first(self) -> None:
+        with self.assertRaises(ModelError):
+            RangeInteger('X', -1, 0, 1)
+
+    def test_range_invalid_range(self) -> None:
+        with self.assertRaises(ModelError):
+            RangeInteger('X', 1, 0, 1)
+
+    def test_range_invalid_size(self) -> None:
+        with self.assertRaises(ModelError):
+            RangeInteger('X', 0, 256, 8)
+
+    def test_array_invalid_call(self) -> None:
+        with self.assertRaises(RuntimeError):
+            Array('X').size()
+
+    def test_evaluate_invalid_cyclic(self) -> None:
+        t = ModularInteger('T', 2)
+
+        n1 = Node('X', t)
+        n2 = Node('Y', t)
 
         n1.edges = [Edge(n2, TRUE, Number(1))]
         n2.edges = [Edge(n1, TRUE, Number(1))]
@@ -122,30 +150,42 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelError):
             evaluate({}, TRUE, Edge(n1, TRUE, Number(1)))
 
+    def test_evaluate_invalid_duplicate(self) -> None:
+        t1 = ModularInteger('T1', 2)
+        t2 = ModularInteger('T2', 4)
+
+        n1 = Node('X', t1)
+        n2 = Node('X', t2)
+
+        n1.edges = [Edge(n2, TRUE)]
+        n2.edges = [Edge(FINAL, TRUE)]
+
+        with self.assertRaises(ModelError):
+            evaluate({}, TRUE, Edge(n1, TRUE, Number(1)))
+
     def test_evaluate_ethernet(self) -> None:
-        destination = Node('Destination')
-        source = Node('Source')
-        tpid = Node('TPID')
-        tci = Node('TCI')
-        ether_type = Node('EtherType')
-        payload = Node('Payload')
+        uint48 = ModularInteger('UINT48', 2**48)
+        uint16 = RangeInteger('UINT16', 0, 2**16 - 1, 16)
+        payload_array = Array('Payload_Array')
+
+        destination = Node('Destination', uint48)
+        source = Node('Source', uint48)
+        tpid = Node('TPID', uint16)
+        tci = Node('TCI', uint16)
+        ether_type = Node('EtherType', uint16)
+        payload = Node('Payload', payload_array)
 
         destination.edges = [Edge(source,
-                                  TRUE,
-                                  Number(48))]
+                                  TRUE)]
         source.edges = [Edge(tpid,
-                             TRUE,
-                             Number(16))]
+                             TRUE)]
         tpid.edges = [Edge(tci,
-                           Equal(Value('TPID'), Number(0x8100)),
-                           Number(16)),
+                           Equal(Value('TPID'), Number(0x8100))),
                       Edge(ether_type,
                            NotEqual(Value('TPID'), Number(0x8100)),
-                           Number(16),
-                           First('TPID'))]
+                           first=First('TPID'))]
         tci.edges = [Edge(ether_type,
-                          TRUE,
-                          Number(16))]
+                          TRUE)]
         ether_type.edges = [Edge(payload,
                                  LessEqual(Value('EtherType'), Number(1500)),
                                  Value('EtherType')),
@@ -154,152 +194,165 @@ class TestModel(unittest.TestCase):
                                  Sub(Last('Buffer'), Last('EtherType')))]
         payload.edges = [Edge(FINAL,
                               And(GreaterEqual(Length('Payload'), Number(46)),
-                                  LessEqual(Length('Payload'), Number(1500))),
-                              Number(0))]
+                                  LessEqual(Length('Payload'), Number(1500))))]
 
         result = evaluate({}, TRUE, Edge(destination, TRUE, Number(48), Number(0)))
 
-        expected: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]] = {
-            'Destination': [
-                (TRUE, {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47)
-                })
-            ],
-            'Source': [
-                (TRUE, {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95)
-                })
-            ],
-            'TPID': [
-                (Or(NotEqual(Value('TPID'), Number(0x8100)),
-                    Equal(Value('TPID'), Number(0x8100))),
-                 {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95),
-                    First('TPID'): Number(96),
-                    Last('TPID'): Number(111)
-                })
-            ],
-            'TCI': [
-                (Equal(Value('TPID'), Number(0x8100)),
-                 {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95),
-                    First('TPID'): Number(96),
-                    Last('TPID'): Number(111),
-                    First('TCI'): Number(112),
-                    Last('TCI'): Number(127)
-                })
-            ],
-            'EtherType': [
-                (And(Equal(Value('TPID'), Number(0x8100)),
-                     Or(GreaterEqual(Value('EtherType'), Number(1536)),
-                        LessEqual(Value('EtherType'), Number(1500)))),
-                 {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95),
-                    First('TPID'): Number(96),
-                    Last('TPID'): Number(111),
-                    First('TCI'): Number(112),
-                    Last('TCI'): Number(127),
-                    First('EtherType'): Number(128),
-                    Last('EtherType'): Number(143)
-                }),
-                (And(NotEqual(Value('TPID'), Number(0x8100)),
-                     Or(GreaterEqual(Value('EtherType'), Number(1536)),
-                        LessEqual(Value('EtherType'), Number(1500)))),
-                 {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95),
-                    First('TPID'): Number(96),
-                    Last('TPID'): Number(111),
-                    First('EtherType'): Number(96),
-                    Last('EtherType'): Number(111)
-                })
-            ],
-            'Payload': [
-                (And(And(Equal(Value('TPID'), Number(0x8100)),
-                         LessEqual(Value('EtherType'), Number(1500))),
-                     And(GreaterEqual(Length('Payload'), Number(46)),
-                         LessEqual(Length('Payload'), Number(1500)))),
-                 {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95),
-                    First('TPID'): Number(96),
-                    Last('TPID'): Number(111),
-                    First('TCI'): Number(112),
-                    Last('TCI'): Number(127),
-                    First('EtherType'): Number(128),
-                    Last('EtherType'): Number(143),
-                    First('Payload'): Number(144),
-                    Last('Payload'): Add(Value('EtherType'), Number(143))
-                }),
-                (And(And(Equal(Value('TPID'), Number(0x8100)),
-                         GreaterEqual(Value('EtherType'), Number(1536))),
-                     And(GreaterEqual(Length('Payload'), Number(46)),
-                         LessEqual(Length('Payload'), Number(1500)))),
-                 {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95),
-                    First('TPID'): Number(96),
-                    Last('TPID'): Number(111),
-                    First('TCI'): Number(112),
-                    Last('TCI'): Number(127),
-                    First('EtherType'): Number(128),
-                    Last('EtherType'): Number(143),
-                    First('Payload'): Number(144),
-                    Last('Payload'): Last('Buffer')
-                }),
-                (And(And(NotEqual(Value('TPID'), Number(0x8100)),
-                         LessEqual(Value('EtherType'), Number(1500))),
-                     And(GreaterEqual(Length('Payload'), Number(46)),
-                         LessEqual(Length('Payload'), Number(1500)))),
-                 {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95),
-                    First('TPID'): Number(96),
-                    Last('TPID'): Number(111),
-                    First('EtherType'): Number(96),
-                    Last('EtherType'): Number(111),
-                    First('Payload'): Number(112),
-                    Last('Payload'): Add(Value('EtherType'), Number(111))
-                }),
-                (And(And(NotEqual(Value('TPID'), Number(0x8100)),
-                         GreaterEqual(Value('EtherType'), Number(1536))),
-                     And(GreaterEqual(Length('Payload'), Number(46)),
-                         LessEqual(Length('Payload'), Number(1500)))),
-                 {
-                    First('Destination'): Number(0),
-                    Last('Destination'): Number(47),
-                    First('Source'): Number(48),
-                    Last('Source'): Number(95),
-                    First('TPID'): Number(96),
-                    Last('TPID'): Number(111),
-                    First('EtherType'): Number(96),
-                    Last('EtherType'): Number(111),
-                    First('Payload'): Number(112),
-                    Last('Payload'): Last('Buffer')
-                })
-            ],
-        }
+        expected: List[Field] = [
+            Field('Destination',
+                  ModularInteger('UINT48', 2**48),
+                  [
+                      (TRUE,
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47)
+                       })
+                  ]),
+            Field('Source',
+                  ModularInteger('UINT48', 2**48),
+                  [
+                      (TRUE,
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95)
+                       })
+                  ]),
+            Field('TPID',
+                  RangeInteger('UINT16', 0, 2**16 - 1, 16),
+                  [
+                      (Or(NotEqual(Value('TPID'), Number(0x8100)),
+                          Equal(Value('TPID'), Number(0x8100))),
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95),
+                           First('TPID'): Number(96),
+                           Last('TPID'): Number(111)
+                      })
+                  ]),
+            Field('TCI',
+                  RangeInteger('UINT16', 0, 2**16 - 1, 16),
+                  [
+                      (Equal(Value('TPID'), Number(0x8100)),
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95),
+                           First('TPID'): Number(96),
+                           Last('TPID'): Number(111),
+                           First('TCI'): Number(112),
+                           Last('TCI'): Number(127)
+                      })
+                  ]),
+            Field('EtherType',
+                  RangeInteger('UINT16', 0, 2**16 - 1, 16),
+                  [
+                      (And(Equal(Value('TPID'), Number(0x8100)),
+                           Or(GreaterEqual(Value('EtherType'), Number(1536)),
+                              LessEqual(Value('EtherType'), Number(1500)))),
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95),
+                           First('TPID'): Number(96),
+                           Last('TPID'): Number(111),
+                           First('TCI'): Number(112),
+                           Last('TCI'): Number(127),
+                           First('EtherType'): Number(128),
+                           Last('EtherType'): Number(143)
+                      }),
+                      (And(NotEqual(Value('TPID'), Number(0x8100)),
+                           Or(GreaterEqual(Value('EtherType'), Number(1536)),
+                              LessEqual(Value('EtherType'), Number(1500)))),
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95),
+                           First('TPID'): Number(96),
+                           Last('TPID'): Number(111),
+                           First('EtherType'): Number(96),
+                           Last('EtherType'): Number(111)
+                      })
+                  ]),
+            Field('Payload',
+                  Array('Payload_Array'),
+                  [
+                      (And(And(Equal(Value('TPID'), Number(0x8100)),
+                               LessEqual(Value('EtherType'), Number(1500))),
+                           And(GreaterEqual(Length('Payload'), Number(46)),
+                               LessEqual(Length('Payload'), Number(1500)))),
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95),
+                           First('TPID'): Number(96),
+                           Last('TPID'): Number(111),
+                           First('TCI'): Number(112),
+                           Last('TCI'): Number(127),
+                           First('EtherType'): Number(128),
+                           Last('EtherType'): Number(143),
+                           First('Payload'): Number(144),
+                           Last('Payload'): Add(Value('EtherType'), Number(143))
+                      }),
+                      (And(And(Equal(Value('TPID'), Number(0x8100)),
+                               GreaterEqual(Value('EtherType'), Number(1536))),
+                           And(GreaterEqual(Length('Payload'), Number(46)),
+                               LessEqual(Length('Payload'), Number(1500)))),
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95),
+                           First('TPID'): Number(96),
+                           Last('TPID'): Number(111),
+                           First('TCI'): Number(112),
+                           Last('TCI'): Number(127),
+                           First('EtherType'): Number(128),
+                           Last('EtherType'): Number(143),
+                           First('Payload'): Number(144),
+                           Last('Payload'): Last('Buffer')
+                      }),
+                      (And(And(NotEqual(Value('TPID'), Number(0x8100)),
+                               LessEqual(Value('EtherType'), Number(1500))),
+                           And(GreaterEqual(Length('Payload'), Number(46)),
+                               LessEqual(Length('Payload'), Number(1500)))),
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95),
+                           First('TPID'): Number(96),
+                           Last('TPID'): Number(111),
+                           First('EtherType'): Number(96),
+                           Last('EtherType'): Number(111),
+                           First('Payload'): Number(112),
+                           Last('Payload'): Add(Value('EtherType'), Number(111))
+                      }),
+                      (And(And(NotEqual(Value('TPID'), Number(0x8100)),
+                               GreaterEqual(Value('EtherType'), Number(1536))),
+                           And(GreaterEqual(Length('Payload'), Number(46)),
+                               LessEqual(Length('Payload'), Number(1500)))),
+                       {
+                           First('Destination'): Number(0),
+                           Last('Destination'): Number(47),
+                           First('Source'): Number(48),
+                           Last('Source'): Number(95),
+                           First('TPID'): Number(96),
+                           Last('TPID'): Number(111),
+                           First('EtherType'): Number(96),
+                           Last('EtherType'): Number(111),
+                           First('Payload'): Number(112),
+                           Last('Payload'): Last('Buffer')
+                      })
+                  ]),
+        ]
 
         self.assertEqual(result, expected)
 
