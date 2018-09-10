@@ -8,6 +8,8 @@ from model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Great
                    Last, Length, Less, LessEqual, ModelError, ModularInteger, Mul, Node, NotEqual,
                    Number, Or, PDU, RangeInteger, Sub, TRUE, UNDEFINED, Value)
 
+from tests.models import ETHERNET_PDU
+
 
 SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
 
@@ -164,8 +166,6 @@ class TestModel(unittest.TestCase):
             PDU('Z', n1).fields()
 
     def test_pdu_fields_ethernet(self) -> None:
-        ethernet_pdu = create_ethernet_model()
-
         expected: List[Field] = [
             Field('Destination',
                   ModularInteger('UINT48', 2**48),
@@ -322,43 +322,7 @@ class TestModel(unittest.TestCase):
                   ]),
         ]
 
-        self.assertEqual(ethernet_pdu.fields(), expected)
-
-
-def create_ethernet_model() -> PDU:
-    uint48 = ModularInteger('UINT48', 2**48)
-    uint16 = RangeInteger('UINT16', 0, 2**16 - 1, 16)
-    payload_array = Array('Payload_Array')
-
-    destination = Node('Destination', uint48)
-    source = Node('Source', uint48)
-    tpid = Node('TPID', uint16)
-    tci = Node('TCI', uint16)
-    ether_type = Node('EtherType', uint16)
-    payload = Node('Payload', payload_array)
-
-    destination.edges = [Edge(source,
-                              TRUE)]
-    source.edges = [Edge(tpid,
-                         TRUE)]
-    tpid.edges = [Edge(tci,
-                       Equal(Value('TPID'), Number(0x8100))),
-                  Edge(ether_type,
-                       NotEqual(Value('TPID'), Number(0x8100)),
-                       first=First('TPID'))]
-    tci.edges = [Edge(ether_type,
-                      TRUE)]
-    ether_type.edges = [Edge(payload,
-                             LessEqual(Value('EtherType'), Number(1500)),
-                             Value('EtherType')),
-                        Edge(payload,
-                             GreaterEqual(Value('EtherType'), Number(1536)),
-                             Sub(Last('Buffer'), Last('EtherType')))]
-    payload.edges = [Edge(FINAL,
-                          And(GreaterEqual(Length('Payload'), Number(46)),
-                              LessEqual(Length('Payload'), Number(1500))))]
-
-    return PDU('Ethernet', destination)
+        self.assertEqual(ETHERNET_PDU.fields(), expected)
 
 
 if __name__ == "__main__":
