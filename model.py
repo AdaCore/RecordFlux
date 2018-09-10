@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from copy import copy
 from math import log
 from pprint import pformat
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 class Expr(ABC):
@@ -435,6 +435,50 @@ class ModelError(Exception):
     pass
 
 
+def evaluate(facts: Dict[Attribute, MathExpr], all_cond: LogExpr, in_edge: Edge,
+             visited: List[Edge] = None) -> List[Field]:
+    node = in_edge.target
+
+    if in_edge.length is UNDEFINED:
+        in_edge.length = node.type.size()
+    if in_edge.first is UNDEFINED:
+        in_edge.first = Number(0)
+
+    facts = create_facts(facts, in_edge)
+
+    fields = [Field(node.name,
+                    node.type,
+                    [(combine_conditions(all_cond,
+                                         in_edge.condition,
+                                         [e.condition for e in node.edges]).simplified(),
+                      facts)])]
+
+    for out_edge in node.edges:
+        if out_edge.target is FINAL:
+            continue
+
+        visited = create_visited_edges(visited, out_edge)
+
+        edge = copy(out_edge)
+        if edge.first is UNDEFINED:
+            edge.first = Add(in_edge.first, in_edge.length)
+
+        extend_fields(fields,
+                      evaluate(facts,
+                               combine_conditions(all_cond, in_edge.condition, []),
+                               edge,
+                               visited))
+
+    return fields
+
+
+def create_facts(facts: Dict[Attribute, MathExpr], edge: Edge) -> Dict[Attribute, MathExpr]:
+    facts = dict(facts)
+    facts[First(edge.target.name)] = edge.first.simplified(facts)
+    facts[Last(edge.target.name)] = Add(edge.first, edge.length, Number(-1)).simplified(facts)
+    return facts
+
+
 def combine_conditions(all_cond: LogExpr, in_cond: LogExpr, out_cond: List[LogExpr]) -> LogExpr:
     if out_cond:
         res = out_cond.pop()
@@ -443,6 +487,28 @@ def combine_conditions(all_cond: LogExpr, in_cond: LogExpr, out_cond: List[LogEx
     else:
         res = TRUE
     return And(And(all_cond, in_cond), res)
+
+
+def create_visited_edges(visited: Optional[List[Edge]], edge: Edge) -> List[Edge]:
+    if not visited:
+        visited = []
+    if edge in visited:
+        raise ModelError('cyclic')
+    return list(visited + [edge])
+
+
+def extend_fields(fields: List[Field], new_fields: List[Field]) -> None:
+    for new_field in new_fields:
+        found = False
+        for field in fields:
+            if field.name == new_field.name:
+                if field.type != new_field.type:
+                    raise ModelError('duplicate node {} with different types ({} != {})'.format(
+                        field.name, field.type.name, new_field.type.name))
+                field.variants += new_field.variants
+                found = True
+        if not found:
+            fields.append(new_field)
 
 
 def filter_fields(fields: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]]
@@ -458,51 +524,3 @@ def filter_fields(fields: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr
         ]
         for field, variants in fields.items()
     }
-
-
-def evaluate(facts: Dict[Attribute, MathExpr], all_cond: LogExpr, in_edge: Edge,
-             visited: List[Edge] = None) -> List[Field]:
-    node = in_edge.target
-
-    facts = dict(facts)
-    facts[First(node.name)] = in_edge.first.simplified(facts)
-    facts[Last(node.name)] = Add(in_edge.first, in_edge.length, Number(-1)).simplified(facts)
-
-    cond = combine_conditions(all_cond,
-                              in_edge.condition,
-                              [e.condition for e in node.edges]).simplified()
-
-    fields = [Field(node.name, node.type, [(cond, facts)])]
-
-    for out_edge in node.edges:
-        if out_edge.target is FINAL:
-            continue
-
-        if not visited:
-            visited = []
-        if out_edge in visited:
-            raise ModelError('cyclic')
-        visited = list(visited + [out_edge])
-
-        edge = copy(out_edge)
-        if edge.first is UNDEFINED:
-            edge.first = Add(in_edge.first, in_edge.length)
-        if edge.length is UNDEFINED:
-            edge.length = edge.target.type.size()
-        new_fields = evaluate(facts,
-                              combine_conditions(all_cond, in_edge.condition, []),
-                              edge,
-                              visited)
-        for new_field in new_fields:
-            found = False
-            for field in fields:
-                if field.name == new_field.name:
-                    if field.type != new_field.type:
-                        raise ModelError('duplicate node {} with different types ({} != {})'.format(
-                            field.name, field.type.name, new_field.type.name))
-                    field.variants += new_field.variants
-                    found = True
-            if not found:
-                fields.append(new_field)
-
-    return fields
