@@ -431,6 +431,27 @@ class Field:
             self.name, self.type, pformat(self.variants, indent=2))
 
 
+class PDU:
+    def __init__(self, name: str, node: Node) -> None:
+        self.name = name
+        self.initial_node = node
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return 'PDU(\n\t{},\n\t{}\n)'.format(
+            self.name, self.initial_node)
+
+    def fields(self, facts: Dict[Attribute, MathExpr] = None,
+               first: MathExpr = UNDEFINED) -> List[Field]:
+        if facts is None:
+            facts = {}
+        return evaluate(facts, TRUE, Edge(self.initial_node, TRUE, first=first))
+
+
 class ModelError(Exception):
     pass
 

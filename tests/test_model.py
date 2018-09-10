@@ -4,9 +4,9 @@
 import unittest
 from typing import List
 
-from model import (evaluate, Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater,
-                   GreaterEqual, Last, Length, Less, LessEqual, ModelError, ModularInteger, Mul,
-                   Node, NotEqual, Number, Or, RangeInteger, Sub, TRUE, UNDEFINED, Value)
+from model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater, GreaterEqual,
+                   Last, Length, Less, LessEqual, ModelError, ModularInteger, Mul, Node, NotEqual,
+                   Number, Or, PDU, RangeInteger, Sub, TRUE, UNDEFINED, Value)
 
 
 SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
@@ -138,7 +138,7 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             Array('X').size()
 
-    def test_evaluate_invalid_cyclic(self) -> None:
+    def test_pdu_fields_invalid_cyclic(self) -> None:
         t = ModularInteger('T', 2)
 
         n1 = Node('X', t)
@@ -148,9 +148,9 @@ class TestModel(unittest.TestCase):
         n2.edges = [Edge(n1, TRUE, Number(1))]
 
         with self.assertRaises(ModelError):
-            evaluate({}, TRUE, Edge(n1, TRUE, Number(1)))
+            PDU('Z', n1).fields()
 
-    def test_evaluate_invalid_duplicate(self) -> None:
+    def test_pdu_fields_invalid_dupe(self) -> None:
         t1 = ModularInteger('T1', 2)
         t2 = ModularInteger('T2', 4)
 
@@ -161,42 +161,10 @@ class TestModel(unittest.TestCase):
         n2.edges = [Edge(FINAL, TRUE)]
 
         with self.assertRaises(ModelError):
-            evaluate({}, TRUE, Edge(n1, TRUE, Number(1)))
+            PDU('Z', n1).fields()
 
-    def test_evaluate_ethernet(self) -> None:
-        uint48 = ModularInteger('UINT48', 2**48)
-        uint16 = RangeInteger('UINT16', 0, 2**16 - 1, 16)
-        payload_array = Array('Payload_Array')
-
-        destination = Node('Destination', uint48)
-        source = Node('Source', uint48)
-        tpid = Node('TPID', uint16)
-        tci = Node('TCI', uint16)
-        ether_type = Node('EtherType', uint16)
-        payload = Node('Payload', payload_array)
-
-        destination.edges = [Edge(source,
-                                  TRUE)]
-        source.edges = [Edge(tpid,
-                             TRUE)]
-        tpid.edges = [Edge(tci,
-                           Equal(Value('TPID'), Number(0x8100))),
-                      Edge(ether_type,
-                           NotEqual(Value('TPID'), Number(0x8100)),
-                           first=First('TPID'))]
-        tci.edges = [Edge(ether_type,
-                          TRUE)]
-        ether_type.edges = [Edge(payload,
-                                 LessEqual(Value('EtherType'), Number(1500)),
-                                 Value('EtherType')),
-                            Edge(payload,
-                                 GreaterEqual(Value('EtherType'), Number(1536)),
-                                 Sub(Last('Buffer'), Last('EtherType')))]
-        payload.edges = [Edge(FINAL,
-                              And(GreaterEqual(Length('Payload'), Number(46)),
-                                  LessEqual(Length('Payload'), Number(1500))))]
-
-        result = evaluate({}, TRUE, Edge(destination, TRUE, Number(48), Number(0)))
+    def test_pdu_fields_ethernet(self) -> None:
+        ethernet_pdu = create_ethernet_model()
 
         expected: List[Field] = [
             Field('Destination',
@@ -354,7 +322,43 @@ class TestModel(unittest.TestCase):
                   ]),
         ]
 
-        self.assertEqual(result, expected)
+        self.assertEqual(ethernet_pdu.fields(), expected)
+
+
+def create_ethernet_model() -> PDU:
+    uint48 = ModularInteger('UINT48', 2**48)
+    uint16 = RangeInteger('UINT16', 0, 2**16 - 1, 16)
+    payload_array = Array('Payload_Array')
+
+    destination = Node('Destination', uint48)
+    source = Node('Source', uint48)
+    tpid = Node('TPID', uint16)
+    tci = Node('TCI', uint16)
+    ether_type = Node('EtherType', uint16)
+    payload = Node('Payload', payload_array)
+
+    destination.edges = [Edge(source,
+                              TRUE)]
+    source.edges = [Edge(tpid,
+                         TRUE)]
+    tpid.edges = [Edge(tci,
+                       Equal(Value('TPID'), Number(0x8100))),
+                  Edge(ether_type,
+                       NotEqual(Value('TPID'), Number(0x8100)),
+                       first=First('TPID'))]
+    tci.edges = [Edge(ether_type,
+                      TRUE)]
+    ether_type.edges = [Edge(payload,
+                             LessEqual(Value('EtherType'), Number(1500)),
+                             Value('EtherType')),
+                        Edge(payload,
+                             GreaterEqual(Value('EtherType'), Number(1536)),
+                             Sub(Last('Buffer'), Last('EtherType')))]
+    payload.edges = [Edge(FINAL,
+                          And(GreaterEqual(Length('Payload'), Number(46)),
+                              LessEqual(Length('Payload'), Number(1500))))]
+
+    return PDU('Ethernet', destination)
 
 
 if __name__ == "__main__":
