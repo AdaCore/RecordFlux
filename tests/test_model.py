@@ -21,23 +21,40 @@ class TestModel(unittest.TestCase):
         self.maxDiff = None  # pylint: disable=invalid-name
 
     def test_true_simplified(self) -> None:
-        self.assertEqual(TRUE.simplified(), TRUE)
+        self.assertEqual(TRUE.simplified(),
+                         TRUE)
 
     def test_and_simplified(self) -> None:
-        self.assertEqual(And(TRUE, TRUE).simplified(), TRUE)
-        self.assertEqual(And(TRUE, SOME_LOG_EXPR).simplified(), SOME_LOG_EXPR)
-        self.assertEqual(And(SOME_LOG_EXPR, TRUE).simplified(), SOME_LOG_EXPR)
+        self.assertEqual(And(TRUE, TRUE).simplified(),
+                         TRUE)
+        self.assertEqual(And(TRUE, SOME_LOG_EXPR).simplified(),
+                         SOME_LOG_EXPR)
+        self.assertEqual(And(SOME_LOG_EXPR, TRUE).simplified(),
+                         SOME_LOG_EXPR)
 
     def test_or_simplified(self) -> None:
-        self.assertEqual(Or(TRUE, TRUE).simplified(), TRUE)
-        self.assertEqual(Or(TRUE, SOME_LOG_EXPR).simplified(), TRUE)
-        self.assertEqual(Or(SOME_LOG_EXPR, TRUE).simplified(), TRUE)
+        self.assertEqual(Or(TRUE, TRUE).simplified(),
+                         TRUE)
+        self.assertEqual(Or(TRUE, SOME_LOG_EXPR).simplified(),
+                         TRUE)
+        self.assertEqual(Or(SOME_LOG_EXPR, TRUE).simplified(),
+                         TRUE)
+
+    def test_undefined_neg(self) -> None:
+        self.assertEqual(-UNDEFINED,
+                         UNDEFINED)
 
     def test_undefined_simplified(self) -> None:
-        self.assertEqual(UNDEFINED.simplified(), UNDEFINED)
+        self.assertEqual(UNDEFINED.simplified(),
+                         UNDEFINED)
+
+    def test_number_neg(self) -> None:
+        self.assertEqual(-Number(42),
+                         Number(-42))
 
     def test_number_simplified(self) -> None:
-        self.assertEqual(Number(42).simplified(), Number(42))
+        self.assertEqual(Number(42).simplified(),
+                         Number(42))
 
     def test_number_add(self) -> None:
         self.assertEqual(Number(5) + Number(3), Number(8))
@@ -51,22 +68,57 @@ class TestModel(unittest.TestCase):
     def test_number_div(self) -> None:
         self.assertEqual(Number(4) // Number(2), Number(2))
 
+    def test_add_neg(self) -> None:
+        self.assertEqual(-Add(Value('X'), Number(1)),
+                         Add(Value('X', True), Number(-1)))
+
     def test_add_simplified(self) -> None:
-        self.assertEqual(Add(Value('X'), Number(1)).simplified(), Add(Value('X'), Number(1)))
-        self.assertEqual(Add(Number(2), Number(3), Number(5)).simplified(), Number(10))
+        self.assertEqual(Add(Value('X'), Number(1)).simplified(),
+                         Add(Value('X'), Number(1)))
+        self.assertEqual(Add(Value('X'), Number(0)).simplified(),
+                         Value('X'))
+        self.assertEqual(Add(Number(2), Number(3), Number(5)).simplified(),
+                         Number(10))
+        self.assertEqual(Add(Value('X'), Value('Y'), Value('X', True)).simplified(),
+                         Value('Y'))
+
+    def test_mul_neg(self) -> None:
+        self.assertEqual(-Mul(Value('X'), Number(2)),
+                         Mul(Value('X'), Number(2), Number(-1)))
 
     def test_mul_simplified(self) -> None:
-        self.assertEqual(Mul(Value('X'), Number(1)).simplified(), Mul(Value('X'), Number(1)))
-        self.assertEqual(Mul(Number(2), Number(3), Number(5)).simplified(), Number(30))
+        self.assertEqual(Mul(Value('X'), Number(2)).simplified(),
+                         Mul(Value('X'), Number(2)))
+        self.assertEqual(Mul(Value('X'), Number(1)).simplified(),
+                         Value('X'))
+        self.assertEqual(Mul(Number(2), Number(3), Number(5)).simplified(),
+                         Number(30))
+
+    def test_sub_neg(self) -> None:
+        self.assertEqual(-Sub(Number(1), Value('X')),
+                         Sub(Number(-1), Value('X')))
 
     def test_sub_simplified(self) -> None:
-        self.assertEqual(Sub(Number(1), Value('X')).simplified(), Sub(Number(1), Value('X')))
-        self.assertEqual(Sub(Value('X'), Number(1)).simplified(), Add(Value('X'), Number(-1)))
-        self.assertEqual(Sub(Number(6), Number(2)).simplified(), Number(4))
+        self.assertEqual(Sub(Number(1), Value('X')).simplified(),
+                         Add(Value('X'), Number(-1)))
+        self.assertEqual(Sub(Value('X'), Number(1)).simplified(),
+                         Add(Value('X'), Number(-1)))
+        self.assertEqual(Sub(Number(6), Number(2)).simplified(),
+                         Number(4))
+        self.assertEqual(Sub(Value('X'), Value('Y')).simplified(),
+                         Add(Value('X'), Value('Y', True)))
+
+    def test_div_neg(self) -> None:
+        self.assertEqual(-Div(Value('X'), Number(1)),
+                         Div(Value('X', True), Number(1)))
 
     def test_div_simplified(self) -> None:
-        self.assertEqual(Div(Value('X'), Number(1)).simplified(), Div(Value('X'), Number(1)))
-        self.assertEqual(Div(Number(6), Number(2)).simplified(), Number(3))
+        self.assertEqual(Div(Value('X'), Number(1)).simplified(),
+                         Div(Value('X'), Number(1)))
+        self.assertEqual(Div(Number(6), Number(2)).simplified(),
+                         Number(3))
+        self.assertEqual(Div(Number(9), Number(2)).simplified(),
+                         Div(Number(9), Number(2)))
 
     def test_term_simplified(self) -> None:
         self.assertEqual(Add(Mul(Number(1), Number(6)),
@@ -74,44 +126,73 @@ class TestModel(unittest.TestCase):
                              Add(Number(1), Number(3))).simplified(),
                          Value('X'))
 
+    def test_distributivity_simplified(self) -> None:
+        self.assertEqual(Add(Sub(Value('X'), Add(Value('X'), Number(1))),
+                             Add(Value('X'), Number(1))).simplified(),
+                         Value('X'))
+        self.assertEqual(Div(Add(Mul(Value('X'), Number(8)), Number(144)), Number(8)).simplified(),
+                         Add(Value('X'), Number(18)))
+        self.assertEqual(Div(Sub(Mul(Value('X'), Number(8)), Number(148)), Number(8)).simplified(),
+                         Add(Value('X'), Div(Number(-148), Number(8))))
+
+    def test_value_neg(self) -> None:
+        self.assertEqual(-Value('X'),
+                         Value('X', True))
+
     def test_value_simplified(self) -> None:
-        self.assertEqual(Value('X').simplified(), Value('X'))
-        self.assertEqual(Value('X').simplified({Value('X'): Number(42)}), Number(42))
+        self.assertEqual(Value('X').simplified(),
+                         Value('X'))
+        self.assertEqual(Value('X').simplified({Value('X'): Number(42)}),
+                         Number(42))
 
     def test_length_simplified(self) -> None:
-        self.assertEqual(Length('X').simplified(), Length('X'))
-        self.assertEqual(Length('X').simplified({Length('X'): Number(42)}), Number(42))
+        self.assertEqual(Length('X').simplified(),
+                         Length('X'))
+        self.assertEqual(Length('X').simplified({Length('X'): Number(42)}),
+                         Number(42))
+
+    def test_first_neg(self) -> None:
+        self.assertEqual(-First('X'),
+                         First('X', True))
 
     def test_first_simplified(self) -> None:
-        self.assertEqual(First('X').simplified(), First('X'))
-        self.assertEqual(First('X').simplified({First('X'): Number(42)}), Number(42))
+        self.assertEqual(First('X').simplified(),
+                         First('X'))
+        self.assertEqual(First('X').simplified({First('X'): Number(42)}),
+                         Number(42))
+
+    def test_last_neg(self) -> None:
+        self.assertEqual(-Last('X'),
+                         Last('X', True))
 
     def test_last_simplified(self) -> None:
-        self.assertEqual(Last('X').simplified(), Last('X'))
-        self.assertEqual(Last('X').simplified({Last('X'): Number(42)}), Number(42))
+        self.assertEqual(Last('X').simplified(),
+                         Last('X'))
+        self.assertEqual(Last('X').simplified({Last('X'): Number(42)}),
+                         Number(42))
 
     def test_less_simplified(self) -> None:
-        self.assertEqual(Less(Value('X'), Number(42)).simplified(),
+        self.assertEqual(Less(Value('X'), Add(Number(21), Number(21))).simplified(),
                          Less(Value('X'), Number(42)))
 
     def test_less_equal_simplified(self) -> None:
-        self.assertEqual(LessEqual(Value('X'), Number(42)).simplified(),
+        self.assertEqual(LessEqual(Value('X'), Add(Number(21), Number(21))).simplified(),
                          LessEqual(Value('X'), Number(42)))
 
     def test_equal_simplified(self) -> None:
-        self.assertEqual(Equal(Value('X'), Number(42)).simplified(),
+        self.assertEqual(Equal(Value('X'), Add(Number(21), Number(21))).simplified(),
                          Equal(Value('X'), Number(42)))
 
     def test_greater_simplified(self) -> None:
-        self.assertEqual(Greater(Value('X'), Number(42)).simplified(),
+        self.assertEqual(Greater(Value('X'), Add(Number(21), Number(21))).simplified(),
                          Greater(Value('X'), Number(42)))
 
     def test_greater_equal_simplified(self) -> None:
-        self.assertEqual(GreaterEqual(Value('X'), Number(42)).simplified(),
+        self.assertEqual(GreaterEqual(Value('X'), Add(Number(21), Number(21))).simplified(),
                          GreaterEqual(Value('X'), Number(42)))
 
     def test_not_equal_simplified(self) -> None:
-        self.assertEqual(NotEqual(Value('X'), Number(42)).simplified(),
+        self.assertEqual(NotEqual(Value('X'), Add(Number(21), Number(21))).simplified(),
                          NotEqual(Value('X'), Number(42)))
 
     def test_modular_size(self) -> None:

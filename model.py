@@ -16,7 +16,7 @@ class Expr(ABC):
 
 class LogExpr(Expr):
     @abstractmethod
-    def simplified(self) -> 'LogExpr':
+    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'LogExpr':
         raise NotImplementedError
 
 
@@ -27,7 +27,7 @@ class TrueExpr(LogExpr):
     def __str__(self) -> str:
         return self.__repr__()
 
-    def simplified(self) -> LogExpr:
+    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
         return self
 
 
@@ -46,33 +46,37 @@ class BinLogExpr(LogExpr):
         return self.__repr__()
 
     @abstractmethod
-    def simplified(self) -> 'LogExpr':
+    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
         raise NotImplementedError
 
 
 class And(BinLogExpr):
-    def simplified(self) -> LogExpr:
-        self.left = self.left.simplified()
-        self.right = self.right.simplified()
-        if self.left is TRUE and self.right is TRUE:
+    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
+        left = self.left.simplified(facts)
+        right = self.right.simplified(facts)
+        if left is TRUE and right is TRUE:
             return TRUE
-        if self.left is TRUE:
-            return self.right
-        if self.right is TRUE:
-            return self.left
-        return self
+        if left is TRUE:
+            return right
+        if right is TRUE:
+            return left
+        return And(left, right)
 
 
 class Or(BinLogExpr):
-    def simplified(self) -> LogExpr:
-        self.left = self.left.simplified()
-        self.right = self.right.simplified()
-        if self.left is TRUE or self.right is TRUE:
+    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
+        left = self.left.simplified(facts)
+        right = self.right.simplified(facts)
+        if left is TRUE or right is TRUE:
             return TRUE
-        return self
+        return Or(left, right)
 
 
 class MathExpr(Expr):
+    @abstractmethod
+    def __neg__(self) -> 'MathExpr':
+        raise NotImplementedError
+
     @abstractmethod
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'MathExpr':
         raise NotImplementedError
@@ -87,6 +91,9 @@ class UndefinedExpr(MathExpr):
 
     def __str__(self) -> str:
         return self.__repr__()
+
+    def __neg__(self) -> MathExpr:
+        return self
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         return self
@@ -105,6 +112,9 @@ class Number(MathExpr):
     def __str__(self) -> str:
         return self.__repr__()
 
+    def __neg__(self) -> 'Number':
+        return Number(-self.value)
+
     def __add__(self, other: 'Number') -> 'Number':
         if isinstance(other, Number):
             return Number(self.value + other.value)
@@ -120,9 +130,11 @@ class Number(MathExpr):
             return Number(self.value * other.value)
         return NotImplemented
 
-    def __floordiv__(self, other: 'Number') -> 'Number':
+    def __floordiv__(self, other: 'Number') -> 'MathExpr':
         if isinstance(other, Number):
-            return Number(self.value // other.value)
+            if self.value % other.value == 0:
+                return Number(self.value // other.value)
+            return Div(Number(self.value), Number(other.value))
         return NotImplemented
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
@@ -130,7 +142,7 @@ class Number(MathExpr):
 
 
 class AssMathExpr(MathExpr):
-    def __init__(self, *terms: 'MathExpr') -> None:
+    def __init__(self, *terms: MathExpr) -> None:
         self.terms = list(terms)
 
     def __repr__(self) -> str:
@@ -139,25 +151,29 @@ class AssMathExpr(MathExpr):
     def __str__(self) -> str:
         return self.__repr__()
 
+    @abstractmethod
+    def __neg__(self) -> MathExpr:
+        raise NotImplementedError
+
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
-        terms = []
+        terms: List[MathExpr] = []
+        all_terms = list(self.terms)
         total = self.neutral_element()
-        for summand in self.terms:
-            s = summand.simplified(facts)
-            if isinstance(s, Number):
-                total = self.operation(total, s.value)
-            elif isinstance(s, type(self)):
-                self.terms += s.terms
+        for term in all_terms:
+            t = term.simplified(facts)
+            if isinstance(t, Number):
+                total = self.operation(total, t.value)
+            elif isinstance(t, type(self)):
+                all_terms += t.terms
             else:
-                terms.append(s)
+                terms.append(t)
         if not terms:
             return Number(total)
-        if total > 0:
+        if total != self.neutral_element():
             terms.append(Number(total))
         if len(terms) == 1:
             return terms[0]
-        self.terms = terms
-        return self
+        return self.__class__(*terms)
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -173,8 +189,28 @@ class AssMathExpr(MathExpr):
 
 
 class Add(AssMathExpr):
+    def __neg__(self) -> MathExpr:
+        return Add(*[-term for term in self.terms])
+
     def operation(self, left: int, right: int) -> int:
         return left + right
+
+    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+        expr = super().simplified(facts)
+        if not isinstance(expr, Add):
+            return expr
+        terms: List[MathExpr] = []
+        for term in expr.terms:
+            complement = False
+            for other in terms:
+                if other == -term:
+                    terms.remove(other)
+                    complement = True
+            if not complement:
+                terms.append(term)
+        if len(terms) == 1:
+            return terms[0]
+        return Add(*terms)
 
     def neutral_element(self) -> int:
         return 0
@@ -184,6 +220,9 @@ class Add(AssMathExpr):
 
 
 class Mul(AssMathExpr):
+    def __neg__(self) -> MathExpr:
+        return Mul(*list(self.terms) + [Number(-1)])
+
     def operation(self, left: int, right: int) -> int:
         return left * right
 
@@ -205,6 +244,9 @@ class BinMathExpr(MathExpr):
     def __str__(self) -> str:
         return self.__repr__()
 
+    def __neg__(self) -> MathExpr:
+        return self.__class__(-self.left, self.right)
+
     @abstractmethod
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         raise NotImplementedError
@@ -216,14 +258,15 @@ class BinMathExpr(MathExpr):
 
 class Sub(BinMathExpr):
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
-        self.left = self.left.simplified(facts)
-        self.right = self.right.simplified(facts)
-        if isinstance(self.left, Number) and isinstance(self.right, Number):
-            return self.left - self.right
-        if isinstance(self.right, Number):
-            right = self.right * Number(-1)
-            return Add(self.left, right)
-        return self
+        left = self.left.simplified(facts)
+        right = self.right.simplified(facts)
+        if isinstance(left, Number) and isinstance(right, Number):
+            return left - right
+        if isinstance(left, Number):
+            return Add(right, -left)
+        if isinstance(right, Number):
+            return Add(left, -right)
+        return Add(left, -right)
 
     def symbol(self) -> str:
         return '-'
@@ -231,28 +274,42 @@ class Sub(BinMathExpr):
 
 class Div(BinMathExpr):
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
-        self.left = self.left.simplified(facts)
-        self.right = self.right.simplified(facts)
-        if isinstance(self.left, Number) and isinstance(self.right, Number):
-            return self.left // self.right
-        return self
+        left = self.left.simplified(facts)
+        right = self.right.simplified(facts)
+        if isinstance(left, Number) and isinstance(right, Number):
+            return left // right
+        if isinstance(left, Add) and isinstance(right, Number):
+            return Add(*[Div(term, right) for term in left.terms]).simplified(facts)
+        if isinstance(left, Mul) and isinstance(right, Number):
+            terms: List[MathExpr] = []
+            for term in left.terms:
+                if isinstance(term, Number):
+                    terms.append((term // right).simplified(facts))
+                else:
+                    terms.append(term)
+            return Mul(*terms).simplified(facts)
+        return Div(left, right)
 
     def symbol(self) -> str:
         return '/'
 
 
 class Attribute(MathExpr):
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, negative: bool = False) -> None:
         self.name = name
+        self.negative = negative
 
     def __repr__(self) -> str:
-        return '{}\'{}'.format(self.name, self.__class__.__name__)
+        return '{}{}\'{}'.format('-' if self.negative else '', self.name, self.__class__.__name__)
 
     def __str__(self) -> str:
         return self.__repr__()
 
     def __hash__(self) -> int:
         return hash(self.name + self.__class__.__name__)
+
+    def __neg__(self) -> 'Attribute':
+        return self.__class__(self.name, not self.negative)
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         if facts and self in facts:
@@ -262,7 +319,7 @@ class Attribute(MathExpr):
 
 class Value(Attribute):
     def __str__(self) -> str:
-        return '{}'.format(self.name)
+        return '{}{}'.format('-' if self.negative else '', self.name)
 
 
 class Length(Attribute):
@@ -288,8 +345,10 @@ class Relation(LogExpr):
     def __str__(self) -> str:
         return self.__repr__()
 
-    def simplified(self) -> 'Relation':
-        return self
+    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> 'Relation':
+        left = self.left.simplified(facts)
+        right = self.right.simplified(facts)
+        return self.__class__(left, right)
 
     @abstractmethod
     def symbol(self) -> str:
