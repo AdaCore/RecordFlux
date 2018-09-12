@@ -81,6 +81,10 @@ class MathExpr(Expr):
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'MathExpr':
         raise NotImplementedError
 
+    @abstractmethod
+    def to_bytes(self) -> 'MathExpr':
+        raise NotImplementedError
+
 
 class UndefinedExpr(MathExpr):
     def __init__(self) -> None:
@@ -96,6 +100,9 @@ class UndefinedExpr(MathExpr):
         return self
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+        return self
+
+    def to_bytes(self) -> MathExpr:
         return self
 
 
@@ -139,6 +146,11 @@ class Number(MathExpr):
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         return self
+
+    def to_bytes(self) -> MathExpr:
+        if self.value % 8 != 0 and (self.value + 1) % 8 != 0:
+            raise RuntimeError('value should point to first or last bit of byte')
+        return Number(self.value // 8)
 
 
 class AssMathExpr(MathExpr):
@@ -186,6 +198,9 @@ class AssMathExpr(MathExpr):
     @abstractmethod
     def symbol(self) -> str:
         raise NotImplementedError
+
+    def to_bytes(self) -> MathExpr:
+        return self.__class__(*[term.to_bytes() for term in self.terms])
 
 
 class Add(AssMathExpr):
@@ -255,6 +270,11 @@ class BinMathExpr(MathExpr):
     def symbol(self) -> str:
         raise NotImplementedError
 
+    def to_bytes(self) -> MathExpr:
+        left = self.left.to_bytes()
+        right = self.right.to_bytes()
+        return self.__class__(left, right)
+
 
 class Sub(BinMathExpr):
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
@@ -314,6 +334,9 @@ class Attribute(MathExpr):
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         if facts and self in facts:
             return facts[self]
+        return self
+
+    def to_bytes(self) -> MathExpr:
         return self
 
 

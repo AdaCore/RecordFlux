@@ -48,6 +48,10 @@ class TestModel(unittest.TestCase):
         self.assertEqual(UNDEFINED.simplified(),
                          UNDEFINED)
 
+    def test_undefined_to_bytes(self) -> None:
+        self.assertEqual(UNDEFINED.to_bytes(),
+                         UNDEFINED)
+
     def test_number_neg(self) -> None:
         self.assertEqual(-Number(42),
                          Number(-42))
@@ -55,6 +59,16 @@ class TestModel(unittest.TestCase):
     def test_number_simplified(self) -> None:
         self.assertEqual(Number(42).simplified(),
                          Number(42))
+
+    def test_number_to_bytes(self) -> None:
+        self.assertEqual(Number(48).to_bytes(),
+                         Number(6))
+        self.assertEqual(Number(47).to_bytes(),
+                         Number(5))
+
+    def test_number_to_bytes_invalid(self) -> None:
+        with self.assertRaises(RuntimeError):
+            Number(46).to_bytes()
 
     def test_number_add(self) -> None:
         self.assertEqual(Number(5) + Number(3), Number(8))
@@ -82,6 +96,10 @@ class TestModel(unittest.TestCase):
         self.assertEqual(Add(Value('X'), Value('Y'), Value('X', True)).simplified(),
                          Value('Y'))
 
+    def test_add_to_bytes(self) -> None:
+        self.assertEqual(Add(Value('X'), Number(8)).to_bytes(),
+                         Add(Value('X'), Number(1)))
+
     def test_mul_neg(self) -> None:
         self.assertEqual(-Mul(Value('X'), Number(2)),
                          Mul(Value('X'), Number(2), Number(-1)))
@@ -93,6 +111,10 @@ class TestModel(unittest.TestCase):
                          Value('X'))
         self.assertEqual(Mul(Number(2), Number(3), Number(5)).simplified(),
                          Number(30))
+
+    def test_mul_to_bytes(self) -> None:
+        self.assertEqual(Mul(Value('X'), Number(8)).to_bytes(),
+                         Mul(Value('X'), Number(1)))
 
     def test_sub_neg(self) -> None:
         self.assertEqual(-Sub(Number(1), Value('X')),
@@ -108,6 +130,10 @@ class TestModel(unittest.TestCase):
         self.assertEqual(Sub(Value('X'), Value('Y')).simplified(),
                          Add(Value('X'), Value('Y', True)))
 
+    def test_sub_to_bytes(self) -> None:
+        self.assertEqual(Sub(Value('X'), Number(8)).to_bytes(),
+                         Sub(Value('X'), Number(1)))
+
     def test_div_neg(self) -> None:
         self.assertEqual(-Div(Value('X'), Number(1)),
                          Div(Value('X', True), Number(1)))
@@ -120,11 +146,23 @@ class TestModel(unittest.TestCase):
         self.assertEqual(Div(Number(9), Number(2)).simplified(),
                          Div(Number(9), Number(2)))
 
+    def test_div_to_bytes(self) -> None:
+        self.assertEqual(Div(Value('X'), Number(8)).to_bytes(),
+                         Div(Value('X'), Number(1)))
+
     def test_term_simplified(self) -> None:
         self.assertEqual(Add(Mul(Number(1), Number(6)),
                              Sub(Value('X'), Number(10)),
                              Add(Number(1), Number(3))).simplified(),
                          Value('X'))
+
+    def test_term_to_bytes(self) -> None:
+        self.assertEqual(Add(Mul(Number(8), Number(48)),
+                             Sub(Value('X'), Number(80)),
+                             Div(Number(8), Number(24))).to_bytes(),
+                         Add(Mul(Number(1), Number(6)),
+                             Sub(Value('X'), Number(10)),
+                             Div(Number(1), Number(3))))
 
     def test_distributivity_simplified(self) -> None:
         self.assertEqual(Add(Sub(Value('X'), Add(Value('X'), Number(1))),
