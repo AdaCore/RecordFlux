@@ -348,7 +348,7 @@ class TestModel(unittest.TestCase):
                            First('EtherType'): Number(128),
                            Last('EtherType'): Number(143),
                            First('Payload'): Number(144),
-                           Last('Payload'): Add(Value('EtherType'), Number(143))
+                           Last('Payload'): Add(Mul(Value('EtherType'), Number(8)), Number(143))
                       }),
                       (And(And(Equal(Value('TPID'), Number(0x8100)),
                                GreaterEqual(Value('EtherType'), Number(1536))),
@@ -382,7 +382,7 @@ class TestModel(unittest.TestCase):
                            First('EtherType'): Number(96),
                            Last('EtherType'): Number(111),
                            First('Payload'): Number(112),
-                           Last('Payload'): Add(Value('EtherType'), Number(111))
+                           Last('Payload'): Add(Mul(Value('EtherType'), Number(8)), Number(111))
                       }),
                       (And(And(NotEqual(Value('TPID'), Number(0x8100)),
                                GreaterEqual(Value('EtherType'), Number(1536))),
