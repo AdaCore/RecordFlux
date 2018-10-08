@@ -25,7 +25,7 @@ class TrueExpr(LogExpr):
         return 'TRUE'
 
     def __str__(self) -> str:
-        return self.__repr__()
+        return 'True'
 
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
         return self
@@ -43,10 +43,14 @@ class BinLogExpr(LogExpr):
         return '({} {} {})'.format(self.left, self.__class__.__name__, self.right)
 
     def __str__(self) -> str:
-        return self.__repr__()
+        return '({} {} {})'.format(self.left, self.symbol(), self.right)
 
     @abstractmethod
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
+        raise NotImplementedError
+
+    @abstractmethod
+    def symbol(self) -> str:
         raise NotImplementedError
 
 
@@ -62,6 +66,9 @@ class And(BinLogExpr):
             return left
         return And(left, right)
 
+    def symbol(self) -> str:
+        return 'and then'
+
 
 class Or(BinLogExpr):
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
@@ -70,6 +77,9 @@ class Or(BinLogExpr):
         if left is TRUE or right is TRUE:
             return TRUE
         return Or(left, right)
+
+    def symbol(self) -> str:
+        return 'or'
 
 
 class MathExpr(Expr):
@@ -213,9 +223,6 @@ class AssMathExpr(MathExpr):
     def __repr__(self) -> str:
         return '({})'.format(' {} '.format(self.symbol()).join(map(str, self.terms)))
 
-    def __str__(self) -> str:
-        return self.__repr__()
-
     @abstractmethod
     def __neg__(self) -> MathExpr:
         raise NotImplementedError
@@ -341,9 +348,6 @@ class BinMathExpr(MathExpr):
     def __repr__(self) -> str:
         return '({} {} {})'.format(self.left, self.symbol(), self.right)
 
-    def __str__(self) -> str:
-        return self.__repr__()
-
     def __neg__(self) -> MathExpr:
         return self.__class__(-self.left, self.right)
 
@@ -453,7 +457,7 @@ class Relation(LogExpr):
         return '{}({}, {})'.format(self.__class__.__name__, self.left, self.right)
 
     def __str__(self) -> str:
-        return self.__repr__()
+        return '{} {} {}'.format(self.left, self.symbol(), self.right)
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> 'Relation':
         left = self.left.simplified(facts)
@@ -492,7 +496,7 @@ class Greater(Relation):
 
 class NotEqual(Relation):
     def symbol(self) -> str:
-        return '!='
+        return '/='
 
 
 class Type(ABC):
