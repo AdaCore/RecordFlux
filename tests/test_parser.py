@@ -130,26 +130,6 @@ class TestParser(unittest.TestCase):
                                       NotEqual(Name('Baz'), Name('Foo'))))])]))}
         self.assert_data(['aspect.rflx'], spec)
 
-    def test_simple_ethernet(self):
-        spec = {'Simple_Ethernet': Specification(
-            Context([]),
-            Package('Simple_Ethernet',
-                    [Type('U16',
-                          Modular(Value('2**16'))),
-                     Type('U48',
-                          Modular(Value('2**48'))),
-                     Type('PDU',
-                          Record([Component('Destination', Name('U48')),
-                                  Component('Source', Name('U48')),
-                                  Component('EtherType', Name('U16')),
-                                  Component('Payload', Name('Payload_Type'))]),
-                          [Aspect('Type_Invariant',
-                                  And(And(GreaterEqual(Attribute('Payload', 'Length'), Value('46')),
-                                          LessEqual(Attribute('Payload', 'Length'), Value('1500'))),
-                                      Or(LessEqual(Name('EtherType'), Value('1500')),
-                                         GreaterEqual(Name('EtherType'), Value('1536')))))])]))}
-        self.assert_data(['simple_ethernet.rflx'], spec)
-
     def test_ethernet(self):
         spec = {'Ethernet': Specification(
             Context([]),

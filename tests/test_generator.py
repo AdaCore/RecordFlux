@@ -74,9 +74,6 @@ class TestGenerator(unittest.TestCase):
                                                 14).simplified(),
                          expected)
 
-    def test_simple_ethernet(self):
-        self.assert_code('simple_ethernet')
-
     def test_ethernet(self):
         self.assert_code('ethernet')
 
