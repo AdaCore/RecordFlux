@@ -2,80 +2,48 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+from typing import List
 
-from parser import Parser
-from generator import And, Field, Generator, GreaterEqual, Length, LessEqual, Or, TrueExpr, Value
+from model import PDU
+from generator import Generator
+
+from tests.models import ETHERNET_PDU
 
 
 class TestGenerator(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.testdir = "tests"
         self.maxDiff = None  # pylint: disable=invalid-name
 
-    def fullpath(self, testfile):
+    def fullpath(self, testfile: str) -> str:
         return self.testdir + "/" + testfile
 
-    def generate(self, filename):
-        parser = Parser()
-        parser.parse(self.fullpath(filename))
-        generator = Generator()
-        generator.generate(parser.specifications())
-        return generator
-
-    def assert_code(self, stem):
-        generator = self.generate(stem + '.rflx')
+    def assert_specification(self, generator: Generator) -> None:
         for unit in generator.units():
             unit_name = unit.package.name.lower().replace('.', '-')
             with open(self.fullpath(unit_name + '.ads'), 'r') as f:
                 self.assertEqual(unit.specification(), f.read())
+
+    def assert_definition(self, generator: Generator) -> None:
+        for unit in generator.units():
+            unit_name = unit.package.name.lower().replace('.', '-')
             if unit.definition().strip():
                 with open(self.fullpath(unit_name + '.adb'), 'r') as f:
                     self.assertEqual(unit.definition(), f.read())
 
-    def test_transformed_simplified_0(self):
-        expression = And(And(GreaterEqual(Length('Payload'), Value('46')),
-                             LessEqual(Length('Payload'), Value('1500'))),
-                         Or(LessEqual(Field('EtherType'), Value('1500')),
-                            GreaterEqual(Field('EtherType'), Value('1536'))))
-        expected = TrueExpr()
-        self.assertEqual(expression.transformed('Source', [], 0).simplified(), expected)
+    def test_ethernet_dissector_spec(self) -> None:
+        generator = generate_dissector([ETHERNET_PDU])
+        self.assert_specification(generator)
 
-    def test_transformed_simplified_1(self):
-        expression = And(And(GreaterEqual(Length('Payload'), Value('46')),
-                             LessEqual(Length('Payload'), Value('1500'))),
-                         Or(LessEqual(Field('EtherType'), Value('1500')),
-                            GreaterEqual(Field('EtherType'), Value('1536'))))
-        expected = TrueExpr()
-        self.assertEqual(expression.transformed('EtherType', ['Source'], 0).simplified(), expected)
+    def test_ethernet_dissector_def(self) -> None:
+        generator = generate_dissector([ETHERNET_PDU])
+        self.assert_definition(generator)
 
-    def test_transformed_simplified_2(self):
-        expression = And(And(GreaterEqual(Length('Payload'), Value('46')),
-                             LessEqual(Length('Payload'), Value('1500'))),
-                         Or(LessEqual(Field('EtherType'), Value('1500')),
-                            GreaterEqual(Field('EtherType'), Value('1536'))))
-        expected = Or(LessEqual(Field('EtherType'), Value('1500')),
-                      GreaterEqual(Field('EtherType'), Value('1536')))
-        self.assertEqual(expression.transformed('EtherType',
-                                                ['Source', 'EtherType'],
-                                                0).simplified(),
-                         expected)
 
-    def test_transformed_simplified_3(self):
-        expression = And(And(GreaterEqual(Length('Payload'), Value('46')),
-                             LessEqual(Length('Payload'), Value('1500'))),
-                         Or(LessEqual(Field('EtherType'), Value('1500')),
-                            GreaterEqual(Field('EtherType'), Value('1536'))))
-        expected = And(And(GreaterEqual(Length('Buffer'), Value('60')),
-                           LessEqual(Length('Buffer'), Value('1514'))),
-                       Or(LessEqual(Field('EtherType'), Value('1500')),
-                          GreaterEqual(Field('EtherType'), Value('1536'))))
-        self.assertEqual(expression.transformed('Payload',
-                                                ['Source', 'EtherType'],
-                                                14).simplified(),
-                         expected)
-
-    def test_ethernet(self):
-        self.assert_code('ethernet')
+def generate_dissector(pdus: List[PDU]) -> Generator:
+    generator = Generator()
+    generator.generate_dissector(pdus)
+    return generator
 
 
 if __name__ == "__main__":

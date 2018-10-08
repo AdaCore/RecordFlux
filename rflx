@@ -10,7 +10,7 @@ from generator import Generator
 from parser import Parser, ParserError
 
 
-def main():
+def main() -> None:
     arg_parser = argparse.ArgumentParser(description='RecordFlux')
     arg_parser.add_argument('-g', '--generate', action='store_true', help='generate dissector code')
     arg_parser.add_argument('files', metavar='FILE', type=str, nargs='+')
@@ -33,7 +33,7 @@ def main():
         generator = Generator()
         try:
             print('Generating... ', end='')
-            generator.generate(parser.specifications())
+            generator.generate_dissector(parser.pdus().values())
             print('OK')
         except AssertionError as e:
             print('Generation error: {}'.format(e))
