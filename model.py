@@ -587,11 +587,31 @@ class Edge:
             self.target, self.condition, self.length, self.first).replace('\t', '\t  ')
 
 
+class Variant:
+    def __init__(self, previous: List[Tuple[str, str]], condition: LogExpr,
+                 facts: Dict[Attribute, MathExpr]) -> None:
+        self.previous = previous
+        self.condition = condition
+        self.facts = facts
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return 'Variant(\n\t\'{}\',\n\t{},\n\t{}\n)'.format(
+            pformat(self.previous, indent=2),
+            pformat(self.condition, indent=2),
+            pformat(self.facts, indent=2))
+
+
 class Field:
-    def __init__(self, name: str, data_type: Type,
-                 variants: List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]) -> None:
+    def __init__(self, name: str, data_type: Type, condition: LogExpr,
+                 variants: Dict[str, Variant]) -> None:
         self.name = name
         self.type = data_type
+        self.condition = condition
         self.variants = variants
 
     def __eq__(self, other: object) -> bool:
@@ -622,15 +642,21 @@ class PDU:
                first: MathExpr = UNDEFINED) -> List[Field]:
         if facts is None:
             facts = {}
-        return evaluate(facts, TRUE, Edge(self.initial_node, TRUE, first=first))
+        return evaluate(facts, Edge(self.initial_node, TRUE, first=first))
 
 
 class ModelError(Exception):
     pass
 
 
-def evaluate(facts: Dict[Attribute, MathExpr], all_cond: LogExpr, in_edge: Edge,
-             visited: List[Edge] = None) -> List[Field]:
+def evaluate(facts: Dict[Attribute, MathExpr],
+             in_edge: Edge,
+             visited: List[Edge] = None,
+             previous: List[Tuple[str, str]] = None,
+             variant_id: str = '0') -> List[Field]:
+    if not previous:
+        previous = []
+
     node = in_edge.target
 
     if in_edge.length is UNDEFINED:
@@ -642,12 +668,18 @@ def evaluate(facts: Dict[Attribute, MathExpr], all_cond: LogExpr, in_edge: Edge,
 
     fields = [Field(node.name,
                     node.type,
-                    [(combine_conditions(all_cond,
-                                         in_edge.condition,
-                                         [e.condition for e in node.edges]).simplified(),
-                      facts)])]
+                    combine_conditions(TRUE,
+                                       TRUE,
+                                       [e.condition for e in node.edges]).simplified(),
+                    {
+                        variant_id: Variant(previous,
+                                            in_edge.condition,
+                                            facts)
+                    }
+                    )
+              ]
 
-    for out_edge in node.edges:
+    for i, out_edge in enumerate(node.edges):
         if out_edge.target is FINAL:
             continue
 
@@ -659,9 +691,10 @@ def evaluate(facts: Dict[Attribute, MathExpr], all_cond: LogExpr, in_edge: Edge,
 
         extend_fields(fields,
                       evaluate(facts,
-                               combine_conditions(all_cond, in_edge.condition, []),
                                edge,
-                               visited))
+                               visited,
+                               previous + [(node.name, variant_id)],
+                               '{}_{}'.format(variant_id, str(i))))
 
     return fields
 
@@ -699,7 +732,7 @@ def extend_fields(fields: List[Field], new_fields: List[Field]) -> None:
                 if field.type != new_field.type:
                     raise ModelError('duplicate node {} with different types ({} != {})'.format(
                         field.name, field.type.name, new_field.type.name))
-                field.variants += new_field.variants
+                field.variants.update(new_field.variants)
                 found = True
         if not found:
             fields.append(new_field)
