@@ -82,6 +82,54 @@ class TestModel(unittest.TestCase):
     def test_number_div(self) -> None:
         self.assertEqual(Number(4) // Number(2), Number(2))
 
+    def test_number_lt(self) -> None:
+        self.assertEqual(Number(1) < Number(2),
+                         True)
+        self.assertEqual(Number(2) < Number(2),
+                         False)
+        self.assertEqual(Number(3) < Number(2),
+                         False)
+        self.assertEqual(Value('X') < Number(2),
+                         False)
+        self.assertEqual(Number(2) < Value('X'),
+                         False)
+
+    def test_number_le(self) -> None:
+        self.assertEqual(Number(1) <= Number(2),
+                         True)
+        self.assertEqual(Number(2) <= Number(2),
+                         True)
+        self.assertEqual(Number(3) <= Number(2),
+                         False)
+        self.assertEqual(Value('X') <= Number(2),
+                         False)
+        self.assertEqual(Number(2) <= Value('X'),
+                         False)
+
+    def test_number_gt(self) -> None:
+        self.assertEqual(Number(1) > Number(2),
+                         False)
+        self.assertEqual(Number(2) > Number(2),
+                         False)
+        self.assertEqual(Number(3) > Number(2),
+                         True)
+        self.assertEqual(Value('X') > Number(2),
+                         False)
+        self.assertEqual(Number(2) > Value('X'),
+                         False)
+
+    def test_number_ge(self) -> None:
+        self.assertEqual(Number(1) >= Number(2),
+                         False)
+        self.assertEqual(Number(2) >= Number(2),
+                         True)
+        self.assertEqual(Number(3) >= Number(2),
+                         True)
+        self.assertEqual(Value('X') >= Number(2),
+                         False)
+        self.assertEqual(Number(2) >= Value('X'),
+                         False)
+
     def test_add_neg(self) -> None:
         self.assertEqual(-Add(Value('X'), Number(1)),
                          Add(Value('X', True), Number(-1)))
@@ -99,6 +147,62 @@ class TestModel(unittest.TestCase):
     def test_add_to_bytes(self) -> None:
         self.assertEqual(Add(Value('X'), Number(8)).to_bytes(),
                          Add(Value('X'), Number(1)))
+
+    def test_add_lt(self) -> None:
+        self.assertEqual(Add(Value('X'), Number(1)) < Add(Value('X'), Number(2)),
+                         True)
+        self.assertEqual(Add(Value('X'), Number(2)) < Add(Value('X'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(3)) < Add(Value('X'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(1)) < Add(Value('Y'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) < Add(Value('Y'), Number(1)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) < Add(Value('Y'), Value('Z'), Number(1)),
+                         False)
+
+    def test_add_le(self) -> None:
+        self.assertEqual(Add(Value('X'), Number(1)) <= Add(Value('X'), Number(2)),
+                         True)
+        self.assertEqual(Add(Value('X'), Number(2)) <= Add(Value('X'), Number(2)),
+                         True)
+        self.assertEqual(Add(Value('X'), Number(3)) <= Add(Value('X'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(1)) <= Add(Value('Y'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) <= Add(Value('Y'), Number(1)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) <= Add(Value('Y'), Value('Z'), Number(1)),
+                         False)
+
+    def test_add_gt(self) -> None:
+        self.assertEqual(Add(Value('X'), Number(1)) > Add(Value('X'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) > Add(Value('X'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(3)) > Add(Value('X'), Number(2)),
+                         True)
+        self.assertEqual(Add(Value('X'), Number(1)) > Add(Value('Y'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) > Add(Value('Y'), Number(1)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) > Add(Value('Y'), Value('Z'), Number(1)),
+                         False)
+
+    def test_add_ge(self) -> None:
+        self.assertEqual(Add(Value('X'), Number(1)) >= Add(Value('X'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) >= Add(Value('X'), Number(2)),
+                         True)
+        self.assertEqual(Add(Value('X'), Number(3)) >= Add(Value('X'), Number(2)),
+                         True)
+        self.assertEqual(Add(Value('X'), Number(1)) >= Add(Value('Y'), Number(2)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) >= Add(Value('Y'), Number(1)),
+                         False)
+        self.assertEqual(Add(Value('X'), Number(2)) >= Add(Value('Y'), Value('Z'), Number(1)),
+                         False)
 
     def test_mul_neg(self) -> None:
         self.assertEqual(-Mul(Value('X'), Number(2)),

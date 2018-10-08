@@ -73,6 +73,26 @@ class Or(BinLogExpr):
 
 
 class MathExpr(Expr):
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, MathExpr):
+            return False
+        return NotImplemented
+
+    def __le__(self, other: object) -> bool:
+        if isinstance(other, MathExpr):
+            return self == other
+        return NotImplemented
+
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, MathExpr):
+            return False
+        return NotImplemented
+
+    def __ge__(self, other: object) -> bool:
+        if isinstance(other, MathExpr):
+            return self == other
+        return NotImplemented
+
     @abstractmethod
     def __neg__(self) -> 'MathExpr':
         raise NotImplementedError
@@ -117,7 +137,12 @@ class Number(MathExpr):
         return 'Number({})'.format(self.value)
 
     def __str__(self) -> str:
-        return self.__repr__()
+        if self.value < 0:
+            return '({})'.format(self.value)
+        return str(self.value)
+
+    def __int__(self) -> int:
+        return self.value
 
     def __neg__(self) -> 'Number':
         return Number(-self.value)
@@ -144,6 +169,34 @@ class Number(MathExpr):
             return Div(Number(self.value), Number(other.value))
         return NotImplemented
 
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, Number):
+            return self.value < other.value
+        if isinstance(other, MathExpr):
+            return False
+        return NotImplemented
+
+    def __le__(self, other: object) -> bool:
+        if isinstance(other, Number):
+            return self.value <= other.value
+        if isinstance(other, MathExpr):
+            return False
+        return NotImplemented
+
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, Number):
+            return self.value > other.value
+        if isinstance(other, MathExpr):
+            return False
+        return NotImplemented
+
+    def __ge__(self, other: object) -> bool:
+        if isinstance(other, Number):
+            return self.value >= other.value
+        if isinstance(other, MathExpr):
+            return False
+        return NotImplemented
+
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         return self
 
@@ -166,6 +219,38 @@ class AssMathExpr(MathExpr):
     @abstractmethod
     def __neg__(self) -> MathExpr:
         raise NotImplementedError
+
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, AssMathExpr):
+            if len(self.terms) == len(other.terms):
+                lt = [x < y for x, y in zip(self.terms, other.terms)]
+                eq = [x == y for x, y in zip(self.terms, other.terms)]
+                return any(lt) and all(map((lambda x: x[0] or x[1]), zip(lt, eq)))
+            return False
+        return NotImplemented
+
+    def __le__(self, other: object) -> bool:
+        if isinstance(other, AssMathExpr):
+            if len(self.terms) == len(other.terms):
+                return all([x <= y for x, y in zip(self.terms, other.terms)])
+            return False
+        return NotImplemented
+
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, AssMathExpr):
+            if len(self.terms) == len(other.terms):
+                gt = [x > y for x, y in zip(self.terms, other.terms)]
+                eq = [x == y for x, y in zip(self.terms, other.terms)]
+                return any(gt) and all(map((lambda x: x[0] or x[1]), zip(gt, eq)))
+            return False
+        return NotImplemented
+
+    def __ge__(self, other: object) -> bool:
+        if isinstance(other, AssMathExpr):
+            if len(self.terms) == len(other.terms):
+                return all([x >= y for x, y in zip(self.terms, other.terms)])
+            return False
+        return NotImplemented
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         terms: List[MathExpr] = []
@@ -320,10 +405,10 @@ class Attribute(MathExpr):
         self.negative = negative
 
     def __repr__(self) -> str:
-        return '{}{}\'{}'.format('-' if self.negative else '', self.name, self.__class__.__name__)
-
-    def __str__(self) -> str:
-        return self.__repr__()
+        result = '{}\'{}'.format(self.name, self.__class__.__name__)
+        if self.negative:
+            return '(-{})'.format(result)
+        return result
 
     def __hash__(self) -> int:
         return hash(self.name + self.__class__.__name__)
@@ -342,7 +427,9 @@ class Attribute(MathExpr):
 
 class Value(Attribute):
     def __str__(self) -> str:
-        return '{}{}'.format('-' if self.negative else '', self.name)
+        if self.negative:
+            return '(-{})'.format(self.name)
+        return self.name
 
 
 class Length(Attribute):
