@@ -1,21 +1,29 @@
 package Ethernet is
 
-   type U16 is mod 2**16;
-   type U48 is mod 2**48;
+   type UINT16 is range 0 .. 65535 with Size => 16;
+   type UINT48 is mod 281474976710656;
 
-   type PDU is abstract
+   type PDU is
       record
-         Destination : U48;
-         Source : U48;
-         EtherType : U16;
-         Payload : Payload_Type;
-      end record
-         with Type_Invariant => Payload'Length >= 46 and Payload'Length <= 1500;
-
-   type IEEE_802_3 is new PDU
-      with Type_Invariant => EtherType <= 1500 and Payload'Length = EtherType;
-
-   type Version_2 is new PDU
-      with Type_Invariant => EtherType >= 1536;
+         Destination : UINT48;
+         Source : UINT48;
+         TPID : UINT16
+            then TCI
+               if TPID = 16#8100#,
+            then EtherType
+               with First = TPID'First
+               if TPID /= 16#8100#;
+         TCI : UINT16;
+         EtherType : UINT16
+            then Payload
+               with Length = EtherType * 8
+               if EtherType <= 1500,
+            then Payload
+               with Length = Buffer'Last - EtherType'Last
+               if EtherType >= 1536;
+         Payload : Payload_Array
+            then null
+               if Payload'Length >= 46 and Payload'Length <= 1500;
+      end record;
 
 end Ethernet;

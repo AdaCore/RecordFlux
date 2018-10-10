@@ -2,7 +2,7 @@ package Test is
 
    type Date is
       record
-         Day : Integer range 1 .. 31;
+         Day : Integer;
          Month : Month_Name;
          Year : Natural;
       end record

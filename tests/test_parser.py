@@ -1,165 +1,196 @@
 import unittest
+from typing import Dict, List
 
-from parser import (And, Aspect, Attribute, Component, Context, Derived, Enumeration, Equal,
-                    Greater, GreaterEqual, Less, LessEqual, Modular, Name, NotEqual, Package,
-                    Parser, ParserError, Or, Range, Record, Specification, Type, Value)
+from parser import (And, Component, Context, Enumeration, Equal, First, GreaterEqual, Last, Length,
+                    LessEqual, ModularInteger, Mul, Number, NotEqual, Package, Parser, ParserError,
+                    PDU, RangeInteger, Record, Specification, Sub, Then, Value)
+
+from tests.models import ETHERNET_PDU
 
 
 class TestParser(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.testdir = "tests"
         self.maxDiff = None  # pylint: disable=invalid-name
 
-    def fullpath(self, testfile):
+    def fullpath(self, testfile: str) -> str:
         return self.testdir + "/" + testfile
 
-    def assert_data(self, filenames, data):
+    def assert_specifications(self, filenames: List[str],
+                              specifications: Dict[str, Specification]) -> None:
         parser = Parser()
         for filename in filenames:
             parser.parse(self.fullpath(filename))
-        self.assertEqual(parser.specifications(), data, filenames)
+        self.assertEqual(parser.specifications(), specifications, filenames)
 
-    def assert_parser_error(self, filenames):
+    def assert_pdus(self, filenames: List[str], pdus: Dict[str, PDU]) -> None:
+        parser = Parser()
+        for filename in filenames:
+            parser.parse(self.fullpath(filename))
+        self.assertEqual(parser.pdus(), pdus, filenames)
+
+    def assert_parser_error(self, filenames: List[str]) -> None:
         with self.assertRaises(ParserError):
             parser = Parser()
             for filename in filenames:
                 parser.parse(self.fullpath(filename))
 
-    def test_empty_file(self):
-        self.assert_data(['empty_file.rflx'], {})
+    def test_empty_file_spec(self) -> None:
+        self.assert_specifications(['empty_file.rflx'], {})
 
-    def test_comment_only(self):
-        self.assert_data(['comment_only.rflx'], {})
+    def test_empty_file_pdu(self) -> None:
+        self.assert_pdus(['empty_file.rflx'], {})
 
-    def test_package(self):
-        self.assert_data(['package.rflx'], {'Test': Specification(Context([]),
-                                                                  Package('Test', []))})
+    def test_comment_only_spec(self) -> None:
+        self.assert_specifications(['comment_only.rflx'], {})
 
-    def test_context(self):
-        self.assert_data(['context.rflx'], {'Test': Specification(Context(['Foo', 'Bar']),
-                                                                  Package('Test', []))})
+    def test_comment_only_pdu(self) -> None:
+        self.assert_pdus(['comment_only.rflx'], {})
 
-    def test_duplicate_package(self):
+    def test_package_spec(self) -> None:
+        self.assert_specifications(['package.rflx'], {'Test': Specification(Context([]),
+                                                                            Package('Test', []))})
+
+    def test_package_pdu(self) -> None:
+        self.assert_pdus(['package.rflx'], {})
+
+    def test_context_spec(self) -> None:
+        self.assert_specifications(['context.rflx'], {'Test': Specification(Context(['Foo', 'Bar']),
+                                                                            Package('Test', []))})
+
+    def test_context_pdu(self) -> None:
+        self.assert_pdus(['context.rflx'], {})
+
+    def test_duplicate_package(self) -> None:
         self.assert_parser_error(["package.rflx", "package.rflx"])
 
-    def test_derived_type(self):
+    # def test_derived_type(self) -> None:
+    #     spec = {'Test': Specification(
+    #         Context([]),
+    #         Package('Test',
+    #                 [Type('Counter',
+    #                       Derived(Name('Positive'))),
+    #                  Type('PDU_X',
+    #                       Derived(Name('PDU'), {'Payload_Type': 'X'}))]))}
+    #     self.assert_specifications(['derived_type.rflx'], spec)
+
+    def test_integer_type_spec(self) -> None:
         spec = {'Test': Specification(
             Context([]),
             Package('Test',
-                    [Type('Counter',
-                          Derived(Name('Positive'))),
-                     Type('PDU_X',
-                          Derived(Name('PDU'), {'Payload_Type': 'X'}))]))}
-        self.assert_data(['derived_type.rflx'], spec)
+                    [RangeInteger('Page_Num', 1, 2000, 16),
+                     RangeInteger('Line_Size', 0, 255, 8),
+                     ModularInteger('Byte', 256),
+                     ModularInteger('Hash_Index', 64)]))}
+        self.assert_specifications(['integer_type.rflx'], spec)
 
-    def test_integer_type(self):
+    def test_enumeration_type_spec(self) -> None:
         spec = {'Test': Specification(
             Context([]),
             Package('Test',
-                    [Type('Page_Num', Range(Value('1'), Value('2000'), Value('16'))),
-                     Type('Line_Size', Range(Value('0'), Value('255'), Value('8'))),
-                     Type('Byte', Modular(Value('2**8'))),
-                     Type('Hash_Index', Modular(Value('97')))]))}
-        self.assert_data(['integer_type.rflx'], spec)
+                    [Enumeration('Day',
+                                 ['Mon',
+                                  'Tue',
+                                  'Wed',
+                                  'Thu',
+                                  'Fri',
+                                  'Sat',
+                                  'Sun']),
+                     Enumeration('Gender',
+                                 ['M',
+                                  'F'])]))}
+        self.assert_specifications(['enumeration_type.rflx'], spec)
 
-    def test_enumeration_type(self):
+    def test_record_type_spec(self) -> None:
         spec = {'Test': Specification(
             Context([]),
             Package('Test',
-                    [Type('Day',
-                          Enumeration([Name('Mon'),
-                                       Name('Tue'),
-                                       Name('Wed'),
-                                       Name('Thu'),
-                                       Name('Fri'),
-                                       Name('Sat'),
-                                       Name('Sun')])),
-                     Type('Gender',
-                          Enumeration([Name('M'),
-                                       Name('F')]))]))}
-        self.assert_data(['enumeration_type.rflx'], spec)
+                    [Record('Date',
+                            [Component('Day', 'Integer'),
+                             Component('Month', 'Month_Name'),
+                             Component('Year', 'Natural')]),
+                     Record('PDU',
+                            [Component('Foo', 'T', [
+                                Then('Bar',
+                                     And(Equal(Value('First'), Number(1)),
+                                         Equal(Value('Length'), Number(1))),
+                                     And(Equal(Length('Foo'),
+                                         Number(1)),
+                                         LessEqual(Value('Foo'),
+                                                   Number(30)))),
+                                Then('Baz')]),
+                             Component('Bar', 'T'),
+                             Component('Baz', 'T')])]))}
+        self.assert_specifications(['record_type.rflx'], spec)
 
-    # def test_array_type(self):
-    #     self.assert_data(['array_type.rflx'], [])
+    # def test_aspect(self) -> None:
+    #     spec = {'Test': Specification(
+    #         Context([]),
+    #         Package('Test',
+    #                 [Record('Date',
+    #                         [Component('Day', 'Integer'),
+    #                          Component('Month', 'Month_Name'),
+    #                          Component('Year', 'Natural')],
+    #                          [Aspect('Type_Invariant',
+    #                                  GreaterEqual(Length('Month'), Number(3)))]),
+    #                  Type('Short_Date',
+    #                       Derived('Date'),
+    #                       [Aspect('Type_Invariant',
+    #                               LessEqual(Length('Month'), Number(3)))]),
+    #                  Type('PDU_X',
+    #                       Derived('PDU', {'Payload_Type': 'X'}),
+    #                       [Aspect('Type_Invariant',
+    #                               And(And(Equal(Value('X_Type'), Number(42)),
+    #                                       Or(Greater(Value('Foo'), Number(1)),
+    #                                          Less(Value('Bar'), Number(2)))),
+    #                                   NotEqual(Value('Baz'), Value('Foo'))))])]))}
+    #     self.assert_specifications(['aspect.rflx'], spec)
 
-    def test_record_type(self):
-        spec = {'Test': Specification(
-            Context([]),
-            Package('Test',
-                    [Type('Date',
-                          Record([Component('Day', Name('Integer')),
-                                  Component('Month', Name('Month_Name')),
-                                  Component('Year', Name('Natural'))])),
-                     Type('PDU',
-                          Record([Component('Destination', Name('U48')),
-                                  Component('Source', Name('U48')),
-                                  Component('EtherType', Name('U16')),
-                                  Component('Payload', Name('Payload_Type'))],
-                                 True))]))}
-        self.assert_data(['record_type.rflx'], spec)
-
-    # def test_record_type_with_slice(self):
-    #     self.assert_data(['record_type_with_slice.rflx'], [])
-
-    # def test_record_type_with_variant(self):
-    #     self.assert_data(['record_type_with_variant.rflx'], [])
-
-    def test_aspect(self):
-        spec = {'Test': Specification(
-            Context([]),
-            Package('Test',
-                    [Type('Date',
-                          Record([Component('Day', Name('Integer')),
-                                  Component('Month', Name('Month_Name')),
-                                  Component('Year', Name('Natural'))]),
-                          [Aspect('Type_Invariant',
-                                  GreaterEqual(Attribute('Month', 'Length'), Value('3')))]),
-                     Type('Short_Date',
-                          Derived(Name('Date')),
-                          [Aspect('Type_Invariant',
-                                  LessEqual(Attribute('Month', 'Length'), Value('3')))]),
-                     Type('PDU_X',
-                          Derived(Name('PDU'), {'Payload_Type': 'X'}),
-                          [Aspect('Type_Invariant',
-                                  And(And(Equal(Name('X_Type'), Value('42')),
-                                          Or(Greater(Name('Foo'), Value('1')),
-                                             Less(Name('Bar'), Value('2')))),
-                                      NotEqual(Name('Baz'), Name('Foo'))))])]))}
-        self.assert_data(['aspect.rflx'], spec)
-
-    def test_ethernet(self):
+    def test_ethernet_spec(self) -> None:
         spec = {'Ethernet': Specification(
             Context([]),
             Package('Ethernet',
-                    [Type('U16',
-                          Modular(Value('2**16'))),
-                     Type('U48',
-                          Modular(Value('2**48'))),
-                     Type('PDU',
-                          Record([Component('Destination', Name('U48')),
-                                  Component('Source', Name('U48')),
-                                  Component('EtherType', Name('U16')),
-                                  Component('Payload', Name('Payload_Type'))],
-                                 True),
-                          [Aspect('Type_Invariant',
-                                  And(GreaterEqual(Attribute('Payload', 'Length'),
-                                                   Value('46')),
-                                      LessEqual(Attribute('Payload', 'Length'),
-                                                Value('1500'))))]),
-                     Type('IEEE_802_3',
-                          Derived(Name('PDU')),
-                          [Aspect('Type_Invariant',
-                                  And(LessEqual(Name('EtherType'), Value('1500')),
-                                      Equal(Attribute('Payload', 'Length'),
-                                            Name('EtherType'))))]),
-                     Type('Version_2',
-                          Derived(Name('PDU')),
-                          [Aspect('Type_Invariant',
-                                  GreaterEqual(Name('EtherType'), Value('1536')))])]))}
-        self.assert_data(['ethernet.rflx'], spec)
+                    [RangeInteger('UINT16', 0, 65535, 16),
+                     ModularInteger('UINT48', 281474976710656),
+                     Record('PDU',
+                            [Component('Destination', 'UINT48'),
+                             Component('Source', 'UINT48'),
+                             Component('TPID', 'UINT16', [
+                                 Then('TCI',
+                                      None,
+                                      Equal(Value('TPID'),
+                                            Number(33024))),
+                                 Then('EtherType',
+                                      Equal(Value('First'),
+                                            First('TPID')),
+                                      NotEqual(Value('TPID'),
+                                               Number(33024)))]),
+                             Component('TCI', 'UINT16'),
+                             Component('EtherType', 'UINT16', [
+                                 Then('Payload',
+                                      Equal(Value('Length'),
+                                            Mul(Value('EtherType'),
+                                                Number(8))),
+                                      LessEqual(Value('EtherType'),
+                                                Number(1500))),
+                                 Then('Payload',
+                                      Equal(Value('Length'),
+                                            Sub(Last('Buffer'),
+                                                Last('EtherType'))),
+                                      GreaterEqual(Value('EtherType'),
+                                                   Number(1536)))]),
+                             Component('Payload', 'Payload_Array', [
+                                 Then('null',
+                                      None,
+                                      And(GreaterEqual(Length('Payload'),
+                                                       Number(46)),
+                                          LessEqual(Length('Payload'),
+                                                    Number(1500))))])])]))}
 
-    # def test_mqtt(self):
-    #     self.assert_data(['mqtt.rflx'], [])
+        self.assert_specifications(['ethernet.rflx'], spec)
+
+    def test_ethernet_pdu(self) -> None:
+        self.assert_pdus(['ethernet.rflx'], {'Ethernet': ETHERNET_PDU})
 
 
 if __name__ == "__main__":
