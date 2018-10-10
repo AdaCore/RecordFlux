@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# pylint: disable=line-too-long
-
 from pyparsing import (alphanums, infixNotation, nums, opAssoc, Forward, Group, Keyword, Literal,
                        OneOrMore, Optional, QuotedString, Regex, StringEnd, Suppress, Word, WordEnd, WordStart,
                        ZeroOrMore)

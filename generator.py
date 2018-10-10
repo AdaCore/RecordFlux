@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Dict, List, Tuple

@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import unittest
 from typing import List
 
@@ -44,7 +41,3 @@ def generate_dissector(pdus: List[PDU]) -> Generator:
     generator = Generator()
     generator.generate_dissector(pdus)
     return generator
-
-
-if __name__ == "__main__":
-    unittest.main()

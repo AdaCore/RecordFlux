@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import unittest
 from typing import List
 
@@ -608,7 +605,3 @@ class TestModel(unittest.TestCase):
         ]
 
         self.assertEqual(ETHERNET_PDU.fields(), expected)
-
-
-if __name__ == "__main__":
-    unittest.main()
