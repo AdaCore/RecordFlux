@@ -105,17 +105,22 @@ class Parser:
 
         # Generic
         comma = Suppress(Literal(','))
+        comma.setName('","')
         semicolon = Suppress(Literal(';'))
+        semicolon.setName('";"')
 
         # Comments
         comment = Regex(r'--.*')
 
         # Names
         identifier = WordStart(alphanums) + Word(alphanums + '_') + WordEnd(alphanums + '_')
+        identifier.setName('Identifier')
         attribute_designator = Keyword('First') | Keyword('Last') | Keyword('Length')
         attribute_reference = identifier + Literal('\'') - attribute_designator
         attribute_reference.setParseAction(parse_attribute)
+        attribute_reference.setName('Attribute')
         name = attribute_reference | identifier
+        name.setName('Name')
 
         # Literals
         numeral = Word(nums) + ZeroOrMore(Optional(Word('_')) + Word(nums))
@@ -126,6 +131,7 @@ class Parser:
         based_literal.setParseAction(lambda t: int(t[2].replace('_', ''), int(t[0])))
         numeric_literal = based_literal | numeral
         numeric_literal.setParseAction(lambda t: Number(t[0]))
+        numeric_literal.setName('Number')
         literal = numeric_literal
 
         # Operators
@@ -138,11 +144,13 @@ class Parser:
         mathematical_expression = Forward()
         relation = mathematical_expression + relational_operator - mathematical_expression
         relation.setParseAction(parse_relation)
+        relation.setName('Relation')
         logical_expression = infixNotation(relation,
                                            [(logical_operator,
                                              2,
                                              opAssoc.LEFT,
                                              parse_logical_expression)])
+        logical_expression.setName('LogicalExpression')
         term = Keyword('null') | literal | name
         term.setParseAction(parse_term)
         mathematical_expression << infixNotation(term,
@@ -150,6 +158,7 @@ class Parser:
                                                    2,
                                                    opAssoc.LEFT,
                                                    parse_mathematical_expression)])
+        mathematical_expression.setName('MathematicalExpression')
 
         # Subtypes
         range_constraint = Forward()
@@ -168,6 +177,7 @@ class Parser:
         derived_type_definition = (Suppress(Keyword('new')) - subtype_indication
                                    - Optional(type_refinement_part))
         derived_type_definition.setParseAction(lambda t: Derived(*t.asList()))
+        derived_type_definition.setName('DerivedType')
 
         # Integer Types
         range_type_definition = (Suppress(Keyword('range')) - numeric_literal
@@ -175,8 +185,10 @@ class Parser:
                                  - Suppress(Keyword('with Size =>')) - numeric_literal)
         range_type_definition.setParseAction(lambda t:
                                              RangeInteger('', int(t[0]), int(t[1]), int(t[2])))
+        range_type_definition.setName('RangeInteger')
         modular_type_definition = Suppress(Keyword('mod')) - numeric_literal
         modular_type_definition.setParseAction(lambda t: ModularInteger('', *map(int, t.asList())))
+        modular_type_definition.setName('ModularInteger')
         integer_type_definition = range_type_definition | modular_type_definition
 
         # Enumeration Types
@@ -185,34 +197,35 @@ class Parser:
                                        + ZeroOrMore(comma - enumeration_literal)
                                        + Suppress(Literal(')')))
         enumeration_type_definition.setParseAction(lambda t: Enumeration('', t.asList()))
-
-        # Variant Parts
-        component_list = Forward()
+        enumeration_type_definition.setName('Enumeration')
 
         # Message Type
-        constraint = Keyword('if') - logical_expression
-        constraint.setParseAction(lambda t: ('constraint', t[1]))
+        value_constraint = Keyword('if') - logical_expression
+        value_constraint.setParseAction(lambda t: ('constraint', t[1]))
         location_expression = Keyword('with') - logical_expression
         location_expression.setParseAction(lambda t: ('location', t[1]))
-        then = Keyword('then') - identifier - Optional(location_expression) - Optional(constraint)
+        then = (Keyword('then') - identifier - Optional(location_expression)
+                - Optional(value_constraint))
         then.setParseAction(parse_then)
-        then_list = then + ZeroOrMore(Suppress(comma) - then)
+        then_list = then + ZeroOrMore(comma - then)
         then_list.setParseAction(lambda t: [t.asList()])
-        message_definition = (Optional(Keyword('abstract')) + Keyword('message')
-                              - component_list - Keyword('end message'))
-        message_definition.setParseAction(lambda t:
-                                          Message('', t[1]) if t[0] != 'abstract'
-                                          else Message('', t[2], True))
+        component_list = Forward()
+        message_type_definition = (Optional(Keyword('abstract')) + Keyword('message')
+                                   - component_list - Keyword('end message'))
+        message_type_definition.setParseAction(lambda t:
+                                               Message('', t[1]) if t[0] != 'abstract'
+                                               else Message('', t[2], True))
+        message_type_definition.setName('Message')
         component_declaration = (identifier + Literal(':') - subtype_indication
                                  - Optional(then_list) - semicolon)
         component_item = component_declaration
         component_item.setParseAction(lambda t:
                                       Component(t[0], t[2], t[3]) if len(t) >= 4
                                       else Component(t[0], t[2]))
+        component_item.setName('Component')
         component_list << (Keyword('null') - semicolon | Keyword('invalid')
-                           + semicolon | Group(component_item + ZeroOrMore(component_item)))
+                           - semicolon | Group(component_item - ZeroOrMore(component_item)))
         component_list.setParseAction(lambda t: t.asList())
-        message_type_definition = message_definition
 
         # Aspect Specification
         aspect_definition = logical_expression | identifier
@@ -221,6 +234,7 @@ class Parser:
         aspect_specification = (Suppress(Keyword('with'))
                                 + Group(aspect_mark + Optional(Keyword('=>') - aspect_definition)))
         aspect_specification.setParseAction(lambda t: [Aspect(a[0], a[2]) for a in t])
+        aspect_specification.setName('Aspect')
 
         # Representation Aspects
         discrete_choice = Keyword('others') | subtype_indication
@@ -234,8 +248,8 @@ class Parser:
         aspect_clause = enum_representation_clause
 
         # Types
-        type_definition = (enumeration_type_definition | message_type_definition
-                           | derived_type_definition | integer_type_definition)
+        type_definition = (enumeration_type_definition | integer_type_definition
+                           | message_type_definition | derived_type_definition)
         type_declaration = (Keyword('type') - identifier - Keyword('is') - type_definition
                             - Optional(aspect_specification) - semicolon)
         type_declaration.setParseAction(parse_type)
