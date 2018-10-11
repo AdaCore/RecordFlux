@@ -4,7 +4,7 @@ package Ethernet is
    type UINT48 is mod 281474976710656;
 
    type PDU is
-      record
+      message
          Destination : UINT48;
          Source : UINT48;
          TPID : UINT16
@@ -24,6 +24,6 @@ package Ethernet is
          Payload : Payload_Array
             then null
                if Payload'Length >= 46 and Payload'Length <= 1500;
-      end record;
+      end message;
 
 end Ethernet;

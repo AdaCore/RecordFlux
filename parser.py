@@ -33,14 +33,14 @@ class Derived(Type):
         raise NotImplementedError
 
 
-class Record(Type):
+class Message(Type):
     def __init__(self, name: str, components: List['Component'], abstract: bool = False) -> None:
         super().__init__(name)
         self.components = components
         self.abstract = abstract
 
     def __repr__(self) -> str:
-        return 'Record({}, {}, {})'.format(self.name, self.components, self.abstract)
+        return 'Message({}, {}, {})'.format(self.name, self.components, self.abstract)
 
     def size(self) -> Number:
         raise NotImplementedError
@@ -189,7 +189,7 @@ class Parser:
         # Variant Parts
         component_list = Forward()
 
-        # Record Type
+        # Message Type
         constraint = Keyword('if') - logical_expression
         constraint.setParseAction(lambda t: ('constraint', t[1]))
         location_expression = Keyword('with') - logical_expression
@@ -198,11 +198,11 @@ class Parser:
         then.setParseAction(parse_then)
         then_list = then + ZeroOrMore(Suppress(comma) - then)
         then_list.setParseAction(lambda t: [t.asList()])
-        record_definition = (Optional(Keyword('abstract')) + Keyword('record')
-                             - component_list - Keyword('end record'))
-        record_definition.setParseAction(lambda t:
-                                         Record('', t[1]) if t[0] != 'abstract'
-                                         else Record('', t[2], True))
+        message_definition = (Optional(Keyword('abstract')) + Keyword('message')
+                              - component_list - Keyword('end message'))
+        message_definition.setParseAction(lambda t:
+                                          Message('', t[1]) if t[0] != 'abstract'
+                                          else Message('', t[2], True))
         component_declaration = (identifier + Literal(':') - subtype_indication
                                  - Optional(then_list) - semicolon)
         component_item = component_declaration
@@ -212,7 +212,7 @@ class Parser:
         component_list << (Keyword('null') - semicolon | Keyword('invalid')
                            + semicolon | Group(component_item + ZeroOrMore(component_item)))
         component_list.setParseAction(lambda t: t.asList())
-        record_type_definition = record_definition
+        message_type_definition = message_definition
 
         # Aspect Specification
         aspect_definition = logical_expression | identifier
@@ -234,7 +234,7 @@ class Parser:
         aspect_clause = enum_representation_clause
 
         # Types
-        type_definition = (enumeration_type_definition | record_type_definition
+        type_definition = (enumeration_type_definition | message_type_definition
                            | derived_type_definition | integer_type_definition)
         type_declaration = (Keyword('type') - identifier - Keyword('is') - type_definition
                             - Optional(aspect_specification) - semicolon)
@@ -295,9 +295,9 @@ def convert_to_pdu(spec: Specification) -> Opt[PDU]:
     for t in spec.package.types:
         if isinstance(t, (ModularInteger, RangeInteger)):
             types[t.name] = t
-        elif isinstance(t, Record):
+        elif isinstance(t, Message):
             if t.name != 'PDU':
-                raise ParserError('Expected record name PDU, found {}'.format(t.name))
+                raise ParserError('Expected message name PDU, found {}'.format(t.name))
             create_nodes(nodes, types, t.components)
             create_edges(nodes, t.components)
             pdu = PDU(spec.package.identifier, next(iter(nodes.values()), FINAL))
@@ -442,7 +442,7 @@ def parse_attribute(string: str, location: int, tokens: list) -> Attribute:
 
 
 def parse_type(string: str, location: int, tokens: list) -> Type:
-    if isinstance(tokens[3], (Enumeration, ModularInteger, RangeInteger, Record)):
+    if isinstance(tokens[3], (Enumeration, ModularInteger, RangeInteger, Message)):
         tokens[3].name = tokens[1]
         return tokens[3]
     raise ParseFatalException(string, location, 'Unexpected type')

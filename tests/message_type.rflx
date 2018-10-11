@@ -1,14 +1,14 @@
 package Test is
 
    type Date is
-      record
+      message
          Day : Integer;
          Month : Month_Name;
          Year : Natural;
-      end record;
+      end message;
 
    type PDU is
-      record
+      message
          Foo : T
             then Bar
                with First = 1 and Length = 1
@@ -16,6 +16,6 @@ package Test is
             then Baz;
          Bar : T;
          Baz : T;
-      end record;
+      end message;
 
 end Test;

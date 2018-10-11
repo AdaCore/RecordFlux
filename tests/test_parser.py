@@ -2,8 +2,8 @@ import unittest
 from typing import Dict, List
 
 from parser import (And, Component, Context, Enumeration, Equal, First, GreaterEqual, Last, Length,
-                    LessEqual, ModularInteger, Mul, Number, NotEqual, Package, Parser, ParserError,
-                    PDU, RangeInteger, Record, Specification, Sub, Then, Value)
+                    LessEqual, Message, ModularInteger, Mul, Number, NotEqual, Package, Parser,
+                    ParserError, PDU, RangeInteger, Specification, Sub, Then, Value)
 
 from tests.models import ETHERNET_PDU
 
@@ -101,33 +101,33 @@ class TestParser(unittest.TestCase):
                                   'F'])]))}
         self.assert_specifications(['enumeration_type.rflx'], spec)
 
-    def test_record_type_spec(self) -> None:
+    def test_message_type_spec(self) -> None:
         spec = {'Test': Specification(
             Context([]),
             Package('Test',
-                    [Record('Date',
-                            [Component('Day', 'Integer'),
-                             Component('Month', 'Month_Name'),
-                             Component('Year', 'Natural')]),
-                     Record('PDU',
-                            [Component('Foo', 'T', [
-                                Then('Bar',
-                                     And(Equal(Value('First'), Number(1)),
-                                         Equal(Value('Length'), Number(1))),
-                                     And(Equal(Length('Foo'),
-                                         Number(1)),
-                                         LessEqual(Value('Foo'),
-                                                   Number(30)))),
-                                Then('Baz')]),
-                             Component('Bar', 'T'),
-                             Component('Baz', 'T')])]))}
-        self.assert_specifications(['record_type.rflx'], spec)
+                    [Message('Date',
+                             [Component('Day', 'Integer'),
+                              Component('Month', 'Month_Name'),
+                              Component('Year', 'Natural')]),
+                     Message('PDU',
+                             [Component('Foo', 'T', [
+                                 Then('Bar',
+                                      And(Equal(Value('First'), Number(1)),
+                                          Equal(Value('Length'), Number(1))),
+                                      And(Equal(Length('Foo'),
+                                          Number(1)),
+                                          LessEqual(Value('Foo'),
+                                                    Number(30)))),
+                                 Then('Baz')]),
+                              Component('Bar', 'T'),
+                              Component('Baz', 'T')])]))}
+        self.assert_specifications(['message_type.rflx'], spec)
 
     # def test_aspect(self) -> None:
     #     spec = {'Test': Specification(
     #         Context([]),
     #         Package('Test',
-    #                 [Record('Date',
+    #                 [Message('Date',
     #                         [Component('Day', 'Integer'),
     #                          Component('Month', 'Month_Name'),
     #                          Component('Year', 'Natural')],
@@ -152,40 +152,40 @@ class TestParser(unittest.TestCase):
             Package('Ethernet',
                     [RangeInteger('UINT16', 0, 65535, 16),
                      ModularInteger('UINT48', 281474976710656),
-                     Record('PDU',
-                            [Component('Destination', 'UINT48'),
-                             Component('Source', 'UINT48'),
-                             Component('TPID', 'UINT16', [
-                                 Then('TCI',
-                                      None,
-                                      Equal(Value('TPID'),
-                                            Number(33024))),
-                                 Then('EtherType',
-                                      Equal(Value('First'),
-                                            First('TPID')),
-                                      NotEqual(Value('TPID'),
-                                               Number(33024)))]),
-                             Component('TCI', 'UINT16'),
-                             Component('EtherType', 'UINT16', [
-                                 Then('Payload',
-                                      Equal(Value('Length'),
-                                            Mul(Value('EtherType'),
-                                                Number(8))),
-                                      LessEqual(Value('EtherType'),
-                                                Number(1500))),
-                                 Then('Payload',
-                                      Equal(Value('Length'),
-                                            Sub(Last('Buffer'),
-                                                Last('EtherType'))),
-                                      GreaterEqual(Value('EtherType'),
-                                                   Number(1536)))]),
-                             Component('Payload', 'Payload_Array', [
-                                 Then('null',
-                                      None,
-                                      And(GreaterEqual(Length('Payload'),
-                                                       Number(46)),
-                                          LessEqual(Length('Payload'),
-                                                    Number(1500))))])])]))}
+                     Message('PDU',
+                             [Component('Destination', 'UINT48'),
+                              Component('Source', 'UINT48'),
+                              Component('TPID', 'UINT16', [
+                                  Then('TCI',
+                                       None,
+                                       Equal(Value('TPID'),
+                                             Number(33024))),
+                                  Then('EtherType',
+                                       Equal(Value('First'),
+                                             First('TPID')),
+                                       NotEqual(Value('TPID'),
+                                                Number(33024)))]),
+                              Component('TCI', 'UINT16'),
+                              Component('EtherType', 'UINT16', [
+                                  Then('Payload',
+                                       Equal(Value('Length'),
+                                             Mul(Value('EtherType'),
+                                                 Number(8))),
+                                       LessEqual(Value('EtherType'),
+                                                 Number(1500))),
+                                  Then('Payload',
+                                       Equal(Value('Length'),
+                                             Sub(Last('Buffer'),
+                                                 Last('EtherType'))),
+                                       GreaterEqual(Value('EtherType'),
+                                                    Number(1536)))]),
+                              Component('Payload', 'Payload_Array', [
+                                  Then('null',
+                                       None,
+                                       And(GreaterEqual(Length('Payload'),
+                                                        Number(46)),
+                                           LessEqual(Length('Payload'),
+                                                     Number(1500))))])])]))}
 
         self.assert_specifications(['ethernet.rflx'], spec)
 
