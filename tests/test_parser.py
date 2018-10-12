@@ -105,10 +105,7 @@ class TestParser(unittest.TestCase):
         spec = {'Test': Specification(
             Context([]),
             Package('Test',
-                    [Message('Date',
-                             [Component('Day', 'Integer'),
-                              Component('Month', 'Month_Name'),
-                              Component('Year', 'Natural')]),
+                    [ModularInteger('T', 256),
                      Message('PDU',
                              [Component('Foo', 'T', [
                                  Then('Bar',

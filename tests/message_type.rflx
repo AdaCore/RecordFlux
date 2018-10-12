@@ -1,11 +1,6 @@
 package Test is
 
-   type Date is
-      message
-         Day : Integer;
-         Month : Month_Name;
-         Year : Natural;
-      end message;
+   type T is mod 256;
 
    type PDU is
       message

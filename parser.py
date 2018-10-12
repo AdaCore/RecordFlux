@@ -102,6 +102,7 @@ class Parser:
     def __init__(self, basedir: str = '.') -> None:
         self.__basedir = basedir
         self.__specifications: Dict[str, Specification] = {}
+        self.__pdus: Dict[str, PDU] = {}
 
         # Generic
         comma = Suppress(Literal(','))
@@ -273,16 +274,19 @@ class Parser:
 
         # Grammar
         self.__grammar = specification + StringEnd()
-        self.__grammar.setParseAction(self.__store_specification)
+        self.__grammar.setParseAction(self.__evaluate_specification)
         self.__grammar.ignore(comment)
 
-    def __store_specification(self, tokens: List[Specification]) -> None:
+    def __evaluate_specification(self, tokens: List[Specification]) -> None:
         if len(tokens) == 1:
             specification = tokens[0]
             identifier = specification.package.identifier
             if identifier in self.__specifications:
                 raise ParserError('Duplicate package {}'.format(identifier))
             self.__specifications[identifier] = specification
+            pdu = convert_to_pdu(specification)
+            if pdu:
+                self.__pdus[identifier] = pdu
 
     def parse(self, infile: str) -> None:
         filepath = self.__basedir + "/" + infile
@@ -293,12 +297,7 @@ class Parser:
         return self.__specifications
 
     def pdus(self) -> Dict[str, PDU]:
-        pdus = {}
-        for name, spec in self.__specifications.items():
-            pdu = convert_to_pdu(spec)
-            if pdu:
-                pdus[name] = pdu
-        return pdus
+        return self.__pdus
 
 
 def convert_to_pdu(spec: Specification) -> Opt[PDU]:
