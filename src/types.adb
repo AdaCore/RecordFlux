@@ -1,6 +1,8 @@
 with Ada.Text_IO;
 
-package body Types is
+package body Types
+  with SPARK_Mode => Off
+is
 
    procedure Bytes_Put (Buffer : Bytes)
      with SPARK_Mode => Off
@@ -19,22 +21,52 @@ package body Types is
       Ada.Text_IO.New_Line;
    end Bytes_Put;
 
-   function Convert_To_Mod (Buffer : Bytes) return UXX
+   function Convert_To_Mod (Buffer : Bytes; Offset : Natural := 0) return Int
    is
-      Value : UXX := 0;
+      Current : Byte;
+      Carry : Byte := 0;
+      Next_Carry : Byte;
+      Value : Int := 0;
+      Fraction : Boolean := (Int'Size + Offset) mod 8 /= 0;
    begin
-      for i in Natural range 0 .. (UXX'Size / 8) - 1 loop
-         Value := Value + UXX (Buffer (Buffer'Last - i)) * UXX (256**i);
+      for I in reverse Natural range 0 .. Buffer'Length - 1 loop
+         Current := Buffer (Buffer'First + (Buffer'Length - I - 1));
+         if Fraction and I = Buffer'Length - 1 then
+            Current := Current and (2**((Int'Size + Offset) mod 8) - 1);
+         end if;
+         if Offset > 0 then
+            Next_Carry := Current and (2**Offset - 1);
+            Current := Current / 2**Offset + Carry * 2**(8 - Offset);
+            Carry := Next_Carry;
+         end if;
+         if I < (Int'Size - 1) / 8 + 1 then
+            Value := Value + Int (Current) * Int (256**I);
+         end if;
       end loop;
       return Value;
    end Convert_To_Mod;
 
-   function Convert_To_Int (Buffer : Bytes) return Int
+   function Convert_To_Int (Buffer : Bytes; Offset : Natural := 0) return Int
    is
+      Current : Byte;
+      Carry : Byte := 0;
+      Next_Carry : Byte;
       Value : Int := 0;
+      Fraction : Boolean := (Int'Size + Offset) mod 8 /= 0;
    begin
-      for i in Natural range 0 .. (Int'Size / 8) - 1 loop
-         Value := Value + Int (Buffer (Buffer'Last - i)) * Int (256**i);
+      for I in reverse Natural range 0 .. Buffer'Length - 1 loop
+         Current := Buffer (Buffer'First + (Buffer'Length - I - 1));
+         if Fraction and I = Buffer'Length - 1 then
+            Current := Current and (2**((Int'Size + Offset) mod 8) - 1);
+         end if;
+         if Offset > 0 then
+            Next_Carry := Current and (2**Offset - 1);
+            Current := Current / 2**Offset + Carry * 2**(8 - Offset);
+            Carry := Next_Carry;
+         end if;
+         if I < (Int'Size - 1) / 8 + 1 then
+            Value := Value + Int (Current) * Int (256**I);
+         end if;
       end loop;
       return Value;
    end Convert_To_Int;

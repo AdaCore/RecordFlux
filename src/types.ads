@@ -9,15 +9,15 @@ is
    procedure Bytes_Put (Buffer : Bytes);
 
    generic
-      type UXX is mod <>;
-   function Convert_To_Mod (Buffer : Bytes) return UXX
+      type Int is mod <>;
+   function Convert_To_Mod (Buffer : Bytes; Offset : Natural := 0) return Int
      with
-       Pre => UXX'Size rem 8 = 0 and then Buffer'Length = UXX'Size / 8;
+       Pre => Offset < 8 and then Buffer'Length = ((Int'Size + Offset - 1) / 8) + 1;
 
    generic
       type Int is range <>;
-   function Convert_To_Int (Buffer : Bytes) return Int
+   function Convert_To_Int (Buffer : Bytes; Offset : Natural := 0) return Int
      with
-       Pre => Int'Size rem 8 = 0 and then Buffer'Length = Int'Size / 8;
+       Pre => Offset < 8 and then Buffer'Length = ((Int'Size + Offset - 1) / 8) + 1;
 
 end Types;
