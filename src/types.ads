@@ -1,4 +1,6 @@
-package Types is
+package Types
+  with SPARK_Mode
+is
 
    type Byte is mod 2**8;
    type Bytes is array (Positive range <>) of Byte;
@@ -10,7 +12,7 @@ package Types is
       type UXX is mod <>;
    function Convert_To_Mod (Buffer : Bytes) return UXX
      with
-        Pre => UXX'Size rem 8 = 0 and then Buffer'Length = UXX'Size / 8;
+       Pre => UXX'Size rem 8 = 0 and then Buffer'Length = UXX'Size / 8;
 
    generic
       type Int is range <>;

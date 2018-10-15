@@ -1,8 +1,10 @@
-with Test_Dissector;
+with AUnit.Reporter.Text;
+with AUnit.Run;
+with Test_Suite;
 
 procedure Test is
+   procedure Runner is new AUnit.Run.Test_Runner (Test_Suite.Suite);
+   Reporter : AUnit.Reporter.Text.Text_Reporter;
 begin
-
-   Test_Dissector.Run;
-
+   Runner (Reporter);
 end Test;
