@@ -63,10 +63,6 @@ class TestModel(unittest.TestCase):
         self.assertEqual(Number(47).to_bytes(),
                          Number(5))
 
-    def test_number_to_bytes_invalid(self) -> None:
-        with self.assertRaises(RuntimeError):
-            Number(46).to_bytes()
-
     def test_number_add(self) -> None:
         self.assertEqual(Number(5) + Number(3), Number(8))
 

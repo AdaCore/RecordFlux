@@ -209,8 +209,6 @@ class Number(MathExpr):
         return self
 
     def to_bytes(self) -> MathExpr:
-        if self.value % 8 != 0 and (self.value + 1) % 8 != 0:
-            raise RuntimeError('value should point to first or last bit of byte')
         return Number(self.value // 8)
 
 

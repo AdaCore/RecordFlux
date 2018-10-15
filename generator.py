@@ -361,42 +361,46 @@ class LogCall(Call, LogExpr):
 class Convert(MathExpr):
     # pylint: disable=too-many-arguments
     def __init__(self, type_name: str, array_name: str, first: MathExpr, last: MathExpr,
-                 negative: bool = False) -> None:
+                 offset: int = 0, negative: bool = False) -> None:
         self.type_name = type_name
         self.array_name = array_name
         self.first = first
         self.last = last
+        self.offset = offset
         self.negative = negative
 
-    def __repr__(self) -> str:
-        return '{}{}({}, {}, {})'.format('-' if self.negative else '',
-                                         self.__class__.__name__,
-                                         self.type_name,
-                                         self.first,
-                                         self.last)
-
     def __str__(self) -> str:
-        return '{}Convert_To_{} ({} ({} .. {}))'.format(
+        return '{}Convert_To_{} ({} ({} .. {}){})'.format(
             '-1 * ' if self.negative else '',
             self.type_name,
             self.array_name,
             self.first,
-            self.last)
+            self.last,
+            ', {}'.format(self.offset) if self.offset else '')
 
     def __neg__(self) -> MathExpr:
-        return Convert(self.type_name, self.array_name, self.first, self.last, not self.negative)
+        return Convert(self.type_name,
+                       self.array_name,
+                       self.first,
+                       self.last,
+                       self.offset,
+                       not self.negative)
 
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
         return Convert(self.type_name,
                        self.array_name,
                        self.first.simplified(facts),
-                       self.last.simplified(facts))
+                       self.last.simplified(facts),
+                       self.offset,
+                       self.negative)
 
     def to_bytes(self) -> MathExpr:
         return Convert(self.type_name,
                        self.array_name,
                        self.first.to_bytes(),
-                       self.last.to_bytes())
+                       self.last.to_bytes(),
+                       self.offset,
+                       self.negative)
 
 
 class Cast(MathExpr):
@@ -464,7 +468,7 @@ class Generator:
                 valid_variants: List[LogExpr] = []
 
                 for variant_id, variant in field.variants.items():
-                    facts = convert_facts_to_bytes(variant.facts)
+                    facts = dict(variant.facts)
                     facts.update(create_length_facts(facts))
 
                     package.subprograms.append(
@@ -513,17 +517,23 @@ def unique(input_list: List) -> List:
     return reduce(lambda l, x: l + [x] if x not in l else l, input_list, [])
 
 
+def calculate_offset(last: MathExpr) -> int:
+    last = last.simplified({First('Buffer'): Number(0)})
+    if isinstance(last, Number):
+        return (8 - (last.value + 1) % 8) % 8
+    # TODO: determine offset for complicated cases
+    return 0
+
+
 def length_constraint(last: MathExpr) -> LogExpr:
     return GreaterEqual(Length('Buffer'),
                         Add(last, -First('Buffer'), Number(1)))
 
 
-def convert_facts_to_bytes(facts: Dict[Attribute, MathExpr]) -> Dict[Attribute, MathExpr]:
-    return {attr: expr.to_bytes() for (attr, expr) in facts.items()}
-
-
 def create_length_facts(facts: Dict[Attribute, MathExpr]) -> Dict[Attribute, MathExpr]:
-    return {Length(a.name): Add(facts[Last(a.name)], -facts[First(a.name)], Number(1)).simplified()
+    return {Length(a.name): Add(facts[Last(a.name)].to_bytes(),
+                                -facts[First(a.name)].to_bytes(),
+                                Number(1)).simplified()
             for a in facts if isinstance(a, First)}
 
 
@@ -548,13 +558,15 @@ def create_value_to_natural_call(
 def create_value_to_natural_convert(
         field: Field,
         variant: Variant,
-        field_types: Dict[str, Type]) -> Dict[Attribute, MathExpr]:
+        field_types: Dict[str, Type],
+        facts: Dict[Attribute, MathExpr]) -> Dict[Attribute, MathExpr]:
 
     return {Value(field_name): Cast('Natural',
                                     Convert(field_types[field_name].name,
                                             'Buffer',
-                                            First(field_name),
-                                            Last(field_name)))
+                                            facts[First(field_name)].to_bytes(),
+                                            facts[Last(field_name)].to_bytes(),
+                                            calculate_offset(facts[Last(field_name)])))
             for field_name, _ in [(field.name, '')] + variant.previous}
 
 
@@ -573,7 +585,7 @@ def create_variant_validation_function(
             if variant.previous else TRUE,
             And(
                 length_constraint(
-                    facts[Last(field.name)]).simplified(
+                    facts[Last(field.name)].to_bytes()).simplified(
                         create_value_to_natural_call(
                             field, variant_id, variant)),
                 variant.condition.simplified(
@@ -589,11 +601,10 @@ def create_variant_accessor_functions(
         facts: Dict[Attribute, MathExpr],
         field_types: Dict[str, Type]) -> List[Subprogram]:
 
-    value_to_natural_convert = {attr: expr.simplified(facts)
-                                for (attr, expr) in create_value_to_natural_convert(
-                                    field, variant, field_types).items()}
-    first = facts[First(field.name)].simplified(value_to_natural_convert)
-    last = facts[Last(field.name)].simplified(value_to_natural_convert)
+    value_to_natural_convert = create_value_to_natural_convert(field, variant, field_types, facts)
+    first_byte = facts[First(field.name)].to_bytes().simplified(value_to_natural_convert)
+    last_byte = facts[Last(field.name)].to_bytes().simplified(value_to_natural_convert)
+    offset = calculate_offset(facts[Last(field.name)])
 
     functions: List[Subprogram] = []
     if 'Payload' in field.type.name:
@@ -602,17 +613,17 @@ def create_variant_accessor_functions(
                 '{}_{}_First'.format(field.name, variant_id),
                 [('Buffer', 'Bytes')],
                 'Natural',
-                first,
+                first_byte,
                 And(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
                     LessEqual(First('Buffer'),
-                              Sub(Last('Natural'), first).simplified({First('Buffer'):
-                                                                      Number(0)})))))
+                              Sub(Last('Natural'), first_byte).simplified({First('Buffer'):
+                                                                           Number(0)})))))
         functions.append(
             ExpressionFunction(
                 '{}_{}_Last'.format(field.name, variant_id),
                 [('Buffer', 'Bytes')],
                 'Natural',
-                last,
+                last_byte,
                 LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id))))
     else:
         functions.append(
@@ -623,8 +634,9 @@ def create_variant_accessor_functions(
                 Convert(
                     field.type.name,
                     'Buffer',
-                    first,
-                    last),
+                    first_byte,
+                    last_byte,
+                    offset),
                 LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id))))
     return functions
 
