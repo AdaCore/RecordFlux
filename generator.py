@@ -67,7 +67,7 @@ class Package(SparkRepresentation):
                                    for f in self.subprograms if f.specification()])
         if subprograms:
             subprograms += '\n\n'
-        return 'package {name} is\n\n{types}{subprograms}end {name};'.format(
+        return 'package {name}\n  with SPARK_Mode\nis\n\n{types}{subprograms}end {name};'.format(
             name=self.name,
             types=types,
             subprograms=subprograms)

@@ -1,6 +1,8 @@
 with Types; use Types;
 
-package Ethernet is
+package Ethernet
+  with SPARK_Mode
+is
 
    type UINT48 is mod 281474976710656;
    function Convert_To_UINT48 is new Convert_To_Mod (UINT48);
