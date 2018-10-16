@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from parser import (And, Component, Context, Enumeration, Equal, First, GreaterEqual, Last, Length,
                     LessEqual, Message, ModularInteger, Mul, Number, NotEqual, Package, Parser,
-                    ParserError, PDU, RangeInteger, Specification, Sub, Then, Value)
+                    ParserError, PDU, Pow, RangeInteger, Specification, Sub, Then, Value)
 
 from tests.models import ETHERNET_PDU
 
@@ -78,10 +78,10 @@ class TestParser(unittest.TestCase):
         spec = {'Test': Specification(
             Context([]),
             Package('Test',
-                    [RangeInteger('Page_Num', 1, 2000, 16),
-                     RangeInteger('Line_Size', 0, 255, 8),
-                     ModularInteger('Byte', 256),
-                     ModularInteger('Hash_Index', 64)]))}
+                    [RangeInteger('Page_Num', Number(1), Number(2000), Number(16)),
+                     RangeInteger('Line_Size', Number(0), Number(255), Number(8)),
+                     ModularInteger('Byte', Number(256)),
+                     ModularInteger('Hash_Index', Number(64))]))}
         self.assert_specifications(['integer_type.rflx'], spec)
 
     def test_enumeration_type_spec(self) -> None:
@@ -105,7 +105,7 @@ class TestParser(unittest.TestCase):
         spec = {'Test': Specification(
             Context([]),
             Package('Test',
-                    [ModularInteger('T', 256),
+                    [ModularInteger('T', Number(256)),
                      Message('PDU',
                              [Component('Foo', 'T', [
                                  Then('Bar',
@@ -147,8 +147,11 @@ class TestParser(unittest.TestCase):
         spec = {'Ethernet': Specification(
             Context([]),
             Package('Ethernet',
-                    [RangeInteger('UINT16', 0, 65535, 16),
-                     ModularInteger('UINT48', 281474976710656),
+                    [RangeInteger('UINT16',
+                                  Number(0),
+                                  Sub(Pow(Number(2), Number(16)), Number(1)),
+                                  Number(16)),
+                     ModularInteger('UINT48', Pow(Number(2), Number(48))),
                      Message('PDU',
                              [Component('Destination', 'UINT48'),
                               Component('Source', 'UINT48'),

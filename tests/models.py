@@ -1,10 +1,13 @@
 from model import (And, Array, Edge, Equal, FINAL, First, GreaterEqual, Last, Length, LessEqual,
-                   ModularInteger, Mul, Node, NotEqual, Number, PDU, RangeInteger, Sub, Value)
+                   ModularInteger, Mul, Node, NotEqual, Number, PDU, Pow, RangeInteger, Sub, Value)
 
 
 def create_ethernet_pdu() -> PDU:
-    uint48 = ModularInteger('UINT48', 2**48)
-    uint16 = RangeInteger('UINT16', 0, 2**16 - 1, 16)
+    uint48 = ModularInteger('UINT48', Pow(Number(2), Number(48)))
+    uint16 = RangeInteger('UINT16',
+                          Number(0),
+                          Sub(Pow(Number(2), Number(16)), Number(1)),
+                          Number(16))
     payload_array = Array('Payload_Array')
 
     destination = Node('Destination', uint48)

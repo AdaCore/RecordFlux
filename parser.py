@@ -7,7 +7,8 @@ from pyparsing import (alphanums, infixNotation, nums, opAssoc, ParseFatalExcept
 
 from model import (Add, And, Array, Attribute, Div, Edge, Equal, FINAL, First, Greater,
                    GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModularInteger,
-                   Mul, Number, Node, NotEqual, Or, PDU, RangeInteger, Relation, Sub, Type, Value)
+                   Mul, Number, Node, NotEqual, Or, PDU, Pow, RangeInteger, Relation, Sub, Type,
+                   Value)
 
 
 class SyntaxTree:
@@ -136,7 +137,8 @@ class Parser:
         literal = numeric_literal
 
         # Operators
-        mathematical_operator = Keyword('+') | Keyword('-') | Keyword('*') | Keyword('/')
+        mathematical_operator = (Literal('**') | Literal('+') | Literal('-') | Literal('*')
+                                 | Literal('/'))
         relational_operator = (Keyword('<=') | Keyword('>=') | Keyword('=') | Keyword('/=')
                                | Keyword('<') | Keyword('>'))
         logical_operator = Keyword('and') | Keyword('or')
@@ -181,14 +183,14 @@ class Parser:
         derived_type_definition.setName('DerivedType')
 
         # Integer Types
-        range_type_definition = (Suppress(Keyword('range')) - numeric_literal
-                                 - Suppress(Literal('..')) - numeric_literal
-                                 - Suppress(Keyword('with Size =>')) - numeric_literal)
+        range_type_definition = (Suppress(Keyword('range')) - mathematical_expression
+                                 - Suppress(Literal('..')) - mathematical_expression
+                                 - Suppress(Keyword('with Size =>')) - mathematical_expression)
         range_type_definition.setParseAction(lambda t:
-                                             RangeInteger('', int(t[0]), int(t[1]), int(t[2])))
+                                             RangeInteger('', *t.asList()))
         range_type_definition.setName('RangeInteger')
-        modular_type_definition = Suppress(Keyword('mod')) - numeric_literal
-        modular_type_definition.setParseAction(lambda t: ModularInteger('', *map(int, t.asList())))
+        modular_type_definition = Suppress(Keyword('mod')) - mathematical_expression
+        modular_type_definition.setParseAction(lambda t: ModularInteger('', *t.asList()))
         modular_type_definition.setName('ModularInteger')
         integer_type_definition = range_type_definition | modular_type_definition
 
@@ -423,6 +425,8 @@ def parse_mathematical_expression(string: str, location: int, tokens: list) -> M
             expression = Mul(left, right)
         elif operator == '/':
             expression = Div(left, right)
+        elif operator == '**':
+            expression = Pow(left, right)
         else:
             raise ParseFatalException(string, location, 'Unexpected mathematical operator')
         result.insert(0, expression)

@@ -3,7 +3,7 @@ from typing import List
 
 from model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater, GreaterEqual,
                    Last, Length, Less, LessEqual, ModelError, ModularInteger, Mul, Node, NotEqual,
-                   Number, Or, PDU, RangeInteger, Sub, TRUE, UNDEFINED, Value, Variant)
+                   Number, Or, PDU, Pow, RangeInteger, Sub, TRUE, UNDEFINED, Value, Variant)
 
 from tests.models import ETHERNET_PDU
 
@@ -74,6 +74,9 @@ class TestModel(unittest.TestCase):
 
     def test_number_div(self) -> None:
         self.assertEqual(Number(4) // Number(2), Number(2))
+
+    def test_number_pow(self) -> None:
+        self.assertEqual(Number(2)**Number(4), Number(16))
 
     def test_number_lt(self) -> None:
         self.assertEqual(Number(1) < Number(2),
@@ -331,33 +334,39 @@ class TestModel(unittest.TestCase):
                          NotEqual(Value('X'), Number(42)))
 
     def test_modular_size(self) -> None:
-        self.assertEqual(ModularInteger('UINT64', 2**64).size(), Number(64))
+        self.assertEqual(ModularInteger('UINT64', Pow(Number(2), Number(64))).size,
+                         Number(64))
 
     def test_modular_invalid_modulus(self) -> None:
         with self.assertRaises(ModelError):
-            ModularInteger('X', 255)
+            ModularInteger('X', Number(255))
 
     def test_range_size(self) -> None:
-        self.assertEqual(RangeInteger('UINT32', 0, 2**32 - 1, 32).size(), Number(32))
+        self.assertEqual(RangeInteger('UINT32',
+                                      Number(0),
+                                      Sub(Pow(Number(2), Number(32)), Number(1)),
+                                      Number(32)
+                                      ).size,
+                         Number(32))
 
     def test_range_invalid_first(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', -1, 0, 1)
+            RangeInteger('X', Number(-1), Number(0), Number(1))
 
     def test_range_invalid_range(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', 1, 0, 1)
+            RangeInteger('X', Number(1), Number(0), Number(1))
 
     def test_range_invalid_size(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', 0, 256, 8)
+            RangeInteger('X', Number(0), Number(256), Number(8))
 
     def test_array_invalid_call(self) -> None:
         with self.assertRaises(RuntimeError):
-            Array('X').size()
+            Array('X').size  # pylint: disable=expression-not-assigned
 
     def test_pdu_fields_invalid_cyclic(self) -> None:
-        t = ModularInteger('T', 2)
+        t = ModularInteger('T', Number(2))
 
         n1 = Node('X', t)
         n2 = Node('Y', t)
@@ -369,8 +378,8 @@ class TestModel(unittest.TestCase):
             PDU('Z', n1).fields()
 
     def test_pdu_fields_invalid_dupe(self) -> None:
-        t1 = ModularInteger('T1', 2)
-        t2 = ModularInteger('T2', 4)
+        t1 = ModularInteger('T1', Number(2))
+        t2 = ModularInteger('T2', Number(4))
 
         n1 = Node('X', t1)
         n2 = Node('X', t2)
@@ -384,7 +393,7 @@ class TestModel(unittest.TestCase):
     def test_pdu_fields_ethernet(self) -> None:
         expected: List[Field] = [
             Field('Destination',
-                  ModularInteger('UINT48', 2**48),
+                  ModularInteger('UINT48', Pow(Number(2), Number(48))),
                   TRUE,
                   {
                       '0':
@@ -397,7 +406,7 @@ class TestModel(unittest.TestCase):
                           })
                   }),
             Field('Source',
-                  ModularInteger('UINT48', 2**48),
+                  ModularInteger('UINT48', Pow(Number(2), Number(48))),
                   TRUE,
                   {
                       '0_0':
@@ -414,7 +423,10 @@ class TestModel(unittest.TestCase):
                           })
                   }),
             Field('TPID',
-                  RangeInteger('UINT16', 0, 2**16 - 1, 16),
+                  RangeInteger('UINT16',
+                               Number(0),
+                               Sub(Pow(Number(2), Number(16)), Number(1)),
+                               Number(16)),
                   Or(NotEqual(Value('TPID'), Number(0x8100)),
                      Equal(Value('TPID'), Number(0x8100))),
                   {
@@ -435,7 +447,10 @@ class TestModel(unittest.TestCase):
                           })
                   }),
             Field('TCI',
-                  RangeInteger('UINT16', 0, 2**16 - 1, 16),
+                  RangeInteger('UINT16',
+                               Number(0),
+                               Sub(Pow(Number(2), Number(16)), Number(1)),
+                               Number(16)),
                   TRUE,
                   {
                       '0_0_0_0':
@@ -458,7 +473,10 @@ class TestModel(unittest.TestCase):
                           })
                   }),
             Field('EtherType',
-                  RangeInteger('UINT16', 0, 2**16 - 1, 16),
+                  RangeInteger('UINT16',
+                               Number(0),
+                               Sub(Pow(Number(2), Number(16)), Number(1)),
+                               Number(16)),
                   Or(GreaterEqual(Value('EtherType'), Number(1536)),
                      LessEqual(Value('EtherType'), Number(1500))),
                   {

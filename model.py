@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
 from math import log
 from pprint import pformat
@@ -177,6 +177,11 @@ class Number(MathExpr):
             return Div(Number(self.value), Number(other.value))
         return NotImplemented
 
+    def __pow__(self, other: 'Number') -> 'Number':
+        if isinstance(other, Number):
+            return Number(self.value ** other.value)
+        return NotImplemented
+
     def __lt__(self, other: object) -> bool:
         if isinstance(other, Number):
             return self.value < other.value
@@ -342,7 +347,7 @@ class BinMathExpr(MathExpr):
         self.right = right
 
     def __repr__(self) -> str:
-        return '({} {} {})'.format(self.left, self.symbol(), self.right)
+        return '({}{}{})'.format(self.left, self.symbol(), self.right)
 
     def __neg__(self) -> MathExpr:
         return self.__class__(-self.left, self.right)
@@ -374,7 +379,7 @@ class Sub(BinMathExpr):
         return Add(left, -right)
 
     def symbol(self) -> str:
-        return '-'
+        return ' - '
 
 
 class Div(BinMathExpr):
@@ -396,7 +401,19 @@ class Div(BinMathExpr):
         return Div(left, right)
 
     def symbol(self) -> str:
-        return '/'
+        return ' / '
+
+
+class Pow(BinMathExpr):
+    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+        left = self.left.simplified(facts)
+        right = self.right.simplified(facts)
+        if isinstance(left, Number) and isinstance(right, Number):
+            return left**right
+        return Pow(left, right)
+
+    def symbol(self) -> str:
+        return '**'
 
 
 class Attribute(MathExpr):
@@ -507,42 +524,70 @@ class Type(ABC):
     def __repr__(self) -> str:
         return 'Type({})'.format(self.name)
 
-    @abstractmethod
-    def size(self) -> Number:
+    @abstractproperty
+    def size(self) -> MathExpr:
         raise NotImplementedError
 
 
 class ModularInteger(Type):
-    def __init__(self, name: str, modulus: int) -> None:
-        if modulus == 0 or (modulus & (modulus - 1)) != 0:
-            raise ModelError('invalid type {}: {} is not a power of two'.format(name, modulus))
+    def __init__(self, name: str, modulus: MathExpr) -> None:
+        modulus_num = modulus.simplified()
+        if not isinstance(modulus_num, Number):
+            raise ModelError('invalid type {}: modulus contains variable'.format(name))
+        modulus_int = int(modulus_num)
+        if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
+            raise ModelError('invalid type {}: {} is not a power of two'.format(name, modulus_int))
         super().__init__(name)
-        self.modulus = modulus
-        self.__size = int(log(self.modulus) / log(2))
+        self.__modulus = modulus
+        self.__size = Number(int(log(modulus_int) / log(2)))
 
-    def size(self) -> Number:
-        return Number(self.__size)
+    @property
+    def modulus(self) -> MathExpr:
+        return self.__modulus
+
+    @property
+    def size(self) -> MathExpr:
+        return self.__size
 
 
 class RangeInteger(Type):
-    def __init__(self, name: str, first: int, last: int, size: int) -> None:
-        if first < 0:
+    def __init__(self, name: str, first: MathExpr, last: MathExpr, size: MathExpr) -> None:
+        first_num = first.simplified()
+        if not isinstance(first_num, Number):
+            raise ModelError('invalid type {}: first contains variable'.format(name))
+        last_num = last.simplified()
+        if not isinstance(last_num, Number):
+            raise ModelError('invalid type {}: last contains variable'.format(name))
+        if first_num < Number(0):
             raise ModelError('invalid type {}: negative first'.format(name))
-        if first > last:
+        if first_num > last_num:
             raise ModelError('invalid type {}: negative range'.format(name))
-        if log(last + 1) / log(2) > size:
+        size_num = size.simplified()
+        if not isinstance(size_num, Number):
+            raise ModelError('invalid type {}: size contains variable'.format(name))
+        if log(int(last_num) + 1) / log(2) > int(size_num):
             raise ModelError('invalid type {}: size too small for given range'.format(name))
         super().__init__(name)
-        self.first = first
-        self.last = last
+        self.__first = first
+        self.__last = last
         self.__size = size
 
-    def size(self) -> Number:
-        return Number(self.__size)
+    @property
+    def first(self) -> MathExpr:
+        return self.__first
+
+    @property
+    def last(self) -> MathExpr:
+        return self.__last
+
+    @property
+    def size(self) -> MathExpr:
+        return self.__size
 
 
 class Array(Type):
-    def size(self) -> Number:
+    @property
+    def size(self) -> MathExpr:
         raise RuntimeError('array type has no fixed size')
 
 
@@ -656,7 +701,7 @@ def evaluate(facts: Dict[Attribute, MathExpr],
     node = in_edge.target
 
     if in_edge.length is UNDEFINED:
-        in_edge.length = node.type.size()
+        in_edge.length = node.type.size
     if in_edge.first is UNDEFINED:
         in_edge.first = Number(0)
 

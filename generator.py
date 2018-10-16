@@ -102,7 +102,7 @@ class TypeDeclaration(SparkRepresentation):
 
 
 class ModularType(TypeDeclaration):
-    def __init__(self, name: str, modulus: int) -> None:
+    def __init__(self, name: str, modulus: MathExpr) -> None:
         super().__init__(name)
         self.modulus = modulus
 
@@ -119,7 +119,7 @@ class ModularType(TypeDeclaration):
 
 
 class RangeType(TypeDeclaration):
-    def __init__(self, name: str, first: int, last: int, size: int) -> None:
+    def __init__(self, name: str, first: MathExpr, last: MathExpr, size: MathExpr) -> None:
         super().__init__(name)
         self.first = first
         self.last = last
@@ -460,7 +460,7 @@ class Generator:
                         package.types += [RangeType(field.type.name,
                                                     field.type.first,
                                                     field.type.last,
-                                                    int(field.type.size()))]
+                                                    field.type.size)]
                     elif isinstance(field.type, Array):
                         if 'Payload' not in field.type.name:
                             raise NotImplementedError('custom arrays are not supported yet')
