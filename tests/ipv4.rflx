@@ -1,0 +1,47 @@
+package IPv4 is
+
+   type Version_Type is range 4 .. 4 with Size => 4;
+   type IHL_Type is range 5 .. 15 with Size => 4;
+   type DCSP_Type is mod 2**6;
+   type ECN_Type is mod 2**2;
+   type Total_Length_Type is range 20 .. 2**16 - 1 with Size => 16;
+   type Identification_Type is mod 2**16;
+   type Flag_Type is mod 2;
+   type Fragment_Offset_Type is mod 2**13;
+   type TTL_Type is mod 2**8;
+   type Protocol_Type is mod 2**8;
+   type Header_Checksum_Type is mod 2**16;
+   type Address_Type is mod 2**32;
+
+   type Packet is
+      message
+         Version : Version_Type;
+         IHL : IHL_Type;
+         DSCP : DCSP_Type;
+         ECN : ECN_Type;
+         Total_Length : Total_Length_Type;
+         Identification : Identification_Type;
+         Flag_R : Flag_Type
+            then Flag_DF
+               if Flag_R = 0;
+         Flag_DF : Flag_Type;
+         Flag_MF : Flag_Type;
+         Fragment_Offset : Fragment_Offset_Type;
+         TTL : TTL_Type;
+         Protocol : Protocol_Type;
+         Header_Checksum : Header_Checksum_Type;
+         Source : Address_Type;
+         Destination : Address_Type
+            then Payload
+               with Length = Total_Length * 8 - (Destination'Last - Version'First + 1)
+               if IHL = 5,
+            then Options
+               with Length = IHL * 32 - (Destination'Last - Version'First + 1)
+               if IHL > 5;
+         Options : Payload_Type
+            then Payload
+               with Length = Total_Length * 8 - (Options'Last - Version'First + 1);
+         Payload : Payload_Type;
+      end message;
+
+end IPv4;

@@ -31,3 +31,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_ethernet(self) -> None:
         self.assert_dissector('ethernet')
+
+    def test_ipv4(self) -> None:
+        self.assert_dissector('ipv4')

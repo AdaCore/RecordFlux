@@ -1,5 +1,6 @@
 with Types.Tests;
 with Ethernet.Tests;
+with IPv4.Tests;
 
 package body Test_Suite is
 
@@ -8,6 +9,7 @@ package body Test_Suite is
    begin
       Result.Add_Test (new Types.Tests.Test);
       Result.Add_Test (new Ethernet.Tests.Test);
+      Result.Add_Test (new IPv4.Tests.Test);
       return Result;
    end Suite;
 
