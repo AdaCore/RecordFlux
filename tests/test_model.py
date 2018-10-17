@@ -1,5 +1,5 @@
 import unittest
-from typing import List
+from typing import Dict
 
 from model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater, GreaterEqual,
                    Last, Length, Less, LessEqual, ModelError, ModularInteger, Mul, Node, NotEqual,
@@ -391,7 +391,8 @@ class TestModel(unittest.TestCase):
             PDU('Z', n1).fields()
 
     def test_pdu_fields_ethernet(self) -> None:
-        expected: List[Field] = [
+        expected: Dict[str, Field] = {
+            'Destination':
             Field('Destination',
                   ModularInteger('UINT48', Pow(Number(2), Number(48))),
                   TRUE,
@@ -402,9 +403,11 @@ class TestModel(unittest.TestCase):
                           TRUE,
                           {
                               First('Destination'): Number(0),
-                              Last('Destination'): Number(47)
+                              Last('Destination'): Number(47),
+                              Length('Destination'): Number(48)
                           })
                   }),
+            'Source':
             Field('Source',
                   ModularInteger('UINT48', Pow(Number(2), Number(48))),
                   TRUE,
@@ -418,10 +421,13 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
-                              Last('Source'): Number(95)
+                              Last('Source'): Number(95),
+                              Length('Source'): Number(48)
                           })
                   }),
+            'TPID':
             Field('TPID',
                   RangeInteger('UINT16',
                                Number(0),
@@ -440,12 +446,16 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
                               Last('Source'): Number(95),
+                              Length('Source'): Number(48),
                               First('TPID'): Number(96),
-                              Last('TPID'): Number(111)
+                              Last('TPID'): Number(111),
+                              Length('TPID'): Number(16)
                           })
                   }),
+            'TCI':
             Field('TCI',
                   RangeInteger('UINT16',
                                Number(0),
@@ -464,14 +474,19 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
                               Last('Source'): Number(95),
+                              Length('Source'): Number(48),
                               First('TPID'): Number(96),
                               Last('TPID'): Number(111),
+                              Length('TPID'): Number(16),
                               First('TCI'): Number(112),
-                              Last('TCI'): Number(127)
+                              Last('TCI'): Number(127),
+                              Length('TCI'): Number(16)
                           })
                   }),
+            'EtherType':
             Field('EtherType',
                   RangeInteger('UINT16',
                                Number(0),
@@ -492,14 +507,19 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
                               Last('Source'): Number(95),
+                              Length('Source'): Number(48),
                               First('TPID'): Number(96),
                               Last('TPID'): Number(111),
+                              Length('TPID'): Number(16),
                               First('TCI'): Number(112),
                               Last('TCI'): Number(127),
+                              Length('TCI'): Number(16),
                               First('EtherType'): Number(128),
-                              Last('EtherType'): Number(143)
+                              Last('EtherType'): Number(143),
+                              Length('EtherType'): Number(16)
                           }),
                       '0_0_0_1':
                       Variant(
@@ -512,14 +532,19 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
                               Last('Source'): Number(95),
+                              Length('Source'): Number(48),
                               First('TPID'): Number(96),
                               Last('TPID'): Number(111),
+                              Length('TPID'): Number(16),
                               First('EtherType'): Number(96),
-                              Last('EtherType'): Number(111)
+                              Last('EtherType'): Number(111),
+                              Length('EtherType'): Number(16)
                           })
                   }),
+            'Payload':
             Field('Payload',
                   Array('Payload_Array'),
                   And(GreaterEqual(Length('Payload'), Number(46)),
@@ -538,16 +563,22 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
                               Last('Source'): Number(95),
+                              Length('Source'): Number(48),
                               First('TPID'): Number(96),
                               Last('TPID'): Number(111),
+                              Length('TPID'): Number(16),
                               First('TCI'): Number(112),
                               Last('TCI'): Number(127),
+                              Length('TCI'): Number(16),
                               First('EtherType'): Number(128),
                               Last('EtherType'): Number(143),
+                              Length('EtherType'): Number(16),
                               First('Payload'): Number(144),
-                              Last('Payload'): Add(Mul(Value('EtherType'), Number(8)), Number(143))
+                              Last('Payload'): Add(Mul(Value('EtherType'), Number(8)), Number(143)),
+                              Length('Payload'): Mul(Value('EtherType'), Number(8))
                           }),
                       '0_0_0_0_0_1':
                       Variant(
@@ -562,16 +593,22 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
                               Last('Source'): Number(95),
+                              Length('Source'): Number(48),
                               First('TPID'): Number(96),
                               Last('TPID'): Number(111),
+                              Length('TPID'): Number(16),
                               First('TCI'): Number(112),
                               Last('TCI'): Number(127),
+                              Length('TCI'): Number(16),
                               First('EtherType'): Number(128),
                               Last('EtherType'): Number(143),
+                              Length('EtherType'): Number(16),
                               First('Payload'): Number(144),
-                              Last('Payload'): Last('Buffer')
+                              Last('Payload'): Last('Buffer'),
+                              Length('Payload'): Add(Last('Buffer'), Number(-143))
                           }),
                       '0_0_0_1_0':
                       Variant(
@@ -585,14 +622,19 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
                               Last('Source'): Number(95),
+                              Length('Source'): Number(48),
                               First('TPID'): Number(96),
                               Last('TPID'): Number(111),
+                              Length('TPID'): Number(16),
                               First('EtherType'): Number(96),
                               Last('EtherType'): Number(111),
+                              Length('EtherType'): Number(16),
                               First('Payload'): Number(112),
-                              Last('Payload'): Add(Mul(Value('EtherType'), Number(8)), Number(111))
+                              Last('Payload'): Add(Mul(Value('EtherType'), Number(8)), Number(111)),
+                              Length('Payload'): Mul(Value('EtherType'), Number(8))
                           }),
                       '0_0_0_1_1':
                       Variant(
@@ -606,16 +648,21 @@ class TestModel(unittest.TestCase):
                           {
                               First('Destination'): Number(0),
                               Last('Destination'): Number(47),
+                              Length('Destination'): Number(48),
                               First('Source'): Number(48),
                               Last('Source'): Number(95),
+                              Length('Source'): Number(48),
                               First('TPID'): Number(96),
                               Last('TPID'): Number(111),
+                              Length('TPID'): Number(16),
                               First('EtherType'): Number(96),
                               Last('EtherType'): Number(111),
+                              Length('EtherType'): Number(16),
                               First('Payload'): Number(112),
-                              Last('Payload'): Last('Buffer')
+                              Last('Payload'): Last('Buffer'),
+                              Length('Payload'): Add(Last('Buffer'), Number(-111))
                           })
                   }),
-        ]
+        }
 
         self.assertEqual(ETHERNET_PDU.fields(), expected)

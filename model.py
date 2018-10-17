@@ -680,7 +680,7 @@ class PDU:
             self.name, self.initial_node)
 
     def fields(self, facts: Dict[Attribute, MathExpr] = None,
-               first: MathExpr = UNDEFINED) -> List[Field]:
+               first: MathExpr = UNDEFINED) -> Dict[str, Field]:
         if facts is None:
             facts = {}
         return evaluate(facts, Edge(self.initial_node, TRUE, first=first))
@@ -694,7 +694,7 @@ def evaluate(facts: Dict[Attribute, MathExpr],
              in_edge: Edge,
              visited: List[Edge] = None,
              previous: List[Tuple[str, str]] = None,
-             variant_id: str = '0') -> List[Field]:
+             variant_id: str = '0') -> Dict[str, Field]:
     if not previous:
         previous = []
 
@@ -707,7 +707,8 @@ def evaluate(facts: Dict[Attribute, MathExpr],
 
     facts = create_facts(facts, in_edge)
 
-    fields = [Field(node.name,
+    fields = {node.name:
+              Field(node.name,
                     node.type,
                     combine_conditions(TRUE,
                                        TRUE,
@@ -718,7 +719,7 @@ def evaluate(facts: Dict[Attribute, MathExpr],
                                             facts)
                     }
                     )
-              ]
+              }
 
     for i, out_edge in enumerate(node.edges):
         if out_edge.target is FINAL:
@@ -744,6 +745,7 @@ def create_facts(facts: Dict[Attribute, MathExpr], edge: Edge) -> Dict[Attribute
     facts = dict(facts)
     facts[First(edge.target.name)] = edge.first.simplified(facts)
     facts[Last(edge.target.name)] = Add(edge.first, edge.length, Number(-1)).simplified(facts)
+    facts[Length(edge.target.name)] = edge.length.simplified(facts)
     return facts
 
 
@@ -765,10 +767,10 @@ def create_visited_edges(visited: Optional[List[Edge]], edge: Edge) -> List[Edge
     return list(visited + [edge])
 
 
-def extend_fields(fields: List[Field], new_fields: List[Field]) -> None:
-    for new_field in new_fields:
+def extend_fields(fields: Dict[str, Field], new_fields: Dict[str, Field]) -> None:
+    for new_field in new_fields.values():
         found = False
-        for field in fields:
+        for field in fields.values():
             if field.name == new_field.name:
                 if field.type != new_field.type:
                     raise ModelError('duplicate node {} with different types ({} != {})'.format(
@@ -776,7 +778,7 @@ def extend_fields(fields: List[Field], new_fields: List[Field]) -> None:
                 field.variants.update(new_field.variants)
                 found = True
         if not found:
-            fields.append(new_field)
+            fields[new_field.name] = new_field
 
 
 def filter_fields(fields: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]]

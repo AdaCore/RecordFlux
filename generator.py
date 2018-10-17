@@ -445,12 +445,11 @@ class Generator:
             package = Package(pdu.name, [], [])
             self.__units += [Unit(context, package)]
 
-            field_types: Dict[str, Type] = {}
             seen_types: List[Type] = []
             unreachable_functions: Dict[str, Subprogram] = {}
 
-            for field in pdu.fields(first=First('Buffer')):
-                field_types[field.name] = field.type
+            fields = pdu.fields(first=First('Buffer'))
+            for field in fields.values():
                 if field.type not in seen_types:
                     seen_types.append(field.type)
                     if isinstance(field.type, ModularInteger):
@@ -468,25 +467,20 @@ class Generator:
                 valid_variants: List[LogExpr] = []
 
                 for variant_id, variant in field.variants.items():
-                    facts = dict(variant.facts)
-                    facts.update(create_length_facts(facts))
-
                     package.subprograms.append(
                         create_variant_validation_function(
                             field,
                             variant_id,
-                            variant,
-                            facts))
+                            variant))
 
                     package.subprograms.extend(
                         create_variant_accessor_functions(
                             field,
                             variant_id,
                             variant,
-                            facts,
-                            field_types))
+                            fields))
 
-                    extend_valid_variants(valid_variants, field, variant_id, variant, facts)
+                    extend_valid_variants(valid_variants, field, variant_id, variant)
 
                 package.subprograms.append(
                     create_field_validation_function(
@@ -507,7 +501,7 @@ class Generator:
 
             package.subprograms.append(
                 create_packet_validation_function(
-                    pdu.fields()[-1].name))
+                    list(fields.values())[-1].name))
 
     def units(self) -> List[Unit]:
         return self.__units
@@ -528,13 +522,6 @@ def calculate_offset(last: MathExpr) -> int:
 def length_constraint(last: MathExpr) -> LogExpr:
     return GreaterEqual(Length('Buffer'),
                         Add(last, -First('Buffer'), Number(1)))
-
-
-def create_length_facts(facts: Dict[Attribute, MathExpr]) -> Dict[Attribute, MathExpr]:
-    return {Length(a.name): Add(facts[Last(a.name)].to_bytes(),
-                                -facts[First(a.name)].to_bytes(),
-                                Number(1)).simplified()
-            for a in facts if isinstance(a, First)}
 
 
 def create_value_to_call(
@@ -558,23 +545,21 @@ def create_value_to_natural_call(
 def create_value_to_natural_convert(
         field: Field,
         variant: Variant,
-        field_types: Dict[str, Type],
-        facts: Dict[Attribute, MathExpr]) -> Dict[Attribute, MathExpr]:
+        fields: Dict[str, Field]) -> Dict[Attribute, MathExpr]:
 
     return {Value(field_name): Cast('Natural',
-                                    Convert(field_types[field_name].name,
+                                    Convert(fields[field_name].type.name,
                                             'Buffer',
-                                            facts[First(field_name)].to_bytes(),
-                                            facts[Last(field_name)].to_bytes(),
-                                            calculate_offset(facts[Last(field_name)])))
+                                            variant.facts[First(field_name)].to_bytes(),
+                                            variant.facts[Last(field_name)].to_bytes(),
+                                            calculate_offset(variant.facts[Last(field_name)])))
             for field_name, _ in [(field.name, '')] + variant.previous}
 
 
 def create_variant_validation_function(
         field: Field,
         variant_id: str,
-        variant: Variant,
-        facts: Dict[Attribute, MathExpr]) -> Subprogram:
+        variant: Variant) -> Subprogram:
 
     return ExpressionFunction(
         'Valid_{}_{}'.format(field.name, variant_id),
@@ -585,7 +570,7 @@ def create_variant_validation_function(
             if variant.previous else TRUE,
             And(
                 length_constraint(
-                    facts[Last(field.name)].to_bytes()).simplified(
+                    variant.facts[Last(field.name)].to_bytes()).simplified(
                         create_value_to_natural_call(
                             field, variant_id, variant)),
                 variant.condition.simplified(
@@ -598,13 +583,12 @@ def create_variant_accessor_functions(
         field: Field,
         variant_id: str,
         variant: Variant,
-        facts: Dict[Attribute, MathExpr],
-        field_types: Dict[str, Type]) -> List[Subprogram]:
+        fields: Dict[str, Field]) -> List[Subprogram]:
 
-    value_to_natural_convert = create_value_to_natural_convert(field, variant, field_types, facts)
-    first_byte = facts[First(field.name)].to_bytes().simplified(value_to_natural_convert)
-    last_byte = facts[Last(field.name)].to_bytes().simplified(value_to_natural_convert)
-    offset = calculate_offset(facts[Last(field.name)])
+    value_to_natural_convert = create_value_to_natural_convert(field, variant, fields)
+    first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_convert)
+    last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_convert)
+    offset = calculate_offset(variant.facts[Last(field.name)])
 
     functions: List[Subprogram] = []
     if 'Payload' in field.type.name:
@@ -641,18 +625,24 @@ def create_variant_accessor_functions(
     return functions
 
 
+def convert_facts_to_bytes(facts: Dict[Attribute, MathExpr]) -> Dict[Attribute, MathExpr]:
+    return {attr: expr.to_bytes() for (attr, expr) in facts.items()}
+
+
 def extend_valid_variants(
         valid_variants: List[LogExpr],
         field: Field,
         variant_id: str,
-        variant: Variant,
-        facts: Dict[Attribute, MathExpr]) -> None:
+        variant: Variant) -> None:
 
     expression: LogExpr = LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id))
     if field.condition is not TRUE:
         expression = And(expression, field.condition)
-    valid_variants.append(expression.simplified(facts).simplified(
-        create_value_to_call(field, variant_id, variant)))
+    valid_variants.append(
+        expression.simplified(
+            convert_facts_to_bytes(variant.facts)
+        ).simplified(
+            create_value_to_call(field, variant_id, variant)))
 
 
 def create_field_validation_function(
