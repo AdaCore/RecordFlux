@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
+from collections import OrderedDict
 from copy import copy
 from math import log
 from pprint import pformat
@@ -707,19 +708,21 @@ def evaluate(facts: Dict[Attribute, MathExpr],
 
     facts = create_facts(facts, in_edge)
 
-    fields = {node.name:
-              Field(node.name,
-                    node.type,
-                    combine_conditions(TRUE,
-                                       TRUE,
-                                       [e.condition for e in node.edges]).simplified(),
-                    {
-                        variant_id: Variant(previous,
-                                            in_edge.condition,
-                                            facts)
-                    }
-                    )
-              }
+    fields = OrderedDict([
+        (node.name,
+         Field(node.name,
+               node.type,
+               combine_conditions(TRUE,
+                                  TRUE,
+                                  [e.condition for e in node.edges]).simplified(),
+               {
+                   variant_id: Variant(previous,
+                                       in_edge.condition,
+                                       facts)
+               }
+               )
+         )
+    ])
 
     for i, out_edge in enumerate(node.edges):
         if out_edge.target is FINAL:
@@ -767,7 +770,7 @@ def create_visited_edges(visited: Optional[List[Edge]], edge: Edge) -> List[Edge
     return list(visited + [edge])
 
 
-def extend_fields(fields: Dict[str, Field], new_fields: Dict[str, Field]) -> None:
+def extend_fields(fields: OrderedDict, new_fields: Dict[str, Field]) -> None:
     for new_field in new_fields.values():
         found = False
         for field in fields.values():
@@ -779,6 +782,8 @@ def extend_fields(fields: Dict[str, Field], new_fields: Dict[str, Field]) -> Non
                 found = True
         if not found:
             fields[new_field.name] = new_field
+        else:
+            fields.move_to_end(new_field.name)
 
 
 def filter_fields(fields: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]]
