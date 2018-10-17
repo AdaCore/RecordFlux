@@ -126,7 +126,7 @@ is
        Pre => (Valid_Payload_0_0_0_0_0_0 (Buffer) and then Buffer'First <= (Natural'Last + (-18)));
 
    function Payload_0_0_0_0_0_0_Last (Buffer : Bytes) return Natural is
-      ((Natural (Convert_To_UINT16 (Buffer ((Buffer'First + 16) .. (Buffer'First + 17)))) + Buffer'First + 17))
+      ((Natural (EtherType_0_0_0_0_0 (Buffer)) + Buffer'First + 17))
      with
        Pre => Valid_Payload_0_0_0_0_0_0 (Buffer);
 
@@ -152,7 +152,7 @@ is
        Pre => (Valid_Payload_0_0_0_1_0 (Buffer) and then Buffer'First <= (Natural'Last + (-14)));
 
    function Payload_0_0_0_1_0_Last (Buffer : Bytes) return Natural is
-      ((Natural (Convert_To_UINT16 (Buffer ((Buffer'First + 12) .. (Buffer'First + 13)))) + Buffer'First + 13))
+      ((Natural (EtherType_0_0_0_1 (Buffer)) + Buffer'First + 13))
      with
        Pre => Valid_Payload_0_0_0_1_0 (Buffer);
 

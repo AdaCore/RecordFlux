@@ -483,8 +483,7 @@ class Generator:
                         create_variant_accessor_functions(
                             field,
                             variant_id,
-                            variant,
-                            fields))
+                            variant))
 
                     extend_valid_variants(valid_variants, field, variant_id, variant)
 
@@ -548,20 +547,6 @@ def create_value_to_natural_call(
             for field_name, vid in [(field.name, variant_id)] + variant.previous}
 
 
-def create_value_to_natural_convert(
-        field: Field,
-        variant: Variant,
-        fields: Dict[str, Field]) -> Dict[Attribute, MathExpr]:
-
-    return {Value(field_name): Cast('Natural',
-                                    Convert(fields[field_name].type.name,
-                                            'Buffer',
-                                            variant.facts[First(field_name)].to_bytes(),
-                                            variant.facts[Last(field_name)].to_bytes(),
-                                            calculate_offset(variant.facts[Last(field_name)])))
-            for field_name, _ in [(field.name, '')] + variant.previous}
-
-
 def create_variant_validation_function(
         field: Field,
         variant_id: str,
@@ -588,12 +573,11 @@ def create_variant_validation_function(
 def create_variant_accessor_functions(
         field: Field,
         variant_id: str,
-        variant: Variant,
-        fields: Dict[str, Field]) -> List[Subprogram]:
+        variant: Variant) -> List[Subprogram]:
 
-    value_to_natural_convert = create_value_to_natural_convert(field, variant, fields)
-    first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_convert)
-    last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_convert)
+    value_to_natural_call = create_value_to_natural_call(field, variant_id, variant)
+    first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_call)
+    last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
     offset = calculate_offset(variant.facts[Last(field.name)])
 
     functions: List[Subprogram] = []
