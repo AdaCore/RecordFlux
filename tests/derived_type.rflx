@@ -1,7 +1,0 @@
-package Test is
-
-   type Counter is new Positive;
-
-   type PDU_X is new PDU (Payload_Type => X);
-
-end Test;

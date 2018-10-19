@@ -4,7 +4,7 @@ from typing import Dict, List
 from parser import (And, Component, Context, Div, Edge, Enumeration, Equal, FINAL, First,
                     GreaterEqual, Last, Length, LessEqual, Message, ModularInteger, Mul, Number,
                     Node, NotEqual, Package, Parser, ParseFatalException, ParserError, PDU, Pow,
-                    RangeInteger, Specification, Sub, Then, Value)
+                    RangeInteger, Refinement, Specification, Sub, Then, Value)
 
 from tests.models import ETHERNET_PDU
 
@@ -200,15 +200,20 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'duplicate message "PDU"')
 
-    # def test_derived_type(self) -> None:
-    #     spec = {'Test': Specification(
-    #         Context([]),
-    #         Package('Test',
-    #                 [Type('Counter',
-    #                       Derived(Name('Positive'))),
-    #                  Type('PDU_X',
-    #                       Derived(Name('PDU'), {'Payload_Type': 'X'}))]))}
-    #     self.assert_specifications(['derived_type.rflx'], spec)
+    def test_duplicate_refinement(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T;
+                      end message;
+                   type In_PDU is new PDU (Foo => PDU);
+                   type In_PDU is new Test.PDU (Foo => Test.PDU);
+                end Test;
+            """,
+            r'duplicate refinement "In_PDU"')
 
     def test_integer_type_spec(self) -> None:
         spec = {'Test': Specification(
@@ -282,28 +287,40 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
         self.assert_pdus(['message_type.rflx'], pdus)
 
-    # def test_aspect(self) -> None:
-    #     spec = {'Test': Specification(
-    #         Context([]),
-    #         Package('Test',
-    #                 [Message('Date',
-    #                         [Component('Day', 'Integer'),
-    #                          Component('Month', 'Month_Name'),
-    #                          Component('Year', 'Natural')],
-    #                          [Aspect('Type_Invariant',
-    #                                  GreaterEqual(Length('Month'), Number(3)))]),
-    #                  Type('Short_Date',
-    #                       Derived('Date'),
-    #                       [Aspect('Type_Invariant',
-    #                               LessEqual(Length('Month'), Number(3)))]),
-    #                  Type('PDU_X',
-    #                       Derived('PDU', {'Payload_Type': 'X'}),
-    #                       [Aspect('Type_Invariant',
-    #                               And(And(Equal(Value('X_Type'), Number(42)),
-    #                                       Or(Greater(Value('Foo'), Number(1)),
-    #                                          Less(Value('Bar'), Number(2)))),
-    #                                   NotEqual(Value('Baz'), Value('Foo'))))])]))}
-    #     self.assert_specifications(['aspect.rflx'], spec)
+    def test_type_refinement_spec(self) -> None:
+        spec = {
+            'Test': Specification(
+                Context([]),
+                Package('Test',
+                        [ModularInteger('T', Number(256)),
+                         Message('PDU',
+                                 [Component('Foo', 'T', [
+                                     Then('Bar',
+                                          And(Equal(Value('First'), Number(1)),
+                                              Equal(Value('Length'), Number(1))),
+                                          And(Equal(Length('Foo'),
+                                              Number(1)),
+                                              LessEqual(Value('Foo'),
+                                                        Number(30)))),
+                                     Then('Baz')]),
+                                  Component('Bar', 'T'),
+                                  Component('Baz', 'T')]),
+                         Message('Simple_PDU',
+                                 [Component('Bar', 'T'),
+                                  Component('Baz', 'T')])])),
+            'In_Test': Specification(
+                Context(['Test']),
+                Package('In_Test',
+                        [Refinement('PDU_In_Simple_PDU',
+                                    'Test.Simple_PDU',
+                                    'Bar',
+                                    'Test.PDU',
+                                    Equal(Value('Baz'), Number(42))),
+                         Refinement('Simple_PDU_In_PDU',
+                                    'Test.PDU',
+                                    'Bar',
+                                    'Test.Simple_PDU')]))}
+        self.assert_specifications(['message_type.rflx', 'type_refinement.rflx'], spec)
 
     def test_ethernet_spec(self) -> None:
         spec = {'Ethernet': Specification(

@@ -2,13 +2,13 @@ from collections import OrderedDict
 from typing import Dict, List, Union
 
 from pyparsing import (alphanums, infixNotation, nums, opAssoc, ParseFatalException, Forward,
-                       Group, Keyword, Literal, OneOrMore, Optional, Regex, StringEnd, Suppress,
-                       Word, WordEnd, WordStart, ZeroOrMore)
+                       Group, Keyword, Literal, Optional, Regex, StringEnd, Suppress, Word, WordEnd,
+                       WordStart, ZeroOrMore)
 
 from model import (Add, And, Array, Attribute, Div, Edge, Equal, FINAL, First, Greater,
                    GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModelError,
                    ModularInteger, Mul, Number, Node, NotEqual, Or, PDU, Pow, RangeInteger,
-                   Relation, Sub, Type, Value)
+                   Refinement, Relation, Sub, TRUE, Type, Value)
 
 
 class SyntaxTree:
@@ -23,16 +23,6 @@ class SyntaxTree:
     def __repr__(self) -> str:
         args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
         return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
-
-
-class Derived(Type):
-    def __init__(self, name: str, parent: str, refinements: Dict = None) -> None:
-        super().__init__(name)
-        self.parent = parent
-        self.refinements = refinements or {}
-
-    def size(self) -> Number:
-        raise NotImplementedError
 
 
 class Message(Type):
@@ -51,12 +41,6 @@ class Enumeration(Type):
 
     def size(self) -> Number:
         raise NotImplementedError
-
-
-class Aspect(SyntaxTree):
-    def __init__(self, identifier: str, expression: LogExpr) -> None:
-        self.identifier = identifier
-        self.expression = expression
 
 
 class Then(SyntaxTree):
@@ -101,6 +85,7 @@ class Parser:
         self.__basedir = basedir
         self.__specifications: Dict[str, Specification] = {}
         self.__pdus: Dict[str, PDU] = {}
+        self.__refinements: Dict[str, Refinement] = {}
 
         # Generic
         comma = Suppress(Literal(','))
@@ -171,15 +156,13 @@ class Parser:
         constraint = scalar_constraint | composite_constraint
         subtype_indication = name + Optional(constraint)
 
-        # Derived Types
-        type_refinement_part = (Suppress(Literal('('))
-                                + OneOrMore(identifier + Suppress(Literal('=>')) - identifier)
-                                - Suppress(Literal(')')))
-        type_refinement_part.setParseAction(lambda t: dict(zip(t[::2], t[1::2])))
-        derived_type_definition = (Suppress(Keyword('new')) - subtype_indication
-                                   - Optional(type_refinement_part))
-        derived_type_definition.setParseAction(lambda t: Derived(*t.asList()))
-        derived_type_definition.setName('DerivedType')
+        # Type Refinement
+        value_constraint = Keyword('if') - logical_expression
+        value_constraint.setParseAction(lambda t: ('constraint', t[1]))
+        type_refinement_definition = (Keyword('new') - qualified_identifier - Suppress(Literal('('))
+                                      - identifier - Suppress(Literal('=>')) - qualified_identifier
+                                      - Suppress(Literal(')')) - Optional(value_constraint))
+        type_refinement_definition.setName('Refinement')
 
         # Integer Types
         range_type_definition = (Keyword('range') - mathematical_expression
@@ -197,8 +180,6 @@ class Parser:
         enumeration_type_definition.setName('Enumeration')
 
         # Message Type
-        value_constraint = Keyword('if') - logical_expression
-        value_constraint.setParseAction(lambda t: ('constraint', t[1]))
         location_expression = Keyword('with') - logical_expression
         location_expression.setParseAction(lambda t: ('location', t[1]))
         then = (Keyword('then') - identifier - Optional(location_expression)
@@ -220,15 +201,6 @@ class Parser:
                            - semicolon | Group(component_item - ZeroOrMore(component_item)))
         component_list.setParseAction(lambda t: t.asList())
 
-        # Aspect Specification
-        aspect_definition = logical_expression | identifier
-        aspect_definition.setParseAction(lambda t: t.asList())
-        aspect_mark = Keyword('Type_Invariant')
-        aspect_specification = (Suppress(Keyword('with'))
-                                + Group(aspect_mark + Optional(Keyword('=>') - aspect_definition)))
-        aspect_specification.setParseAction(lambda t: [Aspect(a[0], a[2]) for a in t])
-        aspect_specification.setName('Aspect')
-
         # Representation Aspects
         discrete_choice = Keyword('others') | subtype_indication
         discrete_choice_list = discrete_choice + ZeroOrMore(Literal('|') - discrete_choice)
@@ -242,9 +214,9 @@ class Parser:
 
         # Types
         type_definition = (enumeration_type_definition | integer_type_definition
-                           | message_type_definition | derived_type_definition)
+                           | message_type_definition | type_refinement_definition)
         type_declaration = (Keyword('type') - identifier - Keyword('is') - type_definition
-                            - Optional(aspect_specification) - semicolon)
+                            - semicolon)
         type_declaration.setParseAction(parse_type)
 
         # Package
@@ -279,6 +251,9 @@ class Parser:
             pdus = convert_to_pdus(specification)
             if pdus:
                 self.__pdus.update(pdus)
+            refinements = convert_to_refinements(specification, self.__pdus)
+            if refinements:
+                self.__refinements.update(refinements)
 
     def parse(self, infile: str) -> None:
         filepath = self.__basedir + "/" + infile
@@ -294,6 +269,10 @@ class Parser:
     @property
     def pdus(self) -> List[PDU]:
         return list(self.__pdus.values())
+
+    @property
+    def refinements(self) -> List[Refinement]:
+        return list(self.__refinements.values())
 
 
 def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
@@ -366,6 +345,27 @@ def convert_location_equation(expr: LogExpr) -> Dict[str, MathExpr]:
             or (expr.left != Value('First') and expr.left != Value('Length')):
         raise ParserError(f'expected "First" or "Length" instead of "{expr.left}"')
     return {expr.left.name.lower(): expr.right}
+
+
+def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> Dict[str, Refinement]:
+    refinements: Dict[str, Refinement] = {}
+    for t in spec.package.types:
+        if isinstance(t, Refinement):
+            pdu = t.pdu
+            if pdu not in pdus:
+                pdu = f'{spec.package.identifier}.{t.pdu}'
+                if pdu not in pdus:
+                    raise ParserError(f'unknown type "{t.pdu}"')
+            sdu = t.sdu
+            if sdu not in pdus:
+                sdu = f'{spec.package.identifier}.{t.pdu}'
+                if sdu not in pdus:
+                    raise ParserError(f'unknown type "{t.sdu}"')
+            name = f'{spec.package.identifier}.{t.name}'
+            if name in refinements:
+                raise ParserError(f'duplicate refinement "{t.name}"')
+            refinements[name] = Refinement(name, pdu, t.field, sdu, t.condition)
+    return refinements
 
 
 def parse_term(string: str, location: int, tokens: list) -> Union[Attribute, Number]:
@@ -467,6 +467,12 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
             return Message(tokens[1], tokens[4])
         if tokens[3] == '(':
             return Enumeration(tokens[1], tokens[4:-1])
+        if tokens[3] == 'new':
+            if len(tokens) == 7:
+                tokens.append(TRUE)
+            elif len(tokens) == 8:
+                tokens[7] = tokens[7][1]
+            return Refinement(tokens[1], *tokens[4:])
     except ModelError as e:
         raise ParseFatalException(string, location, e)
     raise ParseFatalException(string, location, 'unexpected type')

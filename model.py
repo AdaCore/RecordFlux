@@ -600,6 +600,25 @@ class Array(Type):
         raise ModelError(f'size of "{self.name}" undefined')
 
 
+class Refinement(Type):
+    # pylint: disable=too-many-arguments
+    def __init__(self, name: str, pdu: str, field: str, sdu: str,
+                 condition: LogExpr = TRUE) -> None:
+        super().__init__(name)
+        self.pdu = pdu
+        self.field = field
+        self.sdu = sdu
+        self.condition = condition
+
+    @property
+    def size(self) -> Number:
+        raise NotImplementedError
+
+    @property
+    def package(self) -> str:
+        return self.name.rsplit('.', 1)[0]
+
+
 class Node(Element):
     def __init__(self, name: str, data_type: Type, edges: List['Edge'] = None) -> None:
         self.name = name
