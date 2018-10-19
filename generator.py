@@ -14,7 +14,8 @@ class SparkRepresentation(ABC):
         return NotImplemented
 
     def __repr__(self) -> str:
-        return "\n%s %s" % (self.__class__.__name__, self.__dict__)
+        args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
 
     @abstractmethod
     def specification(self) -> str:

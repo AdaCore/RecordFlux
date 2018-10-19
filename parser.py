@@ -21,7 +21,8 @@ class SyntaxTree:
         return not self.__eq__(other)
 
     def __repr__(self) -> str:
-        return "\n%s %s" % (self.__class__.__name__, self.__dict__)
+        args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
 
 
 class Derived(Type):
@@ -38,9 +39,6 @@ class Message(Type):
     def __init__(self, name: str, components: List['Component']) -> None:
         super().__init__(name)
         self.components = components
-
-    def __repr__(self) -> str:
-        return 'Message({}, {})'.format(self.name, self.components)
 
     def size(self) -> Number:
         raise NotImplementedError

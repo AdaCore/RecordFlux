@@ -2,15 +2,22 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from copy import copy
 from math import log
-from pprint import pformat
 from typing import Dict, List, Optional, Tuple
 
 
-class Expr(ABC):
+class Element(ABC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         return NotImplemented
+
+    def __repr__(self) -> str:
+        args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
+
+
+class Expr(Element):
+    pass
 
 
 class LogExpr(Expr):
@@ -520,17 +527,9 @@ class NotEqual(Relation):
         return '/='
 
 
-class Type(ABC):
+class Type(Element):
     def __init__(self, name: str) -> None:
         self.name = name
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-
-    def __repr__(self) -> str:
-        return 'Type({})'.format(self.name)
 
     @abstractproperty
     def size(self) -> MathExpr:
@@ -601,26 +600,17 @@ class Array(Type):
         raise ModelError(f'size of "{self.name}" undefined')
 
 
-class Node:
+class Node(Element):
     def __init__(self, name: str, data_type: Type, edges: List['Edge'] = None) -> None:
         self.name = name
         self.type = data_type
         self.edges = edges or []
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-
-    def __repr__(self) -> str:
-        return 'Node(\n\t\'{}\',\n\t{},\n\t{}\n\t)'.format(
-            self.name, self.type, self.edges).replace('\t', '\t  ')
-
 
 FINAL = Node('', Array(''))
 
 
-class Edge:
+class Edge(Element):
     def __init__(self, target: Node, condition: LogExpr = TRUE, length: MathExpr = UNDEFINED,
                  first: MathExpr = UNDEFINED) -> None:
         self.target = target
@@ -628,36 +618,16 @@ class Edge:
         self.length = length
         self.first = first
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
 
-    def __repr__(self) -> str:
-        return 'Edge(\n\t{},\n\t{},\n\t{},\n\t{}\n\t)'.format(
-            self.target, self.condition, self.length, self.first).replace('\t', '\t  ')
-
-
-class Variant:
+class Variant(Element):
     def __init__(self, previous: List[Tuple[str, str]], condition: LogExpr,
                  facts: Dict[Attribute, MathExpr]) -> None:
         self.previous = previous
         self.condition = condition
         self.facts = facts
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
 
-    def __repr__(self) -> str:
-        return 'Variant(\n\t\'{}\',\n\t{},\n\t{}\n)'.format(
-            pformat(self.previous, indent=2),
-            pformat(self.condition, indent=2),
-            pformat(self.facts, indent=2))
-
-
-class Field:
+class Field(Element):
     def __init__(self, name: str, data_type: Type, condition: LogExpr,
                  variants: Dict[str, Variant]) -> None:
         self.name = name
@@ -665,17 +635,8 @@ class Field:
         self.condition = condition
         self.variants = variants
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
 
-    def __repr__(self) -> str:
-        return 'Field(\n\t{},\n\t{},\n\t{}\n)'.format(
-            self.name, self.type, pformat(self.variants, indent=2))
-
-
-class PDU:
+class PDU(Element):
     def __init__(self, name: str, node: Node) -> None:
         self.name = name
         self.initial_node = node
@@ -685,9 +646,6 @@ class PDU:
             return self.__dict__ == other.__dict__
         return NotImplemented
 
-    def __repr__(self) -> str:
-        return 'PDU(\n\t{},\n\t{}\n)'.format(
-            self.name, self.initial_node)
 
     def fields(self, facts: Dict[Attribute, MathExpr] = None,
                first: MathExpr = UNDEFINED) -> Dict[str, Field]:
