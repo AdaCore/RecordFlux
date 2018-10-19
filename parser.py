@@ -6,9 +6,9 @@ from pyparsing import (alphanums, infixNotation, nums, opAssoc, ParseFatalExcept
                        Word, WordEnd, WordStart, ZeroOrMore)
 
 from model import (Add, And, Array, Attribute, Div, Edge, Equal, FINAL, First, Greater,
-                   GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModularInteger,
-                   Mul, Number, Node, NotEqual, Or, PDU, Pow, RangeInteger, Relation, Sub, Type,
-                   Value)
+                   GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModelError,
+                   ModularInteger, Mul, Number, Node, NotEqual, Or, PDU, Pow, RangeInteger,
+                   Relation, Sub, Type, Value)
 
 
 class SyntaxTree:
@@ -35,13 +35,12 @@ class Derived(Type):
 
 
 class Message(Type):
-    def __init__(self, name: str, components: List['Component'], abstract: bool = False) -> None:
+    def __init__(self, name: str, components: List['Component']) -> None:
         super().__init__(name)
         self.components = components
-        self.abstract = abstract
 
     def __repr__(self) -> str:
-        return 'Message({}, {}, {})'.format(self.name, self.components, self.abstract)
+        return 'Message({}, {})'.format(self.name, self.components)
 
     def size(self) -> Number:
         raise NotImplementedError
@@ -183,23 +182,18 @@ class Parser:
         derived_type_definition.setName('DerivedType')
 
         # Integer Types
-        range_type_definition = (Suppress(Keyword('range')) - mathematical_expression
+        range_type_definition = (Keyword('range') - mathematical_expression
                                  - Suppress(Literal('..')) - mathematical_expression
                                  - Suppress(Keyword('with Size =>')) - mathematical_expression)
-        range_type_definition.setParseAction(lambda t:
-                                             RangeInteger('', *t.asList()))
         range_type_definition.setName('RangeInteger')
-        modular_type_definition = Suppress(Keyword('mod')) - mathematical_expression
-        modular_type_definition.setParseAction(lambda t: ModularInteger('', *t.asList()))
+        modular_type_definition = Keyword('mod') - mathematical_expression
         modular_type_definition.setName('ModularInteger')
         integer_type_definition = range_type_definition | modular_type_definition
 
         # Enumeration Types
         enumeration_literal = name
-        enumeration_type_definition = (Suppress(Literal('(')) + enumeration_literal
-                                       + ZeroOrMore(comma - enumeration_literal)
-                                       + Suppress(Literal(')')))
-        enumeration_type_definition.setParseAction(lambda t: Enumeration('', t.asList()))
+        enumeration_type_definition = (Literal('(') - enumeration_literal
+                                       + ZeroOrMore(comma - enumeration_literal) - Literal(')'))
         enumeration_type_definition.setName('Enumeration')
 
         # Message Type
@@ -213,11 +207,7 @@ class Parser:
         then_list = then + ZeroOrMore(comma - then)
         then_list.setParseAction(lambda t: [t.asList()])
         component_list = Forward()
-        message_type_definition = (Optional(Keyword('abstract')) + Keyword('message')
-                                   - component_list - Keyword('end message'))
-        message_type_definition.setParseAction(lambda t:
-                                               Message('', t[1]) if t[0] != 'abstract'
-                                               else Message('', t[2], True))
+        message_type_definition = Keyword('message') - component_list - Keyword('end message')
         message_type_definition.setName('Message')
         component_declaration = (identifier + Literal(':') - subtype_indication
                                  - Optional(then_list) - semicolon)
@@ -284,7 +274,7 @@ class Parser:
             specification = tokens[0]
             identifier = specification.package.identifier
             if identifier in self.__specifications:
-                raise ParserError('Duplicate package {}'.format(identifier))
+                raise ParserError(f'duplicate package "{identifier}"')
             self.__specifications[identifier] = specification
             pdu = convert_to_pdu(specification)
             if pdu:
@@ -294,6 +284,9 @@ class Parser:
         filepath = self.__basedir + "/" + infile
         with open(filepath, 'r') as filehandle:
             self.__grammar.parseFile(filehandle)
+
+    def parse_string(self, string: str) -> None:
+        self.__grammar.parseString(string)
 
     def specifications(self) -> Dict[str, Specification]:
         return self.__specifications
@@ -309,10 +302,12 @@ def convert_to_pdu(spec: Specification) -> Opt[PDU]:
 
     for t in spec.package.types:
         if isinstance(t, (ModularInteger, RangeInteger)):
+            if t.name in types:
+                raise ParserError(f'duplicate type "{t.name}"')
             types[t.name] = t
         elif isinstance(t, Message):
             if t.name != 'PDU':
-                raise ParserError('Expected message name PDU, found {}'.format(t.name))
+                raise ParserError(f'expected message name "PDU", found "{t.name}"')
             create_nodes(nodes, types, t.components)
             create_edges(nodes, t.components)
             pdu = PDU(spec.package.identifier, next(iter(nodes.values()), FINAL))
@@ -325,6 +320,8 @@ def create_nodes(nodes: Dict[str, Node], types: Dict[str, Type],
     for component in components:
         if 'Payload' in component.type:
             types[component.type] = Array(component.type)
+        if component.type not in types:
+            raise ParserError(f'reference to undefined type "{component.type}"')
         nodes[component.name] = Node(component.name, types[component.type])
 
 
@@ -334,6 +331,8 @@ def create_edges(nodes: Dict[str, Node], components: List[Component]) -> None:
             nodes[component.name].edges.append(
                 Edge(nodes[components[i + 1].name]) if i + 1 < len(components) else Edge(FINAL))
         for then in component.thens:
+            if then.name not in nodes and then.name != 'null':
+                raise ParserError(f'reference to undefined node "{then.name}"')
             edge = Edge(nodes[then.name]) if then.name != 'null' else Edge(FINAL)
             if then.constraint:
                 edge.condition = then.constraint
@@ -348,24 +347,22 @@ def create_edges(nodes: Dict[str, Node], components: List[Component]) -> None:
 
 def convert_location_expression(expr: LogExpr) -> Dict[str, MathExpr]:
     result: Dict[str, MathExpr] = {}
-    if not isinstance(expr, (And, Equal)):
-        raise ParserError('Invalid location expression {}'.format(expr))
     if isinstance(expr, Equal):
         result.update(convert_location_equation(expr))
-    if isinstance(expr, And):
+    elif isinstance(expr, And):
         result.update(convert_location_equation(expr.left))
         result.update(convert_location_equation(expr.right))
+    else:
+        raise ParserError(f'unexpected "{expr.symbol()}" in "{expr}"')
     return result
 
 
 def convert_location_equation(expr: LogExpr) -> Dict[str, MathExpr]:
     if not isinstance(expr, Equal):
-        raise ParserError('Expected equation, found {}'.format(expr))
+        raise ParserError(f'expected "=" instead of "{expr.symbol()}" in "{expr}"')
     if not isinstance(expr.left, Value) \
             or (expr.left != Value('First') and expr.left != Value('Length')):
-        raise ParserError('Expected First or Length, found {}'.format(expr.left))
-    if not isinstance(expr.right, MathExpr):
-        raise ParserError('Expected expression, found {}'.format(expr.right))
+        raise ParserError(f'expected "First" or "Length" instead of "{expr.left}"')
     return {expr.left.name.lower(): expr.right}
 
 
@@ -374,7 +371,7 @@ def parse_term(string: str, location: int, tokens: list) -> Union[Attribute, Num
         return Value(tokens[0])
     if isinstance(tokens[0], (Attribute, Number)):
         return tokens[0]
-    raise ParseFatalException(string, location, 'Expected identifier, attribute or number')
+    raise ParseFatalException(string, location, 'expected identifier, attribute or number')
 
 
 def parse_relation(string: str, location: int, tokens: list) -> Relation:
@@ -390,7 +387,7 @@ def parse_relation(string: str, location: int, tokens: list) -> Relation:
         return Greater(tokens[0], tokens[2])
     if tokens[1] == '/=':
         return NotEqual(tokens[0], tokens[2])
-    raise ParseFatalException(string, location, 'Unexpected relation operator')
+    raise ParseFatalException(string, location, 'unexpected relation operator')
 
 
 def parse_logical_expression(string: str, location: int, tokens: list) -> LogExpr:
@@ -405,7 +402,7 @@ def parse_logical_expression(string: str, location: int, tokens: list) -> LogExp
         elif operator == 'or':
             expression = Or(left, right)
         else:
-            raise ParseFatalException(string, location, 'Unexpected logical operator')
+            raise ParseFatalException(string, location, 'unexpected logical operator')
         result.insert(0, expression)
     return result[0]
 
@@ -428,7 +425,7 @@ def parse_mathematical_expression(string: str, location: int, tokens: list) -> M
         elif operator == '**':
             expression = Pow(left, right)
         else:
-            raise ParseFatalException(string, location, 'Unexpected mathematical operator')
+            raise ParseFatalException(string, location, 'unexpected mathematical operator')
         result.insert(0, expression)
     return result[0]
 
@@ -444,7 +441,7 @@ def parse_then(string: str, location: int, tokens: list) -> Then:
             constraint = expr
         else:
             raise ParseFatalException(
-                string, location, 'Expected location expression or value constraint in \'then\'')
+                string, location, 'expected location expression or value constraint')
     return Then(identifier, location_expr, constraint)
 
 
@@ -455,11 +452,19 @@ def parse_attribute(string: str, location: int, tokens: list) -> Attribute:
         return Last(tokens[0])
     if tokens[2] == 'Length':
         return Length(tokens[0])
-    raise ParseFatalException(string, location, 'Expected attribute')
+    raise ParseFatalException(string, location, 'unexpected attribute')
 
 
 def parse_type(string: str, location: int, tokens: list) -> Type:
-    if isinstance(tokens[3], (Enumeration, ModularInteger, RangeInteger, Message)):
-        tokens[3].name = tokens[1]
-        return tokens[3]
-    raise ParseFatalException(string, location, 'Unexpected type')
+    try:
+        if tokens[3] == 'mod':
+            return ModularInteger(tokens[1], *tokens[4:6])
+        if tokens[3] == 'range':
+            return RangeInteger(tokens[1], *tokens[4:7])
+        if tokens[3] == 'message':
+            return Message(tokens[1], tokens[4])
+        if tokens[3] == '(':
+            return Enumeration(tokens[1], tokens[4:-1])
+    except ModelError as e:
+        raise ParseFatalException(string, location, e)
+    raise ParseFatalException(string, location, 'unexpected type')

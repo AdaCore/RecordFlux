@@ -277,6 +277,9 @@ class IfExpression(SparkRepresentation, LogExpr):
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> LogExpr:
         return self
 
+    def symbol(self) -> str:
+        raise NotImplementedError
+
 
 class Statement(SparkRepresentation):
     def specification(self) -> str:
@@ -357,6 +360,9 @@ class LogCall(Call, LogExpr):
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> LogExpr:
         return self
 
+    def symbol(self) -> str:
+        raise NotImplementedError
+
 
 class Convert(MathExpr):
     # pylint: disable=too-many-arguments
@@ -430,6 +436,9 @@ class FalseExpr(LogExpr):
 
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
         return self
+
+    def symbol(self) -> str:
+        raise NotImplementedError
 
 
 FALSE = FalseExpr()

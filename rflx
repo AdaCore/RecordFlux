@@ -4,10 +4,8 @@
 import argparse
 import sys
 
-import pyparsing
-
 from generator import Generator
-from parser import Parser, ParserError
+from parser import Parser, ParseFatalException, ParserError
 
 
 def main() -> None:
@@ -22,7 +20,7 @@ def main() -> None:
             print('Parsing {}... '.format(f), end='')
             parser.parse(f)
             print('OK')
-        except pyparsing.ParseException as e:
+        except ParseFatalException as e:
             print('Syntax error: {}'.format(e))
             sys.exit(1)
         except ParserError as e:

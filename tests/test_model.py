@@ -337,9 +337,17 @@ class TestModel(unittest.TestCase):
         self.assertEqual(ModularInteger('UINT64', Pow(Number(2), Number(64))).size,
                          Number(64))
 
-    def test_modular_invalid_modulus(self) -> None:
+    def test_modular_invalid_modulus_power_of_two(self) -> None:
         with self.assertRaises(ModelError):
             ModularInteger('X', Number(255))
+
+    def test_modular_invalid_modulus_variable(self) -> None:
+        with self.assertRaises(ModelError):
+            ModularInteger('X', Pow(Number(2), Value('X')))
+
+    def test_modular_invalid_modulus_limit(self) -> None:
+        with self.assertRaises(ModelError):
+            ModularInteger('X', Pow(Number(2), Number(128)))
 
     def test_range_size(self) -> None:
         self.assertEqual(RangeInteger('UINT32',
@@ -349,7 +357,15 @@ class TestModel(unittest.TestCase):
                                       ).size,
                          Number(32))
 
-    def test_range_invalid_first(self) -> None:
+    def test_range_invalid_first_variable(self) -> None:
+        with self.assertRaises(ModelError):
+            RangeInteger('X', Add(Number(1), Value('X')), Number(15), Number(4))
+
+    def test_range_invalid_last_variable(self) -> None:
+        with self.assertRaises(ModelError):
+            RangeInteger('X', Number(1), Add(Number(1), Value('X')), Number(4))
+
+    def test_range_invalid_first_negative(self) -> None:
         with self.assertRaises(ModelError):
             RangeInteger('X', Number(-1), Number(0), Number(1))
 
@@ -357,12 +373,16 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelError):
             RangeInteger('X', Number(1), Number(0), Number(1))
 
-    def test_range_invalid_size(self) -> None:
+    def test_range_invalid_size_variable(self) -> None:
+        with self.assertRaises(ModelError):
+            RangeInteger('X', Number(0), Number(256), Add(Number(8), Value('X')))
+
+    def test_range_invalid_size_too_small(self) -> None:
         with self.assertRaises(ModelError):
             RangeInteger('X', Number(0), Number(256), Number(8))
 
     def test_array_invalid_call(self) -> None:
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ModelError):
             Array('X').size  # pylint: disable=expression-not-assigned
 
     def test_pdu_fields_invalid_cyclic(self) -> None:

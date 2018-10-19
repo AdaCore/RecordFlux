@@ -18,6 +18,10 @@ class LogExpr(Expr):
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'LogExpr':
         raise NotImplementedError
 
+    @abstractmethod
+    def symbol(self) -> str:
+        raise NotImplementedError
+
 
 class TrueExpr(LogExpr):
     def __repr__(self) -> str:
@@ -28,6 +32,9 @@ class TrueExpr(LogExpr):
 
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
         return self
+
+    def symbol(self) -> str:
+        return self.__str__()
 
 
 TRUE = TrueExpr()
@@ -534,10 +541,12 @@ class ModularInteger(Type):
     def __init__(self, name: str, modulus: MathExpr) -> None:
         modulus_num = modulus.simplified()
         if not isinstance(modulus_num, Number):
-            raise ModelError('invalid type {}: modulus contains variable'.format(name))
+            raise ModelError(f'modulus of "{name}" contains variable')
         modulus_int = int(modulus_num)
+        if modulus_int > 2**64:
+            raise ModelError(f'modulus of "{name}" exceeds limit (2**64)')
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
-            raise ModelError('invalid type {}: {} is not a power of two'.format(name, modulus_int))
+            raise ModelError(f'modulus of "{name}" not power of two')
         super().__init__(name)
         self.__modulus = modulus
         self.__size = Number(int(log(modulus_int) / log(2)))
@@ -555,19 +564,19 @@ class RangeInteger(Type):
     def __init__(self, name: str, first: MathExpr, last: MathExpr, size: MathExpr) -> None:
         first_num = first.simplified()
         if not isinstance(first_num, Number):
-            raise ModelError('invalid type {}: first contains variable'.format(name))
+            raise ModelError(f'first of "{name}" contains variable')
         last_num = last.simplified()
         if not isinstance(last_num, Number):
-            raise ModelError('invalid type {}: last contains variable'.format(name))
+            raise ModelError(f'last of "{name}" contains variable')
         if first_num < Number(0):
-            raise ModelError('invalid type {}: negative first'.format(name))
+            raise ModelError(f'first of "{name}" negative')
         if first_num > last_num:
-            raise ModelError('invalid type {}: negative range'.format(name))
+            raise ModelError(f'range of "{name}" negative')
         size_num = size.simplified()
         if not isinstance(size_num, Number):
-            raise ModelError('invalid type {}: size contains variable'.format(name))
+            raise ModelError(f'size of "{name}" contains variable')
         if log(int(last_num) + 1) / log(2) > int(size_num):
-            raise ModelError('invalid type {}: size too small for given range'.format(name))
+            raise ModelError(f'size for "{name}" too small')
         super().__init__(name)
         self.__first = first
         self.__last = last
@@ -589,7 +598,7 @@ class RangeInteger(Type):
 class Array(Type):
     @property
     def size(self) -> MathExpr:
-        raise RuntimeError('array type has no fixed size')
+        raise ModelError(f'size of "{self.name}" undefined')
 
 
 class Node:
@@ -776,8 +785,7 @@ def extend_fields(fields: OrderedDict, new_fields: Dict[str, Field]) -> None:
         for field in fields.values():
             if field.name == new_field.name:
                 if field.type != new_field.type:
-                    raise ModelError('duplicate node {} with different types ({} != {})'.format(
-                        field.name, field.type.name, new_field.type.name))
+                    raise ModelError('duplicate node "{field.name}"')
                 field.variants.update(new_field.variants)
                 found = True
         if not found:

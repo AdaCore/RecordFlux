@@ -3,12 +3,13 @@ from typing import Dict, List
 
 from parser import (And, Component, Context, Div, Enumeration, Equal, First, GreaterEqual, Last,
                     Length, LessEqual, Message, ModularInteger, Mul, Number, NotEqual, Package,
-                    Parser, ParserError, PDU, Pow, RangeInteger, Specification, Sub, Then, Value)
+                    Parser, ParseFatalException, ParserError, PDU, Pow, RangeInteger, Specification,
+                    Sub, Then, Value)
 
 from tests.models import ETHERNET_PDU
 
 
-class TestParser(unittest.TestCase):
+class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def setUp(self) -> None:
         self.testdir = "tests"
         self.maxDiff = None  # pylint: disable=invalid-name
@@ -29,11 +30,19 @@ class TestParser(unittest.TestCase):
             parser.parse(self.fullpath(filename))
         self.assertEqual(parser.pdus(), pdus, filenames)
 
-    def assert_parser_error(self, filenames: List[str]) -> None:
-        with self.assertRaises(ParserError):
+    def assert_parser_error(self, filenames: List[str], regex: str) -> None:
+        with self.assertRaisesRegex(ParserError, regex):
             parser = Parser()
             for filename in filenames:
                 parser.parse(self.fullpath(filename))
+
+    def assert_parser_error_string(self, string: str, regex: str) -> None:
+        with self.assertRaisesRegex(ParserError, regex):
+            Parser().parse_string(string)
+
+    def assert_parse_exception_string(self, string: str, regex: str) -> None:
+        with self.assertRaisesRegex(ParseFatalException, regex):
+            Parser().parse_string(string)
 
     def test_empty_file_spec(self) -> None:
         self.assert_specifications(['empty_file.rflx'], {})
@@ -62,7 +71,117 @@ class TestParser(unittest.TestCase):
         self.assert_pdus(['context.rflx'], {})
 
     def test_duplicate_package(self) -> None:
-        self.assert_parser_error(["package.rflx", "package.rflx"])
+        self.assert_parser_error(['package.rflx', 'package.rflx'],
+                                 r'duplicate package')
+
+    def test_duplicate_type(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type T is mod 256;
+                end Test;
+            """,
+            r'duplicate type "T"')
+
+    def test_reference_to_undefined_type(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type PDU is
+                      message
+                         Foo : T;
+                      end message;
+                end Test;
+            """,
+            r'reference to undefined type "T"')
+
+    def test_reference_to_undefined_node(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T
+                            then Bar;
+                      end message;
+                end Test;
+            """,
+            r'reference to undefined node "Bar"')
+
+    def test_invalid_location_expression_no_conjunction(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T
+                            then Bar
+                                with First = 1 or Length = 1;
+                        Bar : T;
+                      end message;
+                end Test;
+            """,
+            r'unexpected "or" in "\(First = 1 or Length = 1\)"')
+
+    def test_invalid_location_expression_no_equation(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T
+                            then Bar
+                                with First < 1 and Length = 1;
+                        Bar : T;
+                      end message;
+                end Test;
+            """,
+            r'expected "=" instead of "<" in "First < 1"')
+
+    def test_invalid_location_expression_no_equation_2(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T
+                            then Bar
+                                with First < 1;
+                        Bar : T;
+                      end message;
+                end Test;
+            """,
+            r'unexpected "<" in "First < 1"')
+
+    def test_invalid_location_expression_no_attribute(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T
+                            then Bar
+                                with Foo = 1;
+                        Bar : T;
+                      end message;
+                end Test;
+            """,
+            r'expected "First" or "Length" instead of "Foo"')
+
+    def test_invalid_type(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type T is mod 2**128;
+                end Test;
+            """,
+            r'modulus of "T" exceeds limit \(2\*\*64\) .*')
 
     # def test_derived_type(self) -> None:
     #     spec = {'Test': Specification(
