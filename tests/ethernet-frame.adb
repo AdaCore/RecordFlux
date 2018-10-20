@@ -1,4 +1,4 @@
-package body Ethernet is
+package body Ethernet.Frame is
 
    procedure Payload (Buffer : Bytes; First : out Natural; Last : out Natural) is
    begin
@@ -20,4 +20,4 @@ package body Ethernet is
       end if;
    end Payload;
 
-end Ethernet;
+end Ethernet.Frame;

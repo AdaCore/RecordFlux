@@ -31,7 +31,7 @@ def main() -> None:
         generator = Generator()
         try:
             print('Generating... ', end='')
-            generator.generate_dissector(parser.pdus().values())
+            generator.generate_dissector(parser.pdus)
             print('OK')
         except AssertionError as e:
             print('Generation error: {}'.format(e))

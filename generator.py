@@ -447,13 +447,19 @@ FALSE = FalseExpr()
 
 class Generator:
     def __init__(self) -> None:
-        self.__units: List[Unit] = []
+        self.__units: Dict[str, Unit] = {}
 
     def generate_dissector(self, pdus: List[PDU]) -> None:
         for pdu in pdus:
-            context = [ContextItem('Types', True)]
-            package = Package(pdu.name, [], [])
-            self.__units += [Unit(context, package)]
+            if pdu.package in self.__units:
+                top_level_package = self.__units[pdu.package].package
+            else:
+                top_level_package = Package(pdu.package, [], [])
+                self.__units[pdu.package] = Unit([ContextItem('Types', True)],
+                                                 top_level_package)
+
+            package = Package(pdu.full_name, [], [])
+            self.__units[pdu.full_name] = Unit([], package)
 
             seen_types: List[Type] = []
             unreachable_functions: Dict[str, Subprogram] = {}
@@ -469,13 +475,13 @@ class Generator:
                 if field.type not in seen_types:
                     seen_types.append(field.type)
                     if isinstance(field.type, ModularInteger):
-                        package.types += [ModularType(field.type.name,
-                                                      field.type.modulus)]
+                        top_level_package.types += [ModularType(field.type.name,
+                                                                field.type.modulus)]
                     elif isinstance(field.type, RangeInteger):
-                        package.types += [RangeType(field.type.name,
-                                                    field.type.first,
-                                                    field.type.last,
-                                                    field.type.size)]
+                        top_level_package.types += [RangeType(field.type.name,
+                                                              field.type.first,
+                                                              field.type.last,
+                                                              field.type.size)]
                     elif isinstance(field.type, Array):
                         if 'Payload' not in field.type.name:
                             raise NotImplementedError('custom arrays are not supported yet')
@@ -519,7 +525,7 @@ class Generator:
                     list(fields.values())[-1].name))
 
     def units(self) -> List[Unit]:
-        return self.__units
+        return list(self.__units.values())
 
 
 def unique(input_list: List) -> List:

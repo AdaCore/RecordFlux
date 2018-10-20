@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Dict, List, Optional as Opt, Union
+from typing import Dict, List, Union
 
 from pyparsing import (alphanums, infixNotation, nums, opAssoc, ParseFatalException, Forward,
                        Group, Keyword, Literal, OneOrMore, Optional, Regex, StringEnd, Suppress,
@@ -114,6 +114,8 @@ class Parser:
         # Names
         identifier = WordStart(alphanums) + Word(alphanums + '_') + WordEnd(alphanums + '_')
         identifier.setName('Identifier')
+        qualified_identifier = Optional(identifier + Literal('.')) - identifier
+        qualified_identifier.setParseAction(lambda t: ''.join(t.asList()))
         attribute_designator = Keyword('First') | Keyword('Last') | Keyword('Length')
         attribute_reference = identifier + Literal('\'') - attribute_designator
         attribute_reference.setParseAction(parse_attribute)
@@ -274,9 +276,9 @@ class Parser:
             if identifier in self.__specifications:
                 raise ParserError(f'duplicate package "{identifier}"')
             self.__specifications[identifier] = specification
-            pdu = convert_to_pdu(specification)
-            if pdu:
-                self.__pdus[identifier] = pdu
+            pdus = convert_to_pdus(specification)
+            if pdus:
+                self.__pdus.update(pdus)
 
     def parse(self, infile: str) -> None:
         filepath = self.__basedir + "/" + infile
@@ -289,14 +291,14 @@ class Parser:
     def specifications(self) -> Dict[str, Specification]:
         return self.__specifications
 
-    def pdus(self) -> Dict[str, PDU]:
-        return self.__pdus
+    @property
+    def pdus(self) -> List[PDU]:
+        return list(self.__pdus.values())
 
 
-def convert_to_pdu(spec: Specification) -> Opt[PDU]:
+def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
     types: Dict[str, Type] = {}
-    nodes: Dict[str, Node] = OrderedDict()
-    pdu = None
+    pdus: Dict[str, PDU] = {}
 
     for t in spec.package.types:
         if isinstance(t, (ModularInteger, RangeInteger)):
@@ -304,13 +306,15 @@ def convert_to_pdu(spec: Specification) -> Opt[PDU]:
                 raise ParserError(f'duplicate type "{t.name}"')
             types[t.name] = t
         elif isinstance(t, Message):
-            if t.name != 'PDU':
-                raise ParserError(f'expected message name "PDU", found "{t.name}"')
+            nodes: Dict[str, Node] = OrderedDict()
             create_nodes(nodes, types, t.components)
             create_edges(nodes, t.components)
-            pdu = PDU(spec.package.identifier, next(iter(nodes.values()), FINAL))
+            name = f'{spec.package.identifier}.{t.name}'
+            if name in pdus:
+                raise ParserError(f'duplicate message "{t.name}"')
+            pdus[name] = PDU(name, next(iter(nodes.values()), FINAL))
 
-    return pdu
+    return pdus
 
 
 def create_nodes(nodes: Dict[str, Node], types: Dict[str, Type],

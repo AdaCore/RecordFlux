@@ -36,7 +36,7 @@ def create_ethernet_pdu() -> PDU:
                           And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
                               LessEqual(Div(Length('Payload'), Number(8)), Number(1500))))]
 
-    return PDU('Ethernet', destination)
+    return PDU('Ethernet.Frame', destination)
 
 
 ETHERNET_PDU = create_ethernet_pdu()

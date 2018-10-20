@@ -3,7 +3,7 @@ package Ethernet is
    type UINT16 is range 0 .. 2**16 - 1 with Size => 16;
    type UINT48 is mod 2**48;
 
-   type PDU is
+   type Frame is
       message
          Destination : UINT48;
          Source : UINT48;

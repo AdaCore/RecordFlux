@@ -637,8 +637,8 @@ class Field(Element):
 
 
 class PDU(Element):
-    def __init__(self, name: str, node: Node) -> None:
-        self.name = name
+    def __init__(self, full_name: str, node: Node) -> None:
+        self.full_name = full_name
         self.initial_node = node
 
     def __eq__(self, other: object) -> bool:
@@ -646,6 +646,9 @@ class PDU(Element):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
+    @property
+    def package(self) -> str:
+        return self.full_name.rsplit('.', 1)[0]
 
     def fields(self, facts: Dict[Attribute, MathExpr] = None,
                first: MathExpr = UNDEFINED) -> Dict[str, Field]:

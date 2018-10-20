@@ -17,7 +17,7 @@ class TestIntegration(unittest.TestCase):
         parser.parse('{}.rflx'.format(self.fullpath(filename)))
 
         generator = Generator()
-        generator.generate_dissector(list(parser.pdus().values()))
+        generator.generate_dissector(parser.pdus)
 
         for unit in generator.units():
             unit_name = unit.package.name.lower().replace('.', '-')

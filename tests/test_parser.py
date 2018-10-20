@@ -1,10 +1,10 @@
 import unittest
 from typing import Dict, List
 
-from parser import (And, Component, Context, Div, Enumeration, Equal, First, GreaterEqual, Last,
-                    Length, LessEqual, Message, ModularInteger, Mul, Number, NotEqual, Package,
-                    Parser, ParseFatalException, ParserError, PDU, Pow, RangeInteger, Specification,
-                    Sub, Then, Value)
+from parser import (And, Component, Context, Div, Edge, Enumeration, Equal, FINAL, First,
+                    GreaterEqual, Last, Length, LessEqual, Message, ModularInteger, Mul, Number,
+                    Node, NotEqual, Package, Parser, ParseFatalException, ParserError, PDU, Pow,
+                    RangeInteger, Specification, Sub, Then, Value)
 
 from tests.models import ETHERNET_PDU
 
@@ -24,11 +24,11 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             parser.parse(self.fullpath(filename))
         self.assertEqual(parser.specifications(), specifications, filenames)
 
-    def assert_pdus(self, filenames: List[str], pdus: Dict[str, PDU]) -> None:
+    def assert_pdus(self, filenames: List[str], pdus: List[PDU]) -> None:
         parser = Parser()
         for filename in filenames:
             parser.parse(self.fullpath(filename))
-        self.assertEqual(parser.pdus(), pdus, filenames)
+        self.assertEqual(parser.pdus, pdus, filenames)
 
     def assert_parser_error(self, filenames: List[str], regex: str) -> None:
         with self.assertRaisesRegex(ParserError, regex):
@@ -48,27 +48,27 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assert_specifications(['empty_file.rflx'], {})
 
     def test_empty_file_pdu(self) -> None:
-        self.assert_pdus(['empty_file.rflx'], {})
+        self.assert_pdus(['empty_file.rflx'], [])
 
     def test_comment_only_spec(self) -> None:
         self.assert_specifications(['comment_only.rflx'], {})
 
     def test_comment_only_pdu(self) -> None:
-        self.assert_pdus(['comment_only.rflx'], {})
+        self.assert_pdus(['comment_only.rflx'], [])
 
     def test_package_spec(self) -> None:
         self.assert_specifications(['package.rflx'], {'Test': Specification(Context([]),
                                                                             Package('Test', []))})
 
     def test_package_pdu(self) -> None:
-        self.assert_pdus(['package.rflx'], {})
+        self.assert_pdus(['package.rflx'], [])
 
     def test_context_spec(self) -> None:
         self.assert_specifications(['context.rflx'], {'Test': Specification(Context(['Foo', 'Bar']),
                                                                             Package('Test', []))})
 
     def test_context_pdu(self) -> None:
-        self.assert_pdus(['context.rflx'], {})
+        self.assert_pdus(['context.rflx'], [])
 
     def test_duplicate_package(self) -> None:
         self.assert_parser_error(['package.rflx', 'package.rflx'],
@@ -183,6 +183,23 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'modulus of "T" exceeds limit \(2\*\*64\) .*')
 
+    def test_duplicate_message(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T;
+                      end message;
+                   type PDU is
+                      message
+                         Foo : T;
+                      end message;
+                end Test;
+            """,
+            r'duplicate message "PDU"')
+
     # def test_derived_type(self) -> None:
     #     spec = {'Test': Specification(
     #         Context([]),
@@ -236,8 +253,34 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                     Number(30)))),
                                  Then('Baz')]),
                               Component('Bar', 'T'),
+                              Component('Baz', 'T')]),
+                     Message('Simple_PDU',
+                             [Component('Bar', 'T'),
                               Component('Baz', 'T')])]))}
         self.assert_specifications(['message_type.rflx'], spec)
+
+    def test_message_type_pdu(self) -> None:
+        t = ModularInteger('T', Number(256))
+
+        pdu_foo = Node('Foo', t)
+        pdu_bar = Node('Bar', t)
+        pdu_baz = Node('Baz', t)
+
+        pdu_foo.edges = [Edge(pdu_bar,
+                              And(Equal(Length('Foo'),
+                                        Number(1)),
+                                  LessEqual(Value('Foo'),
+                                            Number(30))),
+                              Number(1),
+                              Number(1)),
+                         Edge(pdu_baz)]
+        pdu_bar.edges = [Edge(pdu_baz)]
+        pdu_baz.edges = [Edge(FINAL)]
+
+        pdus = [PDU('Test.PDU', pdu_foo),
+                PDU('Test.Simple_PDU', pdu_bar)]
+
+        self.assert_pdus(['message_type.rflx'], pdus)
 
     # def test_aspect(self) -> None:
     #     spec = {'Test': Specification(
@@ -271,7 +314,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                   Sub(Pow(Number(2), Number(16)), Number(1)),
                                   Number(16)),
                      ModularInteger('UINT48', Pow(Number(2), Number(48))),
-                     Message('PDU',
+                     Message('Frame',
                              [Component('Destination', 'UINT48'),
                               Component('Source', 'UINT48'),
                               Component('TPID', 'UINT16', [
@@ -311,7 +354,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assert_specifications(['ethernet.rflx'], spec)
 
     def test_ethernet_pdu(self) -> None:
-        self.assert_pdus(['ethernet.rflx'], {'Ethernet': ETHERNET_PDU})
+        self.assert_pdus(['ethernet.rflx'], [ETHERNET_PDU])
 
 
 if __name__ == "__main__":
