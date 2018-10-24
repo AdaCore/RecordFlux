@@ -323,14 +323,15 @@ class Add(AssMathExpr):
         if not isinstance(expr, Add):
             return expr
         terms: List[MathExpr] = []
-        for term in expr.terms:
+        for term in reversed(expr.terms):
             complement = False
             for other in terms:
                 if other == -term:
                     terms.remove(other)
                     complement = True
+                    break
             if not complement:
-                terms.append(term)
+                terms.insert(0, term)
         if len(terms) == 1:
             return terms[0]
         return Add(*terms)

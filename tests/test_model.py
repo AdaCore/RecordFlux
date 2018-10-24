@@ -139,6 +139,8 @@ class TestModel(unittest.TestCase):
                          Number(10))
         self.assertEqual(Add(Value('X'), Value('Y'), Value('X', True)).simplified(),
                          Value('Y'))
+        self.assertEqual(Add(Value('X'), Value('Y'), Value('X'), -Value('X')).simplified(),
+                         Add(Value('X'), Value('Y')))
 
     def test_add_to_bytes(self) -> None:
         self.assertEqual(Add(Value('X'), Number(8)).to_bytes(),
