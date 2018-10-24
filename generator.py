@@ -297,7 +297,7 @@ class Assignment(Statement):
         self.expression = expression
 
     def definition(self) -> str:
-        return '      {} := {}'.format(self.name, str(self.expression))
+        return f'      {self.name} := {self.expression};'
 
 
 class IfStatement(Statement):
@@ -508,8 +508,8 @@ class Generator:
                         field.name,
                         valid_variants))
 
-                package.subprograms.append(
-                    create_field_accessor_function(
+                package.subprograms.extend(
+                    create_field_accessor_functions(
                         field))
 
                 extend_unreachable_functions(unreachable_functions, field.type)
@@ -667,12 +667,12 @@ def extend_unreachable_functions(
 
     if field_type.name not in unreachable_functions:
         if isinstance(field_type, Array):
-            if 'Unreachable' not in unreachable_functions:
-                unreachable_functions[field_type.name] = ExpressionFunction(
-                    'Unreachable',
+            if 'Unreachable_Natural' not in unreachable_functions:
+                unreachable_functions['Unreachable_Natural'] = ExpressionFunction(
+                    'Unreachable_Natural',
                     [],
-                    'Boolean',
-                    FALSE,
+                    'Natural',
+                    First('Natural'),
                     FALSE)
         else:
             unreachable_functions[field_type.name] = ExpressionFunction(
@@ -683,50 +683,46 @@ def extend_unreachable_functions(
                 FALSE)
 
 
-def create_field_accessor_function(field: Field) -> Subprogram:
-    assignments: List[Tuple[LogExpr, List[Statement]]] = []
-    preconditions: List[Tuple[LogExpr, Expr]] = []
-
+def create_field_accessor_functions(field: Field) -> List[Subprogram]:
+    functions: List[Subprogram] = []
     if 'Payload' in field.type.name:
-        for variant_id in field.variants:
-            first_call = MathCall('{}_{}_First (Buffer)'.format(field.name, variant_id))
-            last_call = MathCall('{}_{}_Last (Buffer)'.format(field.name, variant_id))
-            assignments.append(
-                (
-                    LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
-                    [Assignment('First', first_call),
-                     Assignment('Last', last_call)]
-                )
-            )
-            preconditions.append(
-                (
-                    LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
-                    And(Equal(Value('First'), first_call),
-                        Equal(Value('Last'), last_call))
-                )
-            )
+        for attribute in ['First', 'Last']:
+            functions.append(
+                ExpressionFunction(
+                    f'{field.name}_{attribute}',
+                    [('Buffer', 'Bytes')],
+                    'Natural',
+                    IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
+                                   LogCall(f'{field.name}_{variant_id}_{attribute} (Buffer)'))
+                                  for variant_id in field.variants],
+                                 'Unreachable_Natural'),
+                    LogCall(f'Valid_{field.name} (Buffer)')))
 
-        return Procedure(
-            field.name,
-            [('Buffer', 'Bytes'),
-             ('First', 'out Natural'),
-             ('Last', 'out Natural')],
-            [IfStatement(assignments,
-                         [Assignment('First', Last('Buffer')),
-                          Assignment('Last', First('Buffer'))])],
-            LogCall('Valid_{} (Buffer)'.format(field.name)),
-            IfExpression(preconditions,
-                         'Unreachable'))
+        functions.append(
+            Procedure(
+                field.name,
+                [('Buffer', 'Bytes'),
+                 ('First', 'out Natural'),
+                 ('Last', 'out Natural')],
+                [Assignment('First', MathCall(f'{field.name}_First (Buffer)')),
+                 Assignment('Last', MathCall(f'{field.name}_Last (Buffer)'))],
+                LogCall(f'Valid_{field.name} (Buffer)'),
+                And(Equal(Value('First'), MathCall(f'{field.name}_First (Buffer)')),
+                    Equal(Value('Last'), MathCall(f'{field.name}_Last (Buffer)')))))
 
-    return ExpressionFunction(
-        field.name,
-        [('Buffer', 'Bytes')],
-        field.type.name,
-        IfExpression([(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
-                       MathCall('{}_{} (Buffer)'.format(field.name, variant_id)))
-                      for variant_id in field.variants],
-                     'Unreachable_{}'.format(field.type.name)),
-        LogCall('Valid_{} (Buffer)'.format(field.name)))
+    else:
+        functions.append(
+            ExpressionFunction(
+                field.name,
+                [('Buffer', 'Bytes')],
+                field.type.name,
+                IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
+                               MathCall(f'{field.name}_{variant_id} (Buffer)'))
+                              for variant_id in field.variants],
+                             f'Unreachable_{field.type.name}'),
+                LogCall(f'Valid_{field.name} (Buffer)')))
+
+    return functions
 
 
 def create_packet_validation_function(field_name: str) -> Subprogram:

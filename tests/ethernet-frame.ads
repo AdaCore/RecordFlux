@@ -14,8 +14,8 @@ is
      with
        Pre => False;
 
-   function Unreachable return Boolean is
-      (False)
+   function Unreachable_Natural return Natural is
+      (Natural'First)
      with
        Pre => False;
 
@@ -164,10 +164,20 @@ is
    function Valid_Payload (Buffer : Bytes) return Boolean is
       (((((Valid_Payload_0_0_0_1_1 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) <= 1500)) or (Valid_Payload_0_0_0_0_0_0 (Buffer) and then (EtherType_0_0_0_0_0 (Buffer) >= 46 and then EtherType_0_0_0_0_0 (Buffer) <= 1500))) or (Valid_Payload_0_0_0_0_0_1 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) <= 1500))) or (Valid_Payload_0_0_0_1_0 (Buffer) and then (EtherType_0_0_0_1 (Buffer) >= 46 and then EtherType_0_0_0_1 (Buffer) <= 1500))));
 
+   function Payload_First (Buffer : Bytes) return Natural is
+      ((if Valid_Payload_0_0_0_0_0_0 (Buffer) then Payload_0_0_0_0_0_0_First (Buffer) elsif Valid_Payload_0_0_0_0_0_1 (Buffer) then Payload_0_0_0_0_0_1_First (Buffer) elsif Valid_Payload_0_0_0_1_0 (Buffer) then Payload_0_0_0_1_0_First (Buffer) elsif Valid_Payload_0_0_0_1_1 (Buffer) then Payload_0_0_0_1_1_First (Buffer) else Unreachable_Natural))
+     with
+       Pre => Valid_Payload (Buffer);
+
+   function Payload_Last (Buffer : Bytes) return Natural is
+      ((if Valid_Payload_0_0_0_0_0_0 (Buffer) then Payload_0_0_0_0_0_0_Last (Buffer) elsif Valid_Payload_0_0_0_0_0_1 (Buffer) then Payload_0_0_0_0_0_1_Last (Buffer) elsif Valid_Payload_0_0_0_1_0 (Buffer) then Payload_0_0_0_1_0_Last (Buffer) elsif Valid_Payload_0_0_0_1_1 (Buffer) then Payload_0_0_0_1_1_Last (Buffer) else Unreachable_Natural))
+     with
+       Pre => Valid_Payload (Buffer);
+
    procedure Payload (Buffer : Bytes; First : out Natural; Last : out Natural)
      with
        Pre => Valid_Payload (Buffer),
-       Post => (if Valid_Payload_0_0_0_0_0_0 (Buffer) then (First = Payload_0_0_0_0_0_0_First (Buffer) and then Last = Payload_0_0_0_0_0_0_Last (Buffer)) elsif Valid_Payload_0_0_0_0_0_1 (Buffer) then (First = Payload_0_0_0_0_0_1_First (Buffer) and then Last = Payload_0_0_0_0_0_1_Last (Buffer)) elsif Valid_Payload_0_0_0_1_0 (Buffer) then (First = Payload_0_0_0_1_0_First (Buffer) and then Last = Payload_0_0_0_1_0_Last (Buffer)) elsif Valid_Payload_0_0_0_1_1 (Buffer) then (First = Payload_0_0_0_1_1_First (Buffer) and then Last = Payload_0_0_0_1_1_Last (Buffer)) else Unreachable);
+       Post => (First = Payload_First (Buffer) and then Last = Payload_Last (Buffer));
 
    function Is_Valid (Buffer : Bytes) return Boolean is
       (Valid_Payload (Buffer));
