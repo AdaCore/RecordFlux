@@ -15,16 +15,13 @@ package body Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer      : Bytes := Read_File ("tests/ethernet.raw");
-      Valid       : Boolean;
+      Buffer      : Bytes := Read_File ("tests/ethernet_ipv4_udp.raw");
       Destination : Ethernet.UINT48;
       Source      : Ethernet.UINT48;
       EtherType   : Ethernet.UINT16;
       First       : Natural;
       Last        : Natural;
    begin
-      Valid := Ethernet.Frame.Is_Valid (Buffer);
-      Assert (Valid, "Invalid packet");
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Destination (Buffer);
          Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
@@ -42,6 +39,7 @@ package body Ethernet.Tests is
             end if;
          end if;
       end if;
+      Assert (Ethernet.Frame.Is_Valid (Buffer), "Invalid frame");
    end Test_Ethernet_II;
 
    procedure Test_IEEE_802_3 (T : in out Aunit.Test_Cases.Test_Case'Class)
@@ -49,15 +47,12 @@ package body Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer      : Bytes := Read_File ("tests/ethernet_802.3.raw");
-      Valid       : Boolean;
       Destination : Ethernet.UINT48;
       Source      : Ethernet.UINT48;
       EtherType   : Ethernet.UINT16;
       First       : Natural;
       Last        : Natural;
    begin
-      Valid := Ethernet.Frame.Is_Valid (Buffer);
-      Assert (Valid, "Invalid packet");
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Destination (Buffer);
          Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
@@ -75,6 +70,7 @@ package body Ethernet.Tests is
             end if;
          end if;
       end if;
+      Assert (Ethernet.Frame.Is_Valid (Buffer), "Invalid frame");
    end Test_IEEE_802_3;
 
    procedure Test_Ethernet_II_VLAN (T : in out Aunit.Test_Cases.Test_Case'Class)
@@ -82,7 +78,6 @@ package body Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer      : Bytes := Read_File ("tests/ethernet_vlan_tag.raw");
-      Valid       : Boolean;
       Destination : Ethernet.UINT48;
       Source      : Ethernet.UINT48;
       TPID        : Ethernet.UINT16;
@@ -91,8 +86,6 @@ package body Ethernet.Tests is
       First       : Natural;
       Last        : Natural;
    begin
-      Valid := Ethernet.Frame.Is_Valid (Buffer);
-      Assert (Valid, "Invalid packet");
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Destination (Buffer);
          Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
@@ -118,6 +111,7 @@ package body Ethernet.Tests is
             end if;
          end if;
       end if;
+      Assert (Ethernet.Frame.Is_Valid (Buffer), "Invalid frame");
    end Test_Ethernet_II_VLAN;
 
    procedure Test_Invalid_Ethernet_II_Too_Short (T : in out Aunit.Test_Cases.Test_Case'Class)
