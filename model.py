@@ -469,10 +469,12 @@ class Attribute(MathExpr):
         return item == self
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
-        if facts and self in facts:
-            if self in facts[self]:
-                raise ModelError(f'self-reference to "{self}"')
-            return facts[self]
+        if facts:
+            positive_self = self.__class__(self.name)
+            if positive_self in facts:
+                if positive_self in facts[positive_self]:
+                    raise ModelError(f'self-reference to "{positive_self}"')
+                return -facts[positive_self] if self.negative else facts[positive_self]
         return self
 
     def to_bytes(self) -> MathExpr:

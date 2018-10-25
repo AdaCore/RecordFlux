@@ -290,6 +290,8 @@ class TestModel(unittest.TestCase):
                          Length('X'))
         self.assertEqual(Length('X').simplified({Length('X'): Number(42)}),
                          Number(42))
+        self.assertEqual(-Length('X').simplified({Length('X'): Number(42)}),
+                         Number(-42))
 
     def test_first_neg(self) -> None:
         self.assertEqual(-First('X'),
@@ -300,6 +302,8 @@ class TestModel(unittest.TestCase):
                          First('X'))
         self.assertEqual(First('X').simplified({First('X'): Number(42)}),
                          Number(42))
+        self.assertEqual(-First('X').simplified({First('X'): Number(42)}),
+                         Number(-42))
 
     def test_last_neg(self) -> None:
         self.assertEqual(-Last('X'),
@@ -310,6 +314,8 @@ class TestModel(unittest.TestCase):
                          Last('X'))
         self.assertEqual(Last('X').simplified({Last('X'): Number(42)}),
                          Number(42))
+        self.assertEqual(-Last('X').simplified({Last('X'): Number(42)}),
+                         Number(-42))
 
     def test_less_simplified(self) -> None:
         self.assertEqual(Less(Value('X'), Add(Number(21), Number(21))).simplified(),
