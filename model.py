@@ -759,9 +759,9 @@ def evaluate(facts: Dict[Attribute, MathExpr],
 
 def create_facts(facts: Dict[Attribute, MathExpr], edge: Edge) -> Dict[Attribute, MathExpr]:
     facts = dict(facts)
+    facts[Length(edge.target.name)] = edge.length.simplified(facts)
     facts[First(edge.target.name)] = edge.first.simplified(facts)
     facts[Last(edge.target.name)] = Add(edge.first, edge.length, Number(-1)).simplified(facts)
-    facts[Length(edge.target.name)] = edge.length.simplified(facts)
     return facts
 
 

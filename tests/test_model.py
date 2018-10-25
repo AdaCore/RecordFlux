@@ -1,4 +1,5 @@
 import unittest
+from collections import OrderedDict
 from typing import Dict
 
 from model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater, GreaterEqual,
@@ -429,6 +430,82 @@ class TestModel(unittest.TestCase):
 
         with self.assertRaisesRegex(ModelError, 'self-reference to "Y\'First"'):
             PDU('Z', n1).fields()
+
+    def test_pdu_fields_length_after_payload(self) -> None:
+        int_type = ModularInteger('T', Number(256))
+        payload_type = Array('Payload_Type')
+
+        version = Node('Version', int_type)
+        payload = Node('Payload', payload_type)
+        length = Node('Length', int_type)
+
+        version.edges = [Edge(payload, length=Value('Length'))]
+        payload.edges = [Edge(length, first=Add(Last('Buffer'),
+                                                -Length('Length'),
+                                                Number(1)))]
+        length.edges = [Edge(FINAL)]
+
+        pdu = PDU('Foo', version)
+
+        expected = OrderedDict([
+            ('Version',
+             Field('Version',
+                   int_type,
+                   TRUE,
+                   {
+                       '0':
+                       Variant(
+                           [],
+                           TRUE,
+                           {
+                               Length('Version'): Number(8),
+                               First('Version'): Number(0),
+                               Last('Version'): Number(7)
+                           })
+                   })),
+            ('Payload',
+             Field('Payload',
+                   payload_type,
+                   TRUE,
+                   {
+                       '0_0':
+                       Variant(
+                           [('Version', '0')],
+                           TRUE,
+                           {
+                               Length('Version'): Number(8),
+                               First('Version'): Number(0),
+                               Last('Version'): Number(7),
+                               Length('Payload'): Value('Length'),
+                               First('Payload'): Number(8),
+                               Last('Payload'): Add(Value('Length'), Number(7))
+                           })
+                   })),
+            ('Length',
+             Field('Length',
+                   int_type,
+                   TRUE,
+                   {
+                       '0_0_0':
+                       Variant(
+                           [('Version', '0'),
+                            ('Payload', '0_0')],
+                           TRUE,
+                           {
+                               Length('Version'): Number(8),
+                               First('Version'): Number(0),
+                               Last('Version'): Number(7),
+                               Length('Payload'): Value('Length'),
+                               First('Payload'): Number(8),
+                               Last('Payload'): Add(Value('Length'), Number(7)),
+                               Length('Length'): Number(8),
+                               First('Length'): Add(Last('Buffer'), Number(-7)),
+                               Last('Length'): Last('Buffer')
+                           })
+                   }))
+        ])
+
+        self.assertEqual(pdu.fields(), expected)
 
     def test_pdu_fields_ethernet(self) -> None:
         expected: Dict[str, Field] = {
