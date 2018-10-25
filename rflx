@@ -5,6 +5,7 @@ import argparse
 import sys
 
 from generator import Generator
+from model import ModelError
 from parser import Parser, ParseFatalException, ParserError
 
 
@@ -35,6 +36,9 @@ def main() -> None:
             print('OK')
         except AssertionError as e:
             print('Generation error: {}'.format(e))
+            sys.exit(1)
+        except ModelError as e:
+            print('Model error: {}'.format(e))
             sys.exit(1)
         for unit in generator.units():
             unit_name = unit.package.name.lower().replace('.', '-')

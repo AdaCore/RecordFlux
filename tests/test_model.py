@@ -412,6 +412,18 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelError):
             PDU('Z', n1).fields()
 
+    def test_pdu_fields_invalid_self_reference(self) -> None:
+        t = ModularInteger('T', Number(2))
+
+        n1 = Node('X', t)
+        n2 = Node('Y', t)
+
+        n1.edges = [Edge(n2, first=First('Y'))]
+        n2.edges = [Edge(FINAL)]
+
+        with self.assertRaisesRegex(ModelError, 'self-reference to "Y\'First"'):
+            PDU('Z', n1).fields()
+
     def test_pdu_fields_ethernet(self) -> None:
         expected: Dict[str, Field] = {
             'Destination':

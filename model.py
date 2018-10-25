@@ -121,6 +121,10 @@ class MathExpr(Expr):
         raise NotImplementedError
 
     @abstractmethod
+    def __contains__(self, item: 'MathExpr') -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'MathExpr':
         raise NotImplementedError
 
@@ -141,6 +145,9 @@ class UndefinedExpr(MathExpr):
 
     def __neg__(self) -> MathExpr:
         return self
+
+    def __contains__(self, item: MathExpr) -> bool:
+        raise NotImplementedError
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         return self
@@ -169,6 +176,9 @@ class Number(MathExpr):
 
     def __neg__(self) -> 'Number':
         return Number(-self.value)
+
+    def __contains__(self, item: MathExpr) -> bool:
+        return item == self
 
     def __add__(self, other: 'Number') -> 'Number':
         if isinstance(other, Number):
@@ -242,6 +252,9 @@ class AssMathExpr(MathExpr):
     @abstractmethod
     def __neg__(self) -> MathExpr:
         raise NotImplementedError
+
+    def __contains__(self, item: MathExpr) -> bool:
+        return any(item in term for term in self.terms)
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, AssMathExpr):
@@ -368,6 +381,9 @@ class BinMathExpr(MathExpr):
     def __neg__(self) -> MathExpr:
         return self.__class__(-self.left, self.right)
 
+    def __contains__(self, item: MathExpr) -> bool:
+        return item in (self.left, self.right)
+
     @abstractmethod
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         raise NotImplementedError
@@ -449,8 +465,13 @@ class Attribute(MathExpr):
     def __neg__(self) -> 'Attribute':
         return self.__class__(self.name, not self.negative)
 
+    def __contains__(self, item: MathExpr) -> bool:
+        return item == self
+
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         if facts and self in facts:
+            if self in facts[self]:
+                raise ModelError(f'self-reference to "{self}"')
             return facts[self]
         return self
 

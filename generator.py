@@ -350,6 +350,9 @@ class MathCall(Call, MathExpr):
     def __neg__(self) -> MathExpr:
         return self.__class__(self.call, not self.negative)
 
+    def __contains__(self, item: MathExpr) -> bool:
+        return item == self
+
     def to_bytes(self) -> MathExpr:
         return self
 
@@ -393,6 +396,9 @@ class Convert(MathExpr):
                        self.offset,
                        not self.negative)
 
+    def __contains__(self, item: MathExpr) -> bool:
+        return item == self
+
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
         return Convert(self.type_name,
                        self.array_name,
@@ -420,6 +426,9 @@ class Cast(MathExpr):
 
     def __neg__(self) -> MathExpr:
         return Cast(self.name, -self.expression)
+
+    def __contains__(self, item: MathExpr) -> bool:
+        return item == self
 
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
         return Cast(self.name, self.expression.simplified(facts))
