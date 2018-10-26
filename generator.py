@@ -345,6 +345,19 @@ class Assignment(Statement):
         return f'      {self.name} := {self.expression};'
 
 
+class PragmaStatement(Statement):
+    def __init__(self, name: str, parameters: List[str]) -> None:
+        self.name = name
+        self.pragma_parameters = parameters
+
+    def definition(self) -> str:
+        parameters = ''
+        if self.pragma_parameters:
+            parameters = ', '.join(self.pragma_parameters)
+            parameters = f' ({parameters})'
+        return f'      pragma {self.name}{parameters};'
+
+
 class IfStatement(Statement):
     def __init__(self, condition_statements: List[Tuple[LogExpr, List[Statement]]],
                  else_statements: List[Statement]) -> None:
@@ -515,6 +528,9 @@ class Generator:
             package = Package(pdu.full_name, [], [])
             self.__units[pdu.full_name] = Unit([], package)
 
+            package.subprograms.extend(
+                create_contain_functions())
+
             seen_types: List[Type] = []
             unreachable_functions: Dict[str, Subprogram] = {}
 
@@ -582,6 +598,17 @@ class Generator:
         return list(self.__units.values())
 
 
+def create_contain_functions() -> List[Subprogram]:
+    return [ExpressionFunction('Is_Contained',
+                               'Boolean',
+                               [('Buffer', 'Bytes')],
+                               aspects=[Ghost(), Import()]),
+            Procedure('Initialize',
+                      [('Buffer', 'Bytes')],
+                      [PragmaStatement('Assume', ['Is_Contained (Buffer)'])],
+                      aspects=[Postcondition(LogCall('Is_Contained (Buffer)'))])]
+
+
 def unique(input_list: List) -> List:
     return reduce(lambda l, x: l + [x] if x not in l else l, input_list, [])
 
@@ -637,7 +664,8 @@ def create_variant_validation_function(
                 variant.condition.simplified(
                     create_value_to_call(
                         field, variant_id, variant)))
-            ).simplified())
+            ).simplified(),
+        [Precondition(LogCall('Is_Contained (Buffer)'))])
 
 
 def create_variant_accessor_functions(
@@ -659,17 +687,20 @@ def create_variant_accessor_functions(
                 [('Buffer', 'Bytes')],
                 first_byte,
                 [Precondition(
-                    And(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
-                        LessEqual(First('Buffer'),
-                                  Sub(Last('Natural'), first_byte).simplified({First('Buffer'):
-                                                                               Number(0)}))))]))
+                    And(LogCall('Is_Contained (Buffer)'),
+                        And(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
+                            LessEqual(First('Buffer'),
+                                      Sub(Last('Natural'), first_byte).simplified(
+                                          {First('Buffer'): Number(0)})))))]))
         functions.append(
             ExpressionFunction(
                 '{}_{}_Last'.format(field.name, variant_id),
                 'Natural',
                 [('Buffer', 'Bytes')],
                 last_byte,
-                [Precondition(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)))]))
+                [Precondition(And(LogCall('Is_Contained (Buffer)'),
+                                  LogCall('Valid_{}_{} (Buffer)'.format(
+                                      field.name, variant_id))))]))
     else:
         functions.append(
             ExpressionFunction(
@@ -682,7 +713,9 @@ def create_variant_accessor_functions(
                     first_byte,
                     last_byte,
                     offset),
-                [Precondition(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)))]))
+                [Precondition(And(LogCall('Is_Contained (Buffer)'),
+                                  LogCall('Valid_{}_{} (Buffer)'.format(
+                                      field.name, variant_id))))]))
     return functions
 
 
@@ -713,7 +746,8 @@ def create_field_validation_function(
         'Valid_{}'.format(field_name),
         'Boolean',
         [('Buffer', 'Bytes')],
-        expr)
+        expr,
+        [Precondition(LogCall('Is_Contained (Buffer)'))])
 
 
 def extend_unreachable_functions(
@@ -751,7 +785,8 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
                                    LogCall(f'{field.name}_{variant_id}_{attribute} (Buffer)'))
                                   for variant_id in field.variants],
                                  'Unreachable_Natural'),
-                    [Precondition(LogCall(f'Valid_{field.name} (Buffer)'))]))
+                    [Precondition(And(LogCall('Is_Contained (Buffer)'),
+                                      LogCall(f'Valid_{field.name} (Buffer)')))]))
 
         functions.append(
             Procedure(
@@ -761,7 +796,8 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
                  ('Last', 'out Natural')],
                 [Assignment('First', MathCall(f'{field.name}_First (Buffer)')),
                  Assignment('Last', MathCall(f'{field.name}_Last (Buffer)'))],
-                [Precondition(LogCall(f'Valid_{field.name} (Buffer)')),
+                [Precondition(And(LogCall('Is_Contained (Buffer)'),
+                                  LogCall(f'Valid_{field.name} (Buffer)'))),
                  Postcondition(And(Equal(Value('First'),
                                          MathCall(f'{field.name}_First (Buffer)')),
                                    Equal(Value('Last'),
@@ -777,7 +813,8 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
                                MathCall(f'{field.name}_{variant_id} (Buffer)'))
                               for variant_id in field.variants],
                              f'Unreachable_{field.type.name}'),
-                [Precondition(LogCall(f'Valid_{field.name} (Buffer)'))]))
+                [Precondition(And(LogCall('Is_Contained (Buffer)'),
+                                  LogCall(f'Valid_{field.name} (Buffer)')))]))
 
     return functions
 
@@ -787,4 +824,5 @@ def create_packet_validation_function(field_name: str) -> Subprogram:
         'Is_Valid',
         'Boolean',
         [('Buffer', 'Bytes')],
-        LogCall('Valid_{} (Buffer)'.format(field_name)))
+        LogCall('Valid_{} (Buffer)'.format(field_name)),
+        [Precondition(LogCall('Is_Contained (Buffer)'))])

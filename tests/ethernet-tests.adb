@@ -22,6 +22,7 @@ package body Ethernet.Tests is
       First       : Natural;
       Last        : Natural;
    begin
+      Ethernet.Frame.Initialize (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Destination (Buffer);
          Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
@@ -53,6 +54,7 @@ package body Ethernet.Tests is
       First       : Natural;
       Last        : Natural;
    begin
+      Ethernet.Frame.Initialize (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Destination (Buffer);
          Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
@@ -86,6 +88,7 @@ package body Ethernet.Tests is
       First       : Natural;
       Last        : Natural;
    begin
+      Ethernet.Frame.Initialize (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Destination (Buffer);
          Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
@@ -120,6 +123,7 @@ package body Ethernet.Tests is
       pragma Unreferenced (T);
       Buffer : Bytes := Read_File ("tests/ethernet_invalid_too_short.raw");
    begin
+      Ethernet.Frame.Initialize (Buffer);
       Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
    end Test_Invalid_Ethernet_II_Too_Short;
 
@@ -129,6 +133,7 @@ package body Ethernet.Tests is
       pragma Unreferenced (T);
       Buffer : Bytes := Read_File ("tests/ethernet_invalid_too_long.raw");
    begin
+      Ethernet.Frame.Initialize (Buffer);
       Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
    end Test_Invalid_Ethernet_II_Too_Long;
 
@@ -138,6 +143,7 @@ package body Ethernet.Tests is
       pragma Unreferenced (T);
       Buffer : Bytes := Read_File ("tests/ethernet_undefined.raw");
    begin
+      Ethernet.Frame.Initialize (Buffer);
       Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
    end Test_Invalid_Ethernet_II_Undefined_Type;
 
@@ -147,6 +153,7 @@ package body Ethernet.Tests is
       pragma Unreferenced (T);
       Buffer : Bytes := Read_File ("tests/ethernet_802.3_invalid_length.raw");
    begin
+      Ethernet.Frame.Initialize (Buffer);
       Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
    end Test_Invalid_IEEE_802_3_Invalid_Length;
 

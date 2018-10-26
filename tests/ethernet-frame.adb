@@ -1,5 +1,10 @@
 package body Ethernet.Frame is
 
+   procedure Initialize (Buffer : Bytes) is
+   begin
+      pragma Assume (Is_Contained (Buffer));
+   end Initialize;
+
    procedure Payload (Buffer : Bytes; First : out Natural; Last : out Natural) is
    begin
       First := Payload_First (Buffer);
