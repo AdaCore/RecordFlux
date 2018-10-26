@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from functools import reduce
 from typing import Dict, List, Tuple
 
@@ -140,15 +140,74 @@ class RangeType(TypeDeclaration):
         return ''
 
 
+class Aspect(ABC):
+    def __str__(self) -> str:
+        if self.definition:
+            return f'{self.mark} => {self.definition}'
+        return f'{self.mark}'
+
+    @abstractproperty
+    def mark(self) -> str:
+        raise NotImplementedError
+
+    @abstractproperty
+    def definition(self) -> str:
+        raise NotImplementedError
+
+
+class Precondition(Aspect):
+    def __init__(self, expr: LogExpr) -> None:
+        self.expr = expr
+
+    @property
+    def mark(self) -> str:
+        return 'Pre'
+
+    @property
+    def definition(self) -> str:
+        return str(self.expr)
+
+
+class Postcondition(Aspect):
+    def __init__(self, expr: LogExpr) -> None:
+        self.expr = expr
+
+    @property
+    def mark(self) -> str:
+        return 'Post'
+
+    @property
+    def definition(self) -> str:
+        return str(self.expr)
+
+
+class Ghost(Aspect):
+    @property
+    def mark(self) -> str:
+        return 'Ghost'
+
+    @property
+    def definition(self) -> str:
+        return ''
+
+
+class Import(Aspect):
+    @property
+    def mark(self) -> str:
+        return 'Import'
+
+    @property
+    def definition(self) -> str:
+        return ''
+
+
 class Subprogram(SparkRepresentation):
-    # pylint: disable=too-many-arguments
-    def __init__(self, name: str, parameters: List[Tuple[str, str]], body: List['Statement'],
-                 precondition: LogExpr = TRUE, postcondition: LogExpr = TRUE) -> None:
+    def __init__(self, name: str, parameters: List[Tuple[str, str]] = None,
+                 body: List['Statement'] = None, aspects: List[Aspect] = None) -> None:
         self.name = name
-        self.parameters = parameters
-        self.precondition = precondition
-        self.postcondition = postcondition
-        self.body = body
+        self.parameters = parameters or []
+        self.body = body or []
+        self.aspects = aspects or []
 
     @abstractmethod
     def specification(self) -> str:
@@ -157,33 +216,35 @@ class Subprogram(SparkRepresentation):
     def _parameters(self) -> str:
         parameters = ''
         if self.parameters:
-            parameters = ' ({})'.format(
-                '; '.join(['{} : {}'.format(p_name, p_type) for p_name, p_type in self.parameters]))
+            parameters = '; '.join([f'{p_name} : {p_type}' for p_name, p_type in self.parameters])
+            parameters = f' ({parameters})'
         return parameters
 
+    def _body(self) -> str:
+        return '\n'.join([s.definition() for s in self.body])
+
     def _with_clause(self) -> str:
-        if self.precondition is TRUE and self.postcondition is TRUE:
+        if not self.aspects:
             return ''
         with_clause = '\n     with\n       '
-        if self.precondition is not TRUE:
-            with_clause += 'Pre => {}'.format(self.precondition)
-            if self.postcondition is not TRUE:
+        for i, aspect in enumerate(self.aspects):
+            with_clause += str(aspect)
+            if i + 1 < len(self.aspects):
                 with_clause += ',\n       '
-        if self.postcondition is not TRUE:
-            with_clause += 'Post => {}'.format(self.postcondition)
         return with_clause
 
 
 class Pragma(Subprogram):
     def __init__(self, name: str, parameters: List[str]) -> None:
-        super().__init__(name, [], [])
+        super().__init__(name)
         self.pragma_parameters = parameters
 
     def specification(self) -> str:
         parameters = ''
         if self.pragma_parameters:
-            parameters = ' ({})'.format(', '.join(self.pragma_parameters))
-        return '   pragma {}{};'.format(self.name, parameters)
+            parameters = ', '.join(self.pragma_parameters)
+            parameters = f' ({parameters})'
+        return f'   pragma {self.name}{parameters};'
 
     def definition(self) -> str:
         return ''
@@ -191,46 +252,36 @@ class Pragma(Subprogram):
 
 class Function(Subprogram):
     # pylint: disable=too-many-arguments
-    def __init__(self, name: str, parameters: List[Tuple[str, str]], return_type: str,
-                 body: List['Statement'], precondition: LogExpr = TRUE,
-                 postcondition: LogExpr = TRUE) -> None:
-        super().__init__(name, parameters, body, precondition, postcondition)
+    def __init__(self, name: str, return_type: str, parameters: List[Tuple[str, str]] = None,
+                 body: List['Statement'] = None, aspects: List[Aspect] = None) -> None:
+        super().__init__(name, parameters, body, aspects)
         self.return_type = return_type
 
     def specification(self) -> str:
-        return '   function {}{} return {}{};'.format(
-            self.name,
-            self._parameters(),
-            self.return_type,
-            self._with_clause())
+        return (f'   function {self.name}{self._parameters()} return {self.return_type}'
+                f'{self._with_clause()};')
 
     def definition(self) -> str:
-        return ('   function {name}{parameters} return {return_type} is\n'
-                '   begin\n'
-                '{body}\n'
-                '   end {name};').format(
-                    name=self.name,
-                    parameters=self._parameters(),
-                    return_type=self.return_type,
-                    body='\n'.join([s.definition() for s in self.body]))
+        return (f'   function {self.name}{self._parameters()} return {self.return_type} is\n'
+                f'   begin\n'
+                f'{self._body()}\n'
+                f'   end {self.name};')
 
 
 class ExpressionFunction(Subprogram):
     # pylint: disable=too-many-arguments
-    def __init__(self, name: str, parameters: List[Tuple[str, str]], return_type: str,
-                 expression: Expr, precondition: LogExpr = TRUE,
-                 postcondition: LogExpr = TRUE) -> None:
-        super().__init__(name, parameters, [], precondition, postcondition)
+    def __init__(self, name: str, return_type: str, parameters: List[Tuple[str, str]] = None,
+                 expression: Expr = None, aspects: List[Aspect] = None) -> None:
+        super().__init__(name, parameters, aspects=aspects)
         self.return_type = return_type
         self.expression = expression
 
     def specification(self) -> str:
-        return '   function {}{} return {} is\n      ({}){};'.format(
-            self.name,
-            self._parameters(),
-            self.return_type,
-            str(self.expression),
-            self._with_clause())
+        if self.expression:
+            return (f'   function {self.name}{self._parameters()} return {self.return_type} is\n'
+                    f'      ({self.expression!s}){self._with_clause()};')
+        return (f'   function {self.name}{self._parameters()} return {self.return_type}'
+                f'{self._with_clause()};')
 
     def definition(self) -> str:
         return ''
@@ -238,19 +289,13 @@ class ExpressionFunction(Subprogram):
 
 class Procedure(Subprogram):
     def specification(self) -> str:
-        return '   procedure {}{}{};'.format(
-            self.name,
-            self._parameters(),
-            self._with_clause())
+        return f'   procedure {self.name}{self._parameters()}{self._with_clause()};'
 
     def definition(self) -> str:
-        return ('   procedure {name}{parameters} is\n'
-                '   begin\n'
-                '{body}\n'
-                '   end {name};').format(
-                    name=self.name,
-                    parameters=self._parameters(),
-                    body='\n'.join([s.definition() for s in self.body]))
+        return (f'   procedure {self.name}{self._parameters()} is\n'
+                f'   begin\n'
+                f'{self._body()}\n'
+                f'   end {self.name};')
 
 
 class IfExpression(SparkRepresentation, LogExpr):
@@ -579,8 +624,8 @@ def create_variant_validation_function(
 
     return ExpressionFunction(
         'Valid_{}_{}'.format(field.name, variant_id),
-        [('Buffer', 'Bytes')],
         'Boolean',
+        [('Buffer', 'Bytes')],
         And(LogCall('Valid_{}_{} (Buffer)'.format(variant.previous[-1][0],
                                                   variant.previous[-1][1]))
             if variant.previous else TRUE,
@@ -610,33 +655,34 @@ def create_variant_accessor_functions(
         functions.append(
             ExpressionFunction(
                 '{}_{}_First'.format(field.name, variant_id),
-                [('Buffer', 'Bytes')],
                 'Natural',
+                [('Buffer', 'Bytes')],
                 first_byte,
-                And(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
-                    LessEqual(First('Buffer'),
-                              Sub(Last('Natural'), first_byte).simplified({First('Buffer'):
-                                                                           Number(0)})))))
+                [Precondition(
+                    And(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
+                        LessEqual(First('Buffer'),
+                                  Sub(Last('Natural'), first_byte).simplified({First('Buffer'):
+                                                                               Number(0)}))))]))
         functions.append(
             ExpressionFunction(
                 '{}_{}_Last'.format(field.name, variant_id),
-                [('Buffer', 'Bytes')],
                 'Natural',
+                [('Buffer', 'Bytes')],
                 last_byte,
-                LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id))))
+                [Precondition(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)))]))
     else:
         functions.append(
             ExpressionFunction(
                 '{}_{}'.format(field.name, variant_id),
-                [('Buffer', 'Bytes')],
                 field.type.name,
+                [('Buffer', 'Bytes')],
                 Convert(
                     field.type.name,
                     'Buffer',
                     first_byte,
                     last_byte,
                     offset),
-                LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id))))
+                [Precondition(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)))]))
     return functions
 
 
@@ -665,8 +711,8 @@ def create_field_validation_function(
 
     return ExpressionFunction(
         'Valid_{}'.format(field_name),
-        [('Buffer', 'Bytes')],
         'Boolean',
+        [('Buffer', 'Bytes')],
         expr)
 
 
@@ -679,17 +725,17 @@ def extend_unreachable_functions(
             if 'Unreachable_Natural' not in unreachable_functions:
                 unreachable_functions['Unreachable_Natural'] = ExpressionFunction(
                     'Unreachable_Natural',
-                    [],
                     'Natural',
+                    [],
                     First('Natural'),
-                    FALSE)
+                    [Precondition(FALSE)])
         else:
             unreachable_functions[field_type.name] = ExpressionFunction(
                 'Unreachable_{}'.format(field_type.name),
-                [],
                 field_type.name,
+                [],
                 First(field_type.name),
-                FALSE)
+                [Precondition(FALSE)])
 
 
 def create_field_accessor_functions(field: Field) -> List[Subprogram]:
@@ -699,13 +745,13 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
             functions.append(
                 ExpressionFunction(
                     f'{field.name}_{attribute}',
-                    [('Buffer', 'Bytes')],
                     'Natural',
+                    [('Buffer', 'Bytes')],
                     IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
                                    LogCall(f'{field.name}_{variant_id}_{attribute} (Buffer)'))
                                   for variant_id in field.variants],
                                  'Unreachable_Natural'),
-                    LogCall(f'Valid_{field.name} (Buffer)')))
+                    [Precondition(LogCall(f'Valid_{field.name} (Buffer)'))]))
 
         functions.append(
             Procedure(
@@ -715,21 +761,23 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
                  ('Last', 'out Natural')],
                 [Assignment('First', MathCall(f'{field.name}_First (Buffer)')),
                  Assignment('Last', MathCall(f'{field.name}_Last (Buffer)'))],
-                LogCall(f'Valid_{field.name} (Buffer)'),
-                And(Equal(Value('First'), MathCall(f'{field.name}_First (Buffer)')),
-                    Equal(Value('Last'), MathCall(f'{field.name}_Last (Buffer)')))))
+                [Precondition(LogCall(f'Valid_{field.name} (Buffer)')),
+                 Postcondition(And(Equal(Value('First'),
+                                         MathCall(f'{field.name}_First (Buffer)')),
+                                   Equal(Value('Last'),
+                                         MathCall(f'{field.name}_Last (Buffer)'))))]))
 
     else:
         functions.append(
             ExpressionFunction(
                 field.name,
-                [('Buffer', 'Bytes')],
                 field.type.name,
+                [('Buffer', 'Bytes')],
                 IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
                                MathCall(f'{field.name}_{variant_id} (Buffer)'))
                               for variant_id in field.variants],
                              f'Unreachable_{field.type.name}'),
-                LogCall(f'Valid_{field.name} (Buffer)')))
+                [Precondition(LogCall(f'Valid_{field.name} (Buffer)'))]))
 
     return functions
 
@@ -737,6 +785,6 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
 def create_packet_validation_function(field_name: str) -> Subprogram:
     return ExpressionFunction(
         'Is_Valid',
-        [('Buffer', 'Bytes')],
         'Boolean',
+        [('Buffer', 'Bytes')],
         LogCall('Valid_{} (Buffer)'.format(field_name)))
