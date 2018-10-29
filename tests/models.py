@@ -1,5 +1,6 @@
-from model import (And, Array, Edge, Equal, FINAL, First, GreaterEqual, Last, Length, LessEqual,
-                   ModularInteger, Mul, Node, NotEqual, Number, PDU, Pow, RangeInteger, Sub, Value)
+from model import (And, Array, Div, Edge, Equal, FINAL, First, GreaterEqual, Last, Length,
+                   LessEqual, ModularInteger, Mul, Node, NotEqual, Number, PDU, Pow,
+                   RangeInteger, Sub, Value)
 
 
 def create_ethernet_pdu() -> PDU:
@@ -30,7 +31,7 @@ def create_ethernet_pdu() -> PDU:
                              Mul(Value('EtherType'), Number(8))),
                         Edge(payload,
                              GreaterEqual(Value('EtherType'), Number(1536)),
-                             Sub(Last('Buffer'), Last('EtherType')))]
+                             Sub(Last('Message'), Last('EtherType')))]
     payload.edges = [Edge(FINAL,
                           And(GreaterEqual(Length('Payload'), Number(46)),
                               LessEqual(Length('Payload'), Number(1500))))]

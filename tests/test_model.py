@@ -607,8 +607,8 @@ class TestModel(unittest.TestCase):
                               Last('EtherType'): Number(143),
                               Length('EtherType'): Number(16),
                               First('Payload'): Number(144),
-                              Last('Payload'): Last('Buffer'),
-                              Length('Payload'): Add(Last('Buffer'), Number(-143))
+                              Last('Payload'): Last('Message'),
+                              Length('Payload'): Add(Last('Message'), Number(-143))
                           }),
                       '0_0_0_1_0':
                       Variant(
@@ -659,8 +659,8 @@ class TestModel(unittest.TestCase):
                               Last('EtherType'): Number(111),
                               Length('EtherType'): Number(16),
                               First('Payload'): Number(112),
-                              Last('Payload'): Last('Buffer'),
-                              Length('Payload'): Add(Last('Buffer'), Number(-111))
+                              Last('Payload'): Last('Message'),
+                              Length('Payload'): Add(Last('Message'), Number(-111))
                           })
                   }),
         }

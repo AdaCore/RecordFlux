@@ -1,9 +1,9 @@
 import unittest
 from typing import Dict, List
 
-from parser import (And, Component, Context, Enumeration, Equal, First, GreaterEqual, Last, Length,
-                    LessEqual, Message, ModularInteger, Mul, Number, NotEqual, Package, Parser,
-                    ParserError, PDU, Pow, RangeInteger, Specification, Sub, Then, Value)
+from parser import (And, Component, Context, Div, Enumeration, Equal, First, GreaterEqual, Last,
+                    Length, LessEqual, Message, ModularInteger, Mul, Number, NotEqual, Package,
+                    Parser, ParserError, PDU, Pow, RangeInteger, Specification, Sub, Then, Value)
 
 from tests.models import ETHERNET_PDU
 
@@ -175,7 +175,7 @@ class TestParser(unittest.TestCase):
                                                  Number(1500))),
                                   Then('Payload',
                                        Equal(Value('Length'),
-                                             Sub(Last('Buffer'),
+                                             Sub(Last('Message'),
                                                  Last('EtherType'))),
                                        GreaterEqual(Value('EtherType'),
                                                     Number(1536)))]),

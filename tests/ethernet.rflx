@@ -19,7 +19,7 @@ package Ethernet is
                with Length = EtherType * 8
                if EtherType <= 1500,
             then Payload
-               with Length = Buffer'Last - EtherType'Last
+               with Length = Message'Last - EtherType'Last
                if EtherType >= 1536;
          Payload : Payload_Array
             then null

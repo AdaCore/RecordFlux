@@ -3,7 +3,7 @@ from functools import reduce
 from typing import Dict, List, Tuple
 
 from model import (Add, And, Array, Attribute, Equal, Expr, Field, First, GreaterEqual, Last,
-                   Length, LessEqual, LogExpr, MathExpr, ModularInteger, Number, Or, PDU,
+                   Length, LessEqual, LogExpr, MathExpr, ModularInteger, Mul, Number, Or, PDU,
                    RangeInteger, Sub, TRUE, Type, Value, Variant)
 
 
@@ -448,7 +448,13 @@ class Generator:
             seen_types: List[Type] = []
             unreachable_functions: Dict[str, Subprogram] = {}
 
-            fields = pdu.fields(first=First('Buffer'))
+            facts = {
+                First('Message'): First('Buffer'),
+                Last('Message'): Mul(Last('Buffer'), Number(8)),
+                Length('Message'): Sub(Mul(Last('Buffer'), Number(8)), First('Buffer'))
+            }
+
+            fields = pdu.fields(facts, First('Buffer'))
             for field in fields.values():
                 if field.type not in seen_types:
                     seen_types.append(field.type)
