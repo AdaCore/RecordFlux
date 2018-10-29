@@ -33,8 +33,8 @@ def create_ethernet_pdu() -> PDU:
                              GreaterEqual(Value('EtherType'), Number(1536)),
                              Sub(Last('Message'), Last('EtherType')))]
     payload.edges = [Edge(FINAL,
-                          And(GreaterEqual(Length('Payload'), Number(46)),
-                              LessEqual(Length('Payload'), Number(1500))))]
+                          And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
+                              LessEqual(Div(Length('Payload'), Number(8)), Number(1500))))]
 
     return PDU('Ethernet', destination)
 

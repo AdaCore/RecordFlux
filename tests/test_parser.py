@@ -182,9 +182,11 @@ class TestParser(unittest.TestCase):
                               Component('Payload', 'Payload_Array', [
                                   Then('null',
                                        None,
-                                       And(GreaterEqual(Length('Payload'),
+                                       And(GreaterEqual(Div(Length('Payload'),
+                                                            Number(8)),
                                                         Number(46)),
-                                           LessEqual(Length('Payload'),
+                                           LessEqual(Div(Length('Payload'),
+                                                         Number(8)),
                                                      Number(1500))))])])]))}
 
         self.assert_specifications(['ethernet.rflx'], spec)

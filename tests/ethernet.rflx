@@ -23,7 +23,7 @@ package Ethernet is
                if EtherType >= 1536;
          Payload : Payload_Array
             then null
-               if Payload'Length >= 46 and Payload'Length <= 1500;
+               if Payload'Length / 8 >= 46 and Payload'Length / 8 <= 1500;
       end message;
 
 end Ethernet;

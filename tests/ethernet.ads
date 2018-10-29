@@ -170,7 +170,7 @@ is
        Pre => Valid_Payload_0_0_0_1_1 (Buffer);
 
    function Valid_Payload (Buffer : Bytes) return Boolean is
-      (((((Valid_Payload_0_0_0_1_1 (Buffer) and then ((Buffer'Last + (-Buffer'First) + (-13)) >= 46 and then (Buffer'Last + (-Buffer'First) + (-13)) <= 1500)) or (Valid_Payload_0_0_0_0_0_0 (Buffer) and then (EtherType_0_0_0_0_0 (Buffer) >= 46 and then EtherType_0_0_0_0_0 (Buffer) <= 1500))) or (Valid_Payload_0_0_0_0_0_1 (Buffer) and then ((Buffer'Last + (-Buffer'First) + (-17)) >= 46 and then (Buffer'Last + (-Buffer'First) + (-17)) <= 1500))) or (Valid_Payload_0_0_0_1_0 (Buffer) and then (EtherType_0_0_0_1 (Buffer) >= 46 and then EtherType_0_0_0_1 (Buffer) <= 1500))));
+      (((((Valid_Payload_0_0_0_1_1 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) <= 1500)) or (Valid_Payload_0_0_0_0_0_0 (Buffer) and then (EtherType_0_0_0_0_0 (Buffer) >= 46 and then EtherType_0_0_0_0_0 (Buffer) <= 1500))) or (Valid_Payload_0_0_0_0_0_1 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) <= 1500))) or (Valid_Payload_0_0_0_1_0 (Buffer) and then (EtherType_0_0_0_1 (Buffer) >= 46 and then EtherType_0_0_0_1 (Buffer) <= 1500))));
 
    procedure Payload (Buffer : Bytes; First : out Natural; Last : out Natural)
      with

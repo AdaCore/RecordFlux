@@ -631,10 +631,6 @@ def create_variant_accessor_functions(
     return functions
 
 
-def convert_facts_to_bytes(facts: Dict[Attribute, MathExpr]) -> Dict[Attribute, MathExpr]:
-    return {attr: expr.to_bytes() for (attr, expr) in facts.items()}
-
-
 def extend_valid_variants(
         valid_variants: List[LogExpr],
         field: Field,
@@ -645,10 +641,8 @@ def extend_valid_variants(
     if field.condition is not TRUE:
         expression = And(expression, field.condition)
     valid_variants.append(
-        expression.simplified(
-            convert_facts_to_bytes(variant.facts)
-        ).simplified(
-            create_value_to_call(field, variant_id, variant)))
+        expression.simplified({**variant.facts,
+                               **create_value_to_call(field, variant_id, variant)}))
 
 
 def create_field_validation_function(

@@ -547,8 +547,8 @@ class TestModel(unittest.TestCase):
             'Payload':
             Field('Payload',
                   Array('Payload_Array'),
-                  And(GreaterEqual(Length('Payload'), Number(46)),
-                      LessEqual(Length('Payload'), Number(1500))),
+                  And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
+                      LessEqual(Div(Length('Payload'), Number(8)), Number(1500))),
                   {
                       '0_0_0_0_0_0':
                       Variant(
