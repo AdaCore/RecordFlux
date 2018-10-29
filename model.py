@@ -358,7 +358,7 @@ class Add(AssMathExpr):
 
 class Mul(AssMathExpr):
     def __neg__(self) -> MathExpr:
-        return Mul(*list(self.terms) + [Number(-1)])
+        return Mul(*list(self.terms) + [Number(-1)]).simplified()
 
     def operation(self, left: int, right: int) -> int:
         return left * right

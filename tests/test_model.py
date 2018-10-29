@@ -205,7 +205,7 @@ class TestModel(unittest.TestCase):
 
     def test_mul_neg(self) -> None:
         self.assertEqual(-Mul(Value('X'), Number(2)),
-                         Mul(Value('X'), Number(2), Number(-1)))
+                         Mul(Value('X'), Number(-2)))
 
     def test_mul_simplified(self) -> None:
         self.assertEqual(Mul(Value('X'), Number(2)).simplified(),
