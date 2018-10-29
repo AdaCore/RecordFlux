@@ -752,7 +752,7 @@ def evaluate(facts: Dict[Attribute, MathExpr],
                                edge,
                                visited,
                                previous + [(node.name, variant_id)],
-                               '{}_{}'.format(variant_id, str(i))))
+                               f'{variant_id}{encode_id(i)}'))
 
     return fields
 
@@ -811,3 +811,20 @@ def filter_fields(fields: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr
         ]
         for field, variants in fields.items()
     }
+
+
+def encode_id(number: int) -> str:
+    if number < 0:
+        raise ValueError('number must be positive')
+
+    alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    base36 = ''
+    while number:
+        number, i = divmod(number, 36)
+        base36 = alphabet[i] + base36
+
+    if not base36:
+        return alphabet[0]
+    if len(base36) == 1:
+        return base36
+    return f'_{base36}_'

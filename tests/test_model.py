@@ -468,7 +468,7 @@ class TestModel(unittest.TestCase):
                    payload_type,
                    TRUE,
                    {
-                       '0_0':
+                       '00':
                        Variant(
                            [('Version', '0')],
                            TRUE,
@@ -486,10 +486,10 @@ class TestModel(unittest.TestCase):
                    int_type,
                    TRUE,
                    {
-                       '0_0_0':
+                       '000':
                        Variant(
                            [('Version', '0'),
-                            ('Payload', '0_0')],
+                            ('Payload', '00')],
                            TRUE,
                            {
                                Length('Version'): Number(8),
@@ -529,7 +529,7 @@ class TestModel(unittest.TestCase):
                   ModularInteger('UINT48', Pow(Number(2), Number(48))),
                   TRUE,
                   {
-                      '0_0':
+                      '00':
                       Variant(
                           [
                               ('Destination', '0')
@@ -553,11 +553,11 @@ class TestModel(unittest.TestCase):
                   Or(NotEqual(Value('TPID'), Number(0x8100)),
                      Equal(Value('TPID'), Number(0x8100))),
                   {
-                      '0_0_0':
+                      '000':
                       Variant(
                           [
                               ('Destination', '0'),
-                              ('Source', '0_0')
+                              ('Source', '00')
                           ],
                           TRUE,
                           {
@@ -580,12 +580,12 @@ class TestModel(unittest.TestCase):
                                Number(16)),
                   TRUE,
                   {
-                      '0_0_0_0':
+                      '0000':
                       Variant(
                           [
                               ('Destination', '0'),
-                              ('Source', '0_0'),
-                              ('TPID', '0_0_0')
+                              ('Source', '00'),
+                              ('TPID', '000')
                           ],
                           Equal(Value('TPID'), Number(0x8100)),
                           {
@@ -612,13 +612,13 @@ class TestModel(unittest.TestCase):
                   Or(GreaterEqual(Value('EtherType'), Number(1536)),
                      LessEqual(Value('EtherType'), Number(1500))),
                   {
-                      '0_0_0_0_0':
+                      '00000':
                       Variant(
                           [
                               ('Destination', '0'),
-                              ('Source', '0_0'),
-                              ('TPID', '0_0_0'),
-                              ('TCI', '0_0_0_0')
+                              ('Source', '00'),
+                              ('TPID', '000'),
+                              ('TCI', '0000')
                           ],
                           TRUE,
                           {
@@ -638,12 +638,12 @@ class TestModel(unittest.TestCase):
                               Last('EtherType'): Number(143),
                               Length('EtherType'): Number(16)
                           }),
-                      '0_0_0_1':
+                      '0001':
                       Variant(
                           [
                               ('Destination', '0'),
-                              ('Source', '0_0'),
-                              ('TPID', '0_0_0')
+                              ('Source', '00'),
+                              ('TPID', '000')
                           ],
                           NotEqual(Value('TPID'), Number(0x8100)),
                           {
@@ -667,14 +667,14 @@ class TestModel(unittest.TestCase):
                   And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
                       LessEqual(Div(Length('Payload'), Number(8)), Number(1500))),
                   {
-                      '0_0_0_0_0_0':
+                      '000000':
                       Variant(
                           [
                               ('Destination', '0'),
-                              ('Source', '0_0'),
-                              ('TPID', '0_0_0'),
-                              ('TCI', '0_0_0_0'),
-                              ('EtherType', '0_0_0_0_0')
+                              ('Source', '00'),
+                              ('TPID', '000'),
+                              ('TCI', '0000'),
+                              ('EtherType', '00000')
                           ],
                           LessEqual(Value('EtherType'), Number(1500)),
                           {
@@ -697,14 +697,14 @@ class TestModel(unittest.TestCase):
                               Last('Payload'): Add(Mul(Value('EtherType'), Number(8)), Number(143)),
                               Length('Payload'): Mul(Value('EtherType'), Number(8))
                           }),
-                      '0_0_0_0_0_1':
+                      '000001':
                       Variant(
                           [
                               ('Destination', '0'),
-                              ('Source', '0_0'),
-                              ('TPID', '0_0_0'),
-                              ('TCI', '0_0_0_0'),
-                              ('EtherType', '0_0_0_0_0')
+                              ('Source', '00'),
+                              ('TPID', '000'),
+                              ('TCI', '0000'),
+                              ('EtherType', '00000')
                           ],
                           GreaterEqual(Value('EtherType'), Number(1536)),
                           {
@@ -727,13 +727,13 @@ class TestModel(unittest.TestCase):
                               Last('Payload'): Last('Message'),
                               Length('Payload'): Add(Last('Message'), Number(-143))
                           }),
-                      '0_0_0_1_0':
+                      '00010':
                       Variant(
                           [
                               ('Destination', '0'),
-                              ('Source', '0_0'),
-                              ('TPID', '0_0_0'),
-                              ('EtherType', '0_0_0_1')
+                              ('Source', '00'),
+                              ('TPID', '000'),
+                              ('EtherType', '0001')
                           ],
                           LessEqual(Value('EtherType'), Number(1500)),
                           {
@@ -753,13 +753,13 @@ class TestModel(unittest.TestCase):
                               Last('Payload'): Add(Mul(Value('EtherType'), Number(8)), Number(111)),
                               Length('Payload'): Mul(Value('EtherType'), Number(8))
                           }),
-                      '0_0_0_1_1':
+                      '00011':
                       Variant(
                           [
                               ('Destination', '0'),
-                              ('Source', '0_0'),
-                              ('TPID', '0_0_0'),
-                              ('EtherType', '0_0_0_1')
+                              ('Source', '00'),
+                              ('TPID', '000'),
+                              ('EtherType', '0001')
                           ],
                           GreaterEqual(Value('EtherType'), Number(1536)),
                           {
