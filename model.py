@@ -666,6 +666,10 @@ class Refinement(Type):
         raise NotImplementedError
 
     @property
+    def unqualified_name(self) -> str:
+        return self.name.rsplit('.', 1)[-1]
+
+    @property
     def package(self) -> str:
         return self.name.rsplit('.', 1)[0]
 

@@ -1,7 +1,7 @@
 import unittest
 from typing import List
 
-from model import PDU
+from model import PDU, Refinement
 from generator import Generator
 
 from tests.models import ETHERNET_PDU
@@ -29,15 +29,15 @@ class TestGenerator(unittest.TestCase):
                     self.assertEqual(unit.definition(), f.read())
 
     def test_ethernet_dissector_spec(self) -> None:
-        generator = generate_dissector([ETHERNET_PDU])
+        generator = generate_dissector([ETHERNET_PDU], [])
         self.assert_specification(generator)
 
     def test_ethernet_dissector_def(self) -> None:
-        generator = generate_dissector([ETHERNET_PDU])
+        generator = generate_dissector([ETHERNET_PDU], [])
         self.assert_definition(generator)
 
 
-def generate_dissector(pdus: List[PDU]) -> Generator:
+def generate_dissector(pdus: List[PDU], refinements: List[Refinement]) -> Generator:
     generator = Generator()
-    generator.generate_dissector(pdus)
+    generator.generate_dissector(pdus, refinements)
     return generator

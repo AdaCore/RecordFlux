@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 from model import (Add, And, Array, Attribute, Div, Equal, Expr, Field, First, GreaterEqual, Last,
                    Length, LessEqual, LogExpr, MathExpr, ModularInteger, Mul, Number, Or, PDU,
-                   RangeInteger, Sub, TRUE, Type, Value, Variant)
+                   RangeInteger, Refinement, Sub, TRUE, Type, Value, Variant)
 
 
 class SparkRepresentation(ABC):
@@ -309,7 +309,7 @@ class Procedure(Subprogram):
 
 class IfExpression(SparkRepresentation, LogExpr):
     def __init__(self, condition_expressions: List[Tuple[LogExpr, Expr]],
-                 else_expression: str) -> None:
+                 else_expression: str = '') -> None:
         self.condition_expressions = condition_expressions
         self.else_expression = else_expression
 
@@ -317,10 +317,12 @@ class IfExpression(SparkRepresentation, LogExpr):
         result = ''
         for c, e in self.condition_expressions:
             if not result:
-                result = '(if {} then {}'.format(c, e)
+                result = f'(if {c} then {e}'
             else:
-                result += ' elsif {} then {}'.format(c, e)
-        result += ' else {})'.format(self.else_expression)
+                result += f' elsif {c} then {e}'
+        if self.else_expression:
+            result += f' else {self.else_expression}'
+        result += ')'
         return result
 
     def specification(self) -> str:
@@ -367,9 +369,17 @@ class PragmaStatement(Statement):
         return f'      pragma {self.name}{parameters};'
 
 
+class ReturnStatement(Statement):
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
+
+    def definition(self) -> str:
+        return f'      return {self.expression};'
+
+
 class IfStatement(Statement):
     def __init__(self, condition_statements: List[Tuple[LogExpr, List[Statement]]],
-                 else_statements: List[Statement]) -> None:
+                 else_statements: List[Statement] = None) -> None:
         self.condition_statements = condition_statements
         self.else_statements = else_statements
 
@@ -380,14 +390,15 @@ class IfStatement(Statement):
         result = ''
         for condition, statements in self.condition_statements:
             if not result:
-                result = '      if {} then\n'.format(condition)
+                result = f'      if {condition} then\n'
             else:
-                result += '      elsif {} then\n'.format(condition)
+                result += f'      elsif {condition} then\n'
             for statement in statements:
-                result += '   {};\n'.format(statement.definition())
-        result += '      else\n'
-        for statement in self.else_statements:
-            result += '   {};\n'.format(statement.definition())
+                result += f'   {statement.definition()}\n'
+        if self.else_statements:
+            result += '      else\n'
+            for statement in self.else_statements:
+                result += f'   {statement.definition()}\n'
         result += '      end if;'
         return result
 
@@ -524,8 +535,16 @@ FALSE = FalseExpr()
 class Generator:
     def __init__(self) -> None:
         self.__units: Dict[str, Unit] = {}
+        self.__pdu_fields: Dict[str, List[str]] = {}
 
-    def generate_dissector(self, pdus: List[PDU]) -> None:
+    def generate_dissector(self, pdus: List[PDU], refinements: List[Refinement]) -> None:
+        self.__process_pdus(pdus)
+        self.__process_refinements(refinements)
+
+    def units(self) -> List[Unit]:
+        return list(self.__units.values())
+
+    def __process_pdus(self, pdus: List[PDU]) -> None:
         for pdu in pdus:
             if pdu.package in self.__units:
                 top_level_package = self.__units[pdu.package].package
@@ -550,6 +569,8 @@ class Generator:
             }
 
             fields = pdu.fields(facts, First('Buffer'))
+            self.__pdu_fields[pdu.full_name] = list(fields.keys())
+
             for field in fields.values():
                 if field.type not in seen_types:
                     seen_types.append(field.type)
@@ -614,8 +635,35 @@ class Generator:
                 create_packet_validation_function(
                     list(fields.values())[-1].name))
 
-    def units(self) -> List[Unit]:
-        return list(self.__units.values())
+    def __process_refinements(self, refinements: List[Refinement]) -> None:
+        for refinement in refinements:
+            if refinement.package in self.__units:
+                context = self.__units[refinement.package].context
+                package = self.__units[refinement.package].package
+            else:
+                context = [ContextItem('Types', True)]
+                package = Package(refinement.package, [], [])
+                self.__units[refinement.package] = Unit(context, package)
+
+            pdu_top_level_context = ContextItem(refinement.pdu.rsplit('.', 1)[0], True)
+            if pdu_top_level_context not in context:
+                context.append(pdu_top_level_context)
+            pdu_context = ContextItem(refinement.pdu, False)
+            if pdu_context not in context:
+                context.append(pdu_context)
+            sdu_context = ContextItem(refinement.sdu, False)
+            if sdu_context not in context:
+                context.append(sdu_context)
+
+            package.subprograms.append(
+                create_contains_function(
+                    refinement.unqualified_name,
+                    refinement.pdu,
+                    refinement.field,
+                    refinement.sdu,
+                    refinement.condition.simplified(
+                        {Value(field): MathCall(f'{refinement.pdu}.{field} (Buffer)')
+                         for field in self.__pdu_fields[refinement.pdu]})))
 
 
 def create_contain_functions() -> List[Subprogram]:
@@ -862,3 +910,26 @@ def create_packet_validation_function(field_name: str) -> Subprogram:
         [('Buffer', 'Bytes')],
         LogCall('Valid_{} (Buffer)'.format(field_name)),
         [Precondition(LogCall('Is_Contained (Buffer)'))])
+
+
+def create_contains_function(name: str, pdu: str, field: str, sdu: str,
+                             condition: LogExpr) -> Subprogram:
+
+    return Function(f'Contains_{name}',
+                    'Boolean',
+                    [('Buffer', 'Bytes')],
+                    [IfStatement(
+                        [(condition,
+                          [PragmaStatement(
+                              'Assume',
+                              [(f'{sdu}.Is_Contained (Buffer ({pdu}.{field}_First (Buffer)'
+                                f' .. {pdu}.{field}_Last (Buffer)))')]),
+                           ReturnStatement(TRUE)])]),
+                     ReturnStatement(FALSE)],
+                    [Precondition(And(LogCall(f'{pdu}.Is_Contained (Buffer)'),
+                                      LogCall(f'{pdu}.Is_Valid (Buffer)'))),
+                     Postcondition(
+                         IfExpression(
+                             [(LogCall(f'Contains_{name}\'Result'),
+                               LogCall((f'{sdu}.Is_Contained (Buffer ({pdu}.{field}_First (Buffer)'
+                                        f' .. {pdu}.{field}_Last (Buffer)))')))]))])
