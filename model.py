@@ -559,6 +559,14 @@ class Type(Element):
     def size(self) -> MathExpr:
         raise NotImplementedError
 
+    @property
+    def constraints(self) -> LogExpr:
+        return TRUE
+
+    @property
+    def base_name(self) -> str:
+        return f'{self.name}_Base'
+
 
 class ModularInteger(Type):
     def __init__(self, name: str, modulus: MathExpr) -> None:
@@ -605,6 +613,13 @@ class RangeInteger(Type):
         self.__last = last
         self.__size = size
 
+        constraints: LogExpr = TRUE
+        if self.first.simplified() != self.base_first.simplified():
+            constraints = GreaterEqual(Value(self.name), self.first)
+        if self.last.simplified() != self.base_last.simplified():
+            constraints = And(constraints, LessEqual(Value(self.name), self.last))
+        self.__constraints = constraints.simplified()
+
     @property
     def first(self) -> MathExpr:
         return self.__first
@@ -616,6 +631,18 @@ class RangeInteger(Type):
     @property
     def size(self) -> MathExpr:
         return self.__size
+
+    @property
+    def constraints(self) -> LogExpr:
+        return self.__constraints
+
+    @property
+    def base_first(self) -> MathExpr:
+        return Number(0)
+
+    @property
+    def base_last(self) -> MathExpr:
+        return Sub(Pow(Number(2), self.size), Number(1))
 
 
 class Array(Type):

@@ -127,14 +127,23 @@ class RangeType(TypeDeclaration):
         self.size = size
 
     def specification(self) -> str:
-        declaration = '   type {name} is range {first} .. {last} with Size => {size};\n'.format(
-            name=self.name,
-            first=self.first,
-            last=self.last,
-            size=self.size)
-        return '{declaration}   function Convert_To_{name} is new Convert_To_Int ({name});'.format(
-            name=self.name,
-            declaration=declaration)
+        return (f'   type {self.name} is range {self.first} .. {self.last}'
+                f' with Size => {self.size};\n'
+                f'   function Convert_To_{self.name} is new Convert_To_Int ({self.name});')
+
+    def definition(self) -> str:
+        return ''
+
+
+class RangeSubtype(TypeDeclaration):
+    def __init__(self, name: str, base_name: str, first: MathExpr, last: MathExpr) -> None:
+        super().__init__(name)
+        self.base_name = base_name
+        self.first = first
+        self.last = last
+
+    def specification(self) -> str:
+        return f'   subtype {self.name} is {self.base_name} range {self.first} .. {self.last};'
 
     def definition(self) -> str:
         return ''
@@ -548,10 +557,21 @@ class Generator:
                         top_level_package.types += [ModularType(field.type.name,
                                                                 field.type.modulus)]
                     elif isinstance(field.type, RangeInteger):
-                        top_level_package.types += [RangeType(field.type.name,
-                                                              field.type.first,
-                                                              field.type.last,
-                                                              field.type.size)]
+                        if field.type.constraints == TRUE:
+                            top_level_package.types += [RangeType(field.type.name,
+                                                                  field.type.first,
+                                                                  field.type.last,
+                                                                  field.type.size)]
+                        else:
+                            top_level_package.types += [RangeType(field.type.base_name,
+                                                                  field.type.base_first,
+                                                                  field.type.base_last,
+                                                                  field.type.size)]
+                            top_level_package.types += [RangeSubtype(field.type.name,
+                                                                     field.type.base_name,
+                                                                     field.type.first,
+                                                                     field.type.last)]
+
                     elif isinstance(field.type, Array):
                         if 'Payload' not in field.type.name:
                             raise NotImplementedError('custom arrays are not supported yet')
@@ -649,6 +669,22 @@ def create_variant_validation_function(
         variant_id: str,
         variant: Variant) -> Subprogram:
 
+    type_constraints: LogExpr = TRUE
+
+    if field.type.constraints != TRUE:
+        value_to_natural_call = create_value_to_natural_call(field, variant_id, variant)
+        first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_call)
+        last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
+        offset = calculate_offset(variant.facts[Last(field.name)])
+
+        convert = Convert(
+            field.type.base_name,
+            'Buffer',
+            first_byte,
+            last_byte,
+            offset)
+        type_constraints = field.type.constraints.simplified({Value(field.type.name): convert})
+
     return ExpressionFunction(
         'Valid_{}_{}'.format(field.name, variant_id),
         'Boolean',
@@ -657,13 +693,15 @@ def create_variant_validation_function(
                                                   variant.previous[-1][1]))
             if variant.previous else TRUE,
             And(
-                length_constraint(
-                    variant.facts[Last(field.name)].to_bytes()).simplified(
-                        create_value_to_natural_call(
-                            field, variant_id, variant)),
-                variant.condition.simplified(
-                    create_value_to_call(
-                        field, variant_id, variant)))
+                And(
+                    length_constraint(
+                        variant.facts[Last(field.name)].to_bytes()).simplified(
+                            create_value_to_natural_call(
+                                field, variant_id, variant)),
+                    variant.condition.simplified(
+                        create_value_to_call(
+                            field, variant_id, variant))),
+                type_constraints)
             ).simplified(),
         [Precondition(LogCall('Is_Contained (Buffer)'))])
 
@@ -708,7 +746,7 @@ def create_variant_accessor_functions(
                 field.type.name,
                 [('Buffer', 'Bytes')],
                 Convert(
-                    field.type.name,
+                    field.type.name if field.type.constraints == TRUE else field.type.base_name,
                     'Buffer',
                     first_byte,
                     last_byte,
