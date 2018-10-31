@@ -31,7 +31,7 @@ is
        Post => Is_Contained (Buffer);
 
    function Valid_Destination_0 (Buffer : Bytes) return Boolean is
-      (Buffer'Length >= 6)
+      ((Buffer'Length >= 6 and then Buffer'First <= (Natural'Last / 2)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -51,7 +51,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Destination (Buffer));
 
    function Valid_Source_00 (Buffer : Bytes) return Boolean is
-      ((Valid_Destination_0 (Buffer) and then Buffer'Length >= 12))
+      ((Valid_Destination_0 (Buffer) and then (Buffer'Length >= 12 and then Buffer'First <= (Natural'Last / 2))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -71,7 +71,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Source (Buffer));
 
    function Valid_TPID_000 (Buffer : Bytes) return Boolean is
-      ((Valid_Source_00 (Buffer) and then Buffer'Length >= 14))
+      ((Valid_Source_00 (Buffer) and then (Buffer'Length >= 14 and then Buffer'First <= (Natural'Last / 2))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -91,7 +91,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_TPID (Buffer));
 
    function Valid_TCI_0000 (Buffer : Bytes) return Boolean is
-      ((Valid_TPID_000 (Buffer) and then (Buffer'Length >= 16 and then TPID_000 (Buffer) = 33024)))
+      ((Valid_TPID_000 (Buffer) and then ((Buffer'Length >= 16 and then Buffer'First <= (Natural'Last / 2)) and then TPID_000 (Buffer) = 33024)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -111,7 +111,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_TCI (Buffer));
 
    function Valid_EtherType_00000 (Buffer : Bytes) return Boolean is
-      ((Valid_TCI_0000 (Buffer) and then Buffer'Length >= 18))
+      ((Valid_TCI_0000 (Buffer) and then (Buffer'Length >= 18 and then Buffer'First <= (Natural'Last / 2))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -121,7 +121,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_EtherType_00000 (Buffer));
 
    function Valid_EtherType_0001 (Buffer : Bytes) return Boolean is
-      ((Valid_TPID_000 (Buffer) and then (Buffer'Length >= 14 and then TPID_000 (Buffer) /= 33024)))
+      ((Valid_TPID_000 (Buffer) and then ((Buffer'Length >= 14 and then Buffer'First <= (Natural'Last / 2)) and then TPID_000 (Buffer) /= 33024)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -141,14 +141,14 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_EtherType (Buffer));
 
    function Valid_Payload_000000 (Buffer : Bytes) return Boolean is
-      ((Valid_EtherType_00000 (Buffer) and then (Buffer'Length >= (Natural (EtherType_00000 (Buffer)) + 18) and then EtherType_00000 (Buffer) <= 1500)))
+      ((Valid_EtherType_00000 (Buffer) and then ((Buffer'Length >= (Natural (EtherType_00000 (Buffer)) + 18) and then Buffer'First <= (Natural'Last / 2)) and then EtherType_00000 (Buffer) <= 1500)))
      with
        Pre => Is_Contained (Buffer);
 
    function Payload_000000_First (Buffer : Bytes) return Natural is
       ((Buffer'First + 18))
      with
-       Pre => (Is_Contained (Buffer) and then (Valid_Payload_000000 (Buffer) and then Buffer'First <= (Natural'Last + (-18))));
+       Pre => (Is_Contained (Buffer) and then Valid_Payload_000000 (Buffer));
 
    function Payload_000000_Last (Buffer : Bytes) return Natural is
       ((Natural (EtherType_00000 (Buffer)) + Buffer'First + 17))
@@ -156,14 +156,14 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Payload_000000 (Buffer));
 
    function Valid_Payload_000001 (Buffer : Bytes) return Boolean is
-      ((Valid_EtherType_00000 (Buffer) and then (Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then EtherType_00000 (Buffer) >= 1536)))
+      ((Valid_EtherType_00000 (Buffer) and then ((Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then Buffer'First <= (Natural'Last / 2)) and then EtherType_00000 (Buffer) >= 1536)))
      with
        Pre => Is_Contained (Buffer);
 
    function Payload_000001_First (Buffer : Bytes) return Natural is
       ((Buffer'First + 18))
      with
-       Pre => (Is_Contained (Buffer) and then (Valid_Payload_000001 (Buffer) and then Buffer'First <= (Natural'Last + (-18))));
+       Pre => (Is_Contained (Buffer) and then Valid_Payload_000001 (Buffer));
 
    function Payload_000001_Last (Buffer : Bytes) return Natural is
       (Buffer'Last)
@@ -171,14 +171,14 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Payload_000001 (Buffer));
 
    function Valid_Payload_00010 (Buffer : Bytes) return Boolean is
-      ((Valid_EtherType_0001 (Buffer) and then (Buffer'Length >= (Natural (EtherType_0001 (Buffer)) + 14) and then EtherType_0001 (Buffer) <= 1500)))
+      ((Valid_EtherType_0001 (Buffer) and then ((Buffer'Length >= (Natural (EtherType_0001 (Buffer)) + 14) and then Buffer'First <= (Natural'Last / 2)) and then EtherType_0001 (Buffer) <= 1500)))
      with
        Pre => Is_Contained (Buffer);
 
    function Payload_00010_First (Buffer : Bytes) return Natural is
       ((Buffer'First + 14))
      with
-       Pre => (Is_Contained (Buffer) and then (Valid_Payload_00010 (Buffer) and then Buffer'First <= (Natural'Last + (-14))));
+       Pre => (Is_Contained (Buffer) and then Valid_Payload_00010 (Buffer));
 
    function Payload_00010_Last (Buffer : Bytes) return Natural is
       ((Natural (EtherType_0001 (Buffer)) + Buffer'First + 13))
@@ -186,14 +186,14 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Payload_00010 (Buffer));
 
    function Valid_Payload_00011 (Buffer : Bytes) return Boolean is
-      ((Valid_EtherType_0001 (Buffer) and then (Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then EtherType_0001 (Buffer) >= 1536)))
+      ((Valid_EtherType_0001 (Buffer) and then ((Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then Buffer'First <= (Natural'Last / 2)) and then EtherType_0001 (Buffer) >= 1536)))
      with
        Pre => Is_Contained (Buffer);
 
    function Payload_00011_First (Buffer : Bytes) return Natural is
       ((Buffer'First + 14))
      with
-       Pre => (Is_Contained (Buffer) and then (Valid_Payload_00011 (Buffer) and then Buffer'First <= (Natural'Last + (-14))));
+       Pre => (Is_Contained (Buffer) and then Valid_Payload_00011 (Buffer));
 
    function Payload_00011_Last (Buffer : Bytes) return Natural is
       (Buffer'Last)

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from functools import reduce
 from typing import Dict, List, Tuple
 
-from model import (Add, And, Array, Attribute, Equal, Expr, Field, First, GreaterEqual, Last,
+from model import (Add, And, Array, Attribute, Div, Equal, Expr, Field, First, GreaterEqual, Last,
                    Length, LessEqual, LogExpr, MathExpr, ModularInteger, Mul, Number, Or, PDU,
                    RangeInteger, Sub, TRUE, Type, Value, Variant)
 
@@ -641,9 +641,10 @@ def calculate_offset(last: MathExpr) -> int:
     return 0
 
 
-def length_constraint(last: MathExpr) -> LogExpr:
-    return GreaterEqual(Length('Buffer'),
-                        Add(last, -First('Buffer'), Number(1)))
+def buffer_constraints(last: MathExpr) -> LogExpr:
+    return And(GreaterEqual(Length('Buffer'),
+                            Add(last, -First('Buffer'), Number(1))),
+               LessEqual(First('Buffer'), Div(Last('Natural'), Number(2))))
 
 
 def create_value_to_call(
@@ -694,7 +695,7 @@ def create_variant_validation_function(
             if variant.previous else TRUE,
             And(
                 And(
-                    length_constraint(
+                    buffer_constraints(
                         variant.facts[Last(field.name)].to_bytes()).simplified(
                             create_value_to_natural_call(
                                 field, variant_id, variant)),
@@ -726,10 +727,7 @@ def create_variant_accessor_functions(
                 first_byte,
                 [Precondition(
                     And(LogCall('Is_Contained (Buffer)'),
-                        And(LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id)),
-                            LessEqual(First('Buffer'),
-                                      Sub(Last('Natural'), first_byte).simplified(
-                                          {First('Buffer'): Number(0)})))))]))
+                        LogCall(f'Valid_{field.name}_{variant_id} (Buffer)')))]))
         functions.append(
             ExpressionFunction(
                 '{}_{}_Last'.format(field.name, variant_id),
