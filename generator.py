@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from functools import reduce
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 from model import (Add, And, Array, Attribute, Div, Equal, Expr, Field, First, GreaterEqual, Last,
                    Length, LessEqual, LogExpr, MathExpr, ModularInteger, Mul, Number, Or, PDU,
@@ -34,23 +33,22 @@ class Unit(SparkRepresentation):
     def specification(self) -> str:
         context_clause = ''
         if self.context:
-            context_clause = '{}\n\n'.format('\n'.join([c.specification() for c in self.context]))
-        return '{}{}\n'.format(context_clause, self.package.specification())
+            context_clause = '\n'.join([str(c) for c in self.context])
+            context_clause = f'{context_clause}\n\n'
+        return f'{context_clause}{self.package.specification()}\n'
 
     def definition(self) -> str:
-        return '{}\n'.format(self.package.definition())
+        return f'{self.package.definition()}\n'
 
 
-class ContextItem(SparkRepresentation):
+class ContextItem:
     def __init__(self, name: str, use: bool) -> None:
         self.name = name
         self.use = use
 
-    def specification(self) -> str:
-        return 'with {};{}'.format(self.name, ' use {};'.format(self.name) if self.use else '')
-
-    def definition(self) -> str:
-        return ''
+    def __str__(self) -> str:
+        use = f' use {self.name};' if self.use else ''
+        return f'with {self.name};{use}'
 
 
 class Package(SparkRepresentation):
@@ -61,45 +59,35 @@ class Package(SparkRepresentation):
         self.subprograms = subprograms
 
     def specification(self) -> str:
-        types = '\n\n'.join([t.specification() for t in self.types if t.specification()])
-        if types:
-            types += '\n\n'
-        subprograms = '\n\n'.join([f.specification()
-                                   for f in self.subprograms if f.specification()])
-        if subprograms:
-            subprograms += '\n\n'
-        return 'package {name}\n  with SPARK_Mode\nis\n\n{types}{subprograms}end {name};'.format(
-            name=self.name,
-            types=types,
-            subprograms=subprograms)
+        return self.__representation(lambda x: x.specification(), False)
 
     def definition(self) -> str:
-        if not self.subprograms:
+        return self.__representation(lambda x: x.definition(), True)
+
+    def __representation(self, function: Callable, definition: bool) -> str:
+        if definition and not self.subprograms:
             return ''
-        types = '\n\n'.join([t.definition() for t in self.types if t.definition()])
+
+        types = '\n\n'.join([str(t) for t in self.types if str(t)])
         if types:
             types += '\n\n'
-        subprograms = '\n\n'.join([f.definition() for f in self.subprograms if f.definition()])
+
+        subprograms = '\n\n'.join([function(f) for f in self.subprograms if function(f)])
         if subprograms:
             subprograms += '\n\n'
-        return 'package body {name} is\n\n{types}{subprograms}end {name};'.format(
-            name=self.name,
-            types=types,
-            subprograms=subprograms)
+
+        indicator = ' '
+        aspect = '\n  with SPARK_Mode\n'
+        if definition:
+            indicator = ' body '
+            aspect = ' '
+
+        return f'package{indicator}{self.name}{aspect}is\n\n{types}{subprograms}end {self.name};'
 
 
-class TypeDeclaration(SparkRepresentation):
+class TypeDeclaration(ABC):
     def __init__(self, name: str) -> None:
         self.name = name
-
-    def specification(self) -> str:
-        type_declaration = ''
-        return '{type_declaration}   function Convert_To_{name} is new Convert_To ({name});'.format(
-            name=self.name,
-            type_declaration=type_declaration)
-
-    def definition(self) -> str:
-        return ''
 
 
 class ModularType(TypeDeclaration):
@@ -107,16 +95,9 @@ class ModularType(TypeDeclaration):
         super().__init__(name)
         self.modulus = modulus
 
-    def specification(self) -> str:
-        declaration = '   type {name} is mod {modulus};\n'.format(
-            name=self.name,
-            modulus=self.modulus)
-        return '{declaration}   function Convert_To_{name} is new Convert_To_Mod ({name});'.format(
-            name=self.name,
-            declaration=declaration)
-
-    def definition(self) -> str:
-        return ''
+    def __str__(self) -> str:
+        return (f'   type {self.name} is mod {self.modulus};\n'
+                f'   function Convert_To_{self.name} is new Convert_To_Mod ({self.name});')
 
 
 class RangeType(TypeDeclaration):
@@ -126,13 +107,10 @@ class RangeType(TypeDeclaration):
         self.last = last
         self.size = size
 
-    def specification(self) -> str:
+    def __str__(self) -> str:
         return (f'   type {self.name} is range {self.first} .. {self.last}'
                 f' with Size => {self.size};\n'
                 f'   function Convert_To_{self.name} is new Convert_To_Int ({self.name});')
-
-    def definition(self) -> str:
-        return ''
 
 
 class RangeSubtype(TypeDeclaration):
@@ -142,11 +120,8 @@ class RangeSubtype(TypeDeclaration):
         self.first = first
         self.last = last
 
-    def specification(self) -> str:
+    def __str__(self) -> str:
         return f'   subtype {self.name} is {self.base_name} range {self.first} .. {self.last};'
-
-    def definition(self) -> str:
-        return ''
 
 
 class Aspect(ABC):
@@ -230,7 +205,7 @@ class Subprogram(SparkRepresentation):
         return parameters
 
     def _body(self) -> str:
-        return '\n'.join([s.definition() for s in self.body])
+        return '\n'.join([str(s) for s in self.body])
 
     def _with_clause(self) -> str:
         if not self.aspects:
@@ -286,11 +261,10 @@ class ExpressionFunction(Subprogram):
         self.expression = expression
 
     def specification(self) -> str:
+        signature = f'   function {self.name}{self._parameters()} return {self.return_type}'
         if self.expression:
-            return (f'   function {self.name}{self._parameters()} return {self.return_type} is\n'
-                    f'      ({self.expression!s}){self._with_clause()};')
-        return (f'   function {self.name}{self._parameters()} return {self.return_type}'
-                f'{self._with_clause()};')
+            return f'{signature} is\n      ({self.expression!s}){self._with_clause()};'
+        return f'{signature}{self._with_clause()};'
 
     def definition(self) -> str:
         return ''
@@ -307,7 +281,7 @@ class Procedure(Subprogram):
                 f'   end {self.name};')
 
 
-class IfExpression(SparkRepresentation, LogExpr):
+class IfExpression(LogExpr):
     def __init__(self, condition_expressions: List[Tuple[LogExpr, Expr]],
                  else_expression: str = '') -> None:
         self.condition_expressions = condition_expressions
@@ -325,12 +299,6 @@ class IfExpression(SparkRepresentation, LogExpr):
         result += ')'
         return result
 
-    def specification(self) -> str:
-        return str(self)
-
-    def definition(self) -> str:
-        return self.specification()
-
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> LogExpr:
         return self
 
@@ -338,13 +306,8 @@ class IfExpression(SparkRepresentation, LogExpr):
         raise NotImplementedError
 
 
-class Statement(SparkRepresentation):
-    def specification(self) -> str:
-        raise RuntimeError('statement in specification')
-
-    @abstractmethod
-    def definition(self) -> str:
-        raise NotImplementedError
+class Statement(ABC):
+    pass
 
 
 class Assignment(Statement):
@@ -352,7 +315,7 @@ class Assignment(Statement):
         self.name = name
         self.expression = expression
 
-    def definition(self) -> str:
+    def __str__(self) -> str:
         return f'      {self.name} := {self.expression};'
 
 
@@ -361,7 +324,7 @@ class PragmaStatement(Statement):
         self.name = name
         self.pragma_parameters = parameters
 
-    def definition(self) -> str:
+    def __str__(self) -> str:
         parameters = ''
         if self.pragma_parameters:
             parameters = ', '.join(self.pragma_parameters)
@@ -373,7 +336,7 @@ class ReturnStatement(Statement):
     def __init__(self, expression: Expr) -> None:
         self.expression = expression
 
-    def definition(self) -> str:
+    def __str__(self) -> str:
         return f'      return {self.expression};'
 
 
@@ -383,10 +346,7 @@ class IfStatement(Statement):
         self.condition_statements = condition_statements
         self.else_statements = else_statements
 
-    def specification(self) -> str:
-        raise RuntimeError('if statement in specification')
-
-    def definition(self) -> str:
+    def __str__(self) -> str:
         result = ''
         for condition, statements in self.condition_statements:
             if not result:
@@ -394,11 +354,11 @@ class IfStatement(Statement):
             else:
                 result += f'      elsif {condition} then\n'
             for statement in statements:
-                result += f'   {statement.definition()}\n'
+                result += f'   {statement}\n'
         if self.else_statements:
             result += '      else\n'
             for statement in self.else_statements:
-                result += f'   {statement.definition()}\n'
+                result += f'   {statement}\n'
         result += '      end if;'
         return result
 
@@ -408,7 +368,7 @@ class Call(ABC):
         self.call = call
 
     def __repr__(self) -> str:
-        return '{}({})'.format(self.__class__.__name__, self.call)
+        return f'{self.__class__.__name__}({self.call})'
 
     def __str__(self) -> str:
         return self.call
@@ -420,9 +380,9 @@ class MathCall(Call, MathExpr):
         self.negative = negative
 
     def __repr__(self) -> str:
-        result = '{}({})'.format(self.__class__.__name__, self.call)
+        result = f'{self.__class__.__name__}({self.call})'
         if self.negative:
-            return '(-{})'.format(result)
+            return f'(-{result})'
         return result
 
     def __neg__(self) -> MathExpr:
@@ -458,13 +418,12 @@ class Convert(MathExpr):
         self.negative = negative
 
     def __str__(self) -> str:
-        return '{}Convert_To_{} ({} ({} .. {}){})'.format(
-            '-1 * ' if self.negative else '',
-            self.type_name,
-            self.array_name,
-            self.first,
-            self.last,
-            ', {}'.format(self.offset) if self.offset else '')
+        negative = '-1 * ' if self.negative else ''
+        offset = f', {self.offset}' if self.offset else ''
+        return (f'{negative}'
+                f'Convert_To_{self.type_name} ({self.array_name} ({self.first} .. {self.last})'
+                f'{offset}'
+                ')')
 
     def __neg__(self) -> MathExpr:
         return Convert(self.type_name,
@@ -499,8 +458,8 @@ class Cast(MathExpr):
         self.name = name
         self.expression = expression
 
-    def __repr__(self) -> str:
-        return '{} ({})'.format(self.name, self.expression)
+    def __str__(self) -> str:
+        return f'{self.name} ({self.expression})'
 
     def __neg__(self) -> MathExpr:
         return Cast(self.name, -self.expression)
@@ -666,6 +625,9 @@ class Generator:
                          for field in self.__pdu_fields[refinement.pdu]})))
 
 
+COMMON_PRECONDITION = LogCall('Is_Contained (Buffer)')
+
+
 def create_contain_functions() -> List[Subprogram]:
     return [ExpressionFunction('Is_Contained',
                                'Boolean',
@@ -675,10 +637,6 @@ def create_contain_functions() -> List[Subprogram]:
                       [('Buffer', 'Bytes')],
                       [PragmaStatement('Assume', ['Is_Contained (Buffer)'])],
                       aspects=[Postcondition(LogCall('Is_Contained (Buffer)'))])]
-
-
-def unique(input_list: List) -> List:
-    return reduce(lambda l, x: l + [x] if x not in l else l, input_list, [])
 
 
 def calculate_offset(last: MathExpr) -> int:
@@ -700,7 +658,7 @@ def create_value_to_call(
         variant_id: str,
         variant: Variant) -> Dict[Attribute, MathExpr]:
 
-    return {Value(field_name): MathCall('{}_{} (Buffer)'.format(field_name, vid))
+    return {Value(field_name): MathCall(f'{field_name}_{vid} (Buffer)')
             for field_name, vid in [(field.name, variant_id)] + variant.previous}
 
 
@@ -709,7 +667,7 @@ def create_value_to_natural_call(
         variant_id: str,
         variant: Variant) -> Dict[Attribute, MathExpr]:
 
-    return {Value(field_name): Cast('Natural', MathCall('{}_{} (Buffer)'.format(field_name, vid)))
+    return {Value(field_name): Cast('Natural', MathCall(f'{field_name}_{vid} (Buffer)'))
             for field_name, vid in [(field.name, variant_id)] + variant.previous}
 
 
@@ -735,11 +693,10 @@ def create_variant_validation_function(
         type_constraints = field.type.constraints.simplified({Value(field.type.name): convert})
 
     return ExpressionFunction(
-        'Valid_{}_{}'.format(field.name, variant_id),
+        f'Valid_{field.name}_{variant_id}',
         'Boolean',
         [('Buffer', 'Bytes')],
-        And(LogCall('Valid_{}_{} (Buffer)'.format(variant.previous[-1][0],
-                                                  variant.previous[-1][1]))
+        And(LogCall(f'Valid_{variant.previous[-1][0]}_{variant.previous[-1][1]} (Buffer)')
             if variant.previous else TRUE,
             And(
                 And(
@@ -752,7 +709,7 @@ def create_variant_validation_function(
                             field, variant_id, variant))),
                 type_constraints)
             ).simplified(),
-        [Precondition(LogCall('Is_Contained (Buffer)'))])
+        [Precondition(COMMON_PRECONDITION)])
 
 
 def create_variant_accessor_functions(
@@ -765,30 +722,31 @@ def create_variant_accessor_functions(
     last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
     offset = calculate_offset(variant.facts[Last(field.name)])
 
+    name = f'{field.name}_{variant_id}'
+    precondition = Precondition(
+        And(COMMON_PRECONDITION,
+            LogCall(f'Valid_{name} (Buffer)')))
+
     functions: List[Subprogram] = []
     if 'Payload' in field.type.name:
         functions.append(
             ExpressionFunction(
-                '{}_{}_First'.format(field.name, variant_id),
+                f'{name}_First',
                 'Natural',
                 [('Buffer', 'Bytes')],
                 first_byte,
-                [Precondition(
-                    And(LogCall('Is_Contained (Buffer)'),
-                        LogCall(f'Valid_{field.name}_{variant_id} (Buffer)')))]))
+                [precondition]))
         functions.append(
             ExpressionFunction(
-                '{}_{}_Last'.format(field.name, variant_id),
+                f'{name}_Last',
                 'Natural',
                 [('Buffer', 'Bytes')],
                 last_byte,
-                [Precondition(And(LogCall('Is_Contained (Buffer)'),
-                                  LogCall('Valid_{}_{} (Buffer)'.format(
-                                      field.name, variant_id))))]))
+                [precondition]))
     else:
         functions.append(
             ExpressionFunction(
-                '{}_{}'.format(field.name, variant_id),
+                name,
                 field.type.name,
                 [('Buffer', 'Bytes')],
                 Convert(
@@ -797,9 +755,7 @@ def create_variant_accessor_functions(
                     first_byte,
                     last_byte,
                     offset),
-                [Precondition(And(LogCall('Is_Contained (Buffer)'),
-                                  LogCall('Valid_{}_{} (Buffer)'.format(
-                                      field.name, variant_id))))]))
+                [precondition]))
     return functions
 
 
@@ -809,7 +765,7 @@ def extend_valid_variants(
         variant_id: str,
         variant: Variant) -> None:
 
-    expression: LogExpr = LogCall('Valid_{}_{} (Buffer)'.format(field.name, variant_id))
+    expression: LogExpr = LogCall(f'Valid_{field.name}_{variant_id} (Buffer)')
     if field.condition is not TRUE:
         expression = And(expression, field.condition)
     valid_variants.append(
@@ -827,11 +783,11 @@ def create_field_validation_function(
             expr = Or(expr, e)
 
     return ExpressionFunction(
-        'Valid_{}'.format(field_name),
+        f'Valid_{field_name}',
         'Boolean',
         [('Buffer', 'Bytes')],
         expr,
-        [Precondition(LogCall('Is_Contained (Buffer)'))])
+        [Precondition(COMMON_PRECONDITION)])
 
 
 def extend_unreachable_functions(
@@ -849,7 +805,7 @@ def extend_unreachable_functions(
                     [Precondition(FALSE)])
         else:
             unreachable_functions[field_type.name] = ExpressionFunction(
-                'Unreachable_{}'.format(field_type.name),
+                f'Unreachable_{field_type.name}',
                 field_type.name,
                 [],
                 First(field_type.name),
@@ -857,6 +813,9 @@ def extend_unreachable_functions(
 
 
 def create_field_accessor_functions(field: Field) -> List[Subprogram]:
+    precondition = Precondition(And(COMMON_PRECONDITION,
+                                    LogCall(f'Valid_{field.name} (Buffer)')))
+
     functions: List[Subprogram] = []
     if 'Payload' in field.type.name:
         for attribute in ['First', 'Last']:
@@ -869,8 +828,7 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
                                    LogCall(f'{field.name}_{variant_id}_{attribute} (Buffer)'))
                                   for variant_id in field.variants],
                                  'Unreachable_Natural'),
-                    [Precondition(And(LogCall('Is_Contained (Buffer)'),
-                                      LogCall(f'Valid_{field.name} (Buffer)')))]))
+                    [precondition]))
 
         functions.append(
             Procedure(
@@ -880,8 +838,7 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
                  ('Last', 'out Natural')],
                 [Assignment('First', MathCall(f'{field.name}_First (Buffer)')),
                  Assignment('Last', MathCall(f'{field.name}_Last (Buffer)'))],
-                [Precondition(And(LogCall('Is_Contained (Buffer)'),
-                                  LogCall(f'Valid_{field.name} (Buffer)'))),
+                [precondition,
                  Postcondition(And(Equal(Value('First'),
                                          MathCall(f'{field.name}_First (Buffer)')),
                                    Equal(Value('Last'),
@@ -897,8 +854,7 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
                                MathCall(f'{field.name}_{variant_id} (Buffer)'))
                               for variant_id in field.variants],
                              f'Unreachable_{field.type.name}'),
-                [Precondition(And(LogCall('Is_Contained (Buffer)'),
-                                  LogCall(f'Valid_{field.name} (Buffer)')))]))
+                [precondition]))
 
     return functions
 
@@ -908,8 +864,8 @@ def create_packet_validation_function(field_name: str) -> Subprogram:
         'Is_Valid',
         'Boolean',
         [('Buffer', 'Bytes')],
-        LogCall('Valid_{} (Buffer)'.format(field_name)),
-        [Precondition(LogCall('Is_Contained (Buffer)'))])
+        LogCall(f'Valid_{field_name} (Buffer)'),
+        [Precondition(COMMON_PRECONDITION)])
 
 
 def create_contains_function(name: str, pdu: str, field: str, sdu: str,
