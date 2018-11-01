@@ -11,7 +11,7 @@ project Test is
         for Switches use
         (
             "-j0",              -- Use all cores
-            "--level=4",        -- Many provers, longer timeout
+            "--level=1",        -- Use all provers, short timeout
             "--warnings=error", -- Treat warnings as errors
             "-U"                -- Analyze all files
         );
