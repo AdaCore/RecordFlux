@@ -39,3 +39,9 @@ class TestIntegration(unittest.TestCase):
 
     def test_in_ethernet(self) -> None:
         self.assert_dissector(['ethernet', 'ipv4', 'in_ethernet'])
+
+    def test_udp(self) -> None:
+        self.assert_dissector(['udp'])
+
+    def test_in_ipv4(self) -> None:
+        self.assert_dissector(['ipv4', 'udp', 'in_ipv4'])

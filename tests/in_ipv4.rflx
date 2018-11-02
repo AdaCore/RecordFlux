@@ -1,0 +1,6 @@
+package In_IPv4 is
+
+   type UDP_In_IPv4 is new IPv4.Packet (Payload => UDP.Datagram)
+      if Protocol = 16#11#;
+
+end In_IPv4;
