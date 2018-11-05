@@ -174,7 +174,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'expected "First" or "Length" instead of "Foo"')
 
-    def test_invalid_type(self) -> None:
+    def test_invalid_modular_type(self) -> None:
         self.assert_parse_exception_string(
             """
                 package Test is
@@ -182,6 +182,33 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 end Test;
             """,
             r'modulus of "T" exceeds limit \(2\*\*64\) .*')
+
+    def test_invalid_enumeration_type_size(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type T is (Foo, Bar, Baz) with Size => 1;
+                end Test;
+            """,
+            r'size for "T" too small')
+
+    def test_invalid_enumeration_type_duplicate_elements(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type T is (Foo, Foo) with Size => 1;
+                end Test;
+            """,
+            r'"T" contains duplicate elements')
+
+    def test_invalid_enumeration_type_duplicate_values(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type T is (Foo => 0, Bar => 0) with Size => 1;
+                end Test;
+            """,
+            r'"T" contains elements with same value')
 
     def test_duplicate_message(self) -> None:
         self.assert_parser_error_string(
@@ -230,16 +257,18 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             Context([]),
             Package('Test',
                     [Enumeration('Day',
-                                 ['Mon',
-                                  'Tue',
-                                  'Wed',
-                                  'Thu',
-                                  'Fri',
-                                  'Sat',
-                                  'Sun']),
+                                 {'Mon': Number(1),
+                                  'Tue': Number(2),
+                                  'Wed': Number(3),
+                                  'Thu': Number(4),
+                                  'Fri': Number(5),
+                                  'Sat': Number(6),
+                                  'Sun': Number(7)},
+                                 Number(3)),
                      Enumeration('Gender',
-                                 ['M',
-                                  'F'])]))}
+                                 {'M': Number(0),
+                                  'F': Number(1)},
+                                 Number(1))]))}
         self.assert_specifications(['enumeration_type.rflx'], spec)
 
     def test_message_type_spec(self) -> None:

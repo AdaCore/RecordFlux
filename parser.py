@@ -5,10 +5,10 @@ from pyparsing import (alphanums, infixNotation, nums, opAssoc, ParseFatalExcept
                        Group, Keyword, Literal, Optional, Regex, StringEnd, Suppress, Word, WordEnd,
                        WordStart, ZeroOrMore)
 
-from model import (Add, And, Array, Attribute, Div, Edge, Equal, FINAL, First, Greater,
-                   GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModelError,
-                   ModularInteger, Mul, Number, Node, NotEqual, Or, PDU, Pow, RangeInteger,
-                   Refinement, Relation, Sub, TRUE, Type, Value)
+from model import (Add, And, Array, Attribute, Div, Edge, Enumeration, Equal, FINAL, First,
+                   Greater, GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr,
+                   ModelError, ModularInteger, Mul, Number, Node, NotEqual, Or, PDU, Pow,
+                   RangeInteger, Refinement, Relation, Sub, TRUE, Type, Value)
 
 
 class SyntaxTree:
@@ -29,15 +29,6 @@ class Message(Type):
     def __init__(self, name: str, components: List['Component']) -> None:
         super().__init__(name)
         self.components = components
-
-    def size(self) -> Number:
-        raise NotImplementedError
-
-
-class Enumeration(Type):
-    def __init__(self, name: str, literals: List[str]) -> None:
-        super().__init__(name)
-        self.literals = literals
 
     def size(self) -> Number:
         raise NotImplementedError
@@ -165,9 +156,10 @@ class Parser:
         type_refinement_definition.setName('Refinement')
 
         # Integer Types
+        size_aspect = Suppress(Keyword('with Size =>')) - mathematical_expression
         range_type_definition = (Keyword('range') - mathematical_expression
                                  - Suppress(Literal('..')) - mathematical_expression
-                                 - Suppress(Keyword('with Size =>')) - mathematical_expression)
+                                 - size_aspect)
         range_type_definition.setName('RangeInteger')
         modular_type_definition = Keyword('mod') - mathematical_expression
         modular_type_definition.setName('ModularInteger')
@@ -175,8 +167,15 @@ class Parser:
 
         # Enumeration Types
         enumeration_literal = name
-        enumeration_type_definition = (Literal('(') - enumeration_literal
-                                       + ZeroOrMore(comma - enumeration_literal) - Literal(')'))
+        positional_enumeration = enumeration_literal + ZeroOrMore(comma - enumeration_literal)
+        positional_enumeration.setParseAction(lambda t: [(k, Number(v))
+                                                         for v, k in enumerate(t.asList())])
+        element_value_association = enumeration_literal + Keyword('=>') - numeric_literal
+        element_value_association.setParseAction(lambda t: (t[0], t[2]))
+        named_enumeration = (element_value_association
+                             + ZeroOrMore(comma - element_value_association))
+        enumeration_type_definition = (Literal('(') - (named_enumeration | positional_enumeration)
+                                       - Literal(')') - size_aspect)
         enumeration_type_definition.setName('Enumeration')
 
         # Message Type
@@ -201,17 +200,6 @@ class Parser:
                            - semicolon | Group(component_item - ZeroOrMore(component_item)))
         component_list.setParseAction(lambda t: t.asList())
 
-        # Representation Aspects
-        discrete_choice = Keyword('others') | subtype_indication
-        discrete_choice_list = discrete_choice + ZeroOrMore(Literal('|') - discrete_choice)
-        array_component_association = (discrete_choice_list + Literal('=>')
-                                       - (Literal('<>') | logical_expression))
-        named_array_aggregate = (Literal('(') + array_component_association
-                                 + ZeroOrMore(comma + array_component_association) + Literal(')'))
-        enum_representation_clause = (Literal('for') + name + Literal('use') - named_array_aggregate
-                                      - semicolon)
-        aspect_clause = enum_representation_clause
-
         # Types
         type_definition = (enumeration_type_definition | integer_type_definition
                            | message_type_definition | type_refinement_definition)
@@ -220,7 +208,7 @@ class Parser:
         type_declaration.setParseAction(parse_type)
 
         # Package
-        basic_declaration = type_declaration | aspect_clause
+        basic_declaration = type_declaration
         package_declaration = (Keyword('package') - identifier - Keyword('is')
                                - Group(ZeroOrMore(basic_declaration)) - Keyword('end') - name
                                - semicolon)
@@ -280,7 +268,7 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
     pdus: Dict[str, PDU] = {}
 
     for t in spec.package.types:
-        if isinstance(t, (ModularInteger, RangeInteger)):
+        if isinstance(t, (ModularInteger, RangeInteger, Enumeration)):
             if t.name in types:
                 raise ParserError(f'duplicate type "{t.name}"')
             types[t.name] = t
@@ -292,6 +280,10 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
             if name in pdus:
                 raise ParserError(f'duplicate message "{t.name}"')
             pdus[name] = PDU(name, next(iter(nodes.values()), FINAL))
+        elif isinstance(t, Refinement):
+            continue
+        else:
+            raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
 
     return pdus
 
@@ -466,7 +458,10 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
         if tokens[3] == 'message':
             return Message(tokens[1], tokens[4])
         if tokens[3] == '(':
-            return Enumeration(tokens[1], tokens[4:-1])
+            elements = dict(tokens[4:-2])
+            if len(elements) < len(tokens[4:-2]):
+                raise ModelError(f'"{tokens[1]}" contains duplicate elements')
+            return Enumeration(tokens[1], elements, tokens[-1])
         if tokens[3] == 'new':
             if len(tokens) == 7:
                 tokens.append(TRUE)

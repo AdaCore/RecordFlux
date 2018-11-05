@@ -1,6 +1,6 @@
 package Test is
 
-type Day is (Mon, Tue, Wed, Thu, Fri, Sat, Sun);
-type Gender is (M, F);
+   type Day is (Mon => 1, Tue => 2, Wed => 3, Thu => 4, Fri => 5, Sat => 6, Sun => 7) with Size => 3;
+   type Gender is (M, F) with Size => 1;
 
 end Test;

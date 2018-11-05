@@ -171,6 +171,9 @@ class Number(MathExpr):
             return '({})'.format(self.value)
         return str(self.value)
 
+    def __hash__(self) -> int:
+        return hash(self.value)
+
     def __int__(self) -> int:
         return self.value
 
@@ -643,6 +646,21 @@ class RangeInteger(Type):
     @property
     def base_last(self) -> MathExpr:
         return Sub(Pow(Number(2), self.size), Number(1))
+
+
+class Enumeration(Type):
+    def __init__(self, name: str, literals: Dict[str, Number], size: Number) -> None:
+        if log(max(map(int, literals.values())) + 1) / log(2) > int(size):
+            raise ModelError(f'size for "{name}" too small')
+        if len(set(literals.values())) < len(literals.values()):
+            raise ModelError(f'"{name}" contains elements with same value')
+        super().__init__(name)
+        self.literals = literals
+        self.__size = size
+
+    @property
+    def size(self) -> Number:
+        return self.__size
 
 
 class Array(Type):
