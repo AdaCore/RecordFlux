@@ -1,0 +1,24 @@
+sudo: required
+
+jobs:
+  include:
+    - name: "Python Tests"
+      language: python
+      python:
+        - 3.6
+      install:
+        - pip install codecov
+        - pip install mypy
+        - pip install pyparsing
+      script:
+        - mypy rflx *.py tests/*.py
+        - coverage run -m unittest
+      after_success:
+        - codecov
+
+    - name: "SPARK Tests"
+      language: c
+      services:
+        - docker
+      script:
+        - docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2018.spark /bin/sh -c "gprbuild -Ptest && build/test && gnatprove -Ptest"

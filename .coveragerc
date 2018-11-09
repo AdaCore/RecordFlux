@@ -1,0 +1,7 @@
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    def __str__
+    raise NotImplementedError
+    return NotImplemented

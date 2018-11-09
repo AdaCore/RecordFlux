@@ -1,4 +1,7 @@
+*.ali
+*.o
+.coverage
+.mypy_cache
 __pycache__
 build
-*.o
-*.ali
+htmlcov
