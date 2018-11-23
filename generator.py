@@ -65,16 +65,18 @@ class Package(SparkRepresentation):
         return self.__representation(lambda x: x.definition(), True)
 
     def __representation(self, function: Callable, definition: bool) -> str:
-        if definition and not self.subprograms:
-            return ''
-
-        types = '\n\n'.join([str(t) for t in self.types if str(t)])
-        if types:
-            types += '\n\n'
+        types = ''
+        if not definition:
+            types = '\n\n'.join([str(t) for t in self.types if str(t)])
+            if types:
+                types += '\n\n'
 
         subprograms = '\n\n'.join([function(f) for f in self.subprograms if function(f)])
         if subprograms:
             subprograms += '\n\n'
+
+        if not types and not subprograms:
+            return ''
 
         indicator = ' '
         aspect = '\n  with SPARK_Mode\n'
