@@ -199,6 +199,10 @@ class Subprogram(SparkRepresentation):
     def specification(self) -> str:
         raise NotImplementedError
 
+    @abstractmethod
+    def definition(self) -> str:
+        raise NotImplementedError
+
     def _parameters(self) -> str:
         parameters = ''
         if self.parameters:
