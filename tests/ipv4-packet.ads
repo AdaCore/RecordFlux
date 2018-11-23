@@ -201,7 +201,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Identification (Buffer));
 
    function Valid_Flag_R_0000000 (Buffer : Bytes) return Boolean is
-      ((Valid_Identification_000000 (Buffer) and then (Buffer'Length >= 7 and then Buffer'First <= (Natural'Last / 2))))
+      ((Valid_Identification_000000 (Buffer) and then ((Buffer'Length >= 7 and then Buffer'First <= (Natural'Last / 2)) and then Valid_Flag_Type (Buffer ((Buffer'First + 6) .. (Buffer'First + 6)), 7))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -211,7 +211,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Flag_R_0000000 (Buffer));
 
    function Valid_Flag_R (Buffer : Bytes) return Boolean is
-      ((Valid_Flag_R_0000000 (Buffer) and then Flag_R_0000000 (Buffer) = 0))
+      ((Valid_Flag_R_0000000 (Buffer) and then Flag_R_0000000 (Buffer) = Flag_False))
      with
        Pre => Is_Contained (Buffer);
 
@@ -221,7 +221,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Flag_R (Buffer));
 
    function Valid_Flag_DF_00000000 (Buffer : Bytes) return Boolean is
-      ((Valid_Flag_R_0000000 (Buffer) and then ((Buffer'Length >= 7 and then Buffer'First <= (Natural'Last / 2)) and then Flag_R_0000000 (Buffer) = 0)))
+      ((Valid_Flag_R_0000000 (Buffer) and then (((Buffer'Length >= 7 and then Buffer'First <= (Natural'Last / 2)) and then Flag_R_0000000 (Buffer) = Flag_False) and then Valid_Flag_Type (Buffer ((Buffer'First + 6) .. (Buffer'First + 6)), 6))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -241,7 +241,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Flag_DF (Buffer));
 
    function Valid_Flag_MF_000000000 (Buffer : Bytes) return Boolean is
-      ((Valid_Flag_DF_00000000 (Buffer) and then (Buffer'Length >= 7 and then Buffer'First <= (Natural'Last / 2))))
+      ((Valid_Flag_DF_00000000 (Buffer) and then ((Buffer'Length >= 7 and then Buffer'First <= (Natural'Last / 2)) and then Valid_Flag_Type (Buffer ((Buffer'First + 6) .. (Buffer'First + 6)), 5))))
      with
        Pre => Is_Contained (Buffer);
 

@@ -1,9 +1,11 @@
+import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Callable, Dict, List, Tuple
 
-from model import (Add, And, Array, Attribute, Div, Equal, Expr, Field, First, GreaterEqual, Last,
-                   Length, LessEqual, LogExpr, MathExpr, ModularInteger, Mul, Number, Or, PDU,
-                   RangeInteger, Refinement, Sub, TRUE, Type, Value, Variant)
+from model import (Add, And, Array, Attribute, Div, Enumeration, Equal, Expr, Field, First,
+                   GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModularInteger,
+                   Mul, Number, Or, PDU, Pow, RangeInteger, Refinement, Size, Sub, TRUE, Type,
+                   Value, Variant)
 
 
 class SparkRepresentation(ABC):
@@ -113,6 +115,19 @@ class RangeType(TypeDeclaration):
         return (f'   type {self.name} is range {self.first} .. {self.last}'
                 f' with Size => {self.size};\n'
                 f'   function Convert_To_{self.name} is new Convert_To_Int ({self.name});')
+
+
+class EnumerationType(TypeDeclaration):
+    def __init__(self, name: str, literals: Dict[str, Number], size: Number) -> None:
+        super().__init__(name)
+        self.literals = literals
+        self.size = size
+
+    def __str__(self) -> str:
+        literal_specification = ', '.join(self.literals.keys())
+        literal_representation = ', '.join([f'{k} => {v}' for k, v in self.literals.items()])
+        return (f'   type {self.name} is ({literal_specification}) with Size => {self.size};\n'
+                f'   for {self.name} use ({literal_representation});')
 
 
 class RangeSubtype(TypeDeclaration):
@@ -310,6 +325,21 @@ class IfExpression(LogExpr):
 
     def symbol(self) -> str:
         raise NotImplementedError
+
+
+class CaseExpression(Expr):
+    def __init__(self, control_expression: Expr,
+                 case_statements: List[Tuple[Expr, Expr]]) -> None:
+        self.control_expression = control_expression
+        self.case_statements = case_statements
+
+    def __str__(self) -> str:
+        grouped_cases = [(' | '.join([str(c) for c, _ in choices]), expr)
+                         for expr, choices in itertools.groupby(self.case_statements,
+                                                                lambda x: x[1])]
+        cases = ', '.join([f'when {choice} => {expr}'
+                           for choice, expr in grouped_cases])
+        return f'case {self.control_expression} is {cases}'
 
 
 class Statement(ABC):
@@ -558,9 +588,16 @@ class Generator:
                                                                      field.type.first,
                                                                      field.type.last)]
 
+                    elif isinstance(field.type, Enumeration):
+                        top_level_package.types += enumeration_types(field.type)
+                        top_level_package.subprograms += enumeration_functions(field.type)
+
                     elif isinstance(field.type, Array):
                         if 'Payload' not in field.type.name:
                             raise NotImplementedError('custom arrays are not supported yet')
+
+                    else:
+                        raise NotImplementedError(f'unsupported type "{type(field.type).__name__}"')
 
                 valid_variants: List[LogExpr] = []
 
@@ -631,6 +668,50 @@ class Generator:
                          for field in self.__pdu_fields[refinement.pdu]})))
 
 
+def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
+    return [ModularType(enum.base_name,
+                        Pow(Number(2), enum.size)),
+            EnumerationType(enum.name,
+                            enum.literals,
+                            enum.size)]
+
+
+def enumeration_functions(enum: Enumeration) -> List[Subprogram]:
+    common_precondition = And(Less(Value('Offset'),
+                                   Number(8)),
+                              Equal(Length('Buffer'),
+                                    Add(Div(Add(Size(enum.base_name),
+                                                Value('Offset'),
+                                                Number(-1)),
+                                            Number(8)),
+                                        Number(1))))
+
+    control_expression = LogCall(f'Convert_To_{enum.base_name} (Buffer, Offset)')
+
+    validation_cases: List[Tuple[Expr, Expr]] = []
+    validation_cases += [(value, Value('True')) for value in enum.literals.values()]
+    validation_cases += [(Value('others'), Value('False'))]
+
+    conversion_cases: List[Tuple[Expr, Expr]] = []
+    conversion_cases += [(value, Value(key)) for key, value in enum.literals.items()]
+
+    return [ExpressionFunction(f'Valid_{enum.name}',
+                               'Boolean',
+                               [('Buffer', 'Bytes'),
+                                ('Offset', 'Natural')],
+                               CaseExpression(control_expression,
+                                              validation_cases),
+                               [Precondition(common_precondition)]),
+            ExpressionFunction(f'Convert_To_{enum.name}',
+                               enum.name,
+                               [('Buffer', 'Bytes'),
+                                ('Offset', 'Natural')],
+                               CaseExpression(control_expression,
+                                              conversion_cases),
+                               [Precondition(And(common_precondition,
+                                                 LogCall(f'Valid_{enum.name} (Buffer, Offset)')))])]
+
+
 COMMON_PRECONDITION = LogCall('Is_Contained (Buffer)')
 
 
@@ -684,19 +765,25 @@ def create_variant_validation_function(
 
     type_constraints: LogExpr = TRUE
 
-    if field.type.constraints != TRUE:
+    if field.type.constraints != TRUE or isinstance(field.type, Enumeration):
         value_to_natural_call = create_value_to_natural_call(field, variant_id, variant)
         first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_call)
         last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
         offset = calculate_offset(variant.facts[Last(field.name)])
 
-        convert = Convert(
-            field.type.base_name,
-            'Buffer',
-            first_byte,
-            last_byte,
-            offset)
-        type_constraints = field.type.constraints.simplified({Value(field.type.name): convert})
+        if field.type.constraints != TRUE:
+            convert = Convert(
+                field.type.base_name,
+                'Buffer',
+                first_byte,
+                last_byte,
+                offset)
+            type_constraints = field.type.constraints.simplified({Value(field.type.name): convert})
+
+        if isinstance(field.type, Enumeration):
+            type_constraints = And(type_constraints,
+                                   LogCall((f'Valid_{field.type.name} (Buffer ({first_byte}'
+                                            f' .. {last_byte}), {offset})')))
 
     return ExpressionFunction(
         f'Valid_{field.name}_{variant_id}',

@@ -6,7 +6,7 @@ package IPv4 is
    type ECN_Type is mod 2**2;
    type Total_Length_Type is range 20 .. 2**16 - 1 with Size => 16;
    type Identification_Type is mod 2**16;
-   type Flag_Type is mod 2;
+   type Flag_Type is (Flag_False, Flag_True) with Size => 1;
    type Fragment_Offset_Type is mod 2**13;
    type TTL_Type is mod 2**8;
    type Protocol_Type is mod 2**8;
@@ -23,7 +23,7 @@ package IPv4 is
          Identification : Identification_Type;
          Flag_R : Flag_Type
             then Flag_DF
-               if Flag_R = 0;
+               if Flag_R = Flag_False;
          Flag_DF : Flag_Type;
          Flag_MF : Flag_Type;
          Fragment_Offset : Fragment_Offset_Type;

@@ -491,6 +491,10 @@ class Value(Attribute):
         return self.name
 
 
+class Size(Attribute):
+    pass
+
+
 class Length(Attribute):
     pass
 

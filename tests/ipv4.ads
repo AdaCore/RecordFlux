@@ -28,8 +28,11 @@ is
    type Identification_Type is mod (2**16);
    function Convert_To_Identification_Type is new Convert_To_Mod (Identification_Type);
 
-   type Flag_Type is mod 2;
-   function Convert_To_Flag_Type is new Convert_To_Mod (Flag_Type);
+   type Flag_Type_Base is mod (2**1);
+   function Convert_To_Flag_Type_Base is new Convert_To_Mod (Flag_Type_Base);
+
+   type Flag_Type is (Flag_False, Flag_True) with Size => 1;
+   for Flag_Type use (Flag_False => 0, Flag_True => 1);
 
    type Fragment_Offset_Type is mod (2**13);
    function Convert_To_Fragment_Offset_Type is new Convert_To_Mod (Fragment_Offset_Type);
@@ -45,5 +48,15 @@ is
 
    type Address_Type is mod (2**32);
    function Convert_To_Address_Type is new Convert_To_Mod (Address_Type);
+
+   function Valid_Flag_Type (Buffer : Bytes; Offset : Natural) return Boolean is
+      (case Convert_To_Flag_Type_Base (Buffer, Offset) is when 0 | 1 => True, when others => False)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Flag_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Convert_To_Flag_Type (Buffer : Bytes; Offset : Natural) return Flag_Type is
+      (case Convert_To_Flag_Type_Base (Buffer, Offset) is when 0 => Flag_False, when 1 => Flag_True)
+     with
+       Pre => ((Offset < 8 and then Buffer'Length = (((Flag_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Flag_Type (Buffer, Offset));
 
 end IPv4;

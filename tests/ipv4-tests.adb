@@ -70,17 +70,17 @@ package body IPv4.Tests is
                         Assert (Valid, "Invalid Flag_R");
                         if Valid then
                            Flag_R := IPv4.Packet.Flag_R (Buffer);
-                           Assert (Flag_R'Image, IPv4.Flag_Type'Image (0), "Invalid Flag_R");
+                           Assert (Flag_R'Image, IPv4.Flag_Type'Image (Flag_False), "Invalid Flag_R");
                            Valid := IPv4.Packet.Valid_Flag_DF (Buffer);
                            Assert (Valid, "Invalid Flag_DF");
                            if Valid then
                               Flag_DF := IPv4.Packet.Flag_DF (Buffer);
-                              Assert (Flag_DF'Image, IPv4.Flag_Type'Image (0), "Invalid Flag_DF");
+                              Assert (Flag_DF'Image, IPv4.Flag_Type'Image (Flag_False), "Invalid Flag_DF");
                               Valid := IPv4.Packet.Valid_Flag_MF (Buffer);
                               Assert (Valid, "Invalid Flag_MF");
                               if Valid then
                                  Flag_MF := IPv4.Packet.Flag_MF (Buffer);
-                                 Assert (Flag_MF'Image, IPv4.Flag_Type'Image (0), "Invalid Flag_MF");
+                                 Assert (Flag_MF'Image, IPv4.Flag_Type'Image (Flag_False), "Invalid Flag_MF");
                                  Valid := IPv4.Packet.Valid_Fragment_Offset (Buffer);
                                  Assert (Valid, "Invalid Fragment_Offset");
                                  if Valid then
