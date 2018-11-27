@@ -1,0 +1,6 @@
+package Test is
+
+   type Byte is mod 256;
+   type Vector is array of Byte;
+
+end Test;

@@ -1,7 +1,7 @@
 import unittest
 from typing import Dict, List
 
-from parser import (And, Component, Context, Div, Edge, Enumeration, Equal, FINAL, First,
+from parser import (And, Array, Component, Context, Div, Edge, Enumeration, Equal, FINAL, First,
                     GreaterEqual, Last, Length, LessEqual, Message, ModularInteger, Mul, Number,
                     Node, NotEqual, Package, Parser, ParseFatalException, ParserError, PDU, Pow,
                     RangeInteger, Refinement, Specification, Sub, Then, Value)
@@ -210,6 +210,15 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'"T" contains elements with same value')
 
+    def test_array_reference_to_undefined_type(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is array of Foo;
+                end Test;
+            """,
+            r'reference to undefined type "Foo"')
+
     def test_duplicate_message(self) -> None:
         self.assert_parser_error_string(
             """
@@ -270,6 +279,15 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                   'F': Number(1)},
                                  Number(1))]))}
         self.assert_specifications(['enumeration_type.rflx'], spec)
+
+    def test_array_type_spec(self) -> None:
+        spec = {'Test': Specification(
+            Context([]),
+            Package('Test',
+                    [ModularInteger('Byte', Number(256)),
+                     Array('Vector',
+                           'Byte')]))}
+        self.assert_specifications(['array_type.rflx'], spec)
 
     def test_message_type_spec(self) -> None:
         spec = {'Test': Specification(
