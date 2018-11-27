@@ -1,0 +1,12 @@
+package Test is
+
+   type Byte is mod 256;
+
+   type Foo is
+      message
+         Byte : Byte;
+      end message;
+
+   type Bar is array of Foo;
+
+end Test;

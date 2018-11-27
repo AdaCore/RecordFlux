@@ -169,6 +169,11 @@ class Parser:
                                        - Literal(')') - size_aspect)
         enumeration_type_definition.setName('Enumeration')
 
+        # Array Type
+        unconstrained_array_definition = Keyword('array of') + name
+        array_type_definition = unconstrained_array_definition
+        array_type_definition.setName('Array')
+
         # Message Type
         location_expression = Keyword('with') - logical_expression
         location_expression.setParseAction(lambda t: ('location', t[1]))
@@ -193,7 +198,8 @@ class Parser:
 
         # Types
         type_definition = (enumeration_type_definition | integer_type_definition
-                           | message_type_definition | type_refinement_definition)
+                           | message_type_definition | type_refinement_definition
+                           | array_type_definition)
         type_declaration = (Keyword('type') - identifier - Keyword('is') - type_definition
                             - semicolon)
         type_declaration.setParseAction(parse_type)
@@ -259,9 +265,13 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
     pdus: Dict[str, PDU] = {}
 
     for t in spec.package.types:
-        if isinstance(t, (ModularInteger, RangeInteger, Enumeration)):
+        if isinstance(t, (ModularInteger, RangeInteger, Enumeration, Array)):
             if t.name in types:
                 raise ParserError(f'duplicate type "{t.name}"')
+            if isinstance(t, Array) and t.element_type not in types:
+                raise ParserError(f'reference to undefined type "{t.element_type}" in "{t.name}"')
+            if isinstance(t, Array) and not isinstance(types[t.element_type], Message):
+                raise ParserError(f'unsupported element type "{t.element_type}" in "{t.name}"')
             types[t.name] = t
         elif isinstance(t, Message):
             nodes: Dict[str, Node] = OrderedDict()
@@ -271,6 +281,7 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
             if name in pdus:
                 raise ParserError(f'duplicate message "{t.name}"')
             pdus[name] = PDU(name, next(iter(nodes.values()), FINAL))
+            types[t.name] = t
         elif isinstance(t, Refinement):
             continue
         else:
@@ -459,6 +470,8 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
             elif len(tokens) == 8:
                 tokens[7] = tokens[7][1]
             return Refinement(tokens[1], *tokens[4:])
+        if tokens[3] == 'array of':
+            return Array(tokens[1], tokens[4])
     except ModelError as e:
         raise ParseFatalException(string, location, e)
     raise ParseFatalException(string, location, 'unexpected type')

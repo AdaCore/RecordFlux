@@ -668,6 +668,10 @@ class Enumeration(Type):
 
 
 class Array(Type):
+    def __init__(self, name: str, element_type: str = '') -> None:
+        super().__init__(name)
+        self.element_type = element_type
+
     @property
     def size(self) -> MathExpr:
         raise ModelError(f'size of "{self.name}" undefined')
