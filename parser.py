@@ -138,15 +138,6 @@ class Parser:
                                                    parse_mathematical_expression)])
         mathematical_expression.setName('MathematicalExpression')
 
-        # Subtypes
-        range_constraint = Forward()
-        digits_constraint = Forward()
-        scalar_constraint = range_constraint | digits_constraint
-        index_constraint = Forward()
-        composite_constraint = index_constraint
-        constraint = scalar_constraint | composite_constraint
-        subtype_indication = name + Optional(constraint)
-
         # Type Refinement
         value_constraint = Keyword('if') - logical_expression
         value_constraint.setParseAction(lambda t: ('constraint', t[1]))
@@ -189,7 +180,7 @@ class Parser:
         component_list = Forward()
         message_type_definition = Keyword('message') - component_list - Keyword('end message')
         message_type_definition.setName('Message')
-        component_declaration = (identifier + Literal(':') - subtype_indication
+        component_declaration = (identifier + Literal(':') - name
                                  - Optional(then_list) - semicolon)
         component_item = component_declaration
         component_item.setParseAction(lambda t:
