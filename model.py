@@ -673,6 +673,15 @@ class Array(Type):
         raise ModelError(f'size of "{self.name}" undefined')
 
 
+class Null(Type):
+    def __init__(self) -> None:
+        super().__init__('NULL')
+
+    @property
+    def size(self) -> MathExpr:
+        return Number(0)
+
+
 class Refinement(Type):
     # pylint: disable=too-many-arguments
     def __init__(self, name: str, pdu: str, field: str, sdu: str,
@@ -703,7 +712,7 @@ class Node(Element):
         self.edges = edges or []
 
 
-FINAL = Node('', Array(''))
+FINAL = Node('', Null())
 
 
 class Edge(Element):
