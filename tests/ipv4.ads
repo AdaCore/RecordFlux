@@ -49,6 +49,75 @@ is
    type Address_Type is mod (2**32);
    function Convert_To_Address_Type is new Convert_To_Mod (Address_Type);
 
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_Version_Type return Version_Type is
+      (Version_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_IHL_Type return IHL_Type is
+      (IHL_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_DCSP_Type return DCSP_Type is
+      (DCSP_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_ECN_Type return ECN_Type is
+      (ECN_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Total_Length_Type return Total_Length_Type is
+      (Total_Length_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Identification_Type return Identification_Type is
+      (Identification_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Flag_Type return Flag_Type is
+      (Flag_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Fragment_Offset_Type return Fragment_Offset_Type is
+      (Fragment_Offset_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_TTL_Type return TTL_Type is
+      (TTL_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Protocol_Type return Protocol_Type is
+      (Protocol_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Header_Checksum_Type return Header_Checksum_Type is
+      (Header_Checksum_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Address_Type return Address_Type is
+      (Address_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Natural return Natural is
+      (Natural'First)
+     with
+       Pre => False;
+
+   pragma Warnings (On, "precondition is statically false");
+
    function Valid_Flag_Type (Buffer : Bytes; Offset : Natural) return Boolean is
       (case Convert_To_Flag_Type_Base (Buffer, Offset) is when 0 | 1 => True, when others => False)
      with

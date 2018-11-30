@@ -627,11 +627,15 @@ class Generator:
 
                 extend_unreachable_functions(unreachable_functions, field.type)
 
-            package.subprograms.insert(0, Pragma('Warnings',
-                                                 ['On', '"precondition is statically false"']))
-            package.subprograms[0:0] = list(unreachable_functions.values())
-            package.subprograms.insert(0, Pragma('Warnings',
-                                                 ['Off', '"precondition is statically false"']))
+            top_level_package.subprograms.insert(
+                0,
+                Pragma('Warnings',
+                       ['On', '"precondition is statically false"']))
+            top_level_package.subprograms[0:0] = list(unreachable_functions.values())
+            top_level_package.subprograms.insert(
+                0,
+                Pragma('Warnings',
+                       ['Off', '"precondition is statically false"']))
 
             package.subprograms.append(
                 create_packet_validation_function(

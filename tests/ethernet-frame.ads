@@ -2,25 +2,6 @@ package Ethernet.Frame
   with SPARK_Mode
 is
 
-   pragma Warnings (Off, "precondition is statically false");
-
-   function Unreachable_UINT48 return UINT48 is
-      (UINT48'First)
-     with
-       Pre => False;
-
-   function Unreachable_UINT16 return UINT16 is
-      (UINT16'First)
-     with
-       Pre => False;
-
-   function Unreachable_Natural return Natural is
-      (Natural'First)
-     with
-       Pre => False;
-
-   pragma Warnings (On, "precondition is statically false");
-
    function Is_Contained (Buffer : Bytes) return Boolean
      with
        Ghost,

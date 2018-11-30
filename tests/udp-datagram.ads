@@ -2,30 +2,6 @@ package UDP.Datagram
   with SPARK_Mode
 is
 
-   pragma Warnings (Off, "precondition is statically false");
-
-   function Unreachable_Port_Type return Port_Type is
-      (Port_Type'First)
-     with
-       Pre => False;
-
-   function Unreachable_Length_Type return Length_Type is
-      (Length_Type'First)
-     with
-       Pre => False;
-
-   function Unreachable_Checksum_Type return Checksum_Type is
-      (Checksum_Type'First)
-     with
-       Pre => False;
-
-   function Unreachable_Natural return Natural is
-      (Natural'First)
-     with
-       Pre => False;
-
-   pragma Warnings (On, "precondition is statically false");
-
    function Is_Contained (Buffer : Bytes) return Boolean
      with
        Ghost,
