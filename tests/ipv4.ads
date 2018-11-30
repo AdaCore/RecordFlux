@@ -124,7 +124,7 @@ is
        Pre => (Offset < 8 and then Buffer'Length = (((Flag_Type_Base'Size + Offset + (-1)) / 8) + 1));
 
    function Convert_To_Flag_Type (Buffer : Bytes; Offset : Natural) return Flag_Type is
-      (case Convert_To_Flag_Type_Base (Buffer, Offset) is when 0 => Flag_False, when 1 => Flag_True)
+      (case Convert_To_Flag_Type_Base (Buffer, Offset) is when 0 => Flag_False, when 1 => Flag_True, when others => Unreachable_Flag_Type)
      with
        Pre => ((Offset < 8 and then Buffer'Length = (((Flag_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Flag_Type (Buffer, Offset));
 

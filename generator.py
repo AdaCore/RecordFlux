@@ -698,6 +698,7 @@ def enumeration_functions(enum: Enumeration) -> List[Subprogram]:
 
     conversion_cases: List[Tuple[Expr, Expr]] = []
     conversion_cases += [(value, Value(key)) for key, value in enum.literals.items()]
+    conversion_cases += [(Value('others'), LogCall(f'Unreachable_{enum.name}'))]
 
     return [ExpressionFunction(f'Valid_{enum.name}',
                                'Boolean',
