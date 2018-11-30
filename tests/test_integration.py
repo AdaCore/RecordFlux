@@ -45,3 +45,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_in_ipv4(self) -> None:
         self.assert_dissector(['ipv4', 'udp', 'in_ipv4'])
+
+    def test_tlv(self) -> None:
+        self.assert_dissector(['tlv'])

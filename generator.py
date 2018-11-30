@@ -567,6 +567,9 @@ class Generator:
             self.__pdu_fields[pdu.full_name] = list(fields.keys())
 
             for field in fields.values():
+                if field.name == 'FINAL':
+                    continue
+
                 if field.type not in seen_types:
                     seen_types.append(field.type)
                     if isinstance(field.type, ModularInteger):
@@ -639,7 +642,7 @@ class Generator:
 
             package.subprograms.append(
                 create_packet_validation_function(
-                    list(fields.values())[-1].name))
+                    list(fields['FINAL'].variants.values())))
 
     def __process_refinements(self, refinements: List[Refinement]) -> None:
         for refinement in refinements:
@@ -745,13 +748,9 @@ def buffer_constraints(last: MathExpr) -> LogExpr:
                LessEqual(First('Buffer'), Div(Last('Natural'), Number(2))))
 
 
-def create_value_to_call(
-        field: Field,
-        variant_id: str,
-        variant: Variant) -> Dict[Attribute, MathExpr]:
-
+def create_value_to_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
     return {Value(field_name): MathCall(f'{field_name}_{vid} (Buffer)')
-            for field_name, vid in [(field.name, variant_id)] + variant.previous}
+            for field_name, vid in previous}
 
 
 def create_value_to_natural_call(
@@ -804,7 +803,7 @@ def create_variant_validation_function(
                                 field, variant_id, variant)),
                     variant.condition.simplified(
                         create_value_to_call(
-                            field, variant_id, variant))),
+                            [(field.name, variant_id)] + variant.previous))),
                 type_constraints)
             ).simplified(),
         [Precondition(COMMON_PRECONDITION)])
@@ -867,8 +866,9 @@ def extend_valid_variants(
     if field.condition is not TRUE:
         expression = And(expression, field.condition)
     valid_variants.append(
-        expression.simplified({**variant.facts,
-                               **create_value_to_call(field, variant_id, variant)}))
+        expression.simplified(
+            {**variant.facts,
+             **create_value_to_call([(field.name, variant_id)] + variant.previous)}))
 
 
 def create_field_validation_function(
@@ -957,12 +957,22 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
     return functions
 
 
-def create_packet_validation_function(field_name: str) -> Subprogram:
+def create_packet_validation_function(variants: List[Variant]) -> Subprogram:
+    expr: LogExpr = FALSE
+
+    for variant in variants:
+        field_name, variant_id = variant.previous[-1]
+        valid_call = LogCall(f'Valid_{field_name}_{variant_id} (Buffer)')
+        condition = And(valid_call, variant.condition).simplified(
+            {**variant.facts,
+             **create_value_to_call(variant.previous)})
+        expr = condition if expr == FALSE else Or(expr, condition)
+
     return ExpressionFunction(
         'Is_Valid',
         'Boolean',
         [('Buffer', 'Bytes')],
-        LogCall(f'Valid_{field_name} (Buffer)'),
+        expr,
         [Precondition(COMMON_PRECONDITION)])
 
 

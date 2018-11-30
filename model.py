@@ -712,7 +712,7 @@ class Node(Element):
         self.edges = edges or []
 
 
-FINAL = Node('', Null())
+FINAL = Node('FINAL', Null())
 
 
 class Edge(Element):
@@ -781,7 +781,7 @@ def evaluate(facts: Dict[Attribute, MathExpr],
     if in_edge.first is UNDEFINED:
         in_edge.first = Number(0)
 
-    facts = create_facts(facts, in_edge)
+    facts = create_facts(facts, in_edge) if node is not FINAL else facts
 
     fields = OrderedDict([
         (node.name,
@@ -800,9 +800,6 @@ def evaluate(facts: Dict[Attribute, MathExpr],
     ])
 
     for i, out_edge in enumerate(node.edges):
-        if out_edge.target is FINAL:
-            continue
-
         visited = create_visited_edges(visited, out_edge)
 
         edge = copy(out_edge)

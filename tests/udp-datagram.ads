@@ -127,7 +127,7 @@ is
        Post => (First = Payload_First (Buffer) and then Last = Payload_Last (Buffer));
 
    function Is_Valid (Buffer : Bytes) return Boolean is
-      (Valid_Payload (Buffer))
+      (Valid_Payload_00000 (Buffer))
      with
        Pre => Is_Contained (Buffer);
 

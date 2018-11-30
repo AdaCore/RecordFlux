@@ -202,7 +202,7 @@ is
        Post => (First = Payload_First (Buffer) and then Last = Payload_Last (Buffer));
 
    function Is_Valid (Buffer : Bytes) return Boolean is
-      (Valid_Payload (Buffer))
+      (((((Valid_Payload_000000 (Buffer) and then (EtherType_00000 (Buffer) >= 46 and then EtherType_00000 (Buffer) <= 1500)) or (Valid_Payload_000001 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) <= 1500))) or (Valid_Payload_00010 (Buffer) and then (EtherType_0001 (Buffer) >= 46 and then EtherType_0001 (Buffer) <= 1500))) or (Valid_Payload_00011 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) <= 1500))))
      with
        Pre => Is_Contained (Buffer);
 

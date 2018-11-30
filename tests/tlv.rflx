@@ -1,0 +1,19 @@
+package TLV is
+
+   type Tag_Type is (Msg_Data => 1, Msg_Error => 3) with Size => 2;
+   type Length_Type is mod 2**14;
+
+   type Message is
+      message
+         Tag    : Tag_Type
+            then Length
+               if Tag = Msg_Data,
+            then null
+               if Tag = Msg_Error;
+         Length : Length_Type
+            then Value
+               with Length = Length * 8;
+         Value  : Payload_Type;
+       end message;
+
+end TLV;
