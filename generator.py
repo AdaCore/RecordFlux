@@ -142,6 +142,11 @@ class RangeSubtype(TypeDeclaration):
 
 
 class Aspect(ABC):
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
     def __str__(self) -> str:
         if self.definition:
             return f'{self.mark} => {self.definition}'
@@ -540,6 +545,9 @@ class Generator:
         return list(self.__units.values())
 
     def __process_pdus(self, pdus: List[PDU]) -> None:
+        seen_types: List[str] = []
+        unreachable_functions: Dict[str, List[Subprogram]] = {}
+
         for pdu in pdus:
             if pdu.package in self.__units:
                 top_level_package = self.__units[pdu.package].package
@@ -551,11 +559,11 @@ class Generator:
             package = Package(pdu.full_name, [], [])
             self.__units[pdu.full_name] = Unit([], package)
 
+            if pdu.package not in unreachable_functions:
+                unreachable_functions[pdu.package] = []
+
             package.subprograms.extend(
                 create_contain_functions())
-
-            seen_types: List[Type] = []
-            unreachable_functions: Dict[str, Subprogram] = {}
 
             facts = {
                 First('Message'): First('Buffer'),
@@ -570,8 +578,8 @@ class Generator:
                 if field.name == 'FINAL':
                     continue
 
-                if field.type not in seen_types:
-                    seen_types.append(field.type)
+                if f'{pdu.package}.{field.type.name}' not in seen_types:
+                    seen_types.append(f'{pdu.package}.{field.type.name}')
                     if isinstance(field.type, ModularInteger):
                         top_level_package.types += [ModularType(field.type.name,
                                                                 field.type.modulus)]
@@ -602,6 +610,11 @@ class Generator:
                     else:
                         raise NotImplementedError(f'unsupported type "{type(field.type).__name__}"')
 
+                    function = create_unreachable_function(
+                        field.type.name if not isinstance(field.type, Array) else 'Natural')
+                    if function not in unreachable_functions[pdu.package]:
+                        unreachable_functions[pdu.package].append(function)
+
                 valid_variants: List[LogExpr] = []
 
                 for variant_id, variant in field.variants.items():
@@ -628,21 +641,21 @@ class Generator:
                     create_field_accessor_functions(
                         field))
 
-                extend_unreachable_functions(unreachable_functions, field.type)
+            package.subprograms.append(
+                create_packet_validation_function(
+                    list(fields['FINAL'].variants.values())))
 
+        for pdu_package, functions in unreachable_functions.items():
+            top_level_package = self.__units[pdu_package].package
             top_level_package.subprograms.insert(
                 0,
                 Pragma('Warnings',
                        ['On', '"precondition is statically false"']))
-            top_level_package.subprograms[0:0] = list(unreachable_functions.values())
+            top_level_package.subprograms[0:0] = functions
             top_level_package.subprograms.insert(
                 0,
                 Pragma('Warnings',
                        ['Off', '"precondition is statically false"']))
-
-            package.subprograms.append(
-                create_packet_validation_function(
-                    list(fields['FINAL'].variants.values())))
 
     def __process_refinements(self, refinements: List[Refinement]) -> None:
         for refinement in refinements:
@@ -888,26 +901,13 @@ def create_field_validation_function(
         [Precondition(COMMON_PRECONDITION)])
 
 
-def extend_unreachable_functions(
-        unreachable_functions: Dict[str, Subprogram],
-        field_type: Type) -> None:
-
-    if field_type.name not in unreachable_functions:
-        if isinstance(field_type, Array):
-            if 'Unreachable_Natural' not in unreachable_functions:
-                unreachable_functions['Unreachable_Natural'] = ExpressionFunction(
-                    'Unreachable_Natural',
-                    'Natural',
-                    [],
-                    First('Natural'),
-                    [Precondition(FALSE)])
-        else:
-            unreachable_functions[field_type.name] = ExpressionFunction(
-                f'Unreachable_{field_type.name}',
-                field_type.name,
-                [],
-                First(field_type.name),
-                [Precondition(FALSE)])
+def create_unreachable_function(type_name: str) -> Subprogram:
+    return ExpressionFunction(
+        f'Unreachable_{type_name}',
+        type_name,
+        [],
+        First(type_name),
+        [Precondition(FALSE)])
 
 
 def create_field_accessor_functions(field: Field) -> List[Subprogram]:
