@@ -645,6 +645,10 @@ class Generator:
                 create_packet_validation_function(
                     list(fields['FINAL'].variants.values())))
 
+            package.subprograms.append(
+                create_message_length_function(
+                    list(fields['FINAL'].variants.values())))
+
         for pdu_package, functions in unreachable_functions.items():
             top_level_package = self.__units[pdu_package].package
             top_level_package.subprograms.insert(
@@ -766,13 +770,9 @@ def create_value_to_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, Mat
             for field_name, vid in previous}
 
 
-def create_value_to_natural_call(
-        field: Field,
-        variant_id: str,
-        variant: Variant) -> Dict[Attribute, MathExpr]:
-
+def create_value_to_natural_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
     return {Value(field_name): Cast('Natural', MathCall(f'{field_name}_{vid} (Buffer)'))
-            for field_name, vid in [(field.name, variant_id)] + variant.previous}
+            for field_name, vid in previous}
 
 
 def create_variant_validation_function(
@@ -783,7 +783,8 @@ def create_variant_validation_function(
     type_constraints: LogExpr = TRUE
 
     if field.type.constraints != TRUE or isinstance(field.type, Enumeration):
-        value_to_natural_call = create_value_to_natural_call(field, variant_id, variant)
+        value_to_natural_call = create_value_to_natural_call(
+            [(field.name, variant_id)] + variant.previous)
         first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_call)
         last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
         offset = calculate_offset(variant.facts[Last(field.name)])
@@ -813,7 +814,7 @@ def create_variant_validation_function(
                     buffer_constraints(
                         variant.facts[Last(field.name)].to_bytes()).simplified(
                             create_value_to_natural_call(
-                                field, variant_id, variant)),
+                                [(field.name, variant_id)] + variant.previous)),
                     variant.condition.simplified(
                         create_value_to_call(
                             [(field.name, variant_id)] + variant.previous))),
@@ -827,7 +828,8 @@ def create_variant_accessor_functions(
         variant_id: str,
         variant: Variant) -> List[Subprogram]:
 
-    value_to_natural_call = create_value_to_natural_call(field, variant_id, variant)
+    value_to_natural_call = create_value_to_natural_call(
+        [(field.name, variant_id)] + variant.previous)
     first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_call)
     last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
     offset = calculate_offset(variant.facts[Last(field.name)])
@@ -974,6 +976,33 @@ def create_packet_validation_function(variants: List[Variant]) -> Subprogram:
         [('Buffer', 'Bytes')],
         expr,
         [Precondition(COMMON_PRECONDITION)])
+
+
+def create_message_length_function(variants: List[Variant]) -> Subprogram:
+    condition_expressions: List[Tuple[LogExpr, Expr]] = []
+
+    for variant in variants:
+        field_name, variant_id = variant.previous[-1]
+        valid_call = LogCall(f'Valid_{field_name}_{variant_id} (Buffer)')
+        condition = And(valid_call, variant.condition).simplified(
+            {**variant.facts,
+             **create_value_to_call(variant.previous)})
+        length = Add(
+            Last(variant.previous[-1][0]),
+            -First(variant.previous[0][0]),
+            Number(1)
+        ).simplified(
+            {**variant.facts,
+             **create_value_to_natural_call(variant.previous)}
+        ).to_bytes().simplified()
+        condition_expressions.append((condition, length))
+
+    return ExpressionFunction(
+        'Message_Length',
+        'Natural',
+        [('Buffer', 'Bytes')],
+        IfExpression(condition_expressions, 'Unreachable_Natural'),
+        [Precondition(And(COMMON_PRECONDITION, LogCall('Is_Valid (Buffer)')))])
 
 
 def create_contains_function(name: str, pdu: str, field: str, sdu: str,
