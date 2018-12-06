@@ -401,4 +401,9 @@ is
      with
        Pre => Is_Contained (Buffer);
 
+   function Message_Length (Buffer : Bytes) return Natural is
+      ((if Valid_Payload_0000000000000000 (Buffer) then Natural (Total_Length_00000 (Buffer)) elsif Valid_Payload_00000000000000010 (Buffer) then Natural (Total_Length_00000 (Buffer)) else Unreachable_Natural))
+     with
+       Pre => (Is_Contained (Buffer) and then Is_Valid (Buffer));
+
 end IPv4.Packet;

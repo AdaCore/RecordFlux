@@ -91,4 +91,9 @@ is
      with
        Pre => Is_Contained (Buffer);
 
+   function Message_Length (Buffer : Bytes) return Natural is
+      ((if Valid_Value_000 (Buffer) then (Natural (Length_00 (Buffer)) + 2) elsif (Valid_Tag_0 (Buffer) and then Tag_0 (Buffer) = Msg_Error) then 0 else Unreachable_Natural))
+     with
+       Pre => (Is_Contained (Buffer) and then Is_Valid (Buffer));
+
 end TLV.Message;

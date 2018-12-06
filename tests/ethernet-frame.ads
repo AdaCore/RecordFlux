@@ -206,4 +206,9 @@ is
      with
        Pre => Is_Contained (Buffer);
 
+   function Message_Length (Buffer : Bytes) return Natural is
+      ((if (Valid_Payload_000000 (Buffer) and then (EtherType_00000 (Buffer) >= 46 and then EtherType_00000 (Buffer) <= 1500)) then (Natural (EtherType_00000 (Buffer)) + 18) elsif (Valid_Payload_000001 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) <= 1500)) then (Buffer'Last + (-Buffer'First)) elsif (Valid_Payload_00010 (Buffer) and then (EtherType_0001 (Buffer) >= 46 and then EtherType_0001 (Buffer) <= 1500)) then (Natural (EtherType_0001 (Buffer)) + 14) elsif (Valid_Payload_00011 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) <= 1500)) then (Buffer'Last + (-Buffer'First)) else Unreachable_Natural))
+     with
+       Pre => (Is_Contained (Buffer) and then Is_Valid (Buffer));
+
 end Ethernet.Frame;

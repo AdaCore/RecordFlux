@@ -131,4 +131,9 @@ is
      with
        Pre => Is_Contained (Buffer);
 
+   function Message_Length (Buffer : Bytes) return Natural is
+      ((if Valid_Payload_00000 (Buffer) then Natural (Length_000 (Buffer)) else Unreachable_Natural))
+     with
+       Pre => (Is_Contained (Buffer) and then Is_Valid (Buffer));
+
 end UDP.Datagram;
