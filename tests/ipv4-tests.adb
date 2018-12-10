@@ -2,6 +2,8 @@ with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
 with IPv4.Packet;
+with IPv4.Option;
+with IPv4.Options;
 
 package body IPv4.Tests is
 
@@ -137,10 +139,122 @@ package body IPv4.Tests is
       Assert (Valid, "Invalid packet");
    end Test_IPv4;
 
+   procedure Test_IPv4_Option (T : in out Aunit.Test_Cases.Test_Case'Class)
+     with SPARK_Mode, Global => null
+   is
+      pragma Unreferenced (T);
+      Buffer        : Bytes := (68, 3, 42);
+      Valid         : Boolean;
+      First         : Natural;
+      Last          : Natural;
+      Copied        : IPv4.Flag_Type;
+      Option_Class  : IPv4.Option_Class_Type;
+      Option_Number : IPv4.Option_Number_Type;
+      Option_Length : IPv4.Option_Length_Type;
+   begin
+      IPv4.Option.Initialize (Buffer);
+      Valid := IPv4.Option.Valid_Copied (Buffer);
+      Assert (Valid, "Invalid Copied");
+      if Valid then
+         Copied := IPv4.Option.Copied (Buffer);
+         Assert (Copied'Image, Flag_False'Image, "Invalid Copied");
+         Valid := IPv4.Option.Valid_Option_Class (Buffer);
+         Assert (Valid, "Invalid Option_Class");
+         if Valid then
+            Option_Class := IPv4.Option.Option_Class (Buffer);
+            Assert (Option_Class'Image, Debugging_And_Measurement'Image, "Invalid Option_Class");
+            Valid := IPv4.Option.Valid_Option_Number (Buffer);
+            Assert (Valid, "Invalid Option_Number");
+            if Valid then
+               Option_Number := IPv4.Option.Option_Number (Buffer);
+               Assert (Option_Number'Image, Natural'Image (4), "Invalid Option_Number");
+               Valid := IPv4.Option.Valid_Option_Length (Buffer);
+               Assert (Valid, "Invalid Option_Length");
+               if Valid then
+                  Option_Length := IPv4.Option.Option_Length (Buffer);
+                  Assert (Option_Length'Image, Natural'Image (3), "Invalid Option_Length");
+                  Valid := IPv4.Option.Valid_Option_Data (Buffer);
+                  Assert (Valid, "Invalid Option_Data");
+                  if Valid then
+                     IPv4.Option.Option_Data (Buffer, First, Last);
+                     Assert (First'Image, Natural'Image (3), "Invalid Option_Data'First");
+                     Assert (Last'Image, Natural'Image (3), "Invalid Option_Data'Last");
+                  end if;
+               end if;
+            end if;
+         end if;
+      end if;
+      Valid := IPv4.Option.Is_Valid (Buffer);
+      Assert (Valid, "Invalid option");
+   end Test_IPv4_Option;
+
+   procedure Test_IPv4_With_Options (T : in out Aunit.Test_Cases.Test_Case'Class)
+     with SPARK_Mode, Global => null
+   is
+      pragma Unreferenced (T);
+      Buffer        : Bytes := Read_File ("tests/ipv4-options_udp.raw");
+      Valid         : Boolean;
+      First         : Natural;
+      Last          : Natural;
+      Option_First  : Natural;
+      Option_Last   : Natural;
+      Offset        : IPv4.Options.Offset_Type;
+      Option_Length : IPv4.Option_Length_Type;
+   begin
+      IPv4.Packet.Initialize (Buffer);
+      Valid := IPv4.Packet.Valid_Options (Buffer);
+      Assert (Valid, "Invalid options");
+      if Valid then
+         IPv4.Packet.Options (Buffer, First, Last);
+         Assert (First'Image, Natural'Image (21), "Invalid Options'First");
+         Assert (Last'Image, Natural'Image (36), "Invalid Options'Last");
+         Valid := IPv4.Options.Valid_First (Buffer (First .. Last));
+         Assert (Valid, "Invalid first");
+         if Valid then
+            IPv4.Options.First (Buffer (First .. Last), Offset, Option_First, Option_Last);
+            Assert (Option_First'Image, Natural'Image (21), "Invalid First of first option");
+            Assert (Option_Last'Image, Natural'Image (23), "Invalid Last of first option");
+            Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
+            Assert (Valid, "Invalid first option");
+            if IPv4.Option.Valid_Option_Length (Buffer (Option_First .. Option_Last)) then
+               Option_Length := IPv4.Option.Option_Length (Buffer (Option_First .. Option_Last));
+               Assert (Option_Length'Image, Natural'Image (3), "Invalid Length of first option");
+            end if;
+            Valid := IPv4.Options.Valid_Next (Buffer (First .. Last), Offset);
+            Assert (Valid, "Invalid next after first option");
+            if Valid then
+               IPv4.Options.Next (Buffer (First .. Last), Offset, Option_First, Option_Last);
+               Assert (Option_First'Image, Natural'Image (24), "Invalid First of second option");
+               Assert (Option_Last'Image, Natural'Image (34), "Invalid Last of second option");
+               Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
+               Assert (Valid, "Invalid second option");
+               if IPv4.Option.Valid_Option_Length (Buffer (Option_First .. Option_Last)) then
+                  Option_Length := IPv4.Option.Option_Length (Buffer (Option_First .. Option_Last));
+                  Assert (Option_Length'Image, Natural'Image (11), "Invalid Length of second option");
+               end if;
+            end if;
+            Valid := IPv4.Options.Valid_Next (Buffer (First .. Last), Offset);
+            Assert (Valid, "Invalid next after second option");
+            if Valid then
+               IPv4.Options.Next (Buffer (First .. Last), Offset, Option_First, Option_Last);
+               Assert (Option_First'Image, Natural'Image (35), "Invalid First of third option");
+               Assert (Option_Last'Image, Natural'Image (35), "Invalid Last of third option");
+               Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
+               Assert (Valid, "Invalid third option");
+            end if;
+            Assert (not IPv4.Options.Valid_Next (Buffer (First .. Last), Offset), "Invalid acceptance of fourth option");
+         end if;
+      end if;
+      Valid := IPv4.Packet.Is_Valid (Buffer);
+      Assert (Valid, "Invalid packet");
+      end Test_IPv4_With_Options;
+
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
       Register_Routine (T, Test_IPv4'Access, "IPv4");
+      Register_Routine (T, Test_IPv4_Option'Access, "IPv4 Option");
+      Register_Routine (T, Test_IPv4_With_Options'Access, "IPv4 with Options");
    end Register_Tests;
 
 end IPv4.Tests;

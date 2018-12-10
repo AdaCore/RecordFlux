@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Tuple
 
 from model import (Add, And, Array, Attribute, Div, Enumeration, Equal, Expr, Field, First,
                    GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModularInteger,
-                   Mul, Number, Or, PDU, Pow, RangeInteger, Refinement, Size, Sub, TRUE, Type,
+                   Mul, Number, Or, PDU, Pow, RangeInteger, Refinement, Size, Sub, TRUE,
                    Value, Variant)
 
 
@@ -77,7 +77,7 @@ class Package(SparkRepresentation):
         if subprograms:
             subprograms += '\n\n'
 
-        if not types and not subprograms:
+        if definition and not types and not subprograms:
             return ''
 
         indicator = ' '
@@ -139,6 +139,15 @@ class RangeSubtype(TypeDeclaration):
 
     def __str__(self) -> str:
         return f'   subtype {self.name} is {self.base_name} range {self.first} .. {self.last};'
+
+
+class DerivedType(TypeDeclaration):
+    def __init__(self, name: str, type_name: str) -> None:
+        super().__init__(name)
+        self.type_name = type_name
+
+    def __str__(self) -> str:
+        return f'   type {self.name} is new {self.type_name};'
 
 
 class Aspect(ABC):
@@ -360,6 +369,16 @@ class Assignment(Statement):
         return f'      {self.name} := {self.expression};'
 
 
+class CallStatement(Statement):
+    def __init__(self, name: str, arguments: List[str]) -> None:
+        self.name = name
+        self.arguments = arguments
+
+    def __str__(self) -> str:
+        arguments = ', '.join(self.arguments)
+        return f'      {self.name} ({arguments});'
+
+
 class PragmaStatement(Statement):
     def __init__(self, name: str, parameters: List[str]) -> None:
         self.name = name
@@ -556,8 +575,9 @@ class Generator:
                 self.__units[pdu.package] = Unit([ContextItem('Types', True)],
                                                  top_level_package)
 
+            context: List[ContextItem] = []
             package = Package(pdu.full_name, [], [])
-            self.__units[pdu.full_name] = Unit([], package)
+            self.__units[pdu.full_name] = Unit(context, package)
 
             if pdu.package not in unreachable_functions:
                 unreachable_functions[pdu.package] = []
@@ -605,7 +625,16 @@ class Generator:
 
                     elif isinstance(field.type, Array):
                         if 'Payload' not in field.type.name:
-                            raise NotImplementedError('custom arrays are not supported yet')
+                            context.append(ContextItem(f'{pdu.package}.{field.type.name}', False))
+
+                            array_context = [ContextItem(f'{pdu.package}.{field.type.element_type}',
+                                                         False)]
+                            array_package = Package(f'{pdu.package}.{field.type.name}', [], [])
+                            self.__units[array_package.name] = Unit(array_context, array_package)
+
+                            array_package.types += array_types()
+                            array_package.subprograms += create_contain_functions()
+                            array_package.subprograms += array_functions(field.type, pdu.package)
 
                     else:
                         raise NotImplementedError(f'unsupported type "{type(field.type).__name__}"')
@@ -639,7 +668,8 @@ class Generator:
 
                 package.subprograms.extend(
                     create_field_accessor_functions(
-                        field))
+                        field,
+                        top_level_package.name))
 
             package.subprograms.append(
                 create_packet_validation_function(
@@ -735,6 +765,72 @@ def enumeration_functions(enum: Enumeration) -> List[Subprogram]:
                                               conversion_cases),
                                [Precondition(And(common_precondition,
                                                  LogCall(f'Valid_{enum.name} (Buffer, Offset)')))])]
+
+
+def array_types() -> List[TypeDeclaration]:
+    return [DerivedType('Offset_Type',
+                        'Positive')]
+
+
+def array_functions(array: Array, package: str) -> List[Subprogram]:
+    common_precondition = LogCall(f'Is_Contained (Buffer)')
+
+    return [Function('Valid_First',
+                     'Boolean',
+                     [('Buffer', 'Bytes')],
+                     [ReturnStatement(
+                         LogCall('Valid_Next (Buffer, Offset_Type (Buffer\'First))'))],
+                     [Precondition(common_precondition)]),
+            Procedure('First',
+                      [('Buffer', 'Bytes'),
+                       ('Offset', 'out Offset_Type'),
+                       ('First', 'out Natural'),
+                       ('Last', 'out Natural')],
+                      [Assignment('Offset', Value('Offset_Type (Buffer\'First)')),
+                       CallStatement('Next', ['Buffer', 'Offset', 'First', 'Last'])],
+                      [Precondition(And(common_precondition,
+                                        LogCall('Valid_First (Buffer)'))),
+                       Postcondition(And(And(GreaterEqual(Value('First'),
+                                                          First('Buffer')),
+                                             LessEqual(Value('Last'),
+                                                       Last('Buffer'))),
+                                         LogCall(f'{package}.{array.element_type}.Is_Contained '
+                                                 '(Buffer (First .. Last))')))]),
+            Function('Valid_Next',
+                     'Boolean',
+                     [('Buffer', 'Bytes'),
+                      ('Offset', 'Offset_Type')],
+                     [PragmaStatement('Assume',
+                                      [(f'{package}.{array.element_type}.Is_Contained '
+                                        '(Buffer (Positive (Offset) .. Buffer\'Last))')]),
+                      ReturnStatement(
+                          LogCall(f'{package}.{array.element_type}.Is_Valid '
+                                  '(Buffer (Positive (Offset) .. Buffer\'Last))'))],
+                     [Precondition(common_precondition)]),
+            Procedure('Next',
+                      [('Buffer', 'Bytes'),
+                       ('Offset', 'in out Offset_Type'),
+                       ('First', 'out Natural'),
+                       ('Last', 'out Natural')],
+                      [Assignment('First', Value('Positive (Offset)')),
+                       Assignment('Last', Add(Value('First'),
+                                              Cast('Natural',
+                                                   MathCall(f'{package}.{array.element_type}.'
+                                                            'Message_Length (Buffer (First '
+                                                            '.. Buffer\'Last))')),
+                                              Number(-1))),
+                       Assignment('Offset', Value('Offset_Type (Last + 1)')),
+                       PragmaStatement('Assume',
+                                       [(f'{package}.{array.element_type}.Is_Contained '
+                                         '(Buffer (First .. Last))')])],
+                      [Precondition(And(common_precondition,
+                                        LogCall('Valid_Next (Buffer, Offset)'))),
+                       Postcondition(And(And(GreaterEqual(Value('First'),
+                                                          First('Buffer')),
+                                             LessEqual(Value('Last'),
+                                                       Last('Buffer'))),
+                                         LogCall(f'{package}.{array.element_type}.Is_Contained '
+                                                 '(Buffer (First .. Last))')))])]
 
 
 COMMON_PRECONDITION = LogCall('Is_Contained (Buffer)')
@@ -840,7 +936,7 @@ def create_variant_accessor_functions(
             LogCall(f'Valid_{name} (Buffer)')))
 
     functions: List[Subprogram] = []
-    if 'Payload' in field.type.name:
+    if isinstance(field.type, Array):
         functions.append(
             ExpressionFunction(
                 f'{name}_First',
@@ -912,12 +1008,12 @@ def create_unreachable_function(type_name: str) -> Subprogram:
         [Precondition(FALSE)])
 
 
-def create_field_accessor_functions(field: Field) -> List[Subprogram]:
+def create_field_accessor_functions(field: Field, package_name: str) -> List[Subprogram]:
     precondition = Precondition(And(COMMON_PRECONDITION,
                                     LogCall(f'Valid_{field.name} (Buffer)')))
 
     functions: List[Subprogram] = []
-    if 'Payload' in field.type.name:
+    if isinstance(field.type, Array):
         for attribute in ['First', 'Last']:
             functions.append(
                 ExpressionFunction(
@@ -930,19 +1026,27 @@ def create_field_accessor_functions(field: Field) -> List[Subprogram]:
                                  'Unreachable_Natural'),
                     [precondition]))
 
+        body: List[Statement] = [Assignment('First', MathCall(f'{field.name}_First (Buffer)')),
+                                 Assignment('Last', MathCall(f'{field.name}_Last (Buffer)'))]
+        postcondition = Postcondition(And(Equal(Value('First'),
+                                                MathCall(f'{field.name}_First (Buffer)')),
+                                          Equal(Value('Last'),
+                                                MathCall(f'{field.name}_Last (Buffer)'))))
+        if 'Payload' not in field.type.name:
+            predicate = f'{package_name}.{field.type.name}.Is_Contained (Buffer (First .. Last))'
+            body += [PragmaStatement('Assume',
+                                     [predicate])]
+            postcondition.expr = And(postcondition.expr, LogCall(predicate))
+
         functions.append(
             Procedure(
                 field.name,
                 [('Buffer', 'Bytes'),
                  ('First', 'out Natural'),
                  ('Last', 'out Natural')],
-                [Assignment('First', MathCall(f'{field.name}_First (Buffer)')),
-                 Assignment('Last', MathCall(f'{field.name}_Last (Buffer)'))],
+                body,
                 [precondition,
-                 Postcondition(And(Equal(Value('First'),
-                                         MathCall(f'{field.name}_First (Buffer)')),
-                                   Equal(Value('Last'),
-                                         MathCall(f'{field.name}_Last (Buffer)'))))]))
+                 postcondition]))
 
     else:
         functions.append(

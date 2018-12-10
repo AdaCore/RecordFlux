@@ -1,3 +1,5 @@
+with IPv4.Options;
+
 package IPv4.Packet
   with SPARK_Mode
 is
@@ -344,7 +346,7 @@ is
    procedure Options (Buffer : Bytes; First : out Natural; Last : out Natural)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Options (Buffer)),
-       Post => (First = Options_First (Buffer) and then Last = Options_Last (Buffer));
+       Post => ((First = Options_First (Buffer) and then Last = Options_Last (Buffer)) and then IPv4.Options.Is_Contained (Buffer (First .. Last)));
 
    function Valid_Payload_0000000000000000 (Buffer : Bytes) return Boolean is
       ((Valid_Destination_000000000000000 (Buffer) and then ((Buffer'Length >= Natural (Total_Length_00000 (Buffer)) and then Buffer'First <= (Natural'Last / 2)) and then IHL_00 (Buffer) = 5)))
