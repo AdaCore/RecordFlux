@@ -9,6 +9,7 @@ package body IPv4.Packet is
    begin
       First := Options_First (Buffer);
       Last := Options_Last (Buffer);
+      pragma Assume (IPv4.Options.Is_Contained (Buffer (First .. Last)));
    end Options;
 
    procedure Payload (Buffer : Bytes; First : out Natural; Last : out Natural) is
