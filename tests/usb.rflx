@@ -1,0 +1,133 @@
+package USB is
+
+   type UInt8 is range 0 .. 255 with Size => 8;
+   type UInt16 is range 0 .. 65535 with Size => 16;
+
+   type Descriptor_Type is (DEVICE => 1, CONFIGURATION => 2, STRING => 3, INTERFACE => 4, ENDPOINT => 5) with Size => 8;
+
+   type Endpoint_Number is mod 2**4;
+   type Endpoint_Reserved_3 is range 0 .. 0 with Size => 3;
+   type Endpoint_Direction is (DIRECTION_OUT, DIRECTION_IN) with Size => 1;
+   type Transfer_Type is (CONTROL, ISOCHRONOUS, BULK, INTERRUPT) with Size => 2;
+   type Synchronisation_Type is (NO_SYNCHRONISATION, ASYNCHRONOUS, ADAPTIVE, SYNCHRONOUS) with Size => 2;
+   type Usage_Type is (DATA_ENDPOINT, FEEDBACK_ENDPOINT, EXPLICIT_FEEDBACK_DATA_ENDPOINT, RESERVED) with Size => 2;
+   type Endpoint_Reserved_2 is mod 2**2;
+
+   type Endpoint_Descriptor is
+      message
+         B_Length : UInt8
+            then B_Descriptor_Type
+               if B_Length >= B_Interval'Last - B_Length'First + 1;
+         B_Descriptor_Type : Descriptor_Type
+            then B_Endpoint_Address_Number
+               if B_Descriptor_Type = INTERFACE;
+         B_Endpoint_Address_Number : Endpoint_Number;
+         B_Endpoint_Address_Reserved : Endpoint_Reserved_3;
+         B_Endpoint_Address_Direction : Endpoint_Direction;
+         Bm_Attribute_Transfer_Type : Transfer_Type;
+         Bm_Attribute_Synchronisation_Type : Synchronisation_Type;
+         Bm_Attribute_Usage_Type : Usage_Type;
+         Bm_Attribute_Reserved : Endpoint_Reserved_2;
+         W_Max_Packet_Size : UInt16;
+         B_Interval : UInt8;
+      end message;
+
+   type Endpoint_Descriptor_Array is array of Endpoint_Descriptor;
+
+   type Class is mod 2**8;
+   type Sub_Class is mod 2**8;
+   type Protocol is mod 2**8;
+   type Index is mod 2**8;
+
+   type Interface_Descriptor is
+      message
+         B_Length : UInt8
+            then B_Descriptor_Type
+               if B_Length >= I_Interface'Last - B_Length'First + 1;
+         B_Descriptor_Type : Descriptor_Type
+            then B_Interface_Number
+               if B_Descriptor_Type = INTERFACE;
+         B_Interface_Number : UInt8;
+         B_Alternate_Setting : UInt8;
+         B_Num_Endpoints : UInt8;
+         B_Inteface_Class : Class;
+         B_Interface_Sub_Class : Sub_Class;
+         B_Interface_Protocol : Protocol;
+         I_Interface : Index
+            then Endpoint_Descriptors
+               with Length = B_Num_Endpoints;  -- Length -> Elements
+         Endpoint_Descriptors : Endpoint_Descriptor_Array;
+      end message;
+
+   type Interface_Descriptor_Array is array of Interface_Descriptor;
+
+   type Flag is mod 2;
+   type Reserved_Flags is range 0 .. 0 with Size => 4;
+   type M_A is mod 2**8;
+
+   type Configuration_Descriptor is
+      message
+         B_Length : UInt8
+            then B_Descriptor_Type
+               if B_Length >= B_Max_Power'Last - B_Length'First + 1;
+         B_Descriptor_Type : Descriptor_Type
+            then W_Total_Length
+               if B_Descriptor_Type = CONFIGURATION;
+         W_Total_Length : UInt16;
+         B_Num_Interfaces : UInt8;
+         B_Configuration_Value : UInt8;
+         I_Configuration : Index;
+         Bm_Attribute_Bus_Powered : Flag
+            then Bm_Attribute_Self_Powered
+               if Bm_Attribute_Bus_Powered = 1;
+         Bm_Attribute_Self_Powered : Flag;
+         Bm_Attribute_Remote_Wakeup : Flag;
+         Bm_Attribute_Reserved : Reserved_Flags;
+         B_Max_Power : M_A
+            then Interface_Descriptors
+               with Length = W_Total_Length * 8 - (B_Max_Power'Last - Payload'First + 1);  -- and Elements = B_Num_Interfaces
+         Interface_Descriptors : Interface_Descriptor_Array;
+      end message;
+
+   type Configuration_Descriptor_Array is array of Configuration_Descriptor;
+
+   type BCD is mod 2**16;
+   type ID is mod 2**16;
+
+   type Device_Descriptor is
+      message
+         B_Length : UInt8
+            then B_Descriptor_Type
+               if B_Length >= B_Num_Configurations'Last - B_Length'First + 1;
+         B_Descriptor_Type : Descriptor_Type
+            then Bcd_USB
+               if B_Descriptor_Type = DEVICE;
+         Bcd_USB : BCD;
+         B_Device_Class : Class;
+         B_Device_Sub_Class : Sub_Class;
+         B_Device_Protocol : Protocol;
+         B_Max_Packet_Size : UInt8;
+         Id_Vendor : ID;
+         Id_Product : ID;
+         Bcd_Device : BCD;
+         I_Manufacturer : Index;
+         I_Product : Index;
+         I_Serial_Number : Index;
+         B_Num_Configurations : UInt8
+            then Configuration_Descriptors
+               with Length = B_Num_Configurations;  -- Length -> Elements
+         Configuration_Descriptors : Configuration_Descriptor_Array;
+      end message;
+
+   type String_Descriptor is
+      message
+         B_Length : UInt8
+            then B_Descriptor_Type
+               if B_Length >= B_String'Last - B_Length'First + 1;
+         B_Descriptor_Type : Descriptor_Type
+            then B_String
+               if B_Descriptor_Type = STRING;
+         B_String : Payload_Type;
+      end message;
+
+end USB;
