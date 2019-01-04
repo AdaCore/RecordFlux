@@ -30,6 +30,7 @@ class Message(Type):
         super().__init__(name)
         self.components = components
 
+    @property
     def size(self) -> Number:
         raise NotImplementedError
 
