@@ -1,43 +1,65 @@
 # Language Reference
 
+The RecordFlux DSL describes protocol message formats based on types. For each type of the specification language a description of its syntax and semantics and an example is given. A simple variant of Backus-Naur Form is used to describe the syntax. Reserved keywords and literals are marked in bold. The following basic elements are used to describe the syntax of the language:
+
+name: A name consists of alphanumeric characters and underscores. By convention a name starts with a capital and after each underscore follows a capital as well (e.g., Mixed_Case_With_Underscores).
+
+number: A number consists of numerical digits. An underscore can be added between two digits to improve readability.
+
+mathematical_expression: A mathematical expression consists of numbers and names combined by mathematical operators (addition __+__, subtraction __-__, multiplication __\*__, division __/__, exponentiation __\*\*__).
+
+logical_expression: A logical expression consists of relations (__<__, __<=__, __=__, __/=__, __>=__, __>__) between names and numbers combined by logical operators (conjunction __and__, disjunction __or__).
+
 ## Basic Types
 
 ### Integer Type
 
-A integer type is used to represent numbers. Two types of integers are supported: modular type and range type.
+An integer type is used to represent numbers. Two types of integers are supported: modular type and range type.
 
 #### Syntax
 
-__type__ name __is__ __mod__ modulus
+modular_type ::= __type__ name __is__ __mod__ modulus __;__
 
-__type__ name __is__ __range__ first __..__ last
+range_type ::= __type__ name __is__ __range__ first __..__ last __with Size =>__ number __;__
+
+modulus ::= mathematical_expression
+
+first ::= mathematical_expression
+
+last ::= mathematical_expression
 
 #### Static Semantics
 
-The set of values of a modular type consists of the values from 0 to one less than the modulus. The set of values of a range type consists of all numbers from the lower bound to the upper bound.
+A modular type represents the values from 0 to one less than the modulus. The bit size of a modular type is determined by calculating the binary logarithm of modulus.
+
+The set of values of a range type consists of all numbers from the lower bound to the upper bound. For a range type the bit size has to be specified explicitly.
 
 #### Example
 
-```
+```Ada
+type U16 is range 0 .. 2**16 - 1 with Size => 16;
 type U48 is mod 2**48;
-type Length is range 1 .. 2_000;
 ```
 
 ### Enumeration Type
 
-A enumeration type represents a value out of a list of possible values.
+An enumeration type represents a value out of a list of possible values.
 
 #### Syntax
 
-__type__ name __is__ __(__ literals __) with Size =>__ size
+enumeration_type ::= __type__ name __is__ __(__ literals __) with Size =>__ number __;__
+
+literals ::= literal { __,__ literal }
+
+literal ::= name [__=>__ number]
 
 #### Static Semantics
 
-The set of values of an enumeration type consists of the list of declared enumeration literals. Each enumeration literal has a distinct value. If no explicit value is given, the first literal is zero, and the value of each subsequent literal is incremented by one.
+The set of values of an enumeration type consists of the list of declared enumeration literals. Each enumeration literal has a distinct value. If no explicit value is given, the first literal is zero, and the value of each subsequent literal is incremented by one. Literals with and without explicit value must not be intermixed in one definition. The bit size of the enumeration type has to be specified explicitly.
 
 #### Example
 
-```
+```Ada
 type Packet_Type is (Msg_Error, Msg_Data) with Size => 1;
 type Day is (Mon => 1, Tue => 2, Wed => 3, Thu => 4, Fri => 5, Sat => 6, Sun => 7) with Size => 3;
 ```
@@ -48,15 +70,34 @@ A message type is a collection components. Additional then clauses allow to defi
 
 #### Syntax
 
-__type__ name __is__ __message__ components __end message__
+message_type ::= __type__ name __is__ __message__ component { component } __end message__ __;__
+
+component ::= component_name __:__ component_type
+                 [ then_clause ] { __,__ then_clause } __;__
+
+then_clause ::= __then__ component_name
+                     [__with__ location_expression]
+                     [__if__ condition]
+
+component_name ::= name | __null__
+
+component_type ::= name
+
+location_expression ::= first_expression | length_expression | first_expression __and__ length_expression
+
+first_expression ::= __First__ __=__ mathematical_expression
+
+length_expression ::= __Length__ __=__ mathematical_expression
+
+condition ::= logical_expression
 
 #### Static Semantics
 
-A message type specifies the PDU format of a protocol. Each component corresponds to one field in a message.
+A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and a location expression which allows to define the length of the next field and the location of its first bit. The condition can refer to previous fields (including the component containing the then clause).
 
 #### Example
 
-```
+```Ada
 type Frame is
    message
       Destination : U48;
@@ -64,47 +105,65 @@ type Frame is
       EtherType : U16
          then Payload
             with Length = EtherType * 8
-            if EtherType <= 1500;
-      Payload : Payload_Type;
+            if EtherType <= 1500,
+         then Payload
+            with Length = Message'Last - EtherType'Last
+            if EtherType >= 1536;
+      Payload : Payload_Array
+         then null
+            if Payload'Length / 8 >= 46 and Payload'Length / 8 <= 1500;
    end message;
 ```
 
 ## Type Refinement
 
-A component in a message type can be refined by another message type.
+A type refinement describes the relation of a component in a message type to another message type.
 
 #### Syntax
 
-__type__ name __is new__ refined_type_name __(__ refined_component_name __=>__ message_type_name __)__
+type_refinement ::= __type__ name __is new__ refined_type_name __(__ refined_component_name __=>__ message_type_name __)__ [ __if__ condition ] __;__
+
+refined_type_name ::= qualified_name
+
+refined_component_name ::= name
+
+message_type_name ::= qualified_name
+
+qualified_name ::= name { __.__ name }
+
+condition ::= logical_expression
 
 #### Static Semantics
 
-The relation between two protocols is defined by a type refinement. Usually it describes under which conditions a specific protocol message can be expected inside of a payload field.
+A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only components of type `Payload_Type` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to components of the refined type.
 
 #### Example
 
-```
-type IPv4_In_Ethernet is new Ethernet.Frame (Payload_Type => IPv4.Packet);
+```Ada
+type IPv4_In_Ethernet is new Ethernet.Frame (Payload => IPv4.Packet)
+   if EtherType = 16#0800#;
 ```
 
 ## Package
 
-A package is a collection of types.
+A package is used to structure a specification.
 
 #### Syntax
 
-__package__ name __is__ body __end__ name
+package ::= __package__ name __is__ body __end__ name __;__
+
+body := { modular_type | range_type | enumeration_type | message_type | type_refinement }
 
 #### Static Semantics
 
-A package is used to structure the specification. Usually only one protocol is specified in one package.
+A package is a collection of types. By convention one protocol is specified in one package.
 
 #### Example
 
-```
+```Ada
 package Ethernet is
 
-   type U16 is mod 2**16;
+   type U16 is range 0 .. 2**16 - 1 with Size => 16;
    type U48 is mod 2**48;
 
    type Frame is
@@ -114,8 +173,13 @@ package Ethernet is
          EtherType : U16
             then Payload
                with Length = EtherType * 8
-               if EtherType <= 1500;
-         Payload : Payload_Type;
+               if EtherType <= 1500,
+            then Payload
+               with Length = Message'Last - EtherType'Last
+               if EtherType >= 1536;
+         Payload : Payload_Array
+            then null
+               if Payload'Length / 8 >= 46 and Payload'Length / 8 <= 1500;
       end message;
 
 end Ethernet;
@@ -127,24 +191,41 @@ The context clause is used to specify the relation to other packages and consist
 
 #### Syntax
 
-__with__ package_name
+context ::= { __with__ package_name __;__ }
+
+package_name ::= name
 
 #### Static Semantics
 
-For each package referenced in the file, a corresponding with clause has to be added.
+For each package referenced in a file, a corresponding with clause has to be added to the beginning of the file.
 
 #### Example
 
-```
-with IP;
+```Ada
+with Ethernet;
+with IPv4;
 ```
 
 ## File
 
-A RecordFlux specification file can be recognized by the file extension `.rflx`. Each specification file has to contain a package with a name which corresponds to the file name.
+A RecordFlux specification file is recognized by the file extension `.rflx`. Each specification file contains exactly one package. The file name must match the package name in lower case characters.
+
+#### Syntax
+
+file ::= context package
 
 #### Example
 
-```
-ethernet.rflx
+File: `in_ethernet.rflx`
+
+```Ada
+with Ethernet;
+with IPv4;
+
+package In_Ethernet is
+
+   type IPv4_In_Ethernet is new Ethernet.Frame (Payload => IPv4.Packet)
+      if EtherType = 16#0800#;
+
+end In_Ethernet;
 ```
