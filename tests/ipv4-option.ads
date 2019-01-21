@@ -57,7 +57,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Option_Number_000 (Buffer : Bytes) return Option_Number_Type is
-      (Convert_To_Option_Number_Type (Buffer (Buffer'First .. Buffer'First)))
+      (Convert_To_Option_Number_Type (Buffer (Buffer'First .. Buffer'First), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Option_Number_000 (Buffer));
 
@@ -77,7 +77,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Option_Length_0001 (Buffer : Bytes) return Option_Length_Type is
-      (Convert_To_Option_Length_Type (Buffer ((Buffer'First + 1) .. (Buffer'First + 1))))
+      (Convert_To_Option_Length_Type (Buffer ((Buffer'First + 1) .. (Buffer'First + 1)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Option_Length_0001 (Buffer));
 

@@ -17,7 +17,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Source_Port_0 (Buffer : Bytes) return Port_Type is
-      (Convert_To_Port_Type (Buffer (Buffer'First .. (Buffer'First + 1))))
+      (Convert_To_Port_Type (Buffer (Buffer'First .. (Buffer'First + 1)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Source_Port_0 (Buffer));
 
@@ -37,7 +37,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Destination_Port_00 (Buffer : Bytes) return Port_Type is
-      (Convert_To_Port_Type (Buffer ((Buffer'First + 2) .. (Buffer'First + 3))))
+      (Convert_To_Port_Type (Buffer ((Buffer'First + 2) .. (Buffer'First + 3)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Destination_Port_00 (Buffer));
 
@@ -52,12 +52,12 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Destination_Port (Buffer));
 
    function Valid_Length_000 (Buffer : Bytes) return Boolean is
-      ((Valid_Destination_Port_00 (Buffer) and then ((Buffer'Length >= 6 and then Buffer'First <= (Natural'Last / 2)) and then Convert_To_Length_Type_Base (Buffer ((Buffer'First + 4) .. (Buffer'First + 5))) >= 8)))
+      ((Valid_Destination_Port_00 (Buffer) and then ((Buffer'Length >= 6 and then Buffer'First <= (Natural'Last / 2)) and then Convert_To_Length_Type_Base (Buffer ((Buffer'First + 4) .. (Buffer'First + 5)), 0) >= 8)))
      with
        Pre => Is_Contained (Buffer);
 
    function Length_000 (Buffer : Bytes) return Length_Type is
-      (Convert_To_Length_Type_Base (Buffer ((Buffer'First + 4) .. (Buffer'First + 5))))
+      (Convert_To_Length_Type_Base (Buffer ((Buffer'First + 4) .. (Buffer'First + 5)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Length_000 (Buffer));
 
@@ -77,7 +77,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Checksum_0000 (Buffer : Bytes) return Checksum_Type is
-      (Convert_To_Checksum_Type (Buffer ((Buffer'First + 6) .. (Buffer'First + 7))))
+      (Convert_To_Checksum_Type (Buffer ((Buffer'First + 6) .. (Buffer'First + 7)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Checksum_0000 (Buffer));
 

@@ -479,10 +479,9 @@ class Convert(MathExpr):
 
     def __str__(self) -> str:
         negative = '-1 * ' if self.negative else ''
-        offset = f', {self.offset}' if self.offset else ''
         return (f'{negative}'
-                f'Convert_To_{self.type_name} ({self.array_name} ({self.first} .. {self.last})'
-                f'{offset}'
+                f'Convert_To_{self.type_name} ({self.array_name} ({self.first} .. {self.last}), '
+                f'{self.offset}'
                 ')')
 
     def __neg__(self) -> MathExpr:

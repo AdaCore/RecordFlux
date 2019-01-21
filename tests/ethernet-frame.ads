@@ -17,7 +17,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Destination_0 (Buffer : Bytes) return UINT48 is
-      (Convert_To_UINT48 (Buffer (Buffer'First .. (Buffer'First + 5))))
+      (Convert_To_UINT48 (Buffer (Buffer'First .. (Buffer'First + 5)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Destination_0 (Buffer));
 
@@ -37,7 +37,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Source_00 (Buffer : Bytes) return UINT48 is
-      (Convert_To_UINT48 (Buffer ((Buffer'First + 6) .. (Buffer'First + 11))))
+      (Convert_To_UINT48 (Buffer ((Buffer'First + 6) .. (Buffer'First + 11)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Source_00 (Buffer));
 
@@ -57,7 +57,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function TPID_000 (Buffer : Bytes) return UINT16 is
-      (Convert_To_UINT16 (Buffer ((Buffer'First + 12) .. (Buffer'First + 13))))
+      (Convert_To_UINT16 (Buffer ((Buffer'First + 12) .. (Buffer'First + 13)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_TPID_000 (Buffer));
 
@@ -77,7 +77,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function TCI_0000 (Buffer : Bytes) return UINT16 is
-      (Convert_To_UINT16 (Buffer ((Buffer'First + 14) .. (Buffer'First + 15))))
+      (Convert_To_UINT16 (Buffer ((Buffer'First + 14) .. (Buffer'First + 15)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_TCI_0000 (Buffer));
 
@@ -97,7 +97,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function EtherType_00000 (Buffer : Bytes) return UINT16 is
-      (Convert_To_UINT16 (Buffer ((Buffer'First + 16) .. (Buffer'First + 17))))
+      (Convert_To_UINT16 (Buffer ((Buffer'First + 16) .. (Buffer'First + 17)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_EtherType_00000 (Buffer));
 
@@ -107,7 +107,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function EtherType_0001 (Buffer : Bytes) return UINT16 is
-      (Convert_To_UINT16 (Buffer ((Buffer'First + 12) .. (Buffer'First + 13))))
+      (Convert_To_UINT16 (Buffer ((Buffer'First + 12) .. (Buffer'First + 13)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_EtherType_0001 (Buffer));
 

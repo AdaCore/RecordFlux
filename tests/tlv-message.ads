@@ -37,7 +37,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Length_00 (Buffer : Bytes) return Length_Type is
-      (Convert_To_Length_Type (Buffer (Buffer'First .. (Buffer'First + 1))))
+      (Convert_To_Length_Type (Buffer (Buffer'First .. (Buffer'First + 1)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Length_00 (Buffer));
 

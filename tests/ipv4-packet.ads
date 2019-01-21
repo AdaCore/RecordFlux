@@ -34,12 +34,12 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Version (Buffer));
 
    function Valid_IHL_00 (Buffer : Bytes) return Boolean is
-      ((Valid_Version_0 (Buffer) and then ((Buffer'Length >= 1 and then Buffer'First <= (Natural'Last / 2)) and then Convert_To_IHL_Type_Base (Buffer (Buffer'First .. Buffer'First)) >= 5)))
+      ((Valid_Version_0 (Buffer) and then ((Buffer'Length >= 1 and then Buffer'First <= (Natural'Last / 2)) and then Convert_To_IHL_Type_Base (Buffer (Buffer'First .. Buffer'First), 0) >= 5)))
      with
        Pre => Is_Contained (Buffer);
 
    function IHL_00 (Buffer : Bytes) return IHL_Type is
-      (Convert_To_IHL_Type_Base (Buffer (Buffer'First .. Buffer'First)))
+      (Convert_To_IHL_Type_Base (Buffer (Buffer'First .. Buffer'First), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_IHL_00 (Buffer));
 
@@ -79,7 +79,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function ECN_0000 (Buffer : Bytes) return ECN_Type is
-      (Convert_To_ECN_Type (Buffer ((Buffer'First + 1) .. (Buffer'First + 1))))
+      (Convert_To_ECN_Type (Buffer ((Buffer'First + 1) .. (Buffer'First + 1)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_ECN_0000 (Buffer));
 
@@ -94,12 +94,12 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_ECN (Buffer));
 
    function Valid_Total_Length_00000 (Buffer : Bytes) return Boolean is
-      ((Valid_ECN_0000 (Buffer) and then ((Buffer'Length >= 4 and then Buffer'First <= (Natural'Last / 2)) and then Convert_To_Total_Length_Type_Base (Buffer ((Buffer'First + 2) .. (Buffer'First + 3))) >= 20)))
+      ((Valid_ECN_0000 (Buffer) and then ((Buffer'Length >= 4 and then Buffer'First <= (Natural'Last / 2)) and then Convert_To_Total_Length_Type_Base (Buffer ((Buffer'First + 2) .. (Buffer'First + 3)), 0) >= 20)))
      with
        Pre => Is_Contained (Buffer);
 
    function Total_Length_00000 (Buffer : Bytes) return Total_Length_Type is
-      (Convert_To_Total_Length_Type_Base (Buffer ((Buffer'First + 2) .. (Buffer'First + 3))))
+      (Convert_To_Total_Length_Type_Base (Buffer ((Buffer'First + 2) .. (Buffer'First + 3)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Total_Length_00000 (Buffer));
 
@@ -119,7 +119,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Identification_000000 (Buffer : Bytes) return Identification_Type is
-      (Convert_To_Identification_Type (Buffer ((Buffer'First + 4) .. (Buffer'First + 5))))
+      (Convert_To_Identification_Type (Buffer ((Buffer'First + 4) .. (Buffer'First + 5)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Identification_000000 (Buffer));
 
@@ -199,7 +199,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Fragment_Offset_0000000000 (Buffer : Bytes) return Fragment_Offset_Type is
-      (Convert_To_Fragment_Offset_Type (Buffer ((Buffer'First + 6) .. (Buffer'First + 7))))
+      (Convert_To_Fragment_Offset_Type (Buffer ((Buffer'First + 6) .. (Buffer'First + 7)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Fragment_Offset_0000000000 (Buffer));
 
@@ -219,7 +219,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function TTL_00000000000 (Buffer : Bytes) return TTL_Type is
-      (Convert_To_TTL_Type (Buffer ((Buffer'First + 8) .. (Buffer'First + 8))))
+      (Convert_To_TTL_Type (Buffer ((Buffer'First + 8) .. (Buffer'First + 8)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_TTL_00000000000 (Buffer));
 
@@ -239,7 +239,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Protocol_000000000000 (Buffer : Bytes) return Protocol_Type is
-      (Convert_To_Protocol_Type (Buffer ((Buffer'First + 9) .. (Buffer'First + 9))))
+      (Convert_To_Protocol_Type (Buffer ((Buffer'First + 9) .. (Buffer'First + 9)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Protocol_000000000000 (Buffer));
 
@@ -259,7 +259,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Header_Checksum_0000000000000 (Buffer : Bytes) return Header_Checksum_Type is
-      (Convert_To_Header_Checksum_Type (Buffer ((Buffer'First + 10) .. (Buffer'First + 11))))
+      (Convert_To_Header_Checksum_Type (Buffer ((Buffer'First + 10) .. (Buffer'First + 11)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Header_Checksum_0000000000000 (Buffer));
 
@@ -279,7 +279,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Source_00000000000000 (Buffer : Bytes) return Address_Type is
-      (Convert_To_Address_Type (Buffer ((Buffer'First + 12) .. (Buffer'First + 15))))
+      (Convert_To_Address_Type (Buffer ((Buffer'First + 12) .. (Buffer'First + 15)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Source_00000000000000 (Buffer));
 
@@ -299,7 +299,7 @@ is
        Pre => Is_Contained (Buffer);
 
    function Destination_000000000000000 (Buffer : Bytes) return Address_Type is
-      (Convert_To_Address_Type (Buffer ((Buffer'First + 16) .. (Buffer'First + 19))))
+      (Convert_To_Address_Type (Buffer ((Buffer'First + 16) .. (Buffer'First + 19)), 0))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Destination_000000000000000 (Buffer));
 
