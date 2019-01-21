@@ -3,6 +3,7 @@ with SPARK.File_IO; use SPARK.File_IO;
 
 with IPv4.Packet;
 with Ethernet.Frame;
+with In_Ethernet.Contains;
 
 package body In_Ethernet.Tests is
 
@@ -28,7 +29,7 @@ package body In_Ethernet.Tests is
          Ethernet.Frame.Payload (Buffer, First, Last);
          Assert (First'Image, Natural'Image (15), "Invalid Ethernet Payload'First");
          Assert (Last'Image, Natural'Image (60), "Invalid Ethernet Payload'Last");
-         Valid := In_Ethernet.Contains_IPv4_In_Ethernet (Buffer);
+         Valid := In_Ethernet.Contains.IPv4_In_Ethernet (Buffer);
          Assert (Valid, "Ethernet frame contains no IPv4 packet");
          if Valid then
             Valid := IPv4.Packet.Is_Valid (Buffer (First .. Last));

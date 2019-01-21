@@ -4,7 +4,8 @@ with SPARK.File_IO; use SPARK.File_IO;
 with UDP.Datagram;
 with IPv4.Packet;
 with Ethernet.Frame;
-with In_Ethernet;
+with In_Ethernet.Contains;
+with In_IPv4.Contains;
 
 package body In_IPv4.Tests is
 
@@ -30,7 +31,7 @@ package body In_IPv4.Tests is
          IPv4.Packet.Payload (Buffer, First, Last);
          Assert (First'Image, Natural'Image (21), "Invalid IPv4 Payload'First");
          Assert (Last'Image, Natural'Image (44), "Invalid IPv4 Payload'Last");
-         Valid := In_IPv4.Contains_UDP_In_IPv4 (Buffer);
+         Valid := In_IPv4.Contains.UDP_In_IPv4 (Buffer);
          Assert (Valid, "IPv4 packet contains no UDP datagram");
          if Valid then
             Valid := UDP.Datagram.Is_Valid (Buffer (First .. Last));
@@ -64,7 +65,7 @@ package body In_IPv4.Tests is
          Ethernet.Frame.Payload (Buffer, IPv4_First, IPv4_Last);
          Assert (IPv4_First'Image, Natural'Image (15), "Invalid Ethernet Payload'First");
          Assert (IPv4_Last'Image, Natural'Image (60), "Invalid Ethernet Payload'Last");
-         Valid := In_Ethernet.Contains_IPv4_In_Ethernet (Buffer);
+         Valid := In_Ethernet.Contains.IPv4_In_Ethernet (Buffer);
          Assert (Valid, "Ethernet frame contains no IPv4 packet");
          if Valid then
             Valid := IPv4.Packet.Is_Valid (Buffer (IPv4_First .. IPv4_Last));
@@ -73,7 +74,7 @@ package body In_IPv4.Tests is
                IPv4.Packet.Payload (Buffer (IPv4_First .. IPv4_Last), UDP_First, UDP_Last);
                Assert (UDP_First'Image, Natural'Image (35), "Invalid IPv4 Payload'First");
                Assert (UDP_Last'Image, Natural'Image (60), "Invalid IPv4 Payload'Last");
-               Valid := In_IPv4.Contains_UDP_In_IPv4 (Buffer (IPv4_First .. IPv4_Last));
+               Valid := In_IPv4.Contains.UDP_In_IPv4 (Buffer (IPv4_First .. IPv4_Last));
                Assert (Valid, "IPv4 packet contains no UDP datagram");
                if Valid then
                   Valid := UDP.Datagram.Is_Valid (Buffer (UDP_First .. UDP_Last));

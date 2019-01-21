@@ -52,6 +52,11 @@ class ContextItem:
         use = f' use {self.name};' if self.use else ''
         return f'with {self.name};{use}'
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
 
 class Package(SparkRepresentation):
     def __init__(self, name: str, types: List['TypeDeclaration'],
@@ -692,17 +697,25 @@ class Generator:
 
     def __process_refinements(self, refinements: List[Refinement]) -> None:
         for refinement in refinements:
-            if refinement.package in self.__units:
-                context = self.__units[refinement.package].context
-                package = self.__units[refinement.package].package
-            else:
+            if refinement.package not in self.__units:
                 context = [ContextItem('Types', True)]
                 package = Package(refinement.package, [], [])
                 self.__units[refinement.package] = Unit(context, package)
 
-            pdu_top_level_context = ContextItem(refinement.pdu.rsplit('.', 1)[0], True)
-            if pdu_top_level_context not in context:
-                context.append(pdu_top_level_context)
+            contains_package = f'{refinement.package}.Contains'
+            if contains_package in self.__units:
+                context = self.__units[contains_package].context
+                package = self.__units[contains_package].package
+            else:
+                context = []
+                package = Package(contains_package, [], [])
+                self.__units[contains_package] = Unit(context, package)
+
+            pdu_package = refinement.pdu.rsplit('.', 1)[0]
+            if pdu_package != refinement.package:
+                pdu_top_level_context = ContextItem(pdu_package, True)
+                if pdu_top_level_context not in context:
+                    context.append(pdu_top_level_context)
             pdu_context = ContextItem(refinement.pdu, False)
             if pdu_context not in context:
                 context.append(pdu_context)
@@ -1111,7 +1124,7 @@ def create_message_length_function(variants: List[Variant]) -> Subprogram:
 def create_contains_function(name: str, pdu: str, field: str, sdu: str,
                              condition: LogExpr) -> Subprogram:
 
-    return Function(f'Contains_{name}',
+    return Function(name,
                     'Boolean',
                     [('Buffer', 'Bytes')],
                     [IfStatement(
@@ -1126,6 +1139,6 @@ def create_contains_function(name: str, pdu: str, field: str, sdu: str,
                                       LogCall(f'{pdu}.Is_Valid (Buffer)'))),
                      Postcondition(
                          IfExpression(
-                             [(LogCall(f'Contains_{name}\'Result'),
+                             [(LogCall(f'{name}\'Result'),
                                LogCall((f'{sdu}.Is_Contained (Buffer ({pdu}.{field}_First (Buffer)'
                                         f' .. {pdu}.{field}_Last (Buffer)))')))]))])
