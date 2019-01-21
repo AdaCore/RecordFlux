@@ -794,9 +794,7 @@ def evaluate(facts: Dict[Attribute, MathExpr],
         (node.name,
          Field(node.name,
                node.type,
-               combine_conditions(TRUE,
-                                  TRUE,
-                                  [e.condition for e in node.edges]).simplified(),
+               disjunction([e.condition for e in node.edges]),
                {
                    variant_id: Variant(previous,
                                        in_edge.condition,
@@ -831,14 +829,14 @@ def create_facts(facts: Dict[Attribute, MathExpr], edge: Edge) -> Dict[Attribute
     return facts
 
 
-def combine_conditions(all_cond: LogExpr, in_cond: LogExpr, out_cond: List[LogExpr]) -> LogExpr:
-    if out_cond:
-        res = out_cond.pop()
-        for c in out_cond:
+def disjunction(cond: List[LogExpr]) -> LogExpr:
+    if cond:
+        res = cond.pop()
+        for c in cond:
             res = Or(res, c)
     else:
         res = TRUE
-    return And(And(all_cond, in_cond), res)
+    return res
 
 
 def create_visited_edges(visited: Optional[List[Edge]], edge: Edge) -> List[Edge]:
