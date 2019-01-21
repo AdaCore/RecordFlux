@@ -1,5 +1,6 @@
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
+from collections import OrderedDict
 from typing import Callable, Dict, List, Tuple
 
 from model import (Add, And, Array, Attribute, Div, Enumeration, Equal, Expr, Field, First,
@@ -125,7 +126,7 @@ class RangeType(TypeDeclaration):
 class EnumerationType(TypeDeclaration):
     def __init__(self, name: str, literals: Dict[str, Number], size: Number) -> None:
         super().__init__(name)
-        self.literals = literals
+        self.literals = OrderedDict(sorted(literals.items(), key=lambda t: t[1]))
         self.size = size
 
     def __str__(self) -> str:
