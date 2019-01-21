@@ -763,7 +763,10 @@ class PDU(Element):
                first: MathExpr = UNDEFINED) -> Dict[str, Field]:
         if facts is None:
             facts = {}
-        return evaluate(facts, Edge(self.initial_node, TRUE, first=first))
+        try:
+            return evaluate(facts, Edge(self.initial_node, TRUE, first=first))
+        except ModelError as e:
+            raise ModelError(f'{e} in "{self.full_name}"')
 
 
 class ModelError(Exception):
