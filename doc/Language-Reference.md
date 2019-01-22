@@ -144,6 +144,26 @@ type IPv4_In_Ethernet is new Ethernet.Frame (Payload => IPv4.Packet)
    if EtherType = 16#0800#;
 ```
 
+## Array Type
+
+An array type represents a list of similar elements.
+
+#### Syntax
+
+*array_type* ::= __type__ *name* __is array of__ *element_type* __;__
+
+*element_type* ::= *name*
+
+#### Static Semantics
+
+An array consists of a number of elements with similar type. Only message types can be used as element type. When an array is used in a message type, its bit length has to be specified by a length expression.
+
+#### Example
+
+```Ada
+type Options is array of Option;
+```
+
 ## Package
 
 A package is used to structure a specification.
