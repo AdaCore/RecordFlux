@@ -276,7 +276,7 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
             types[t.name] = t
         elif isinstance(t, Message):
             nodes: Dict[str, Node] = OrderedDict()
-            create_nodes(nodes, types, t.components)
+            create_nodes(nodes, types, t.components, t.name)
             create_edges(nodes, t.components)
             name = f'{spec.package.identifier}.{t.name}'
             if name in pdus:
@@ -292,12 +292,12 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
 
 
 def create_nodes(nodes: Dict[str, Node], types: Dict[str, Type],
-                 components: List[Component]) -> None:
+                 components: List[Component], message_name: str) -> None:
     for component in components:
         if 'Payload' in component.type:
             types[component.type] = Array(component.type)
         if component.type not in types:
-            raise ParserError(f'reference to undefined type "{component.type}"')
+            raise ParserError(f'reference to undefined type "{component.type}" in "{message_name}"')
         nodes[component.name] = Node(component.name, types[component.type])
 
 
