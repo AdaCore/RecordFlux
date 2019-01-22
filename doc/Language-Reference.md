@@ -2,13 +2,13 @@
 
 The RecordFlux DSL describes protocol message formats based on types. For each type of the specification language a description of its syntax and semantics and an example is given. A simple variant of Backus-Naur Form is used to describe the syntax. Reserved keywords and literals are marked in bold. The following basic elements are used to describe the syntax of the language:
 
-name: A name consists of alphanumeric characters and underscores. By convention a name starts with a capital and after each underscore follows a capital as well (e.g., Mixed_Case_With_Underscores).
+*name*: A name consists of alphanumeric characters and underscores. By convention a name starts with a capital and after each underscore follows a capital as well (e.g., Mixed_Case_With_Underscores).
 
-number: A number consists of numerical digits. An underscore can be added between two digits to improve readability.
+*number*: A number consists of numerical digits. An underscore can be added between two digits to improve readability.
 
-mathematical_expression: A mathematical expression consists of numbers and names combined by mathematical operators (addition __+__, subtraction __-__, multiplication __\*__, division __/__, exponentiation __\*\*__).
+*mathematical_expression*: A mathematical expression consists of numbers and names combined by mathematical operators (addition __+__, subtraction __-__, multiplication __\*__, division __/__, exponentiation __\*\*__).
 
-logical_expression: A logical expression consists of relations (__<__, __<=__, __=__, __/=__, __>=__, __>__) between names and numbers combined by logical operators (conjunction __and__, disjunction __or__).
+*logical_expression*: A logical expression consists of relations (__<__, __<=__, __=__, __/=__, __>=__, __>__) between names and numbers combined by logical operators (conjunction __and__, disjunction __or__).
 
 ## Basic Types
 
@@ -18,19 +18,19 @@ An integer type is used to represent numbers. Two types of integers are supporte
 
 #### Syntax
 
-modular_type ::= __type__ name __is__ __mod__ modulus __;__
+*modular_type* ::= __type__ *name* __is__ __mod__ *modulus* __;__
 
-range_type ::= __type__ name __is__ __range__ first __..__ last __with Size =>__ number __;__
+*range_type* ::= __type__ *name* __is__ __range__ *first* __..__ *last* __with Size =>__ *number* __;__
 
-modulus ::= mathematical_expression
+*modulus* ::= *mathematical_expression*
 
-first ::= mathematical_expression
+*first* ::= *mathematical_expression*
 
-last ::= mathematical_expression
+*last* ::= *mathematical_expression*
 
 #### Static Semantics
 
-A modular type represents the values from 0 to one less than the modulus. The bit size of a modular type is determined by calculating the binary logarithm of modulus.
+A modular type represents the values from 0 to one less than the *modulus*. The bit size of a modular type is determined by calculating the binary logarithm of *modulus*.
 
 The set of values of a range type consists of all numbers from the lower bound to the upper bound. For a range type the bit size has to be specified explicitly.
 
@@ -47,11 +47,11 @@ An enumeration type represents a value out of a list of possible values.
 
 #### Syntax
 
-enumeration_type ::= __type__ name __is__ __(__ literals __) with Size =>__ number __;__
+*enumeration_type* ::= __type__ *name* __is__ __(__ *literals* __) with Size =>__ *number* __;__
 
-literals ::= literal { __,__ literal }
+*literals* ::= *literal* { __,__ *literal* }
 
-literal ::= name [__=>__ number]
+*literal* ::= *name* [__=>__ *number*]
 
 #### Static Semantics
 
@@ -70,26 +70,26 @@ A message type is a collection components. Additional then clauses allow to defi
 
 #### Syntax
 
-message_type ::= __type__ name __is__ __message__ component { component } __end message__ __;__
+*message_type* ::= __type__ *name* __is__ __message__ *component* { *component* } __end message__ __;__
 
-component ::= component_name __:__ component_type
-                 [ then_clause ] { __,__ then_clause } __;__
+*component* ::= *component_name* __:__ *component_type*
+                 [ *then_clause* ] { __,__ *then_clause* } __;__
 
-then_clause ::= __then__ component_name
-                     [__with__ location_expression]
-                     [__if__ condition]
+*then_clause* ::= __then__ *component_name*
+                     [__with__ *location_expression*]
+                     [__if__ *condition*]
 
-component_name ::= name | __null__
+*component_name* ::= *name* | __null__
 
-component_type ::= name
+*component_type* ::= *name*
 
-location_expression ::= first_expression | length_expression | first_expression __and__ length_expression
+*location_expression* ::= *first_expression* | *length_expression* | *first_expression* __and__ *length_expression*
 
-first_expression ::= __First__ __=__ mathematical_expression
+*first_expression* ::= __First__ __=__ *mathematical_expression*
 
-length_expression ::= __Length__ __=__ mathematical_expression
+*length_expression* ::= __Length__ __=__ *mathematical_expression*
 
-condition ::= logical_expression
+*condition* ::= *logical_expression*
 
 #### Static Semantics
 
@@ -121,17 +121,17 @@ A type refinement describes the relation of a component in a message type to ano
 
 #### Syntax
 
-type_refinement ::= __type__ name __is new__ refined_type_name __(__ refined_component_name __=>__ message_type_name __)__ [ __if__ condition ] __;__
+*type_refinement* ::= __type__ *name* __is new__ *refined_type_name* __(__ *refined_component_name* __=>__ *message_type_name* __)__ [ __if__ *condition* ] __;__
 
-refined_type_name ::= qualified_name
+*refined_type_name* ::= *qualified_name*
 
-refined_component_name ::= name
+*refined_component_name* ::= *name*
 
-message_type_name ::= qualified_name
+*message_type_name* ::= *qualified_name*
 
-qualified_name ::= name { __.__ name }
+*qualified_name* ::= *name* { __.__ *name* }
 
-condition ::= logical_expression
+*condition* ::= *logical_expression*
 
 #### Static Semantics
 
@@ -150,9 +150,9 @@ A package is used to structure a specification.
 
 #### Syntax
 
-package ::= __package__ name __is__ body __end__ name __;__
+*package* ::= __package__ *name* __is__ *body* __end__ *name* __;__
 
-body := { modular_type | range_type | enumeration_type | message_type | type_refinement }
+*body* := { *modular_type* | *range_type* | *enumeration_type* | *message_type* | *type_refinement* }
 
 #### Static Semantics
 
@@ -191,9 +191,9 @@ The context clause is used to specify the relation to other packages and consist
 
 #### Syntax
 
-context ::= { __with__ package_name __;__ }
+*context* ::= { __with__ *package_name* __;__ }
 
-package_name ::= name
+*package_name* ::= *name*
 
 #### Static Semantics
 
@@ -212,7 +212,7 @@ A RecordFlux specification file is recognized by the file extension `.rflx`. Eac
 
 #### Syntax
 
-file ::= context package
+*file* ::= *context* *package*
 
 #### Example
 
