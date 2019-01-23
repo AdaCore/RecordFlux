@@ -24,15 +24,15 @@ package body TLV.Tests is
       TLV.Message.Initialize (Buffer);
       Assert (TLV.Message.Valid_Tag (Buffer), "Invalid Tag");
       if TLV.Message.Valid_Tag (Buffer) then
-         Tag := TLV.Message.Tag (Buffer);
+         Tag := TLV.Message.Get_Tag (Buffer);
          Assert (Tag'Image, TLV.Tag_Type'Image (TLV.Msg_Data), "Unexpected Tag");
          Assert (TLV.Message.Valid_Length (Buffer), "Invalid Length");
          if TLV.Message.Valid_Length (Buffer) then
-            Length := TLV.Message.Length (Buffer);
+            Length := TLV.Message.Get_Length (Buffer);
             Assert (Length'Image, TLV.Length_Type'Image (4), "Unexpected Length");
             Assert (TLV.Message.Valid_Value (Buffer), "Invalid Value");
             if TLV.Message.Valid_Value (Buffer) then
-               TLV.Message.Value (Buffer, First, Last);
+               TLV.Message.Get_Value (Buffer, First, Last);
                Assert (First'Image, Natural'Image (3), "Unexpected Value'First");
                Assert (Last'Image, Natural'Image (6), "Unexpected Value'Last");
             end if;
@@ -54,15 +54,15 @@ package body TLV.Tests is
       TLV.Message.Initialize (Buffer);
       Assert (TLV.Message.Valid_Tag (Buffer), "Invalid Tag");
       if TLV.Message.Valid_Tag (Buffer) then
-         Tag := TLV.Message.Tag (Buffer);
+         Tag := TLV.Message.Get_Tag (Buffer);
          Assert (Tag'Image, TLV.Tag_Type'Image (TLV.Msg_Data), "Unexpected Tag");
          Assert (TLV.Message.Valid_Length (Buffer), "Invalid Length");
          if TLV.Message.Valid_Length (Buffer) then
-            Length := TLV.Message.Length (Buffer);
+            Length := TLV.Message.Get_Length (Buffer);
             Assert (Length'Image, TLV.Length_Type'Image (0), "Unexpected Length");
             Assert (TLV.Message.Valid_Value (Buffer), "Invalid Value");
             if TLV.Message.Valid_Value (Buffer) then
-               TLV.Message.Value (Buffer, First, Last);
+               TLV.Message.Get_Value (Buffer, First, Last);
                Assert (First'Image, Natural'Image (3), "Unexpected Value'First");
                Assert (Last'Image, Natural'Image (2), "Unexpected Value'Last");
             end if;
@@ -81,7 +81,7 @@ package body TLV.Tests is
       TLV.Message.Initialize (Buffer);
       Assert (TLV.Message.Valid_Tag (Buffer), "Invalid Tag");
       if TLV.Message.Valid_Tag (Buffer) then
-         Tag := TLV.Message.Tag (Buffer);
+         Tag := TLV.Message.Get_Tag (Buffer);
          Assert (Tag'Image, TLV.Tag_Type'Image (TLV.Msg_Error), "Unexpected Tag");
       end if;
       Assert (TLV.Message.Is_Valid (Buffer), "Invalid Message");

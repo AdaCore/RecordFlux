@@ -26,7 +26,7 @@ package body In_Ethernet.Tests is
       Valid := Ethernet.Frame.Is_Valid (Buffer);
       Assert (Valid, "Invalid Ethernet frame");
       if Valid then
-         Ethernet.Frame.Payload (Buffer, First, Last);
+         Ethernet.Frame.Get_Payload (Buffer, First, Last);
          Assert (First'Image, Natural'Image (15), "Invalid Ethernet Payload'First");
          Assert (Last'Image, Natural'Image (60), "Invalid Ethernet Payload'Last");
          Valid := In_Ethernet.Contains.IPv4_In_Ethernet (Buffer);
@@ -35,7 +35,7 @@ package body In_Ethernet.Tests is
             Valid := IPv4.Packet.Is_Valid (Buffer (First .. Last));
             Assert (Valid, "Invalid IPv4 packet");
             if Valid then
-               IPv4.Packet.Payload (Buffer (First .. Last), First, Last);
+               IPv4.Packet.Get_Payload (Buffer (First .. Last), First, Last);
                Assert (First'Image, Natural'Image (35), "Invalid IPv4 Payload'First");
                Assert (Last'Image, Natural'Image (60), "Invalid IPv4 Payload'Last");
             end if;

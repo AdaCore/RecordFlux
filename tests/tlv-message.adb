@@ -5,10 +5,10 @@ package body TLV.Message is
       pragma Assume (Is_Contained (Buffer));
    end Initialize;
 
-   procedure Value (Buffer : Bytes; First : out Natural; Last : out Natural) is
+   procedure Get_Value (Buffer : Bytes; First : out Natural; Last : out Natural) is
    begin
-      First := Value_First (Buffer);
-      Last := Value_Last (Buffer);
-   end Value;
+      First := Get_Value_First (Buffer);
+      Last := Get_Value_Last (Buffer);
+   end Get_Value;
 
 end TLV.Message;

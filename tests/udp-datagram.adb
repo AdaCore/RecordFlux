@@ -5,10 +5,10 @@ package body UDP.Datagram is
       pragma Assume (Is_Contained (Buffer));
    end Initialize;
 
-   procedure Payload (Buffer : Bytes; First : out Natural; Last : out Natural) is
+   procedure Get_Payload (Buffer : Bytes; First : out Natural; Last : out Natural) is
    begin
-      First := Payload_First (Buffer);
-      Last := Payload_Last (Buffer);
-   end Payload;
+      First := Get_Payload_First (Buffer);
+      Last := Get_Payload_Last (Buffer);
+   end Get_Payload;
 
 end UDP.Datagram;

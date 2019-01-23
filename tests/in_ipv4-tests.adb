@@ -28,7 +28,7 @@ package body In_IPv4.Tests is
       Valid := IPv4.Packet.Is_Valid (Buffer);
       Assert (Valid, "Invalid IPv4 packet");
       if Valid then
-         IPv4.Packet.Payload (Buffer, First, Last);
+         IPv4.Packet.Get_Payload (Buffer, First, Last);
          Assert (First'Image, Natural'Image (21), "Invalid IPv4 Payload'First");
          Assert (Last'Image, Natural'Image (44), "Invalid IPv4 Payload'Last");
          Valid := In_IPv4.Contains.UDP_In_IPv4 (Buffer);
@@ -37,7 +37,7 @@ package body In_IPv4.Tests is
             Valid := UDP.Datagram.Is_Valid (Buffer (First .. Last));
             Assert (Valid, "Invalid UDP datagram");
             if Valid then
-               UDP.Datagram.Payload (Buffer (First .. Last), First, Last);
+               UDP.Datagram.Get_Payload (Buffer (First .. Last), First, Last);
                Assert (First'Image, Natural'Image (29), "Invalid UDP Payload'First");
                Assert (Last'Image, Natural'Image (44), "Invalid UDP Payload'Last");
             end if;
@@ -62,7 +62,7 @@ package body In_IPv4.Tests is
       Valid := Ethernet.Frame.Is_Valid (Buffer);
       Assert (Valid, "Invalid Ethernet frame");
       if Valid then
-         Ethernet.Frame.Payload (Buffer, IPv4_First, IPv4_Last);
+         Ethernet.Frame.Get_Payload (Buffer, IPv4_First, IPv4_Last);
          Assert (IPv4_First'Image, Natural'Image (15), "Invalid Ethernet Payload'First");
          Assert (IPv4_Last'Image, Natural'Image (60), "Invalid Ethernet Payload'Last");
          Valid := In_Ethernet.Contains.IPv4_In_Ethernet (Buffer);
@@ -71,7 +71,7 @@ package body In_IPv4.Tests is
             Valid := IPv4.Packet.Is_Valid (Buffer (IPv4_First .. IPv4_Last));
             Assert (Valid, "Invalid IPv4 packet");
             if Valid then
-               IPv4.Packet.Payload (Buffer (IPv4_First .. IPv4_Last), UDP_First, UDP_Last);
+               IPv4.Packet.Get_Payload (Buffer (IPv4_First .. IPv4_Last), UDP_First, UDP_Last);
                Assert (UDP_First'Image, Natural'Image (35), "Invalid IPv4 Payload'First");
                Assert (UDP_Last'Image, Natural'Image (60), "Invalid IPv4 Payload'Last");
                Valid := In_IPv4.Contains.UDP_In_IPv4 (Buffer (IPv4_First .. IPv4_Last));
@@ -80,7 +80,7 @@ package body In_IPv4.Tests is
                   Valid := UDP.Datagram.Is_Valid (Buffer (UDP_First .. UDP_Last));
                   Assert (Valid, "Invalid UDP datagram");
                   if Valid then
-                     UDP.Datagram.Payload (Buffer (UDP_First .. UDP_Last), First, Last);
+                     UDP.Datagram.Get_Payload (Buffer (UDP_First .. UDP_Last), First, Last);
                      Assert (First'Image, Natural'Image (43), "Invalid UDP Payload'First");
                      Assert (Last'Image, Natural'Image (60), "Invalid UDP Payload'Last");
                   end if;

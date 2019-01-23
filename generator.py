@@ -731,7 +731,7 @@ class Generator:
                     refinement.field,
                     refinement.sdu,
                     refinement.condition.simplified(
-                        {Value(field): MathCall(f'{refinement.pdu}.{field} (Buffer)')
+                        {Value(field): MathCall(f'{refinement.pdu}.Get_{field} (Buffer)')
                          for field in self.__pdu_fields[refinement.pdu]})))
 
 
@@ -875,12 +875,12 @@ def buffer_constraints(last: MathExpr) -> LogExpr:
 
 
 def create_value_to_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
-    return {Value(field_name): MathCall(f'{field_name}_{vid} (Buffer)')
+    return {Value(field_name): MathCall(f'Get_{field_name}_{vid} (Buffer)')
             for field_name, vid in previous}
 
 
 def create_value_to_natural_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
-    return {Value(field_name): Cast('Natural', MathCall(f'{field_name}_{vid} (Buffer)'))
+    return {Value(field_name): Cast('Natural', MathCall(f'Get_{field_name}_{vid} (Buffer)'))
             for field_name, vid in previous}
 
 
@@ -943,10 +943,10 @@ def create_variant_accessor_functions(
     last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
     offset = calculate_offset(variant.facts[Last(field.name)])
 
-    name = f'{field.name}_{variant_id}'
+    name = f'Get_{field.name}_{variant_id}'
     precondition = Precondition(
         And(COMMON_PRECONDITION,
-            LogCall(f'Valid_{name} (Buffer)')))
+            LogCall(f'Valid_{field.name}_{variant_id} (Buffer)')))
 
     functions: List[Subprogram] = []
     if isinstance(field.type, Array):
@@ -1030,21 +1030,21 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
         for attribute in ['First', 'Last']:
             functions.append(
                 ExpressionFunction(
-                    f'{field.name}_{attribute}',
+                    f'Get_{field.name}_{attribute}',
                     'Natural',
                     [('Buffer', 'Bytes')],
                     IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
-                                   LogCall(f'{field.name}_{variant_id}_{attribute} (Buffer)'))
+                                   LogCall(f'Get_{field.name}_{variant_id}_{attribute} (Buffer)'))
                                   for variant_id in field.variants],
                                  'Unreachable_Natural'),
                     [precondition]))
 
-        body: List[Statement] = [Assignment('First', MathCall(f'{field.name}_First (Buffer)')),
-                                 Assignment('Last', MathCall(f'{field.name}_Last (Buffer)'))]
+        body: List[Statement] = [Assignment('First', MathCall(f'Get_{field.name}_First (Buffer)')),
+                                 Assignment('Last', MathCall(f'Get_{field.name}_Last (Buffer)'))]
         postcondition = Postcondition(And(Equal(Value('First'),
-                                                MathCall(f'{field.name}_First (Buffer)')),
+                                                MathCall(f'Get_{field.name}_First (Buffer)')),
                                           Equal(Value('Last'),
-                                                MathCall(f'{field.name}_Last (Buffer)'))))
+                                                MathCall(f'Get_{field.name}_Last (Buffer)'))))
         if 'Payload' not in field.type.name:
             predicate = f'{package_name}.{field.type.name}.Is_Contained (Buffer (First .. Last))'
             body += [PragmaStatement('Assume',
@@ -1053,7 +1053,7 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
 
         functions.append(
             Procedure(
-                field.name,
+                f'Get_{field.name}',
                 [('Buffer', 'Bytes'),
                  ('First', 'out Natural'),
                  ('Last', 'out Natural')],
@@ -1064,11 +1064,11 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
     else:
         functions.append(
             ExpressionFunction(
-                field.name,
+                f'Get_{field.name}',
                 field.type.name,
                 [('Buffer', 'Bytes')],
                 IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
-                               MathCall(f'{field.name}_{variant_id} (Buffer)'))
+                               MathCall(f'Get_{field.name}_{variant_id} (Buffer)'))
                               for variant_id in field.variants],
                              f'Unreachable_{field.type.name}'),
                 [precondition]))
@@ -1132,8 +1132,8 @@ def create_contains_function(name: str, pdu: str, field: str, sdu: str,
                         [(condition,
                           [PragmaStatement(
                               'Assume',
-                              [(f'{sdu}.Is_Contained (Buffer ({pdu}.{field}_First (Buffer)'
-                                f' .. {pdu}.{field}_Last (Buffer)))')]),
+                              [(f'{sdu}.Is_Contained (Buffer ({pdu}.Get_{field}_First (Buffer)'
+                                f' .. {pdu}.Get_{field}_Last (Buffer)))')]),
                            ReturnStatement(TRUE)])]),
                      ReturnStatement(FALSE)],
                     [Precondition(And(LogCall(f'{pdu}.Is_Contained (Buffer)'),
@@ -1141,5 +1141,6 @@ def create_contains_function(name: str, pdu: str, field: str, sdu: str,
                      Postcondition(
                          IfExpression(
                              [(LogCall(f'{name}\'Result'),
-                               LogCall((f'{sdu}.Is_Contained (Buffer ({pdu}.{field}_First (Buffer)'
-                                        f' .. {pdu}.{field}_Last (Buffer)))')))]))])
+                               LogCall((f'{sdu}.Is_Contained (Buffer ('
+                                        f'{pdu}.Get_{field}_First (Buffer)'
+                                        f' .. {pdu}.Get_{field}_Last (Buffer)))')))]))])
