@@ -107,7 +107,7 @@ class ModularType(TypeDeclaration):
 
     def __str__(self) -> str:
         return (f'   type {self.name} is mod {self.modulus};\n'
-                f'   function Convert_To_{self.name} is new Convert_To_Mod ({self.name});')
+                f'   function Convert_To_{self.name} is new Types.Convert_To_Mod ({self.name});')
 
 
 class RangeType(TypeDeclaration):
@@ -120,7 +120,7 @@ class RangeType(TypeDeclaration):
     def __str__(self) -> str:
         return (f'   type {self.name} is range {self.first} .. {self.last}'
                 f' with Size => {self.size};\n'
-                f'   function Convert_To_{self.name} is new Convert_To_Int ({self.name});')
+                f'   function Convert_To_{self.name} is new Types.Convert_To_Int ({self.name});')
 
 
 class EnumerationType(TypeDeclaration):
@@ -577,7 +577,7 @@ class Generator:
                 top_level_package = self.__units[pdu.package].package
             else:
                 top_level_package = Package(pdu.package, [], [])
-                self.__units[pdu.package] = Unit([ContextItem('Types', True)],
+                self.__units[pdu.package] = Unit([ContextItem('Types', False)],
                                                  top_level_package)
 
             context: List[ContextItem] = []
@@ -699,7 +699,7 @@ class Generator:
     def __process_refinements(self, refinements: List[Refinement]) -> None:
         for refinement in refinements:
             if refinement.package not in self.__units:
-                context = [ContextItem('Types', True)]
+                context = [ContextItem('Types', False)]
                 package = Package(refinement.package, [], [])
                 self.__units[refinement.package] = Unit(context, package)
 
@@ -765,14 +765,14 @@ def enumeration_functions(enum: Enumeration) -> List[Subprogram]:
 
     return [ExpressionFunction(f'Valid_{enum.name}',
                                'Boolean',
-                               [('Buffer', 'Bytes'),
+                               [('Buffer', 'Types.Bytes'),
                                 ('Offset', 'Natural')],
                                CaseExpression(control_expression,
                                               validation_cases),
                                [Precondition(common_precondition)]),
             ExpressionFunction(f'Convert_To_{enum.name}',
                                enum.name,
-                               [('Buffer', 'Bytes'),
+                               [('Buffer', 'Types.Bytes'),
                                 ('Offset', 'Natural')],
                                CaseExpression(control_expression,
                                               conversion_cases),
@@ -790,12 +790,12 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
 
     return [Function('Valid_First',
                      'Boolean',
-                     [('Buffer', 'Bytes')],
+                     [('Buffer', 'Types.Bytes')],
                      [ReturnStatement(
                          LogCall('Valid_Next (Buffer, Offset_Type (Buffer\'First))'))],
                      [Precondition(common_precondition)]),
             Procedure('First',
-                      [('Buffer', 'Bytes'),
+                      [('Buffer', 'Types.Bytes'),
                        ('Offset', 'out Offset_Type'),
                        ('First', 'out Natural'),
                        ('Last', 'out Natural')],
@@ -811,7 +811,7 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
                                                  '(Buffer (First .. Last))')))]),
             Function('Valid_Next',
                      'Boolean',
-                     [('Buffer', 'Bytes'),
+                     [('Buffer', 'Types.Bytes'),
                       ('Offset', 'Offset_Type')],
                      [PragmaStatement('Assume',
                                       [(f'{package}.{array.element_type}.Is_Contained '
@@ -821,7 +821,7 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
                                   '(Buffer (Positive (Offset) .. Buffer\'Last))'))],
                      [Precondition(common_precondition)]),
             Procedure('Next',
-                      [('Buffer', 'Bytes'),
+                      [('Buffer', 'Types.Bytes'),
                        ('Offset', 'in out Offset_Type'),
                        ('First', 'out Natural'),
                        ('Last', 'out Natural')],
@@ -852,10 +852,10 @@ COMMON_PRECONDITION = LogCall('Is_Contained (Buffer)')
 def create_contain_functions() -> List[Subprogram]:
     return [ExpressionFunction('Is_Contained',
                                'Boolean',
-                               [('Buffer', 'Bytes')],
+                               [('Buffer', 'Types.Bytes')],
                                aspects=[Ghost(), Import()]),
             Procedure('Initialize',
-                      [('Buffer', 'Bytes')],
+                      [('Buffer', 'Types.Bytes')],
                       [PragmaStatement('Assume', ['Is_Contained (Buffer)'])],
                       aspects=[Postcondition(LogCall('Is_Contained (Buffer)'))])]
 
@@ -915,7 +915,7 @@ def create_variant_validation_function(
     return ExpressionFunction(
         f'Valid_{field.name}_{variant_id}',
         'Boolean',
-        [('Buffer', 'Bytes')],
+        [('Buffer', 'Types.Bytes')],
         And(LogCall(f'Valid_{variant.previous[-1][0]}_{variant.previous[-1][1]} (Buffer)')
             if variant.previous else TRUE,
             And(
@@ -954,14 +954,14 @@ def create_variant_accessor_functions(
             ExpressionFunction(
                 f'{name}_First',
                 'Natural',
-                [('Buffer', 'Bytes')],
+                [('Buffer', 'Types.Bytes')],
                 first_byte,
                 [precondition]))
         functions.append(
             ExpressionFunction(
                 f'{name}_Last',
                 'Natural',
-                [('Buffer', 'Bytes')],
+                [('Buffer', 'Types.Bytes')],
                 last_byte,
                 [precondition]))
     else:
@@ -969,7 +969,7 @@ def create_variant_accessor_functions(
             ExpressionFunction(
                 name,
                 field.type.name,
-                [('Buffer', 'Bytes')],
+                [('Buffer', 'Types.Bytes')],
                 Convert(
                     field.type.name if field.type.constraints == TRUE else field.type.base_name,
                     'Buffer',
@@ -1007,7 +1007,7 @@ def create_field_validation_function(
     return ExpressionFunction(
         f'Valid_{field_name}',
         'Boolean',
-        [('Buffer', 'Bytes')],
+        [('Buffer', 'Types.Bytes')],
         expr,
         [Precondition(COMMON_PRECONDITION)])
 
@@ -1032,7 +1032,7 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
                 ExpressionFunction(
                     f'Get_{field.name}_{attribute}',
                     'Natural',
-                    [('Buffer', 'Bytes')],
+                    [('Buffer', 'Types.Bytes')],
                     IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
                                    LogCall(f'Get_{field.name}_{variant_id}_{attribute} (Buffer)'))
                                   for variant_id in field.variants],
@@ -1054,7 +1054,7 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
         functions.append(
             Procedure(
                 f'Get_{field.name}',
-                [('Buffer', 'Bytes'),
+                [('Buffer', 'Types.Bytes'),
                  ('First', 'out Natural'),
                  ('Last', 'out Natural')],
                 body,
@@ -1066,7 +1066,7 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
             ExpressionFunction(
                 f'Get_{field.name}',
                 field.type.name,
-                [('Buffer', 'Bytes')],
+                [('Buffer', 'Types.Bytes')],
                 IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
                                MathCall(f'Get_{field.name}_{variant_id} (Buffer)'))
                               for variant_id in field.variants],
@@ -1090,7 +1090,7 @@ def create_packet_validation_function(variants: List[Variant]) -> Subprogram:
     return ExpressionFunction(
         'Is_Valid',
         'Boolean',
-        [('Buffer', 'Bytes')],
+        [('Buffer', 'Types.Bytes')],
         expr,
         [Precondition(COMMON_PRECONDITION)])
 
@@ -1117,7 +1117,7 @@ def create_message_length_function(variants: List[Variant]) -> Subprogram:
     return ExpressionFunction(
         'Message_Length',
         'Natural',
-        [('Buffer', 'Bytes')],
+        [('Buffer', 'Types.Bytes')],
         IfExpression(condition_expressions, 'Unreachable_Natural'),
         [Precondition(And(COMMON_PRECONDITION, LogCall('Is_Valid (Buffer)')))])
 
@@ -1127,7 +1127,7 @@ def create_contains_function(name: str, pdu: str, field: str, sdu: str,
 
     return Function(name,
                     'Boolean',
-                    [('Buffer', 'Bytes')],
+                    [('Buffer', 'Types.Bytes')],
                     [IfStatement(
                         [(condition,
                           [PragmaStatement(

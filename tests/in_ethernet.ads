@@ -1,4 +1,4 @@
-with Types; use Types;
+with Types;
 
 package In_Ethernet
   with SPARK_Mode

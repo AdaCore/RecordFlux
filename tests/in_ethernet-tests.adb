@@ -17,7 +17,7 @@ package body In_Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer          : Bytes := Read_File ("tests/ethernet_ipv4_udp.raw");
+      Buffer          : Types.Bytes := Read_File ("tests/ethernet_ipv4_udp.raw");
       Valid           : Boolean;
       First           : Natural;
       Last            : Natural;

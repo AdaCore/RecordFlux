@@ -15,7 +15,7 @@ package body Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer      : Bytes := Read_File ("tests/ethernet_ipv4_udp.raw");
+      Buffer      : Types.Bytes := Read_File ("tests/ethernet_ipv4_udp.raw");
       Destination : Ethernet.UINT48;
       Source      : Ethernet.UINT48;
       EtherType   : Ethernet.UINT16;
@@ -47,7 +47,7 @@ package body Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer      : Bytes := Read_File ("tests/ethernet_802.3.raw");
+      Buffer      : Types.Bytes := Read_File ("tests/ethernet_802.3.raw");
       Destination : Ethernet.UINT48;
       Source      : Ethernet.UINT48;
       EtherType   : Ethernet.UINT16;
@@ -79,7 +79,7 @@ package body Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer      : Bytes := Read_File ("tests/ethernet_vlan_tag.raw");
+      Buffer      : Types.Bytes := Read_File ("tests/ethernet_vlan_tag.raw");
       Destination : Ethernet.UINT48;
       Source      : Ethernet.UINT48;
       TPID        : Ethernet.UINT16;
@@ -121,7 +121,7 @@ package body Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := Read_File ("tests/ethernet_invalid_too_short.raw");
+      Buffer : Types.Bytes := Read_File ("tests/ethernet_invalid_too_short.raw");
    begin
       Ethernet.Frame.Initialize (Buffer);
       Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
@@ -131,7 +131,7 @@ package body Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := Read_File ("tests/ethernet_invalid_too_long.raw");
+      Buffer : Types.Bytes := Read_File ("tests/ethernet_invalid_too_long.raw");
    begin
       Ethernet.Frame.Initialize (Buffer);
       Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
@@ -141,7 +141,7 @@ package body Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := Read_File ("tests/ethernet_undefined.raw");
+      Buffer : Types.Bytes := Read_File ("tests/ethernet_undefined.raw");
    begin
       Ethernet.Frame.Initialize (Buffer);
       Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
@@ -151,7 +151,7 @@ package body Ethernet.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := Read_File ("tests/ethernet_802.3_invalid_length.raw");
+      Buffer : Types.Bytes := Read_File ("tests/ethernet_802.3_invalid_length.raw");
    begin
       Ethernet.Frame.Initialize (Buffer);
       Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");

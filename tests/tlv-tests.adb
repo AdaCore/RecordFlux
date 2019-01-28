@@ -15,7 +15,7 @@ package body TLV.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := Bytes'(64, 4, 0, 0, 0, 0);
+      Buffer : Types.Bytes := Types.Bytes'(64, 4, 0, 0, 0, 0);
       Tag    : TLV.Tag_Type;
       Length : TLV.Length_Type;
       First  : Natural;
@@ -45,7 +45,7 @@ package body TLV.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := Bytes'(64, 0);
+      Buffer : Types.Bytes := Types.Bytes'(64, 0);
       Tag    : TLV.Tag_Type;
       Length : TLV.Length_Type;
       First  : Natural;
@@ -75,7 +75,7 @@ package body TLV.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := (1 => 192);
+      Buffer : Types.Bytes := (1 => 192);
       Tag    : TLV.Tag_Type;
    begin
       TLV.Message.Initialize (Buffer);
@@ -91,7 +91,7 @@ package body TLV.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := Bytes'(0, 0);
+      Buffer : Types.Bytes := Types.Bytes'(0, 0);
    begin
       TLV.Message.Initialize (Buffer);
       Assert (Not TLV.Message.Is_Valid (Buffer), "False positive");

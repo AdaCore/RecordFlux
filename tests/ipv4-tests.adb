@@ -17,7 +17,7 @@ package body IPv4.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer          : Bytes := Read_File ("tests/ipv4_udp.raw");
+      Buffer          : Types.Bytes := Read_File ("tests/ipv4_udp.raw");
       Valid           : Boolean;
       Version         : IPv4.Version_Type;
       IHL             : IPv4.IHL_Type;
@@ -143,7 +143,7 @@ package body IPv4.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer        : Bytes := (68, 3, 42);
+      Buffer        : Types.Bytes := (68, 3, 42);
       Valid         : Boolean;
       First         : Natural;
       Last          : Natural;
@@ -192,7 +192,7 @@ package body IPv4.Tests is
      with SPARK_Mode, Global => null
    is
       pragma Unreferenced (T);
-      Buffer        : Bytes := Read_File ("tests/ipv4-options_udp.raw");
+      Buffer        : Types.Bytes := Read_File ("tests/ipv4-options_udp.raw");
       Valid         : Boolean;
       First         : Natural;
       Last          : Natural;

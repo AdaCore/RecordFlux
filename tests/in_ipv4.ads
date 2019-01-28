@@ -1,4 +1,4 @@
-with Types; use Types;
+with Types;
 
 package In_IPv4
   with SPARK_Mode
