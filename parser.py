@@ -6,8 +6,8 @@ from pyparsing import (alphanums, infixNotation, nums, opAssoc, ParseFatalExcept
                        WordStart, ZeroOrMore)
 
 from model import (Add, And, Array, Attribute, Div, Edge, Enumeration, Equal, FINAL, First,
-                   Greater, GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr,
-                   ModelError, ModularInteger, Mul, Number, Node, NotEqual, Or, PDU, Pow,
+                   Greater, GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
+                   MathExpr, ModelError, ModularInteger, Mul, Number, Node, NotEqual, Or, PDU, Pow,
                    RangeInteger, Refinement, Relation, Sub, TRUE, Type, Value)
 
 
@@ -315,10 +315,14 @@ def create_edges(nodes: Dict[str, Node], components: List[Component]) -> None:
             if then.location:
                 location = convert_location_expression(then.location)
                 if 'first' in location:
-                    edge.first = location['first']
+                    edge.first = location['first'].converted(replace_value_by_length_value)
                 if 'length' in location:
-                    edge.length = location['length']
+                    edge.length = location['length'].converted(replace_value_by_length_value)
             nodes[component.name].edges.append(edge)
+
+
+def replace_value_by_length_value(self: MathExpr) -> MathExpr:
+    return LengthValue(self.name) if isinstance(self, Value) else self
 
 
 def convert_location_expression(expr: LogExpr) -> Dict[str, MathExpr]:

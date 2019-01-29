@@ -2,8 +2,9 @@ import unittest
 from collections import OrderedDict
 
 from model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater, GreaterEqual,
-                   Last, Length, Less, LessEqual, ModelError, ModularInteger, Mul, Node, NotEqual,
-                   Null, Number, Or, PDU, Pow, RangeInteger, Sub, TRUE, UNDEFINED, Value, Variant)
+                   Last, Length, LengthValue, Less, LessEqual, ModelError, ModularInteger, Mul,
+                   Node, NotEqual, Null, Number, Or, PDU, Pow, RangeInteger, Sub, TRUE, UNDEFINED,
+                   Value, Variant)
 
 from tests.models import ETHERNET_PDU
 
@@ -715,9 +716,9 @@ class TestModel(unittest.TestCase):
                                Length('EtherType'): Number(16),
                                First('EtherType'): Number(128),
                                Last('EtherType'): Number(143),
-                               Length('Payload'): Mul(Value('EtherType'), Number(8)),
+                               Length('Payload'): Mul(LengthValue('EtherType'), Number(8)),
                                First('Payload'): Number(144),
-                               Last('Payload'): Add(Mul(Value('EtherType'), Number(8)),
+                               Last('Payload'): Add(Mul(LengthValue('EtherType'), Number(8)),
                                                     Number(143))
                            }),
                        '000001':
@@ -772,9 +773,9 @@ class TestModel(unittest.TestCase):
                                Length('EtherType'): Number(16),
                                First('EtherType'): Number(96),
                                Last('EtherType'): Number(111),
-                               Length('Payload'): Mul(Value('EtherType'), Number(8)),
+                               Length('Payload'): Mul(LengthValue('EtherType'), Number(8)),
                                First('Payload'): Number(112),
-                               Last('Payload'): Add(Mul(Value('EtherType'), Number(8)),
+                               Last('Payload'): Add(Mul(LengthValue('EtherType'), Number(8)),
                                                     Number(111))
                            }),
                        '00011':
@@ -837,9 +838,9 @@ class TestModel(unittest.TestCase):
                                Length('EtherType'): Number(16),
                                First('EtherType'): Number(128),
                                Last('EtherType'): Number(143),
-                               Length('Payload'): Mul(Value('EtherType'), Number(8)),
+                               Length('Payload'): Mul(LengthValue('EtherType'), Number(8)),
                                First('Payload'): Number(144),
-                               Last('Payload'): Add(Mul(Value('EtherType'), Number(8)),
+                               Last('Payload'): Add(Mul(LengthValue('EtherType'), Number(8)),
                                                     Number(143))
                            }),
                        '0000010':
@@ -898,9 +899,9 @@ class TestModel(unittest.TestCase):
                                Length('EtherType'): Number(16),
                                First('EtherType'): Number(96),
                                Last('EtherType'): Number(111),
-                               Length('Payload'): Mul(Value('EtherType'), Number(8)),
+                               Length('Payload'): Mul(LengthValue('EtherType'), Number(8)),
                                First('Payload'): Number(112),
-                               Last('Payload'): Add(Mul(Value('EtherType'), Number(8)),
+                               Last('Payload'): Add(Mul(LengthValue('EtherType'), Number(8)),
                                                     Number(111))
                            }),
                        '000110':

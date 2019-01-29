@@ -4,9 +4,9 @@ from collections import OrderedDict
 from typing import Callable, Dict, List, Tuple
 
 from model import (Add, And, Array, Attribute, Div, Enumeration, Equal, Expr, Field, First,
-                   GreaterEqual, Last, Length, Less, LessEqual, LogExpr, MathExpr, ModularInteger,
-                   Mul, Number, Or, PDU, Pow, RangeInteger, Refinement, Size, Sub, TRUE,
-                   Value, Variant)
+                   GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr, MathExpr,
+                   ModularInteger, Mul, Number, Or, PDU, Pow, RangeInteger, Refinement, Size, Sub,
+                   TRUE, Value, Variant)
 
 
 class SparkRepresentation(ABC):
@@ -477,6 +477,9 @@ class MathCall(Call, MathExpr):
     def to_bytes(self) -> MathExpr:
         return self
 
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
+        raise NotImplementedError
+
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
         return self
 
@@ -518,6 +521,9 @@ class Convert(MathExpr):
     def __contains__(self, item: MathExpr) -> bool:
         return item == self
 
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
+        raise NotImplementedError
+
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
         return Convert(self.type_name,
                        self.array_name,
@@ -548,6 +554,9 @@ class Cast(MathExpr):
 
     def __contains__(self, item: MathExpr) -> bool:
         return item == self
+
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
+        raise NotImplementedError
 
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
         return Cast(self.name, self.expression.simplified(facts))
@@ -894,18 +903,26 @@ def buffer_constraints(last: MathExpr) -> LogExpr:
                LessEqual(First('Buffer'), Div(Last('Types.Index_Type'), Number(2))))
 
 
+def create_field_location(
+        field_name: str,
+        variant_id: str,
+        variant: Variant) -> Tuple[MathExpr, MathExpr, int]:
+
+    value_to_call = create_value_to_call(
+        [(field_name, variant_id)] + variant.previous)
+    first_byte = variant.facts[First(field_name)].to_bytes().simplified(value_to_call)
+    last_byte = variant.facts[Last(field_name)].to_bytes().simplified(value_to_call)
+    offset = calculate_offset(variant.facts[Last(field_name)])
+    return (first_byte, last_byte, offset)
+
+
 def create_value_to_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
-    return {
-        Value(field_name): MathCall(f'Get_{field_name}_{vid} (Buffer)')
-        for field_name, vid in previous
-    }
-
-
-def create_value_to_natural_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
-    return {
-        Value(field_name): Cast('Types.Length_Type', MathCall(f'Get_{field_name}_{vid} (Buffer)'))
-        for field_name, vid in previous
-    }
+    result: Dict[Attribute, MathExpr] = {}
+    for field_name, vid in previous:
+        get_call = MathCall(f'Get_{field_name}_{vid} (Buffer)')
+        result[Value(field_name)] = get_call
+        result[LengthValue(field_name)] = Cast('Types.Length_Type', get_call)
+    return result
 
 
 def create_variant_validation_function(
@@ -916,11 +933,7 @@ def create_variant_validation_function(
     type_constraints: LogExpr = TRUE
 
     if field.type.constraints != TRUE or isinstance(field.type, Enumeration):
-        value_to_natural_call = create_value_to_natural_call(
-            [(field.name, variant_id)] + variant.previous)
-        first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_call)
-        last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
-        offset = calculate_offset(variant.facts[Last(field.name)])
+        first_byte, last_byte, offset = create_field_location(field.name, variant_id, variant)
 
         if field.type.constraints != TRUE:
             convert = Convert(
@@ -936,6 +949,8 @@ def create_variant_validation_function(
                                    LogCall((f'Valid_{field.type.name} (Buffer ({first_byte}'
                                             f' .. {last_byte}), {offset})')))
 
+    value_to_call = create_value_to_call([(field.name, variant_id)] + variant.previous)
+
     return ExpressionFunction(
         f'Valid_{field.name}_{variant_id}',
         'Boolean',
@@ -945,12 +960,8 @@ def create_variant_validation_function(
             And(
                 And(
                     buffer_constraints(
-                        variant.facts[Last(field.name)].to_bytes()).simplified(
-                            create_value_to_natural_call(
-                                [(field.name, variant_id)] + variant.previous)),
-                    variant.condition.simplified(
-                        create_value_to_call(
-                            [(field.name, variant_id)] + variant.previous))),
+                        variant.facts[Last(field.name)].to_bytes()).simplified(value_to_call),
+                    variant.condition.simplified(value_to_call)),
                 type_constraints)
             ).simplified(),
         [Precondition(COMMON_PRECONDITION)])
@@ -961,11 +972,7 @@ def create_variant_accessor_functions(
         variant_id: str,
         variant: Variant) -> List[Subprogram]:
 
-    value_to_natural_call = create_value_to_natural_call(
-        [(field.name, variant_id)] + variant.previous)
-    first_byte = variant.facts[First(field.name)].to_bytes().simplified(value_to_natural_call)
-    last_byte = variant.facts[Last(field.name)].to_bytes().simplified(value_to_natural_call)
-    offset = calculate_offset(variant.facts[Last(field.name)])
+    first_byte, last_byte, offset = create_field_location(field.name, variant_id, variant)
 
     name = f'Get_{field.name}_{variant_id}'
     precondition = Precondition(
@@ -1134,7 +1141,7 @@ def create_message_length_function(variants: List[Variant]) -> Subprogram:
             Number(1)
         ).simplified(
             {**variant.facts,
-             **create_value_to_natural_call(variant.previous)}
+             **create_value_to_call(variant.previous)}
         ).to_bytes().simplified()
         condition_expressions.append((condition, length))
 

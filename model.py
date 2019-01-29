@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from copy import copy
 from math import log
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 
 class Element(ABC):
@@ -125,6 +125,10 @@ class MathExpr(Expr):
         raise NotImplementedError
 
     @abstractmethod
+    def converted(self, replace_function: Callable[['MathExpr'], 'MathExpr']) -> 'MathExpr':
+        raise NotImplementedError
+
+    @abstractmethod
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'MathExpr':
         raise NotImplementedError
 
@@ -147,6 +151,9 @@ class UndefinedExpr(MathExpr):
         return self
 
     def __contains__(self, item: MathExpr) -> bool:
+        raise NotImplementedError
+
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
         raise NotImplementedError
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
@@ -238,6 +245,9 @@ class Number(MathExpr):
             return False
         return NotImplemented
 
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
+        return replace_function(self)
+
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         return self
 
@@ -290,6 +300,12 @@ class AssMathExpr(MathExpr):
                 return all([x >= y for x, y in zip(self.terms, other.terms)])
             return False
         return NotImplemented
+
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
+        terms: List[MathExpr] = []
+        for term in self.terms:
+            terms.append(term.converted(replace_function))
+        return self.__class__(*terms)
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         terms: List[MathExpr] = []
@@ -387,6 +403,10 @@ class BinMathExpr(MathExpr):
     def __contains__(self, item: MathExpr) -> bool:
         return item in (self.left, self.right)
 
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
+        return self.__class__(self.left.converted(replace_function),
+                              self.right.converted(replace_function))
+
     @abstractmethod
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         raise NotImplementedError
@@ -471,6 +491,9 @@ class Attribute(MathExpr):
     def __contains__(self, item: MathExpr) -> bool:
         return item == self
 
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
+        return replace_function(self)
+
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
         if facts:
             positive_self = self.__class__(self.name)
@@ -489,6 +512,13 @@ class Value(Attribute):
         if self.negative:
             return '(-{})'.format(self.name)
         return self.name
+
+
+class LengthValue(Attribute):
+    def __str__(self) -> str:
+        if self.negative:
+            return '(-{})'.format(self.name)
+        return f'LengthValue({self.name})'
 
 
 class Size(Attribute):
