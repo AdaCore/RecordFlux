@@ -1,4 +1,5 @@
-with Ethernet; use Ethernet;
+with Ethernet;
+use Ethernet;
 with Ethernet.Frame;
 with IPv4.Packet;
 

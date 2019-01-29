@@ -5,14 +5,14 @@ package body IPv4.Packet is
       pragma Assume (Is_Contained (Buffer));
    end Initialize;
 
-   procedure Get_Options (Buffer : Types.Bytes; First : out Natural; Last : out Natural) is
+   procedure Get_Options (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type) is
    begin
       First := Get_Options_First (Buffer);
       Last := Get_Options_Last (Buffer);
       pragma Assume (IPv4.Options.Is_Contained (Buffer (First .. Last)));
    end Get_Options;
 
-   procedure Get_Payload (Buffer : Types.Bytes; First : out Natural; Last : out Natural) is
+   procedure Get_Payload (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type) is
    begin
       First := Get_Payload_First (Buffer);
       Last := Get_Payload_Last (Buffer);

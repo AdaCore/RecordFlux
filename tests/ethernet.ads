@@ -1,4 +1,5 @@
 with Types;
+use type Types.Index_Type, Types.Length_Type;
 
 package Ethernet
   with SPARK_Mode
@@ -22,8 +23,13 @@ is
      with
        Pre => False;
 
-   function Unreachable_Natural return Natural is
-      (Natural'First)
+   function Unreachable_Types_Index_Type return Types.Index_Type is
+      (Types.Index_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_Types_Length_Type return Types.Length_Type is
+      (Types.Length_Type'First)
      with
        Pre => False;
 

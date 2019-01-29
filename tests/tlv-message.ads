@@ -12,7 +12,7 @@ is
        Post => Is_Contained (Buffer);
 
    function Valid_Tag_0 (Buffer : Types.Bytes) return Boolean is
-      (((Buffer'Length >= 1 and then Buffer'First <= (Natural'Last / 2)) and then Valid_Tag_Type (Buffer (Buffer'First .. Buffer'First), 6)))
+      (((Buffer'Length >= 1 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Valid_Tag_Type (Buffer (Buffer'First .. Buffer'First), 6)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -32,7 +32,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Tag (Buffer));
 
    function Valid_Length_00 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Tag_0 (Buffer) and then ((Buffer'Length >= 2 and then Buffer'First <= (Natural'Last / 2)) and then Get_Tag_0 (Buffer) = Msg_Data)))
+      ((Valid_Tag_0 (Buffer) and then ((Buffer'Length >= 2 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_Tag_0 (Buffer) = Msg_Data)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -52,17 +52,17 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Length (Buffer));
 
    function Valid_Value_000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Length_00 (Buffer) and then (Buffer'Length >= (Natural (Get_Length_00 (Buffer)) + 2) and then Buffer'First <= (Natural'Last / 2))))
+      ((Valid_Length_00 (Buffer) and then (Buffer'Length >= (Types.Length_Type (Get_Length_00 (Buffer)) + 2) and then Buffer'First <= (Types.Index_Type'Last / 2))))
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Value_000_First (Buffer : Types.Bytes) return Natural is
+   function Get_Value_000_First (Buffer : Types.Bytes) return Types.Index_Type is
       ((Buffer'First + 2))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value_000 (Buffer));
 
-   function Get_Value_000_Last (Buffer : Types.Bytes) return Natural is
-      ((Natural (Get_Length_00 (Buffer)) + Buffer'First + 1))
+   function Get_Value_000_Last (Buffer : Types.Bytes) return Types.Index_Type is
+      ((Types.Length_Type (Get_Length_00 (Buffer)) + Buffer'First + 1))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value_000 (Buffer));
 
@@ -71,17 +71,17 @@ is
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Value_First (Buffer : Types.Bytes) return Natural is
-      ((if Valid_Value_000 (Buffer) then Get_Value_000_First (Buffer) else Unreachable_Natural))
+   function Get_Value_First (Buffer : Types.Bytes) return Types.Index_Type is
+      ((if Valid_Value_000 (Buffer) then Get_Value_000_First (Buffer) else Unreachable_Types_Index_Type))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer));
 
-   function Get_Value_Last (Buffer : Types.Bytes) return Natural is
-      ((if Valid_Value_000 (Buffer) then Get_Value_000_Last (Buffer) else Unreachable_Natural))
+   function Get_Value_Last (Buffer : Types.Bytes) return Types.Index_Type is
+      ((if Valid_Value_000 (Buffer) then Get_Value_000_Last (Buffer) else Unreachable_Types_Index_Type))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer));
 
-   procedure Get_Value (Buffer : Types.Bytes; First : out Natural; Last : out Natural)
+   procedure Get_Value (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer)),
        Post => (First = Get_Value_First (Buffer) and then Last = Get_Value_Last (Buffer));
@@ -91,8 +91,8 @@ is
      with
        Pre => Is_Contained (Buffer);
 
-   function Message_Length (Buffer : Types.Bytes) return Natural is
-      ((if Valid_Value_000 (Buffer) then (Natural (Get_Length_00 (Buffer)) + 2) elsif (Valid_Tag_0 (Buffer) and then Get_Tag_0 (Buffer) = Msg_Error) then 0 else Unreachable_Natural))
+   function Message_Length (Buffer : Types.Bytes) return Types.Length_Type is
+      ((if Valid_Value_000 (Buffer) then (Types.Length_Type (Get_Length_00 (Buffer)) + 2) elsif (Valid_Tag_0 (Buffer) and then Get_Tag_0 (Buffer) = Msg_Error) then 0 else Unreachable_Types_Length_Type))
      with
        Pre => (Is_Contained (Buffer) and then Is_Valid (Buffer));
 

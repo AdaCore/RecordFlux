@@ -1,4 +1,5 @@
-with IPv4; use IPv4;
+with IPv4;
+use IPv4;
 with IPv4.Packet;
 with UDP.Datagram;
 

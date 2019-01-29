@@ -1,4 +1,5 @@
 with Types;
+use type Types.Index_Type, Types.Length_Type;
 
 package In_IPv4
   with SPARK_Mode

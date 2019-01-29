@@ -19,8 +19,8 @@ package body Ethernet.Tests is
       Destination : Ethernet.UINT48;
       Source      : Ethernet.UINT48;
       EtherType   : Ethernet.UINT16;
-      First       : Natural;
-      Last        : Natural;
+      First       : Types.Index_Type;
+      Last        : Types.Index_Type;
    begin
       Ethernet.Frame.Initialize (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
@@ -34,8 +34,8 @@ package body Ethernet.Tests is
                Assert (EtherType'Image, Ethernet.UINT16'Image (16#0800#), "Invalid EtherType");
                if Ethernet.Frame.Valid_Payload (Buffer) then
                   Ethernet.Frame.Get_Payload (Buffer, First, Last);
-                  Assert (First'Image, Natural'Image (15), "Invalid Payload'First");
-                  Assert (Last'Image, Natural'Image (60), "Invalid Payload'Last");
+                  Assert (First'Image, Types.Index_Type'Image (15), "Invalid Payload'First");
+                  Assert (Last'Image, Types.Index_Type'Image (60), "Invalid Payload'Last");
                end if;
             end if;
          end if;
@@ -51,8 +51,8 @@ package body Ethernet.Tests is
       Destination : Ethernet.UINT48;
       Source      : Ethernet.UINT48;
       EtherType   : Ethernet.UINT16;
-      First       : Natural;
-      Last        : Natural;
+      First       : Types.Index_Type;
+      Last        : Types.Index_Type;
    begin
       Ethernet.Frame.Initialize (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
@@ -66,8 +66,8 @@ package body Ethernet.Tests is
                Assert (EtherType'Image, Ethernet.UINT16'Image (46), "Invalid EtherType");
                if Ethernet.Frame.Valid_Payload (Buffer) then
                   Ethernet.Frame.Get_Payload (Buffer, First, Last);
-                  Assert (First'Image, Natural'Image (15), "Invalid Payload'First");
-                  Assert (Last'Image, Natural'Image (60), "Invalid Payload'Last");
+                  Assert (First'Image, Types.Index_Type'Image (15), "Invalid Payload'First");
+                  Assert (Last'Image, Types.Index_Type'Image (60), "Invalid Payload'Last");
                end if;
             end if;
          end if;
@@ -85,8 +85,8 @@ package body Ethernet.Tests is
       TPID        : Ethernet.UINT16;
       TCI         : Ethernet.UINT16;
       EtherType   : Ethernet.UINT16;
-      First       : Natural;
-      Last        : Natural;
+      First       : Types.Index_Type;
+      Last        : Types.Index_Type;
    begin
       Ethernet.Frame.Initialize (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
@@ -106,8 +106,8 @@ package body Ethernet.Tests is
                      Assert (EtherType'Image, Ethernet.UINT16'Image (16#0800#), "Invalid EtherType");
                      if Ethernet.Frame.Valid_Payload (Buffer) then
                         Ethernet.Frame.Get_Payload (Buffer, First, Last);
-                        Assert (First'Image, Natural'Image (19), "Invalid Payload'First");
-                        Assert (Last'Image, Natural'Image (65), "Invalid Payload'Last");
+                        Assert (First'Image, Types.Index_Type'Image (19), "Invalid Payload'First");
+                        Assert (Last'Image, Types.Index_Type'Image (65), "Invalid Payload'Last");
                      end if;
                   end if;
                end if;

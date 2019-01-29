@@ -18,8 +18,8 @@ package body TLV.Tests is
       Buffer : Types.Bytes := Types.Bytes'(64, 4, 0, 0, 0, 0);
       Tag    : TLV.Tag_Type;
       Length : TLV.Length_Type;
-      First  : Natural;
-      Last   : Natural;
+      First  : Types.Index_Type;
+      Last   : Types.Index_Type;
    begin
       TLV.Message.Initialize (Buffer);
       Assert (TLV.Message.Valid_Tag (Buffer), "Invalid Tag");
@@ -33,8 +33,8 @@ package body TLV.Tests is
             Assert (TLV.Message.Valid_Value (Buffer), "Invalid Value");
             if TLV.Message.Valid_Value (Buffer) then
                TLV.Message.Get_Value (Buffer, First, Last);
-               Assert (First'Image, Natural'Image (3), "Unexpected Value'First");
-               Assert (Last'Image, Natural'Image (6), "Unexpected Value'Last");
+               Assert (First'Image, Types.Index_Type'Image (3), "Unexpected Value'First");
+               Assert (Last'Image, Types.Index_Type'Image (6), "Unexpected Value'Last");
             end if;
          end if;
       end if;
@@ -48,8 +48,8 @@ package body TLV.Tests is
       Buffer : Types.Bytes := Types.Bytes'(64, 0);
       Tag    : TLV.Tag_Type;
       Length : TLV.Length_Type;
-      First  : Natural;
-      Last   : Natural;
+      First  : Types.Index_Type;
+      Last   : Types.Index_Type;
    begin
       TLV.Message.Initialize (Buffer);
       Assert (TLV.Message.Valid_Tag (Buffer), "Invalid Tag");
@@ -63,8 +63,8 @@ package body TLV.Tests is
             Assert (TLV.Message.Valid_Value (Buffer), "Invalid Value");
             if TLV.Message.Valid_Value (Buffer) then
                TLV.Message.Get_Value (Buffer, First, Last);
-               Assert (First'Image, Natural'Image (3), "Unexpected Value'First");
-               Assert (Last'Image, Natural'Image (2), "Unexpected Value'Last");
+               Assert (First'Image, Types.Index_Type'Image (3), "Unexpected Value'First");
+               Assert (Last'Image, Types.Index_Type'Image (2), "Unexpected Value'Last");
             end if;
          end if;
       end if;

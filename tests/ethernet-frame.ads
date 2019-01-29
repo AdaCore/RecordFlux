@@ -12,7 +12,7 @@ is
        Post => Is_Contained (Buffer);
 
    function Valid_Destination_0 (Buffer : Types.Bytes) return Boolean is
-      ((Buffer'Length >= 6 and then Buffer'First <= (Natural'Last / 2)))
+      ((Buffer'Length >= 6 and then Buffer'First <= (Types.Index_Type'Last / 2)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -32,7 +32,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Destination (Buffer));
 
    function Valid_Source_00 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Destination_0 (Buffer) and then (Buffer'Length >= 12 and then Buffer'First <= (Natural'Last / 2))))
+      ((Valid_Destination_0 (Buffer) and then (Buffer'Length >= 12 and then Buffer'First <= (Types.Index_Type'Last / 2))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -52,7 +52,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Source (Buffer));
 
    function Valid_TPID_000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Source_00 (Buffer) and then (Buffer'Length >= 14 and then Buffer'First <= (Natural'Last / 2))))
+      ((Valid_Source_00 (Buffer) and then (Buffer'Length >= 14 and then Buffer'First <= (Types.Index_Type'Last / 2))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -72,7 +72,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_TPID (Buffer));
 
    function Valid_TCI_0000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_TPID_000 (Buffer) and then ((Buffer'Length >= 16 and then Buffer'First <= (Natural'Last / 2)) and then Get_TPID_000 (Buffer) = 33024)))
+      ((Valid_TPID_000 (Buffer) and then ((Buffer'Length >= 16 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_TPID_000 (Buffer) = 33024)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -92,7 +92,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_TCI (Buffer));
 
    function Valid_EtherType_00000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_TCI_0000 (Buffer) and then (Buffer'Length >= 18 and then Buffer'First <= (Natural'Last / 2))))
+      ((Valid_TCI_0000 (Buffer) and then (Buffer'Length >= 18 and then Buffer'First <= (Types.Index_Type'Last / 2))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -102,7 +102,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_EtherType_00000 (Buffer));
 
    function Valid_EtherType_0001 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_TPID_000 (Buffer) and then ((Buffer'Length >= 14 and then Buffer'First <= (Natural'Last / 2)) and then Get_TPID_000 (Buffer) /= 33024)))
+      ((Valid_TPID_000 (Buffer) and then ((Buffer'Length >= 14 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_TPID_000 (Buffer) /= 33024)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -122,61 +122,61 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_EtherType (Buffer));
 
    function Valid_Payload_000000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_EtherType_00000 (Buffer) and then ((Buffer'Length >= (Natural (Get_EtherType_00000 (Buffer)) + 18) and then Buffer'First <= (Natural'Last / 2)) and then Get_EtherType_00000 (Buffer) <= 1500)))
+      ((Valid_EtherType_00000 (Buffer) and then ((Buffer'Length >= (Types.Length_Type (Get_EtherType_00000 (Buffer)) + 18) and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_EtherType_00000 (Buffer) <= 1500)))
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Payload_000000_First (Buffer : Types.Bytes) return Natural is
+   function Get_Payload_000000_First (Buffer : Types.Bytes) return Types.Index_Type is
       ((Buffer'First + 18))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload_000000 (Buffer));
 
-   function Get_Payload_000000_Last (Buffer : Types.Bytes) return Natural is
-      ((Natural (Get_EtherType_00000 (Buffer)) + Buffer'First + 17))
+   function Get_Payload_000000_Last (Buffer : Types.Bytes) return Types.Index_Type is
+      ((Types.Length_Type (Get_EtherType_00000 (Buffer)) + Buffer'First + 17))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload_000000 (Buffer));
 
    function Valid_Payload_000001 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_EtherType_00000 (Buffer) and then ((Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then Buffer'First <= (Natural'Last / 2)) and then Get_EtherType_00000 (Buffer) >= 1536)))
+      ((Valid_EtherType_00000 (Buffer) and then ((Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_EtherType_00000 (Buffer) >= 1536)))
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Payload_000001_First (Buffer : Types.Bytes) return Natural is
+   function Get_Payload_000001_First (Buffer : Types.Bytes) return Types.Index_Type is
       ((Buffer'First + 18))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload_000001 (Buffer));
 
-   function Get_Payload_000001_Last (Buffer : Types.Bytes) return Natural is
+   function Get_Payload_000001_Last (Buffer : Types.Bytes) return Types.Index_Type is
       (Buffer'Last)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload_000001 (Buffer));
 
    function Valid_Payload_00010 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_EtherType_0001 (Buffer) and then ((Buffer'Length >= (Natural (Get_EtherType_0001 (Buffer)) + 14) and then Buffer'First <= (Natural'Last / 2)) and then Get_EtherType_0001 (Buffer) <= 1500)))
+      ((Valid_EtherType_0001 (Buffer) and then ((Buffer'Length >= (Types.Length_Type (Get_EtherType_0001 (Buffer)) + 14) and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_EtherType_0001 (Buffer) <= 1500)))
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Payload_00010_First (Buffer : Types.Bytes) return Natural is
+   function Get_Payload_00010_First (Buffer : Types.Bytes) return Types.Index_Type is
       ((Buffer'First + 14))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload_00010 (Buffer));
 
-   function Get_Payload_00010_Last (Buffer : Types.Bytes) return Natural is
-      ((Natural (Get_EtherType_0001 (Buffer)) + Buffer'First + 13))
+   function Get_Payload_00010_Last (Buffer : Types.Bytes) return Types.Index_Type is
+      ((Types.Length_Type (Get_EtherType_0001 (Buffer)) + Buffer'First + 13))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload_00010 (Buffer));
 
    function Valid_Payload_00011 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_EtherType_0001 (Buffer) and then ((Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then Buffer'First <= (Natural'Last / 2)) and then Get_EtherType_0001 (Buffer) >= 1536)))
+      ((Valid_EtherType_0001 (Buffer) and then ((Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_EtherType_0001 (Buffer) >= 1536)))
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Payload_00011_First (Buffer : Types.Bytes) return Natural is
+   function Get_Payload_00011_First (Buffer : Types.Bytes) return Types.Index_Type is
       ((Buffer'First + 14))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload_00011 (Buffer));
 
-   function Get_Payload_00011_Last (Buffer : Types.Bytes) return Natural is
+   function Get_Payload_00011_Last (Buffer : Types.Bytes) return Types.Index_Type is
       (Buffer'Last)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload_00011 (Buffer));
@@ -186,17 +186,17 @@ is
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Payload_First (Buffer : Types.Bytes) return Natural is
-      ((if Valid_Payload_000000 (Buffer) then Get_Payload_000000_First (Buffer) elsif Valid_Payload_000001 (Buffer) then Get_Payload_000001_First (Buffer) elsif Valid_Payload_00010 (Buffer) then Get_Payload_00010_First (Buffer) elsif Valid_Payload_00011 (Buffer) then Get_Payload_00011_First (Buffer) else Unreachable_Natural))
+   function Get_Payload_First (Buffer : Types.Bytes) return Types.Index_Type is
+      ((if Valid_Payload_000000 (Buffer) then Get_Payload_000000_First (Buffer) elsif Valid_Payload_000001 (Buffer) then Get_Payload_000001_First (Buffer) elsif Valid_Payload_00010 (Buffer) then Get_Payload_00010_First (Buffer) elsif Valid_Payload_00011 (Buffer) then Get_Payload_00011_First (Buffer) else Unreachable_Types_Index_Type))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload (Buffer));
 
-   function Get_Payload_Last (Buffer : Types.Bytes) return Natural is
-      ((if Valid_Payload_000000 (Buffer) then Get_Payload_000000_Last (Buffer) elsif Valid_Payload_000001 (Buffer) then Get_Payload_000001_Last (Buffer) elsif Valid_Payload_00010 (Buffer) then Get_Payload_00010_Last (Buffer) elsif Valid_Payload_00011 (Buffer) then Get_Payload_00011_Last (Buffer) else Unreachable_Natural))
+   function Get_Payload_Last (Buffer : Types.Bytes) return Types.Index_Type is
+      ((if Valid_Payload_000000 (Buffer) then Get_Payload_000000_Last (Buffer) elsif Valid_Payload_000001 (Buffer) then Get_Payload_000001_Last (Buffer) elsif Valid_Payload_00010 (Buffer) then Get_Payload_00010_Last (Buffer) elsif Valid_Payload_00011 (Buffer) then Get_Payload_00011_Last (Buffer) else Unreachable_Types_Index_Type))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload (Buffer));
 
-   procedure Get_Payload (Buffer : Types.Bytes; First : out Natural; Last : out Natural)
+   procedure Get_Payload (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Payload (Buffer)),
        Post => (First = Get_Payload_First (Buffer) and then Last = Get_Payload_Last (Buffer));
@@ -206,8 +206,8 @@ is
      with
        Pre => Is_Contained (Buffer);
 
-   function Message_Length (Buffer : Types.Bytes) return Natural is
-      ((if (Valid_Payload_000000 (Buffer) and then (Get_EtherType_00000 (Buffer) >= 46 and then Get_EtherType_00000 (Buffer) <= 1500)) then (Natural (Get_EtherType_00000 (Buffer)) + 18) elsif (Valid_Payload_000001 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) <= 1500)) then (Buffer'Last + (-Buffer'First)) elsif (Valid_Payload_00010 (Buffer) and then (Get_EtherType_0001 (Buffer) >= 46 and then Get_EtherType_0001 (Buffer) <= 1500)) then (Natural (Get_EtherType_0001 (Buffer)) + 14) elsif (Valid_Payload_00011 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) <= 1500)) then (Buffer'Last + (-Buffer'First)) else Unreachable_Natural))
+   function Message_Length (Buffer : Types.Bytes) return Types.Length_Type is
+      ((if (Valid_Payload_000000 (Buffer) and then (Get_EtherType_00000 (Buffer) >= 46 and then Get_EtherType_00000 (Buffer) <= 1500)) then (Types.Length_Type (Get_EtherType_00000 (Buffer)) + 18) elsif (Valid_Payload_000001 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-143) / 8)) <= 1500)) then (Buffer'Last + (-Buffer'First)) elsif (Valid_Payload_00010 (Buffer) and then (Get_EtherType_0001 (Buffer) >= 46 and then Get_EtherType_0001 (Buffer) <= 1500)) then (Types.Length_Type (Get_EtherType_0001 (Buffer)) + 14) elsif (Valid_Payload_00011 (Buffer) and then ((Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) >= 46 and then (Buffer'Last + ((-Buffer'First) / 8) + ((-111) / 8)) <= 1500)) then (Buffer'Last + (-Buffer'First)) else Unreachable_Types_Length_Type))
      with
        Pre => (Is_Contained (Buffer) and then Is_Valid (Buffer));
 

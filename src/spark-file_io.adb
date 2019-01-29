@@ -8,9 +8,9 @@ is
    function Read_File (Name : String) return Bytes is
       package Byte_IO is new Ada.Sequential_IO (Byte);
       Input_File : Byte_IO.File_Type;
-      Buffer : Bytes (1 .. Integer(Ada.Directories.Size(Name)));
+      Buffer : Bytes (1 .. Index_Type (Ada.Directories.Size (Name)));
       Value : Byte := 0;
-      I : Natural := 0;
+      I : Length_Type := 0;
    begin
       Byte_IO.Open (Input_File, Byte_IO.In_File, Name);
       while not Byte_IO.End_Of_File (Input_File) loop

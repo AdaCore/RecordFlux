@@ -45,18 +45,35 @@ class Unit(SparkRepresentation):
 
 
 class ContextItem:
-    def __init__(self, name: str, use: bool) -> None:
-        self.name = name
-        self.use = use
+    def __init__(self, names: List[str]) -> None:
+        self.names = names
 
+    @abstractmethod
     def __str__(self) -> str:
-        use = f' use {self.name};' if self.use else ''
-        return f'with {self.name};{use}'
+        raise NotImplementedError
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         return NotImplemented
+
+
+class WithClause(ContextItem):
+    def __str__(self) -> str:
+        names = ', '.join(self.names)
+        return f'with {names};'
+
+
+class UsePackageClause(ContextItem):
+    def __str__(self) -> str:
+        names = ', '.join(self.names)
+        return f'use {names};'
+
+
+class UseTypeClause(ContextItem):
+    def __str__(self) -> str:
+        names = ', '.join(self.names)
+        return f'use type {names};'
 
 
 class Package(SparkRepresentation):
@@ -555,6 +572,8 @@ class FalseExpr(LogExpr):
 
 FALSE = FalseExpr()
 
+COMMON_CONTEXT = [WithClause(['Types']), UseTypeClause(['Types.Index_Type', 'Types.Length_Type'])]
+
 
 class Generator:
     def __init__(self) -> None:
@@ -577,7 +596,7 @@ class Generator:
                 top_level_package = self.__units[pdu.package].package
             else:
                 top_level_package = Package(pdu.package, [], [])
-                self.__units[pdu.package] = Unit([ContextItem('Types', False)],
+                self.__units[pdu.package] = Unit(COMMON_CONTEXT,
                                                  top_level_package)
 
             context: List[ContextItem] = []
@@ -630,10 +649,10 @@ class Generator:
 
                     elif isinstance(field.type, Array):
                         if 'Payload' not in field.type.name:
-                            context.append(ContextItem(f'{pdu.package}.{field.type.name}', False))
+                            context.append(WithClause([f'{pdu.package}.{field.type.name}']))
 
-                            array_context = [ContextItem(f'{pdu.package}.{field.type.element_type}',
-                                                         False)]
+                            array_context: List[ContextItem] = \
+                                [WithClause([f'{pdu.package}.{field.type.element_type}'])]
                             array_package = Package(f'{pdu.package}.{field.type.name}', [], [])
                             self.__units[array_package.name] = Unit(array_context, array_package)
 
@@ -644,10 +663,11 @@ class Generator:
                     else:
                         raise NotImplementedError(f'unsupported type "{type(field.type).__name__}"')
 
-                    function = create_unreachable_function(
-                        field.type.name if not isinstance(field.type, Array) else 'Natural')
-                    if function not in unreachable_functions[pdu.package]:
-                        unreachable_functions[pdu.package].append(function)
+                    for type_name in [field.type.name] if not isinstance(field.type, Array) \
+                            else ['Types.Index_Type', 'Types.Length_Type']:
+                        function = create_unreachable_function(type_name)
+                        if function not in unreachable_functions[pdu.package]:
+                            unreachable_functions[pdu.package].append(function)
 
                 valid_variants: List[LogExpr] = []
 
@@ -699,7 +719,7 @@ class Generator:
     def __process_refinements(self, refinements: List[Refinement]) -> None:
         for refinement in refinements:
             if refinement.package not in self.__units:
-                context = [ContextItem('Types', False)]
+                context = COMMON_CONTEXT
                 package = Package(refinement.package, [], [])
                 self.__units[refinement.package] = Unit(context, package)
 
@@ -714,13 +734,13 @@ class Generator:
 
             pdu_package = refinement.pdu.rsplit('.', 1)[0]
             if pdu_package != refinement.package:
-                pdu_top_level_context = ContextItem(pdu_package, True)
+                pdu_top_level_context = [WithClause([pdu_package]), UsePackageClause([pdu_package])]
                 if pdu_top_level_context not in context:
-                    context.append(pdu_top_level_context)
-            pdu_context = ContextItem(refinement.pdu, False)
+                    context.extend(pdu_top_level_context)
+            pdu_context = WithClause([refinement.pdu])
             if pdu_context not in context:
                 context.append(pdu_context)
-            sdu_context = ContextItem(refinement.sdu, False)
+            sdu_context = WithClause([refinement.sdu])
             if sdu_context not in context:
                 context.append(sdu_context)
 
@@ -782,7 +802,7 @@ def enumeration_functions(enum: Enumeration) -> List[Subprogram]:
 
 def array_types() -> List[TypeDeclaration]:
     return [DerivedType('Offset_Type',
-                        'Positive')]
+                        'Types.Index_Type')]
 
 
 def array_functions(array: Array, package: str) -> List[Subprogram]:
@@ -797,8 +817,8 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
             Procedure('First',
                       [('Buffer', 'Types.Bytes'),
                        ('Offset', 'out Offset_Type'),
-                       ('First', 'out Natural'),
-                       ('Last', 'out Natural')],
+                       ('First', 'out Types.Index_Type'),
+                       ('Last', 'out Types.Index_Type')],
                       [Assignment('Offset', Value('Offset_Type (Buffer\'First)')),
                        CallStatement('Next', ['Buffer', 'Offset', 'First', 'Last'])],
                       [Precondition(And(common_precondition,
@@ -815,19 +835,19 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
                       ('Offset', 'Offset_Type')],
                      [PragmaStatement('Assume',
                                       [(f'{package}.{array.element_type}.Is_Contained '
-                                        '(Buffer (Positive (Offset) .. Buffer\'Last))')]),
+                                        '(Buffer (Types.Index_Type (Offset) .. Buffer\'Last))')]),
                       ReturnStatement(
                           LogCall(f'{package}.{array.element_type}.Is_Valid '
-                                  '(Buffer (Positive (Offset) .. Buffer\'Last))'))],
+                                  '(Buffer (Types.Index_Type (Offset) .. Buffer\'Last))'))],
                      [Precondition(common_precondition)]),
             Procedure('Next',
                       [('Buffer', 'Types.Bytes'),
                        ('Offset', 'in out Offset_Type'),
-                       ('First', 'out Natural'),
-                       ('Last', 'out Natural')],
-                      [Assignment('First', Value('Positive (Offset)')),
+                       ('First', 'out Types.Index_Type'),
+                       ('Last', 'out Types.Index_Type')],
+                      [Assignment('First', Value('Types.Index_Type (Offset)')),
                        Assignment('Last', Add(Value('First'),
-                                              Cast('Natural',
+                                              Cast('Types.Length_Type',
                                                    MathCall(f'{package}.{array.element_type}.'
                                                             'Message_Length (Buffer (First '
                                                             '.. Buffer\'Last))')),
@@ -871,17 +891,21 @@ def calculate_offset(last: MathExpr) -> int:
 def buffer_constraints(last: MathExpr) -> LogExpr:
     return And(GreaterEqual(Length('Buffer'),
                             Add(last, -First('Buffer'), Number(1))),
-               LessEqual(First('Buffer'), Div(Last('Natural'), Number(2))))
+               LessEqual(First('Buffer'), Div(Last('Types.Index_Type'), Number(2))))
 
 
 def create_value_to_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
-    return {Value(field_name): MathCall(f'Get_{field_name}_{vid} (Buffer)')
-            for field_name, vid in previous}
+    return {
+        Value(field_name): MathCall(f'Get_{field_name}_{vid} (Buffer)')
+        for field_name, vid in previous
+    }
 
 
 def create_value_to_natural_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
-    return {Value(field_name): Cast('Natural', MathCall(f'Get_{field_name}_{vid} (Buffer)'))
-            for field_name, vid in previous}
+    return {
+        Value(field_name): Cast('Types.Length_Type', MathCall(f'Get_{field_name}_{vid} (Buffer)'))
+        for field_name, vid in previous
+    }
 
 
 def create_variant_validation_function(
@@ -953,14 +977,14 @@ def create_variant_accessor_functions(
         functions.append(
             ExpressionFunction(
                 f'{name}_First',
-                'Natural',
+                'Types.Index_Type',
                 [('Buffer', 'Types.Bytes')],
                 first_byte,
                 [precondition]))
         functions.append(
             ExpressionFunction(
                 f'{name}_Last',
-                'Natural',
+                'Types.Index_Type',
                 [('Buffer', 'Types.Bytes')],
                 last_byte,
                 [precondition]))
@@ -1014,7 +1038,7 @@ def create_field_validation_function(
 
 def create_unreachable_function(type_name: str) -> Subprogram:
     return ExpressionFunction(
-        f'Unreachable_{type_name}',
+        f'Unreachable_{type_name}'.replace('.', '_'),
         type_name,
         [],
         First(type_name),
@@ -1031,12 +1055,12 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
             functions.append(
                 ExpressionFunction(
                     f'Get_{field.name}_{attribute}',
-                    'Natural',
+                    'Types.Index_Type',
                     [('Buffer', 'Types.Bytes')],
                     IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
                                    LogCall(f'Get_{field.name}_{variant_id}_{attribute} (Buffer)'))
                                   for variant_id in field.variants],
-                                 'Unreachable_Natural'),
+                                 'Unreachable_Types_Index_Type'),
                     [precondition]))
 
         body: List[Statement] = [Assignment('First', MathCall(f'Get_{field.name}_First (Buffer)')),
@@ -1055,8 +1079,8 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
             Procedure(
                 f'Get_{field.name}',
                 [('Buffer', 'Types.Bytes'),
-                 ('First', 'out Natural'),
-                 ('Last', 'out Natural')],
+                 ('First', 'out Types.Index_Type'),
+                 ('Last', 'out Types.Index_Type')],
                 body,
                 [precondition,
                  postcondition]))
@@ -1116,9 +1140,9 @@ def create_message_length_function(variants: List[Variant]) -> Subprogram:
 
     return ExpressionFunction(
         'Message_Length',
-        'Natural',
+        'Types.Length_Type',
         [('Buffer', 'Types.Bytes')],
-        IfExpression(condition_expressions, 'Unreachable_Natural'),
+        IfExpression(condition_expressions, 'Unreachable_Types_Length_Type'),
         [Precondition(And(COMMON_PRECONDITION, LogCall('Is_Valid (Buffer)')))])
 
 

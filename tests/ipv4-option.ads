@@ -12,7 +12,7 @@ is
        Post => Is_Contained (Buffer);
 
    function Valid_Copied_0 (Buffer : Types.Bytes) return Boolean is
-      (((Buffer'Length >= 1 and then Buffer'First <= (Natural'Last / 2)) and then Valid_Flag_Type (Buffer (Buffer'First .. Buffer'First), 7)))
+      (((Buffer'Length >= 1 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Valid_Flag_Type (Buffer (Buffer'First .. Buffer'First), 7)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -32,7 +32,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Copied (Buffer));
 
    function Valid_Option_Class_00 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Copied_0 (Buffer) and then ((Buffer'Length >= 1 and then Buffer'First <= (Natural'Last / 2)) and then Valid_Option_Class_Type (Buffer (Buffer'First .. Buffer'First), 5))))
+      ((Valid_Copied_0 (Buffer) and then ((Buffer'Length >= 1 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Valid_Option_Class_Type (Buffer (Buffer'First .. Buffer'First), 5))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -52,7 +52,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Option_Class (Buffer));
 
    function Valid_Option_Number_000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Option_Class_00 (Buffer) and then (Buffer'Length >= 1 and then Buffer'First <= (Natural'Last / 2))))
+      ((Valid_Option_Class_00 (Buffer) and then (Buffer'Length >= 1 and then Buffer'First <= (Types.Index_Type'Last / 2))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -72,7 +72,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Option_Number (Buffer));
 
    function Valid_Option_Length_0001 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Option_Number_000 (Buffer) and then ((Buffer'Length >= 2 and then Buffer'First <= (Natural'Last / 2)) and then Get_Option_Number_000 (Buffer) > 1)))
+      ((Valid_Option_Number_000 (Buffer) and then ((Buffer'Length >= 2 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_Option_Number_000 (Buffer) > 1)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -92,17 +92,17 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Option_Length (Buffer));
 
    function Valid_Option_Data_00010 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Option_Length_0001 (Buffer) and then ((Buffer'Length >= Natural (Get_Option_Length_0001 (Buffer)) and then Buffer'First <= (Natural'Last / 2)) and then (((((Get_Option_Class_00 (Buffer) = Control and then Get_Option_Number_000 (Buffer) = 2) and then Get_Option_Length_0001 (Buffer) = 11) or ((Get_Option_Class_00 (Buffer) = Control and then Get_Option_Number_000 (Buffer) = 8) and then Get_Option_Length_0001 (Buffer) = 4)) or (Get_Option_Class_00 (Buffer) = Control and then ((Get_Option_Number_000 (Buffer) = 3 or Get_Option_Number_000 (Buffer) = 7) or Get_Option_Number_000 (Buffer) = 9))) or (Get_Option_Class_00 (Buffer) = Debugging_And_Measurement and then Get_Option_Number_000 (Buffer) = 4)))))
+      ((Valid_Option_Length_0001 (Buffer) and then ((Buffer'Length >= Types.Length_Type (Get_Option_Length_0001 (Buffer)) and then Buffer'First <= (Types.Index_Type'Last / 2)) and then (((((Get_Option_Class_00 (Buffer) = Control and then Get_Option_Number_000 (Buffer) = 2) and then Get_Option_Length_0001 (Buffer) = 11) or ((Get_Option_Class_00 (Buffer) = Control and then Get_Option_Number_000 (Buffer) = 8) and then Get_Option_Length_0001 (Buffer) = 4)) or (Get_Option_Class_00 (Buffer) = Control and then ((Get_Option_Number_000 (Buffer) = 3 or Get_Option_Number_000 (Buffer) = 7) or Get_Option_Number_000 (Buffer) = 9))) or (Get_Option_Class_00 (Buffer) = Debugging_And_Measurement and then Get_Option_Number_000 (Buffer) = 4)))))
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Option_Data_00010_First (Buffer : Types.Bytes) return Natural is
+   function Get_Option_Data_00010_First (Buffer : Types.Bytes) return Types.Index_Type is
       ((Buffer'First + 2))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Option_Data_00010 (Buffer));
 
-   function Get_Option_Data_00010_Last (Buffer : Types.Bytes) return Natural is
-      ((Buffer'First + Natural (Get_Option_Length_0001 (Buffer)) + (-1)))
+   function Get_Option_Data_00010_Last (Buffer : Types.Bytes) return Types.Index_Type is
+      ((Buffer'First + Types.Length_Type (Get_Option_Length_0001 (Buffer)) + (-1)))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Option_Data_00010 (Buffer));
 
@@ -111,17 +111,17 @@ is
      with
        Pre => Is_Contained (Buffer);
 
-   function Get_Option_Data_First (Buffer : Types.Bytes) return Natural is
-      ((if Valid_Option_Data_00010 (Buffer) then Get_Option_Data_00010_First (Buffer) else Unreachable_Natural))
+   function Get_Option_Data_First (Buffer : Types.Bytes) return Types.Index_Type is
+      ((if Valid_Option_Data_00010 (Buffer) then Get_Option_Data_00010_First (Buffer) else Unreachable_Types_Index_Type))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Option_Data (Buffer));
 
-   function Get_Option_Data_Last (Buffer : Types.Bytes) return Natural is
-      ((if Valid_Option_Data_00010 (Buffer) then Get_Option_Data_00010_Last (Buffer) else Unreachable_Natural))
+   function Get_Option_Data_Last (Buffer : Types.Bytes) return Types.Index_Type is
+      ((if Valid_Option_Data_00010 (Buffer) then Get_Option_Data_00010_Last (Buffer) else Unreachable_Types_Index_Type))
      with
        Pre => (Is_Contained (Buffer) and then Valid_Option_Data (Buffer));
 
-   procedure Get_Option_Data (Buffer : Types.Bytes; First : out Natural; Last : out Natural)
+   procedure Get_Option_Data (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Option_Data (Buffer)),
        Post => (First = Get_Option_Data_First (Buffer) and then Last = Get_Option_Data_Last (Buffer));
@@ -131,8 +131,8 @@ is
      with
        Pre => Is_Contained (Buffer);
 
-   function Message_Length (Buffer : Types.Bytes) return Natural is
-      ((if (Valid_Option_Number_000 (Buffer) and then (Get_Option_Class_00 (Buffer) = Control and then Get_Option_Number_000 (Buffer) = 1)) then 1 elsif Valid_Option_Data_00010 (Buffer) then Natural (Get_Option_Length_0001 (Buffer)) else Unreachable_Natural))
+   function Message_Length (Buffer : Types.Bytes) return Types.Length_Type is
+      ((if (Valid_Option_Number_000 (Buffer) and then (Get_Option_Class_00 (Buffer) = Control and then Get_Option_Number_000 (Buffer) = 1)) then 1 elsif Valid_Option_Data_00010 (Buffer) then Types.Length_Type (Get_Option_Length_0001 (Buffer)) else Unreachable_Types_Length_Type))
      with
        Pre => (Is_Contained (Buffer) and then Is_Valid (Buffer));
 

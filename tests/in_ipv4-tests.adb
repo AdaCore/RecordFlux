@@ -21,16 +21,16 @@ package body In_IPv4.Tests is
       pragma Unreferenced (T);
       Buffer : Types.Bytes := Read_File ("tests/ipv4_udp.raw");
       Valid  : Boolean;
-      First  : Natural;
-      Last   : Natural;
+      First  : Types.Index_Type;
+      Last   : Types.Index_Type;
    begin
       IPv4.Packet.Initialize (Buffer);
       Valid := IPv4.Packet.Is_Valid (Buffer);
       Assert (Valid, "Invalid IPv4 packet");
       if Valid then
          IPv4.Packet.Get_Payload (Buffer, First, Last);
-         Assert (First'Image, Natural'Image (21), "Invalid IPv4 Payload'First");
-         Assert (Last'Image, Natural'Image (44), "Invalid IPv4 Payload'Last");
+         Assert (First'Image, Types.Index_Type'Image (21), "Invalid IPv4 Payload'First");
+         Assert (Last'Image, Types.Index_Type'Image (44), "Invalid IPv4 Payload'Last");
          Valid := In_IPv4.Contains.UDP_In_IPv4 (Buffer);
          Assert (Valid, "IPv4 packet contains no UDP datagram");
          if Valid then
@@ -38,8 +38,8 @@ package body In_IPv4.Tests is
             Assert (Valid, "Invalid UDP datagram");
             if Valid then
                UDP.Datagram.Get_Payload (Buffer (First .. Last), First, Last);
-               Assert (First'Image, Natural'Image (29), "Invalid UDP Payload'First");
-               Assert (Last'Image, Natural'Image (44), "Invalid UDP Payload'Last");
+               Assert (First'Image, Types.Index_Type'Image (29), "Invalid UDP Payload'First");
+               Assert (Last'Image, Types.Index_Type'Image (44), "Invalid UDP Payload'Last");
             end if;
          end if;
       end if;
@@ -51,20 +51,20 @@ package body In_IPv4.Tests is
       pragma Unreferenced (T);
       Buffer     : Types.Bytes := Read_File ("tests/ethernet_ipv4_udp.raw");
       Valid      : Boolean;
-      IPv4_First : Natural;
-      IPv4_Last  : Natural;
-      UDP_First  : Natural;
-      UDP_Last   : Natural;
-      First      : Natural;
-      Last       : Natural;
+      IPv4_First : Types.Index_Type;
+      IPv4_Last  : Types.Index_Type;
+      UDP_First  : Types.Index_Type;
+      UDP_Last   : Types.Index_Type;
+      First      : Types.Index_Type;
+      Last       : Types.Index_Type;
    begin
       Ethernet.Frame.Initialize (Buffer);
       Valid := Ethernet.Frame.Is_Valid (Buffer);
       Assert (Valid, "Invalid Ethernet frame");
       if Valid then
          Ethernet.Frame.Get_Payload (Buffer, IPv4_First, IPv4_Last);
-         Assert (IPv4_First'Image, Natural'Image (15), "Invalid Ethernet Payload'First");
-         Assert (IPv4_Last'Image, Natural'Image (60), "Invalid Ethernet Payload'Last");
+         Assert (IPv4_First'Image, Types.Index_Type'Image (15), "Invalid Ethernet Payload'First");
+         Assert (IPv4_Last'Image, Types.Index_Type'Image (60), "Invalid Ethernet Payload'Last");
          Valid := In_Ethernet.Contains.IPv4_In_Ethernet (Buffer);
          Assert (Valid, "Ethernet frame contains no IPv4 packet");
          if Valid then
@@ -72,8 +72,8 @@ package body In_IPv4.Tests is
             Assert (Valid, "Invalid IPv4 packet");
             if Valid then
                IPv4.Packet.Get_Payload (Buffer (IPv4_First .. IPv4_Last), UDP_First, UDP_Last);
-               Assert (UDP_First'Image, Natural'Image (35), "Invalid IPv4 Payload'First");
-               Assert (UDP_Last'Image, Natural'Image (60), "Invalid IPv4 Payload'Last");
+               Assert (UDP_First'Image, Types.Index_Type'Image (35), "Invalid IPv4 Payload'First");
+               Assert (UDP_Last'Image, Types.Index_Type'Image (60), "Invalid IPv4 Payload'Last");
                Valid := In_IPv4.Contains.UDP_In_IPv4 (Buffer (IPv4_First .. IPv4_Last));
                Assert (Valid, "IPv4 packet contains no UDP datagram");
                if Valid then
@@ -81,8 +81,8 @@ package body In_IPv4.Tests is
                   Assert (Valid, "Invalid UDP datagram");
                   if Valid then
                      UDP.Datagram.Get_Payload (Buffer (UDP_First .. UDP_Last), First, Last);
-                     Assert (First'Image, Natural'Image (43), "Invalid UDP Payload'First");
-                     Assert (Last'Image, Natural'Image (60), "Invalid UDP Payload'Last");
+                     Assert (First'Image, Types.Index_Type'Image (43), "Invalid UDP Payload'First");
+                     Assert (Last'Image, Types.Index_Type'Image (60), "Invalid UDP Payload'Last");
                   end if;
                end if;
             end if;

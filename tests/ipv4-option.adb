@@ -5,7 +5,7 @@ package body IPv4.Option is
       pragma Assume (Is_Contained (Buffer));
    end Initialize;
 
-   procedure Get_Option_Data (Buffer : Types.Bytes; First : out Natural; Last : out Natural) is
+   procedure Get_Option_Data (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type) is
    begin
       First := Get_Option_Data_First (Buffer);
       Last := Get_Option_Data_Last (Buffer);
