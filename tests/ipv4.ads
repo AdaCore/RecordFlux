@@ -20,8 +20,10 @@ is
    type Option_Number_Type is mod (2**5);
    function Convert_To_Option_Number_Type is new Types.Convert_To_Mod (Option_Number_Type);
 
-   type Option_Length_Type is mod (2**8);
-   function Convert_To_Option_Length_Type is new Types.Convert_To_Mod (Option_Length_Type);
+   type Option_Length_Type_Base is range 0 .. ((2**8) - 1) with Size => 8;
+   function Convert_To_Option_Length_Type_Base is new Types.Convert_To_Int (Option_Length_Type_Base);
+
+   subtype Option_Length_Type is Option_Length_Type_Base range 2 .. ((2**8) - 1);
 
    type Version_Type_Base is range 0 .. ((2**4) - 1) with Size => 4;
    function Convert_To_Version_Type_Base is new Types.Convert_To_Int (Version_Type_Base);
