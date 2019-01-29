@@ -8,7 +8,9 @@ jobs:
         - 3.6
       install:
         - pip install codecov
+        - pip install flake8
         - pip install mypy
+        - pip install pylint
         - pip install pyparsing
       script:
         - make test_python
