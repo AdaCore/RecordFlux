@@ -5,11 +5,11 @@
 [![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://python.org/)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 
-RecordFlux is a framework for the dissection, generation and verification of communication protocols. It comprises a protocol specification language and a code generator.
+RecordFlux is a toolset for the dissection, generation and verification of communication protocols. It comprises a protocol specification language and a code generator.
 
 ## Protocol Specification Language
 
-The RecordFlux Protocol Specification Language aims to be a closed, declarative Domain Specific Language (DSL) which allows to specify real-world binary protocols. Its syntax is inspired by [Ada](http://www.ada-auth.org/standards/12rm/html/RM-TTL.html). In the current state the specification is restricted to the description of protocol message formats. A detailed specification of the language elements can be found [here](/doc/Language-Reference.md).
+The RecordFlux Protocol Specification Language aims to be a closed, declarative Domain Specific Language (DSL) which allows to specify real-world binary protocols. Its syntax is inspired by [Ada](https://www.adacore.com/about-ada). At this stage, the specification is restricted to the definition of protocol message formats. A detailed description of the language elements can be found in the [Language Reference](/doc/Language-Reference.md).
 
 ### Example
 
@@ -45,11 +45,11 @@ end Foo;
 
 ## Code Generation
 
-The code generator is able to generate dissector code based on a set of protocol specifications. The generated code allows to validate and parse protocol messages and thereby respects all specified restrictions in and between protocols. Adding the generation of messages is in planning. By using the SPARK language we are able to prove the absence of run-time errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a protocol message is validated before accessed).
+The code generator is able to generate dissector code based on a set of protocol specifications. The generated code allows to validate and parse protocol messages and thereby respects all specified restrictions in and between protocols. Adding the generation of messages is in planning. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a protocol message is validated before accessed).
 
 The code generator creates a number of packages for a protocol specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message type a child package is generated which contains validation and access functions for each field of the message.
 
-A user of the generated code has to validate a protocol field or the whole protocol message before accessing the data of a particular protocol field. The SPARK toolset in combination with the generated verification conditions make it possible to verify this property, and so prevent incorrect usage.
+A user of the generated code has to validate a protocol field or the whole protocol message before accessing the data of a particular protocol field. The SPARK toolset in combination with the generated verification conditions make it possible to ensure this property, and so prevent incorrect usage.
 
 ### Example
 
@@ -71,44 +71,44 @@ The file `foo-bar.ads` contains the specification of all functions related to th
 ```
 package Foo.Bar is
 
-   procedure Initialize (Buffer : Bytes)
+   procedure Initialize (Buffer : Types.Bytes)
      with
        Post => Is_Contained (Buffer);
 
-   function Valid_Tag (Buffer : Bytes) return Boolean
+   function Valid_Tag (Buffer : Types.Bytes) return Boolean
      with
        Pre => Is_Contained (Buffer);
 
-   function Tag (Buffer : Bytes) return Tag_Type
+   function Tag (Buffer : Types.Bytes) return Tag_Type
      with
        Pre => (Is_Contained (Buffer) and then Valid_Tag (Buffer));
 
-   function Valid_Value_Length (Buffer : Bytes) return Boolean
+   function Valid_Value_Length (Buffer : Types.Bytes) return Boolean
      with
        Pre => Is_Contained (Buffer);
 
-   function Value_Length (Buffer : Bytes) return Length_Type
+   function Value_Length (Buffer : Types.Bytes) return Length_Type
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value_Length (Buffer));
 
-   function Valid_Value (Buffer : Bytes) return Boolean
+   function Valid_Value (Buffer : Types.Bytes) return Boolean
      with
        Pre => Is_Contained (Buffer);
 
-   function Value_First (Buffer : Bytes) return Natural
+   function Value_First (Buffer : Types.Bytes) return Types.Index_Type
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer));
 
-   function Value_Last (Buffer : Bytes) return Natural
+   function Value_Last (Buffer : Types.Bytes) return Types.Index_Type
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer));
 
-   procedure Value (Buffer : Bytes; First : out Natural; Last : out Natural)
+   procedure Value (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer)),
        Post => (First = Value_First (Buffer) and then Last = Value_Last (Buffer));
 
-   function Is_Valid (Buffer : Bytes) return Boolean
+   function Is_Valid (Buffer : Types.Bytes) return Boolean
      with
        Pre => Is_Contained (Buffer);
 
@@ -123,9 +123,9 @@ The generated code could be used in the following way:
 with Foo.Bar;
 
 procedure Main is
-   Buffer : Bytes := Read;
-   First  : Natural;
-   Last   : Natural;
+   Buffer : Types.Bytes := Read;
+   First  : Types.Index_Type;
+   Last   : Types.Index_Type;
 begin
    Foo.Bar.Initialize (Buffer);
    if Foo.Bar.Is_Valid (Buffer) then
