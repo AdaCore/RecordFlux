@@ -1,9 +1,9 @@
 package body IPv4.Options is
 
-   procedure Initialize (Buffer : Types.Bytes) is
+   procedure Label (Buffer : Types.Bytes) is
    begin
       pragma Assume (Is_Contained (Buffer));
-   end Initialize;
+   end Label;
 
    function Valid_First (Buffer : Types.Bytes) return Boolean is
    begin

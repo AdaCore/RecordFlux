@@ -1,9 +1,9 @@
 package body IPv4.Option is
 
-   procedure Initialize (Buffer : Types.Bytes) is
+   procedure Label (Buffer : Types.Bytes) is
    begin
       pragma Assume (Is_Contained (Buffer));
-   end Initialize;
+   end Label;
 
    procedure Get_Option_Data (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type) is
    begin

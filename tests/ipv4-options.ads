@@ -11,7 +11,7 @@ is
        Ghost,
        Import;
 
-   procedure Initialize (Buffer : Types.Bytes)
+   procedure Label (Buffer : Types.Bytes)
      with
        Post => Is_Contained (Buffer);
 

@@ -22,7 +22,7 @@ package body In_Ethernet.Tests is
       First           : Types.Index_Type;
       Last            : Types.Index_Type;
    begin
-      Ethernet.Frame.Initialize (Buffer);
+      Ethernet.Frame.Label (Buffer);
       Valid := Ethernet.Frame.Is_Valid (Buffer);
       Assert (Valid, "Invalid Ethernet frame");
       if Valid then

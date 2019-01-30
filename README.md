@@ -71,7 +71,7 @@ The file `foo-bar.ads` contains the specification of all functions related to th
 ```
 package Foo.Bar is
 
-   procedure Initialize (Buffer : Types.Bytes)
+   procedure Label (Buffer : Types.Bytes)
      with
        Post => Is_Contained (Buffer);
 
@@ -115,7 +115,7 @@ package Foo.Bar is
 end Foo.Bar;
 ```
 
-The check of the `Is_Contained` predicate in the precondition of each access and validation function ensures that always the right input buffer is used. This is important if multiple protocol layers or [type refinements](/doc/Language-Reference.md#type-refinement) are used. At the lowest protocol layer the predicate has to be added manually to the input buffer by calling `Initialize`.
+The check of the `Is_Contained` predicate in the precondition of each access and validation function ensures that always the right input buffer is used. This is important if multiple protocol layers or [type refinements](/doc/Language-Reference.md#type-refinement) are used. At the lowest protocol layer the predicate has to be added manually to the input buffer by calling `Label`.
 
 The generated code could be used in the following way:
 
@@ -127,7 +127,7 @@ procedure Main is
    First  : Types.Index_Type;
    Last   : Types.Index_Type;
 begin
-   Foo.Bar.Initialize (Buffer);
+   Foo.Bar.Label (Buffer);
    if Foo.Bar.Is_Valid (Buffer) then
       if Foo.Bar.Tag (Buffer) = Msg_Data then
          Foo.Bar.Value (Buffer, First, Last);
@@ -139,7 +139,7 @@ begin
 end Main;
 ```
 
-In this example `Read` is a function which returns a byte array. After stating that `Buffer` may contain a message `Bar` of the protocol `Foo` (`Initialize`) its validity is checked (`Is_Valid`). In the case that a valid message is contained the value of `Tag` is read. Only if the value of `Tag` is `Msg_Data`, the `Value` field of the message is present and thus allowed to be accessed.
+In this example `Read` is a function which returns a byte array. After stating that `Buffer` may contain a message `Bar` of the protocol `Foo` (`Label`) its validity is checked (`Is_Valid`). In the case that a valid message is contained the value of `Tag` is read. Only if the value of `Tag` is `Msg_Data`, the `Value` field of the message is present and thus allowed to be accessed.
 
 *Note: For the sake of simplicity, the code examples are limited to the parts relevant to the user, omitting implementation details.*
 

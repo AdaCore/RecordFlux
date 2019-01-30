@@ -21,7 +21,7 @@ package body TLV.Tests is
       First  : Types.Index_Type;
       Last   : Types.Index_Type;
    begin
-      TLV.Message.Initialize (Buffer);
+      TLV.Message.Label (Buffer);
       Assert (TLV.Message.Valid_Tag (Buffer), "Invalid Tag");
       if TLV.Message.Valid_Tag (Buffer) then
          Tag := TLV.Message.Get_Tag (Buffer);
@@ -51,7 +51,7 @@ package body TLV.Tests is
       First  : Types.Index_Type;
       Last   : Types.Index_Type;
    begin
-      TLV.Message.Initialize (Buffer);
+      TLV.Message.Label (Buffer);
       Assert (TLV.Message.Valid_Tag (Buffer), "Invalid Tag");
       if TLV.Message.Valid_Tag (Buffer) then
          Tag := TLV.Message.Get_Tag (Buffer);
@@ -78,7 +78,7 @@ package body TLV.Tests is
       Buffer : Types.Bytes := (1 => 192);
       Tag    : TLV.Tag_Type;
    begin
-      TLV.Message.Initialize (Buffer);
+      TLV.Message.Label (Buffer);
       Assert (TLV.Message.Valid_Tag (Buffer), "Invalid Tag");
       if TLV.Message.Valid_Tag (Buffer) then
          Tag := TLV.Message.Get_Tag (Buffer);
@@ -93,7 +93,7 @@ package body TLV.Tests is
       pragma Unreferenced (T);
       Buffer : Types.Bytes := Types.Bytes'(0, 0);
    begin
-      TLV.Message.Initialize (Buffer);
+      TLV.Message.Label (Buffer);
       Assert (Not TLV.Message.Is_Valid (Buffer), "False positive");
    end Test_Invalid_TLV_Invalid_Tag;
 

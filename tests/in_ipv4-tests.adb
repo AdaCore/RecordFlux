@@ -24,7 +24,7 @@ package body In_IPv4.Tests is
       First  : Types.Index_Type;
       Last   : Types.Index_Type;
    begin
-      IPv4.Packet.Initialize (Buffer);
+      IPv4.Packet.Label (Buffer);
       Valid := IPv4.Packet.Is_Valid (Buffer);
       Assert (Valid, "Invalid IPv4 packet");
       if Valid then
@@ -58,7 +58,7 @@ package body In_IPv4.Tests is
       First      : Types.Index_Type;
       Last       : Types.Index_Type;
    begin
-      Ethernet.Frame.Initialize (Buffer);
+      Ethernet.Frame.Label (Buffer);
       Valid := Ethernet.Frame.Is_Valid (Buffer);
       Assert (Valid, "Invalid Ethernet frame");
       if Valid then

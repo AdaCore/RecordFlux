@@ -883,7 +883,7 @@ def create_contain_functions() -> List[Subprogram]:
                                'Boolean',
                                [('Buffer', 'Types.Bytes')],
                                aspects=[Ghost(), Import()]),
-            Procedure('Initialize',
+            Procedure('Label',
                       [('Buffer', 'Types.Bytes')],
                       [PragmaStatement('Assume', ['Is_Contained (Buffer)'])],
                       aspects=[Postcondition(LogCall('Is_Contained (Buffer)'))])]

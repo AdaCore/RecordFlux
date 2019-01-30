@@ -37,7 +37,7 @@ package body IPv4.Tests is
       First           : Types.Index_Type;
       Last            : Types.Index_Type;
    begin
-      IPv4.Packet.Initialize (Buffer);
+      IPv4.Packet.Label (Buffer);
       Valid := IPv4.Packet.Valid_Version (Buffer);
       Assert (Valid, "Invalid Version");
       if Valid then
@@ -152,7 +152,7 @@ package body IPv4.Tests is
       Option_Number : IPv4.Option_Number_Type;
       Option_Length : IPv4.Option_Length_Type;
    begin
-      IPv4.Option.Initialize (Buffer);
+      IPv4.Option.Label (Buffer);
       Valid := IPv4.Option.Valid_Copied (Buffer);
       Assert (Valid, "Invalid Copied");
       if Valid then
@@ -201,7 +201,7 @@ package body IPv4.Tests is
       Offset        : IPv4.Options.Offset_Type;
       Option_Length : IPv4.Option_Length_Type;
    begin
-      IPv4.Packet.Initialize (Buffer);
+      IPv4.Packet.Label (Buffer);
       Valid := IPv4.Packet.Valid_Options (Buffer);
       Assert (Valid, "Invalid options");
       if Valid then
