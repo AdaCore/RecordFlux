@@ -8,27 +8,23 @@ from parser import Parser
 class TestIntegration(unittest.TestCase):
     def setUp(self) -> None:
         self.testdir = "tests"
+        self.specdir = "specs"
         self.maxDiff = None  # pylint: disable=invalid-name
 
-    def fullpath(self, testfile: str) -> str:
-        return self.testdir + "/" + testfile
-
-    def assert_dissector(self, filenames: List[str]) -> None:
+    def assert_dissector(self, basenames: List[str]) -> None:
         parser = Parser()
-        for filename in filenames:
-            parser.parse(f'{self.fullpath(filename)}.rflx')
+        for basename in basenames:
+            parser.parse(f'{self.specdir}/{basename}.rflx')
 
         generator = Generator()
         generator.generate_dissector(parser.pdus, parser.refinements)
 
         for unit in generator.units():
-            unit_name = unit.package.name.lower().replace('.', '-')
-            filename = unit_name + '.ads'
-            with open(self.fullpath(filename), 'r') as f:
+            basename = unit.package.name.lower().replace('.', '-')
+            with open(f'{self.testdir}/{basename}.ads', 'r') as f:
                 self.assertEqual(unit.specification(), f.read())
             if unit.definition().strip():
-                filename = unit_name + '.adb'
-                with open(self.fullpath(filename), 'r') as f:
+                with open(f'{self.testdir}/{basename}.adb', 'r') as f:
                     self.assertEqual(unit.definition(), f.read())
 
     def test_ethernet(self) -> None:

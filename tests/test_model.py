@@ -15,7 +15,6 @@ SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
 # pylint: disable=too-many-public-methods
 class TestModel(unittest.TestCase):
     def setUp(self) -> None:
-        self.testdir = "tests"
         self.maxDiff = None  # pylint: disable=invalid-name
 
     def test_true_simplified(self) -> None:
