@@ -154,7 +154,7 @@ In this example `Read` is a function which returns a byte array. After stating t
 The `rflx` tool is used to generate dissector code based on a protocol specification.
 
 ```
-usage: rflx [-h] [-g] FILE [FILE ...]
+usage: rflx [-h] [-g] [-o DIR] FILE [FILE ...]
 
 RecordFlux
 
@@ -162,8 +162,9 @@ positional arguments:
   FILE
 
 optional arguments:
-  -h, --help      show this help message and exit
-  -g, --generate  generate dissector code
+  -h, --help            show this help message and exit
+  -g, --generate        generate dissector code
+  -o DIR, --output DIR  output directory for dissector code
 ```
 
 ### Example
@@ -177,7 +178,7 @@ Parsing tests/udp.rflx... OK
 Parsing tests/in_ipv4.rflx... OK
 ```
 
-By adding `-g` the dissector code will be generated. All files will be created in the current directory.
+By adding `-g` the dissector code will be generated. All files will be created in the current directory by default.
 
 ```
 rflx -g tests/ipv4.rflx tests/udp.rflx tests/in_ipv4.rflx

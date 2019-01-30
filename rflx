@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import pathlib
 import sys
 
 from generator import Generator
@@ -12,6 +13,8 @@ from parser import Parser, ParseFatalException, ParserError
 def main() -> None:
     arg_parser = argparse.ArgumentParser(description='RecordFlux')
     arg_parser.add_argument('-g', '--generate', action='store_true', help='generate dissector code')
+    arg_parser.add_argument('-o', '--output', metavar='DIR', type=str,
+                            help='output directory for dissector code')
     arg_parser.add_argument('files', metavar='FILE', type=str, nargs='+')
     args = arg_parser.parse_args()
 
@@ -29,6 +32,11 @@ def main() -> None:
             sys.exit(1)
 
     if args.generate:
+        outdir = pathlib.Path(args.output)
+        if not outdir.is_dir():
+            print(f'Invalid output directory: {outdir}')
+            sys.exit(1)
+
         generator = Generator()
         try:
             print('Generating... ', end='')
@@ -40,14 +48,15 @@ def main() -> None:
         except ModelError as e:
             print('Model error: {}'.format(e))
             sys.exit(1)
+
         for unit in generator.units():
-            unit_name = unit.package.name.lower().replace('.', '-')
-            filename = unit_name + '.ads'
+            filename = outdir.joinpath(unit.package.name.lower().replace('.', '-') + '.ads')
             print('Creating {}'.format(filename))
             with open(filename, 'w') as f:
                 f.write(unit.specification())
+
             if unit.definition().strip():
-                filename = unit_name + '.adb'
+                filename = filename.with_suffix('.adb')
                 print('Creating {}'.format(filename))
                 with open(filename, 'w') as f:
                     f.write(unit.definition())
