@@ -961,7 +961,7 @@ def create_variant_validation_function(
                 And(
                     buffer_constraints(
                         variant.facts[Last(field.name)].to_bytes()).simplified(value_to_call),
-                    variant.condition.simplified(value_to_call)),
+                    variant.condition.simplified(variant.facts).simplified(value_to_call)),
                 type_constraints)
             ).simplified(),
         [Precondition(COMMON_PRECONDITION)])
@@ -1022,8 +1022,9 @@ def extend_valid_variants(
         expression = And(expression, field.condition)
     valid_variants.append(
         expression.simplified(
-            {**variant.facts,
-             **create_value_to_call([(field.name, variant_id)] + variant.previous)}))
+            variant.facts
+        ).simplified(
+            create_value_to_call([(field.name, variant_id)] + variant.previous)))
 
 
 def create_field_validation_function(
@@ -1111,11 +1112,7 @@ def create_packet_validation_function(variants: List[Variant]) -> Subprogram:
     expr: LogExpr = FALSE
 
     for variant in variants:
-        field_name, variant_id = variant.previous[-1]
-        valid_call = LogCall(f'Valid_{field_name}_{variant_id} (Buffer)')
-        condition = And(valid_call, variant.condition).simplified(
-            {**variant.facts,
-             **create_value_to_call(variant.previous)})
+        condition = create_variant_condition(variant)
         expr = condition if expr == FALSE else Or(expr, condition)
 
     return ExpressionFunction(
@@ -1130,18 +1127,15 @@ def create_message_length_function(variants: List[Variant]) -> Subprogram:
     condition_expressions: List[Tuple[LogExpr, Expr]] = []
 
     for variant in variants:
-        field_name, variant_id = variant.previous[-1]
-        valid_call = LogCall(f'Valid_{field_name}_{variant_id} (Buffer)')
-        condition = And(valid_call, variant.condition).simplified(
-            {**variant.facts,
-             **create_value_to_call(variant.previous)})
+        condition = create_variant_condition(variant)
         length = Add(
             Last(variant.previous[-1][0]),
             -First(variant.previous[0][0]),
             Number(1)
         ).simplified(
-            {**variant.facts,
-             **create_value_to_call(variant.previous)}
+            variant.facts
+        ).simplified(
+            create_value_to_call(variant.previous)
         ).to_bytes().simplified()
         condition_expressions.append((condition, length))
 
@@ -1151,6 +1145,14 @@ def create_message_length_function(variants: List[Variant]) -> Subprogram:
         [('Buffer', 'Types.Bytes')],
         IfExpression(condition_expressions, 'Unreachable_Types_Length_Type'),
         [Precondition(And(COMMON_PRECONDITION, LogCall('Is_Valid (Buffer)')))])
+
+
+def create_variant_condition(variant: Variant) -> LogExpr:
+    field_name, variant_id = variant.previous[-1]
+    return And(
+        LogCall(f'Valid_{field_name}_{variant_id} (Buffer)'),
+        variant.condition
+    ).simplified(variant.facts).simplified(create_value_to_call(variant.previous))
 
 
 def create_contains_function(name: str, pdu: str, field: str, sdu: str,
