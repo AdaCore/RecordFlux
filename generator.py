@@ -658,8 +658,6 @@ class Generator:
 
                     elif isinstance(field.type, Array):
                         if 'Payload' not in field.type.name:
-                            context.append(WithClause([f'{pdu.package}.{field.type.name}']))
-
                             array_context: List[ContextItem] = \
                                 [WithClause([f'{pdu.package}.{field.type.element_type}'])]
                             array_package = Package(f'{pdu.package}.{field.type.name}', [], [])
@@ -677,6 +675,11 @@ class Generator:
                         function = create_unreachable_function(type_name)
                         if function not in unreachable_functions[pdu.package]:
                             unreachable_functions[pdu.package].append(function)
+
+                if isinstance(field.type, Array) and 'Payload' not in field.type.name:
+                    with_clause = WithClause([f'{pdu.package}.{field.type.name}'])
+                    if with_clause not in context:
+                        context.append(with_clause)
 
                 valid_variants: List[LogExpr] = []
 
