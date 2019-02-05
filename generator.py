@@ -670,11 +670,11 @@ class Generator:
                     else:
                         raise NotImplementedError(f'unsupported type "{type(field.type).__name__}"')
 
-                    for type_name in [field.type.name] if not isinstance(field.type, Array) \
-                            else ['Types.Index_Type', 'Types.Length_Type']:
-                        function = create_unreachable_function(type_name)
-                        if function not in unreachable_functions[pdu.package]:
-                            unreachable_functions[pdu.package].append(function)
+                    type_name = field.type.name if not isinstance(field.type, Array) \
+                        else 'Types.Index_Type'
+                    function = create_unreachable_function(type_name)
+                    if function not in unreachable_functions[pdu.package]:
+                        unreachable_functions[pdu.package].append(function)
 
                 if isinstance(field.type, Array) and 'Payload' not in field.type.name:
                     with_clause = WithClause([f'{pdu.package}.{field.type.name}'])
@@ -715,6 +715,10 @@ class Generator:
             package.subprograms.append(
                 create_message_length_function(
                     list(fields['FINAL'].variants.values())))
+
+            function = create_unreachable_function('Types.Length_Type')
+            if function not in unreachable_functions[pdu.package]:
+                unreachable_functions[pdu.package].append(function)
 
         for pdu_package, functions in unreachable_functions.items():
             top_level_package = self.__units[pdu_package].package
