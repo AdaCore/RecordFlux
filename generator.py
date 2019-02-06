@@ -618,10 +618,11 @@ class Generator:
             package.subprograms.extend(
                 create_contain_functions())
 
-            facts = {
-                First('Message'): First('Buffer'),
+            facts: Dict[Attribute, MathExpr] = {
+                First('Message'): Mul(First('Buffer'), Number(8)),
                 Last('Message'): Mul(Last('Buffer'), Number(8)),
-                Length('Message'): Sub(Mul(Last('Buffer'), Number(8)), First('Buffer'))
+                Length('Message'): Sub(Add(Mul(Last('Buffer'), Number(8)), Number(8)),
+                                       Mul(First('Buffer'), Number(8)))
             }
 
             fields = pdu.fields(facts, First('Buffer'))
