@@ -7,7 +7,8 @@ is
    type Length_Type is new Natural;
    subtype Index_Type is Length_Type range 1 .. Length_Type'Last;
 
-   type Bytes is array (Index_Type range <>) of Byte;
+   type Bytes is array (Index_Type range <>) of Byte
+      with Predicate => Bytes'Length > 0;
 
    type Payload_Type is new Bytes;
 
