@@ -746,6 +746,11 @@ class Node(Element):
         self.edges = edges or []
 
 
+class InitialNode(Node):
+    def __init__(self, edges: List['Edge'] = None) -> None:
+        super().__init__('INITIAL', Null(), edges)
+
+
 FINAL = Node('FINAL', Null())
 
 
@@ -794,7 +799,11 @@ class PDU(Element):
         if facts is None:
             facts = {}
         try:
-            return evaluate(facts, Edge(self.initial_node, TRUE, first=first))
+            initial_edge = Edge(self.initial_node.edges[0].target,
+                                self.initial_node.edges[0].condition,
+                                self.initial_node.edges[0].length,
+                                first)
+            return evaluate(facts, initial_edge)
         except ModelError as e:
             raise ModelError(f'{e} in "{self.full_name}"')
 

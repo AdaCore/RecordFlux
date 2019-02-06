@@ -2,9 +2,9 @@ import unittest
 from collections import OrderedDict
 
 from model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater, GreaterEqual,
-                   Last, Length, LengthValue, Less, LessEqual, ModelError, ModularInteger, Mul,
-                   Node, NotEqual, Null, Number, Or, PDU, Pow, RangeInteger, Sub, TRUE, UNDEFINED,
-                   Value, Variant)
+                   InitialNode, Last, Length, LengthValue, Less, LessEqual, ModelError,
+                   ModularInteger, Mul, Node, NotEqual, Null, Number, Or, PDU, Pow, RangeInteger,
+                   Sub, TRUE, UNDEFINED, Value, Variant)
 
 from tests.models import ETHERNET_PDU
 
@@ -396,55 +396,63 @@ class TestModel(unittest.TestCase):
     def test_pdu_fields_invalid_cyclic(self) -> None:
         t = ModularInteger('T', Number(2))
 
+        initial = InitialNode()
         n1 = Node('X', t)
         n2 = Node('Y', t)
 
+        initial.edges = [Edge(n1, TRUE)]
         n1.edges = [Edge(n2, TRUE, Number(1))]
         n2.edges = [Edge(n1, TRUE, Number(1))]
 
         with self.assertRaises(ModelError):
-            PDU('Z', n1).fields()
+            PDU('Z', initial).fields()
 
     def test_pdu_fields_invalid_dupe(self) -> None:
         t1 = ModularInteger('T1', Number(2))
         t2 = ModularInteger('T2', Number(4))
 
+        initial = InitialNode()
         n1 = Node('X', t1)
         n2 = Node('X', t2)
 
+        initial.edges = [Edge(n1, TRUE)]
         n1.edges = [Edge(n2, TRUE)]
         n2.edges = [Edge(FINAL, TRUE)]
 
         with self.assertRaises(ModelError):
-            PDU('Z', n1).fields()
+            PDU('Z', initial).fields()
 
     def test_pdu_fields_invalid_self_reference(self) -> None:
         t = ModularInteger('T', Number(2))
 
+        initial = InitialNode()
         n1 = Node('X', t)
         n2 = Node('Y', t)
 
+        initial.edges = [Edge(n1, TRUE)]
         n1.edges = [Edge(n2, first=First('Y'))]
         n2.edges = [Edge(FINAL)]
 
         with self.assertRaisesRegex(ModelError, 'self-reference to "Y\'First"'):
-            PDU('Z', n1).fields()
+            PDU('Z', initial).fields()
 
     def test_pdu_fields_length_after_payload(self) -> None:
         int_type = ModularInteger('T', Number(256))
         payload_type = Array('Payload_Type')
 
+        initial = InitialNode()
         version = Node('Version', int_type)
         payload = Node('Payload', payload_type)
         length = Node('Length', int_type)
 
+        initial.edges = [Edge(version, TRUE)]
         version.edges = [Edge(payload, length=Value('Length'))]
         payload.edges = [Edge(length, first=Add(Last('Buffer'),
                                                 -Length('Length'),
                                                 Number(1)))]
         length.edges = [Edge(FINAL)]
 
-        pdu = PDU('Foo', version)
+        pdu = PDU('Foo', initial)
 
         expected = OrderedDict([
             ('Version',

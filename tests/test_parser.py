@@ -2,9 +2,9 @@ import unittest
 from typing import Dict, List
 
 from parser import (And, Array, Component, Context, Div, Edge, Enumeration, Equal, FINAL, First,
-                    GreaterEqual, Last, Length, LessEqual, Message, ModularInteger, Mul, Number,
-                    Node, NotEqual, Package, Parser, ParseFatalException, ParserError, PDU, Pow,
-                    RangeInteger, Refinement, Specification, Sub, Then, Value)
+                    GreaterEqual, InitialNode, Last, Length, LessEqual, Message, ModularInteger,
+                    Mul, Number, Node, NotEqual, Package, Parser, ParseFatalException, ParserError,
+                    PDU, Pow, RangeInteger, Refinement, Specification, Sub, Then, Value)
 
 from tests.models import ETHERNET_PDU
 
@@ -261,6 +261,57 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'duplicate refinement "In_PDU"')
 
+    def test_invalid_first_in_initial_node(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         null
+                            then Foo
+                               with First = 0;
+                         Foo : T;
+                      end message;
+                end Test;
+            """,
+            r'^invalid first expression in initial node in "PDU"$')
+
+    def test_multiple_initial_node_edges(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         null
+                            then Foo,
+                            then Bar;
+                         Foo : T;
+                         Bar : T;
+                      end message;
+                end Test;
+            """,
+            r'^Expected ";" \(at char 198\), \(line:7, col:37\)$')
+
+    def test_multiple_initial_nodes(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         null
+                            then Foo;
+                         null
+                            then Bar;
+                         Foo : T;
+                         Bar : T;
+                      end message;
+                end Test;
+            """,
+            r'^Expected ":" \(at char 258\), \(line:9, col:29\)$')
+
     def test_integer_type_spec(self) -> None:
         spec = {'Test': Specification(
             Context([]),
@@ -307,15 +358,18 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             Package('Test',
                     [ModularInteger('T', Number(256)),
                      Message('PDU',
-                             [Component('Foo', 'T', [
-                                 Then('Bar',
-                                      And(Equal(Value('First'), Number(1)),
-                                          Equal(Value('Length'), Number(1))),
-                                      And(Equal(Length('Foo'),
-                                          Number(1)),
-                                          LessEqual(Value('Foo'),
-                                                    Number(30)))),
-                                 Then('Baz')]),
+                             [Component('null', '', [
+                                 Then('Foo',
+                                      Equal(Value('Length'), Number(1)))]),
+                              Component('Foo', 'T', [
+                                  Then('Bar',
+                                       And(Equal(Value('First'), Number(1)),
+                                           Equal(Value('Length'), Number(1))),
+                                       And(Equal(Length('Foo'),
+                                           Number(1)),
+                                           LessEqual(Value('Foo'),
+                                                     Number(30)))),
+                                  Then('Baz')]),
                               Component('Bar', 'T'),
                               Component('Baz', 'T')]),
                      Message('Simple_PDU',
@@ -326,10 +380,15 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_message_type_pdu(self) -> None:
         t = ModularInteger('T', Number(256))
 
+        initial = InitialNode()
+        simple_initial = InitialNode()
         pdu_foo = Node('Foo', t)
         pdu_bar = Node('Bar', t)
         pdu_baz = Node('Baz', t)
 
+        initial.edges = [Edge(pdu_foo,
+                              length=Number(1))]
+        simple_initial.edges = [Edge(pdu_bar)]
         pdu_foo.edges = [Edge(pdu_bar,
                               And(Equal(Length('Foo'),
                                         Number(1)),
@@ -341,8 +400,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         pdu_bar.edges = [Edge(pdu_baz)]
         pdu_baz.edges = [Edge(FINAL)]
 
-        pdus = [PDU('Test.PDU', pdu_foo),
-                PDU('Test.Simple_PDU', pdu_bar)]
+        pdus = [PDU('Test.PDU', initial),
+                PDU('Test.Simple_PDU', simple_initial)]
 
         self.assert_pdus([f'{self.testdir}/message_type.rflx'], pdus)
 
@@ -353,15 +412,18 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 Package('Test',
                         [ModularInteger('T', Number(256)),
                          Message('PDU',
-                                 [Component('Foo', 'T', [
-                                     Then('Bar',
-                                          And(Equal(Value('First'), Number(1)),
-                                              Equal(Value('Length'), Number(1))),
-                                          And(Equal(Length('Foo'),
-                                              Number(1)),
-                                              LessEqual(Value('Foo'),
-                                                        Number(30)))),
-                                     Then('Baz')]),
+                                 [Component('null', '', [
+                                     Then('Foo',
+                                          Equal(Value('Length'), Number(1)))]),
+                                  Component('Foo', 'T', [
+                                      Then('Bar',
+                                           And(Equal(Value('First'), Number(1)),
+                                               Equal(Value('Length'), Number(1))),
+                                           And(Equal(Length('Foo'),
+                                               Number(1)),
+                                               LessEqual(Value('Foo'),
+                                                         Number(30)))),
+                                      Then('Baz')]),
                                   Component('Bar', 'T'),
                                   Component('Baz', 'T')]),
                          Message('Simple_PDU',

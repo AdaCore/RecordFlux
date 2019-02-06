@@ -6,9 +6,9 @@ from pyparsing import (alphanums, infixNotation, nums, opAssoc, ParseFatalExcept
                        WordStart, ZeroOrMore)
 
 from model import (Add, And, Array, Attribute, Div, Edge, Enumeration, Equal, FINAL, First,
-                   Greater, GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
-                   MathExpr, ModelError, ModularInteger, Mul, Number, Node, NotEqual, Or, PDU, Pow,
-                   RangeInteger, Refinement, Relation, Sub, TRUE, Type, Value)
+                   Greater, GreaterEqual, InitialNode, Last, Length, LengthValue, Less, LessEqual,
+                   LogExpr, MathExpr, ModelError, ModularInteger, Mul, Number, Node, NotEqual, Or,
+                   PDU, Pow, RangeInteger, Refinement, Relation, Sub, TRUE, Type, UNDEFINED, Value)
 
 
 class SyntaxTree:
@@ -193,8 +193,11 @@ class Parser:
                                       Component(t[0], t[2], t[3]) if len(t) >= 4
                                       else Component(t[0], t[2]))
         component_item.setName('Component')
-        component_list << (Keyword('null') - semicolon | Keyword('invalid')
-                           - semicolon | Group(component_item - ZeroOrMore(component_item)))
+        null_component_item = Keyword('null') - then - semicolon
+        null_component_item.setParseAction(lambda t: Component(t[0], '', [t[1]]))
+        null_component_item.setName('NullComponent')
+        component_list << (Group(Optional(null_component_item) - component_item
+                                 - ZeroOrMore(component_item)))
         component_list.setParseAction(lambda t: t.asList())
 
         # Types
@@ -276,8 +279,7 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
             types[t.name] = t
         elif isinstance(t, Message):
             nodes: Dict[str, Node] = OrderedDict()
-            create_nodes(nodes, types, t.components, t.name)
-            create_edges(nodes, t.components)
+            create_graph(nodes, types, t.components, t.name)
             name = f'{spec.package.identifier}.{t.name}'
             if name in pdus:
                 raise ParserError(f'duplicate message "{t.name}"')
@@ -291,9 +293,28 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
     return pdus
 
 
+def create_graph(nodes: Dict[str, Node], types: Dict[str, Type],
+                 components: List[Component], message_name: str) -> None:
+
+    components = list(components)
+
+    if components[0].name != 'null':
+        components.insert(0, Component('null', ''))
+
+    create_nodes(nodes, types, components, message_name)
+    create_edges(nodes, components)
+
+    if next(iter(nodes.values())).edges[0].first != UNDEFINED:
+        raise ParserError(f'invalid first expression in initial node in "{message_name}"')
+
+
 def create_nodes(nodes: Dict[str, Node], types: Dict[str, Type],
                  components: List[Component], message_name: str) -> None:
+
     for component in components:
+        if component.name == 'null':
+            nodes[component.name] = InitialNode()
+            continue
         if 'Payload' in component.type:
             types[component.type] = Array(component.type)
         if component.type not in types:

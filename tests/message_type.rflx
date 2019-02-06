@@ -4,6 +4,9 @@ package Test is
 
    type PDU is
       message
+         null
+            then Foo
+               with Length = 1;
          Foo : T
             then Bar
                with First = 1 and Length = 1
