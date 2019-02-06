@@ -906,9 +906,13 @@ def calculate_offset(last: MathExpr) -> int:
 
 
 def buffer_constraints(last: MathExpr) -> LogExpr:
-    return And(GreaterEqual(Length('Buffer'),
-                            Add(last, -First('Buffer'), Number(1))),
-               LessEqual(First('Buffer'), Div(Last('Types.Index_Type'), Number(2))))
+    last = last.simplified()
+    index_constraint = LessEqual(First('Buffer'), Div(Last('Types.Index_Type'), Number(2)))
+    if last != Last('Buffer'):
+        length_constraint = GreaterEqual(Length('Buffer'),
+                                         Add(last, -First('Buffer'), Number(1)))
+        return And(length_constraint, index_constraint)
+    return index_constraint
 
 
 def create_field_location(

@@ -137,7 +137,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Payload_000000 (Buffer));
 
    function Valid_Payload_000001 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_EtherType_00000 (Buffer) and then ((Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_EtherType_00000 (Buffer) >= 1536)))
+      ((Valid_EtherType_00000 (Buffer) and then (Buffer'First <= (Types.Index_Type'Last / 2) and then Get_EtherType_00000 (Buffer) >= 1536)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -167,7 +167,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Payload_00010 (Buffer));
 
    function Valid_Payload_00011 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_EtherType_0001 (Buffer) and then ((Buffer'Length >= (Buffer'Last + (-Buffer'First) + 1) and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_EtherType_0001 (Buffer) >= 1536)))
+      ((Valid_EtherType_0001 (Buffer) and then (Buffer'First <= (Types.Index_Type'Last / 2) and then Get_EtherType_0001 (Buffer) >= 1536)))
      with
        Pre => Is_Contained (Buffer);
 
