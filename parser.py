@@ -1,9 +1,9 @@
 from collections import OrderedDict
 from typing import Dict, List, Union
 
-from pyparsing import (alphanums, infixNotation, nums, opAssoc, ParseFatalException, Forward,
-                       Group, Keyword, Literal, Optional, Regex, StringEnd, Suppress, Word, WordEnd,
-                       WordStart, ZeroOrMore)
+from pyparsing import (alphanums, infixNotation, nums, opAssoc, CaselessKeyword,
+                       ParseFatalException, Forward, Group, Keyword, Literal, Optional, Regex,
+                       StringEnd, Suppress, Word, WordEnd, WordStart, ZeroOrMore)
 
 from model import (Add, And, Array, Attribute, Div, Edge, Enumeration, Equal, FINAL, First,
                    Greater, GreaterEqual, InitialNode, Last, Length, LengthValue, Less, LessEqual,
@@ -90,6 +90,7 @@ class Parser:
 
         # Names
         identifier = WordStart(alphanums) + Word(alphanums + '_') + WordEnd(alphanums + '_')
+        identifier.setParseAction(verify_identifier)
         identifier.setName('Identifier')
         qualified_identifier = Optional(identifier + Literal('.')) - identifier
         qualified_identifier.setParseAction(lambda t: ''.join(t.asList()))
@@ -143,7 +144,8 @@ class Parser:
         value_constraint = Keyword('if') - logical_expression
         value_constraint.setParseAction(lambda t: ('constraint', t[1]))
         type_refinement_definition = (Keyword('new') - qualified_identifier - Suppress(Literal('('))
-                                      - identifier - Suppress(Literal('=>')) - qualified_identifier
+                                      - identifier - Suppress(Literal('=>'))
+                                      - (Keyword('null') | qualified_identifier)
                                       - Suppress(Literal(')')) - Optional(value_constraint))
         type_refinement_definition.setName('Refinement')
 
@@ -178,7 +180,7 @@ class Parser:
         # Message Type
         location_expression = Keyword('with') - logical_expression
         location_expression.setParseAction(lambda t: ('location', t[1]))
-        then = (Keyword('then') - identifier - Optional(location_expression)
+        then = (Keyword('then') - (Keyword('null') | identifier) - Optional(location_expression)
                 - Optional(value_constraint))
         then.setParseAction(parse_then)
         then_list = then + ZeroOrMore(comma - then)
@@ -186,9 +188,8 @@ class Parser:
         component_list = Forward()
         message_type_definition = Keyword('message') - component_list - Keyword('end message')
         message_type_definition.setName('Message')
-        component_declaration = (identifier + Literal(':') - name
-                                 - Optional(then_list) - semicolon)
-        component_item = component_declaration
+        component_item = (~Keyword('end') + ~CaselessKeyword('Message') - identifier + Literal(':')
+                          - name - Optional(then_list) - semicolon)
         component_item.setParseAction(lambda t:
                                       Component(t[0], t[2], t[3]) if len(t) >= 4
                                       else Component(t[0], t[2]))
@@ -465,6 +466,23 @@ def parse_then(string: str, location: int, tokens: list) -> Then:
             raise ParseFatalException(
                 string, location, 'expected location expression or value constraint')
     return Then(identifier, location_expr, constraint)
+
+
+def verify_identifier(string: str, location: int, tokens: list) -> str:
+    reserved_words = ['abort', 'abs', 'abstract', 'accept', 'access', 'aliased', 'all', 'and',
+                      'array', 'at', 'begin', 'body', 'case', 'constant', 'declare', 'delay',
+                      'delta', 'digits', 'do', 'else', 'elsif', 'end', 'entry', 'exception',
+                      'exit', 'for', 'function', 'generic', 'goto', 'if', 'in', 'interface', 'is',
+                      'limited', 'loop', 'mod', 'new', 'not', 'null', 'of', 'or', 'others', 'out',
+                      'overriding', 'package', 'pragma', 'private', 'procedure', 'protected',
+                      'raise', 'range', 'record', 'rem', 'renames', 'requeue', 'return', 'reverse',
+                      'select', 'separate', 'some', 'subtype', 'synchronized', 'tagged', 'task',
+                      'terminate', 'then', 'type', 'until', 'use', 'when', 'while', 'with', 'xor',
+                      'buffer']
+    if tokens[0].lower() in reserved_words:
+        raise ParseFatalException(
+            string, location, f'reserved word "{tokens[0]}" used as identifier')
+    return tokens[0]
 
 
 def parse_attribute(string: str, location: int, tokens: list) -> Attribute:

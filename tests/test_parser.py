@@ -310,7 +310,29 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'^Expected ":" \(at char 258\), \(line:9, col:29\)$')
+            r'^reserved word "null" used as identifier \(at char 225\), \(line:8, col:26\)$')
+
+    def test_reserved_word_in_type_name(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type Type is mod 256;
+                end Test;
+            """,
+            r'^reserved word "Type" used as identifier \(at char 57\), \(line:3, col:25\)$')
+
+    def test_reserved_word_in_message_component(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Message : T;
+                      end message;
+                end Test;
+            """,
+            r'^Found unwanted token, "Message" \(at char 157\), \(line:6, col:26\)$')
 
     def test_integer_type_spec(self) -> None:
         spec = {'Test': Specification(
