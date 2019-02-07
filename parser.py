@@ -377,7 +377,7 @@ def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> Dict[st
                 if pdu not in pdus:
                     raise ParserError(f'unknown type "{t.pdu}"')
             sdu = t.sdu
-            if sdu not in pdus:
+            if sdu != 'null' and sdu not in pdus:
                 sdu = f'{spec.package.identifier}.{t.sdu}'
                 if sdu not in pdus:
                     raise ParserError(f'unknown type "{t.sdu}"')

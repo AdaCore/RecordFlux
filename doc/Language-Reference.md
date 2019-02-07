@@ -138,7 +138,7 @@ A type refinement describes the relation of a component in a message type to ano
 
 #### Static Semantics
 
-A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only components of type `Payload_Type` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to components of the refined type.
+A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only components of type `Payload_Type` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to components of the refined type. To indicate that a refined component is empty (i.e. does not exit) under a certain condition, __null__ can be used as message type.
 
 #### Example
 

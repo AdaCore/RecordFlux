@@ -7,4 +7,6 @@ package In_Test is
 
    type Simple_PDU_In_PDU is new Test.PDU (Bar => Test.Simple_PDU);
 
+   type Null_In_Simple_PDU is new Test.Simple_PDU (Bar => null);
+
 end In_Test;

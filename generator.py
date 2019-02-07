@@ -757,9 +757,10 @@ class Generator:
             pdu_context = WithClause([refinement.pdu])
             if pdu_context not in context:
                 context.append(pdu_context)
-            sdu_context = WithClause([refinement.sdu])
-            if sdu_context not in context:
-                context.append(sdu_context)
+            if refinement.sdu != 'null':
+                sdu_context = WithClause([refinement.sdu])
+                if sdu_context not in context:
+                    context.append(sdu_context)
 
             package.subprograms.append(
                 create_contains_function(
@@ -1170,22 +1171,29 @@ def create_variant_condition(variant: Variant) -> LogExpr:
 def create_contains_function(name: str, pdu: str, field: str, sdu: str,
                              condition: LogExpr) -> Subprogram:
 
+    success_statements: List[Statement] = [ReturnStatement(TRUE)]
+    aspects: List[Aspect] = [Precondition(And(LogCall(f'{pdu}.Is_Contained (Buffer)'),
+                                              LogCall(f'{pdu}.Is_Valid (Buffer)')))]
+    if sdu != 'null':
+        success_statements.insert(
+            0,
+            PragmaStatement(
+                'Assume',
+                [(f'{sdu}.Is_Contained (Buffer ({pdu}.Get_{field}_First (Buffer)'
+                  f' .. {pdu}.Get_{field}_Last (Buffer)))')]))
+        aspects.append(
+            Postcondition(
+                IfExpression(
+                    [(LogCall(f'{name}\'Result'),
+                      LogCall((f'{sdu}.Is_Contained (Buffer ('
+                               f'{pdu}.Get_{field}_First (Buffer)'
+                               f' .. {pdu}.Get_{field}_Last (Buffer)))')))])))
+
     return Function(name,
                     'Boolean',
                     [('Buffer', 'Types.Bytes')],
                     [IfStatement(
                         [(condition,
-                          [PragmaStatement(
-                              'Assume',
-                              [(f'{sdu}.Is_Contained (Buffer ({pdu}.Get_{field}_First (Buffer)'
-                                f' .. {pdu}.Get_{field}_Last (Buffer)))')]),
-                           ReturnStatement(TRUE)])]),
+                          success_statements)]),
                      ReturnStatement(FALSE)],
-                    [Precondition(And(LogCall(f'{pdu}.Is_Contained (Buffer)'),
-                                      LogCall(f'{pdu}.Is_Valid (Buffer)'))),
-                     Postcondition(
-                         IfExpression(
-                             [(LogCall(f'{name}\'Result'),
-                               LogCall((f'{sdu}.Is_Contained (Buffer ('
-                                        f'{pdu}.Get_{field}_First (Buffer)'
-                                        f' .. {pdu}.Get_{field}_Last (Buffer)))')))]))])
+                    aspects)

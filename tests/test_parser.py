@@ -440,7 +440,11 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                          Refinement('Simple_PDU_In_PDU',
                                     'Test.PDU',
                                     'Bar',
-                                    'Test.Simple_PDU')]))}
+                                    'Test.Simple_PDU'),
+                         Refinement('Null_In_Simple_PDU',
+                                    'Test.Simple_PDU',
+                                    'Bar',
+                                    'null')]))}
         self.assert_specifications([f'{self.testdir}/message_type.rflx',
                                     f'{self.testdir}/type_refinement.rflx'], spec)
 
