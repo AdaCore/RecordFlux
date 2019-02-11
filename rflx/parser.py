@@ -5,10 +5,11 @@ from pyparsing import (alphanums, infixNotation, nums, opAssoc, CaselessKeyword,
                        ParseFatalException, Forward, Group, Keyword, Literal, Optional, Regex,
                        StringEnd, Suppress, Word, WordEnd, WordStart, ZeroOrMore)
 
-from model import (Add, And, Array, Attribute, Div, Edge, Enumeration, Equal, FINAL, First,
-                   Greater, GreaterEqual, InitialNode, Last, Length, LengthValue, Less, LessEqual,
-                   LogExpr, MathExpr, ModelError, ModularInteger, Mul, Number, Node, NotEqual, Or,
-                   PDU, Pow, RangeInteger, Refinement, Relation, Sub, TRUE, Type, UNDEFINED, Value)
+from rflx.model import (Add, And, Array, Attribute, Div, Edge, Enumeration, Equal, FINAL, First,
+                        Greater, GreaterEqual, InitialNode, Last, Length, LengthValue, Less,
+                        LessEqual, LogExpr, MathExpr, ModelError, ModularInteger, Mul, Number, Node,
+                        NotEqual, Or, PDU, Pow, RangeInteger, Refinement, Relation, Sub, TRUE, Type,
+                        UNDEFINED, Value)
 
 
 class SyntaxTree:

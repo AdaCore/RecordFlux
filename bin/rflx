@@ -5,9 +5,9 @@ import argparse
 import pathlib
 import sys
 
-from generator import Generator
-from model import ModelError
-from parser import Parser, ParseFatalException, ParserError
+from rflx.generator import Generator
+from rflx.model import ModelError
+from rflx.parser import Parser, ParseFatalException, ParserError
 
 
 def main() -> None:

@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from typing import Callable, Dict, List, Tuple
 
-from model import (Add, And, Array, Attribute, Div, Enumeration, Equal, Expr, Field, First,
-                   GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr, MathExpr,
-                   ModularInteger, Mul, Number, Or, PDU, Pow, RangeInteger, Refinement, Size, Sub,
-                   TRUE, Value, Variant)
+from rflx.model import (Add, And, Array, Attribute, Div, Enumeration, Equal, Expr, Field, First,
+                        GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr, MathExpr,
+                        ModularInteger, Mul, Number, Or, PDU, Pow, RangeInteger, Refinement, Size,
+                        Sub, TRUE, Value, Variant)
 
 
 class SparkRepresentation(ABC):

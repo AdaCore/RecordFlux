@@ -1,8 +1,8 @@
 import unittest
 from typing import List
 
-from generator import Generator
-from parser import Parser
+from rflx.generator import Generator
+from rflx.parser import Parser
 
 
 class TestIntegration(unittest.TestCase):

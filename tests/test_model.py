@@ -1,10 +1,10 @@
 import unittest
 from collections import OrderedDict
 
-from model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater, GreaterEqual,
-                   InitialNode, Last, Length, LengthValue, Less, LessEqual, ModelError,
-                   ModularInteger, Mul, Node, NotEqual, Null, Number, Or, PDU, Pow, RangeInteger,
-                   Sub, TRUE, UNDEFINED, Value, Variant)
+from rflx.model import (Add, And, Array, Div, Edge, Equal, FINAL, Field, First, Greater,
+                        GreaterEqual, InitialNode, Last, Length, LengthValue, Less, LessEqual,
+                        ModelError, ModularInteger, Mul, Node, NotEqual, Null, Number, Or, PDU, Pow,
+                        RangeInteger, Sub, TRUE, UNDEFINED, Value, Variant)
 
 from tests.models import ETHERNET_PDU
 

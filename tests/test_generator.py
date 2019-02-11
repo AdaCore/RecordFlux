@@ -1,8 +1,8 @@
 import unittest
 from typing import List
 
-from model import PDU, Refinement
-from generator import Generator
+from rflx.model import PDU, Refinement
+from rflx.generator import Generator
 
 from tests.models import ETHERNET_PDU
 
