@@ -6,10 +6,10 @@ package Test is
       message
          null
             then Foo
-               with Length = 1;
+               with Length => 1;
          Foo : T
             then Bar
-               with First = 1 and Length = 1
+               with First => 1, Length => 1
                if Foo'Length = 1 and Foo <= 16#1E#,
             then Baz;
          Bar : T;

@@ -79,24 +79,26 @@ A message type is a collection components. Additional then clauses allow to defi
                          *then_clause* __;__
 
 *then_clause* ::= __then__ *component_name*
-                     [__with__ *location_expression*]
+                     [__with__ *aspects*]
                      [__if__ *condition*]
 
 *component_name* ::= *name* | __null__
 
 *component_type* ::= *name*
 
-*location_expression* ::= *first_expression* | *length_expression* | *first_expression* __and__ *length_expression*
+*aspects* ::= *aspect* { __,__ *aspect* }
 
-*first_expression* ::= __First__ __=__ *mathematical_expression*
+*aspect* ::= *first_aspect* | *length_aspect*
 
-*length_expression* ::= __Length__ __=__ *mathematical_expression*
+*first_aspect* ::= __First__ __=>__ *mathematical_expression*
+
+*length_aspect* ::= __Length__ __=>__ *mathematical_expression*
 
 *condition* ::= *logical_expression*
 
 #### Static Semantics
 
-A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and a location expression which allows to define the length of the next field and the location of its first bit. The condition can refer to previous fields (including the component containing the then clause). If required, a null component can be used to specify the length of the first field in the message.
+A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the length of the next field and the location of its first bit. The condition can refer to previous fields (including the component containing the then clause). If required, a null component can be used to specify the length of the first field in the message.
 
 #### Example
 
@@ -159,7 +161,7 @@ An array type represents a list of similar elements.
 
 #### Static Semantics
 
-An array consists of a number of elements with similar type. Only message types can be used as element type. When an array is used in a message type, its bit length has to be specified by a length expression.
+An array consists of a number of elements with similar type. Only message types can be used as element type. When an array is used in a message type, its bit length has to be specified by a length aspect.
 
 #### Example
 

@@ -111,8 +111,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'reference to undefined node "Bar"')
 
-    def test_invalid_location_expression_no_conjunction(self) -> None:
-        self.assert_parser_error_string(
+    def test_invalid_location_expression(self) -> None:
+        self.assert_parse_exception_string(
             """
                 package Test is
                    type T is mod 256;
@@ -120,60 +120,13 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       message
                          Foo : T
                             then Bar
-                                with First = 1 or Length = 1;
+                                with Foo => 1;
                         Bar : T;
                       end message;
                 end Test;
             """,
-            r'unexpected "or" in "\(First = 1 or Length = 1\)"')
-
-    def test_invalid_location_expression_no_equation(self) -> None:
-        self.assert_parser_error_string(
-            """
-                package Test is
-                   type T is mod 256;
-                   type PDU is
-                      message
-                         Foo : T
-                            then Bar
-                                with First < 1 and Length = 1;
-                        Bar : T;
-                      end message;
-                end Test;
-            """,
-            r'expected "=" instead of "<" in "First < 1"')
-
-    def test_invalid_location_expression_no_equation_2(self) -> None:
-        self.assert_parser_error_string(
-            """
-                package Test is
-                   type T is mod 256;
-                   type PDU is
-                      message
-                         Foo : T
-                            then Bar
-                                with First < 1;
-                        Bar : T;
-                      end message;
-                end Test;
-            """,
-            r'unexpected "<" in "First < 1"')
-
-    def test_invalid_location_expression_no_attribute(self) -> None:
-        self.assert_parser_error_string(
-            """
-                package Test is
-                   type T is mod 256;
-                   type PDU is
-                      message
-                         Foo : T
-                            then Bar
-                                with Foo = 1;
-                        Bar : T;
-                      end message;
-                end Test;
-            """,
-            r'expected "First" or "Length" instead of "Foo"')
+            r'^Expected {{"First =>" - MathematicalExpression} | {"Length =>" -'
+            r' MathematicalExpression}} \(at char 239\), \(line:8, col:38\)$')
 
     def test_invalid_modular_type(self) -> None:
         self.assert_parse_exception_string(
@@ -271,7 +224,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       message
                          null
                             then Foo
-                               with First = 0;
+                               with First => 0;
                          Foo : T;
                       end message;
                 end Test;
@@ -383,11 +336,12 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                      Message('PDU',
                              [Component('null', '', [
                                  Then('Foo',
-                                      Equal(Value('Length'), Number(1)))]),
+                                      None,
+                                      Number(1))]),
                               Component('Foo', 'T', [
                                   Then('Bar',
-                                       And(Equal(Value('First'), Number(1)),
-                                           Equal(Value('Length'), Number(1))),
+                                       Number(1),
+                                       Number(1),
                                        And(Equal(Length('Foo'),
                                            Number(1)),
                                            LessEqual(Value('Foo'),
@@ -437,11 +391,12 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                          Message('PDU',
                                  [Component('null', '', [
                                      Then('Foo',
-                                          Equal(Value('Length'), Number(1)))]),
+                                          None,
+                                          Number(1))]),
                                   Component('Foo', 'T', [
                                       Then('Bar',
-                                           And(Equal(Value('First'), Number(1)),
-                                               Equal(Value('Length'), Number(1))),
+                                           Number(1),
+                                           Number(1),
                                            And(Equal(Length('Foo'),
                                                Number(1)),
                                                LessEqual(Value('Foo'),
@@ -486,29 +441,31 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                               Component('TPID', 'UINT16', [
                                   Then('TCI',
                                        None,
+                                       None,
                                        Equal(Value('TPID'),
                                              Number(33024))),
                                   Then('EtherType',
-                                       Equal(Value('First'),
-                                             First('TPID')),
+                                       First('TPID'),
+                                       None,
                                        NotEqual(Value('TPID'),
                                                 Number(33024)))]),
                               Component('TCI', 'UINT16'),
                               Component('EtherType', 'UINT16', [
                                   Then('Payload',
-                                       Equal(Value('Length'),
-                                             Mul(Value('EtherType'),
-                                                 Number(8))),
+                                       None,
+                                       Mul(Value('EtherType'),
+                                           Number(8)),
                                        LessEqual(Value('EtherType'),
                                                  Number(1500))),
                                   Then('Payload',
-                                       Equal(Value('Length'),
-                                             Sub(Last('Message'),
-                                                 Last('EtherType'))),
+                                       None,
+                                       Sub(Last('Message'),
+                                           Last('EtherType')),
                                        GreaterEqual(Value('EtherType'),
                                                     Number(1536)))]),
                               Component('Payload', 'Payload_Array', [
                                   Then('null',
+                                       None,
                                        None,
                                        And(GreaterEqual(Div(Length('Payload'),
                                                             Number(8)),

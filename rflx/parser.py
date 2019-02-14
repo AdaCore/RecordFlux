@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from typing import Dict, List, Union
 
-from pyparsing import (alphanums, infixNotation, nums, opAssoc, CaselessKeyword,
+from pyparsing import (alphanums, delimitedList, infixNotation, nums, opAssoc, CaselessKeyword,
                        ParseFatalException, Forward, Group, Keyword, Literal, Optional, Regex,
                        StringEnd, Suppress, Word, WordEnd, WordStart, ZeroOrMore)
 
@@ -37,10 +37,11 @@ class Message(Type):
 
 
 class Then(SyntaxTree):
-    def __init__(self, name: str, location: LogExpr = None,
+    def __init__(self, name: str, first: MathExpr = None, length: MathExpr = None,
                  constraint: LogExpr = None) -> None:
         self.name = name
-        self.location = location
+        self.first = first
+        self.length = length
         self.constraint = constraint
 
 
@@ -143,7 +144,7 @@ class Parser:
 
         # Type Refinement
         value_constraint = Keyword('if') - logical_expression
-        value_constraint.setParseAction(lambda t: ('constraint', t[1]))
+        value_constraint.setParseAction(lambda t: t[1])
         type_refinement_definition = (Keyword('new') - qualified_identifier - Suppress(Literal('('))
                                       - identifier - Suppress(Literal('=>'))
                                       - (Keyword('null') | qualified_identifier)
@@ -179,10 +180,15 @@ class Parser:
         array_type_definition.setName('Array')
 
         # Message Type
-        location_expression = Keyword('with') - logical_expression
-        location_expression.setParseAction(lambda t: ('location', t[1]))
-        then = (Keyword('then') - (Keyword('null') | identifier) - Optional(location_expression)
-                - Optional(value_constraint))
+        first_aspect = Keyword('First =>') - mathematical_expression
+        first_aspect.setParseAction(lambda t: ('first', t[1]))
+        length_aspect = Keyword('Length =>') - mathematical_expression
+        length_aspect.setParseAction(lambda t: ('length', t[1]))
+        component_aspects = Keyword('with') - delimitedList(first_aspect | length_aspect)
+        component_aspects.setParseAction(lambda t: dict(t[1:]))
+        then = (Keyword('then') - (Keyword('null') | identifier)
+                - Group(Optional(component_aspects))
+                - Group(Optional(value_constraint)))
         then.setParseAction(parse_then)
         then_list = then + ZeroOrMore(comma - then)
         then_list.setParseAction(lambda t: [t.asList()])
@@ -335,38 +341,15 @@ def create_edges(nodes: Dict[str, Node], components: List[Component]) -> None:
             edge = Edge(nodes[then.name]) if then.name != 'null' else Edge(FINAL)
             if then.constraint:
                 edge.condition = then.constraint
-            if then.location:
-                location = convert_location_expression(then.location)
-                if 'first' in location:
-                    edge.first = location['first'].converted(replace_value_by_length_value)
-                if 'length' in location:
-                    edge.length = location['length'].converted(replace_value_by_length_value)
+            if then.first:
+                edge.first = then.first.converted(replace_value_by_length_value)
+            if then.length:
+                edge.length = then.length.converted(replace_value_by_length_value)
             nodes[component.name].edges.append(edge)
 
 
 def replace_value_by_length_value(self: MathExpr) -> MathExpr:
     return LengthValue(self.name) if isinstance(self, Value) else self
-
-
-def convert_location_expression(expr: LogExpr) -> Dict[str, MathExpr]:
-    result: Dict[str, MathExpr] = {}
-    if isinstance(expr, Equal):
-        result.update(convert_location_equation(expr))
-    elif isinstance(expr, And):
-        result.update(convert_location_equation(expr.left))
-        result.update(convert_location_equation(expr.right))
-    else:
-        raise ParserError(f'unexpected "{expr.symbol()}" in "{expr}"')
-    return result
-
-
-def convert_location_equation(expr: LogExpr) -> Dict[str, MathExpr]:
-    if not isinstance(expr, Equal):
-        raise ParserError(f'expected "=" instead of "{expr.symbol()}" in "{expr}"')
-    if not isinstance(expr.left, Value) \
-            or (expr.left != Value('First') and expr.left != Value('Length')):
-        raise ParserError(f'expected "First" or "Length" instead of "{expr.left}"')
-    return {expr.left.name.lower(): expr.right}
 
 
 def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> Dict[str, Refinement]:
@@ -454,19 +437,11 @@ def parse_mathematical_expression(string: str, location: int, tokens: list) -> M
     return result[0]
 
 
-def parse_then(string: str, location: int, tokens: list) -> Then:
-    identifier = tokens[1]
-    location_expr = None
-    constraint = None
-    for key, expr in tokens[2:]:
-        if key == 'location':
-            location_expr = expr
-        elif key == 'constraint':
-            constraint = expr
-        else:
-            raise ParseFatalException(
-                string, location, 'expected location expression or value constraint')
-    return Then(identifier, location_expr, constraint)
+def parse_then(tokens: list) -> Then:
+    return Then(tokens[1],
+                tokens[2][0]['first'] if tokens[2] and 'first' in tokens[2][0] else None,
+                tokens[2][0]['length'] if tokens[2] and 'length' in tokens[2][0] else None,
+                tokens[3][0] if tokens[3] else None)
 
 
 def verify_identifier(string: str, location: int, tokens: list) -> str:
@@ -512,8 +487,6 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
         if tokens[3] == 'new':
             if len(tokens) == 7:
                 tokens.append(TRUE)
-            elif len(tokens) == 8:
-                tokens[7] = tokens[7][1]
             return Refinement(tokens[1], *tokens[4:])
         if tokens[3] == 'array of':
             return Array(tokens[1], tokens[4])

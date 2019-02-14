@@ -11,15 +11,15 @@ package Ethernet is
             then TCI
                if TPID = 16#8100#,
             then EtherType
-               with First = TPID'First
+               with First => TPID'First
                if TPID /= 16#8100#;
          TCI : UINT16;
          EtherType : UINT16
             then Payload
-               with Length = EtherType * 8
+               with Length => EtherType * 8
                if EtherType <= 1500,
             then Payload
-               with Length = Message'Last - EtherType'Last
+               with Length => Message'Last - EtherType'Last
                if EtherType >= 1536;
          Payload : Payload_Array
             then null
