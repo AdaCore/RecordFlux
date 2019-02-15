@@ -19,7 +19,7 @@ is
      with
        Pre => Is_Contained (Buffer);
 
-   procedure First (Buffer : Types.Bytes; Offset : out Offset_Type; First : out Types.Index_Type; Last : out Types.Index_Type)
+   procedure Get_First (Buffer : Types.Bytes; Offset : out Offset_Type; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_First (Buffer)),
        Post => ((First >= Buffer'First and then Last <= Buffer'Last) and then IPv4.Option.Is_Contained (Buffer (First .. Last)));
@@ -28,7 +28,7 @@ is
      with
        Pre => Is_Contained (Buffer);
 
-   procedure Next (Buffer : Types.Bytes; Offset : in out Offset_Type; First : out Types.Index_Type; Last : out Types.Index_Type)
+   procedure Get_Next (Buffer : Types.Bytes; Offset : in out Offset_Type; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Next (Buffer, Offset)),
        Post => ((First >= Buffer'First and then Last <= Buffer'Last) and then IPv4.Option.Is_Contained (Buffer (First .. Last)));

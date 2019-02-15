@@ -211,7 +211,7 @@ package body IPv4.Tests is
          Valid := IPv4.Options.Valid_First (Buffer (First .. Last));
          Assert (Valid, "Invalid first");
          if Valid then
-            IPv4.Options.First (Buffer (First .. Last), Offset, Option_First, Option_Last);
+            IPv4.Options.Get_First (Buffer (First .. Last), Offset, Option_First, Option_Last);
             Assert (Option_First'Image, Types.Index_Type'Image (21), "Invalid First of first option");
             Assert (Option_Last'Image, Types.Index_Type'Image (23), "Invalid Last of first option");
             Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
@@ -223,7 +223,7 @@ package body IPv4.Tests is
             Valid := IPv4.Options.Valid_Next (Buffer (First .. Last), Offset);
             Assert (Valid, "Invalid next after first option");
             if Valid then
-               IPv4.Options.Next (Buffer (First .. Last), Offset, Option_First, Option_Last);
+               IPv4.Options.Get_Next (Buffer (First .. Last), Offset, Option_First, Option_Last);
                Assert (Option_First'Image, Types.Index_Type'Image (24), "Invalid First of second option");
                Assert (Option_Last'Image, Types.Index_Type'Image (34), "Invalid Last of second option");
                Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
@@ -236,7 +236,7 @@ package body IPv4.Tests is
             Valid := IPv4.Options.Valid_Next (Buffer (First .. Last), Offset);
             Assert (Valid, "Invalid next after second option");
             if Valid then
-               IPv4.Options.Next (Buffer (First .. Last), Offset, Option_First, Option_Last);
+               IPv4.Options.Get_Next (Buffer (First .. Last), Offset, Option_First, Option_Last);
                Assert (Option_First'Image, Types.Index_Type'Image (35), "Invalid First of third option");
                Assert (Option_Last'Image, Types.Index_Type'Image (35), "Invalid Last of third option");
                Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
