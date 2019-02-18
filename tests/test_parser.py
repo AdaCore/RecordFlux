@@ -125,7 +125,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'^Expected {{"First =>" - MathematicalExpression} | {"Length =>" -'
+            r'^Expected {{"First" - "=>" - MathematicalExpression} | {"Length" - "=>" -'
             r' MathematicalExpression}} \(at char 239\), \(line:8, col:38\)$')
 
     def test_invalid_modular_type(self) -> None:
@@ -310,11 +310,19 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                   'Fri': Number(5),
                                   'Sat': Number(6),
                                   'Sun': Number(7)},
-                                 Number(3)),
+                                 Number(3),
+                                 False),
                      Enumeration('Gender',
                                  {'M': Number(0),
                                   'F': Number(1)},
-                                 Number(1))]))}
+                                 Number(1),
+                                 False),
+                     Enumeration('Priority',
+                                 {'LOW': Number(1),
+                                  'MEDIUM': Number(4),
+                                  'HIGH': Number(7)},
+                                 Number(3),
+                                 True)]))}
         self.assert_specifications([f'{self.testdir}/enumeration_type.rflx'], spec)
 
     def test_array_type_spec(self) -> None:

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from pyparsing import (alphanums, delimitedList, infixNotation, nums, opAssoc, CaselessKeyword,
                        ParseFatalException, Forward, Group, Keyword, Literal, Optional, Regex,
@@ -152,10 +152,14 @@ class Parser:
         type_refinement_definition.setName('Refinement')
 
         # Integer Types
-        size_aspect = Suppress(Keyword('with Size =>')) - mathematical_expression
+        size_aspect = Keyword('Size') - Keyword('=>') - mathematical_expression
+        size_aspect.setParseAction(parse_aspect)
+        range_type_aspects = Keyword('with') - size_aspect
+        range_type_aspects.setParseAction(parse_aspects)
+
         range_type_definition = (Keyword('range') - mathematical_expression
                                  - Suppress(Literal('..')) - mathematical_expression
-                                 - size_aspect)
+                                 - range_type_aspects)
         range_type_definition.setName('RangeInteger')
         modular_type_definition = Keyword('mod') - mathematical_expression
         modular_type_definition.setName('ModularInteger')
@@ -170,8 +174,18 @@ class Parser:
         element_value_association.setParseAction(lambda t: (t[0], t[2]))
         named_enumeration = (element_value_association
                              + ZeroOrMore(comma - element_value_association))
+
+        boolean_literal = Keyword('True') | Keyword('False')
+        boolean_literal.setParseAction(lambda t: t[0] == 'True')
+        boolean_aspect_definition = Optional(Keyword('=>') - boolean_literal)
+        boolean_aspect_definition.setParseAction(lambda t: (t if t else ['=>', True]))
+        always_valid_aspect = Literal('Always_Valid') - boolean_aspect_definition
+        always_valid_aspect.setParseAction(parse_aspect)
+        enumeration_aspects = Keyword('with') - delimitedList(size_aspect | always_valid_aspect)
+        enumeration_aspects.setParseAction(parse_aspects)
+
         enumeration_type_definition = (Literal('(') - (named_enumeration | positional_enumeration)
-                                       - Literal(')') - size_aspect)
+                                       - Literal(')') - enumeration_aspects)
         enumeration_type_definition.setName('Enumeration')
 
         # Array Type
@@ -180,12 +194,13 @@ class Parser:
         array_type_definition.setName('Array')
 
         # Message Type
-        first_aspect = Keyword('First =>') - mathematical_expression
-        first_aspect.setParseAction(lambda t: ('first', t[1]))
-        length_aspect = Keyword('Length =>') - mathematical_expression
-        length_aspect.setParseAction(lambda t: ('length', t[1]))
+        first_aspect = Keyword('First') - Keyword('=>') - mathematical_expression
+        first_aspect.setParseAction(parse_aspect)
+        length_aspect = Keyword('Length') - Keyword('=>') - mathematical_expression
+        length_aspect.setParseAction(parse_aspect)
         component_aspects = Keyword('with') - delimitedList(first_aspect | length_aspect)
-        component_aspects.setParseAction(lambda t: dict(t[1:]))
+        component_aspects.setParseAction(parse_aspects)
+
         then = (Keyword('then') - (Keyword('null') | identifier)
                 - Group(Optional(component_aspects))
                 - Group(Optional(value_constraint)))
@@ -491,19 +506,33 @@ def parse_attribute(string: str, location: int, tokens: list) -> Attribute:
 
 
 @fatalexceptions
+def parse_aspect(string: str, location: int, tokens: list) -> Tuple[str, Any]:
+    return (tokens[0].lower(), tokens[2])
+
+
+@fatalexceptions
+def parse_aspects(string: str, location: int, tokens: list) -> Dict[str, Any]:
+    return dict(tokens[1:])
+
+
+@fatalexceptions
 def parse_type(string: str, location: int, tokens: list) -> Type:
     try:
         if tokens[3] == 'mod':
             return ModularInteger(tokens[1], *tokens[4:6])
         if tokens[3] == 'range':
+            tokens[6] = tokens[6]['size']
             return RangeInteger(tokens[1], *tokens[4:7])
         if tokens[3] == 'message':
             return Message(tokens[1], tokens[4])
         if tokens[3] == '(':
             elements = dict(tokens[4:-2])
+            aspects = tokens[-1]
             if len(elements) < len(tokens[4:-2]):
                 raise ModelError(f'"{tokens[1]}" contains duplicate elements')
-            return Enumeration(tokens[1], elements, tokens[-1])
+            if 'always_valid' not in aspects:
+                aspects['always_valid'] = False
+            return Enumeration(tokens[1], elements, aspects['size'], aspects['always_valid'])
         if tokens[3] == 'new':
             if len(tokens) == 7:
                 tokens.append(TRUE)

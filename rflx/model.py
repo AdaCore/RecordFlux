@@ -683,7 +683,8 @@ class RangeInteger(Type):
 
 
 class Enumeration(Type):
-    def __init__(self, name: str, literals: Dict[str, Number], size: Number) -> None:
+    def __init__(self, name: str, literals: Dict[str, Number], size: Number,
+                 always_valid: bool) -> None:
         if log(max(map(int, literals.values())) + 1) / log(2) > int(size):
             raise ModelError(f'size for "{name}" too small')
         if len(set(literals.values())) < len(literals.values()):
@@ -691,6 +692,7 @@ class Enumeration(Type):
         super().__init__(name)
         self.literals = literals
         self.__size = size
+        self.always_valid = always_valid
 
     @property
     def size(self) -> Number:
