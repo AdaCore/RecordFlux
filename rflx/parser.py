@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Dict, List, Union
+from typing import Any, Callable, Dict, List, Union
 
 from pyparsing import (alphanums, delimitedList, infixNotation, nums, opAssoc, CaselessKeyword,
                        ParseFatalException, Forward, Group, Keyword, Literal, Optional, Regex,
@@ -373,6 +373,19 @@ def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> Dict[st
     return refinements
 
 
+# pylint: disable=unused-argument
+def fatalexceptions(parse_function: Callable) -> Callable:
+    def wrapper(string: str, location: int, tokens: list) -> Any:
+        try:
+            return parse_function(string, location, tokens)
+        except ParseFatalException as e:
+            raise e
+        except Exception as e:
+            raise ParseFatalException(string, location, f'implementation error ({e})')
+    return wrapper
+
+
+@fatalexceptions
 def parse_term(string: str, location: int, tokens: list) -> Union[Attribute, Number]:
     if isinstance(tokens[0], str):
         return Value(tokens[0])
@@ -381,6 +394,7 @@ def parse_term(string: str, location: int, tokens: list) -> Union[Attribute, Num
     raise ParseFatalException(string, location, 'expected identifier, attribute or number')
 
 
+@fatalexceptions
 def parse_relation(string: str, location: int, tokens: list) -> Relation:
     if tokens[1] == '<':
         return Less(tokens[0], tokens[2])
@@ -397,6 +411,7 @@ def parse_relation(string: str, location: int, tokens: list) -> Relation:
     raise ParseFatalException(string, location, 'unexpected relation operator')
 
 
+@fatalexceptions
 def parse_logical_expression(string: str, location: int, tokens: list) -> LogExpr:
     result: List[LogExpr] = tokens[0]
     while len(result) > 1:
@@ -414,6 +429,7 @@ def parse_logical_expression(string: str, location: int, tokens: list) -> LogExp
     return result[0]
 
 
+@fatalexceptions
 def parse_mathematical_expression(string: str, location: int, tokens: list) -> MathExpr:
     result: List[MathExpr] = tokens[0]
     while len(result) > 1:
@@ -437,13 +453,15 @@ def parse_mathematical_expression(string: str, location: int, tokens: list) -> M
     return result[0]
 
 
-def parse_then(tokens: list) -> Then:
+@fatalexceptions
+def parse_then(string: str, location: int, tokens: list) -> Then:
     return Then(tokens[1],
                 tokens[2][0]['first'] if tokens[2] and 'first' in tokens[2][0] else None,
                 tokens[2][0]['length'] if tokens[2] and 'length' in tokens[2][0] else None,
                 tokens[3][0] if tokens[3] else None)
 
 
+@fatalexceptions
 def verify_identifier(string: str, location: int, tokens: list) -> str:
     reserved_words = ['abort', 'abs', 'abstract', 'accept', 'access', 'aliased', 'all', 'and',
                       'array', 'at', 'begin', 'body', 'case', 'constant', 'declare', 'delay',
@@ -461,6 +479,7 @@ def verify_identifier(string: str, location: int, tokens: list) -> str:
     return tokens[0]
 
 
+@fatalexceptions
 def parse_attribute(string: str, location: int, tokens: list) -> Attribute:
     if tokens[2] == 'First':
         return First(tokens[0])
@@ -471,6 +490,7 @@ def parse_attribute(string: str, location: int, tokens: list) -> Attribute:
     raise ParseFatalException(string, location, 'unexpected attribute')
 
 
+@fatalexceptions
 def parse_type(string: str, location: int, tokens: list) -> Type:
     try:
         if tokens[3] == 'mod':
