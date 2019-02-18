@@ -1,6 +1,7 @@
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
+from pathlib import Path
 from typing import Callable, Dict, List, Tuple
 
 from rflx.model import (Add, And, Array, Attribute, Div, Enumeration, Equal, Expr, Field, First,
@@ -596,6 +597,27 @@ class Generator:
     def units(self) -> List[Unit]:
         return list(self.__units.values())
 
+    def write_units(self, output_directory: str) -> List[Path]:
+        written_files = []
+
+        outdir = Path(output_directory)
+        if not outdir.is_dir():
+            raise GeneratorError(f'invalid output directory: {outdir}')
+
+        for unit in self.units():
+            filename = outdir.joinpath(unit.package.name.lower().replace('.', '-') + '.ads')
+            written_files.append(filename)
+            with open(filename, 'w') as f:
+                f.write(unit.specification())
+
+            if unit.definition().strip():
+                filename = filename.with_suffix('.adb')
+                written_files.append(filename)
+                with open(filename, 'w') as f:
+                    f.write(unit.definition())
+
+        return written_files
+
     def __process_pdus(self, pdus: List[PDU]) -> None:
         seen_types: List[str] = []
         unreachable_functions: Dict[str, List[Subprogram]] = {}
@@ -771,6 +793,10 @@ class Generator:
                     refinement.condition.simplified(
                         {Value(field): MathCall(f'{refinement.pdu}.Get_{field} (Buffer)')
                          for field in self.__pdu_fields[refinement.pdu]})))
+
+
+class GeneratorError(Exception):
+    pass
 
 
 def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:

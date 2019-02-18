@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import pathlib
 import sys
 
-from rflx.generator import Generator
+from typing import List, Tuple
+
+from rflx.generator import Generator, GeneratorError
 from rflx.model import ModelError
 from rflx.parser import Parser, ParseFatalException, ParserError
 
@@ -18,48 +19,46 @@ def main() -> None:
     arg_parser.add_argument('files', metavar='FILE', type=str, nargs='+')
     args = arg_parser.parse_args()
 
+    pdus, refinements = parse(args.files)
+
+    if args.generate:
+        generate(pdus, refinements, args.output)
+
+
+def parse(files: List) -> Tuple[List, List]:
     parser = Parser()
-    for f in args.files:
+
+    for f in files:
         try:
             print('Parsing {}... '.format(f), end='')
             parser.parse(f)
             print('OK')
         except ParseFatalException as e:
-            print('Syntax error: {}'.format(e))
+            print('\nSyntax error: {}'.format(e))
             sys.exit(1)
         except ParserError as e:
-            print('Parser error: {}'.format(e))
+            print('\nParser error: {}'.format(e))
             sys.exit(1)
 
-    if args.generate:
-        outdir = pathlib.Path(args.output)
-        if not outdir.is_dir():
-            print(f'Invalid output directory: {outdir}')
-            sys.exit(1)
+    return (parser.pdus, parser.refinements)
 
-        generator = Generator()
-        try:
-            print('Generating... ', end='')
-            generator.generate_dissector(parser.pdus, parser.refinements)
-            print('OK')
-        except AssertionError as e:
-            print('Generation error: {}'.format(e))
-            sys.exit(1)
-        except ModelError as e:
-            print('Model error: {}'.format(e))
-            sys.exit(1)
 
-        for unit in generator.units():
-            filename = outdir.joinpath(unit.package.name.lower().replace('.', '-') + '.ads')
-            print('Creating {}'.format(filename))
-            with open(filename, 'w') as f:
-                f.write(unit.specification())
+def generate(pdus: List, refinements: List, output: str) -> None:
+    generator = Generator()
 
-            if unit.definition().strip():
-                filename = filename.with_suffix('.adb')
-                print('Creating {}'.format(filename))
-                with open(filename, 'w') as f:
-                    f.write(unit.definition())
+    try:
+        print('Generating... ', end='')
+        generator.generate_dissector(pdus, refinements)
+        written_files = generator.write_units(output)
+        print('OK')
+        for f in written_files:
+            print(f'Created {f}')
+    except GeneratorError as e:
+        print('\nGenerator error: {}'.format(e))
+        sys.exit(1)
+    except ModelError as e:
+        print('\nModel error: {}'.format(e))
+        sys.exit(1)
 
 
 if __name__ == '__main__':
