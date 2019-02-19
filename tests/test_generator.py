@@ -4,7 +4,7 @@ from typing import List
 from rflx.model import PDU, Refinement
 from rflx.generator import Generator
 
-from tests.models import ETHERNET_PDU
+from tests.models import ETHERNET_PDU, ENUMERATION_PDU
 
 
 class TestGenerator(unittest.TestCase):
@@ -31,6 +31,14 @@ class TestGenerator(unittest.TestCase):
 
     def test_ethernet_dissector_def(self) -> None:
         generator = generate_dissector([ETHERNET_PDU], [])
+        self.assert_definition(generator)
+
+    def test_enumeration_dissector_spec(self) -> None:
+        generator = generate_dissector([ENUMERATION_PDU], [])
+        self.assert_specification(generator)
+
+    def test_enumeration_dissector_def(self) -> None:
+        generator = generate_dissector([ENUMERATION_PDU], [])
         self.assert_definition(generator)
 
 

@@ -1,6 +1,6 @@
-from rflx.model import (And, Array, Div, Edge, Equal, FINAL, First, GreaterEqual, InitialNode, Last,
-                        Length, LengthValue, LessEqual, ModularInteger, Mul, Node, NotEqual, Number,
-                        PDU, Pow, RangeInteger, Sub, Value)
+from rflx.model import (And, Array, Div, Edge, Enumeration, Equal, FINAL, First, GreaterEqual,
+                        InitialNode, Last, Length, LengthValue, LessEqual, ModularInteger, Mul,
+                        Node, NotEqual, Number, PDU, Pow, RangeInteger, Sub, Value)
 
 
 def create_ethernet_pdu() -> PDU:
@@ -41,4 +41,20 @@ def create_ethernet_pdu() -> PDU:
     return PDU('Ethernet.Frame', initial)
 
 
+def create_enumeration_pdu() -> PDU:
+    priority_type = Enumeration('Priority',
+                                {'LOW': Number(1), 'MEDIUM': Number(4), 'HIGH': Number(7)},
+                                Number(3),
+                                True)
+
+    initial = InitialNode()
+    priority = Node('Priority', priority_type)
+
+    initial.edges = [Edge(priority)]
+    priority.edges = [Edge(FINAL)]
+
+    return PDU('Enumeration.Message', initial)
+
+
 ETHERNET_PDU = create_ethernet_pdu()
+ENUMERATION_PDU = create_enumeration_pdu()

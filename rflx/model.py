@@ -698,6 +698,10 @@ class Enumeration(Type):
     def size(self) -> Number:
         return self.__size
 
+    @property
+    def enum_name(self) -> str:
+        return f'{self.name}_Enum'
+
 
 class Array(Type):
     def __init__(self, name: str, element_type: str = '') -> None:

@@ -501,6 +501,8 @@ class ReturnStatement(Statement):
         self.expression = expression
 
     def __str__(self) -> str:
+        if isinstance(self.expression, CaseExpression):
+            return f'      return ({self.expression});'
         return f'      return {self.expression};'
 
 
@@ -773,9 +775,14 @@ class Generator:
                     else:
                         raise NotImplementedError(f'unsupported type "{type(field.type).__name__}"')
 
-                    type_name = field.type.name if not isinstance(field.type, Array) \
-                        else 'Types.Index_Type'
-                    function = create_unreachable_function(type_name)
+                    if isinstance(field.type, Array):
+                        type_name = 'Types.Index_Type'
+                    else:
+                        type_name = field.type.name
+                    base_name = None
+                    if isinstance(field.type, Enumeration) and field.type.always_valid:
+                        base_name = field.type.base_name
+                    function = create_unreachable_function(type_name, base_name)
                     if function not in unreachable_functions[pdu.package]:
                         unreachable_functions[pdu.package].append(function)
 
@@ -880,11 +887,22 @@ class GeneratorError(Exception):
 
 
 def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
-    return [ModularType(enum.base_name,
-                        Pow(Number(2), enum.size)),
-            EnumerationType(enum.name,
-                            enum.literals,
-                            enum.size)]
+    types: List[TypeDeclaration] = []
+
+    types.append(
+        ModularType(enum.base_name, Pow(Number(2), enum.size)))
+    types.append(
+        EnumerationType(enum.enum_name if enum.always_valid else enum.name,
+                        enum.literals,
+                        enum.size))
+    if enum.always_valid:
+        types.append(
+            VariantRecordType(enum.name,
+                              Discriminant('Known', 'Boolean', 'False'),
+                              [VariantItem('True', [ComponentItem('Enum', enum.enum_name)]),
+                               VariantItem('False', [ComponentItem('Raw', enum.base_name)])]))
+
+    return types
 
 
 def enumeration_functions(enum: Enumeration) -> List[Subprogram]:
@@ -899,29 +917,56 @@ def enumeration_functions(enum: Enumeration) -> List[Subprogram]:
 
     control_expression = LogCall(f'Convert_To_{enum.base_name} (Buffer, Offset)')
 
-    validation_cases: List[Tuple[Expr, Expr]] = []
-    validation_cases += [(value, Value('True')) for value in enum.literals.values()]
-    validation_cases += [(Value('others'), Value('False'))]
+    validation_expression: Expr
+    if enum.always_valid:
+        validation_expression = Value('True')
+    else:
+        validation_cases: List[Tuple[Expr, Expr]] = []
+        validation_cases.extend((value, Value('True')) for value in enum.literals.values())
+        validation_cases.append((Value('others'), Value('False')))
 
+        validation_expression = CaseExpression(control_expression,
+                                               validation_cases)
+    validation_function = ExpressionFunction(f'Valid_{enum.name}',
+                                             'Boolean',
+                                             [('Buffer', 'Types.Bytes'),
+                                              ('Offset', 'Natural')],
+                                             validation_expression,
+                                             [Precondition(common_precondition)])
+
+    function_name = f'Convert_To_{enum.name}'
+    parameters = [('Buffer', 'Types.Bytes'),
+                  ('Offset', 'Natural')]
+    precondition = Precondition(And(common_precondition,
+                                    LogCall(f'Valid_{enum.name} (Buffer, Offset)')))
     conversion_cases: List[Tuple[Expr, Expr]] = []
-    conversion_cases += [(value, Value(key)) for key, value in enum.literals.items()]
-    conversion_cases += [(Value('others'), LogCall(f'Unreachable_{enum.name}'))]
+    conversion_function: Subprogram
 
-    return [ExpressionFunction(f'Valid_{enum.name}',
-                               'Boolean',
-                               [('Buffer', 'Types.Bytes'),
-                                ('Offset', 'Natural')],
-                               CaseExpression(control_expression,
-                                              validation_cases),
-                               [Precondition(common_precondition)]),
-            ExpressionFunction(f'Convert_To_{enum.name}',
-                               enum.name,
-                               [('Buffer', 'Types.Bytes'),
-                                ('Offset', 'Natural')],
-                               CaseExpression(control_expression,
-                                              conversion_cases),
-                               [Precondition(And(common_precondition,
-                                                 LogCall(f'Valid_{enum.name} (Buffer, Offset)')))])]
+    if enum.always_valid:
+        conversion_cases.extend((value, Aggregate(Value('True'), Value(key)))
+                                for key, value in enum.literals.items())
+        conversion_cases.append((Value('others'),
+                                 Aggregate(Value('False'), Value('Raw'))))
+
+        conversion_function = Function(function_name,
+                                       enum.name,
+                                       parameters,
+                                       [Declaration('Raw', enum.base_name, control_expression)],
+                                       [ReturnStatement(CaseExpression(Value('Raw'),
+                                                                       conversion_cases))],
+                                       [precondition])
+    else:
+        conversion_cases.extend((value, Value(key)) for key, value in enum.literals.items())
+        conversion_cases.append((Value('others'), LogCall(f'Unreachable_{enum.name}')))
+
+        conversion_function = ExpressionFunction(function_name,
+                                                 enum.name,
+                                                 parameters,
+                                                 CaseExpression(control_expression,
+                                                                conversion_cases),
+                                                 [precondition])
+
+    return [validation_function, conversion_function]
 
 
 def array_types() -> List[TypeDeclaration]:
@@ -1168,12 +1213,12 @@ def create_field_validation_function(
         [Precondition(COMMON_PRECONDITION)])
 
 
-def create_unreachable_function(type_name: str) -> Subprogram:
+def create_unreachable_function(type_name: str, base_name: str = None) -> Subprogram:
     return ExpressionFunction(
         f'Unreachable_{type_name}'.replace('.', '_'),
         type_name,
         [],
-        First(type_name),
+        First(type_name) if not base_name else Aggregate(Value('False'), First(base_name)),
         [Precondition(FALSE)])
 
 
