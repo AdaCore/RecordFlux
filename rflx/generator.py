@@ -174,6 +174,55 @@ class DerivedType(TypeDeclaration):
         return f'   type {self.name} is new {self.type_name};'
 
 
+class VariantRecordType(TypeDeclaration):
+    def __init__(self, name: str, discriminant: 'Discriminant',
+                 variants: List['VariantItem']) -> None:
+        super().__init__(name)
+        self.discriminant = discriminant
+        self.variants = variants
+
+    def __str__(self) -> str:
+        variants = ''.join(str(variant) for variant in self.variants)
+        return (f'   type {self.name} ({self.discriminant}) is\n'
+                f'      record\n'
+                f'         case {self.discriminant.name} is\n'
+                f'{variants}'
+                f'         end case;\n'
+                f'      end record;')
+
+
+class Discriminant:
+    def __init__(self, name: str, type_: str, default: str = None) -> None:
+        self.name = name
+        self.type = type_
+        self.default = default
+
+    def __str__(self) -> str:
+        default = ''
+        if self.default:
+            default = f' := {self.default}'
+        return f'{self.name} : {self.type}{default}'
+
+
+class VariantItem:
+    def __init__(self, discrete_choice: str, components: List['ComponentItem']) -> None:
+        self.discrete_choice = discrete_choice
+        self.components = components
+
+    def __str__(self) -> str:
+        components = '   '.join(str(component) for component in self.components)
+        return f'            when {self.discrete_choice} =>\n{components}'
+
+
+class ComponentItem:
+    def __init__(self, name: str, type_: str) -> None:
+        self.name = name
+        self.type = type_
+
+    def __str__(self) -> str:
+        return f'               {self.name} : {self.type};\n'
+
+
 class Aspect(ABC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -400,6 +449,15 @@ class CaseExpression(Expr):
         cases = ', '.join([f'when {choice} => {expr}'
                            for choice, expr in grouped_cases])
         return f'case {self.control_expression} is {cases}'
+
+
+class Aggregate(Expr):
+    def __init__(self, *expressions: Expr) -> None:
+        self.expressions = expressions
+
+    def __str__(self) -> str:
+        expressions = ', '.join(str(expression) for expression in self.expressions)
+        return f'({expressions})'
 
 
 class Statement(ABC):
