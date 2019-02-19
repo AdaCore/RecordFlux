@@ -241,10 +241,13 @@ class Import(Aspect):
 
 
 class Subprogram(SparkRepresentation):
+    # pylint: disable=too-many-arguments
     def __init__(self, name: str, parameters: List[Tuple[str, str]] = None,
-                 body: List['Statement'] = None, aspects: List[Aspect] = None) -> None:
+                 declarations: List['Declaration'] = None, body: List['Statement'] = None,
+                 aspects: List[Aspect] = None) -> None:
         self.name = name
         self.parameters = parameters or []
+        self.declarations = declarations or []
         self.body = body or []
         self.aspects = aspects or []
 
@@ -262,6 +265,9 @@ class Subprogram(SparkRepresentation):
             parameters = '; '.join([f'{p_name} : {p_type}' for p_name, p_type in self.parameters])
             parameters = f' ({parameters})'
         return parameters
+
+    def _declarations(self) -> str:
+        return ''.join(f'      {declaration}\n' for declaration in self.declarations)
 
     def _body(self) -> str:
         return '\n'.join([str(s) for s in self.body])
@@ -296,8 +302,9 @@ class Pragma(Subprogram):
 class Function(Subprogram):
     # pylint: disable=too-many-arguments
     def __init__(self, name: str, return_type: str, parameters: List[Tuple[str, str]] = None,
-                 body: List['Statement'] = None, aspects: List[Aspect] = None) -> None:
-        super().__init__(name, parameters, body, aspects)
+                 declarations: List['Declaration'] = None, body: List['Statement'] = None,
+                 aspects: List[Aspect] = None) -> None:
+        super().__init__(name, parameters, declarations, body, aspects)
         self.return_type = return_type
 
     def specification(self) -> str:
@@ -306,6 +313,7 @@ class Function(Subprogram):
 
     def definition(self) -> str:
         return (f'   function {self.name}{self._parameters()} return {self.return_type} is\n'
+                f'{self._declarations()}'
                 f'   begin\n'
                 f'{self._body()}\n'
                 f'   end {self.name};')
@@ -335,9 +343,23 @@ class Procedure(Subprogram):
 
     def definition(self) -> str:
         return (f'   procedure {self.name}{self._parameters()} is\n'
+                f'{self._declarations()}'
                 f'   begin\n'
                 f'{self._body()}\n'
                 f'   end {self.name};')
+
+
+class Declaration:
+    def __init__(self, name: str, type_: str, default: Expr = None) -> None:
+        self.name = name
+        self.type = type_
+        self.default = default
+
+    def __str__(self) -> str:
+        default = ''
+        if self.default:
+            default = f' := {self.default}'
+        return f'{self.name} : {self.type}{default};'
 
 
 class IfExpression(LogExpr):
@@ -855,6 +877,7 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
     return [Function('Valid_First',
                      'Boolean',
                      [('Buffer', 'Types.Bytes')],
+                     [],
                      [ReturnStatement(
                          LogCall('Valid_Next (Buffer, Offset_Type (Buffer\'First))'))],
                      [Precondition(common_precondition)]),
@@ -863,6 +886,7 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
                        ('Offset', 'out Offset_Type'),
                        ('First', 'out Types.Index_Type'),
                        ('Last', 'out Types.Index_Type')],
+                      [],
                       [Assignment('Offset', Value('Offset_Type (Buffer\'First)')),
                        CallStatement('Get_Next', ['Buffer', 'Offset', 'First', 'Last'])],
                       [Precondition(And(common_precondition,
@@ -877,6 +901,7 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
                      'Boolean',
                      [('Buffer', 'Types.Bytes'),
                       ('Offset', 'Offset_Type')],
+                     [],
                      [PragmaStatement('Assume',
                                       [(f'{package}.{array.element_type}.Is_Contained '
                                         '(Buffer (Types.Index_Type (Offset) .. Buffer\'Last))')]),
@@ -889,6 +914,7 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
                        ('Offset', 'in out Offset_Type'),
                        ('First', 'out Types.Index_Type'),
                        ('Last', 'out Types.Index_Type')],
+                      [],
                       [Assignment('First', Value('Types.Index_Type (Offset)')),
                        Assignment('Last', Add(Value('First'),
                                               Cast('Types.Length_Type',
@@ -920,6 +946,7 @@ def create_contain_functions() -> List[Subprogram]:
                                aspects=[Ghost(), Import()]),
             Procedure('Label',
                       [('Buffer', 'Types.Bytes')],
+                      [],
                       [PragmaStatement('Assume', ['Is_Contained (Buffer)'])],
                       aspects=[Postcondition(LogCall('Is_Contained (Buffer)'))])]
 
@@ -1128,6 +1155,7 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
                 [('Buffer', 'Types.Bytes'),
                  ('First', 'out Types.Index_Type'),
                  ('Last', 'out Types.Index_Type')],
+                [],
                 body,
                 [precondition,
                  postcondition]))
@@ -1218,6 +1246,7 @@ def create_contains_function(name: str, pdu: str, field: str, sdu: str,
     return Function(name,
                     'Boolean',
                     [('Buffer', 'Types.Bytes')],
+                    [],
                     [IfStatement(
                         [(condition,
                           success_statements)]),
