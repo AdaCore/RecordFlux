@@ -1,15 +1,15 @@
 from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-from pyparsing import (alphanums, delimitedList, infixNotation, nums, opAssoc, CaselessKeyword,
-                       ParseFatalException, Forward, Group, Keyword, Literal, Optional, Regex,
-                       StringEnd, Suppress, Word, WordEnd, WordStart, ZeroOrMore)
+from pyparsing import (CaselessKeyword, Forward, Group, Keyword, Literal, Optional,
+                       ParseFatalException, Regex, StringEnd, Suppress, Word, WordEnd, WordStart,
+                       ZeroOrMore, alphanums, delimitedList, infixNotation, nums, opAssoc)
 
-from rflx.expression import (Add, And, Attribute, Div, Equal, First, Greater, GreaterEqual, Last,
-                             Length, LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number,
-                             NotEqual, Or, Pow, Relation, Sub, TRUE, UNDEFINED, Value)
-from rflx.model import (Array, Edge, Enumeration, FINAL, InitialNode, ModelError, ModularInteger,
-                        Node, PDU, RangeInteger, Refinement, Type)
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, First, Greater,
+                             GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
+                             MathExpr, Mul, NotEqual, Number, Or, Pow, Relation, Sub, Value)
+from rflx.model import (FINAL, PDU, Array, Edge, Enumeration, InitialNode, ModelError,
+                        ModularInteger, Node, RangeInteger, Refinement, Type)
 
 
 class SyntaxTree:

@@ -3,13 +3,12 @@
 
 import argparse
 import sys
-
 from typing import List, Tuple
 
 from rflx.expression import ExpressionError
 from rflx.generator import Generator, GeneratorError
 from rflx.model import ModelError
-from rflx.parser import Parser, ParseFatalException, ParserError
+from rflx.parser import ParseFatalException, Parser, ParserError
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 from rflx.expression import (And, Div, Equal, First, GreaterEqual, Last, Length, LengthValue,
                              LessEqual, Mul, NotEqual, Number, Pow, Sub, Value)
-from rflx.model import (Array, Edge, Enumeration, FINAL, InitialNode, ModularInteger, Node, PDU,
+from rflx.model import (FINAL, PDU, Array, Edge, Enumeration, InitialNode, ModularInteger, Node,
                         RangeInteger)
 
 

@@ -1,9 +1,7 @@
 import unittest
 
-from rflx.expression import (Add, And, Div, Equal, First, Greater, GreaterEqual, Last, Length,
-                             Less, LessEqual, Mul, NotEqual, Number, Or, Sub, TRUE, UNDEFINED,
-                             Value)
-
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Div, Equal, First, Greater, GreaterEqual,
+                             Last, Length, Less, LessEqual, Mul, NotEqual, Number, Or, Sub, Value)
 
 SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
 

@@ -1,19 +1,18 @@
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from rflx.ada import (Aggregate, Aspect, Assignment, CallStatement, CaseExpression, Cast,
+from rflx.ada import (FALSE, Aggregate, Aspect, Assignment, CallStatement, CaseExpression, Cast,
                       ComponentItem, ContextItem, Convert, Declaration, DerivedType, Discriminant,
-                      EnumerationType, ExpressionFunction, FALSE, Function, Ghost, IfExpression,
+                      EnumerationType, ExpressionFunction, Function, Ghost, IfExpression,
                       IfStatement, Import, LogCall, MathCall, ModularType, Package, Postcondition,
                       Pragma, PragmaStatement, Precondition, Procedure, RangeSubtype, RangeType,
                       ReturnStatement, Statement, Subprogram, TypeDeclaration, Unit,
                       UsePackageClause, UseTypeClause, VariantItem, VariantRecordType, WithClause)
-from rflx.expression import (Add, Attribute, And, Div, Equal, Expr, GreaterEqual, Last, Length,
-                             LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number, Or, Pow,
-                             Size, Sub, TRUE, Value)
-from rflx.model import (Array, Enumeration, Field, First, ModularInteger, PDU, RangeInteger,
+from rflx.expression import (TRUE, Add, And, Attribute, Div, Equal, Expr, GreaterEqual, Last,
+                             Length, LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number,
+                             Or, Pow, Size, Sub, Value)
+from rflx.model import (PDU, Array, Enumeration, Field, First, ModularInteger, RangeInteger,
                         Refinement, Variant)
-
 
 COMMON_CONTEXT = [WithClause(['Types']), UseTypeClause(['Types.Index_Type', 'Types.Length_Type'])]
 

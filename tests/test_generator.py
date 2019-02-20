@@ -1,10 +1,9 @@
 import unittest
 from typing import List
 
-from rflx.model import PDU, Refinement
 from rflx.generator import Generator
-
-from tests.models import ETHERNET_PDU, ENUMERATION_PDU
+from rflx.model import PDU, Refinement
+from tests.models import ENUMERATION_PDU, ETHERNET_PDU
 
 
 class TestGenerator(unittest.TestCase):

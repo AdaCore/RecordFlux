@@ -1,12 +1,11 @@
 import unittest
 from typing import Dict, List
 
-from rflx.parser import (And, Array, Component, Context, Div, Edge, Enumeration, Equal, FINAL,
+from rflx.parser import (FINAL, PDU, And, Array, Component, Context, Div, Edge, Enumeration, Equal,
                          First, GreaterEqual, InitialNode, Last, Length, LessEqual, Message,
-                         ModularInteger, Mul, Number, Node, NotEqual, Package, Parser,
-                         ParseFatalException, ParserError, PDU, Pow, RangeInteger, Refinement,
-                         Specification, Sub, Then, Value)
-
+                         ModularInteger, Mul, Node, NotEqual, Number, Package, ParseFatalException,
+                         Parser, ParserError, Pow, RangeInteger, Refinement, Specification, Sub,
+                         Then, Value)
 from tests.models import ETHERNET_PDU
 
 

@@ -1,14 +1,12 @@
 import unittest
 from collections import OrderedDict
 
-from rflx.expression import (Add, And, Div, Equal, ExpressionError, First, GreaterEqual, Last,
-                             Length, LengthValue, LessEqual, Mul, NotEqual, Number, Or, Pow, Sub,
-                             TRUE, UNDEFINED, Value)
-from rflx.model import (Array, Edge, FINAL, Field, InitialNode, ModelError, ModularInteger, Node,
-                        Null, PDU, RangeInteger, Variant)
-
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Div, Equal, ExpressionError, First,
+                             GreaterEqual, Last, Length, LengthValue, LessEqual, Mul, NotEqual,
+                             Number, Or, Pow, Sub, Value)
+from rflx.model import (FINAL, PDU, Array, Edge, Field, InitialNode, ModelError, ModularInteger,
+                        Node, Null, RangeInteger, Variant)
 from tests.models import ETHERNET_PDU
-
 
 SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
 

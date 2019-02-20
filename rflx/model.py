@@ -4,8 +4,8 @@ from copy import copy
 from math import log
 from typing import Dict, List, Optional, Tuple
 
-from rflx.expression import (Add, And, Attribute, First, GreaterEqual, Last, Length, LessEqual,
-                             LogExpr, MathExpr, Number, Or, Pow, Sub, TRUE, UNDEFINED, Value)
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, First, GreaterEqual, Last,
+                             Length, LessEqual, LogExpr, MathExpr, Number, Or, Pow, Sub, Value)
 
 
 class Element(ABC):
