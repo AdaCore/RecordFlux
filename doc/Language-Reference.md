@@ -47,15 +47,23 @@ An enumeration type represents a value out of a list of possible values.
 
 #### Syntax
 
-*enumeration_type* ::= __type__ *name* __is__ __(__ *literals* __) with Size =>__ *number* __;__
+*enumeration_type* ::= __type__ *name* __is__ __(__ *literals* __)__ __with__ *enumeration_aspects* __;__
 
 *literals* ::= *literal* { __,__ *literal* }
 
 *literal* ::= *name* [__=>__ *number*]
 
+*enumeration_aspects* ::= *enumeration_aspect* { __,__ *enumeration_aspect* }
+
+*enumeration_aspect* ::= *size_aspect* | *always_valid_aspect*
+
+*size_aspect* ::= __Size =>__ *number*
+
+*always_valid_aspect* ::= __Always_Valid__ [ __=>__ ( __True__ | __False__ ) ]
+
 #### Static Semantics
 
-The set of values of an enumeration type consists of the list of declared enumeration literals. Each enumeration literal has a distinct value. If no explicit value is given, the first literal is zero, and the value of each subsequent literal is incremented by one. Literals with and without explicit value must not be intermixed in one definition. The bit size of the enumeration type has to be specified explicitly.
+The set of values of an enumeration type consists of the list of declared enumeration literals. Each enumeration literal has a distinct value. If no explicit value is given, the first literal is zero, and the value of each subsequent literal is incremented by one. Literals with and without explicit value must not be intermixed in one definition. The bit size of the enumeration type must be specified explicitly. Optionally, an enumeration type can be flagged as always valid. A message field with such type is always considered valid, whether or not its value corresponds to one of the specified literals.
 
 #### Example
 
