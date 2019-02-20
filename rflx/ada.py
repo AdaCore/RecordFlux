@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from typing import Callable, Dict, List, Tuple
 
-from rflx.model import Attribute, Expr, LogExpr, MathExpr, Number
+from rflx.expression import Attribute, Expr, LogExpr, MathExpr, Number
 
 
 class AdaRepresentation(ABC):

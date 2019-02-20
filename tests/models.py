@@ -1,6 +1,7 @@
-from rflx.model import (And, Array, Div, Edge, Enumeration, Equal, FINAL, First, GreaterEqual,
-                        InitialNode, Last, Length, LengthValue, LessEqual, ModularInteger, Mul,
-                        Node, NotEqual, Number, PDU, Pow, RangeInteger, Sub, Value)
+from rflx.expression import (And, Div, Equal, First, GreaterEqual, Last, Length, LengthValue,
+                             LessEqual, Mul, NotEqual, Number, Pow, Sub, Value)
+from rflx.model import (Array, Edge, Enumeration, FINAL, InitialNode, ModularInteger, Node, PDU,
+                        RangeInteger)
 
 
 def create_ethernet_pdu() -> PDU:

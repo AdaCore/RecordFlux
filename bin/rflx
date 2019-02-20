@@ -6,6 +6,7 @@ import sys
 
 from typing import List, Tuple
 
+from rflx.expression import ExpressionError
 from rflx.generator import Generator, GeneratorError
 from rflx.model import ModelError
 from rflx.parser import Parser, ParseFatalException, ParserError
@@ -56,7 +57,7 @@ def generate(pdus: List, refinements: List, output: str) -> None:
     except GeneratorError as e:
         print('\nGenerator error: {}'.format(e))
         sys.exit(1)
-    except ModelError as e:
+    except (ModelError, ExpressionError) as e:
         print('\nModel error: {}'.format(e))
         sys.exit(1)
 

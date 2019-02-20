@@ -8,10 +8,11 @@ from rflx.ada import (Aggregate, Aspect, Assignment, CallStatement, CaseExpressi
                       Pragma, PragmaStatement, Precondition, Procedure, RangeSubtype, RangeType,
                       ReturnStatement, Statement, Subprogram, TypeDeclaration, Unit,
                       UsePackageClause, UseTypeClause, VariantItem, VariantRecordType, WithClause)
-from rflx.model import (Add, And, Array, Attribute, Div, Enumeration, Equal, Expr, Field, First,
-                        GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr, MathExpr,
-                        ModularInteger, Mul, Number, Or, PDU, Pow, RangeInteger, Refinement, Size,
-                        Sub, TRUE, Value, Variant)
+from rflx.expression import (Add, Attribute, And, Div, Equal, Expr, GreaterEqual, Last, Length,
+                             LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number, Or, Pow,
+                             Size, Sub, TRUE, Value)
+from rflx.model import (Array, Enumeration, Field, First, ModularInteger, PDU, RangeInteger,
+                        Refinement, Variant)
 
 
 COMMON_CONTEXT = [WithClause(['Types']), UseTypeClause(['Types.Index_Type', 'Types.Length_Type'])]
