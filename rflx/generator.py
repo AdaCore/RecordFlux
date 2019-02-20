@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Iterator, List, Tuple
 
 from rflx.ada import (FALSE, Aggregate, Aspect, Assignment, CallStatement, CaseExpression, Cast,
                       ComponentItem, ContextItem, Convert, Declaration, DerivedType, Discriminant,
@@ -11,8 +11,8 @@ from rflx.ada import (FALSE, Aggregate, Aspect, Assignment, CallStatement, CaseE
 from rflx.expression import (TRUE, Add, And, Attribute, Div, Equal, Expr, GreaterEqual, Last,
                              Length, LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number,
                              Or, Pow, Size, Sub, Value)
-from rflx.model import (PDU, Array, Enumeration, Field, First, ModularInteger, RangeInteger,
-                        Refinement, Variant)
+from rflx.model import (PDU, Array, Enumeration, Field, First, ModularInteger, Null, RangeInteger,
+                        Refinement, Type, Variant)
 
 COMMON_CONTEXT = [WithClause(['Types']), UseTypeClause(['Types.Index_Type', 'Types.Length_Type'])]
 
@@ -52,25 +52,18 @@ class Generator:
 
     def __process_pdus(self, pdus: List[PDU]) -> None:
         seen_types: List[str] = []
-        unreachable_functions: Dict[str, List[Subprogram]] = {}
 
         for pdu in pdus:
-            if pdu.package in self.__units:
-                top_level_package = self.__units[pdu.package].package
-            else:
-                top_level_package = Package(pdu.package, [], [])
+            if pdu.package not in self.__units:
                 self.__units[pdu.package] = Unit(COMMON_CONTEXT,
-                                                 top_level_package)
+                                                 Package(pdu.package, [], []))
 
             context: List[ContextItem] = []
             package = Package(pdu.full_name, [], [])
             self.__units[pdu.full_name] = Unit(context, package)
 
-            if pdu.package not in unreachable_functions:
-                unreachable_functions[pdu.package] = []
-
             package.subprograms.extend(
-                create_contain_functions())
+                contain_functions())
 
             facts: Dict[Attribute, MathExpr] = {
                 First('Message'): Mul(First('Buffer'), Number(8)),
@@ -88,95 +81,84 @@ class Generator:
 
                 if f'{pdu.package}.{field.type.name}' not in seen_types:
                     seen_types.append(f'{pdu.package}.{field.type.name}')
-                    if isinstance(field.type, ModularInteger):
-                        top_level_package.types += [ModularType(field.type.name,
-                                                                field.type.modulus)]
-                    elif isinstance(field.type, RangeInteger):
-                        if field.type.constraints == TRUE:
-                            top_level_package.types += [RangeType(field.type.name,
-                                                                  field.type.first,
-                                                                  field.type.last,
-                                                                  field.type.size)]
-                        else:
-                            top_level_package.types += [RangeType(field.type.base_name,
-                                                                  field.type.base_first,
-                                                                  field.type.base_last,
-                                                                  field.type.size)]
-                            top_level_package.types += [RangeSubtype(field.type.name,
-                                                                     field.type.base_name,
-                                                                     field.type.first,
-                                                                     field.type.last)]
 
-                    elif isinstance(field.type, Enumeration):
-                        top_level_package.types += enumeration_types(field.type)
-                        top_level_package.subprograms += enumeration_functions(field.type)
-
-                    elif isinstance(field.type, Array):
-                        if 'Payload' not in field.type.name:
-                            array_context: List[ContextItem] = \
-                                [WithClause([f'{pdu.package}.{field.type.element_type}'])]
-                            array_package = Package(f'{pdu.package}.{field.type.name}', [], [])
-                            self.__units[array_package.name] = Unit(array_context, array_package)
-
-                            array_package.types += array_types()
-                            array_package.subprograms += create_contain_functions()
-                            array_package.subprograms += array_functions(field.type, pdu.package)
-
-                    else:
-                        raise NotImplementedError(f'unsupported type "{type(field.type).__name__}"')
-
-                    if isinstance(field.type, Array):
-                        type_name = 'Types.Index_Type'
-                    else:
-                        type_name = field.type.name
-                    base_name = None
-                    if isinstance(field.type, Enumeration) and field.type.always_valid:
-                        base_name = field.type.base_name
-                    function = create_unreachable_function(type_name, base_name)
-                    if function not in unreachable_functions[pdu.package]:
-                        unreachable_functions[pdu.package].append(function)
+                    self.__create_type(field.type, pdu.package)
 
                 if isinstance(field.type, Array) and 'Payload' not in field.type.name:
                     with_clause = WithClause([f'{pdu.package}.{field.type.name}'])
                     if with_clause not in context:
                         context.append(with_clause)
 
-                valid_variants: List[LogExpr] = []
-
                 for variant_id, variant in field.variants.items():
                     package.subprograms.append(
-                        create_variant_validation_function(
+                        variant_validation_function(
                             field,
                             variant_id,
                             variant))
 
                     package.subprograms.extend(
-                        create_variant_accessor_functions(
+                        variant_accessor_functions(
                             field,
                             variant_id,
                             variant))
 
-                    extend_valid_variants(valid_variants, field, variant_id, variant)
-
                 package.subprograms.append(
-                    create_field_validation_function(
-                        field.name,
-                        valid_variants))
+                    field_validation_function(
+                        field))
 
                 package.subprograms.extend(
-                    create_field_accessor_functions(
+                    field_accessor_functions(
                         field,
-                        top_level_package.name))
+                        pdu.package))
 
             package.subprograms.append(
-                create_packet_validation_function(
+                message_validation_function(
                     list(fields['FINAL'].variants.values())))
 
             package.subprograms.append(
-                create_message_length_function(
+                message_length_function(
                     list(fields['FINAL'].variants.values())))
 
-            function = create_unreachable_function('Types.Length_Type')
+        self.__create_unreachable_functions(pdus)
+
+    def __create_type(self, field_type: Type, pdu_package: str) -> None:
+        top_level_package = self.__units[pdu_package].package
+
+        if isinstance(field_type, ModularInteger):
+            top_level_package.types += modular_types(field_type)
+        elif isinstance(field_type, RangeInteger):
+            top_level_package.types += range_types(field_type)
+        elif isinstance(field_type, Enumeration):
+            top_level_package.types += enumeration_types(field_type)
+            top_level_package.subprograms += enumeration_functions(field_type)
+        elif isinstance(field_type, Array):
+            if 'Payload' not in field_type.name:
+                array_context: List[ContextItem] = [
+                    WithClause([f'{pdu_package}.{field_type.element_type}'])]
+
+                array_package = Package(f'{pdu_package}.{field_type.name}',
+                                        array_types(),
+                                        contain_functions()
+                                        + array_functions(field_type, pdu_package))
+
+                self.__units[array_package.name] = Unit(array_context, array_package)
+        else:
+            raise NotImplementedError(f'unsupported type "{type(field_type).__name__}"')
+
+    def __create_unreachable_functions(self, pdus: List[PDU]) -> None:
+        unreachable_functions: Dict[str, List[Subprogram]] = {}
+
+        for pdu in pdus:
+            if pdu.package not in unreachable_functions:
+                unreachable_functions[pdu.package] = []
+
+            for field in pdu.fields().values():
+                if not isinstance(field.type, Null):
+                    function = type_dependent_unreachable_function(field.type)
+                    if function not in unreachable_functions[pdu.package]:
+                        unreachable_functions[pdu.package].append(function)
+
+            function = unreachable_function('Types.Length_Type')
             if function not in unreachable_functions[pdu.package]:
                 unreachable_functions[pdu.package].append(function)
 
@@ -222,7 +204,7 @@ class Generator:
                     context.append(sdu_context)
 
             package.subprograms.append(
-                create_contains_function(
+                contains_function(
                     refinement.unqualified_name,
                     refinement.pdu,
                     refinement.field,
@@ -234,6 +216,28 @@ class Generator:
 
 class GeneratorError(Exception):
     pass
+
+
+def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
+    return [ModularType(integer.name,
+                        integer.modulus)]
+
+
+def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
+    if integer.constraints == TRUE:
+        return [RangeType(integer.name,
+                          integer.first,
+                          integer.last,
+                          integer.size)]
+
+    return [RangeType(integer.base_name,
+                      integer.base_first,
+                      integer.base_last,
+                      integer.size),
+            RangeSubtype(integer.name,
+                         integer.base_name,
+                         integer.first,
+                         integer.last)]
 
 
 def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
@@ -392,7 +396,7 @@ def array_functions(array: Array, package: str) -> List[Subprogram]:
 COMMON_PRECONDITION = LogCall('Is_Contained (Buffer)')
 
 
-def create_contain_functions() -> List[Subprogram]:
+def contain_functions() -> List[Subprogram]:
     return [ExpressionFunction('Is_Contained',
                                'Boolean',
                                [('Buffer', 'Types.Bytes')],
@@ -404,47 +408,7 @@ def create_contain_functions() -> List[Subprogram]:
                       aspects=[Postcondition(LogCall('Is_Contained (Buffer)'))])]
 
 
-def calculate_offset(last: MathExpr) -> int:
-    last = last.simplified({First('Buffer'): Number(0)})
-    if isinstance(last, Number):
-        return (8 - (last.value + 1) % 8) % 8
-    # TODO: determine offset for complicated cases
-    return 0
-
-
-def buffer_constraints(last: MathExpr) -> LogExpr:
-    last = last.simplified()
-    index_constraint = LessEqual(First('Buffer'), Div(Last('Types.Index_Type'), Number(2)))
-    if last != Last('Buffer'):
-        length_constraint = GreaterEqual(Length('Buffer'),
-                                         Add(last, -First('Buffer'), Number(1)))
-        return And(length_constraint, index_constraint)
-    return index_constraint
-
-
-def create_field_location(
-        field_name: str,
-        variant_id: str,
-        variant: Variant) -> Tuple[MathExpr, MathExpr, int]:
-
-    value_to_call = create_value_to_call(
-        [(field_name, variant_id)] + variant.previous)
-    first_byte = variant.facts[First(field_name)].to_bytes().simplified(value_to_call)
-    last_byte = variant.facts[Last(field_name)].to_bytes().simplified(value_to_call)
-    offset = calculate_offset(variant.facts[Last(field_name)])
-    return (first_byte, last_byte, offset)
-
-
-def create_value_to_call(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
-    result: Dict[Attribute, MathExpr] = {}
-    for field_name, vid in previous:
-        get_call = MathCall(f'Get_{field_name}_{vid} (Buffer)')
-        result[Value(field_name)] = get_call
-        result[LengthValue(field_name)] = Cast('Types.Length_Type', get_call)
-    return result
-
-
-def create_variant_validation_function(
+def variant_validation_function(
         field: Field,
         variant_id: str,
         variant: Variant) -> Subprogram:
@@ -452,7 +416,7 @@ def create_variant_validation_function(
     type_constraints: LogExpr = TRUE
 
     if field.type.constraints != TRUE or isinstance(field.type, Enumeration):
-        first_byte, last_byte, offset = create_field_location(field.name, variant_id, variant)
+        first_byte, last_byte, offset = field_location(field.name, variant_id, variant)
 
         if field.type.constraints != TRUE:
             convert = Convert(
@@ -468,7 +432,7 @@ def create_variant_validation_function(
                                    LogCall((f'Valid_{field.type.name} (Buffer ({first_byte}'
                                             f' .. {last_byte}), {offset})')))
 
-    value_to_call = create_value_to_call([(field.name, variant_id)] + variant.previous)
+    value_to_call = value_to_call_facts([(field.name, variant_id)] + variant.previous)
 
     return ExpressionFunction(
         f'Valid_{field.name}_{variant_id}',
@@ -486,12 +450,12 @@ def create_variant_validation_function(
         [Precondition(COMMON_PRECONDITION)])
 
 
-def create_variant_accessor_functions(
+def variant_accessor_functions(
         field: Field,
         variant_id: str,
         variant: Variant) -> List[Subprogram]:
 
-    first_byte, last_byte, offset = create_field_location(field.name, variant_id, variant)
+    first_byte, last_byte, offset = field_location(field.name, variant_id, variant)
 
     name = f'Get_{field.name}_{variant_id}'
     precondition = Precondition(
@@ -530,49 +494,23 @@ def create_variant_accessor_functions(
     return functions
 
 
-def extend_valid_variants(
-        valid_variants: List[LogExpr],
-        field: Field,
-        variant_id: str,
-        variant: Variant) -> None:
+def field_validation_function(field: Field) -> Subprogram:
+    variants: List[LogExpr] = list(valid_variants(field))
 
-    expression: LogExpr = LogCall(f'Valid_{field.name}_{variant_id} (Buffer)')
-    if field.condition is not TRUE:
-        expression = And(expression, field.condition)
-    valid_variants.append(
-        expression.simplified(
-            variant.facts
-        ).simplified(
-            create_value_to_call([(field.name, variant_id)] + variant.previous)))
-
-
-def create_field_validation_function(
-        field_name: str,
-        valid_variants: List[LogExpr]) -> Subprogram:
-
-    expr = valid_variants.pop()
-    for e in valid_variants:
+    expr = variants.pop()
+    for e in variants:
         if e is not TRUE:
             expr = Or(expr, e)
 
     return ExpressionFunction(
-        f'Valid_{field_name}',
+        f'Valid_{field.name}',
         'Boolean',
         [('Buffer', 'Types.Bytes')],
         expr,
         [Precondition(COMMON_PRECONDITION)])
 
 
-def create_unreachable_function(type_name: str, base_name: str = None) -> Subprogram:
-    return ExpressionFunction(
-        f'Unreachable_{type_name}'.replace('.', '_'),
-        type_name,
-        [],
-        First(type_name) if not base_name else Aggregate(Value('False'), First(base_name)),
-        [Precondition(FALSE)])
-
-
-def create_field_accessor_functions(field: Field, package_name: str) -> List[Subprogram]:
+def field_accessor_functions(field: Field, package_name: str) -> List[Subprogram]:
     precondition = Precondition(And(COMMON_PRECONDITION,
                                     LogCall(f'Valid_{field.name} (Buffer)')))
 
@@ -598,8 +536,7 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
                                                 MathCall(f'Get_{field.name}_Last (Buffer)'))))
         if 'Payload' not in field.type.name:
             predicate = f'{package_name}.{field.type.name}.Is_Contained (Buffer (First .. Last))'
-            body += [PragmaStatement('Assume',
-                                     [predicate])]
+            body.append(PragmaStatement('Assume', [predicate]))
             postcondition.expr = And(postcondition.expr, LogCall(predicate))
 
         functions.append(
@@ -628,11 +565,11 @@ def create_field_accessor_functions(field: Field, package_name: str) -> List[Sub
     return functions
 
 
-def create_packet_validation_function(variants: List[Variant]) -> Subprogram:
+def message_validation_function(variants: List[Variant]) -> Subprogram:
     expr: LogExpr = FALSE
 
     for variant in variants:
-        condition = create_variant_condition(variant)
+        condition = variant_condition(variant)
         expr = condition if expr == FALSE else Or(expr, condition)
 
     return ExpressionFunction(
@@ -643,11 +580,11 @@ def create_packet_validation_function(variants: List[Variant]) -> Subprogram:
         [Precondition(COMMON_PRECONDITION)])
 
 
-def create_message_length_function(variants: List[Variant]) -> Subprogram:
+def message_length_function(variants: List[Variant]) -> Subprogram:
     condition_expressions: List[Tuple[LogExpr, Expr]] = []
 
     for variant in variants:
-        condition = create_variant_condition(variant)
+        condition = variant_condition(variant)
         length = Add(
             Last(variant.previous[-1][0]),
             -First(variant.previous[0][0]),
@@ -655,7 +592,7 @@ def create_message_length_function(variants: List[Variant]) -> Subprogram:
         ).simplified(
             variant.facts
         ).simplified(
-            create_value_to_call(variant.previous)
+            value_to_call_facts(variant.previous)
         ).to_bytes().simplified()
         condition_expressions.append((condition, length))
 
@@ -667,16 +604,16 @@ def create_message_length_function(variants: List[Variant]) -> Subprogram:
         [Precondition(And(COMMON_PRECONDITION, LogCall('Is_Valid (Buffer)')))])
 
 
-def create_variant_condition(variant: Variant) -> LogExpr:
+def variant_condition(variant: Variant) -> LogExpr:
     field_name, variant_id = variant.previous[-1]
     return And(
         LogCall(f'Valid_{field_name}_{variant_id} (Buffer)'),
         variant.condition
-    ).simplified(variant.facts).simplified(create_value_to_call(variant.previous))
+    ).simplified(variant.facts).simplified(value_to_call_facts(variant.previous))
 
 
-def create_contains_function(name: str, pdu: str, field: str, sdu: str,
-                             condition: LogExpr) -> Subprogram:
+def contains_function(name: str, pdu: str, field: str, sdu: str,
+                      condition: LogExpr) -> Subprogram:
 
     success_statements: List[Statement] = [ReturnStatement(TRUE)]
     aspects: List[Aspect] = [Precondition(And(LogCall(f'{pdu}.Is_Contained (Buffer)'),
@@ -705,3 +642,73 @@ def create_contains_function(name: str, pdu: str, field: str, sdu: str,
                           success_statements)]),
                      ReturnStatement(FALSE)],
                     aspects)
+
+
+def type_dependent_unreachable_function(field_type: Type) -> Subprogram:
+    if isinstance(field_type, Array):
+        type_name = 'Types.Index_Type'
+    else:
+        type_name = field_type.name
+    base_name = None
+    if isinstance(field_type, Enumeration) and field_type.always_valid:
+        base_name = field_type.base_name
+    return unreachable_function(type_name, base_name)
+
+
+def unreachable_function(type_name: str, base_name: str = None) -> Subprogram:
+    return ExpressionFunction(
+        f'Unreachable_{type_name}'.replace('.', '_'),
+        type_name,
+        [],
+        First(type_name) if not base_name else Aggregate(Value('False'), First(base_name)),
+        [Precondition(FALSE)])
+
+
+def field_location(
+        field_name: str,
+        variant_id: str,
+        variant: Variant) -> Tuple[MathExpr, MathExpr, int]:
+
+    value_to_call = value_to_call_facts(
+        [(field_name, variant_id)] + variant.previous)
+    first_byte = variant.facts[First(field_name)].to_bytes().simplified(value_to_call)
+    last_byte = variant.facts[Last(field_name)].to_bytes().simplified(value_to_call)
+    offset = calculate_offset(variant.facts[Last(field_name)])
+    return (first_byte, last_byte, offset)
+
+
+def calculate_offset(last: MathExpr) -> int:
+    last = last.simplified({First('Buffer'): Number(0)})
+    if isinstance(last, Number):
+        return (8 - (last.value + 1) % 8) % 8
+    return 0
+
+
+def value_to_call_facts(previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
+    result: Dict[Attribute, MathExpr] = {}
+    for field_name, vid in previous:
+        get_call = MathCall(f'Get_{field_name}_{vid} (Buffer)')
+        result[Value(field_name)] = get_call
+        result[LengthValue(field_name)] = Cast('Types.Length_Type', get_call)
+    return result
+
+
+def buffer_constraints(last: MathExpr) -> LogExpr:
+    last = last.simplified()
+    index_constraint = LessEqual(First('Buffer'), Div(Last('Types.Index_Type'), Number(2)))
+    if last != Last('Buffer'):
+        length_constraint = GreaterEqual(Length('Buffer'),
+                                         Add(last, -First('Buffer'), Number(1)))
+        return And(length_constraint, index_constraint)
+    return index_constraint
+
+
+def valid_variants(field: Field) -> Iterator[LogExpr]:
+    for variant_id, variant in field.variants.items():
+        expression: LogExpr = LogCall(f'Valid_{field.name}_{variant_id} (Buffer)')
+        if field.condition is not TRUE:
+            expression = And(expression, field.condition)
+        yield expression.simplified(
+            variant.facts
+        ).simplified(
+            value_to_call_facts([(field.name, variant_id)] + variant.previous))
