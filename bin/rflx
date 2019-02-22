@@ -3,62 +3,102 @@
 
 import argparse
 import sys
+from pathlib import Path
 from typing import List, Tuple
 
 from rflx.expression import ExpressionError
-from rflx.generator import Generator, GeneratorError
+from rflx.generator import Generator
 from rflx.model import ModelError
-from rflx.parser import ParseFatalException, Parser, ParserError
+from rflx.parser import Parser, ParserError
+
+
+class Error(Exception):
+    pass
+
+
+class InternalError(Error):
+    pass
 
 
 def main() -> None:
-    arg_parser = argparse.ArgumentParser(description='RecordFlux')
-    arg_parser.add_argument('-g', '--generate', action='store_true', help='generate dissector code')
-    arg_parser.add_argument('-o', '--output', metavar='DIR', type=str,
-                            help='output directory for dissector code')
-    arg_parser.add_argument('files', metavar='FILE', type=str, nargs='+')
-    args = arg_parser.parse_args()
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='subcommand')
+
+    parser_check = subparsers.add_parser('check', help='check specification')
+    parser_check.add_argument('files', metavar='FILE', type=str, nargs='+',
+                              help='specification file')
+    parser_check.set_defaults(func=check)
+
+    parser_generate = subparsers.add_parser('generate', help='generate code')
+    parser_generate.add_argument('directory', metavar='DIRECTORY', type=str,
+                                 help='output directory')
+    parser_generate.add_argument('files', metavar='FILE', type=str, nargs='*',
+                                 help='specification file')
+    parser_generate.set_defaults(func=generate)
+
+    args = parser.parse_args()
+
+    if not args.subcommand:
+        parser.print_usage()
+        sys.exit(2)
+
+    try:
+        args.func(args)
+    except ParserError as e:
+        exit_error(parser.prog, f'parser error: {e}')
+    except (ModelError, ExpressionError) as e:
+        exit_error(parser.prog, f'model error: {e}')
+    except InternalError as e:
+        exit_error(parser.prog, f'internal error: {e}')
+    except (Error, OSError) as e:
+        exit_error(parser.prog, f'error: {e}')
+
+
+def check(args: argparse.Namespace) -> None:
+    parse(args.files)
+
+
+def generate(args: argparse.Namespace) -> None:
+    directory = Path(args.directory)
+    if not directory.is_dir():
+        raise Error(f'directory not found: "{directory}"')
 
     pdus, refinements = parse(args.files)
-
-    if args.generate:
-        generate(pdus, refinements, args.output)
+    generate_dissector(pdus, refinements, directory)
 
 
 def parse(files: List) -> Tuple[List, List]:
     parser = Parser()
 
     for f in files:
-        try:
-            print('Parsing {}... '.format(f), end='')
-            parser.parse(f)
-            print('OK')
-        except ParseFatalException as e:
-            print('\nSyntax error: {}'.format(e))
-            sys.exit(1)
-        except ParserError as e:
-            print('\nParser error: {}'.format(e))
-            sys.exit(1)
+        if not Path(f).is_file():
+            raise Error(f'file not found: "{f}"')
+
+        print(f'Parsing {f}... ', end='')
+        parser.parse(f)
+        print('OK')
 
     return (parser.pdus, parser.refinements)
 
 
-def generate(pdus: List, refinements: List, output: str) -> None:
+def generate_dissector(pdus: List, refinements: List, directory: Path) -> None:
+    if not pdus and not refinements:
+        return
+
     generator = Generator()
 
-    try:
-        print('Generating... ', end='')
-        generator.generate_dissector(pdus, refinements)
-        written_files = generator.write_units(output)
-        print('OK')
-        for f in written_files:
-            print(f'Created {f}')
-    except GeneratorError as e:
-        print('\nGenerator error: {}'.format(e))
-        sys.exit(1)
-    except (ModelError, ExpressionError) as e:
-        print('\nModel error: {}'.format(e))
-        sys.exit(1)
+    print('Generating... ', end='')
+    generator.generate_dissector(pdus, refinements)
+    written_files = generator.write_units(directory)
+    print('OK')
+
+    for f in written_files:
+        print(f'Created {f}')
+
+
+def exit_error(prefix: str, msg: str) -> None:
+    sys.stderr.write(f'{prefix}: {msg}\n')
+    sys.exit(1)
 
 
 if __name__ == '__main__':

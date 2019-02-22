@@ -29,15 +29,11 @@ class Generator:
     def units(self) -> List[Unit]:
         return list(self.__units.values())
 
-    def write_units(self, output_directory: str) -> List[Path]:
+    def write_units(self, directory: Path) -> List[Path]:
         written_files = []
 
-        outdir = Path(output_directory)
-        if not outdir.is_dir():
-            raise GeneratorError(f'invalid output directory: {outdir}')
-
         for unit in self.units():
-            filename = outdir.joinpath(unit.package.name.lower().replace('.', '-') + '.ads')
+            filename = directory.joinpath(unit.package.name.lower().replace('.', '-') + '.ads')
             written_files.append(filename)
             with open(filename, 'w') as f:
                 f.write(unit.specification())
@@ -212,10 +208,6 @@ class Generator:
                     refinement.condition.simplified(
                         {Value(field): MathCall(f'{refinement.pdu}.Get_{field} (Buffer)')
                          for field in self.__pdu_fields[refinement.pdu]})))
-
-
-class GeneratorError(Exception):
-    pass
 
 
 def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:

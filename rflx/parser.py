@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-from pyparsing import (CaselessKeyword, Forward, Group, Keyword, Literal, Optional,
+from pyparsing import (CaselessKeyword, Forward, Group, Keyword, Literal, Optional, ParseException,
                        ParseFatalException, Regex, StringEnd, Suppress, Word, WordEnd, WordStart,
                        ZeroOrMore, alphanums, delimitedList, infixNotation, nums, opAssoc)
 
@@ -270,7 +270,10 @@ class Parser:
     def parse(self, infile: str) -> None:
         filepath = self.__basedir + "/" + infile
         with open(filepath, 'r') as filehandle:
-            self.__grammar.parseFile(filehandle)
+            try:
+                self.__grammar.parseFile(filehandle)
+            except (ParseException, ParseFatalException) as e:
+                raise ParserError(e)
 
     def parse_string(self, string: str) -> None:
         self.__grammar.parseString(string)
