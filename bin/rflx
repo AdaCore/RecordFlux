@@ -2,14 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import shutil
 import sys
 from pathlib import Path
 from typing import List, Tuple
+
+import pkg_resources
 
 from rflx.expression import ExpressionError
 from rflx.generator import Generator
 from rflx.model import ModelError
 from rflx.parser import Parser, ParserError
+
+LIBRARY_PATH = pkg_resources.resource_filename('rflx', 'data/')
+LIBRARY_FILES = ['types.ads', 'types.adb']
 
 
 class Error(Exception):
@@ -30,6 +36,10 @@ def main() -> None:
     parser_check.set_defaults(func=check)
 
     parser_generate = subparsers.add_parser('generate', help='generate code')
+    parser_generate.add_argument('-d', '--dissector', action='store_true',
+                                 help='generate dissector code')
+    parser_generate.add_argument('-l', '--library', action='store_true',
+                                 help='generate library code')
     parser_generate.add_argument('directory', metavar='DIRECTORY', type=str,
                                  help='output directory')
     parser_generate.add_argument('files', metavar='FILE', type=str, nargs='*',
@@ -64,7 +74,10 @@ def generate(args: argparse.Namespace) -> None:
         raise Error(f'directory not found: "{directory}"')
 
     pdus, refinements = parse(args.files)
-    generate_dissector(pdus, refinements, directory)
+    if args.dissector or (not args.dissector and not args.library):
+        generate_dissector(pdus, refinements, directory)
+    if args.library or (not args.dissector and not args.library):
+        generate_library(directory)
 
 
 def parse(files: List) -> Tuple[List, List]:
@@ -94,6 +107,19 @@ def generate_dissector(pdus: List, refinements: List, directory: Path) -> None:
 
     for f in written_files:
         print(f'Created {f}')
+
+
+def generate_library(directory: Path) -> None:
+    source = Path(LIBRARY_PATH)
+    if not source.is_dir():
+        raise InternalError('library directory not found')
+
+    for f in LIBRARY_FILES:
+        if not source.joinpath(f).is_file():
+            raise InternalError(f'library file not found: "{f}"')
+
+        shutil.copy(f'{source}/{f}', directory)
+        print(f'Created {directory}/{f}')
 
 
 def exit_error(prefix: str, msg: str) -> None:
