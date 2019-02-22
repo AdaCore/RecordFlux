@@ -151,49 +151,40 @@ In this example `Read` is a function which returns a byte array. After stating t
 
 ## Usage
 
-The `rflx` tool is used to generate dissector code based on a protocol specification.
-
-```
-usage: rflx [-h] [-g] [-o DIR] FILE [FILE ...]
-
-RecordFlux
-
-positional arguments:
-  FILE
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -g, --generate        generate dissector code
-  -o DIR, --output DIR  output directory for dissector code
-```
+The `rflx` tool is used to verify a protocol specification and generate code based on it. Therefore it offers the two sub-commands `check` and `generate`.
 
 ### Example
 
-The default behavior of `rflx` is to just check the syntax of all given specification files.
+With the sub-command `check` the correctness of the given specification files can be verified.
 
 ```
-rflx tests/ipv4.rflx tests/udp.rflx tests/in_ipv4.rflx
-Parsing tests/ipv4.rflx... OK
-Parsing tests/udp.rflx... OK
-Parsing tests/in_ipv4.rflx... OK
+$ rflx check specs/ipv4.rflx specs/udp.rflx specs/in_ipv4.rflx                                                                                                                     :(
+Parsing specs/ipv4.rflx... OK
+Parsing specs/udp.rflx... OK
+Parsing specs/in_ipv4.rflx... OK
 ```
 
-By adding `-g` the dissector code will be generated. All files will be created in the current directory by default.
+The sub-command `generate` is used to generate the code based on the specification. The target directory and the specification files have to be given. By adding `-d` or `-l` the generation can be limited to the dissector code or to the internally used library files, respectively.
 
 ```
-rflx -g tests/ipv4.rflx tests/udp.rflx tests/in_ipv4.rflx
-Parsing tests/ipv4.rflx... OK
-Parsing tests/udp.rflx... OK
-Parsing tests/in_ipv4.rflx... OK
+$ rflx generate -d tests specs/ipv4.rflx specs/udp.rflx specs/in_ipv4.rflx
+Parsing specs/ipv4.rflx... OK
+Parsing specs/udp.rflx... OK
+Parsing specs/in_ipv4.rflx... OK
 Generating... OK
-Creating ipv4.ads
-Creating ipv4-packet.ads
-Creating ipv4-packet.adb
-Creating udp.ads
-Creating udp-datagram.ads
-Creating udp-datagram.adb
-Creating in_ipv4.ads
-Creating in_ipv4.adb
+Created tests/ipv4.ads
+Created tests/ipv4-option.ads
+Created tests/ipv4-option.adb
+Created tests/ipv4-packet.ads
+Created tests/ipv4-packet.adb
+Created tests/ipv4-options.ads
+Created tests/ipv4-options.adb
+Created tests/udp.ads
+Created tests/udp-datagram.ads
+Created tests/udp-datagram.adb
+Created tests/in_ipv4.ads
+Created tests/in_ipv4-contains.ads
+Created tests/in_ipv4-contains.adb
 ```
 
 ## Licence
