@@ -5,6 +5,7 @@ test_python:
 	mypy bin/*.py rflx/*.py tests/*.py
 	pylint -E bin/*.py rflx/*.py tests/*.py
 	flake8 bin/*.py rflx/*.py tests/*.py
+	isort -c -w 100 bin/*.py rflx/*.py tests/*.py
 
 test_spark:
 	gprbuild -Ptest

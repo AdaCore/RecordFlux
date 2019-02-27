@@ -1,5 +1,6 @@
 coverage
 flake8
+isort
 mypy
 pylint
 pyparsing
