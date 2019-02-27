@@ -41,3 +41,9 @@ max-statements=50
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=0
+
+
+[SIMILARITIES]
+
+# Minimum lines number of a similarity.
+min-similarity-lines=8
