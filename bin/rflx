@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 from typing import List, Tuple
@@ -14,7 +13,7 @@ from rflx.generator import Generator
 from rflx.model import ModelError
 from rflx.parser import Parser, ParserError
 
-LIBRARY_PATH = pkg_resources.resource_filename('rflx', 'data/')
+TEMPLATE_DIR = pkg_resources.resource_filename('rflx', 'templates/')
 LIBRARY_FILES = ['types.ads', 'types.adb']
 
 
@@ -24,6 +23,9 @@ class Error(Exception):
 
 class InternalError(Error):
     pass
+
+
+DEFAULT_PREFIX = 'RFLX'
 
 
 def main() -> None:
@@ -40,6 +42,9 @@ def main() -> None:
                                  help='generate dissector code')
     parser_generate.add_argument('-l', '--library', action='store_true',
                                  help='generate library code')
+    parser_generate.add_argument('-p', '--prefix', type=str, default='RFLX',
+                                 help=('add prefix to generated packages '
+                                       f'(default: {DEFAULT_PREFIX})'))
     parser_generate.add_argument('directory', metavar='DIRECTORY', type=str,
                                  help='output directory')
     parser_generate.add_argument('files', metavar='FILE', type=str, nargs='*',
@@ -75,9 +80,9 @@ def generate(args: argparse.Namespace) -> None:
 
     pdus, refinements = parse(args.files)
     if args.dissector or (not args.dissector and not args.library):
-        generate_dissector(pdus, refinements, directory)
+        generate_dissector(pdus, refinements, directory, args.prefix)
     if args.library or (not args.dissector and not args.library):
-        generate_library(directory)
+        generate_library(directory, args.prefix)
 
 
 def parse(files: List) -> Tuple[List, List]:
@@ -94,11 +99,14 @@ def parse(files: List) -> Tuple[List, List]:
     return (parser.pdus, parser.refinements)
 
 
-def generate_dissector(pdus: List, refinements: List, directory: Path) -> None:
+def generate_dissector(pdus: List, refinements: List, directory: Path, prefix: str) -> None:
     if not pdus and not refinements:
         return
 
-    generator = Generator()
+    if prefix and prefix[-1] != '.':
+        prefix = f'{prefix}.'
+
+    generator = Generator(prefix)
 
     print('Generating... ', end='')
     generator.generate_dissector(pdus, refinements)
@@ -109,17 +117,33 @@ def generate_dissector(pdus: List, refinements: List, directory: Path) -> None:
         print(f'Created {f}')
 
 
-def generate_library(directory: Path) -> None:
-    source = Path(LIBRARY_PATH)
-    if not source.is_dir():
+def generate_library(directory: Path, prefix: str) -> None:
+    template_dir = Path(TEMPLATE_DIR)
+    if not template_dir.is_dir():
         raise InternalError('library directory not found')
 
-    for f in LIBRARY_FILES:
-        if not source.joinpath(f).is_file():
-            raise InternalError(f'library file not found: "{f}"')
+    if prefix == DEFAULT_PREFIX:
+        filename = prefix.lower() + '.ads'
+        file_path = Path(directory).joinpath(filename)
 
-        shutil.copy(f'{source}/{f}', directory)
-        print(f'Created {directory}/{f}')
+        with open(file_path, 'w') as library_file:
+            library_file.write(f'package {prefix} is\n\nend {prefix};')
+            print(f'Created {file_path}')
+
+    if prefix and prefix[-1] != '.':
+        prefix = f'{prefix}.'
+
+    for template_filename in LIBRARY_FILES:
+        if not template_dir.joinpath(template_filename).is_file():
+            raise InternalError(f'library file not found: "{template_filename}"')
+
+        filename = prefix.replace('.', '-').lower() + template_filename
+        file_path = Path(directory).joinpath(filename)
+
+        with open(template_dir.joinpath(template_filename)) as template_file:
+            with open(file_path, 'w') as library_file:
+                library_file.write(template_file.read().format(prefix=prefix))
+                print(f'Created {file_path}')
 
 
 def exit_error(prefix: str, msg: str) -> None:

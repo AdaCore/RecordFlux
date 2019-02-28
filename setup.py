@@ -34,7 +34,7 @@ setup(
         'Topic :: System :: Networking',
     ],
     packages=find_packages(exclude=('tests',)),
-    package_data={'rflx': ['data/*']},
+    package_data={'rflx': ['templates/*']},
     python_requires='>=3.6',
     install_requires=[
         'pyparsing',
