@@ -1,4 +1,6 @@
-package body Enumeration.Message is
+package body Enumeration.Message
+  with SPARK_Mode
+is
 
    procedure Label (Buffer : Types.Bytes) is
    begin

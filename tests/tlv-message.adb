@@ -1,4 +1,6 @@
-package body TLV.Message is
+package body TLV.Message
+  with SPARK_Mode
+is
 
    procedure Label (Buffer : Types.Bytes) is
    begin

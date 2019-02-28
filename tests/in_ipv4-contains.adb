@@ -1,4 +1,6 @@
-package body In_IPv4.Contains is
+package body In_IPv4.Contains
+  with SPARK_Mode
+is
 
    function UDP_In_IPv4 (Buffer : Types.Bytes) return Boolean is
    begin

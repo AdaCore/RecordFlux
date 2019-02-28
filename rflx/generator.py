@@ -358,7 +358,7 @@ class Generator:
                           [('Buffer', self.__types_bytes)],
                           [],
                           [PragmaStatement('Assume', ['Is_Contained (Buffer)'])],
-                          aspects=[Postcondition(LogCall('Is_Contained (Buffer)'))])]
+                          aspects=[Ghost(), Postcondition(LogCall('Is_Contained (Buffer)'))])]
 
     def __variant_validation_function(
             self,

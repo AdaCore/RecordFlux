@@ -1,4 +1,6 @@
-package body Enumeration is
+package body Enumeration
+  with SPARK_Mode
+is
 
    function Convert_To_Priority (Buffer : Types.Bytes; Offset : Natural) return Priority is
       Raw : Priority_Base := Convert_To_Priority_Base (Buffer, Offset);

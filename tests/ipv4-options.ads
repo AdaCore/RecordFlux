@@ -13,6 +13,7 @@ is
 
    procedure Label (Buffer : Types.Bytes)
      with
+       Ghost,
        Post => Is_Contained (Buffer);
 
    function Valid_First (Buffer : Types.Bytes) return Boolean

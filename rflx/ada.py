@@ -104,7 +104,6 @@ class Package(AdaRepresentation):
         aspect = '\n  with SPARK_Mode\n'
         if definition:
             indicator = ' body '
-            aspect = ' '
 
         return f'package{indicator}{self.name}{aspect}is\n\n{types}{subprograms}end {self.name};'
 

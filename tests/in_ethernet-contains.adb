@@ -1,4 +1,6 @@
-package body In_Ethernet.Contains is
+package body In_Ethernet.Contains
+  with SPARK_Mode
+is
 
    function IPv4_In_Ethernet (Buffer : Types.Bytes) return Boolean is
    begin

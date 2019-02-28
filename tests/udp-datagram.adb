@@ -1,4 +1,6 @@
-package body UDP.Datagram is
+package body UDP.Datagram
+  with SPARK_Mode
+is
 
    procedure Label (Buffer : Types.Bytes) is
    begin

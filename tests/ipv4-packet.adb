@@ -1,4 +1,6 @@
-package body IPv4.Packet is
+package body IPv4.Packet
+  with SPARK_Mode
+is
 
    procedure Label (Buffer : Types.Bytes) is
    begin

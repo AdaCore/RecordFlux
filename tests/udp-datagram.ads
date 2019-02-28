@@ -9,6 +9,7 @@ is
 
    procedure Label (Buffer : Types.Bytes)
      with
+       Ghost,
        Post => Is_Contained (Buffer);
 
    function Valid_Source_Port_0 (Buffer : Types.Bytes) return Boolean is

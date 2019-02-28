@@ -1,4 +1,6 @@
-package body Ethernet.Frame is
+package body Ethernet.Frame
+  with SPARK_Mode
+is
 
    procedure Label (Buffer : Types.Bytes) is
    begin
