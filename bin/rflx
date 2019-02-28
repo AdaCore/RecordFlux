@@ -45,10 +45,10 @@ def main() -> None:
     parser_generate.add_argument('-p', '--prefix', type=str, default='RFLX',
                                  help=('add prefix to generated packages '
                                        f'(default: {DEFAULT_PREFIX})'))
-    parser_generate.add_argument('directory', metavar='DIRECTORY', type=str,
-                                 help='output directory')
     parser_generate.add_argument('files', metavar='FILE', type=str, nargs='*',
                                  help='specification file')
+    parser_generate.add_argument('directory', metavar='DIRECTORY', type=str,
+                                 help='output directory')
     parser_generate.set_defaults(func=generate)
 
     args = parser.parse_args()
