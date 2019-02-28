@@ -285,6 +285,20 @@ class Generator:
 
     def __array_functions(self, array: Array, package: str) -> List[Subprogram]:
         common_precondition = LogCall(f'Is_Contained (Buffer)')
+        first_conditions = And(LogCall('Valid_Next (Buffer, Offset_Type (Buffer\'First))'),
+                               And(LogCall(f'{package}.{array.element_type}.Is_Contained '
+                                           '(Buffer (Buffer\'First .. Buffer\'Last))'),
+                                   LogCall(f'{package}.{array.element_type}.Is_Valid '
+                                           '(Buffer (Buffer\'First .. Buffer\'Last))')))
+        element_condition = LogCall(f'{package}.{array.element_type}.Is_Contained '
+                                    '(Buffer (First .. Last))')
+        offset_constraint = GreaterEqual(Value('Offset'), Value('Offset_Type (Buffer\'First)'))
+        first_last_constraints = And(GreaterEqual(Value('First'), Value('Buffer\'First')),
+                                     LessEqual(Value('Last'), Value('Buffer\'Last')))
+        next_conditions = And(LogCall(f'{package}.{array.element_type}.Is_Contained '
+                                      '(Buffer (Types.Index_Type (Offset) .. Buffer\'Last))'),
+                              LogCall(f'{package}.{array.element_type}.Is_Valid '
+                                      '(Buffer (Types.Index_Type (Offset) .. Buffer\'Last))'))
 
         return [Function('Valid_First',
                          'Boolean',
@@ -292,7 +306,9 @@ class Generator:
                          [],
                          [ReturnStatement(
                              LogCall('Valid_Next (Buffer, Offset_Type (Buffer\'First))'))],
-                         [Precondition(common_precondition)]),
+                         [Precondition(common_precondition),
+                          Postcondition(IfExpression([
+                              (LogCall('Valid_First\'Result'), first_conditions)]))]),
                 Procedure('Get_First',
                           [('Buffer', self.__types_bytes),
                            ('Offset', 'out Offset_Type'),
@@ -301,14 +317,10 @@ class Generator:
                           [],
                           [Assignment('Offset', Value('Offset_Type (Buffer\'First)')),
                            CallStatement('Get_Next', ['Buffer', 'Offset', 'First', 'Last'])],
-                          [Precondition(And(common_precondition,
-                                            LogCall('Valid_First (Buffer)'))),
-                           Postcondition(And(And(GreaterEqual(Value('First'),
-                                                              First('Buffer')),
-                                                 LessEqual(Value('Last'),
-                                                           Last('Buffer'))),
-                                             LogCall(f'{package}.{array.element_type}.Is_Contained '
-                                                     '(Buffer (First .. Last))')))]),
+                          [Precondition(And(common_precondition, first_conditions)),
+                           Postcondition(And(offset_constraint,
+                                             And(first_last_constraints,
+                                                 element_condition)))]),
                 Function('Valid_Next',
                          'Boolean',
                          [('Buffer', self.__types_bytes),
@@ -322,7 +334,11 @@ class Generator:
                               LogCall(f'{package}.{array.element_type}.Is_Valid '
                                       f'(Buffer ({self.__types_index} (Offset) '
                                       '.. Buffer\'Last))'))],
-                         [Precondition(common_precondition)]),
+                         [Precondition(And(common_precondition,
+                                           offset_constraint)),
+                          Postcondition(IfExpression([
+                              (LogCall('Valid_Next\'Result'),
+                               next_conditions)]))]),
                 Procedure('Get_Next',
                           [('Buffer', self.__types_bytes),
                            ('Offset', 'in out Offset_Type'),
@@ -341,13 +357,12 @@ class Generator:
                                            [(f'{package}.{array.element_type}.Is_Contained '
                                              '(Buffer (First .. Last))')])],
                           [Precondition(And(common_precondition,
-                                            LogCall('Valid_Next (Buffer, Offset)'))),
-                           Postcondition(And(And(GreaterEqual(Value('First'),
-                                                              First('Buffer')),
-                                                 LessEqual(Value('Last'),
-                                                           Last('Buffer'))),
-                                             LogCall(f'{package}.{array.element_type}.Is_Contained '
-                                                     '(Buffer (First .. Last))')))])]
+                                            And(offset_constraint,
+                                                And(LogCall('Valid_Next (Buffer, Offset)'),
+                                                    next_conditions)))),
+                           Postcondition(And(offset_constraint,
+                                             And(first_last_constraints,
+                                                 element_condition)))])]
 
     def __contain_functions(self) -> List[Subprogram]:
         return [ExpressionFunction('Is_Contained',
