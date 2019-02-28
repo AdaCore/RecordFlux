@@ -7,8 +7,8 @@ project Test is
     for Create_Missing_Dirs use "True";
     for Main use ("test.adb");
 
-    package Prove  is
-        for Switches use
+    package Prove is
+        for Proof_Switches ("Ada") use
         (
             "-j0",              -- Use all cores
             "--level=1",        -- Use all provers, short timeout
