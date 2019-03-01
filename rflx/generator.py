@@ -190,8 +190,9 @@ class Generator:
             pdu_package = self.__prefix + refinement.pdu.rsplit('.', 1)[0]
             if pdu_package != refinement.package:
                 pdu_top_level_context = [WithClause([pdu_package]), UsePackageClause([pdu_package])]
-                if pdu_top_level_context not in context:
-                    context.extend(pdu_top_level_context)
+                for c in pdu_top_level_context:
+                    if c not in context:
+                        context.append(c)
             pdu_context = WithClause([f'{self.__prefix}{refinement.pdu}'])
             if pdu_context not in context:
                 context.append(pdu_context)
