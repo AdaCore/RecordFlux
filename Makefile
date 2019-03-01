@@ -1,4 +1,4 @@
-test: test_python test_spark
+test: test_python test_spark prove_spark
 
 test_python:
 	coverage run -m unittest
@@ -10,6 +10,8 @@ test_python:
 test_spark:
 	gprbuild -Ptest
 	build/test
+
+prove_spark:
 	gnatprove -Ptest --checks-as-errors
 
 clean:
