@@ -485,7 +485,3 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_ethernet_pdu(self) -> None:
         self.assert_pdus([f'{self.specdir}/ethernet.rflx'], [ETHERNET_PDU])
-
-
-if __name__ == "__main__":
-    unittest.main()
