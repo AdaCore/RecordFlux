@@ -48,4 +48,7 @@ is
      with
        Pre => ((Offset < 8 and then Buffer'Length = (((Tag_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Tag_Type (Buffer, Offset));
 
+   function Convert_To_Tag_Type_Base (Enum : Tag_Type) return Tag_Type_Base is
+      (case Enum is when Msg_Data => 1, when Msg_Error => 3);
+
 end TLV;

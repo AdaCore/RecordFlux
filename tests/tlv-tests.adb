@@ -26,6 +26,7 @@ package body TLV.Tests is
       if TLV.Message.Valid_Tag (Buffer) then
          Tag := TLV.Message.Get_Tag (Buffer);
          Assert (Tag'Image, TLV.Tag_Type'Image (TLV.Msg_Data), "Unexpected Tag");
+         Assert (Convert_To_Tag_Type_Base (Tag) = 1, "Invalid conversion of Tag");
          Assert (TLV.Message.Valid_Length (Buffer), "Invalid Length");
          if TLV.Message.Valid_Length (Buffer) then
             Length := TLV.Message.Get_Length (Buffer);

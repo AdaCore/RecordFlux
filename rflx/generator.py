@@ -278,7 +278,15 @@ class Generator:
                                                                     conversion_cases),
                                                      [precondition])
 
-        return [validation_function, conversion_function]
+        enum_to_base_function = ExpressionFunction(
+            f'Convert_To_{enum.base_name}',
+            enum.base_name,
+            [('Enum', enum.enum_name if enum.always_valid else enum.name)],
+            CaseExpression(
+                Value('Enum'),
+                [(Value(key), value) for key, value in enum.literals.items()]))
+
+        return [validation_function, conversion_function, enum_to_base_function]
 
     def __array_types(self) -> List[TypeDeclaration]:
         return [DerivedType('Offset_Type',

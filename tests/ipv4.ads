@@ -163,6 +163,9 @@ is
      with
        Pre => ((Offset < 8 and then Buffer'Length = (((Flag_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Flag_Type (Buffer, Offset));
 
+   function Convert_To_Flag_Type_Base (Enum : Flag_Type) return Flag_Type_Base is
+      (case Enum is when Flag_False => 0, when Flag_True => 1);
+
    function Valid_Option_Class_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (case Convert_To_Option_Class_Type_Base (Buffer, Offset) is when 0 | 2 => True, when others => False)
      with
@@ -172,5 +175,8 @@ is
       (case Convert_To_Option_Class_Type_Base (Buffer, Offset) is when 0 => Control, when 2 => Debugging_And_Measurement, when others => Unreachable_Option_Class_Type)
      with
        Pre => ((Offset < 8 and then Buffer'Length = (((Option_Class_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Option_Class_Type (Buffer, Offset));
+
+   function Convert_To_Option_Class_Type_Base (Enum : Option_Class_Type) return Option_Class_Type_Base is
+      (case Enum is when Control => 0, when Debugging_And_Measurement => 2);
 
 end IPv4;

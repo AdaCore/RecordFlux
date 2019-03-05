@@ -44,4 +44,7 @@ is
      with
        Pre => ((Offset < 8 and then Buffer'Length = (((Priority_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Priority (Buffer, Offset));
 
+   function Convert_To_Priority_Base (Enum : Priority_Enum) return Priority_Base is
+      (case Enum is when LOW => 1, when MEDIUM => 4, when HIGH => 7);
+
 end Enumeration;
