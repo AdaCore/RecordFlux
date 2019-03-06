@@ -196,9 +196,8 @@ package body IPv4.Tests is
       Valid         : Boolean;
       First         : Types.Index_Type;
       Last          : Types.Index_Type;
-      Option_First  : Types.Index_Type;
-      Option_Last   : Types.Index_Type;
-      Offset        : IPv4.Options.Offset_Type;
+      Cursor        : IPv4.Options.Cursor_Type;
+      Option_Class  : IPv4.Option_Class_Type;
       Option_Length : IPv4.Option_Length_Type;
    begin
       IPv4.Packet.Label (Buffer);
@@ -208,46 +207,101 @@ package body IPv4.Tests is
          IPv4.Packet.Get_Options (Buffer, First, Last);
          Assert (First'Image, Types.Index_Type'Image (21), "Invalid Options'First");
          Assert (Last'Image, Types.Index_Type'Image (36), "Invalid Options'Last");
-         Valid := IPv4.Options.Valid_First (Buffer (First .. Last));
+         Cursor := IPv4.Options.First (Buffer (First .. Last));
+         Assert (Cursor.First'Image, Types.Index_Type'Image (21), "Invalid First of first option");
+         Assert (Cursor.Last'Image, Types.Index_Type'Image (36), "Invalid Last of first option");
+         Valid := IPv4.Options.Valid_Element (Buffer (First .. Last), Cursor);
          Assert (Valid, "Invalid first");
          if Valid then
-            IPv4.Options.Get_First (Buffer (First .. Last), Offset, Option_First, Option_Last);
-            Assert (Option_First'Image, Types.Index_Type'Image (21), "Invalid First of first option");
-            Assert (Option_Last'Image, Types.Index_Type'Image (23), "Invalid Last of first option");
-            Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
+            Valid := IPv4.Option.Is_Valid (Buffer (Cursor.First .. Cursor.Last));
             Assert (Valid, "Invalid first option");
-            if IPv4.Option.Valid_Option_Length (Buffer (Option_First .. Option_Last)) then
-               Option_Length := IPv4.Option.Get_Option_Length (Buffer (Option_First .. Option_Last));
+            Option_Class := IPv4.Option.Get_Option_Class (Buffer (Cursor.First .. Cursor.Last));
+            Assert (Option_Class'Image, Control'Image, "Invalid option class of first option");
+            if IPv4.Option.Valid_Option_Length (Buffer (Cursor.First .. Cursor.Last)) then
+               Option_Length := IPv4.Option.Get_Option_Length (Buffer (Cursor.First .. Cursor.Last));
                Assert (Option_Length'Image, Types.Index_Type'Image (3), "Invalid Length of first option");
             end if;
-            Valid := IPv4.Options.Valid_Next (Buffer (First .. Last), Offset);
-            Assert (Valid, "Invalid next after first option");
+            IPv4.Options.Next (Buffer (First .. Last), Cursor);
+            Assert (Cursor.First'Image, Types.Index_Type'Image (24), "Invalid First of second option");
+            Assert (Cursor.Last'Image, Types.Index_Type'Image (36), "Invalid Last of second option");
+            Valid := IPv4.Options.Valid_Element (Buffer (First .. Last), Cursor);
+            Assert (Valid, "Invalid element after first option");
             if Valid then
-               IPv4.Options.Get_Next (Buffer (First .. Last), Offset, Option_First, Option_Last);
-               Assert (Option_First'Image, Types.Index_Type'Image (24), "Invalid First of second option");
-               Assert (Option_Last'Image, Types.Index_Type'Image (34), "Invalid Last of second option");
-               Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
+               Valid := IPv4.Option.Is_Valid (Buffer (Cursor.First .. Cursor.Last));
                Assert (Valid, "Invalid second option");
-               if IPv4.Option.Valid_Option_Length (Buffer (Option_First .. Option_Last)) then
-                  Option_Length := IPv4.Option.Get_Option_Length (Buffer (Option_First .. Option_Last));
+               Option_Class := IPv4.Option.Get_Option_Class (Buffer (Cursor.First .. Cursor.Last));
+               Assert (Option_Class'Image, Control'Image, "Invalid option class of second option");
+               if IPv4.Option.Valid_Option_Length (Buffer (Cursor.First .. Cursor.Last)) then
+                  Option_Length := IPv4.Option.Get_Option_Length (Buffer (Cursor.First .. Cursor.Last));
                   Assert (Option_Length'Image, Types.Index_Type'Image (11), "Invalid Length of second option");
                end if;
+               IPv4.Options.Next (Buffer (First .. Last), Cursor);
+               Assert (Cursor.First'Image, Types.Index_Type'Image (35), "Invalid First of third option");
+               Assert (Cursor.Last'Image, Types.Index_Type'Image (36), "Invalid Last of third option");
+               Valid := IPv4.Options.Valid_Element (Buffer (First .. Last), Cursor);
+               Assert (Valid, "Invalid element after second option");
+               if Valid then
+                  Valid := IPv4.Option.Is_Valid (Buffer (Cursor.First .. Cursor.Last));
+                  Assert (Valid, "Invalid third option");
+                  Option_Class := IPv4.Option.Get_Option_Class (Buffer (Cursor.First .. Cursor.Last));
+                  Assert (Option_Class'Image, Control'Image, "Invalid option class of third option");
+                  IPv4.Options.Next (Buffer (First .. Last), Cursor);
+                  Assert (not IPv4.Options.Valid_Element (Buffer (First .. Last), Cursor), "Invalid acceptance of fourth option");
+               end if;
             end if;
-            Valid := IPv4.Options.Valid_Next (Buffer (First .. Last), Offset);
-            Assert (Valid, "Invalid next after second option");
-            if Valid then
-               IPv4.Options.Get_Next (Buffer (First .. Last), Offset, Option_First, Option_Last);
-               Assert (Option_First'Image, Types.Index_Type'Image (35), "Invalid First of third option");
-               Assert (Option_Last'Image, Types.Index_Type'Image (35), "Invalid Last of third option");
-               Valid := IPv4.Option.Is_Valid (Buffer (Option_First .. Option_Last));
-               Assert (Valid, "Invalid third option");
-            end if;
-            Assert (not IPv4.Options.Valid_Next (Buffer (First .. Last), Offset), "Invalid acceptance of fourth option");
          end if;
       end if;
       Valid := IPv4.Packet.Is_Valid (Buffer);
       Assert (Valid, "Invalid packet");
-      end Test_IPv4_With_Options;
+   end Test_IPv4_With_Options;
+
+   procedure Test_IPv4_With_Options_Loop (T : in out Aunit.Test_Cases.Test_Case'Class)
+     with SPARK_Mode, Global => null
+   is
+      pragma Unreferenced (T);
+      Buffer        : Types.Bytes := Read_File ("tests/ipv4-options_udp.raw");
+      Valid         : Boolean;
+      First         : Types.Index_Type;
+      Last          : Types.Index_Type;
+      Cursor        : IPv4.Options.Cursor_Type;
+      I             : Integer := 0;
+   begin
+      IPv4.Packet.Label (Buffer);
+      Valid := IPv4.Packet.Valid_Options (Buffer);
+      Assert (Valid, "Invalid options");
+      if Valid then
+         IPv4.Packet.Get_Options (Buffer, First, Last);
+         Assert (First'Image, Types.Index_Type'Image (21), "Invalid Options'First");
+         Assert (Last'Image, Types.Index_Type'Image (36), "Invalid Options'Last");
+
+         Cursor := IPv4.Options.First (Buffer (First .. Last));
+         Assert (Cursor.First'Image, Types.Index_Type'Image (21), "Invalid First of first option");
+         Assert (Cursor.Last'Image, Types.Index_Type'Image (36), "Invalid Last of first option");
+
+         while IPv4.Options.Valid_Element (Buffer (First .. Last), Cursor) and then I < Integer'Last loop
+            declare
+               --  workaround for GNATprove version 2018 and prior
+               --  needed to be able to proof bounds of slices in loop invariant
+               Cf : constant Types.Index_Type := Cursor.First;
+               Cl : constant Types.Index_Type := Cursor.Last;
+            begin
+               pragma Loop_Invariant (Cf >= First and then Cl <= Last);
+               pragma Loop_Invariant (Cf = Cursor.First and then Cl = Cursor.Last);
+               pragma Loop_Invariant (IPv4.Option.Is_Contained (Buffer (Cf .. Cl)));
+               pragma Loop_Invariant (IPv4.Option.Is_Valid (Buffer (Cf .. Cl)));
+               pragma Loop_Invariant (I < Integer'Last);
+            end;
+
+            I := I + 1;
+
+            IPv4.Options.Next (Buffer (First .. Last), Cursor);
+         end loop;
+
+         Assert (I'Image, Integer'Image (3), "Invalid number of options");
+      end if;
+      Valid := IPv4.Packet.Is_Valid (Buffer);
+      Assert (Valid, "Invalid packet");
+   end Test_IPv4_With_Options_Loop;
 
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
@@ -255,6 +309,7 @@ package body IPv4.Tests is
       Register_Routine (T, Test_IPv4'Access, "IPv4");
       Register_Routine (T, Test_IPv4_Option'Access, "IPv4 Option");
       Register_Routine (T, Test_IPv4_With_Options'Access, "IPv4 with Options");
+      Register_Routine (T, Test_IPv4_With_Options_Loop'Access, "IPv4 with Options (Loop)");
    end Register_Tests;
 
 end IPv4.Tests;

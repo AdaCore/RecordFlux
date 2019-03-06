@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Tuple
 
 from rflx.ada import (FALSE, Aggregate, Aspect, Assignment, CallStatement, CaseExpression, Cast,
-                      ComponentItem, ContextItem, Convert, Declaration, DerivedType, Discriminant,
+                      ComponentItem, ContextItem, Convert, Declaration, Discriminant,
                       EnumerationType, ExpressionFunction, Function, Ghost, IfExpression,
                       IfStatement, Import, LogCall, MathCall, ModularType, Package, Postcondition,
                       Pragma, PragmaStatement, Precondition, Procedure, RangeSubtype, RangeType,
-                      ReturnStatement, Statement, Subprogram, TypeDeclaration, Unit,
+                      RecordType, ReturnStatement, Statement, Subprogram, TypeDeclaration, Unit,
                       UsePackageClause, UseTypeClause, VariantItem, VariantRecordType, WithClause)
 from rflx.expression import (TRUE, Add, And, Attribute, Div, Equal, Expr, GreaterEqual, Last,
                              Length, LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number,
@@ -289,89 +289,64 @@ class Generator:
         return [validation_function, conversion_function, enum_to_base_function]
 
     def __array_types(self) -> List[TypeDeclaration]:
-        return [DerivedType('Offset_Type',
-                            self.__types_index)]
+        return [RecordType('Cursor_Type',
+                           [ComponentItem('First', self.__types_index),
+                            ComponentItem('Last', self.__types_index)])]
 
     def __array_functions(self, array: Array, package: str) -> List[Subprogram]:
-        common_precondition = LogCall(f'Is_Contained (Buffer)')
-        first_conditions = And(LogCall('Valid_Next (Buffer, Offset_Type (Buffer\'First))'),
-                               And(LogCall(f'{package}.{array.element_type}.Is_Contained '
-                                           '(Buffer (Buffer\'First .. Buffer\'Last))'),
-                                   LogCall(f'{package}.{array.element_type}.Is_Valid '
-                                           '(Buffer (Buffer\'First .. Buffer\'Last))')))
-        element_condition = LogCall(f'{package}.{array.element_type}.Is_Contained '
-                                    '(Buffer (First .. Last))')
-        offset_constraint = GreaterEqual(Value('Offset'), Value('Offset_Type (Buffer\'First)'))
-        first_last_constraints = And(GreaterEqual(Value('First'), Value('Buffer\'First')),
-                                     LessEqual(Value('Last'), Value('Buffer\'Last')))
-        next_conditions = And(LogCall(f'{package}.{array.element_type}.Is_Contained '
-                                      '(Buffer (Types.Index_Type (Offset) .. Buffer\'Last))'),
-                              LogCall(f'{package}.{array.element_type}.Is_Valid '
-                                      '(Buffer (Types.Index_Type (Offset) .. Buffer\'Last))'))
+        contained_condition = LogCall(f'Is_Contained (Buffer)')
 
-        return [Function('Valid_First',
-                         'Boolean',
+        first_index_condition = And(GreaterEqual(Value('First\'Result.First'),
+                                                 First('Buffer')),
+                                    LessEqual(Value('First\'Result.Last'),
+                                              Last('Buffer')))
+        first_element_condition = LogCall(f'{package}.{array.element_type}.Is_Contained '
+                                          '(Buffer (First\'Result.First .. First\'Result.Last))')
+
+        cursor_conditions = And(GreaterEqual(Value('Cursor.First'), First('Buffer')),
+                                LessEqual(Value('Cursor.Last'), Last('Buffer')))
+        cursor_slice = 'Buffer (Cursor.First .. Cursor.Last)'
+
+        element_contained_condition = LogCall(f'{package}.{array.element_type}.Is_Contained '
+                                              f'({cursor_slice})')
+        element_valid_condition = LogCall(f'{package}.{array.element_type}.Is_Valid '
+                                          f'({cursor_slice})')
+
+        return [Function('First',
+                         'Cursor_Type',
                          [('Buffer', self.__types_bytes)],
                          [],
-                         [ReturnStatement(
-                             LogCall('Valid_Next (Buffer, Offset_Type (Buffer\'First))'))],
-                         [Precondition(common_precondition),
-                          Postcondition(IfExpression([
-                              (LogCall('Valid_First\'Result'), first_conditions)]))]),
-                Procedure('Get_First',
+                         [CallStatement(f'{package}.{array.element_type}.Label',
+                                        ['Buffer (Buffer\'First .. Buffer\'Last)']),
+                          ReturnStatement(Aggregate(First('Buffer'),
+                                                    Last('Buffer')))],
+                         [Precondition(contained_condition),
+                          Postcondition(And(first_index_condition,
+                                            first_element_condition))]),
+                Procedure('Next',
                           [('Buffer', self.__types_bytes),
-                           ('Offset', 'out Offset_Type'),
-                           ('First', f'out {self.__types_index}'),
-                           ('Last', f'out {self.__types_index}')],
+                           ('Cursor', 'in out Cursor_Type')],
                           [],
-                          [Assignment('Offset', Value('Offset_Type (Buffer\'First)')),
-                           CallStatement('Get_Next', ['Buffer', 'Offset', 'First', 'Last'])],
-                          [Precondition(And(common_precondition, first_conditions)),
-                           Postcondition(And(offset_constraint,
-                                             And(first_last_constraints,
-                                                 element_condition)))]),
-                Function('Valid_Next',
-                         'Boolean',
-                         [('Buffer', self.__types_bytes),
-                          ('Offset', 'Offset_Type')],
-                         [],
-                         [PragmaStatement('Assume',
-                                          [(f'{package}.{array.element_type}.Is_Contained '
-                                            f'(Buffer ({self.__types_index} (Offset) '
-                                            '.. Buffer\'Last))')]),
-                          ReturnStatement(
-                              LogCall(f'{package}.{array.element_type}.Is_Valid '
-                                      f'(Buffer ({self.__types_index} (Offset) '
-                                      '.. Buffer\'Last))'))],
-                         [Precondition(And(common_precondition,
-                                           offset_constraint)),
-                          Postcondition(IfExpression([
-                              (LogCall('Valid_Next\'Result'),
-                               next_conditions)]))]),
-                Procedure('Get_Next',
-                          [('Buffer', self.__types_bytes),
-                           ('Offset', 'in out Offset_Type'),
-                           ('First', f'out {self.__types_index}'),
-                           ('Last', f'out {self.__types_index}')],
-                          [],
-                          [Assignment('First', Value(f'{self.__types_index} (Offset)')),
-                           Assignment('Last', Add(Value('First'),
-                                                  Cast(self.__types_length,
-                                                       MathCall(f'{package}.{array.element_type}.'
-                                                                'Message_Length (Buffer (First '
-                                                                '.. Buffer\'Last))')),
-                                                  Number(-1))),
-                           Assignment('Offset', Value('Offset_Type (Last + 1)')),
-                           PragmaStatement('Assume',
-                                           [(f'{package}.{array.element_type}.Is_Contained '
-                                             '(Buffer (First .. Last))')])],
-                          [Precondition(And(common_precondition,
-                                            And(offset_constraint,
-                                                And(LogCall('Valid_Next (Buffer, Offset)'),
-                                                    next_conditions)))),
-                           Postcondition(And(offset_constraint,
-                                             And(first_last_constraints,
-                                                 element_condition)))])]
+                          [Assignment('Cursor',
+                                      Aggregate(Add(Value('Cursor.First'),
+                                                    Cast('Types.Length_Type',
+                                                         MathCall(f'{package}.{array.element_type}.'
+                                                                  'Message_Length '
+                                                                  f'({cursor_slice})'))),
+                                                Last('Buffer'))),
+                           CallStatement(f'{package}.{array.element_type}.Label', [cursor_slice])],
+                          [Precondition(And(cursor_conditions,
+                                            And(element_contained_condition,
+                                                element_valid_condition))),
+                           Postcondition(And(cursor_conditions,
+                                             element_contained_condition))]),
+                ExpressionFunction('Valid_Element',
+                                   'Boolean',
+                                   [('Buffer', self.__types_bytes),
+                                    ('Cursor', 'Cursor_Type')],
+                                   element_valid_condition,
+                                   [Precondition(And(cursor_conditions,
+                                                     element_contained_condition))])]
 
     def __contain_functions(self) -> List[Subprogram]:
         return [ExpressionFunction('Is_Contained',

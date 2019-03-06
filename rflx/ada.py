@@ -169,6 +169,19 @@ class DerivedType(TypeDeclaration):
         return f'   type {self.name} is new {self.type_name};'
 
 
+class RecordType(TypeDeclaration):
+    def __init__(self, name: str, components: List['ComponentItem']) -> None:
+        super().__init__(name)
+        self.components = components
+
+    def __str__(self) -> str:
+        components = ''.join(str(component) for component in self.components)
+        return (f'   type {self.name} is\n'
+                f'      record\n'
+                f'{components}'
+                f'      end record;')
+
+
 class VariantRecordType(TypeDeclaration):
     def __init__(self, name: str, discriminant: 'Discriminant',
                  variants: List['VariantItem']) -> None:
@@ -205,7 +218,7 @@ class VariantItem:
         self.components = components
 
     def __str__(self) -> str:
-        components = '   '.join(str(component) for component in self.components)
+        components = '\n'.join(f'      {component}' for component in self.components)
         return f'            when {self.discrete_choice} =>\n{components}'
 
 
@@ -215,7 +228,7 @@ class ComponentItem:
         self.type = type_
 
     def __str__(self) -> str:
-        return f'               {self.name} : {self.type};\n'
+        return f'         {self.name} : {self.type};\n'
 
 
 class Aspect(ABC):
@@ -460,7 +473,7 @@ class Statement(ABC):
 
 
 class Assignment(Statement):
-    def __init__(self, name: str, expression: MathExpr) -> None:
+    def __init__(self, name: str, expression: Expr) -> None:
         self.name = name
         self.expression = expression
 
