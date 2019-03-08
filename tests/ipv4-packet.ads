@@ -15,7 +15,7 @@ is
        Post => Is_Contained (Buffer);
 
    function Valid_Version_0 (Buffer : Types.Bytes) return Boolean is
-      (((Buffer'Length >= 1 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then (Convert_To_Version_Type_Base (Buffer (Buffer'First .. Buffer'First), 4) >= 4 and then Convert_To_Version_Type_Base (Buffer (Buffer'First .. Buffer'First), 4) <= 4)))
+      (((Buffer'Length >= 1 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Valid_Version_Type (Buffer (Buffer'First .. Buffer'First), 4)))
      with
        Pre => Is_Contained (Buffer);
 
@@ -35,7 +35,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Version (Buffer));
 
    function Valid_IHL_00 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Version_0 (Buffer) and then ((Buffer'Length >= 1 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Convert_To_IHL_Type_Base (Buffer (Buffer'First .. Buffer'First), 0) >= 5)))
+      ((Valid_Version_0 (Buffer) and then ((Buffer'Length >= 1 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Valid_IHL_Type (Buffer (Buffer'First .. Buffer'First), 0))))
      with
        Pre => Is_Contained (Buffer);
 
@@ -95,7 +95,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_ECN (Buffer));
 
    function Valid_Total_Length_00000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_ECN_0000 (Buffer) and then ((Buffer'Length >= 4 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Convert_To_Total_Length_Type_Base (Buffer ((Buffer'First + 2) .. (Buffer'First + 3)), 0) >= 20)))
+      ((Valid_ECN_0000 (Buffer) and then ((Buffer'Length >= 4 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Valid_Total_Length_Type (Buffer ((Buffer'First + 2) .. (Buffer'First + 3)), 0))))
      with
        Pre => Is_Contained (Buffer);
 

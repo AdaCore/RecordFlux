@@ -179,4 +179,24 @@ is
    function Convert_To_Option_Class_Type_Base (Enum : Option_Class_Type) return Option_Class_Type_Base is
       (case Enum is when Control => 0, when Debugging_And_Measurement => 2);
 
+   function Valid_Option_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (Convert_To_Option_Length_Type_Base (Buffer, Offset) >= 2)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Option_Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_Version_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      ((Convert_To_Version_Type_Base (Buffer, Offset) >= 4 and then Convert_To_Version_Type_Base (Buffer, Offset) <= 4))
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Version_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_IHL_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (Convert_To_IHL_Type_Base (Buffer, Offset) >= 5)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((IHL_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_Total_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (Convert_To_Total_Length_Type_Base (Buffer, Offset) >= 20)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Total_Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
 end IPv4;

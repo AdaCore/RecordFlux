@@ -73,7 +73,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Option_Number (Buffer));
 
    function Valid_Option_Length_0001 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Option_Number_000 (Buffer) and then (((Buffer'Length >= 2 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_Option_Number_000 (Buffer) > 1) and then Convert_To_Option_Length_Type_Base (Buffer ((Buffer'First + 1) .. (Buffer'First + 1)), 0) >= 2)))
+      ((Valid_Option_Number_000 (Buffer) and then (((Buffer'Length >= 2 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_Option_Number_000 (Buffer) > 1) and then Valid_Option_Length_Type (Buffer ((Buffer'First + 1) .. (Buffer'First + 1)), 0))))
      with
        Pre => Is_Contained (Buffer);
 

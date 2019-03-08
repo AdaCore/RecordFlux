@@ -53,7 +53,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_Destination_Port (Buffer));
 
    function Valid_Length_000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_Destination_Port_00 (Buffer) and then ((Buffer'Length >= 6 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Convert_To_Length_Type_Base (Buffer ((Buffer'First + 4) .. (Buffer'First + 5)), 0) >= 8)))
+      ((Valid_Destination_Port_00 (Buffer) and then ((Buffer'Length >= 6 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Valid_Length_Type (Buffer ((Buffer'First + 4) .. (Buffer'First + 5)), 0))))
      with
        Pre => Is_Contained (Buffer);
 

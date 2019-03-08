@@ -125,6 +125,7 @@ class Generator:
             top_level_package.types += modular_types(field_type)
         elif isinstance(field_type, RangeInteger):
             top_level_package.types += range_types(field_type)
+            top_level_package.subprograms += self.__range_functions(field_type)
         elif isinstance(field_type, Enumeration):
             top_level_package.types += enumeration_types(field_type)
             top_level_package.subprograms += self.__enumeration_functions(field_type)
@@ -216,6 +217,31 @@ class Generator:
                 UseTypeClause([self.__types_index,
                                self.__types_length])]
 
+    def __range_functions(self, integer: RangeInteger) -> List[Subprogram]:
+        if integer.constraints == TRUE:
+            return []
+
+        integer_value = Convert(integer.base_name,
+                                'Buffer',
+                                First('Buffer'),
+                                Last('Buffer'),
+                                Value('Offset'))
+
+        return [ExpressionFunction(f'Valid_{integer.name}',
+                                   'Boolean',
+                                   [('Buffer', self.__types_bytes),
+                                    ('Offset', 'Natural')],
+                                   integer.constraints.simplified({Value(integer.name):
+                                                                   integer_value}),
+                                   [Precondition(And(Less(Value('Offset'),
+                                                          Number(8)),
+                                                     Equal(Length('Buffer'),
+                                                           Add(Div(Add(Size(integer.base_name),
+                                                                       Value('Offset'),
+                                                                       Number(-1)),
+                                                                   Number(8)),
+                                                               Number(1)))))])]
+
     def __enumeration_functions(self, enum: Enumeration) -> List[Subprogram]:
         common_precondition = And(Less(Value('Offset'),
                                        Number(8)),
@@ -226,7 +252,11 @@ class Generator:
                                                 Number(8)),
                                             Number(1))))
 
-        control_expression = LogCall(f'Convert_To_{enum.base_name} (Buffer, Offset)')
+        enum_value = Convert(enum.base_name,
+                             'Buffer',
+                             First('Buffer'),
+                             Last('Buffer'),
+                             Value('Offset'))
 
         validation_expression: Expr
         if enum.always_valid:
@@ -236,7 +266,7 @@ class Generator:
             validation_cases.extend((value, Value('True')) for value in enum.literals.values())
             validation_cases.append((Value('others'), Value('False')))
 
-            validation_expression = CaseExpression(control_expression,
+            validation_expression = CaseExpression(enum_value,
                                                    validation_cases)
         validation_function = ExpressionFunction(f'Valid_{enum.name}',
                                                  'Boolean',
@@ -262,7 +292,7 @@ class Generator:
             conversion_function = Function(function_name,
                                            enum.name,
                                            parameters,
-                                           [Declaration('Raw', enum.base_name, control_expression)],
+                                           [Declaration('Raw', enum.base_name, enum_value)],
                                            [ReturnStatement(CaseExpression(Value('Raw'),
                                                                            conversion_cases))],
                                            [precondition])
@@ -274,7 +304,7 @@ class Generator:
             conversion_function = ExpressionFunction(function_name,
                                                      enum.name,
                                                      parameters,
-                                                     CaseExpression(control_expression,
+                                                     CaseExpression(enum_value,
                                                                     conversion_cases),
                                                      [precondition])
 
@@ -369,21 +399,8 @@ class Generator:
 
         if field.type.constraints != TRUE or isinstance(field.type, Enumeration):
             first_byte, last_byte, offset = self.__field_location(field.name, variant_id, variant)
-
-            if field.type.constraints != TRUE:
-                convert = Convert(
-                    field.type.base_name,
-                    'Buffer',
-                    first_byte,
-                    last_byte,
-                    offset)
-                type_constraints = field.type.constraints.simplified(
-                    {Value(field.type.name): convert})
-
-            if isinstance(field.type, Enumeration):
-                type_constraints = And(type_constraints,
-                                       LogCall((f'Valid_{field.type.name} (Buffer ({first_byte}'
-                                                f' .. {last_byte}), {offset})')))
+            type_constraints = LogCall((f'Valid_{field.type.name} (Buffer ({first_byte}'
+                                        f' .. {last_byte}), {offset})'))
 
         value_to_call = self.__value_to_call_facts([(field.name, variant_id)] + variant.previous)
 
@@ -720,8 +737,8 @@ def unreachable_function_name(type_name: str) -> str:
     return f'Unreachable_{type_name}'.replace('.', '_')
 
 
-def calculate_offset(last: MathExpr) -> int:
+def calculate_offset(last: MathExpr) -> Number:
     last = last.simplified({First('Buffer'): Number(0)})
     if isinstance(last, Number):
-        return (8 - (last.value + 1) % 8) % 8
-    return 0
+        return Number((8 - (last.value + 1) % 8) % 8)
+    return Number(0)

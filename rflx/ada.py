@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from typing import Callable, Dict, List, Tuple
 
-from rflx.expression import Attribute, Expr, LogExpr, MathExpr, Number
+from rflx.expression import Attribute, Expr, First, Last, LogExpr, MathExpr, Number
 
 
 class AdaRepresentation(ABC):
@@ -586,7 +586,7 @@ class LogCall(Call, LogExpr):
 class Convert(MathExpr):
     # pylint: disable=too-many-arguments
     def __init__(self, type_name: str, array_name: str, first: MathExpr, last: MathExpr,
-                 offset: int = 0, negative: bool = False) -> None:
+                 offset: MathExpr = Number(0), negative: bool = False) -> None:
         self.type_name = type_name
         self.array_name = array_name
         self.first = first
@@ -596,8 +596,13 @@ class Convert(MathExpr):
 
     def __str__(self) -> str:
         negative = '-1 * ' if self.negative else ''
+
+        array_slice = ''
+        if self.first != First(self.array_name) or self.last != Last(self.array_name):
+            array_slice = f' ({self.first} .. {self.last})'
+
         return (f'{negative}'
-                f'Convert_To_{self.type_name} ({self.array_name} ({self.first} .. {self.last}), '
+                f'Convert_To_{self.type_name} ({self.array_name}{array_slice}, '
                 f'{self.offset}'
                 ')')
 
