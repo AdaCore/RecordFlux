@@ -4,8 +4,8 @@ from typing import Dict, List
 from rflx.parser import (FINAL, PDU, And, Array, Component, Context, Div, Edge, Enumeration, Equal,
                          First, GreaterEqual, InitialNode, Last, Length, LessEqual, Message,
                          ModularInteger, Mul, Node, NotEqual, Number, Package, ParseFatalException,
-                         Parser, ParserError, Pow, RangeInteger, Refinement, Specification, Sub,
-                         Then, Value)
+                         Parser, ParserError, Pow, RangeInteger, Reference, Refinement,
+                         Specification, Sub, Then, Value)
 from tests.models import ETHERNET_PDU
 
 
@@ -176,11 +176,11 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assert_parser_error_string(
             """
                 package Test is
-                   type Foo is mod 256;
+                   type Foo is mod 2**4;
                    type T is array of Foo;
                 end Test;
             """,
-            r'unsupported element type "Foo" in "T"')
+            r'unsupported size \(4\) of element type "Foo" in "T" \(no multiple of 8\)')
 
     def test_duplicate_message(self) -> None:
         self.assert_parser_error_string(
@@ -329,10 +329,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             Context([]),
             Package('Test',
                     [ModularInteger('Byte', Number(256)),
-                     Message('Foo',
-                             [Component('Byte', 'Byte')]),
-                     Array('Bar',
-                           'Foo')]))}
+                     Array('Bytes', Reference('Byte')),
+                     Message('Foo', [Component('Byte', 'Byte')]),
+                     Array('Bar', Reference('Foo'))]))}
         self.assert_specifications([f'{self.testdir}/array_type.rflx'], spec)
 
     def test_message_type_spec(self) -> None:

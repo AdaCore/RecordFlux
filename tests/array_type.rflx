@@ -1,6 +1,7 @@
 package Test is
 
    type Byte is mod 256;
+   type Bytes is array of Byte;
 
    type Foo is
       message

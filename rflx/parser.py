@@ -9,7 +9,7 @@ from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, F
                              GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
                              MathExpr, Mul, NotEqual, Number, Or, Pow, Relation, Sub, Value)
 from rflx.model import (FINAL, PDU, Array, Edge, Enumeration, InitialNode, ModelError,
-                        ModularInteger, Node, RangeInteger, Refinement, Type)
+                        ModularInteger, Node, RangeInteger, Reference, Refinement, Type)
 
 
 class SyntaxTree:
@@ -298,10 +298,17 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
         if isinstance(t, (ModularInteger, RangeInteger, Enumeration, Array)):
             if t.name in types:
                 raise ParserError(f'duplicate type "{t.name}"')
-            if isinstance(t, Array) and t.element_type not in types:
-                raise ParserError(f'reference to undefined type "{t.element_type}" in "{t.name}"')
-            if isinstance(t, Array) and not isinstance(types[t.element_type], Message):
-                raise ParserError(f'unsupported element type "{t.element_type}" in "{t.name}"')
+            if isinstance(t, Array):
+                if t.element_type.name not in types:
+                    raise ParserError(f'reference to undefined type "{t.element_type.name}" in '
+                                      f'"{t.name}"')
+                if not isinstance(types[t.element_type.name], Message):
+                    element_type_size = types[t.element_type.name].size.simplified()
+                    if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
+                        raise ParserError(f'unsupported size ({element_type_size}) of element type '
+                                          f'"{t.element_type.name}" in "{t.name}" '
+                                          '(no multiple of 8)')
+                    t = Array(t.name, types[t.element_type.name])
             types[t.name] = t
         elif isinstance(t, Message):
             nodes: Dict[str, Node] = OrderedDict()
@@ -541,7 +548,7 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
                 tokens.append(TRUE)
             return Refinement(tokens[1], *tokens[4:])
         if tokens[3] == 'array of':
-            return Array(tokens[1], tokens[4])
+            return Array(tokens[1], Reference(tokens[4]))
     except ModelError as e:
         raise ParseFatalException(string, location, e)
     raise ParseFatalException(string, location, 'unexpected type')

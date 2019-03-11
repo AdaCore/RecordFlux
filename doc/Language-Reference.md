@@ -10,7 +10,7 @@ The RecordFlux DSL describes protocol message formats based on types. For each t
 
 *logical_expression*: A logical expression consists of relations (__<__, __<=__, __=__, __/=__, __>=__, __>__) between names and numbers combined by logical operators (conjunction __and__, disjunction __or__).
 
-## Basic Types
+## Scalar Types
 
 ### Integer Type
 
@@ -169,7 +169,7 @@ An array type represents a list of similar elements.
 
 #### Static Semantics
 
-An array consists of a number of elements with similar type. Only message types can be used as element type. When an array is used in a message type, its bit length has to be specified by a length aspect.
+An array consists of a number of elements with similar type. Scalar types as well as message types can be used as element type. When an array is used in a message type, its bit length has to be specified by a length aspect.
 
 #### Example
 

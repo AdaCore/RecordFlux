@@ -12,7 +12,7 @@ from rflx.expression import (TRUE, Add, And, Attribute, Div, Equal, Expr, Greate
                              Length, LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number,
                              Or, Pow, Size, Sub, Value)
 from rflx.model import (PDU, Array, Enumeration, Field, First, ModularInteger, Null, RangeInteger,
-                        Refinement, Type, Variant)
+                        Reference, Refinement, Type, Variant)
 
 COMMON_PRECONDITION = LogCall('Is_Contained (Buffer)')
 
@@ -131,8 +131,13 @@ class Generator:
             top_level_package.subprograms += self.__enumeration_functions(field_type)
         elif isinstance(field_type, Array):
             if 'Payload' not in field_type.name:
-                array_context: List[ContextItem] = [
-                    WithClause([f'{self.__prefix}{pdu_package}.{field_type.element_type}'])]
+                if not isinstance(field_type.element_type, Reference):
+                    self.__create_type(field_type.element_type, pdu_package)
+
+                array_context: List[ContextItem] = []
+                if isinstance(field_type.element_type, Reference):
+                    array_context = [WithClause([f'{self.__prefix}{pdu_package}.'
+                                                 f'{field_type.element_type.name}'])]
 
                 array_package = Package(f'{self.__prefix}{pdu_package}.{field_type.name}',
                                         self.__array_types(),
@@ -152,9 +157,10 @@ class Generator:
 
             for field in pdu.fields().values():
                 if not isinstance(field.type, Null):
-                    function = self.__type_dependent_unreachable_function(field.type)
-                    if function not in unreachable_functions[pdu.package]:
-                        unreachable_functions[pdu.package].append(function)
+                    functions = self.__type_dependent_unreachable_function(field.type)
+                    for function in functions:
+                        if function not in unreachable_functions[pdu.package]:
+                            unreachable_functions[pdu.package].append(function)
 
             function = unreachable_function(self.__types_length)
             if function not in unreachable_functions[pdu.package]:
@@ -324,29 +330,35 @@ class Generator:
                             ComponentItem('Last', self.__types_index)])]
 
     def __array_functions(self, array: Array, package: str) -> List[Subprogram]:
+        if isinstance(array.element_type, Reference):
+            return self.__message_array_functions(array, package)
+        return self.__scalar_array_functions(array)
+
+    def __message_array_functions(self, array: Array, package: str) -> List[Subprogram]:
+        element_name = array.element_type.name
         contained_condition = LogCall(f'Is_Contained (Buffer)')
 
         first_index_condition = And(GreaterEqual(Value('First\'Result.First'),
                                                  First('Buffer')),
                                     LessEqual(Value('First\'Result.Last'),
                                               Last('Buffer')))
-        first_element_condition = LogCall(f'{package}.{array.element_type}.Is_Contained '
+        first_element_condition = LogCall(f'{package}.{element_name}.Is_Contained '
                                           '(Buffer (First\'Result.First .. First\'Result.Last))')
 
         cursor_conditions = And(GreaterEqual(Value('Cursor.First'), First('Buffer')),
                                 LessEqual(Value('Cursor.Last'), Last('Buffer')))
         cursor_slice = 'Buffer (Cursor.First .. Cursor.Last)'
 
-        element_contained_condition = LogCall(f'{package}.{array.element_type}.Is_Contained '
+        element_contained_condition = LogCall(f'{package}.{element_name}.Is_Contained '
                                               f'({cursor_slice})')
-        element_valid_condition = LogCall(f'{package}.{array.element_type}.Is_Valid '
+        element_valid_condition = LogCall(f'{package}.{element_name}.Is_Valid '
                                           f'({cursor_slice})')
 
         return [Function('First',
                          'Cursor_Type',
                          [('Buffer', self.__types_bytes)],
                          [],
-                         [CallStatement(f'{package}.{array.element_type}.Label',
+                         [CallStatement(f'{package}.{element_name}.Label',
                                         ['Buffer (Buffer\'First .. Buffer\'Last)']),
                           ReturnStatement(Aggregate(First('Buffer'),
                                                     Last('Buffer')))],
@@ -360,11 +372,11 @@ class Generator:
                           [Assignment('Cursor',
                                       Aggregate(Add(Value('Cursor.First'),
                                                     Cast('Types.Length_Type',
-                                                         MathCall(f'{package}.{array.element_type}.'
+                                                         MathCall(f'{package}.{element_name}.'
                                                                   'Message_Length '
                                                                   f'({cursor_slice})'))),
                                                 Last('Buffer'))),
-                           CallStatement(f'{package}.{array.element_type}.Label', [cursor_slice])],
+                           CallStatement(f'{package}.{element_name}.Label', [cursor_slice])],
                           [Precondition(And(cursor_conditions,
                                             And(element_contained_condition,
                                                 element_valid_condition))),
@@ -377,6 +389,85 @@ class Generator:
                                    element_valid_condition,
                                    [Precondition(And(cursor_conditions,
                                                      element_contained_condition))])]
+
+    def __scalar_array_functions(self, array: Array) -> List[Subprogram]:
+        element_size = array.element_type.size.to_bytes()
+        element_size_minus_one = Sub(element_size, Number(1)).simplified()
+
+        contained_condition = LogCall(f'Is_Contained (Buffer)')
+
+        first_index_condition = And(GreaterEqual(Value('First\'Result.First'),
+                                                 First('Buffer')),
+                                    LessEqual(Value('First\'Result.Last'),
+                                              Last('Buffer')))
+
+        cursor_conditions = And(GreaterEqual(Value('Cursor.First'), First('Buffer')),
+                                LessEqual(Value('Cursor.Last'), Last('Buffer')))
+
+        type_constraints: LogExpr = TRUE
+
+        if array.element_type.constraints != TRUE or (isinstance(array.element_type, Enumeration)
+                                                      and not array.element_type.always_valid):
+            type_constraints = LogCall((f'Valid_{array.element_type.name} (Buffer (Cursor.First'
+                                        f' .. Cursor.Last), 0)'))
+
+        element_name = array.element_type.name
+        if array.element_type.constraints != TRUE:
+            element_name = array.element_type.base_name
+        element_value = Convert(element_name,
+                                'Buffer',
+                                Value('Cursor.First'),
+                                Value('Cursor.Last'))
+
+        return [Function('First',
+                         'Cursor_Type',
+                         [('Buffer', self.__types_bytes)],
+                         [],
+                         [IfStatement([(GreaterEqual(Length('Buffer'), element_size),
+                                        [ReturnStatement(
+                                            Aggregate(First('Buffer'),
+                                                      Add(First('Buffer'),
+                                                          element_size_minus_one).simplified()))])],
+                                      [ReturnStatement(
+                                          Aggregate(Last(self.__types_index),
+                                                    First(self.__types_index)))])],
+                         [Precondition(contained_condition),
+                          Postcondition(first_index_condition)]),
+                Procedure('Next',
+                          [('Buffer', self.__types_bytes),
+                           ('Cursor', 'in out Cursor_Type')],
+                          [],
+                          [IfStatement([(LessEqual(Value('Cursor.Last'),
+                                                   Sub(Last('Buffer'),
+                                                       element_size)),
+                                         [Assignment('Cursor',
+                                                     Aggregate(Add(Value('Cursor.Last'),
+                                                                   Number(1)),
+                                                               Add(Value('Cursor.Last'),
+                                                                   element_size)))])],
+                                       [Assignment('Cursor',
+                                                   Aggregate(Last(self.__types_index),
+                                                             First(self.__types_index)))])],
+                          [Precondition(And(contained_condition,
+                                            cursor_conditions))]),
+                ExpressionFunction('Valid_Element',
+                                   'Boolean',
+                                   [('Buffer', self.__types_bytes),
+                                    ('Cursor', 'Cursor_Type')],
+                                   And(cursor_conditions,
+                                       And(LessEqual(Value('Cursor.First'),
+                                                     Value('Cursor.Last')),
+                                           And(Equal(Length('Buffer (Cursor.First .. Cursor.Last)'),
+                                                     element_size),
+                                               type_constraints))).simplified(),
+                                   [Precondition(contained_condition)]),
+                ExpressionFunction('Get_Element',
+                                   array.element_type.name,
+                                   [('Buffer', self.__types_bytes),
+                                    ('Cursor', 'Cursor_Type')],
+                                   element_value,
+                                   [Precondition(And(contained_condition,
+                                                     LogCall('Valid_Element (Buffer, Cursor)')))])]
 
     def __contain_functions(self) -> List[Subprogram]:
         return [ExpressionFunction('Is_Contained',
@@ -616,21 +707,28 @@ class Generator:
                          ReturnStatement(FALSE)],
                         aspects)
 
-    def __type_dependent_unreachable_function(self, field_type: Type) -> Subprogram:
+    def __type_dependent_unreachable_function(self, field_type: Type) -> List[Subprogram]:
+        functions: List[Subprogram] = []
+
+        if isinstance(field_type, Array) and not isinstance(field_type.element_type, Reference):
+            functions.extend(self.__type_dependent_unreachable_function(field_type.element_type))
+
+        type_name = field_type.name
         if isinstance(field_type, Array):
             type_name = self.__types_index
-        else:
-            type_name = field_type.name
         base_name = None
         if isinstance(field_type, Enumeration) and field_type.always_valid:
             base_name = field_type.base_name
-        return unreachable_function(type_name, base_name)
+
+        functions.append(unreachable_function(type_name, base_name))
+
+        return functions
 
     def __field_location(
             self,
             field_name: str,
             variant_id: str,
-            variant: Variant) -> Tuple[MathExpr, MathExpr, int]:
+            variant: Variant) -> Tuple[MathExpr, MathExpr, Number]:
 
         value_to_call = self.__value_to_call_facts(
             [(field_name, variant_id)] + variant.previous)

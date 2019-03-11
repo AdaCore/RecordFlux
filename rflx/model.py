@@ -36,6 +36,12 @@ class Type(Element):
         return f'{self.name}_Base'
 
 
+class Reference(Type):
+    @property
+    def size(self) -> MathExpr:
+        raise NotImplementedError
+
+
 class ModularInteger(Type):
     def __init__(self, name: str, modulus: MathExpr) -> None:
         modulus_num = modulus.simplified()
@@ -135,7 +141,7 @@ class Enumeration(Type):
 
 
 class Array(Type):
-    def __init__(self, name: str, element_type: str = '') -> None:
+    def __init__(self, name: str, element_type: Type = Reference('')) -> None:
         super().__init__(name)
         self.element_type = element_type
 
