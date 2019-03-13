@@ -82,9 +82,7 @@ class Generator:
                     self.__create_type(field.type, pdu.package)
 
                 if isinstance(field.type, Array) and 'Payload' not in field.type.name:
-                    with_clause = WithClause([f'{self.__prefix}{pdu.package}.{field.type.name}'])
-                    if with_clause not in context:
-                        context.append(with_clause)
+                    context.append(WithClause([f'{self.__prefix}{pdu.package}.{field.type.name}']))
 
                 for variant_id, variant in field.variants.items():
                     package.subprograms.append(
@@ -119,16 +117,17 @@ class Generator:
         self.__create_unreachable_functions(pdus)
 
     def __create_type(self, field_type: Type, pdu_package: str) -> None:
-        top_level_package = self.__units[pdu_package].package
+        types = self.__units[pdu_package].package.types
+        subprograms = self.__units[pdu_package].package.subprograms
 
         if isinstance(field_type, ModularInteger):
-            top_level_package.types += modular_types(field_type)
+            types.extend(modular_types(field_type))
         elif isinstance(field_type, RangeInteger):
-            top_level_package.types += range_types(field_type)
-            top_level_package.subprograms += self.__range_functions(field_type)
+            types.extend(range_types(field_type))
+            subprograms.extend(self.__range_functions(field_type))
         elif isinstance(field_type, Enumeration):
-            top_level_package.types += enumeration_types(field_type)
-            top_level_package.subprograms += self.__enumeration_functions(field_type)
+            types.extend(enumeration_types(field_type))
+            subprograms.extend(self.__enumeration_functions(field_type))
         elif isinstance(field_type, Array):
             if 'Payload' not in field_type.name:
                 if not isinstance(field_type.element_type, Reference):
@@ -157,14 +156,10 @@ class Generator:
 
             for field in pdu.fields().values():
                 if not isinstance(field.type, Null):
-                    functions = self.__type_dependent_unreachable_function(field.type)
-                    for function in functions:
-                        if function not in unreachable_functions[pdu.package]:
-                            unreachable_functions[pdu.package].append(function)
+                    unreachable_functions[pdu.package].extend(
+                        self.__type_dependent_unreachable_function(field.type))
 
-            function = unreachable_function(self.__types_length)
-            if function not in unreachable_functions[pdu.package]:
-                unreachable_functions[pdu.package].append(function)
+            unreachable_functions[pdu.package].append(unreachable_function(self.__types_length))
 
         for pdu_package, functions in unreachable_functions.items():
             top_level_package = self.__units[pdu_package].package
@@ -197,16 +192,14 @@ class Generator:
             pdu_package = self.__prefix + refinement.pdu.rsplit('.', 1)[0]
             if pdu_package != refinement.package:
                 pdu_top_level_context = [WithClause([pdu_package]), UsePackageClause([pdu_package])]
-                for c in pdu_top_level_context:
-                    if c not in context:
-                        context.append(c)
+                context.extend(pdu_top_level_context)
+
             pdu_context = WithClause([f'{self.__prefix}{refinement.pdu}'])
-            if pdu_context not in context:
-                context.append(pdu_context)
+            context.append(pdu_context)
+
             if refinement.sdu != 'null':
                 sdu_context = WithClause([f'{self.__prefix}{refinement.sdu}'])
-                if sdu_context not in context:
-                    context.append(sdu_context)
+                context.append(sdu_context)
 
             package.subprograms.append(
                 self.__contains_function(

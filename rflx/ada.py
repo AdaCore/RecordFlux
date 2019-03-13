@@ -1,12 +1,12 @@
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, Iterator, List, Set, Tuple, TypeVar
 
 from rflx.expression import Attribute, Expr, First, Last, LogExpr, MathExpr, Number
 
 
-class AdaRepresentation(ABC):
+class Ada(ABC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
@@ -16,6 +16,11 @@ class AdaRepresentation(ABC):
         args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
         return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
 
+    def __hash__(self) -> int:
+        return hash(repr(self))
+
+
+class MultiPartElement(Ada):
     @abstractmethod
     def specification(self) -> str:
         raise NotImplementedError
@@ -25,7 +30,7 @@ class AdaRepresentation(ABC):
         raise NotImplementedError
 
 
-class Unit(AdaRepresentation):
+class Unit(MultiPartElement):
     def __init__(self, context: List['ContextItem'], package: 'Package') -> None:
         self.context = context
         self.package = package
@@ -33,7 +38,7 @@ class Unit(AdaRepresentation):
     def specification(self) -> str:
         context_clause = ''
         if self.context:
-            context_clause = '\n'.join([str(c) for c in self.context])
+            context_clause = '\n'.join([str(c) for c in unique(self.context)])
             context_clause = f'{context_clause}\n\n'
         return f'{context_clause}{self.package.specification()}\n'
 
@@ -41,18 +46,13 @@ class Unit(AdaRepresentation):
         return f'{self.package.definition()}\n'
 
 
-class ContextItem:
+class ContextItem(Ada):
     def __init__(self, names: List[str]) -> None:
         self.names = names
 
     @abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
 
 
 class WithClause(ContextItem):
@@ -73,7 +73,7 @@ class UseTypeClause(ContextItem):
         return f'use type {names};'
 
 
-class Package(AdaRepresentation):
+class Package(MultiPartElement):
     def __init__(self, name: str, types: List['TypeDeclaration'],
                  subprograms: List['Subprogram']) -> None:
         self.name = name
@@ -89,11 +89,11 @@ class Package(AdaRepresentation):
     def __representation(self, function: Callable, definition: bool) -> str:
         types = ''
         if not definition:
-            types = '\n\n'.join([str(t) for t in self.types if str(t)])
+            types = '\n\n'.join([str(t) for t in unique(self.types) if str(t)])
             if types:
                 types += '\n\n'
 
-        subprograms = '\n\n'.join([function(f) for f in self.subprograms if function(f)])
+        subprograms = '\n\n'.join([function(f) for f in unique(self.subprograms) if function(f)])
         if subprograms:
             subprograms += '\n\n'
 
@@ -108,7 +108,7 @@ class Package(AdaRepresentation):
         return f'package{indicator}{self.name}{aspect}is\n\n{types}{subprograms}end {self.name};'
 
 
-class TypeDeclaration(ABC):
+class TypeDeclaration(Ada):
     def __init__(self, name: str) -> None:
         self.name = name
 
@@ -199,7 +199,7 @@ class VariantRecordType(TypeDeclaration):
                 f'      end record;')
 
 
-class Discriminant:
+class Discriminant(Ada):
     def __init__(self, name: str, type_: str, default: str = None) -> None:
         self.name = name
         self.type = type_
@@ -212,7 +212,7 @@ class Discriminant:
         return f'{self.name} : {self.type}{default}'
 
 
-class VariantItem:
+class VariantItem(Ada):
     def __init__(self, discrete_choice: str, components: List['ComponentItem']) -> None:
         self.discrete_choice = discrete_choice
         self.components = components
@@ -222,7 +222,7 @@ class VariantItem:
         return f'            when {self.discrete_choice} =>\n{components}'
 
 
-class ComponentItem:
+class ComponentItem(Ada):
     def __init__(self, name: str, type_: str) -> None:
         self.name = name
         self.type = type_
@@ -231,12 +231,7 @@ class ComponentItem:
         return f'         {self.name} : {self.type};\n'
 
 
-class Aspect(ABC):
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-
+class Aspect(Ada):
     def __str__(self) -> str:
         if self.definition:
             return f'{self.mark} => {self.definition}'
@@ -297,7 +292,7 @@ class Import(Aspect):
         return ''
 
 
-class Subprogram(AdaRepresentation):
+class Subprogram(MultiPartElement):
     # pylint: disable=too-many-arguments
     def __init__(self, name: str, parameters: List[Tuple[str, str]] = None,
                  declarations: List['Declaration'] = None, body: List['Statement'] = None,
@@ -406,7 +401,7 @@ class Procedure(Subprogram):
                 f'   end {self.name};')
 
 
-class Declaration:
+class Declaration(Ada):
     def __init__(self, name: str, type_: str, default: Expr = None) -> None:
         self.name = name
         self.type = type_
@@ -468,7 +463,7 @@ class Aggregate(Expr):
         return f'({expressions})'
 
 
-class Statement(ABC):
+class Statement(Ada):
     pass
 
 
@@ -537,7 +532,7 @@ class IfStatement(Statement):
         return result
 
 
-class Call(ABC):
+class Call(Ada):
     def __init__(self, call: str) -> None:
         self.call = call
 
@@ -676,3 +671,14 @@ class FalseExpr(LogExpr):
 
 
 FALSE = FalseExpr()
+
+
+T = TypeVar('T')  # pylint: disable=invalid-name
+
+
+def unique(iterable: List[T]) -> Iterator[T]:
+    seen: Set[T] = set()
+    for e in iterable:
+        if e not in seen:
+            seen.add(e)
+            yield e
