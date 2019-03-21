@@ -1,9 +1,10 @@
 from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-from pyparsing import (CaselessKeyword, Forward, Group, Keyword, Literal, Optional, ParseException,
-                       ParseFatalException, Regex, StringEnd, Suppress, Word, WordEnd, WordStart,
-                       ZeroOrMore, alphanums, delimitedList, infixNotation, nums, opAssoc)
+from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, ParseException,
+                       ParseFatalException, Regex, StringEnd, Suppress, Token, Word, WordEnd,
+                       WordStart, ZeroOrMore, alphanums, delimitedList, infixNotation, nums,
+                       opAssoc)
 
 from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, First, Greater,
                              GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
@@ -73,199 +74,20 @@ class ParserError(Exception):
     pass
 
 
+COMMA = Suppress(Literal(',')).setName('","')
+SEMICOLON = Suppress(Literal(';')).setName('";"')
+
+
 class Parser:
-    # pylint: disable=too-many-locals, too-many-statements, expression-not-assigned
+    # pylint: disable=too-many-public-methods
     def __init__(self, basedir: str = '.') -> None:
         self.__basedir = basedir
         self.__specifications: Dict[str, Specification] = {}
         self.__pdus: Dict[str, PDU] = {}
         self.__refinements: Dict[str, Refinement] = {}
-
-        # Generic
-        comma = Suppress(Literal(','))
-        comma.setName('","')
-        semicolon = Suppress(Literal(';'))
-        semicolon.setName('";"')
-
-        # Comments
-        comment = Regex(r'--.*')
-
-        # Names
-        identifier = WordStart(alphanums) + Word(alphanums + '_') + WordEnd(alphanums + '_')
-        identifier.setParseAction(verify_identifier)
-        identifier.setName('Identifier')
-        qualified_identifier = Optional(identifier + Literal('.')) - identifier
-        qualified_identifier.setParseAction(lambda t: ''.join(t.asList()))
-        attribute_designator = Keyword('First') | Keyword('Last') | Keyword('Length')
-        attribute_reference = identifier + Literal('\'') - attribute_designator
-        attribute_reference.setParseAction(parse_attribute)
-        attribute_reference.setName('Attribute')
-        name = attribute_reference | identifier
-        name.setName('Name')
-
-        # Literals
-        numeral = Word(nums) + ZeroOrMore(Optional(Word('_')) + Word(nums))
-        numeral.setParseAction(lambda t: int(''.join(t.asList()).replace('_', '')))
-        extended_digit = Word(nums + 'ABCDEF')
-        based_numeral = extended_digit + ZeroOrMore(Optional('_') + extended_digit)
-        based_literal = numeral + Literal('#') - based_numeral - Literal('#')
-        based_literal.setParseAction(lambda t: int(t[2].replace('_', ''), int(t[0])))
-        numeric_literal = based_literal | numeral
-        numeric_literal.setParseAction(lambda t: Number(t[0]))
-        numeric_literal.setName('Number')
-        literal = numeric_literal
-
-        # Operators
-        mathematical_operator = (Literal('**') | Literal('+') | Literal('-') | Literal('*')
-                                 | Literal('/'))
-        relational_operator = (Keyword('<=') | Keyword('>=') | Keyword('=') | Keyword('/=')
-                               | Keyword('<') | Keyword('>'))
-        logical_operator = Keyword('and') | Keyword('or')
-
-        # Expressions
-        mathematical_expression = Forward()
-        relation = mathematical_expression + relational_operator - mathematical_expression
-        relation.setParseAction(parse_relation)
-        relation.setName('Relation')
-        logical_expression = infixNotation(relation,
-                                           [(logical_operator,
-                                             2,
-                                             opAssoc.LEFT,
-                                             parse_logical_expression)])
-        logical_expression.setName('LogicalExpression')
-        term = Keyword('null') | literal | name
-        term.setParseAction(parse_term)
-        mathematical_expression << infixNotation(term,
-                                                 [(mathematical_operator,
-                                                   2,
-                                                   opAssoc.LEFT,
-                                                   parse_mathematical_expression)])
-        mathematical_expression.setName('MathematicalExpression')
-
-        # Type Refinement
-        value_constraint = Keyword('if') - logical_expression
-        value_constraint.setParseAction(lambda t: t[1])
-        type_refinement_definition = (Keyword('new') - qualified_identifier - Suppress(Literal('('))
-                                      - identifier - Suppress(Literal('=>'))
-                                      - (Keyword('null') | qualified_identifier)
-                                      - Suppress(Literal(')')) - Optional(value_constraint))
-        type_refinement_definition.setName('Refinement')
-
-        # Integer Types
-        size_aspect = Keyword('Size') - Keyword('=>') - mathematical_expression
-        size_aspect.setParseAction(parse_aspect)
-        range_type_aspects = Keyword('with') - size_aspect
-        range_type_aspects.setParseAction(parse_aspects)
-
-        range_type_definition = (Keyword('range') - mathematical_expression
-                                 - Suppress(Literal('..')) - mathematical_expression
-                                 - range_type_aspects)
-        range_type_definition.setName('RangeInteger')
-        modular_type_definition = Keyword('mod') - mathematical_expression
-        modular_type_definition.setName('ModularInteger')
-        integer_type_definition = range_type_definition | modular_type_definition
-
-        # Enumeration Types
-        enumeration_literal = name
-        positional_enumeration = enumeration_literal + ZeroOrMore(comma - enumeration_literal)
-        positional_enumeration.setParseAction(lambda t: [(k, Number(v))
-                                                         for v, k in enumerate(t.asList())])
-        element_value_association = enumeration_literal + Keyword('=>') - numeric_literal
-        element_value_association.setParseAction(lambda t: (t[0], t[2]))
-        named_enumeration = (element_value_association
-                             + ZeroOrMore(comma - element_value_association))
-
-        boolean_literal = Keyword('True') | Keyword('False')
-        boolean_literal.setParseAction(lambda t: t[0] == 'True')
-        boolean_aspect_definition = Optional(Keyword('=>') - boolean_literal)
-        boolean_aspect_definition.setParseAction(lambda t: (t if t else ['=>', True]))
-        always_valid_aspect = Literal('Always_Valid') - boolean_aspect_definition
-        always_valid_aspect.setParseAction(parse_aspect)
-        enumeration_aspects = Keyword('with') - delimitedList(size_aspect | always_valid_aspect)
-        enumeration_aspects.setParseAction(parse_aspects)
-
-        enumeration_type_definition = (Literal('(') - (named_enumeration | positional_enumeration)
-                                       - Literal(')') - enumeration_aspects)
-        enumeration_type_definition.setName('Enumeration')
-
-        # Array Type
-        unconstrained_array_definition = Keyword('array of') + name
-        array_type_definition = unconstrained_array_definition
-        array_type_definition.setName('Array')
-
-        # Message Type
-        first_aspect = Keyword('First') - Keyword('=>') - mathematical_expression
-        first_aspect.setParseAction(parse_aspect)
-        length_aspect = Keyword('Length') - Keyword('=>') - mathematical_expression
-        length_aspect.setParseAction(parse_aspect)
-        component_aspects = Keyword('with') - delimitedList(first_aspect | length_aspect)
-        component_aspects.setParseAction(parse_aspects)
-
-        then = (Keyword('then') - (Keyword('null') | identifier)
-                - Group(Optional(component_aspects))
-                - Group(Optional(value_constraint)))
-        then.setParseAction(parse_then)
-        then_list = then + ZeroOrMore(comma - then)
-        then_list.setParseAction(lambda t: [t.asList()])
-        component_list = Forward()
-        message_type_definition = Keyword('message') - component_list - Keyword('end message')
-        message_type_definition.setName('Message')
-        component_item = (~Keyword('end') + ~CaselessKeyword('Message') - identifier + Literal(':')
-                          - name - Optional(then_list) - semicolon)
-        component_item.setParseAction(lambda t:
-                                      Component(t[0], t[2], t[3]) if len(t) >= 4
-                                      else Component(t[0], t[2]))
-        component_item.setName('Component')
-        null_component_item = Keyword('null') - then - semicolon
-        null_component_item.setParseAction(lambda t: Component(t[0], '', [t[1]]))
-        null_component_item.setName('NullComponent')
-        component_list << (Group(Optional(null_component_item) - component_item
-                                 - ZeroOrMore(component_item)))
-        component_list.setParseAction(lambda t: t.asList())
-
-        # Types
-        type_definition = (enumeration_type_definition | integer_type_definition
-                           | message_type_definition | type_refinement_definition
-                           | array_type_definition)
-        type_declaration = (Keyword('type') - identifier - Keyword('is') - type_definition
-                            - semicolon)
-        type_declaration.setParseAction(parse_type)
-
-        # Package
-        basic_declaration = type_declaration
-        package_declaration = (Keyword('package') - identifier - Keyword('is')
-                               - Group(ZeroOrMore(basic_declaration)) - Keyword('end') - name
-                               - semicolon)
-        package_declaration.setParseAction(lambda t: Package(t[1], t[3].asList()))
-
-        # Context
-        context_item = Keyword('with') - identifier - semicolon
-        context_item.setParseAction(lambda t: t[1])
-        context_clause = ZeroOrMore(context_item)
-        context_clause.setParseAction(lambda t: Context(t.asList()))
-
-        # Specification
-        specification = Optional(context_clause + package_declaration)
-        specification.setParseAction(lambda t: Specification(t[0], t[1]) if len(t) == 2 else None)
-
-        # Grammar
-        self.__grammar = specification + StringEnd()
+        self.__grammar = self.specification() + StringEnd()
         self.__grammar.setParseAction(self.__evaluate_specification)
-        self.__grammar.ignore(comment)
-
-    def __evaluate_specification(self, tokens: List[Specification]) -> None:
-        if len(tokens) == 1:
-            specification = tokens[0]
-            identifier = specification.package.identifier
-            if identifier in self.__specifications:
-                raise ParserError(f'duplicate package "{identifier}"')
-            self.__specifications[identifier] = specification
-            pdus = convert_to_pdus(specification)
-            if pdus:
-                self.__pdus.update(pdus)
-            refinements = convert_to_refinements(specification, self.__pdus)
-            if refinements:
-                self.__refinements.update(refinements)
+        self.__grammar.ignore(Regex(r'--.*'))
 
     def parse(self, infile: str) -> None:
         filepath = self.__basedir + "/" + infile
@@ -288,6 +110,202 @@ class Parser:
     @property
     def refinements(self) -> List[Refinement]:
         return list(self.__refinements.values())
+
+    @classmethod
+    def identifier(cls) -> Token:
+        return (WordStart(alphanums) + Word(alphanums + '_') + WordEnd(alphanums + '_')
+                ).setParseAction(verify_identifier).setName('Identifier')
+
+    @classmethod
+    def qualified_identifier(cls) -> Token:
+        return (Optional(cls.identifier() + Literal('.')) - cls.identifier()
+                ).setParseAction(lambda t: ''.join(t.asList()))
+
+    @classmethod
+    def name(cls) -> Token:
+        attribute_designator = Keyword('First') | Keyword('Last') | Keyword('Length')
+        attribute_reference = cls.identifier() + Literal('\'') - attribute_designator
+        attribute_reference.setParseAction(parse_attribute)
+        attribute_reference.setName('Attribute')
+
+        return (attribute_reference | cls.identifier()).setName('Name')
+
+    @classmethod
+    def numeric_literal(cls) -> Token:
+        numeral = Word(nums) + ZeroOrMore(Optional(Word('_')) + Word(nums))
+        numeral.setParseAction(lambda t: int(''.join(t.asList()).replace('_', '')))
+
+        extended_digit = Word(nums + 'ABCDEF')
+        based_numeral = extended_digit + ZeroOrMore(Optional('_') + extended_digit)
+        based_literal = numeral + Literal('#') - based_numeral - Literal('#')
+        based_literal.setParseAction(lambda t: int(t[2].replace('_', ''), int(t[0])))
+
+        return (based_literal | numeral).setParseAction(lambda t: Number(t[0])).setName('Number')
+
+    @classmethod
+    def logical_expression(cls) -> Token:
+        relational_operator = (Keyword('<=') | Keyword('>=') | Keyword('=') | Keyword('/=')
+                               | Keyword('<') | Keyword('>'))
+        logical_operator = Keyword('and') | Keyword('or')
+
+        relation = (cls.mathematical_expression() + relational_operator
+                    - cls.mathematical_expression())
+        relation.setParseAction(parse_relation)
+        relation.setName('Relation')
+
+        return (infixNotation(relation,
+                              [(logical_operator,
+                                2,
+                                opAssoc.LEFT,
+                                parse_logical_expression)])
+                ).setName('LogicalExpression')
+
+    @classmethod
+    def mathematical_expression(cls) -> Token:
+        mathematical_operator = (Literal('**') | Literal('+') | Literal('-') | Literal('*')
+                                 | Literal('/'))
+
+        term = Keyword('null') | cls.numeric_literal() | cls.name()
+        term.setParseAction(parse_term)
+
+        return (infixNotation(term,
+                              [(mathematical_operator,
+                                2,
+                                opAssoc.LEFT,
+                                parse_mathematical_expression)])
+                ).setName('MathematicalExpression')
+
+    @classmethod
+    def value_constraint(cls) -> Token:
+        return (Keyword('if') - cls.logical_expression()).setParseAction(lambda t: t[1])
+
+    @classmethod
+    def type_refinement_definition(cls) -> Token:
+        return (Keyword('new') - cls.qualified_identifier() - Suppress(Literal('('))
+                - cls.identifier() - Suppress(Literal('=>'))
+                - (Keyword('null') | cls.qualified_identifier())
+                - Suppress(Literal(')')) - Optional(cls.value_constraint())).setName('Refinement')
+
+    @classmethod
+    def size_aspect(cls) -> Token:
+        return (Keyword('Size') - Keyword('=>') - cls.mathematical_expression()
+                ).setParseAction(parse_aspect)
+
+    @classmethod
+    def integer_type_definition(cls) -> Token:
+        range_type_aspects = Keyword('with') - cls.size_aspect()
+        range_type_aspects.setParseAction(parse_aspects)
+
+        range_type_definition = (Keyword('range') - cls.mathematical_expression()
+                                 - Suppress(Literal('..')) - cls.mathematical_expression()
+                                 - range_type_aspects)
+        range_type_definition.setName('RangeInteger')
+        modular_type_definition = Keyword('mod') - cls.mathematical_expression()
+        modular_type_definition.setName('ModularInteger')
+
+        return range_type_definition | modular_type_definition
+
+    @classmethod
+    def enumeration_type_definition(cls) -> Token:
+        enumeration_literal = cls.name()
+        positional_enumeration = enumeration_literal + ZeroOrMore(COMMA - enumeration_literal)
+        positional_enumeration.setParseAction(lambda t: [(k, Number(v))
+                                                         for v, k in enumerate(t.asList())])
+        element_value_association = enumeration_literal + Keyword('=>') - cls.numeric_literal()
+        element_value_association.setParseAction(lambda t: (t[0], t[2]))
+        named_enumeration = (element_value_association
+                             + ZeroOrMore(COMMA - element_value_association))
+
+        boolean_literal = Keyword('True') | Keyword('False')
+        boolean_literal.setParseAction(lambda t: t[0] == 'True')
+        boolean_aspect_definition = Optional(Keyword('=>') - boolean_literal)
+        boolean_aspect_definition.setParseAction(lambda t: (t if t else ['=>', True]))
+        always_valid_aspect = Literal('Always_Valid') - boolean_aspect_definition
+        always_valid_aspect.setParseAction(parse_aspect)
+        enumeration_aspects = (Keyword('with')
+                               - delimitedList(cls.size_aspect() | always_valid_aspect))
+        enumeration_aspects.setParseAction(parse_aspects)
+
+        return (Literal('(') - (named_enumeration | positional_enumeration) - Literal(')')
+                - enumeration_aspects).setName('Enumeration')
+
+    @classmethod
+    def array_type_definition(cls) -> Token:
+        return (Keyword('array of') + cls.name()).setName('Array')
+
+    @classmethod
+    def message_type_definition(cls) -> Token:
+        first_aspect = Keyword('First') - Keyword('=>') - cls.mathematical_expression()
+        first_aspect.setParseAction(parse_aspect)
+        length_aspect = Keyword('Length') - Keyword('=>') - cls.mathematical_expression()
+        length_aspect.setParseAction(parse_aspect)
+        component_aspects = Keyword('with') - delimitedList(first_aspect | length_aspect)
+        component_aspects.setParseAction(parse_aspects)
+
+        then = (Keyword('then') - (Keyword('null') | cls.identifier())
+                - Group(Optional(component_aspects))
+                - Group(Optional(cls.value_constraint())))
+        then.setParseAction(parse_then)
+        then_list = then + ZeroOrMore(COMMA - then)
+        then_list.setParseAction(lambda t: [t.asList()])
+        component_item = (~Keyword('end') + ~CaselessKeyword('Message') - cls.identifier()
+                          + Literal(':') - cls.name() - Optional(then_list) - SEMICOLON)
+        component_item.setParseAction(lambda t:
+                                      Component(t[0], t[2], t[3]) if len(t) >= 4
+                                      else Component(t[0], t[2]))
+        component_item.setName('Component')
+        null_component_item = Keyword('null') - then - SEMICOLON
+        null_component_item.setParseAction(lambda t: Component(t[0], '', [t[1]]))
+        null_component_item.setName('NullComponent')
+        component_list = (Group(Optional(null_component_item) - component_item
+                                - ZeroOrMore(component_item)))
+        component_list.setParseAction(lambda t: t.asList())
+
+        return (Keyword('message') - component_list - Keyword('end message')).setName('Message')
+
+    @classmethod
+    def type_declaration(cls) -> Token:
+        type_definition = (cls.enumeration_type_definition() | cls.integer_type_definition()
+                           | cls.message_type_definition() | cls.type_refinement_definition()
+                           | cls.array_type_definition())
+
+        return (Keyword('type') - cls.identifier() - Keyword('is') - type_definition - SEMICOLON
+                ).setParseAction(parse_type)
+
+    @classmethod
+    def package_declaration(cls) -> Token:
+        basic_declaration = cls.type_declaration()
+
+        return (Keyword('package') - cls.identifier() - Keyword('is')
+                - Group(ZeroOrMore(basic_declaration)) - Keyword('end')
+                - cls.identifier() - SEMICOLON
+                ).setParseAction(lambda t: Package(t[1], t[3].asList()))
+
+    @classmethod
+    def context_clause(cls) -> Token:
+        context_item = Keyword('with') - cls.identifier() - SEMICOLON
+        context_item.setParseAction(lambda t: t[1])
+
+        return ZeroOrMore(context_item).setParseAction(lambda t: Context(t.asList()))
+
+    @classmethod
+    def specification(cls) -> Token:
+        return (Optional(cls.context_clause() + cls.package_declaration())
+                ).setParseAction(lambda t: Specification(t[0], t[1]) if len(t) == 2 else None)
+
+    def __evaluate_specification(self, tokens: List[Specification]) -> None:
+        if len(tokens) == 1:
+            specification = tokens[0]
+            identifier = specification.package.identifier
+            if identifier in self.__specifications:
+                raise ParserError(f'duplicate package "{identifier}"')
+            self.__specifications[identifier] = specification
+            pdus = convert_to_pdus(specification)
+            if pdus:
+                self.__pdus.update(pdus)
+            refinements = convert_to_refinements(specification, self.__pdus)
+            if refinements:
+                self.__refinements.update(refinements)
 
 
 def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
