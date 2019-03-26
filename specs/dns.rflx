@@ -1,0 +1,70 @@
+package DNS is
+
+   type Length_Type is range 1 .. 63 with Size => 8;
+
+   type Label is
+      message
+         Length : Length_Type
+            then Data
+               with Length => Length;
+         Data : Payload_Type;
+      end message;
+
+   type Pointer_Type is range 3 .. 3 with Size => 2;
+   type Name is <>;
+   type Name_Offset is access Name with Size => 14;  -- TODO: pointer refering to 'Name' at offset -> generating function takes 'Offset' and 'Buffer' and has 'Name.Is_Contained (Buffer (Offset .. Buffer'Last))' as postcondition
+
+   type Pointer is
+      message
+         Prefix : Pointer_Type;
+         Offset : Name_Offset
+            then null
+               if Offset >= Buffer'First and Offset < Prefix'First;  -- TODO: Buffer'First (first of underlying buffer) != Message'First (first of current message)
+      end message;
+
+   type Labels is array of Label;
+   type Zero_Type is range 0 .. 0 with Size => 8;
+   type Kind_Type is (LABEL => 0, POINTER => 3) with Size => 2;
+
+   type Name is
+      message
+         Labels : Labels
+            then Zero
+               if Lables'Length <= 255;
+         Kind : Kind_Type
+            then Zero
+               with First => Kind'First
+               if Kind = LABEL,
+            then Pointer
+               with First => Kind'First
+               if Kind = POINTER;
+         Zero : Zero_Type
+            then null;
+         Pointer : Pointer;
+      end message;
+
+   type QType_Type is (A => 1, NS => 2) with Size => 16;
+   type QClass_Type is (INTERNET => 1, ANY => 255) with Size => 16;
+
+   type Question is
+      message
+         QName : Name;
+         QType : QType_Type;
+         QClass : QClass_Type;
+      end message;
+
+   type Questions is array of Question;
+
+   type ID_Type is mod 2**16;
+   type Count_Type is mod 2**16;
+
+   type DNS_Message is
+      message
+         ID : ID_Type;
+         QDCount : Count_Type
+            then Questions
+               with Elements => QDCount;
+         Questions : Questions;
+      end message;
+
+end DNS;
