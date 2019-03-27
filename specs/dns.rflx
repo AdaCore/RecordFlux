@@ -11,15 +11,30 @@ package DNS is
       end message;
 
    type Pointer_Type is range 3 .. 3 with Size => 2;
-   type Name is <>;
-   type Name_Offset is access Name with Size => 14;  -- TODO: pointer refering to 'Name' at offset -> generating function takes 'Offset' and 'Buffer' and has 'Name.Is_Contained (Buffer (Offset .. Buffer'Last))' as postcondition
+
+   --  Rough sketch for supporting "references" as required for the compression
+   --  mechanism in DNS. We could forward-declare messages (as done with name
+   --  below and then define "access" types (TODO: find better name). Contrary
+   --  to Ada access types, those would just represent an arbitrary offset into
+   --  the message. What could be guaranteed, is that a user of that "access"
+   --  type automatically get the message at the respective offset tagged as
+   --  the underlying type. We need to see how well this works.
+
+   --  type Name is <>;
+   --  type Name_Offset is access Name with Size => 14;
+
+   -- TODO: pointer refering to 'Name' at offset -> generating function takes
+   -- Offset' and 'Buffer' and has 'Name.Is_Contained (Buffer (Offset .. Buffer'Last))'
+   -- as postcondition
+
+   type Name_Offset is mod 2**14;
 
    type Pointer is
       message
          Prefix : Pointer_Type;
          Offset : Name_Offset
             then null
-               if Offset >= Buffer'First and Offset < Prefix'First;  -- TODO: Buffer'First (first of underlying buffer) != Message'First (first of current message)
+               if Offset >= Buf'First and Offset < Prefix'First;  -- TODO: Buf'First (first of underlying buffer) != Message'First (first of current message)
       end message;
 
    type Labels is array of Label;
@@ -62,8 +77,9 @@ package DNS is
       message
          ID : ID_Type;
          QDCount : Count_Type
-            then Questions
-               with Elements => QDCount;
+            then Questions;
+               --  We do not support the 'Elements' attribute right now:
+               --  with Elements => QDCount;
          Questions : Questions;
       end message;
 
