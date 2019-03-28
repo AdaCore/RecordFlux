@@ -318,8 +318,7 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
         if isinstance(t, (ModularInteger, RangeInteger, Enumeration, Array)):
             if isinstance(t, Array):
                 if t.element_type.name not in types:
-                    raise ParserError(f'reference to undefined type "{t.element_type.name}" in '
-                                      f'"{t.name}"')
+                    raise ParserError(f'undefined type "{t.element_type.name}" in "{t.name}"')
                 if not isinstance(types[t.element_type.name], Message):
                     element_type_size = types[t.element_type.name].size.simplified()
                     if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
@@ -351,7 +350,7 @@ def create_graph(nodes: Dict[str, Node], types: Dict[str, Type],
         components.insert(0, Component('null', ''))
 
     create_nodes(nodes, types, components, message_name)
-    create_edges(nodes, components)
+    create_edges(nodes, components, message_name)
 
     if next(iter(nodes.values())).edges[0].first != UNDEFINED:
         raise ParserError(f'invalid first expression in initial node in "{message_name}"')
@@ -367,20 +366,20 @@ def create_nodes(nodes: Dict[str, Node], types: Dict[str, Type],
         if 'Payload' in component.type:
             types[component.type] = Array(component.type)
         if component.type not in types:
-            raise ParserError(f'reference to undefined type "{component.type}" in "{message_name}"')
+            raise ParserError(f'undefined type "{component.type}" in "{message_name}"')
         if isinstance(types[component.type], Message):
             raise ParserError(f'unsupported type "{component.type}" in "{message_name}"')
         nodes[component.name] = Node(component.name, types[component.type])
 
 
-def create_edges(nodes: Dict[str, Node], components: List[Component]) -> None:
+def create_edges(nodes: Dict[str, Node], components: List[Component], message_name: str) -> None:
     for i, component in enumerate(components):
         if not component.thens:
             nodes[component.name].edges.append(
                 Edge(nodes[components[i + 1].name]) if i + 1 < len(components) else Edge(FINAL))
         for then in component.thens:
             if then.name not in nodes and then.name != 'null':
-                raise ParserError(f'reference to undefined node "{then.name}"')
+                raise ParserError(f'undefined component "{then.name}" in "{message_name}"')
             edge = Edge(nodes[then.name]) if then.name != 'null' else Edge(FINAL)
             if then.constraint:
                 edge.condition = then.constraint
@@ -403,14 +402,14 @@ def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> Dict[st
             if pdu not in pdus:
                 pdu = f'{spec.package.identifier}.{t.pdu}'
                 if pdu not in pdus:
-                    raise ParserError(f'unknown type "{t.pdu}"')
+                    raise ParserError(f'undefined type "{t.pdu}" in "{t.name}"')
             if t.field not in pdus[pdu].fields():
                 raise ParserError(f'invalid field "{t.field}" in "{t.name}"')
             sdu = t.sdu
             if sdu != 'null' and sdu not in pdus:
                 sdu = f'{spec.package.identifier}.{t.sdu}'
                 if sdu not in pdus:
-                    raise ParserError(f'unknown type "{t.sdu}"')
+                    raise ParserError(f'undefined type "{t.sdu}" in "{t.name}"')
             name = f'{spec.package.identifier}.{t.name}'
             if name in refinements:
                 raise ParserError(f'duplicate refinement "{t.name}"')

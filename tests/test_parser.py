@@ -84,7 +84,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'duplicate type "T"')
 
-    def test_reference_to_undefined_type(self) -> None:
+    def test_message_undefined_type(self) -> None:
         self.assert_parser_error_string(
             """
                 package Test is
@@ -94,9 +94,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'reference to undefined type "T"')
+            r'^undefined type "T" in "PDU"$')
 
-    def test_unsupported_type_in_message(self) -> None:
+    def test_message_unsupported_type(self) -> None:
         self.assert_parser_error_string(
             """
                 package Test is
@@ -113,7 +113,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'^unsupported type "M" in "PDU"$')
 
-    def test_reference_to_undefined_node(self) -> None:
+    def test_message_undefined_component(self) -> None:
         self.assert_parser_error_string(
             """
                 package Test is
@@ -125,7 +125,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'reference to undefined node "Bar"')
+            r'^undefined component "Bar" in "PDU"$')
 
     def test_invalid_location_expression(self) -> None:
         self.assert_parse_exception_string(
@@ -180,14 +180,14 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'"T" contains elements with same value')
 
-    def test_array_reference_to_undefined_type(self) -> None:
+    def test_array_undefined_type(self) -> None:
         self.assert_parser_error_string(
             """
                 package Test is
                    type T is array of Foo;
                 end Test;
             """,
-            r'reference to undefined type "Foo" in "T"')
+            r'^undefined type "Foo" in "T"$')
 
     def test_array_unsupported_element_type(self) -> None:
         self.assert_parser_error_string(
@@ -229,7 +229,30 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type In_PDU is new Test.PDU (Foo => Test.PDU);
                 end Test;
             """,
-            r'duplicate refinement "In_PDU"')
+            r'^duplicate refinement "In_PDU"$')
+
+    def test_refinement_undefined_pdu(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type In_PDU is new PDU (Foo => Bar);
+                end Test;
+            """,
+            r'^undefined type "PDU" in "In_PDU"$')
+
+    def test_refinement_undefined_sdu(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T;
+                      end message;
+                   type In_PDU is new PDU (Foo => Bar);
+                end Test;
+            """,
+            r'^undefined type "Bar" in "In_PDU"$')
 
     def test_refinement_invalid_field(self) -> None:
         self.assert_parser_error_string(
