@@ -368,6 +368,8 @@ def create_nodes(nodes: Dict[str, Node], types: Dict[str, Type],
             types[component.type] = Array(component.type)
         if component.type not in types:
             raise ParserError(f'reference to undefined type "{component.type}" in "{message_name}"')
+        if isinstance(types[component.type], Message):
+            raise ParserError(f'unsupported type "{component.type}" in "{message_name}"')
         nodes[component.name] = Node(component.name, types[component.type])
 
 

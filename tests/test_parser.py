@@ -96,6 +96,23 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'reference to undefined type "T"')
 
+    def test_unsupported_type_in_message(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type M is
+                      message
+                         Foo : T;
+                      end message;
+                   type PDU is
+                      message
+                         Bar : M;
+                      end message;
+                end Test;
+            """,
+            r'^unsupported type "M" in "PDU"$')
+
     def test_reference_to_undefined_node(self) -> None:
         self.assert_parser_error_string(
             """
