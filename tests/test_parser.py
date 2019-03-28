@@ -197,7 +197,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'duplicate message "PDU"')
+            r'duplicate type "PDU"')
 
     def test_duplicate_refinement(self) -> None:
         self.assert_parser_error_string(

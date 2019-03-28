@@ -313,9 +313,9 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
     pdus: Dict[str, PDU] = {}
 
     for t in spec.package.types:
+        if t.name in types:
+            raise ParserError(f'duplicate type "{t.name}"')
         if isinstance(t, (ModularInteger, RangeInteger, Enumeration, Array)):
-            if t.name in types:
-                raise ParserError(f'duplicate type "{t.name}"')
             if isinstance(t, Array):
                 if t.element_type.name not in types:
                     raise ParserError(f'reference to undefined type "{t.element_type.name}" in '
@@ -332,8 +332,6 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
             nodes: Dict[str, Node] = OrderedDict()
             create_graph(nodes, types, t.components, t.name)
             name = f'{spec.package.identifier}.{t.name}'
-            if name in pdus:
-                raise ParserError(f'duplicate message "{t.name}"')
             pdus[name] = PDU(name, next(iter(nodes.values()), FINAL))
             types[t.name] = t
         elif isinstance(t, Refinement):
