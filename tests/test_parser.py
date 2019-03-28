@@ -231,6 +231,20 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'duplicate refinement "In_PDU"')
 
+    def test_refinement_invalid_field(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T;
+                      end message;
+                   type In_PDU is new PDU (Bar => PDU);
+                end Test;
+            """,
+            r'^invalid field "Bar" in "In_PDU"$')
+
     def test_invalid_first_in_initial_node(self) -> None:
         self.assert_parser_error_string(
             """

@@ -404,6 +404,8 @@ def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> Dict[st
                 pdu = f'{spec.package.identifier}.{t.pdu}'
                 if pdu not in pdus:
                     raise ParserError(f'unknown type "{t.pdu}"')
+            if t.field not in pdus[pdu].fields():
+                raise ParserError(f'invalid field "{t.field}" in "{t.name}"')
             sdu = t.sdu
             if sdu != 'null' and sdu not in pdus:
                 sdu = f'{spec.package.identifier}.{t.sdu}'
