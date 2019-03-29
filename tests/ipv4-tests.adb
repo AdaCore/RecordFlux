@@ -97,7 +97,10 @@ package body IPv4.Tests is
                                        Assert (Valid, "Invalid Protocol");
                                        if Valid then
                                           Protocol := IPv4.Packet.Get_Protocol (Buffer);
-                                          Assert (Protocol'Image, IPv4.Protocol_Type'Image (16#11#), "Invalid Protocol");
+                                          Assert (Protocol.Known, "Unknown Protocol");
+                                          if Protocol.Known then
+                                             Assert (Protocol.Enum'Image, IPv4.Protocol_Type_Enum'Image (IPv4.PROTOCOL_UDP), "Invalid Protocol");
+                                          end if;
                                           Valid := IPv4.Packet.Valid_Header_Checksum (Buffer);
                                           Assert (Valid, "Invalid Header_Checksum");
                                           if Valid then

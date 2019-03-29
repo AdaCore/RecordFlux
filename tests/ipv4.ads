@@ -55,8 +55,21 @@ is
    type TTL_Type is mod (2**8);
    function Convert_To_TTL_Type is new Types.Convert_To_Mod (TTL_Type);
 
-   type Protocol_Type is mod (2**8);
-   function Convert_To_Protocol_Type is new Types.Convert_To_Mod (Protocol_Type);
+   type Protocol_Type_Base is mod (2**8);
+   function Convert_To_Protocol_Type_Base is new Types.Convert_To_Mod (Protocol_Type_Base);
+
+   type Protocol_Type_Enum is (PROTOCOL_UDP) with Size => 8;
+   for Protocol_Type_Enum use (PROTOCOL_UDP => 17);
+
+   type Protocol_Type (Known : Boolean := False) is
+      record
+         case Known is
+            when True =>
+               Enum : Protocol_Type_Enum;
+            when False =>
+               Raw : Protocol_Type_Base;
+         end case;
+      end record;
 
    type Header_Checksum_Type is mod (2**16);
    function Convert_To_Header_Checksum_Type is new Types.Convert_To_Mod (Header_Checksum_Type);
@@ -137,7 +150,7 @@ is
        Pre => False;
 
    function Unreachable_Protocol_Type return Protocol_Type is
-      (Protocol_Type'First)
+      ((False, Protocol_Type_Base'First))
      with
        Pre => False;
 
@@ -198,5 +211,17 @@ is
       (Convert_To_Total_Length_Type_Base (Buffer, Offset) >= 20)
      with
        Pre => (Offset < 8 and then Buffer'Length = (((Total_Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_Protocol_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Protocol_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Convert_To_Protocol_Type (Buffer : Types.Bytes; Offset : Natural) return Protocol_Type
+     with
+       Pre => ((Offset < 8 and then Buffer'Length = (((Protocol_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Protocol_Type (Buffer, Offset));
+
+   function Convert_To_Protocol_Type_Base (Enum : Protocol_Type_Enum) return Protocol_Type_Base is
+      (case Enum is when PROTOCOL_UDP => 17);
 
 end IPv4;

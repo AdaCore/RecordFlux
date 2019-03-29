@@ -432,6 +432,9 @@ class IfExpression(LogExpr):
         result += ')'
         return result
 
+    def __contains__(self, item: Expr) -> bool:
+        raise NotImplementedError
+
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> LogExpr:
         return self
 
@@ -571,6 +574,9 @@ class MathCall(Call, MathExpr):
 
 
 class LogCall(Call, LogExpr):
+    def __contains__(self, item: Expr) -> bool:
+        raise NotImplementedError
+
     def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> LogExpr:
         return self
 
@@ -662,6 +668,9 @@ class FalseExpr(LogExpr):
 
     def __str__(self) -> str:
         return 'False'
+
+    def __contains__(self, item: Expr) -> bool:
+        raise NotImplementedError
 
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
         return self

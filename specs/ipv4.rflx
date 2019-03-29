@@ -9,7 +9,7 @@ package IPv4 is
    type Flag_Type is (Flag_False, Flag_True) with Size => 1;
    type Fragment_Offset_Type is mod 2**13;
    type TTL_Type is mod 2**8;
-   type Protocol_Type is mod 2**8;
+   type Protocol_Type is (PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
    type Header_Checksum_Type is mod 2**16;
    type Address_Type is mod 2**32;
 

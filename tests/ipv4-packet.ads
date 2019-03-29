@@ -235,7 +235,7 @@ is
        Pre => (Is_Contained (Buffer) and then Valid_TTL (Buffer));
 
    function Valid_Protocol_000000000000 (Buffer : Types.Bytes) return Boolean is
-      ((Valid_TTL_00000000000 (Buffer) and then (Buffer'Length >= 10 and then Buffer'First <= (Types.Index_Type'Last / 2))))
+      ((Valid_TTL_00000000000 (Buffer) and then ((Buffer'Length >= 10 and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Valid_Protocol_Type (Buffer ((Buffer'First + 9) .. (Buffer'First + 9)), 0))))
      with
        Pre => Is_Contained (Buffer);
 

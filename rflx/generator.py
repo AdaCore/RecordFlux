@@ -21,7 +21,7 @@ class Generator:
     def __init__(self, prefix: str = '') -> None:
         self.__prefix = prefix
         self.__units: Dict[str, Unit] = {}
-        self.__pdu_fields: Dict[str, List[str]] = {}
+        self.__pdu_fields: Dict[str, Dict[str, Field]] = {}
 
     def generate_dissector(self, pdus: List[PDU], refinements: List[Refinement]) -> None:
         self.__process_pdus(pdus)
@@ -70,7 +70,7 @@ class Generator:
             }
 
             fields = pdu.fields(facts, First('Buffer'))
-            self.__pdu_fields[pdu.full_name] = list(fields.keys())
+            self.__pdu_fields[pdu.full_name] = fields
 
             for field in fields.values():
                 if field.name == 'FINAL':
@@ -207,9 +207,7 @@ class Generator:
                     refinement.pdu,
                     refinement.field,
                     refinement.sdu,
-                    refinement.condition.simplified(
-                        {Value(field): MathCall(f'{refinement.pdu}.Get_{field} (Buffer)')
-                         for field in self.__pdu_fields[refinement.pdu]})))
+                    refinement.condition))
 
     def __common_context(self) -> List[ContextItem]:
         return [WithClause([self.__types]),
@@ -667,10 +665,23 @@ class Generator:
             self,
             name: str,
             pdu: str,
-            field: str,
+            refined_field: str,
             sdu: str,
             condition: LogExpr) -> Subprogram:
         # pylint: disable=too-many-arguments
+
+        pdu_fields = self.__pdu_fields[pdu]
+        condition_fields = [field for field in pdu_fields if Value(field) in condition]
+        declarations = [Declaration(field,
+                                    pdu_fields[field].type.name,
+                                    MathCall(f'{pdu}.Get_{field} (Buffer)'))
+                        for field in condition_fields]
+
+        for field in condition_fields:
+            field_type = pdu_fields[field].type
+            if isinstance(field_type, Enumeration) and field_type.always_valid:
+                condition = And(LogCall(f'{field}.Known'),
+                                condition.simplified({Value(field): Value(f'{field}.Enum')}))
 
         success_statements: List[Statement] = [ReturnStatement(TRUE)]
         aspects: List[Aspect] = [Precondition(And(LogCall(f'{pdu}.Is_Contained (Buffer)'),
@@ -680,20 +691,20 @@ class Generator:
                 0,
                 PragmaStatement(
                     'Assume',
-                    [(f'{sdu}.Is_Contained (Buffer ({pdu}.Get_{field}_First (Buffer)'
-                      f' .. {pdu}.Get_{field}_Last (Buffer)))')]))
+                    [(f'{sdu}.Is_Contained (Buffer ({pdu}.Get_{refined_field}_First (Buffer)'
+                      f' .. {pdu}.Get_{refined_field}_Last (Buffer)))')]))
             aspects.append(
                 Postcondition(
                     IfExpression(
                         [(LogCall(f'{name}\'Result'),
                           LogCall((f'{sdu}.Is_Contained (Buffer ('
-                                   f'{pdu}.Get_{field}_First (Buffer)'
-                                   f' .. {pdu}.Get_{field}_Last (Buffer)))')))])))
+                                   f'{pdu}.Get_{refined_field}_First (Buffer)'
+                                   f' .. {pdu}.Get_{refined_field}_Last (Buffer)))')))])))
 
         return Function(name,
                         'Boolean',
                         [('Buffer', self.__types_bytes)],
-                        [],
+                        declarations,
                         [IfStatement(
                             [(condition,
                               success_statements)]),

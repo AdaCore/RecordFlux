@@ -3,8 +3,9 @@ package body In_Ethernet.Contains
 is
 
    function IPv4_In_Ethernet (Buffer : Types.Bytes) return Boolean is
+      EtherType : UINT16 := Ethernet.Frame.Get_EtherType (Buffer);
    begin
-      if Ethernet.Frame.Get_EtherType (Buffer) = 2048 then
+      if EtherType = 2048 then
          pragma Assume (IPv4.Packet.Is_Contained (Buffer (Ethernet.Frame.Get_Payload_First (Buffer) .. Ethernet.Frame.Get_Payload_Last (Buffer))));
          return True;
       end if;

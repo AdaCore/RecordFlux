@@ -15,6 +15,10 @@ class Expr(ABC):
 
 class LogExpr(Expr):
     @abstractmethod
+    def __contains__(self, item: Expr) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'LogExpr':
         raise NotImplementedError
 
@@ -29,6 +33,9 @@ class TrueExpr(LogExpr):
 
     def __str__(self) -> str:
         return 'True'
+
+    def __contains__(self, item: Expr) -> bool:
+        return item == self
 
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
         return self
@@ -50,6 +57,9 @@ class BinLogExpr(LogExpr):
 
     def __str__(self) -> str:
         return '({} {} {})'.format(self.left, self.symbol(), self.right)
+
+    def __contains__(self, item: Expr) -> bool:
+        return item in self.left or item in self.right
 
     @abstractmethod
     def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
@@ -540,6 +550,9 @@ class Relation(LogExpr):
 
     def __str__(self) -> str:
         return '{} {} {}'.format(self.left, self.symbol(), self.right)
+
+    def __contains__(self, item: Expr) -> bool:
+        return isinstance(item, MathExpr) and item in (self.left, self.right)
 
     def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> 'Relation':
         left = self.left.simplified(facts)

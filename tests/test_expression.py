@@ -334,3 +334,20 @@ class TestExpression(unittest.TestCase):
     def test_not_equal_simplified(self) -> None:
         self.assertEqual(NotEqual(Value('X'), Add(Number(21), Number(21))).simplified(),
                          NotEqual(Value('X'), Number(42)))
+
+    def test_contains_relation(self) -> None:
+        self.assertTrue(Value('X') in Less(Value('X'), Number(42)))
+
+    def test_contains_and(self) -> None:
+        self.assertTrue(Value('X') in And(TRUE, Less(Value('X'), Number(42))))
+        self.assertFalse(Value('Y') in And(TRUE, Less(Value('X'), Number(42))))
+
+    def test_contains_or(self) -> None:
+        self.assertTrue(Value('X') in Or(Less(Value('X'), Number(42)), TRUE))
+        self.assertFalse(Value('Y') in Or(Less(Value('X'), Number(42)), TRUE))
+
+    def test_contains_log_expr(self) -> None:
+        self.assertTrue(Value('X') in Or(Greater(Value('Y'), Number(42)),
+                                         And(TRUE, Less(Value('X'), Number(42)))))
+        self.assertFalse(Value('Z') in Or(Greater(Value('Y'), Number(42)),
+                                          And(TRUE, Less(Value('X'), Number(42)))))
