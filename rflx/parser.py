@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 
 from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, ParseException,
                        ParseFatalException, Regex, StringEnd, Suppress, Token, Word, WordEnd,
@@ -315,28 +315,31 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
     for t in spec.package.types:
         if t.name in types:
             raise ParserError(f'duplicate type "{t.name}"')
-        if isinstance(t, (ModularInteger, RangeInteger, Enumeration, Array)):
-            if isinstance(t, Array):
-                if t.element_type.name not in types:
-                    raise ParserError(f'undefined type "{t.element_type.name}" in "{t.name}"')
-                if not isinstance(types[t.element_type.name], Message):
-                    element_type_size = types[t.element_type.name].size.simplified()
-                    if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
-                        raise ParserError(f'unsupported size ({element_type_size}) of element type '
-                                          f'"{t.element_type.name}" in "{t.name}" '
-                                          '(no multiple of 8)')
-                    t = Array(t.name, types[t.element_type.name])
-            types[t.name] = t
+
+        full_name = f'{spec.package.identifier}.{t.name}'
+
+        if isinstance(t, (ModularInteger, RangeInteger, Enumeration)):
+            pass
+        elif isinstance(t, Array):
+            if t.element_type.name not in types:
+                raise ParserError(f'undefined type "{t.element_type.name}" in "{t.name}"')
+            if not isinstance(types[t.element_type.name], Message):
+                element_type_size = types[t.element_type.name].size.simplified()
+                if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
+                    raise ParserError(f'unsupported size ({element_type_size}) of element type '
+                                      f'"{t.element_type.name}" in "{t.name}" '
+                                      '(no multiple of 8)')
+                t = Array(t.name, types[t.element_type.name])
         elif isinstance(t, Message):
             nodes: Dict[str, Node] = OrderedDict()
             create_graph(nodes, types, t.components, t.name)
-            name = f'{spec.package.identifier}.{t.name}'
-            pdus[name] = PDU(name, next(iter(nodes.values()), FINAL))
-            types[t.name] = t
+            pdus[full_name] = PDU(full_name, next(iter(nodes.values()), FINAL))
         elif isinstance(t, Refinement):
             continue
         else:
             raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
+
+        types[t.name] = t
 
     return pdus
 
@@ -398,23 +401,31 @@ def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> Dict[st
     refinements: Dict[str, Refinement] = {}
     for t in spec.package.types:
         if isinstance(t, Refinement):
-            pdu = t.pdu
-            if pdu not in pdus:
-                pdu = f'{spec.package.identifier}.{t.pdu}'
-                if pdu not in pdus:
-                    raise ParserError(f'undefined type "{t.pdu}" in "{t.name}"')
+            pdu = qualified_type_name(t.pdu, spec.package.identifier, pdus.keys(),
+                                      f'undefined type "{t.pdu}" in "{t.name}"')
             if t.field not in pdus[pdu].fields():
                 raise ParserError(f'invalid field "{t.field}" in "{t.name}"')
             sdu = t.sdu
-            if sdu != 'null' and sdu not in pdus:
-                sdu = f'{spec.package.identifier}.{t.sdu}'
-                if sdu not in pdus:
-                    raise ParserError(f'undefined type "{t.sdu}" in "{t.name}"')
+            if sdu != 'null':
+                sdu = qualified_type_name(t.sdu, spec.package.identifier, pdus.keys(),
+                                          f'undefined type "{t.sdu}" in "{t.name}"')
             name = f'{spec.package.identifier}.{t.name}'
             if name in refinements:
                 raise ParserError(f'duplicate refinement "{t.name}"')
             refinements[name] = Refinement(name, pdu, t.field, sdu, t.condition)
     return refinements
+
+
+def qualified_type_name(name: str, package: str, types: Iterable[str], error_message: str) -> str:
+    if name in types:
+        return name
+
+    name = f'{package}.{name}'
+
+    if name not in types:
+        raise ParserError(error_message)
+
+    return name
 
 
 # pylint: disable=unused-argument
