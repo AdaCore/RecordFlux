@@ -31,7 +31,7 @@ package body In_IPv4.Tests is
          IPv4.Packet.Get_Payload (Buffer, First, Last);
          Assert (First'Image, Types.Index_Type'Image (21), "Invalid IPv4 Payload'First");
          Assert (Last'Image, Types.Index_Type'Image (44), "Invalid IPv4 Payload'Last");
-         Valid := In_IPv4.Contains.UDP_In_IPv4 (Buffer);
+         Valid := In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (Buffer);
          Assert (Valid, "IPv4 packet contains no UDP datagram");
          if Valid then
             Valid := UDP.Datagram.Is_Valid (Buffer (First .. Last));
@@ -65,7 +65,7 @@ package body In_IPv4.Tests is
          Ethernet.Frame.Get_Payload (Buffer, IPv4_First, IPv4_Last);
          Assert (IPv4_First'Image, Types.Index_Type'Image (15), "Invalid Ethernet Payload'First");
          Assert (IPv4_Last'Image, Types.Index_Type'Image (60), "Invalid Ethernet Payload'Last");
-         Valid := In_Ethernet.Contains.IPv4_In_Ethernet (Buffer);
+         Valid := In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Buffer);
          Assert (Valid, "Ethernet frame contains no IPv4 packet");
          if Valid then
             Valid := IPv4.Packet.Is_Valid (Buffer (IPv4_First .. IPv4_Last));
@@ -74,7 +74,7 @@ package body In_IPv4.Tests is
                IPv4.Packet.Get_Payload (Buffer (IPv4_First .. IPv4_Last), UDP_First, UDP_Last);
                Assert (UDP_First'Image, Types.Index_Type'Image (35), "Invalid IPv4 Payload'First");
                Assert (UDP_Last'Image, Types.Index_Type'Image (60), "Invalid IPv4 Payload'Last");
-               Valid := In_IPv4.Contains.UDP_In_IPv4 (Buffer (IPv4_First .. IPv4_Last));
+               Valid := In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (Buffer (IPv4_First .. IPv4_Last));
                Assert (Valid, "IPv4 packet contains no UDP datagram");
                if Valid then
                   Valid := UDP.Datagram.Is_Valid (Buffer (UDP_First .. UDP_Last));

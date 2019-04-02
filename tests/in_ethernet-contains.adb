@@ -2,7 +2,7 @@ package body In_Ethernet.Contains
   with SPARK_Mode
 is
 
-   function IPv4_In_Ethernet (Buffer : Types.Bytes) return Boolean is
+   function IPv4_Packet_In_Ethernet_Frame_Payload (Buffer : Types.Bytes) return Boolean is
       EtherType : UINT16 := Ethernet.Frame.Get_EtherType (Buffer);
    begin
       if EtherType = 2048 then
@@ -10,6 +10,6 @@ is
          return True;
       end if;
       return False;
-   end IPv4_In_Ethernet;
+   end IPv4_Packet_In_Ethernet_Frame_Payload;
 
 end In_Ethernet.Contains;

@@ -161,25 +161,26 @@ class Null(Type):
 
 class Refinement(Type):
     # pylint: disable=too-many-arguments
-    def __init__(self, name: str, pdu: str, field: str, sdu: str,
+    def __init__(self, package: str, pdu: str, field: str, sdu: str,
                  condition: LogExpr = TRUE) -> None:
-        super().__init__(name)
+        super().__init__('')
+        self.package = package
         self.pdu = pdu
         self.field = field
         self.sdu = sdu
         self.condition = condition
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return (self.package == other.package
+                    and self.pdu == other.pdu
+                    and self.field == other.field
+                    and self.sdu == other.sdu)
+        return NotImplemented
+
     @property
     def size(self) -> Number:
         raise NotImplementedError
-
-    @property
-    def unqualified_name(self) -> str:
-        return self.name.rsplit('.', 1)[-1]
-
-    @property
-    def package(self) -> str:
-        return self.name.rsplit('.', 1)[0]
 
 
 class Node(Element):
@@ -239,6 +240,9 @@ class PDU(Element):
 
     def fields(self, facts: Dict[Attribute, MathExpr] = None,
                first: MathExpr = UNDEFINED) -> Dict[str, Field]:
+        if self.initial_node is FINAL:
+            return {}
+
         if facts is None:
             facts = {}
         try:

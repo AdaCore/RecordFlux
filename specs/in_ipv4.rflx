@@ -1,6 +1,6 @@
 package In_IPv4 is
 
-   type UDP_In_IPv4 is new IPv4.Packet (Payload => UDP.Datagram)
+   for IPv4.Packet use (Payload => UDP.Datagram)
       if Protocol = PROTOCOL_UDP;
 
 end In_IPv4;

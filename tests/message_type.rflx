@@ -22,4 +22,6 @@ package Test is
          Baz : T;
       end message;
 
+   type Empty_PDU is null message;
+
 end Test;

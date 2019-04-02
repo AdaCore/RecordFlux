@@ -225,20 +225,20 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       message
                          Foo : T;
                       end message;
-                   type In_PDU is new PDU (Foo => PDU);
-                   type In_PDU is new Test.PDU (Foo => Test.PDU);
+                   for Test.PDU use (Foo => Test.PDU);
+                   for PDU use (Foo => PDU);
                 end Test;
             """,
-            r'^duplicate refinement "In_PDU"$')
+            r'^duplicate refinement of field "Foo" with "PDU" in "PDU"$')
 
     def test_refinement_undefined_pdu(self) -> None:
         self.assert_parser_error_string(
             """
                 package Test is
-                   type In_PDU is new PDU (Foo => Bar);
+                   for PDU use (Foo => Bar);
                 end Test;
             """,
-            r'^undefined type "PDU" in "In_PDU"$')
+            r'^undefined type "PDU" in refinement$')
 
     def test_refinement_undefined_sdu(self) -> None:
         self.assert_parser_error_string(
@@ -249,10 +249,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       message
                          Foo : T;
                       end message;
-                   type In_PDU is new PDU (Foo => Bar);
+                   for PDU use (Foo => Bar);
                 end Test;
             """,
-            r'^undefined type "Bar" in "In_PDU"$')
+            r'^undefined type "Bar" in refinement of "PDU"$')
 
     def test_refinement_invalid_field(self) -> None:
         self.assert_parser_error_string(
@@ -263,10 +263,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       message
                          Foo : T;
                       end message;
-                   type In_PDU is new PDU (Bar => PDU);
+                   for PDU use (Bar => PDU);
                 end Test;
             """,
-            r'^invalid field "Bar" in "In_PDU"$')
+            r'^invalid field "Bar" in refinement of "PDU"$')
 
     def test_invalid_first_in_initial_node(self) -> None:
         self.assert_parser_error_string(
@@ -411,7 +411,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                               Component('Baz', 'T')]),
                      Message('Simple_PDU',
                              [Component('Bar', 'T'),
-                              Component('Baz', 'T')])]))}
+                              Component('Baz', 'T')]),
+                     Message('Empty_PDU', [])]))}
         self.assert_specifications([f'{self.testdir}/message_type.rflx'], spec)
 
     def test_message_type_pdu(self) -> None:
@@ -438,7 +439,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         pdu_baz.edges = [Edge(FINAL)]
 
         pdus = [PDU('Test.PDU', initial),
-                PDU('Test.Simple_PDU', simple_initial)]
+                PDU('Test.Simple_PDU', simple_initial),
+                PDU('Test.Empty_PDU', FINAL)]
 
         self.assert_pdus([f'{self.testdir}/message_type.rflx'], pdus)
 
@@ -466,23 +468,20 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                   Component('Baz', 'T')]),
                          Message('Simple_PDU',
                                  [Component('Bar', 'T'),
-                                  Component('Baz', 'T')])])),
+                                  Component('Baz', 'T')]),
+                         Message('Empty_PDU', [])])),
             'In_Test': Specification(
                 Context(['Test']),
                 Package('In_Test',
-                        [Refinement('PDU_In_Simple_PDU',
+                        [Refinement('',
                                     'Test.Simple_PDU',
                                     'Bar',
                                     'Test.PDU',
                                     Equal(Value('Baz'), Number(42))),
-                         Refinement('Simple_PDU_In_PDU',
+                         Refinement('',
                                     'Test.PDU',
                                     'Bar',
-                                    'Test.Simple_PDU'),
-                         Refinement('Null_In_Simple_PDU',
-                                    'Test.Simple_PDU',
-                                    'Bar',
-                                    'null')]))}
+                                    'Test.Simple_PDU')]))}
         self.assert_specifications([f'{self.testdir}/message_type.rflx',
                                     f'{self.testdir}/type_refinement.rflx'], spec)
 

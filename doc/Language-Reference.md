@@ -78,7 +78,9 @@ A message type is a collection components. Additional then clauses allow to defi
 
 #### Syntax
 
-*message_type* ::= __type__ *name* __is__ __message__ [*null_component*] *component* { *component* } __end message__ __;__
+*message_type* ::= __type__ *name* __is__ *message_definition* __;__
+
+*message_definition* ::= __message__ [ *null_component* ] *component* { *component* } __end message__ | __null message__
 
 *component* ::= *component_name* __:__ *component_type*
                  [ *then_clause* ] { __,__ *then_clause* } __;__
@@ -106,7 +108,7 @@ A message type is a collection components. Additional then clauses allow to defi
 
 #### Static Semantics
 
-A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the length of the next field and the location of its first bit. The condition can refer to previous fields (including the component containing the then clause). If required, a null component can be used to specify the length of the first field in the message.
+A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the length of the next field and the location of its first bit. The condition can refer to previous fields (including the component containing the then clause). If required, a null component can be used to specify the length of the first field in the message. An empty message can be represented by a null message.
 
 #### Example
 
@@ -126,6 +128,8 @@ type Frame is
          then null
             if Payload'Length / 8 >= 46 and Payload'Length / 8 <= 1500;
    end message;
+
+type Empty_Message is null message;
 ```
 
 ## Type Refinement
@@ -134,7 +138,7 @@ A type refinement describes the relation of a component in a message type to ano
 
 #### Syntax
 
-*type_refinement* ::= __type__ *name* __is new__ *refined_type_name* __(__ *refined_component_name* __=>__ *message_type_name* __)__ [ __if__ *condition* ] __;__
+*type_refinement* ::= __for__ *refined_type_name* __use__ __(__ *refined_component_name* __=>__ *message_type_name* __)__ [ __if__ *condition* ] __;__
 
 *refined_type_name* ::= *qualified_name*
 
@@ -148,7 +152,7 @@ A type refinement describes the relation of a component in a message type to ano
 
 #### Static Semantics
 
-A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only components of type `Payload_Type` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to components of the refined type. To indicate that a refined component is empty (i.e. does not exit) under a certain condition, __null__ can be used as message type.
+A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only components of type `Payload_Type` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to components of the refined type. To indicate that a refined component is empty (i.e. does not exit) under a certain condition, a null message can be used as message type.
 
 #### Example
 

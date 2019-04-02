@@ -29,7 +29,7 @@ package body In_Ethernet.Tests is
          Ethernet.Frame.Get_Payload (Buffer, First, Last);
          Assert (First'Image, Types.Index_Type'Image (15), "Invalid Ethernet Payload'First");
          Assert (Last'Image, Types.Index_Type'Image (60), "Invalid Ethernet Payload'Last");
-         Valid := In_Ethernet.Contains.IPv4_In_Ethernet (Buffer);
+         Valid := In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Buffer);
          Assert (Valid, "Ethernet frame contains no IPv4 packet");
          if Valid then
             Valid := IPv4.Packet.Is_Valid (Buffer (First .. Last));

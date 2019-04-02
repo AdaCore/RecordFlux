@@ -84,7 +84,7 @@ class Parser:
         self.__basedir = basedir
         self.__specifications: Dict[str, Specification] = {}
         self.__pdus: Dict[str, PDU] = {}
-        self.__refinements: Dict[str, Refinement] = {}
+        self.__refinements: List[Refinement] = []
         self.__grammar = self.specification() + StringEnd()
         self.__grammar.setParseAction(self.__evaluate_specification)
         self.__grammar.ignore(Regex(r'--.*'))
@@ -109,7 +109,7 @@ class Parser:
 
     @property
     def refinements(self) -> List[Refinement]:
-        return list(self.__refinements.values())
+        return self.__refinements
 
     @classmethod
     def identifier(cls) -> Token:
@@ -178,13 +178,6 @@ class Parser:
     @classmethod
     def value_constraint(cls) -> Token:
         return (Keyword('if') - cls.logical_expression()).setParseAction(lambda t: t[1])
-
-    @classmethod
-    def type_refinement_definition(cls) -> Token:
-        return (Keyword('new') - cls.qualified_identifier() - Suppress(Literal('('))
-                - cls.identifier() - Suppress(Literal('=>'))
-                - (Keyword('null') | cls.qualified_identifier())
-                - Suppress(Literal(')')) - Optional(cls.value_constraint())).setName('Refinement')
 
     @classmethod
     def size_aspect(cls) -> Token:
@@ -261,20 +254,30 @@ class Parser:
                                 - ZeroOrMore(component_item)))
         component_list.setParseAction(lambda t: t.asList())
 
-        return (Keyword('message') - component_list - Keyword('end message')).setName('Message')
+        return (Keyword('message') - component_list - Keyword('end message')
+                | Keyword('null message')).setName('Message')
 
     @classmethod
     def type_declaration(cls) -> Token:
-        type_definition = (cls.enumeration_type_definition() | cls.integer_type_definition()
-                           | cls.message_type_definition() | cls.type_refinement_definition()
+        type_definition = (cls.enumeration_type_definition()
+                           | cls.integer_type_definition()
+                           | cls.message_type_definition()
                            | cls.array_type_definition())
 
         return (Keyword('type') - cls.identifier() - Keyword('is') - type_definition - SEMICOLON
                 ).setParseAction(parse_type)
 
     @classmethod
+    def type_refinement(cls) -> Token:
+        return (Suppress(Keyword('for')) - cls.qualified_identifier() - Suppress(Keyword('use'))
+                - Suppress(Literal('(')) - cls.identifier() - Suppress(Keyword('=>'))
+                - cls.qualified_identifier() - Suppress(Literal(')'))
+                - Optional(cls.value_constraint())('constraint') - SEMICOLON
+                ).setParseAction(parse_refinement).setName('Refinement')
+
+    @classmethod
     def package_declaration(cls) -> Token:
-        basic_declaration = cls.type_declaration()
+        basic_declaration = cls.type_declaration() | cls.type_refinement()
 
         return (Keyword('package') - cls.identifier() - Keyword('is')
                 - Group(ZeroOrMore(basic_declaration)) - Keyword('end')
@@ -305,7 +308,7 @@ class Parser:
                 self.__pdus.update(pdus)
             refinements = convert_to_refinements(specification, self.__pdus)
             if refinements:
-                self.__refinements.update(refinements)
+                self.__refinements.extend(refinements)
 
 
 def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
@@ -346,6 +349,9 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
 
 def create_graph(nodes: Dict[str, Node], types: Dict[str, Type],
                  components: List[Component], message_name: str) -> None:
+
+    if not components:
+        return
 
     components = list(components)
 
@@ -397,22 +403,23 @@ def replace_value_by_length_value(self: MathExpr) -> MathExpr:
     return LengthValue(self.name) if isinstance(self, Value) else self
 
 
-def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> Dict[str, Refinement]:
-    refinements: Dict[str, Refinement] = {}
+def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> List[Refinement]:
+    refinements: List[Refinement] = []
     for t in spec.package.types:
         if isinstance(t, Refinement):
             pdu = qualified_type_name(t.pdu, spec.package.identifier, pdus.keys(),
-                                      f'undefined type "{t.pdu}" in "{t.name}"')
+                                      f'undefined type "{t.pdu}" in refinement')
             if t.field not in pdus[pdu].fields():
-                raise ParserError(f'invalid field "{t.field}" in "{t.name}"')
+                raise ParserError(f'invalid field "{t.field}" in refinement of "{t.pdu}"')
             sdu = t.sdu
             if sdu != 'null':
                 sdu = qualified_type_name(t.sdu, spec.package.identifier, pdus.keys(),
-                                          f'undefined type "{t.sdu}" in "{t.name}"')
-            name = f'{spec.package.identifier}.{t.name}'
-            if name in refinements:
-                raise ParserError(f'duplicate refinement "{t.name}"')
-            refinements[name] = Refinement(name, pdu, t.field, sdu, t.condition)
+                                          f'undefined type "{t.sdu}" in refinement of "{t.pdu}"')
+            refinement = Refinement(spec.package.identifier, pdu, t.field, sdu, t.condition)
+            if refinement in refinements:
+                raise ParserError(f'duplicate refinement of field "{t.field}" with "{t.sdu}"'
+                                  f' in "{t.pdu}"')
+            refinements.append(refinement)
     return refinements
 
 
@@ -565,6 +572,8 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
             return RangeInteger(tokens[1], *tokens[4:7])
         if tokens[3] == 'message':
             return Message(tokens[1], tokens[4])
+        if tokens[3] == 'null message':
+            return Message(tokens[1], [])
         if tokens[3] == '(':
             elements = dict(tokens[4:-2])
             aspects = tokens[-1]
@@ -573,12 +582,15 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
             if 'always_valid' not in aspects:
                 aspects['always_valid'] = False
             return Enumeration(tokens[1], elements, aspects['size'], aspects['always_valid'])
-        if tokens[3] == 'new':
-            if len(tokens) == 7:
-                tokens.append(TRUE)
-            return Refinement(tokens[1], *tokens[4:])
         if tokens[3] == 'array of':
             return Array(tokens[1], Reference(tokens[4]))
     except ModelError as e:
         raise ParseFatalException(string, location, e)
     raise ParseFatalException(string, location, 'unexpected type')
+
+
+@fatalexceptions
+def parse_refinement(string: str, location: int, tokens: list) -> Type:
+    if 'constraint' not in tokens:
+        tokens.append(TRUE)
+    return Refinement('', *tokens)
