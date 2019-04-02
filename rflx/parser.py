@@ -37,6 +37,16 @@ class Message(Type):
         raise NotImplementedError
 
 
+class Derivation(Type):
+    def __init__(self, name: str, base: str) -> None:
+        super().__init__(name)
+        self.base = base
+
+    @property
+    def size(self) -> Number:
+        raise NotImplementedError
+
+
 class Then(SyntaxTree):
     def __init__(self, name: str, first: MathExpr = None, length: MathExpr = None,
                  constraint: LogExpr = None) -> None:
@@ -180,6 +190,10 @@ class Parser:
         return (Keyword('if') - cls.logical_expression()).setParseAction(lambda t: t[1])
 
     @classmethod
+    def type_derivation_definition(cls) -> Token:
+        return (Keyword('new') - cls.qualified_identifier()).setName('Derivation')
+
+    @classmethod
     def size_aspect(cls) -> Token:
         return (Keyword('Size') - Keyword('=>') - cls.mathematical_expression()
                 ).setParseAction(parse_aspect)
@@ -262,6 +276,7 @@ class Parser:
         type_definition = (cls.enumeration_type_definition()
                            | cls.integer_type_definition()
                            | cls.message_type_definition()
+                           | cls.type_derivation_definition()
                            | cls.array_type_definition())
 
         return (Keyword('type') - cls.identifier() - Keyword('is') - type_definition - SEMICOLON
@@ -337,6 +352,14 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
             nodes: Dict[str, Node] = OrderedDict()
             create_graph(nodes, types, t.components, t.name)
             pdus[full_name] = PDU(full_name, next(iter(nodes.values()), FINAL))
+        elif isinstance(t, Derivation):
+            base = t.base
+            if base not in types and base not in pdus:
+                raise ParserError(f'undefined type "{t.base}" in "{t.name}"')
+            base = qualified_type_name(t.base, spec.package.identifier, pdus,
+                                       f'unsupported type "{t.base}" in "{t.name}"')
+            pdus[full_name] = PDU(full_name, pdus[base].initial_node)
+            t = Message(t.name, [])
         elif isinstance(t, Refinement):
             continue
         else:
@@ -420,6 +443,11 @@ def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> List[Re
                 raise ParserError(f'duplicate refinement of field "{t.field}" with "{t.sdu}"'
                                   f' in "{t.pdu}"')
             refinements.append(refinement)
+        elif isinstance(t, Derivation):
+            for r in refinements:
+                if r.pdu == f'{t.base}' or r.pdu == f'{spec.package.identifier}.{t.base}':
+                    pdu = f'{spec.package.identifier}.{t.name}'
+                    refinements.append(Refinement(spec.package.identifier, pdu, r.field, r.sdu))
     return refinements
 
 
@@ -582,6 +610,8 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
             if 'always_valid' not in aspects:
                 aspects['always_valid'] = False
             return Enumeration(tokens[1], elements, aspects['size'], aspects['always_valid'])
+        if tokens[3] == 'new':
+            return Derivation(tokens[1], tokens[4])
         if tokens[3] == 'array of':
             return Array(tokens[1], Reference(tokens[4]))
     except ModelError as e:

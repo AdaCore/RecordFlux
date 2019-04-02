@@ -1,11 +1,11 @@
 import unittest
 from typing import Dict, List
 
-from rflx.parser import (FINAL, PDU, And, Array, Component, Context, Div, Edge, Enumeration, Equal,
-                         First, GreaterEqual, InitialNode, Last, Length, LessEqual, Message,
-                         ModularInteger, Mul, Node, NotEqual, Number, Package, ParseFatalException,
-                         Parser, ParserError, Pow, RangeInteger, Reference, Refinement,
-                         Specification, Sub, Then, Value)
+from rflx.parser import (FINAL, PDU, And, Array, Component, Context, Derivation, Div, Edge,
+                         Enumeration, Equal, First, GreaterEqual, InitialNode, Last, Length,
+                         LessEqual, Message, ModularInteger, Mul, Node, NotEqual, Number, Package,
+                         ParseFatalException, Parser, ParserError, Pow, RangeInteger, Reference,
+                         Refinement, Specification, Sub, Then, Value)
 from tests.models import ETHERNET_PDU
 
 
@@ -22,11 +22,27 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             parser.parse(filename)
         self.assertEqual(parser.specifications(), specifications, filenames)
 
+    def assert_specifications_string(self, string: str,
+                                     specifications: Dict[str, Specification]) -> None:
+        parser = Parser()
+        parser.parse_string(string)
+        self.assertEqual(parser.specifications(), specifications)
+
     def assert_pdus(self, filenames: List[str], pdus: List[PDU]) -> None:
         parser = Parser()
         for filename in filenames:
             parser.parse(filename)
         self.assertEqual(parser.pdus, pdus, filenames)
+
+    def assert_pdus_string(self, string: str, pdus: List[PDU]) -> None:
+        parser = Parser()
+        parser.parse_string(string)
+        self.assertEqual(parser.pdus, pdus)
+
+    def assert_refinements_string(self, string: str, refinements: List[Refinement]) -> None:
+        parser = Parser()
+        parser.parse_string(string)
+        self.assertEqual(parser.refinements, refinements)
 
     def assert_parser_error(self, filenames: List[str], regex: str) -> None:
         with self.assertRaisesRegex(ParserError, regex):
@@ -268,6 +284,40 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'^invalid field "Bar" in refinement of "PDU"$')
 
+    def test_derivation_duplicate_type(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type Foo is
+                      message
+                         Foo : T;
+                      end message;
+                   type Bar is new Test.Foo;
+                   type Bar is new Foo;
+                end Test;
+            """,
+            r'^duplicate type "Bar"$')
+
+    def test_derivation_undefined_type(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type Bar is new Foo;
+                end Test;
+            """,
+            r'^undefined type "Foo" in "Bar"$')
+
+    def test_derivation_unsupported_type(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type Foo is mod 256;
+                   type Bar is new Foo;
+                end Test;
+            """,
+            r'^unsupported type "Foo" in "Bar"$')
+
     def test_invalid_first_in_initial_node(self) -> None:
         self.assert_parser_error_string(
             """
@@ -484,6 +534,69 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                     'Test.Simple_PDU')]))}
         self.assert_specifications([f'{self.testdir}/message_type.rflx',
                                     f'{self.testdir}/type_refinement.rflx'], spec)
+
+    def test_type_derivation_spec(self) -> None:
+        self.assert_specifications_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type Foo is
+                      message
+                         N : T;
+                      end message;
+                   type Bar is new Foo;
+                end Test;
+            """,
+            {'Test': Specification(
+                Context([]),
+                Package('Test',
+                        [ModularInteger('T', Number(256)),
+                         Message('Foo',
+                                 [Component('N', 'T')]),
+                         Derivation('Bar', 'Foo')]))})
+
+    def test_type_derivation_pdu(self) -> None:
+        t = ModularInteger('T', Number(256))
+
+        initial = InitialNode()
+        node = Node('Baz', t)
+
+        initial.edges = [Edge(node)]
+        node.edges = [Edge(FINAL)]
+
+        self.assert_pdus_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type Foo is
+                      message
+                         Baz : T;
+                      end message;
+                   type Bar is new Foo;
+                end Test;
+            """,
+            [PDU('Test.Foo', initial),
+             PDU('Test.Bar', initial)])
+
+    def test_type_derivation_refinements(self) -> None:
+        self.assert_refinements_string(
+            """
+                package Test is
+                   type Foo is
+                      message
+                         null
+                            then Baz
+                               with Length => 42;
+                         Baz : Payload_Type;
+                      end message;
+                   for Foo use (Baz => Foo);
+                   type Bar is new Foo;
+                   for Bar use (Baz => Bar);
+                end Test;
+            """,
+            [Refinement('Test', 'Test.Foo', 'Baz', 'Test.Foo'),
+             Refinement('Test', 'Test.Bar', 'Baz', 'Test.Foo'),
+             Refinement('Test', 'Test.Bar', 'Baz', 'Test.Bar')])
 
     def test_ethernet_spec(self) -> None:
         spec = {'Ethernet': Specification(

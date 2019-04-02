@@ -161,6 +161,26 @@ type IPv4_In_Ethernet is new Ethernet.Frame (Payload => IPv4.Packet)
    if EtherType = 16#0800#;
 ```
 
+## Type Derivation
+
+A type derivation allows to create a new message type based on an existing message type.
+
+#### Syntax
+
+*type_derivation* ::= __type__ *name* __is new__ *base_type_name*__;__
+
+*base_type_name* ::= *qualified_name*
+
+#### Static Semantics
+
+A derived message type derives its specification from a base type. All type refinements of the base type which were specified at the time of the derivation will also apply to the derived type.
+
+#### Example
+
+```Ada
+type Specific_Extension is new Extension;
+```
+
 ## Array Type
 
 An array type represents a list of similar elements.
