@@ -1,5 +1,5 @@
 from rflx.expression import (And, Div, Equal, First, GreaterEqual, Last, Length, LengthValue,
-                             LessEqual, Mul, NotEqual, Number, Pow, Sub, Value)
+                             LessEqual, Mul, NotEqual, Number, NumberArray, Pow, Sub, Value)
 from rflx.model import (FINAL, PDU, Array, Edge, Enumeration, InitialNode, ModularInteger, Node,
                         RangeInteger)
 
@@ -95,6 +95,21 @@ def create_array_pdu() -> PDU:
     return PDU('Arrays.Message', initial)
 
 
+def create_expression_pdu() -> PDU:
+    payload_array = Array('Payload_Array')
+
+    initial = InitialNode()
+    payload = Node('Payload', payload_array)
+
+    initial.edges = [Edge(payload,
+                          length=Number(16))]
+    payload.edges = [Edge(FINAL,
+                          Equal(Value('Payload'), NumberArray(Number(1), Number(2))))]
+
+    return PDU('Expression.Message', initial)
+
+
 ETHERNET_PDU = create_ethernet_pdu()
 ENUMERATION_PDU = create_enumeration_pdu()
 ARRAY_PDU = create_array_pdu()
+EXPRESSION_PDU = create_expression_pdu()

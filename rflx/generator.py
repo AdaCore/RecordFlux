@@ -22,6 +22,7 @@ class Generator:
         self.__prefix = prefix
         self.__units: Dict[str, Unit] = {}
         self.__pdu_fields: Dict[str, Dict[str, Field]] = {}
+        self.__fields: Dict[str, Field] = {}
 
     def generate_dissector(self, pdus: List[PDU], refinements: List[Refinement]) -> None:
         self.__process_pdus(pdus)
@@ -72,6 +73,7 @@ class Generator:
             fields = pdu.fields(facts, First('Buffer'))
             if not fields:
                 continue
+            self.__fields = fields
             self.__pdu_fields[pdu.full_name] = fields
 
             for field in fields.values():
@@ -208,7 +210,8 @@ class Generator:
 
     def __common_context(self) -> List[ContextItem]:
         return [WithClause([self.__types]),
-                UseTypeClause([self.__types_index,
+                UseTypeClause([self.__types_bytes,
+                               self.__types_index,
                                self.__types_length])]
 
     def __range_functions(self, integer: RangeInteger) -> List[Subprogram]:
@@ -739,9 +742,14 @@ class Generator:
     def __value_to_call_facts(self, previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
         result: Dict[Attribute, MathExpr] = {}
         for field_name, vid in previous:
-            get_call = MathCall(f'Get_{field_name}_{vid} (Buffer)')
-            result[Value(field_name)] = get_call
-            result[LengthValue(field_name)] = Cast(self.__types_length, get_call)
+            if isinstance(self.__fields[field_name].type, Array):
+                first = self.__fields[field_name].variants[vid].facts[First(field_name)].to_bytes()
+                last = self.__fields[field_name].variants[vid].facts[Last(field_name)].to_bytes()
+                call = MathCall(f'Buffer ({first} .. {last})')
+            else:
+                call = MathCall(f'Get_{field_name}_{vid} (Buffer)')
+                result[LengthValue(field_name)] = Cast(self.__types_length, call)
+            result[Value(field_name)] = call
         return result
 
     def __buffer_constraints(self, last: MathExpr) -> LogExpr:

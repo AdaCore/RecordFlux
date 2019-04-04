@@ -1,5 +1,5 @@
 with Types;
-use type Types.Index_Type, Types.Length_Type;
+use type Types.Bytes, Types.Index_Type, Types.Length_Type;
 
 package UDP
   with SPARK_Mode

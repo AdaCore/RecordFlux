@@ -3,7 +3,7 @@ from typing import List
 
 from rflx.generator import Generator
 from rflx.model import PDU, Refinement
-from tests.models import ARRAY_PDU, ENUMERATION_PDU, ETHERNET_PDU
+from tests.models import ARRAY_PDU, ENUMERATION_PDU, ETHERNET_PDU, EXPRESSION_PDU
 
 
 class TestGenerator(unittest.TestCase):
@@ -46,6 +46,14 @@ class TestGenerator(unittest.TestCase):
 
     def test_array_dissector_def(self) -> None:
         generator = generate_dissector([ENUMERATION_PDU, ARRAY_PDU], [])
+        self.assert_definition(generator)
+
+    def test_expression_dissector_spec(self) -> None:
+        generator = generate_dissector([EXPRESSION_PDU], [])
+        self.assert_specification(generator)
+
+    def test_expression_dissector_def(self) -> None:
+        generator = generate_dissector([EXPRESSION_PDU], [])
         self.assert_definition(generator)
 
 

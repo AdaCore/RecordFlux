@@ -540,6 +540,29 @@ class Last(Attribute):
     pass
 
 
+class NumberArray(MathExpr):
+    def __init__(self, *elements: Number) -> None:
+        self.elements = list(elements)
+
+    def __repr__(self) -> str:
+        return '({})'.format(', '.join(map(str, self.elements)))
+
+    def __neg__(self) -> 'NumberArray':
+        raise NotImplementedError
+
+    def __contains__(self, item: MathExpr) -> bool:
+        raise NotImplementedError
+
+    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
+        raise NotImplementedError
+
+    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+        return self
+
+    def to_bytes(self) -> MathExpr:
+        raise NotImplementedError
+
+
 class Relation(LogExpr):
     def __init__(self, left: MathExpr, right: MathExpr) -> None:
         self.left = left

@@ -1,5 +1,5 @@
 with Types;
-use type Types.Index_Type, Types.Length_Type;
+use type Types.Bytes, Types.Index_Type, Types.Length_Type;
 
 package TLV
   with SPARK_Mode

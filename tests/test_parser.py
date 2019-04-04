@@ -3,9 +3,9 @@ from typing import Dict, List
 
 from rflx.parser import (FINAL, PDU, And, Array, Component, Context, Derivation, Div, Edge,
                          Enumeration, Equal, First, GreaterEqual, InitialNode, Last, Length,
-                         LessEqual, Message, ModularInteger, Mul, Node, NotEqual, Number, Package,
-                         ParseFatalException, Parser, ParserError, Pow, RangeInteger, Reference,
-                         Refinement, Specification, Sub, Then, Value)
+                         LessEqual, Message, ModularInteger, Mul, Node, NotEqual, Number,
+                         NumberArray, Package, ParseFatalException, Parser, ParserError, Pow,
+                         RangeInteger, Reference, Refinement, Specification, Sub, Then, Value)
 from tests.models import ETHERNET_PDU
 
 
@@ -57,6 +57,19 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def assert_parse_exception_string(self, string: str, regex: str) -> None:
         with self.assertRaisesRegex(ParseFatalException, regex):
             Parser().parse_string(string)
+
+    def test_mathematical_expression_array(self) -> None:
+        self.assertEqual(
+            Parser.mathematical_expression().parseString('(1, 2)')[0],
+            NumberArray(Number(1), Number(2)))
+
+    def test_mathematical_expression_array_no_number(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r'^Expected Number'):
+            Parser.mathematical_expression().parseString('(1, Foo)')
+
+    def test_mathematical_expression_array_out_of_range(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r'^Number "256" is out of range 0 .. 255'):
+            Parser.mathematical_expression().parseString('(1, 2, 256)')
 
     def test_empty_file_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/empty_file.rflx'], {})

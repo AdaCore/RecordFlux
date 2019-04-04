@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, ParseException,
                        ParseFatalException, Regex, StringEnd, Suppress, Token, Word, WordEnd,
@@ -8,7 +8,8 @@ from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, Parse
 
 from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, First, Greater,
                              GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
-                             MathExpr, Mul, NotEqual, Number, Or, Pow, Relation, Sub, Value)
+                             MathExpr, Mul, NotEqual, Number, NumberArray, Or, Pow, Relation, Sub,
+                             Value)
 from rflx.model import (FINAL, PDU, Array, Edge, Enumeration, InitialNode, ModelError,
                         ModularInteger, Node, RangeInteger, Reference, Refinement, Type)
 
@@ -175,7 +176,11 @@ class Parser:
         mathematical_operator = (Literal('**') | Literal('+') | Literal('-') | Literal('*')
                                  | Literal('/'))
 
-        term = Keyword('null') | cls.numeric_literal() | cls.name()
+        array_aggregate = (Suppress(Literal('(')) + cls.numeric_literal()
+                           + (COMMA - cls.numeric_literal()) * (1,) + Suppress(Literal(')')))
+        array_aggregate.setParseAction(parse_array_aggregate)
+
+        term = cls.numeric_literal() | cls.name() | array_aggregate
         term.setParseAction(parse_term)
 
         return (infixNotation(term,
@@ -476,12 +481,18 @@ def fatalexceptions(parse_function: Callable) -> Callable:
 
 
 @fatalexceptions
-def parse_term(string: str, location: int, tokens: list) -> Union[Attribute, Number]:
+def parse_array_aggregate(string: str, location: int, tokens: list) -> MathExpr:
+    for t in tokens:
+        if not Number(0) <= t <= Number(255):
+            raise ParseFatalException(string, location, f'Number "{t}" is out of range 0 .. 255')
+    return NumberArray(*tokens)
+
+
+@fatalexceptions
+def parse_term(string: str, location: int, tokens: list) -> MathExpr:
     if isinstance(tokens[0], str):
         return Value(tokens[0])
-    if isinstance(tokens[0], (Attribute, Number)):
-        return tokens[0]
-    raise ParseFatalException(string, location, 'expected identifier, attribute or number')
+    return tokens[0]
 
 
 @fatalexceptions
