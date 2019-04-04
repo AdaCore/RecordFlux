@@ -1,12 +1,12 @@
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Iterable, List, Tuple
+from typing import Callable, Dict, Iterable, List, Tuple
 
 from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, ParseException,
-                       ParseFatalException, Regex, StringEnd, Suppress, Token, Word, WordEnd,
-                       WordStart, ZeroOrMore, alphanums, delimitedList, infixNotation, nums,
-                       opAssoc)
+                       ParseFatalException, ParseResults, Regex, StringEnd, Suppress, Token, Word,
+                       WordEnd, WordStart, ZeroOrMore, alphanums, delimitedList, infixNotation,
+                       nums, opAssoc)
 
-from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, First, Greater,
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, Expr, First, Greater,
                              GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
                              MathExpr, Mul, NotEqual, Number, NumberArray, Or, Pow, Relation, Sub,
                              Value)
@@ -470,7 +470,7 @@ def qualified_type_name(name: str, package: str, types: Iterable[str], error_mes
 
 # pylint: disable=unused-argument
 def fatalexceptions(parse_function: Callable) -> Callable:
-    def wrapper(string: str, location: int, tokens: list) -> Any:
+    def wrapper(string: str, location: int, tokens: ParseResults) -> object:
         try:
             return parse_function(string, location, tokens)
         except ParseFatalException as e:
@@ -481,7 +481,7 @@ def fatalexceptions(parse_function: Callable) -> Callable:
 
 
 @fatalexceptions
-def parse_array_aggregate(string: str, location: int, tokens: list) -> MathExpr:
+def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> MathExpr:
     for t in tokens:
         if not Number(0) <= t <= Number(255):
             raise ParseFatalException(string, location, f'Number "{t}" is out of range 0 .. 255')
@@ -489,14 +489,14 @@ def parse_array_aggregate(string: str, location: int, tokens: list) -> MathExpr:
 
 
 @fatalexceptions
-def parse_term(string: str, location: int, tokens: list) -> MathExpr:
+def parse_term(string: str, location: int, tokens: ParseResults) -> MathExpr:
     if isinstance(tokens[0], str):
         return Value(tokens[0])
     return tokens[0]
 
 
 @fatalexceptions
-def parse_relation(string: str, location: int, tokens: list) -> Relation:
+def parse_relation(string: str, location: int, tokens: ParseResults) -> Relation:
     if tokens[1] == '<':
         return Less(tokens[0], tokens[2])
     if tokens[1] == '<=':
@@ -513,7 +513,7 @@ def parse_relation(string: str, location: int, tokens: list) -> Relation:
 
 
 @fatalexceptions
-def parse_logical_expression(string: str, location: int, tokens: list) -> LogExpr:
+def parse_logical_expression(string: str, location: int, tokens: ParseResults) -> LogExpr:
     result: List[LogExpr] = tokens[0]
     while len(result) > 1:
         left = result.pop(0)
@@ -531,7 +531,7 @@ def parse_logical_expression(string: str, location: int, tokens: list) -> LogExp
 
 
 @fatalexceptions
-def parse_mathematical_expression(string: str, location: int, tokens: list) -> MathExpr:
+def parse_mathematical_expression(string: str, location: int, tokens: ParseResults) -> MathExpr:
     result: List[MathExpr] = tokens[0]
     while len(result) > 1:
         left = result.pop(0)
@@ -555,7 +555,7 @@ def parse_mathematical_expression(string: str, location: int, tokens: list) -> M
 
 
 @fatalexceptions
-def parse_then(string: str, location: int, tokens: list) -> Then:
+def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
     return Then(tokens[1],
                 tokens[2][0]['first'] if tokens[2] and 'first' in tokens[2][0] else None,
                 tokens[2][0]['length'] if tokens[2] and 'length' in tokens[2][0] else None,
@@ -563,7 +563,7 @@ def parse_then(string: str, location: int, tokens: list) -> Then:
 
 
 @fatalexceptions
-def verify_identifier(string: str, location: int, tokens: list) -> str:
+def verify_identifier(string: str, location: int, tokens: ParseResults) -> str:
     reserved_words = ['abort', 'abs', 'abstract', 'accept', 'access', 'aliased', 'all', 'and',
                       'array', 'at', 'begin', 'body', 'case', 'constant', 'declare', 'delay',
                       'delta', 'digits', 'do', 'else', 'elsif', 'end', 'entry', 'exception',
@@ -581,7 +581,7 @@ def verify_identifier(string: str, location: int, tokens: list) -> str:
 
 
 @fatalexceptions
-def parse_attribute(string: str, location: int, tokens: list) -> Attribute:
+def parse_attribute(string: str, location: int, tokens: ParseResults) -> Attribute:
     if tokens[2] == 'First':
         return First(tokens[0])
     if tokens[2] == 'Last':
@@ -592,17 +592,17 @@ def parse_attribute(string: str, location: int, tokens: list) -> Attribute:
 
 
 @fatalexceptions
-def parse_aspect(string: str, location: int, tokens: list) -> Tuple[str, Any]:
+def parse_aspect(string: str, location: int, tokens: ParseResults) -> Tuple[str, Expr]:
     return (tokens[0].lower(), tokens[2])
 
 
 @fatalexceptions
-def parse_aspects(string: str, location: int, tokens: list) -> Dict[str, Any]:
+def parse_aspects(string: str, location: int, tokens: ParseResults) -> Dict[str, Expr]:
     return dict(tokens[1:])
 
 
 @fatalexceptions
-def parse_type(string: str, location: int, tokens: list) -> Type:
+def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
     try:
         if tokens[3] == 'mod':
             return ModularInteger(tokens[1], *tokens[4:6])
@@ -631,7 +631,7 @@ def parse_type(string: str, location: int, tokens: list) -> Type:
 
 
 @fatalexceptions
-def parse_refinement(string: str, location: int, tokens: list) -> Type:
+def parse_refinement(string: str, location: int, tokens: ParseResults) -> Type:
     if 'constraint' not in tokens:
         tokens.append(TRUE)
     return Refinement('', *tokens)
