@@ -224,7 +224,7 @@ class Field(Element):
         self.variants = variants
 
 
-class PDU(Element):
+class Message(Element):
     def __init__(self, full_name: str, node: Node) -> None:
         self.full_name = full_name
         self.initial_node = node

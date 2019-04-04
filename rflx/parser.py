@@ -10,7 +10,7 @@ from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, E
                              GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
                              MathExpr, Mul, NotEqual, Number, NumberArray, Or, Pow, Relation, Sub,
                              Value)
-from rflx.model import (FINAL, PDU, Array, Edge, Enumeration, InitialNode, ModelError,
+from rflx.model import (FINAL, Array, Edge, Enumeration, InitialNode, Message, ModelError,
                         ModularInteger, Node, RangeInteger, Reference, Refinement, Type)
 
 
@@ -28,7 +28,7 @@ class SyntaxTree:
         return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
 
 
-class Message(Type):
+class MessageSpec(Type):
     def __init__(self, name: str, components: List['Component']) -> None:
         super().__init__(name)
         self.components = components
@@ -38,7 +38,7 @@ class Message(Type):
         raise NotImplementedError
 
 
-class Derivation(Type):
+class DerivationSpec(Type):
     def __init__(self, name: str, base: str) -> None:
         super().__init__(name)
         self.base = base
@@ -64,19 +64,19 @@ class Component(SyntaxTree):
         self.thens = thens or []
 
 
-class Package(SyntaxTree):
+class PackageSpec(SyntaxTree):
     def __init__(self, identifier: str, types: List[Type]) -> None:
         self.identifier = identifier
         self.types = types
 
 
-class Context(SyntaxTree):
+class ContextSpec(SyntaxTree):
     def __init__(self, items: List[str]) -> None:
         self.items = items
 
 
 class Specification(SyntaxTree):
-    def __init__(self, context: Context, package: Package) -> None:
+    def __init__(self, context: ContextSpec, package: PackageSpec) -> None:
         self.context = context
         self.package = package
 
@@ -94,7 +94,7 @@ class Parser:
     def __init__(self, basedir: str = '.') -> None:
         self.__basedir = basedir
         self.__specifications: Dict[str, Specification] = {}
-        self.__pdus: Dict[str, PDU] = {}
+        self.__messages: Dict[str, Message] = {}
         self.__refinements: List[Refinement] = []
         self.__grammar = self.specification() + StringEnd()
         self.__grammar.setParseAction(self.__evaluate_specification)
@@ -115,8 +115,8 @@ class Parser:
         return self.__specifications
 
     @property
-    def pdus(self) -> List[PDU]:
-        return list(self.__pdus.values())
+    def messages(self) -> List[Message]:
+        return list(self.__messages.values())
 
     @property
     def refinements(self) -> List[Refinement]:
@@ -196,7 +196,7 @@ class Parser:
 
     @classmethod
     def type_derivation_definition(cls) -> Token:
-        return (Keyword('new') - cls.qualified_identifier()).setName('Derivation')
+        return (Keyword('new') - cls.qualified_identifier()).setName('DerivationSpec')
 
     @classmethod
     def size_aspect(cls) -> Token:
@@ -302,14 +302,14 @@ class Parser:
         return (Keyword('package') - cls.identifier() - Keyword('is')
                 - Group(ZeroOrMore(basic_declaration)) - Keyword('end')
                 - cls.identifier() - SEMICOLON
-                ).setParseAction(lambda t: Package(t[1], t[3].asList()))
+                ).setParseAction(lambda t: PackageSpec(t[1], t[3].asList()))
 
     @classmethod
     def context_clause(cls) -> Token:
         context_item = Keyword('with') - cls.identifier() - SEMICOLON
         context_item.setParseAction(lambda t: t[1])
 
-        return ZeroOrMore(context_item).setParseAction(lambda t: Context(t.asList()))
+        return ZeroOrMore(context_item).setParseAction(lambda t: ContextSpec(t.asList()))
 
     @classmethod
     def specification(cls) -> Token:
@@ -323,17 +323,17 @@ class Parser:
             if identifier in self.__specifications:
                 raise ParserError(f'duplicate package "{identifier}"')
             self.__specifications[identifier] = specification
-            pdus = convert_to_pdus(specification)
-            if pdus:
-                self.__pdus.update(pdus)
-            refinements = convert_to_refinements(specification, self.__pdus)
+            messages = convert_to_messages(specification)
+            if messages:
+                self.__messages.update(messages)
+            refinements = convert_to_refinements(specification, self.__messages)
             if refinements:
                 self.__refinements.extend(refinements)
 
 
-def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
+def convert_to_messages(spec: Specification) -> Dict[str, Message]:
     types: Dict[str, Type] = {}
-    pdus: Dict[str, PDU] = {}
+    messages: Dict[str, Message] = {}
 
     for t in spec.package.types:
         if t.name in types:
@@ -346,25 +346,25 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
         elif isinstance(t, Array):
             if t.element_type.name not in types:
                 raise ParserError(f'undefined type "{t.element_type.name}" in "{t.name}"')
-            if not isinstance(types[t.element_type.name], Message):
+            if not isinstance(types[t.element_type.name], MessageSpec):
                 element_type_size = types[t.element_type.name].size.simplified()
                 if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
                     raise ParserError(f'unsupported size ({element_type_size}) of element type '
                                       f'"{t.element_type.name}" in "{t.name}" '
                                       '(no multiple of 8)')
                 t = Array(t.name, types[t.element_type.name])
-        elif isinstance(t, Message):
+        elif isinstance(t, MessageSpec):
             nodes: Dict[str, Node] = OrderedDict()
             create_graph(nodes, types, t.components, t.name)
-            pdus[full_name] = PDU(full_name, next(iter(nodes.values()), FINAL))
-        elif isinstance(t, Derivation):
+            messages[full_name] = Message(full_name, next(iter(nodes.values()), FINAL))
+        elif isinstance(t, DerivationSpec):
             base = t.base
-            if base not in types and base not in pdus:
+            if base not in types and base not in messages:
                 raise ParserError(f'undefined type "{t.base}" in "{t.name}"')
-            base = qualified_type_name(t.base, spec.package.identifier, pdus,
+            base = qualified_type_name(t.base, spec.package.identifier, messages,
                                        f'unsupported type "{t.base}" in "{t.name}"')
-            pdus[full_name] = PDU(full_name, pdus[base].initial_node)
-            t = Message(t.name, [])
+            messages[full_name] = Message(full_name, messages[base].initial_node)
+            t = MessageSpec(t.name, [])
         elif isinstance(t, Refinement):
             continue
         else:
@@ -372,7 +372,7 @@ def convert_to_pdus(spec: Specification) -> Dict[str, PDU]:
 
         types[t.name] = t
 
-    return pdus
+    return messages
 
 
 def create_graph(nodes: Dict[str, Node], types: Dict[str, Type],
@@ -404,12 +404,13 @@ def create_nodes(nodes: Dict[str, Node], types: Dict[str, Type],
             types[component.type] = Array(component.type)
         if component.type not in types:
             raise ParserError(f'undefined type "{component.type}" in "{message_name}"')
-        if isinstance(types[component.type], Message):
+        if isinstance(types[component.type], MessageSpec):
             raise ParserError(f'unsupported type "{component.type}" in "{message_name}"')
         nodes[component.name] = Node(component.name, types[component.type])
 
 
-def create_edges(nodes: Dict[str, Node], components: List[Component], message_name: str) -> None:
+def create_edges(nodes: Dict[str, Node], components: List[Component],
+                 message_name: str) -> None:
     for i, component in enumerate(components):
         if not component.thens:
             nodes[component.name].edges.append(
@@ -431,24 +432,24 @@ def replace_value_by_length_value(self: MathExpr) -> MathExpr:
     return LengthValue(self.name) if isinstance(self, Value) else self
 
 
-def convert_to_refinements(spec: Specification, pdus: Dict[str, PDU]) -> List[Refinement]:
+def convert_to_refinements(spec: Specification, messages: Dict[str, Message]) -> List[Refinement]:
     refinements: List[Refinement] = []
     for t in spec.package.types:
         if isinstance(t, Refinement):
-            pdu = qualified_type_name(t.pdu, spec.package.identifier, pdus.keys(),
+            pdu = qualified_type_name(t.pdu, spec.package.identifier, messages.keys(),
                                       f'undefined type "{t.pdu}" in refinement')
-            if t.field not in pdus[pdu].fields():
+            if t.field not in messages[pdu].fields():
                 raise ParserError(f'invalid field "{t.field}" in refinement of "{t.pdu}"')
             sdu = t.sdu
             if sdu != 'null':
-                sdu = qualified_type_name(t.sdu, spec.package.identifier, pdus.keys(),
+                sdu = qualified_type_name(t.sdu, spec.package.identifier, messages.keys(),
                                           f'undefined type "{t.sdu}" in refinement of "{t.pdu}"')
             refinement = Refinement(spec.package.identifier, pdu, t.field, sdu, t.condition)
             if refinement in refinements:
                 raise ParserError(f'duplicate refinement of field "{t.field}" with "{t.sdu}"'
                                   f' in "{t.pdu}"')
             refinements.append(refinement)
-        elif isinstance(t, Derivation):
+        elif isinstance(t, DerivationSpec):
             for r in refinements:
                 if r.pdu == f'{t.base}' or r.pdu == f'{spec.package.identifier}.{t.base}':
                     pdu = f'{spec.package.identifier}.{t.name}'
@@ -610,9 +611,9 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
             tokens[6] = tokens[6]['size']
             return RangeInteger(tokens[1], *tokens[4:7])
         if tokens[3] == 'message':
-            return Message(tokens[1], tokens[4])
+            return MessageSpec(tokens[1], tokens[4])
         if tokens[3] == 'null message':
-            return Message(tokens[1], [])
+            return MessageSpec(tokens[1], [])
         if tokens[3] == '(':
             elements = dict(tokens[4:-2])
             aspects = tokens[-1]
@@ -622,7 +623,7 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
                 aspects['always_valid'] = False
             return Enumeration(tokens[1], elements, aspects['size'], aspects['always_valid'])
         if tokens[3] == 'new':
-            return Derivation(tokens[1], tokens[4])
+            return DerivationSpec(tokens[1], tokens[4])
         if tokens[3] == 'array of':
             return Array(tokens[1], Reference(tokens[4]))
     except ModelError as e:

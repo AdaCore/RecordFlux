@@ -17,7 +17,7 @@ class TestIntegration(unittest.TestCase):
             parser.parse(f'{self.specdir}/{basename}.rflx')
 
         generator = Generator()
-        generator.generate_dissector(parser.pdus, parser.refinements)
+        generator.generate_dissector(parser.messages, parser.refinements)
 
         for unit in generator.units():
             basename = unit.package.name.lower().replace('.', '-')

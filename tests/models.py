@@ -1,10 +1,10 @@
 from rflx.expression import (And, Div, Equal, First, GreaterEqual, Last, Length, LengthValue,
                              LessEqual, Mul, NotEqual, Number, NumberArray, Pow, Sub, Value)
-from rflx.model import (FINAL, PDU, Array, Edge, Enumeration, InitialNode, ModularInteger, Node,
+from rflx.model import (FINAL, Array, Edge, Enumeration, InitialNode, Message, ModularInteger, Node,
                         RangeInteger)
 
 
-def create_ethernet_pdu() -> PDU:
+def create_ethernet_frame() -> Message:
     uint48 = ModularInteger('UINT48', Pow(Number(2), Number(48)))
     uint16 = RangeInteger('UINT16',
                           Number(0),
@@ -39,10 +39,10 @@ def create_ethernet_pdu() -> PDU:
                           And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
                               LessEqual(Div(Length('Payload'), Number(8)), Number(1500))))]
 
-    return PDU('Ethernet.Frame', initial)
+    return Message('Ethernet.Frame', initial)
 
 
-def create_enumeration_pdu() -> PDU:
+def create_enumeration_message() -> Message:
     priority_type = Enumeration('Priority',
                                 {'LOW': Number(1), 'MEDIUM': Number(4), 'HIGH': Number(7)},
                                 Number(3),
@@ -54,10 +54,10 @@ def create_enumeration_pdu() -> PDU:
     initial.edges = [Edge(priority)]
     priority.edges = [Edge(FINAL)]
 
-    return PDU('Enumeration.Message', initial)
+    return Message('Enumeration.Message', initial)
 
 
-def create_array_pdu() -> PDU:
+def create_array_message() -> Message:
     length_type = ModularInteger('Length_Type', Pow(Number(2), Number(8)))
 
     modular_type = ModularInteger('Modular_Integer', Pow(Number(2), Number(16)))
@@ -92,10 +92,10 @@ def create_array_pdu() -> PDU:
     enum_vector.edges = [Edge(av_enum_vector, length=Number(16))]
     av_enum_vector.edges = [Edge(FINAL)]
 
-    return PDU('Arrays.Message', initial)
+    return Message('Arrays.Message', initial)
 
 
-def create_expression_pdu() -> PDU:
+def create_expression_message() -> Message:
     payload_array = Array('Payload_Array')
 
     initial = InitialNode()
@@ -106,10 +106,10 @@ def create_expression_pdu() -> PDU:
     payload.edges = [Edge(FINAL,
                           Equal(Value('Payload'), NumberArray(Number(1), Number(2))))]
 
-    return PDU('Expression.Message', initial)
+    return Message('Expression.Message', initial)
 
 
-ETHERNET_PDU = create_ethernet_pdu()
-ENUMERATION_PDU = create_enumeration_pdu()
-ARRAY_PDU = create_array_pdu()
-EXPRESSION_PDU = create_expression_pdu()
+ETHERNET_FRAME = create_ethernet_frame()
+ENUMERATION_MESSAGE = create_enumeration_message()
+ARRAY_MESSAGE = create_array_message()
+EXPRESSION_MESSAGE = create_expression_message()

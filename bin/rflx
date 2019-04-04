@@ -78,9 +78,9 @@ def generate(args: argparse.Namespace) -> None:
     if not directory.is_dir():
         raise Error(f'directory not found: "{directory}"')
 
-    pdus, refinements = parse(args.files)
+    messages, refinements = parse(args.files)
     if args.dissector or (not args.dissector and not args.library):
-        generate_dissector(pdus, refinements, directory, args.prefix)
+        generate_dissector(messages, refinements, directory, args.prefix)
     if args.library or (not args.dissector and not args.library):
         generate_library(directory, args.prefix)
 
@@ -96,11 +96,11 @@ def parse(files: List) -> Tuple[List, List]:
         parser.parse(f)
         print('OK')
 
-    return (parser.pdus, parser.refinements)
+    return (parser.messages, parser.refinements)
 
 
-def generate_dissector(pdus: List, refinements: List, directory: Path, prefix: str) -> None:
-    if not pdus and not refinements:
+def generate_dissector(messages: List, refinements: List, directory: Path, prefix: str) -> None:
+    if not messages and not refinements:
         return
 
     if prefix and prefix[-1] != '.':
@@ -109,7 +109,7 @@ def generate_dissector(pdus: List, refinements: List, directory: Path, prefix: s
     generator = Generator(prefix)
 
     print('Generating... ', end='')
-    generator.generate_dissector(pdus, refinements)
+    generator.generate_dissector(messages, refinements)
     written_files = generator.write_units(directory)
     print('OK')
 

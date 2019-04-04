@@ -11,8 +11,8 @@ from rflx.ada import (FALSE, Aggregate, Aspect, Assignment, CallStatement, CaseE
 from rflx.expression import (TRUE, Add, And, Attribute, Div, Equal, Expr, GreaterEqual, Last,
                              Length, LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number,
                              Or, Pow, Size, Sub, Value)
-from rflx.model import (PDU, Array, Enumeration, Field, First, ModularInteger, Null, RangeInteger,
-                        Reference, Refinement, Type, Variant)
+from rflx.model import (Array, Enumeration, Field, First, Message, ModularInteger, Null,
+                        RangeInteger, Reference, Refinement, Type, Variant)
 
 COMMON_PRECONDITION = LogCall('Is_Contained (Buffer)')
 
@@ -21,11 +21,11 @@ class Generator:
     def __init__(self, prefix: str = '') -> None:
         self.__prefix = prefix
         self.__units: Dict[str, Unit] = {}
-        self.__pdu_fields: Dict[str, Dict[str, Field]] = {}
+        self.__message_fields: Dict[str, Dict[str, Field]] = {}
         self.__fields: Dict[str, Field] = {}
 
-    def generate_dissector(self, pdus: List[PDU], refinements: List[Refinement]) -> None:
-        self.__process_pdus(pdus)
+    def generate_dissector(self, messages: List[Message], refinements: List[Refinement]) -> None:
+        self.__process_messages(messages)
         self.__process_refinements(refinements)
 
     def units(self) -> List[Unit]:
@@ -48,17 +48,18 @@ class Generator:
 
         return written_files
 
-    def __process_pdus(self, pdus: List[PDU]) -> None:
+    def __process_messages(self, messages: List[Message]) -> None:
         seen_types: List[str] = []
 
-        for pdu in pdus:
-            if pdu.package not in self.__units:
-                self.__units[pdu.package] = Unit(self.__common_context(),
-                                                 Package(f'{self.__prefix}{pdu.package}', [], []))
+        for message in messages:
+            if message.package not in self.__units:
+                self.__units[message.package] = Unit(self.__common_context(),
+                                                     Package(f'{self.__prefix}{message.package}',
+                                                             [], []))
 
             context: List[ContextItem] = []
-            package = Package(f'{self.__prefix}{pdu.full_name}', [], [])
-            self.__units[pdu.full_name] = Unit(context, package)
+            package = Package(f'{self.__prefix}{message.full_name}', [], [])
+            self.__units[message.full_name] = Unit(context, package)
 
             package.subprograms.extend(
                 self.__contain_functions())
@@ -70,23 +71,24 @@ class Generator:
                                        Mul(First('Buffer'), Number(8)))
             }
 
-            fields = pdu.fields(facts, First('Buffer'))
+            fields = message.fields(facts, First('Buffer'))
             if not fields:
                 continue
             self.__fields = fields
-            self.__pdu_fields[pdu.full_name] = fields
+            self.__message_fields[message.full_name] = fields
 
             for field in fields.values():
                 if field.name == 'FINAL':
                     continue
 
-                if f'{pdu.package}.{field.type.name}' not in seen_types:
-                    seen_types.append(f'{pdu.package}.{field.type.name}')
+                if f'{message.package}.{field.type.name}' not in seen_types:
+                    seen_types.append(f'{message.package}.{field.type.name}')
 
-                    self.__create_type(field.type, pdu.package)
+                    self.__create_type(field.type, message.package)
 
                 if isinstance(field.type, Array) and 'Payload' not in field.type.name:
-                    context.append(WithClause([f'{self.__prefix}{pdu.package}.{field.type.name}']))
+                    context.append(
+                        WithClause([f'{self.__prefix}{message.package}.{field.type.name}']))
 
                 for variant_id, variant in field.variants.items():
                     package.subprograms.append(
@@ -108,7 +110,7 @@ class Generator:
                 package.subprograms.extend(
                     self.__field_accessor_functions(
                         field,
-                        pdu.package))
+                        message.package))
 
             package.subprograms.append(
                 self.__message_validation_function(
@@ -118,11 +120,11 @@ class Generator:
                 self.__message_length_function(
                     list(fields['FINAL'].variants.values())))
 
-        self.__create_unreachable_functions(pdus)
+        self.__create_unreachable_functions(messages)
 
-    def __create_type(self, field_type: Type, pdu_package: str) -> None:
-        types = self.__units[pdu_package].package.types
-        subprograms = self.__units[pdu_package].package.subprograms
+    def __create_type(self, field_type: Type, message_package: str) -> None:
+        types = self.__units[message_package].package.types
+        subprograms = self.__units[message_package].package.subprograms
 
         if isinstance(field_type, ModularInteger):
             types.extend(modular_types(field_type))
@@ -135,38 +137,38 @@ class Generator:
         elif isinstance(field_type, Array):
             if 'Payload' not in field_type.name:
                 if not isinstance(field_type.element_type, Reference):
-                    self.__create_type(field_type.element_type, pdu_package)
+                    self.__create_type(field_type.element_type, message_package)
 
                 array_context: List[ContextItem] = []
                 if isinstance(field_type.element_type, Reference):
-                    array_context = [WithClause([f'{self.__prefix}{pdu_package}.'
+                    array_context = [WithClause([f'{self.__prefix}{message_package}.'
                                                  f'{field_type.element_type.name}'])]
 
-                array_package = Package(f'{self.__prefix}{pdu_package}.{field_type.name}',
+                array_package = Package(f'{self.__prefix}{message_package}.{field_type.name}',
                                         self.__array_types(),
                                         self.__contain_functions()
-                                        + self.__array_functions(field_type, pdu_package))
+                                        + self.__array_functions(field_type, message_package))
 
                 self.__units[array_package.name] = Unit(array_context, array_package)
         else:
             raise NotImplementedError(f'unsupported type "{type(field_type).__name__}"')
 
-    def __create_unreachable_functions(self, pdus: List[PDU]) -> None:
+    def __create_unreachable_functions(self, messages: List[Message]) -> None:
         unreachable_functions: Dict[str, List[Subprogram]] = {}
 
-        for pdu in pdus:
-            if pdu.package not in unreachable_functions:
-                unreachable_functions[pdu.package] = []
+        for message in messages:
+            if message.package not in unreachable_functions:
+                unreachable_functions[message.package] = []
 
-            for field in pdu.fields().values():
+            for field in message.fields().values():
                 if not isinstance(field.type, Null):
-                    unreachable_functions[pdu.package].extend(
+                    unreachable_functions[message.package].extend(
                         self.__type_dependent_unreachable_function(field.type))
 
-            unreachable_functions[pdu.package].append(unreachable_function(self.__types_length))
+            unreachable_functions[message.package].append(unreachable_function(self.__types_length))
 
-        for pdu_package, functions in unreachable_functions.items():
-            top_level_package = self.__units[pdu_package].package
+        for message_package, functions in unreachable_functions.items():
+            top_level_package = self.__units[message_package].package
             top_level_package.subprograms.insert(
                 0,
                 Pragma('Warnings',
@@ -667,16 +669,16 @@ class Generator:
         pdu_name = ref.pdu.rsplit('.', 1)[1] if ref.pdu.startswith(ref.package) else ref.pdu
         name = f'{sdu_name}_In_{pdu_name}_{ref.field}'.replace('.', '_')
 
-        pdu_fields = self.__pdu_fields[ref.pdu]
-        condition_fields = [field for field in pdu_fields if Value(field) in ref.condition]
+        message_fields = self.__message_fields[ref.pdu]
+        condition_fields = [field for field in message_fields if Value(field) in ref.condition]
         declarations = [Declaration(field,
-                                    pdu_fields[field].type.name,
+                                    message_fields[field].type.name,
                                     MathCall(f'{ref.pdu}.Get_{field} (Buffer)'))
                         for field in condition_fields]
 
         condition = ref.condition
         for field in condition_fields:
-            field_type = pdu_fields[field].type
+            field_type = message_fields[field].type
             if isinstance(field_type, Enumeration) and field_type.always_valid:
                 condition = And(LogCall(f'{field}.Known'),
                                 condition.simplified({Value(field): Value(f'{field}.Enum')}))

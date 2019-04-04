@@ -4,9 +4,9 @@ from collections import OrderedDict
 from rflx.expression import (TRUE, UNDEFINED, Add, And, Div, Equal, ExpressionError, First,
                              GreaterEqual, Last, Length, LengthValue, LessEqual, Mul, NotEqual,
                              Number, Or, Pow, Sub, Value)
-from rflx.model import (FINAL, PDU, Array, Edge, Field, InitialNode, ModelError, ModularInteger,
+from rflx.model import (FINAL, Array, Edge, Field, InitialNode, Message, ModelError, ModularInteger,
                         Node, Null, RangeInteger, Variant)
-from tests.models import ETHERNET_PDU
+from tests.models import ETHERNET_FRAME
 
 SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
 
@@ -80,7 +80,7 @@ class TestModel(unittest.TestCase):
         n2.edges = [Edge(n1, TRUE, Number(1))]
 
         with self.assertRaises(ModelError):
-            PDU('Z', initial).fields()
+            Message('Z', initial).fields()
 
     def test_pdu_fields_invalid_dupe(self) -> None:
         t1 = ModularInteger('T1', Number(2))
@@ -95,7 +95,7 @@ class TestModel(unittest.TestCase):
         n2.edges = [Edge(FINAL, TRUE)]
 
         with self.assertRaises(ModelError):
-            PDU('Z', initial).fields()
+            Message('Z', initial).fields()
 
     def test_pdu_fields_invalid_self_reference(self) -> None:
         t = ModularInteger('T', Number(2))
@@ -109,7 +109,7 @@ class TestModel(unittest.TestCase):
         n2.edges = [Edge(FINAL)]
 
         with self.assertRaisesRegex(ExpressionError, 'self-reference to "Y\'First"'):
-            PDU('Z', initial).fields()
+            Message('Z', initial).fields()
 
     def test_pdu_fields_length_after_payload(self) -> None:
         int_type = ModularInteger('T', Number(256))
@@ -127,7 +127,7 @@ class TestModel(unittest.TestCase):
                                                 Number(1)))]
         length.edges = [Edge(FINAL)]
 
-        pdu = PDU('Foo', initial)
+        pdu = Message('Foo', initial)
 
         expected = OrderedDict([
             ('Version',
@@ -617,4 +617,4 @@ class TestModel(unittest.TestCase):
                    }))
         ])
 
-        self.assertEqual(ETHERNET_PDU.fields(), expected)
+        self.assertEqual(ETHERNET_FRAME.fields(), expected)

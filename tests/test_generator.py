@@ -2,8 +2,8 @@ import unittest
 from typing import List
 
 from rflx.generator import Generator
-from rflx.model import PDU, Refinement
-from tests.models import ARRAY_PDU, ENUMERATION_PDU, ETHERNET_PDU, EXPRESSION_PDU
+from rflx.model import Message, Refinement
+from tests.models import ARRAY_MESSAGE, ENUMERATION_MESSAGE, ETHERNET_FRAME, EXPRESSION_MESSAGE
 
 
 class TestGenerator(unittest.TestCase):
@@ -25,39 +25,39 @@ class TestGenerator(unittest.TestCase):
                     self.assertEqual(unit.definition(), f.read())
 
     def test_ethernet_dissector_spec(self) -> None:
-        generator = generate_dissector([ETHERNET_PDU], [])
+        generator = generate_dissector([ETHERNET_FRAME], [])
         self.assert_specification(generator)
 
     def test_ethernet_dissector_def(self) -> None:
-        generator = generate_dissector([ETHERNET_PDU], [])
+        generator = generate_dissector([ETHERNET_FRAME], [])
         self.assert_definition(generator)
 
     def test_enumeration_dissector_spec(self) -> None:
-        generator = generate_dissector([ENUMERATION_PDU], [])
+        generator = generate_dissector([ENUMERATION_MESSAGE], [])
         self.assert_specification(generator)
 
     def test_enumeration_dissector_def(self) -> None:
-        generator = generate_dissector([ENUMERATION_PDU], [])
+        generator = generate_dissector([ENUMERATION_MESSAGE], [])
         self.assert_definition(generator)
 
     def test_array_dissector_spec(self) -> None:
-        generator = generate_dissector([ENUMERATION_PDU, ARRAY_PDU], [])
+        generator = generate_dissector([ENUMERATION_MESSAGE, ARRAY_MESSAGE], [])
         self.assert_specification(generator)
 
     def test_array_dissector_def(self) -> None:
-        generator = generate_dissector([ENUMERATION_PDU, ARRAY_PDU], [])
+        generator = generate_dissector([ENUMERATION_MESSAGE, ARRAY_MESSAGE], [])
         self.assert_definition(generator)
 
     def test_expression_dissector_spec(self) -> None:
-        generator = generate_dissector([EXPRESSION_PDU], [])
+        generator = generate_dissector([EXPRESSION_MESSAGE], [])
         self.assert_specification(generator)
 
     def test_expression_dissector_def(self) -> None:
-        generator = generate_dissector([EXPRESSION_PDU], [])
+        generator = generate_dissector([EXPRESSION_MESSAGE], [])
         self.assert_definition(generator)
 
 
-def generate_dissector(pdus: List[PDU], refinements: List[Refinement]) -> Generator:
+def generate_dissector(pdus: List[Message], refinements: List[Refinement]) -> Generator:
     generator = Generator()
     generator.generate_dissector(pdus, refinements)
     return generator

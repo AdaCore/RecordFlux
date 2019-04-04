@@ -1,12 +1,12 @@
 import unittest
 from typing import Dict, List
 
-from rflx.parser import (FINAL, PDU, And, Array, Component, Context, Derivation, Div, Edge,
+from rflx.parser import (FINAL, And, Array, Component, ContextSpec, DerivationSpec, Div, Edge,
                          Enumeration, Equal, First, GreaterEqual, InitialNode, Last, Length,
-                         LessEqual, Message, ModularInteger, Mul, Node, NotEqual, Number,
-                         NumberArray, Package, ParseFatalException, Parser, ParserError, Pow,
-                         RangeInteger, Reference, Refinement, Specification, Sub, Then, Value)
-from tests.models import ETHERNET_PDU
+                         LessEqual, Message, MessageSpec, ModularInteger, Mul, Node, NotEqual,
+                         Number, NumberArray, PackageSpec, ParseFatalException, Parser, ParserError,
+                         Pow, RangeInteger, Reference, Refinement, Specification, Sub, Then, Value)
+from tests.models import ETHERNET_FRAME
 
 
 class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
@@ -28,16 +28,16 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         parser.parse_string(string)
         self.assertEqual(parser.specifications(), specifications)
 
-    def assert_pdus(self, filenames: List[str], pdus: List[PDU]) -> None:
+    def assert_messages(self, filenames: List[str], messages: List[Message]) -> None:
         parser = Parser()
         for filename in filenames:
             parser.parse(filename)
-        self.assertEqual(parser.pdus, pdus, filenames)
+        self.assertEqual(parser.messages, messages, filenames)
 
-    def assert_pdus_string(self, string: str, pdus: List[PDU]) -> None:
+    def assert_messages_string(self, string: str, messages: List[Message]) -> None:
         parser = Parser()
         parser.parse_string(string)
-        self.assertEqual(parser.pdus, pdus)
+        self.assertEqual(parser.messages, messages)
 
     def assert_refinements_string(self, string: str, refinements: List[Refinement]) -> None:
         parser = Parser()
@@ -74,30 +74,30 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_empty_file_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/empty_file.rflx'], {})
 
-    def test_empty_file_pdu(self) -> None:
-        self.assert_pdus([f'{self.testdir}/empty_file.rflx'], [])
+    def test_empty_file_message(self) -> None:
+        self.assert_messages([f'{self.testdir}/empty_file.rflx'], [])
 
     def test_comment_only_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/comment_only.rflx'], {})
 
-    def test_comment_only_pdu(self) -> None:
-        self.assert_pdus([f'{self.testdir}/comment_only.rflx'], [])
+    def test_comment_only_message(self) -> None:
+        self.assert_messages([f'{self.testdir}/comment_only.rflx'], [])
 
     def test_package_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/package.rflx'],
-                                   {'Test': Specification(Context([]),
-                                                          Package('Test', []))})
+                                   {'Test': Specification(ContextSpec([]),
+                                                          PackageSpec('Test', []))})
 
-    def test_package_pdu(self) -> None:
-        self.assert_pdus([f'{self.testdir}/package.rflx'], [])
+    def test_package_message(self) -> None:
+        self.assert_messages([f'{self.testdir}/package.rflx'], [])
 
     def test_context_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/context.rflx'],
-                                   {'Test': Specification(Context(['Foo', 'Bar']),
-                                                          Package('Test', []))})
+                                   {'Test': Specification(ContextSpec(['Foo', 'Bar']),
+                                                          PackageSpec('Test', []))})
 
-    def test_context_pdu(self) -> None:
-        self.assert_pdus([f'{self.testdir}/context.rflx'], [])
+    def test_context_message(self) -> None:
+        self.assert_messages([f'{self.testdir}/context.rflx'], [])
 
     def test_duplicate_package(self) -> None:
         self.assert_parser_error([f'{self.testdir}/package.rflx', f'{self.testdir}/package.rflx'],
@@ -260,7 +260,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'^duplicate refinement of field "Foo" with "PDU" in "PDU"$')
 
-    def test_refinement_undefined_pdu(self) -> None:
+    def test_refinement_undefined_message(self) -> None:
         self.assert_parser_error_string(
             """
                 package Test is
@@ -406,79 +406,79 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_integer_type_spec(self) -> None:
         spec = {'Test': Specification(
-            Context([]),
-            Package('Test',
-                    [RangeInteger('Page_Num', Number(1), Number(2000), Number(16)),
-                     RangeInteger('Line_Size', Number(0), Number(255), Number(8)),
-                     ModularInteger('Byte', Number(256)),
-                     ModularInteger('Hash_Index', Number(64))]))}
+            ContextSpec([]),
+            PackageSpec('Test',
+                        [RangeInteger('Page_Num', Number(1), Number(2000), Number(16)),
+                         RangeInteger('Line_Size', Number(0), Number(255), Number(8)),
+                         ModularInteger('Byte', Number(256)),
+                         ModularInteger('Hash_Index', Number(64))]))}
         self.assert_specifications([f'{self.testdir}/integer_type.rflx'], spec)
 
     def test_enumeration_type_spec(self) -> None:
         spec = {'Test': Specification(
-            Context([]),
-            Package('Test',
-                    [Enumeration('Day',
-                                 {'Mon': Number(1),
-                                  'Tue': Number(2),
-                                  'Wed': Number(3),
-                                  'Thu': Number(4),
-                                  'Fri': Number(5),
-                                  'Sat': Number(6),
-                                  'Sun': Number(7)},
-                                 Number(3),
-                                 False),
-                     Enumeration('Gender',
-                                 {'M': Number(0),
-                                  'F': Number(1)},
-                                 Number(1),
-                                 False),
-                     Enumeration('Priority',
-                                 {'LOW': Number(1),
-                                  'MEDIUM': Number(4),
-                                  'HIGH': Number(7)},
-                                 Number(3),
-                                 True)]))}
+            ContextSpec([]),
+            PackageSpec('Test',
+                        [Enumeration('Day',
+                                     {'Mon': Number(1),
+                                      'Tue': Number(2),
+                                      'Wed': Number(3),
+                                      'Thu': Number(4),
+                                      'Fri': Number(5),
+                                      'Sat': Number(6),
+                                      'Sun': Number(7)},
+                                     Number(3),
+                                     False),
+                         Enumeration('Gender',
+                                     {'M': Number(0),
+                                      'F': Number(1)},
+                                     Number(1),
+                                     False),
+                         Enumeration('Priority',
+                                     {'LOW': Number(1),
+                                      'MEDIUM': Number(4),
+                                      'HIGH': Number(7)},
+                                     Number(3),
+                                     True)]))}
         self.assert_specifications([f'{self.testdir}/enumeration_type.rflx'], spec)
 
     def test_array_type_spec(self) -> None:
         spec = {'Test': Specification(
-            Context([]),
-            Package('Test',
-                    [ModularInteger('Byte', Number(256)),
-                     Array('Bytes', Reference('Byte')),
-                     Message('Foo', [Component('Byte', 'Byte')]),
-                     Array('Bar', Reference('Foo'))]))}
+            ContextSpec([]),
+            PackageSpec('Test',
+                        [ModularInteger('Byte', Number(256)),
+                         Array('Bytes', Reference('Byte')),
+                         MessageSpec('Foo', [Component('Byte', 'Byte')]),
+                         Array('Bar', Reference('Foo'))]))}
         self.assert_specifications([f'{self.testdir}/array_type.rflx'], spec)
 
     def test_message_type_spec(self) -> None:
         spec = {'Test': Specification(
-            Context([]),
-            Package('Test',
-                    [ModularInteger('T', Number(256)),
-                     Message('PDU',
-                             [Component('null', '', [
-                                 Then('Foo',
-                                      None,
-                                      Number(1))]),
-                              Component('Foo', 'T', [
-                                  Then('Bar',
-                                       Number(1),
-                                       Number(1),
-                                       And(Equal(Length('Foo'),
-                                           Number(1)),
-                                           LessEqual(Value('Foo'),
-                                                     Number(30)))),
-                                  Then('Baz')]),
-                              Component('Bar', 'T'),
-                              Component('Baz', 'T')]),
-                     Message('Simple_PDU',
-                             [Component('Bar', 'T'),
-                              Component('Baz', 'T')]),
-                     Message('Empty_PDU', [])]))}
+            ContextSpec([]),
+            PackageSpec('Test',
+                        [ModularInteger('T', Number(256)),
+                         MessageSpec('PDU',
+                                     [Component('null', '', [
+                                         Then('Foo',
+                                              None,
+                                              Number(1))]),
+                                      Component('Foo', 'T', [
+                                          Then('Bar',
+                                               Number(1),
+                                               Number(1),
+                                               And(Equal(Length('Foo'),
+                                                   Number(1)),
+                                                   LessEqual(Value('Foo'),
+                                                             Number(30)))),
+                                          Then('Baz')]),
+                                      Component('Bar', 'T'),
+                                      Component('Baz', 'T')]),
+                         MessageSpec('Simple_PDU',
+                                     [Component('Bar', 'T'),
+                                      Component('Baz', 'T')]),
+                         MessageSpec('Empty_PDU', [])]))}
         self.assert_specifications([f'{self.testdir}/message_type.rflx'], spec)
 
-    def test_message_type_pdu(self) -> None:
+    def test_message_type_message(self) -> None:
         t = ModularInteger('T', Number(256))
 
         initial = InitialNode()
@@ -501,50 +501,50 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         pdu_bar.edges = [Edge(pdu_baz)]
         pdu_baz.edges = [Edge(FINAL)]
 
-        pdus = [PDU('Test.PDU', initial),
-                PDU('Test.Simple_PDU', simple_initial),
-                PDU('Test.Empty_PDU', FINAL)]
+        messages = [Message('Test.PDU', initial),
+                    Message('Test.Simple_PDU', simple_initial),
+                    Message('Test.Empty_PDU', FINAL)]
 
-        self.assert_pdus([f'{self.testdir}/message_type.rflx'], pdus)
+        self.assert_messages([f'{self.testdir}/message_type.rflx'], messages)
 
     def test_type_refinement_spec(self) -> None:
         spec = {
             'Test': Specification(
-                Context([]),
-                Package('Test',
-                        [ModularInteger('T', Number(256)),
-                         Message('PDU',
-                                 [Component('null', '', [
-                                     Then('Foo',
-                                          None,
-                                          Number(1))]),
-                                  Component('Foo', 'T', [
-                                      Then('Bar',
-                                           Number(1),
-                                           Number(1),
-                                           And(Equal(Length('Foo'),
-                                               Number(1)),
-                                               LessEqual(Value('Foo'),
-                                                         Number(30)))),
-                                      Then('Baz')]),
-                                  Component('Bar', 'T'),
-                                  Component('Baz', 'T')]),
-                         Message('Simple_PDU',
-                                 [Component('Bar', 'T'),
-                                  Component('Baz', 'T')]),
-                         Message('Empty_PDU', [])])),
+                ContextSpec([]),
+                PackageSpec('Test',
+                            [ModularInteger('T', Number(256)),
+                             MessageSpec('PDU',
+                                         [Component('null', '', [
+                                             Then('Foo',
+                                                  None,
+                                                  Number(1))]),
+                                          Component('Foo', 'T', [
+                                              Then('Bar',
+                                                   Number(1),
+                                                   Number(1),
+                                                   And(Equal(Length('Foo'),
+                                                       Number(1)),
+                                                       LessEqual(Value('Foo'),
+                                                                 Number(30)))),
+                                              Then('Baz')]),
+                                          Component('Bar', 'T'),
+                                          Component('Baz', 'T')]),
+                             MessageSpec('Simple_PDU',
+                                         [Component('Bar', 'T'),
+                                          Component('Baz', 'T')]),
+                             MessageSpec('Empty_PDU', [])])),
             'In_Test': Specification(
-                Context(['Test']),
-                Package('In_Test',
-                        [Refinement('',
-                                    'Test.Simple_PDU',
-                                    'Bar',
-                                    'Test.PDU',
-                                    Equal(Value('Baz'), Number(42))),
-                         Refinement('',
-                                    'Test.PDU',
-                                    'Bar',
-                                    'Test.Simple_PDU')]))}
+                ContextSpec(['Test']),
+                PackageSpec('In_Test',
+                            [Refinement('',
+                                        'Test.Simple_PDU',
+                                        'Bar',
+                                        'Test.PDU',
+                                        Equal(Value('Baz'), Number(42))),
+                             Refinement('',
+                                        'Test.PDU',
+                                        'Bar',
+                                        'Test.Simple_PDU')]))}
         self.assert_specifications([f'{self.testdir}/message_type.rflx',
                                     f'{self.testdir}/type_refinement.rflx'], spec)
 
@@ -561,14 +561,14 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 end Test;
             """,
             {'Test': Specification(
-                Context([]),
-                Package('Test',
-                        [ModularInteger('T', Number(256)),
-                         Message('Foo',
-                                 [Component('N', 'T')]),
-                         Derivation('Bar', 'Foo')]))})
+                ContextSpec([]),
+                PackageSpec('Test',
+                            [ModularInteger('T', Number(256)),
+                             MessageSpec('Foo',
+                                         [Component('N', 'T')]),
+                             DerivationSpec('Bar', 'Foo')]))})
 
-    def test_type_derivation_pdu(self) -> None:
+    def test_type_derivation_message(self) -> None:
         t = ModularInteger('T', Number(256))
 
         initial = InitialNode()
@@ -577,7 +577,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         initial.edges = [Edge(node)]
         node.edges = [Edge(FINAL)]
 
-        self.assert_pdus_string(
+        self.assert_messages_string(
             """
                 package Test is
                    type T is mod 256;
@@ -588,8 +588,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type Bar is new Foo;
                 end Test;
             """,
-            [PDU('Test.Foo', initial),
-             PDU('Test.Bar', initial)])
+            [Message('Test.Foo', initial),
+             Message('Test.Bar', initial)])
 
     def test_type_derivation_refinements(self) -> None:
         self.assert_refinements_string(
@@ -613,53 +613,53 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_ethernet_spec(self) -> None:
         spec = {'Ethernet': Specification(
-            Context([]),
-            Package('Ethernet',
-                    [RangeInteger('UINT16',
-                                  Number(0),
-                                  Sub(Pow(Number(2), Number(16)), Number(1)),
-                                  Number(16)),
-                     ModularInteger('UINT48', Pow(Number(2), Number(48))),
-                     Message('Frame',
-                             [Component('Destination', 'UINT48'),
-                              Component('Source', 'UINT48'),
-                              Component('TPID', 'UINT16', [
-                                  Then('TCI',
-                                       None,
-                                       None,
-                                       Equal(Value('TPID'),
-                                             Number(33024))),
-                                  Then('EtherType',
-                                       First('TPID'),
-                                       None,
-                                       NotEqual(Value('TPID'),
-                                                Number(33024)))]),
-                              Component('TCI', 'UINT16'),
-                              Component('EtherType', 'UINT16', [
-                                  Then('Payload',
-                                       None,
-                                       Mul(Value('EtherType'),
-                                           Number(8)),
-                                       LessEqual(Value('EtherType'),
-                                                 Number(1500))),
-                                  Then('Payload',
-                                       None,
-                                       Sub(Last('Message'),
-                                           Last('EtherType')),
-                                       GreaterEqual(Value('EtherType'),
-                                                    Number(1536)))]),
-                              Component('Payload', 'Payload_Array', [
-                                  Then('null',
-                                       None,
-                                       None,
-                                       And(GreaterEqual(Div(Length('Payload'),
-                                                            Number(8)),
-                                                        Number(46)),
-                                           LessEqual(Div(Length('Payload'),
-                                                         Number(8)),
-                                                     Number(1500))))])])]))}
+            ContextSpec([]),
+            PackageSpec('Ethernet',
+                        [RangeInteger('UINT16',
+                                      Number(0),
+                                      Sub(Pow(Number(2), Number(16)), Number(1)),
+                                      Number(16)),
+                         ModularInteger('UINT48', Pow(Number(2), Number(48))),
+                         MessageSpec('Frame',
+                                     [Component('Destination', 'UINT48'),
+                                      Component('Source', 'UINT48'),
+                                      Component('TPID', 'UINT16', [
+                                          Then('TCI',
+                                               None,
+                                               None,
+                                               Equal(Value('TPID'),
+                                                     Number(33024))),
+                                          Then('EtherType',
+                                               First('TPID'),
+                                               None,
+                                               NotEqual(Value('TPID'),
+                                                        Number(33024)))]),
+                                      Component('TCI', 'UINT16'),
+                                      Component('EtherType', 'UINT16', [
+                                          Then('Payload',
+                                               None,
+                                               Mul(Value('EtherType'),
+                                                   Number(8)),
+                                               LessEqual(Value('EtherType'),
+                                                         Number(1500))),
+                                          Then('Payload',
+                                               None,
+                                               Sub(Last('Message'),
+                                                   Last('EtherType')),
+                                               GreaterEqual(Value('EtherType'),
+                                                            Number(1536)))]),
+                                      Component('Payload', 'Payload_Array', [
+                                          Then('null',
+                                               None,
+                                               None,
+                                               And(GreaterEqual(Div(Length('Payload'),
+                                                                    Number(8)),
+                                                                Number(46)),
+                                                   LessEqual(Div(Length('Payload'),
+                                                                 Number(8)),
+                                                             Number(1500))))])])]))}
 
         self.assert_specifications([f'{self.specdir}/ethernet.rflx'], spec)
 
-    def test_ethernet_pdu(self) -> None:
-        self.assert_pdus([f'{self.specdir}/ethernet.rflx'], [ETHERNET_PDU])
+    def test_ethernet_message(self) -> None:
+        self.assert_messages([f'{self.specdir}/ethernet.rflx'], [ETHERNET_FRAME])
