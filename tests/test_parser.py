@@ -1,11 +1,11 @@
 import unittest
 from typing import Dict, List
 
-from rflx.parser import (FINAL, And, Array, Component, ContextSpec, DerivationSpec, Div, Edge,
-                         Enumeration, Equal, First, GreaterEqual, InitialNode, Last, Length,
+from rflx.parser import (FINAL, Aggregate, And, Array, Component, ContextSpec, DerivationSpec, Div,
+                         Edge, Enumeration, Equal, First, GreaterEqual, InitialNode, Last, Length,
                          LessEqual, Message, MessageSpec, ModularInteger, Mul, Node, NotEqual,
-                         Number, NumberArray, PackageSpec, ParseFatalException, Parser, ParserError,
-                         Pow, RangeInteger, Reference, Refinement, Specification, Sub, Then, Value)
+                         Number, PackageSpec, ParseFatalException, Parser, ParserError, Pow,
+                         RangeInteger, Reference, Refinement, Specification, Sub, Then, Value)
 from tests.models import ETHERNET_FRAME
 
 
@@ -61,7 +61,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_mathematical_expression_array(self) -> None:
         self.assertEqual(
             Parser.mathematical_expression().parseString('(1, 2)')[0],
-            NumberArray(Number(1), Number(2)))
+            Aggregate(Number(1), Number(2)))
 
     def test_mathematical_expression_array_no_number(self) -> None:
         with self.assertRaisesRegex(ParseFatalException, r'^Expected Number'):

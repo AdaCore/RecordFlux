@@ -1,9 +1,8 @@
-import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from typing import Callable, Dict, Iterator, List, Set, Tuple, TypeVar
 
-from rflx.expression import Attribute, Expr, First, Last, LogExpr, MathExpr, Number
+from rflx.expression import Case, Expr, Number
 
 
 class Ada(ABC):
@@ -38,7 +37,7 @@ class Unit(MultiPartElement):
     def specification(self) -> str:
         context_clause = ''
         if self.context:
-            context_clause = '\n'.join([str(c) for c in unique(self.context)])
+            context_clause = '\n'.join(map(str, unique(self.context)))
             context_clause = f'{context_clause}\n\n'
         return f'{context_clause}{self.package.specification()}\n'
 
@@ -89,7 +88,7 @@ class Package(MultiPartElement):
     def __representation(self, function: Callable, definition: bool) -> str:
         types = ''
         if not definition:
-            types = '\n\n'.join([str(t) for t in unique(self.types) if str(t)])
+            types = '\n\n'.join(str(t) for t in unique(self.types) if str(t))
             if types:
                 types += '\n\n'
 
@@ -114,7 +113,7 @@ class TypeDeclaration(Ada):
 
 
 class ModularType(TypeDeclaration):
-    def __init__(self, name: str, modulus: MathExpr) -> None:
+    def __init__(self, name: str, modulus: Expr) -> None:
         super().__init__(name)
         self.modulus = modulus
 
@@ -124,7 +123,7 @@ class ModularType(TypeDeclaration):
 
 
 class RangeType(TypeDeclaration):
-    def __init__(self, name: str, first: MathExpr, last: MathExpr, size: MathExpr) -> None:
+    def __init__(self, name: str, first: Expr, last: Expr, size: Expr) -> None:
         super().__init__(name)
         self.first = first
         self.last = last
@@ -150,7 +149,7 @@ class EnumerationType(TypeDeclaration):
 
 
 class RangeSubtype(TypeDeclaration):
-    def __init__(self, name: str, base_name: str, first: MathExpr, last: MathExpr) -> None:
+    def __init__(self, name: str, base_name: str, first: Expr, last: Expr) -> None:
         super().__init__(name)
         self.base_name = base_name
         self.first = first
@@ -175,7 +174,7 @@ class RecordType(TypeDeclaration):
         self.components = components
 
     def __str__(self) -> str:
-        components = ''.join(str(component) for component in self.components)
+        components = ''.join(map(str, self.components))
         return (f'   type {self.name} is\n'
                 f'      record\n'
                 f'{components}'
@@ -190,7 +189,7 @@ class VariantRecordType(TypeDeclaration):
         self.variants = variants
 
     def __str__(self) -> str:
-        variants = ''.join(str(variant) for variant in self.variants)
+        variants = ''.join(map(str, self.variants))
         return (f'   type {self.name} ({self.discriminant}) is\n'
                 f'      record\n'
                 f'         case {self.discriminant.name} is\n'
@@ -247,7 +246,7 @@ class Aspect(Ada):
 
 
 class Precondition(Aspect):
-    def __init__(self, expr: LogExpr) -> None:
+    def __init__(self, expr: Expr) -> None:
         self.expr = expr
 
     @property
@@ -260,7 +259,7 @@ class Precondition(Aspect):
 
 
 class Postcondition(Aspect):
-    def __init__(self, expr: LogExpr) -> None:
+    def __init__(self, expr: Expr) -> None:
         self.expr = expr
 
     @property
@@ -322,7 +321,7 @@ class Subprogram(MultiPartElement):
         return ''.join(f'      {declaration}\n' for declaration in self.declarations)
 
     def _body(self) -> str:
-        return '\n'.join([str(s) for s in self.body])
+        return '\n'.join(map(str, self.body))
 
     def _with_clause(self) -> str:
         if not self.aspects:
@@ -414,58 +413,6 @@ class Declaration(Ada):
         return f'{self.name} : {self.type}{default};'
 
 
-class IfExpression(LogExpr):
-    def __init__(self, condition_expressions: List[Tuple[LogExpr, Expr]],
-                 else_expression: str = '') -> None:
-        self.condition_expressions = condition_expressions
-        self.else_expression = else_expression
-
-    def __str__(self) -> str:
-        result = ''
-        for c, e in self.condition_expressions:
-            if not result:
-                result = f'(if {c} then {e}'
-            else:
-                result += f' elsif {c} then {e}'
-        if self.else_expression:
-            result += f' else {self.else_expression}'
-        result += ')'
-        return result
-
-    def __contains__(self, item: Expr) -> bool:
-        raise NotImplementedError
-
-    def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> LogExpr:
-        return self
-
-    def symbol(self) -> str:
-        raise NotImplementedError
-
-
-class CaseExpression(Expr):
-    def __init__(self, control_expression: Expr,
-                 case_statements: List[Tuple[Expr, Expr]]) -> None:
-        self.control_expression = control_expression
-        self.case_statements = case_statements
-
-    def __str__(self) -> str:
-        grouped_cases = [(' | '.join([str(c) for c, _ in choices]), expr)
-                         for expr, choices in itertools.groupby(self.case_statements,
-                                                                lambda x: x[1])]
-        cases = ', '.join([f'when {choice} => {expr}'
-                           for choice, expr in grouped_cases])
-        return f'case {self.control_expression} is {cases}'
-
-
-class Aggregate(Expr):
-    def __init__(self, *expressions: Expr) -> None:
-        self.expressions = expressions
-
-    def __str__(self) -> str:
-        expressions = ', '.join(str(expression) for expression in self.expressions)
-        return f'({expressions})'
-
-
 class Statement(Ada):
     pass
 
@@ -480,12 +427,12 @@ class Assignment(Statement):
 
 
 class CallStatement(Statement):
-    def __init__(self, name: str, arguments: List[str]) -> None:
+    def __init__(self, name: str, arguments: List[Expr]) -> None:
         self.name = name
         self.arguments = arguments
 
     def __str__(self) -> str:
-        arguments = ', '.join(self.arguments)
+        arguments = ', '.join(map(str, self.arguments))
         return f'      {self.name} ({arguments});'
 
 
@@ -507,13 +454,13 @@ class ReturnStatement(Statement):
         self.expression = expression
 
     def __str__(self) -> str:
-        if isinstance(self.expression, CaseExpression):
+        if isinstance(self.expression, Case):
             return f'      return ({self.expression});'
         return f'      return {self.expression};'
 
 
 class IfStatement(Statement):
-    def __init__(self, condition_statements: List[Tuple[LogExpr, List[Statement]]],
+    def __init__(self, condition_statements: List[Tuple[Expr, List[Statement]]],
                  else_statements: List[Statement] = None) -> None:
         self.condition_statements = condition_statements
         self.else_statements = else_statements
@@ -533,153 +480,6 @@ class IfStatement(Statement):
                 result += f'   {statement}\n'
         result += '      end if;'
         return result
-
-
-class Call(Ada):
-    def __init__(self, call: str) -> None:
-        self.call = call
-
-    def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self.call})'
-
-    def __str__(self) -> str:
-        return self.call
-
-
-class MathCall(Call, MathExpr):
-    def __init__(self, call: str, negative: bool = False) -> None:
-        super().__init__(call)
-        self.negative = negative
-
-    def __repr__(self) -> str:
-        result = f'{self.__class__.__name__}({self.call})'
-        if self.negative:
-            return f'(-{result})'
-        return result
-
-    def __neg__(self) -> MathExpr:
-        return self.__class__(self.call, not self.negative)
-
-    def __contains__(self, item: MathExpr) -> bool:
-        return item == self
-
-    def to_bytes(self) -> MathExpr:
-        return self
-
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        raise NotImplementedError
-
-    def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
-        return self
-
-
-class LogCall(Call, LogExpr):
-    def __contains__(self, item: Expr) -> bool:
-        raise NotImplementedError
-
-    def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> LogExpr:
-        return self
-
-    def symbol(self) -> str:
-        raise NotImplementedError
-
-
-class Convert(MathExpr):
-    # pylint: disable=too-many-arguments
-    def __init__(self, type_name: str, array_name: str, first: MathExpr, last: MathExpr,
-                 offset: MathExpr = Number(0), negative: bool = False) -> None:
-        self.type_name = type_name
-        self.array_name = array_name
-        self.first = first
-        self.last = last
-        self.offset = offset
-        self.negative = negative
-
-    def __str__(self) -> str:
-        negative = '-1 * ' if self.negative else ''
-
-        array_slice = ''
-        if self.first != First(self.array_name) or self.last != Last(self.array_name):
-            array_slice = f' ({self.first} .. {self.last})'
-
-        return (f'{negative}'
-                f'Convert_To_{self.type_name} ({self.array_name}{array_slice}, '
-                f'{self.offset}'
-                ')')
-
-    def __neg__(self) -> MathExpr:
-        return Convert(self.type_name,
-                       self.array_name,
-                       self.first,
-                       self.last,
-                       self.offset,
-                       not self.negative)
-
-    def __contains__(self, item: MathExpr) -> bool:
-        return item == self
-
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        raise NotImplementedError
-
-    def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
-        return Convert(self.type_name,
-                       self.array_name,
-                       self.first.simplified(facts),
-                       self.last.simplified(facts),
-                       self.offset,
-                       self.negative)
-
-    def to_bytes(self) -> MathExpr:
-        return Convert(self.type_name,
-                       self.array_name,
-                       self.first.to_bytes(),
-                       self.last.to_bytes(),
-                       self.offset,
-                       self.negative)
-
-
-class Cast(MathExpr):
-    def __init__(self, name: str, expression: MathExpr) -> None:
-        self.name = name
-        self.expression = expression
-
-    def __str__(self) -> str:
-        return f'{self.name} ({self.expression})'
-
-    def __neg__(self) -> MathExpr:
-        return Cast(self.name, -self.expression)
-
-    def __contains__(self, item: MathExpr) -> bool:
-        return item == self
-
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        raise NotImplementedError
-
-    def simplified(self, facts: Dict[Attribute, MathExpr] = None) -> MathExpr:
-        return Cast(self.name, self.expression.simplified(facts))
-
-    def to_bytes(self) -> MathExpr:
-        return Cast(self.name, self.expression.to_bytes())
-
-
-class FalseExpr(LogExpr):
-    def __repr__(self) -> str:
-        return 'FALSE'
-
-    def __str__(self) -> str:
-        return 'False'
-
-    def __contains__(self, item: Expr) -> bool:
-        raise NotImplementedError
-
-    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
-        return self
-
-    def symbol(self) -> str:
-        raise NotImplementedError
-
-
-FALSE = FalseExpr()
 
 
 T = TypeVar('T')  # pylint: disable=invalid-name

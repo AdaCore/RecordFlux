@@ -1,34 +1,54 @@
 import unittest
 
-from rflx.expression import (TRUE, UNDEFINED, Add, And, Div, Equal, First, Greater, GreaterEqual,
-                             Last, Length, Less, LessEqual, Mul, NotEqual, Number, Or, Sub, Value)
+from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Case, Div, Equal, ExpressionError,
+                             First, Greater, GreaterEqual, If, Last, Length, LengthValue, Less,
+                             LessEqual, Mul, NotEqual, Number, Or, Slice, Sub, Value)
 
-SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
+EXPR = Equal(UNDEFINED, UNDEFINED)
 
 
-# pylint: disable=too-many-public-methods
-class TestExpression(unittest.TestCase):
+class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
+
+    def test_true_neg(self) -> None:
+        self.assertEqual(-TRUE,
+                         FALSE)
 
     def test_true_simplified(self) -> None:
         self.assertEqual(TRUE.simplified(),
                          TRUE)
 
+    def test_false_neg(self) -> None:
+        self.assertEqual(-FALSE,
+                         TRUE)
+
+    def test_false_simplified(self) -> None:
+        self.assertEqual(FALSE.simplified(),
+                         FALSE)
+
+    def test_and_contains(self) -> None:
+        self.assertTrue(Value('X') in And(TRUE, Less(Value('X'), Number(42))))
+        self.assertFalse(Value('Y') in And(TRUE, Less(Value('X'), Number(42))))
+
     def test_and_simplified(self) -> None:
         self.assertEqual(And(TRUE, TRUE).simplified(),
                          TRUE)
-        self.assertEqual(And(TRUE, SOME_LOG_EXPR).simplified(),
-                         SOME_LOG_EXPR)
-        self.assertEqual(And(SOME_LOG_EXPR, TRUE).simplified(),
-                         SOME_LOG_EXPR)
+        self.assertEqual(And(TRUE, EXPR).simplified(),
+                         EXPR)
+        self.assertEqual(And(EXPR, TRUE).simplified(),
+                         EXPR)
+
+    def test_or_contains(self) -> None:
+        self.assertTrue(Value('X') in Or(Less(Value('X'), Number(42)), TRUE))
+        self.assertFalse(Value('Y') in Or(Less(Value('X'), Number(42)), TRUE))
 
     def test_or_simplified(self) -> None:
         self.assertEqual(Or(TRUE, TRUE).simplified(),
                          TRUE)
-        self.assertEqual(Or(TRUE, SOME_LOG_EXPR).simplified(),
+        self.assertEqual(Or(TRUE, EXPR).simplified(),
                          TRUE)
-        self.assertEqual(Or(SOME_LOG_EXPR, TRUE).simplified(),
+        self.assertEqual(Or(EXPR, TRUE).simplified(),
                          TRUE)
 
     def test_undefined_neg(self) -> None:
@@ -269,6 +289,16 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(Div(Sub(Mul(Value('X'), Number(8)), Number(148)), Number(8)).simplified(),
                          Add(Value('X'), Div(Number(-148), Number(8))))
 
+    def test_value_name(self) -> None:
+        try:
+            Value('Foo')
+        except ExpressionError:
+            self.fail(f'unexpected ExpressionError')
+
+    def test_value_invalid_name(self) -> None:
+        with self.assertRaises(ExpressionError):
+            Value('Foo (Bar)')
+
     def test_value_neg(self) -> None:
         self.assertEqual(-Value('X'),
                          Value('X', True))
@@ -311,43 +341,95 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(-Last('X').simplified({Last('X'): Number(42)}),
                          Number(-42))
 
+    def test_relation_contains(self) -> None:
+        self.assertTrue(Value('X') in Less(Value('X'), Number(42)))
+
+    def test_relation_converted(self) -> None:
+        self.assertEqual(
+            Less(Value('X'), Number(1)).converted(
+                lambda x: LengthValue(x) if isinstance(x, Value) else x),
+            Less(LengthValue('X'), Number(1)))
+
+    def test_less_neg(self) -> None:
+        self.assertEqual(-Less(Value('X'), Number(1)),
+                         GreaterEqual(Value('X'), Number(1)))
+
     def test_less_simplified(self) -> None:
         self.assertEqual(Less(Value('X'), Add(Number(21), Number(21))).simplified(),
                          Less(Value('X'), Number(42)))
+
+    def test_less_equal_neg(self) -> None:
+        self.assertEqual(-LessEqual(Value('X'), Number(1)),
+                         Greater(Value('X'), Number(1)))
 
     def test_less_equal_simplified(self) -> None:
         self.assertEqual(LessEqual(Value('X'), Add(Number(21), Number(21))).simplified(),
                          LessEqual(Value('X'), Number(42)))
 
+    def test_equal_neg(self) -> None:
+        self.assertEqual(-Equal(Value('X'), Number(1)),
+                         NotEqual(Value('X'), Number(1)))
+
     def test_equal_simplified(self) -> None:
         self.assertEqual(Equal(Value('X'), Add(Number(21), Number(21))).simplified(),
                          Equal(Value('X'), Number(42)))
+
+    def test_greater_neg(self) -> None:
+        self.assertEqual(-Greater(Value('X'), Number(1)),
+                         LessEqual(Value('X'), Number(1)))
 
     def test_greater_simplified(self) -> None:
         self.assertEqual(Greater(Value('X'), Add(Number(21), Number(21))).simplified(),
                          Greater(Value('X'), Number(42)))
 
+    def test_greater_equal_neg(self) -> None:
+        self.assertEqual(-GreaterEqual(Value('X'), Number(1)),
+                         Less(Value('X'), Number(1)))
+
     def test_greater_equal_simplified(self) -> None:
         self.assertEqual(GreaterEqual(Value('X'), Add(Number(21), Number(21))).simplified(),
                          GreaterEqual(Value('X'), Number(42)))
+
+    def test_not_equal_neg(self) -> None:
+        self.assertEqual(-NotEqual(Value('X'), Number(1)),
+                         Equal(Value('X'), Number(1)))
 
     def test_not_equal_simplified(self) -> None:
         self.assertEqual(NotEqual(Value('X'), Add(Number(21), Number(21))).simplified(),
                          NotEqual(Value('X'), Number(42)))
 
-    def test_contains_relation(self) -> None:
-        self.assertTrue(Value('X') in Less(Value('X'), Number(42)))
+    def test_slice_simplified(self) -> None:
+        self.assertEqual(Slice('Buffer',
+                               First('Buffer'),
+                               Add(Last('Buffer'), Add(Number(21), Number(21)))).simplified(),
+                         Slice('Buffer',
+                               First('Buffer'),
+                               Add(Last('Buffer'), Number(42))))
 
-    def test_contains_and(self) -> None:
-        self.assertTrue(Value('X') in And(TRUE, Less(Value('X'), Number(42))))
-        self.assertFalse(Value('Y') in And(TRUE, Less(Value('X'), Number(42))))
+    def test_if_simplified(self) -> None:
+        self.assertEqual(If([(Value('X'), Number(21)),
+                             (Value('Y'), Add(Number(21), Number(21))),
+                             (Add(Number(21), Number(21)), Value('Z'))]).simplified(),
+                         If([(Value('X'), Number(21)),
+                             (Value('Y'), Number(42)),
+                             (Number(42), Value('Z'))]))
 
-    def test_contains_or(self) -> None:
-        self.assertTrue(Value('X') in Or(Less(Value('X'), Number(42)), TRUE))
-        self.assertFalse(Value('Y') in Or(Less(Value('X'), Number(42)), TRUE))
+    def test_case_simplified(self) -> None:
+        self.assertEqual(Case(Add(Number(21), Number(21)),
+                              [(Value('X'), Number(21)),
+                               (Value('Y'), Add(Number(21), Number(21))),
+                               (Add(Number(21), Number(21)), Value('Z'))]).simplified(),
+                         Case(Number(42),
+                              [(Value('X'), Number(21)),
+                               (Value('Y'), Number(42)),
+                               (Number(42), Value('Z'))]))
 
-    def test_contains_log_expr(self) -> None:
+    def test_expr_contains(self) -> None:
         self.assertTrue(Value('X') in Or(Greater(Value('Y'), Number(42)),
                                          And(TRUE, Less(Value('X'), Number(42)))))
         self.assertFalse(Value('Z') in Or(Greater(Value('Y'), Number(42)),
                                           And(TRUE, Less(Value('X'), Number(42)))))
+        self.assertTrue(Less(Value('X'), Number(42)) in Or(Greater(Value('Y'), Number(42)),
+                                                           And(TRUE, Less(Value('X'), Number(42)))))
+        self.assertFalse(Less(Value('Z'), Number(42)) in Or(Greater(Value('Y'), Number(42)),
+                                                            And(TRUE, Less(Value('X'), Number(1)))))

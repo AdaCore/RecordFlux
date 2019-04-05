@@ -1,5 +1,5 @@
-from rflx.expression import (And, Div, Equal, First, GreaterEqual, Last, Length, LengthValue,
-                             LessEqual, Mul, NotEqual, Number, NumberArray, Pow, Sub, Value)
+from rflx.expression import (Aggregate, And, Div, Equal, First, GreaterEqual, Last, Length,
+                             LengthValue, LessEqual, Mul, NotEqual, Number, Pow, Sub, Value)
 from rflx.model import (FINAL, Array, Edge, Enumeration, InitialNode, Message, ModularInteger, Node,
                         RangeInteger)
 
@@ -104,7 +104,7 @@ def create_expression_message() -> Message:
     initial.edges = [Edge(payload,
                           length=Number(16))]
     payload.edges = [Edge(FINAL,
-                          Equal(Value('Payload'), NumberArray(Number(1), Number(2))))]
+                          Equal(Value('Payload'), Aggregate(Number(1), Number(2))))]
 
     return Message('Expression.Message', initial)
 

@@ -1,20 +1,19 @@
 from pathlib import Path
 from typing import Dict, Iterator, List, Tuple
 
-from rflx.ada import (FALSE, Aggregate, Aspect, Assignment, CallStatement, CaseExpression, Cast,
-                      ComponentItem, ContextItem, Convert, Declaration, Discriminant,
-                      EnumerationType, ExpressionFunction, Function, Ghost, IfExpression,
-                      IfStatement, Import, LogCall, MathCall, ModularType, Package, Postcondition,
-                      Pragma, PragmaStatement, Precondition, Procedure, RangeSubtype, RangeType,
-                      RecordType, ReturnStatement, Statement, Subprogram, TypeDeclaration, Unit,
+from rflx.ada import (Aspect, Assignment, CallStatement, ComponentItem, ContextItem, Declaration,
+                      Discriminant, EnumerationType, ExpressionFunction, Function, Ghost,
+                      IfStatement, Import, ModularType, Package, Postcondition, Pragma,
+                      PragmaStatement, Precondition, Procedure, RangeSubtype, RangeType, RecordType,
+                      ReturnStatement, Statement, Subprogram, TypeDeclaration, Unit,
                       UsePackageClause, UseTypeClause, VariantItem, VariantRecordType, WithClause)
-from rflx.expression import (TRUE, Add, And, Attribute, Div, Equal, Expr, GreaterEqual, Last,
-                             Length, LengthValue, Less, LessEqual, LogExpr, MathExpr, Mul, Number,
-                             Or, Pow, Size, Sub, Value)
+from rflx.expression import (FALSE, TRUE, Add, Aggregate, And, Attribute, Call, Case, Div, Equal,
+                             Expr, GreaterEqual, If, Last, Length, LengthValue, Less, LessEqual,
+                             Mul, Number, Or, Pow, Size, Slice, Sub, Value)
 from rflx.model import (Array, Enumeration, Field, First, Message, ModularInteger, Null,
                         RangeInteger, Reference, Refinement, Type, Variant)
 
-COMMON_PRECONDITION = LogCall('Is_Contained (Buffer)')
+COMMON_PRECONDITION = Call('Is_Contained', [Value('Buffer')])
 
 
 class Generator:
@@ -64,7 +63,7 @@ class Generator:
             package.subprograms.extend(
                 self.__contain_functions())
 
-            facts: Dict[Attribute, MathExpr] = {
+            facts: Dict[Attribute, Expr] = {
                 First('Message'): Mul(First('Buffer'), Number(8)),
                 Last('Message'): Mul(Last('Buffer'), Number(8)),
                 Length('Message'): Sub(Add(Mul(Last('Buffer'), Number(8)), Number(8)),
@@ -220,11 +219,9 @@ class Generator:
         if integer.constraints == TRUE:
             return []
 
-        integer_value = Convert(integer.base_name,
-                                'Buffer',
-                                First('Buffer'),
-                                Last('Buffer'),
-                                Value('Offset'))
+        integer_value = Call(convert_function_name(integer.base_name),
+                             [Value('Buffer'),
+                              Value('Offset')])
 
         return [ExpressionFunction(f'Valid_{integer.name}',
                                    'Boolean',
@@ -251,11 +248,9 @@ class Generator:
                                                 Number(8)),
                                             Number(1))))
 
-        enum_value = Convert(enum.base_name,
-                             'Buffer',
-                             First('Buffer'),
-                             Last('Buffer'),
-                             Value('Offset'))
+        enum_value = Call(convert_function_name(enum.base_name),
+                          [Value('Buffer'),
+                           Value('Offset')])
 
         validation_expression: Expr
         if enum.always_valid:
@@ -265,8 +260,8 @@ class Generator:
             validation_cases.extend((value, Value('True')) for value in enum.literals.values())
             validation_cases.append((Value('others'), Value('False')))
 
-            validation_expression = CaseExpression(enum_value,
-                                                   validation_cases)
+            validation_expression = Case(enum_value, validation_cases)
+
         validation_function = ExpressionFunction(f'Valid_{enum.name}',
                                                  'Boolean',
                                                  [('Buffer', self.__types_bytes),
@@ -277,8 +272,9 @@ class Generator:
         function_name = f'Convert_To_{enum.name}'
         parameters = [('Buffer', self.__types_bytes),
                       ('Offset', 'Natural')]
-        precondition = Precondition(And(common_precondition,
-                                        LogCall(f'Valid_{enum.name} (Buffer, Offset)')))
+        precondition = Precondition(
+            And(common_precondition,
+                Call(f'Valid_{enum.name}', [Value('Buffer'), Value('Offset')])))
         conversion_cases: List[Tuple[Expr, Expr]] = []
         conversion_function: Subprogram
 
@@ -292,26 +288,24 @@ class Generator:
                                            enum.name,
                                            parameters,
                                            [Declaration('Raw', enum.base_name, enum_value)],
-                                           [ReturnStatement(CaseExpression(Value('Raw'),
-                                                                           conversion_cases))],
+                                           [ReturnStatement(Case(Value('Raw'), conversion_cases))],
                                            [precondition])
         else:
             conversion_cases.extend((value, Value(key)) for key, value in enum.literals.items())
             conversion_cases.append((Value('others'),
-                                     LogCall(unreachable_function_name(enum.name))))
+                                     Call(unreachable_function_name(enum.name))))
 
             conversion_function = ExpressionFunction(function_name,
                                                      enum.name,
                                                      parameters,
-                                                     CaseExpression(enum_value,
-                                                                    conversion_cases),
+                                                     Case(enum_value, conversion_cases),
                                                      [precondition])
 
         enum_to_base_function = ExpressionFunction(
             f'Convert_To_{enum.base_name}',
             enum.base_name,
             [('Enum', enum.enum_name if enum.always_valid else enum.name)],
-            CaseExpression(
+            Case(
                 Value('Enum'),
                 [(Value(key), value) for key, value in enum.literals.items()]))
 
@@ -329,30 +323,34 @@ class Generator:
 
     def __message_array_functions(self, array: Array, package: str) -> List[Subprogram]:
         element_name = array.element_type.name
-        contained_condition = LogCall(f'Is_Contained (Buffer)')
+        contained_condition = Call(f'Is_Contained', [Value('Buffer')])
 
         first_index_condition = And(GreaterEqual(Value('First\'Result.First'),
                                                  First('Buffer')),
                                     LessEqual(Value('First\'Result.Last'),
                                               Last('Buffer')))
-        first_element_condition = LogCall(f'{package}.{element_name}.Is_Contained '
-                                          '(Buffer (First\'Result.First .. First\'Result.Last))')
+        first_element_condition = Call(f'{package}.{element_name}.Is_Contained',
+                                       [Slice('Buffer',
+                                              Value('First\'Result.First'),
+                                              Value('First\'Result.Last'))])
 
         cursor_conditions = And(GreaterEqual(Value('Cursor.First'), First('Buffer')),
                                 LessEqual(Value('Cursor.Last'), Last('Buffer')))
-        cursor_slice = 'Buffer (Cursor.First .. Cursor.Last)'
+        cursor_slice = Slice('Buffer', Value('Cursor.First'), Value('Cursor.Last'))
 
-        element_contained_condition = LogCall(f'{package}.{element_name}.Is_Contained '
-                                              f'({cursor_slice})')
-        element_valid_condition = LogCall(f'{package}.{element_name}.Is_Valid '
-                                          f'({cursor_slice})')
+        element_contained_condition = Call(f'{package}.{element_name}.Is_Contained',
+                                           [cursor_slice])
+        element_valid_condition = Call(f'{package}.{element_name}.Is_Valid',
+                                       [cursor_slice])
 
         return [Function('First',
                          'Cursor_Type',
                          [('Buffer', self.__types_bytes)],
                          [],
                          [CallStatement(f'{package}.{element_name}.Label',
-                                        ['Buffer (Buffer\'First .. Buffer\'Last)']),
+                                        [Slice('Buffer',
+                                               Value('Buffer\'First'),
+                                               Value('Buffer\'Last'))]),
                           ReturnStatement(Aggregate(First('Buffer'),
                                                     Last('Buffer')))],
                          [Precondition(contained_condition),
@@ -364,10 +362,10 @@ class Generator:
                           [],
                           [Assignment('Cursor',
                                       Aggregate(Add(Value('Cursor.First'),
-                                                    Cast('Types.Length_Type',
-                                                         MathCall(f'{package}.{element_name}.'
-                                                                  'Message_Length '
-                                                                  f'({cursor_slice})'))),
+                                                    Call('Types.Length_Type',
+                                                         [Call(f'{package}.{element_name}.'
+                                                               'Message_Length',
+                                                               [Value(cursor_slice)])])),
                                                 Last('Buffer'))),
                            CallStatement(f'{package}.{element_name}.Label', [cursor_slice])],
                           [Precondition(And(cursor_conditions,
@@ -387,7 +385,7 @@ class Generator:
         element_size = array.element_type.size.to_bytes()
         element_size_minus_one = Sub(element_size, Number(1)).simplified()
 
-        contained_condition = LogCall(f'Is_Contained (Buffer)')
+        contained_condition = COMMON_PRECONDITION
 
         first_index_condition = And(GreaterEqual(Value('First\'Result.First'),
                                                  First('Buffer')),
@@ -397,20 +395,20 @@ class Generator:
         cursor_conditions = And(GreaterEqual(Value('Cursor.First'), First('Buffer')),
                                 LessEqual(Value('Cursor.Last'), Last('Buffer')))
 
-        type_constraints: LogExpr = TRUE
+        type_constraints: Expr = TRUE
 
         if array.element_type.constraints != TRUE or (isinstance(array.element_type, Enumeration)
                                                       and not array.element_type.always_valid):
-            type_constraints = LogCall((f'Valid_{array.element_type.name} (Buffer (Cursor.First'
-                                        f' .. Cursor.Last), 0)'))
+            type_constraints = Call(f'Valid_{array.element_type.name}',
+                                    [Slice('Buffer', Value('Cursor.First'), Value('Cursor.Last')),
+                                     Number(0)])
 
         element_name = array.element_type.name
         if array.element_type.constraints != TRUE:
             element_name = array.element_type.base_name
-        element_value = Convert(element_name,
-                                'Buffer',
-                                Value('Cursor.First'),
-                                Value('Cursor.Last'))
+        element_value = Call(convert_function_name(element_name),
+                             [Slice('Buffer', Value('Cursor.First'), Value('Cursor.Last')),
+                              Number(0)])
 
         return [Function('First',
                          'Cursor_Type',
@@ -450,7 +448,9 @@ class Generator:
                                    And(cursor_conditions,
                                        And(LessEqual(Value('Cursor.First'),
                                                      Value('Cursor.Last')),
-                                           And(Equal(Length('Buffer (Cursor.First .. Cursor.Last)'),
+                                           And(Equal(Length(Slice('Buffer',
+                                                                  Value('Cursor.First'),
+                                                                  Value('Cursor.Last'))),
                                                      element_size),
                                                type_constraints))).simplified(),
                                    [Precondition(contained_condition)]),
@@ -460,7 +460,8 @@ class Generator:
                                     ('Cursor', 'Cursor_Type')],
                                    element_value,
                                    [Precondition(And(contained_condition,
-                                                     LogCall('Valid_Element (Buffer, Cursor)')))])]
+                                                     Call('Valid_Element',
+                                                          [Value('Buffer'), Value('Cursor')])))])]
 
     def __contain_functions(self) -> List[Subprogram]:
         return [ExpressionFunction('Is_Contained',
@@ -471,7 +472,7 @@ class Generator:
                           [('Buffer', self.__types_bytes)],
                           [],
                           [PragmaStatement('Assume', ['Is_Contained (Buffer)'])],
-                          aspects=[Ghost(), Postcondition(LogCall('Is_Contained (Buffer)'))])]
+                          aspects=[Ghost(), Postcondition(COMMON_PRECONDITION)])]
 
     def __variant_validation_function(
             self,
@@ -479,12 +480,12 @@ class Generator:
             variant_id: str,
             variant: Variant) -> Subprogram:
 
-        type_constraints: LogExpr = TRUE
+        type_constraints: Expr = TRUE
 
         if field.type.constraints != TRUE or isinstance(field.type, Enumeration):
             first_byte, last_byte, offset = self.__field_location(field.name, variant_id, variant)
-            type_constraints = LogCall((f'Valid_{field.type.name} (Buffer ({first_byte}'
-                                        f' .. {last_byte}), {offset})'))
+            type_constraints = Call(f'Valid_{field.type.name}',
+                                    [Slice('Buffer', first_byte, last_byte), offset])
 
         value_to_call = self.__value_to_call_facts([(field.name, variant_id)] + variant.previous)
 
@@ -492,7 +493,8 @@ class Generator:
             f'Valid_{field.name}_{variant_id}',
             'Boolean',
             [('Buffer', self.__types_bytes)],
-            And(LogCall(f'Valid_{variant.previous[-1][0]}_{variant.previous[-1][1]} (Buffer)')
+            And(Call(f'Valid_{variant.previous[-1][0]}_{variant.previous[-1][1]}',
+                     [Value('Buffer')])
                 if variant.previous else TRUE,
                 And(
                     And(
@@ -514,7 +516,7 @@ class Generator:
         name = f'Get_{field.name}_{variant_id}'
         precondition = Precondition(
             And(COMMON_PRECONDITION,
-                LogCall(f'Valid_{field.name}_{variant_id} (Buffer)')))
+                Call(f'Valid_{field.name}_{variant_id}', [Value('Buffer')])))
 
         functions: List[Subprogram] = []
         if isinstance(field.type, Array):
@@ -538,17 +540,16 @@ class Generator:
                     name,
                     field.type.name,
                     [('Buffer', self.__types_bytes)],
-                    Convert(
-                        field.type.name if field.type.constraints == TRUE else field.type.base_name,
-                        'Buffer',
-                        first_byte,
-                        last_byte,
-                        offset),
+                    Call(convert_function_name(field.type.name
+                                               if field.type.constraints == TRUE
+                                               else field.type.base_name),
+                         [Slice('Buffer', first_byte, last_byte),
+                          offset]),
                     [precondition]))
         return functions
 
     def __field_validation_function(self, field: Field) -> Subprogram:
-        variants: List[LogExpr] = list(self.__valid_variants(field))
+        variants: List[Expr] = list(self.__valid_variants(field))
 
         expr = variants.pop()
         for e in variants:
@@ -564,7 +565,7 @@ class Generator:
 
     def __field_accessor_functions(self, field: Field, package_name: str) -> List[Subprogram]:
         precondition = Precondition(And(COMMON_PRECONDITION,
-                                        LogCall(f'Valid_{field.name} (Buffer)')))
+                                        Call(f'Valid_{field.name}', [Value('Buffer')])))
 
         functions: List[Subprogram] = []
         if isinstance(field.type, Array):
@@ -574,25 +575,26 @@ class Generator:
                         f'Get_{field.name}_{attribute}',
                         self.__types_index,
                         [('Buffer', self.__types_bytes)],
-                        IfExpression([
-                            (LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
-                             LogCall(f'Get_{field.name}_{variant_id}_{attribute} ''(Buffer)'))
+                        If([
+                            (Call(f'Valid_{field.name}_{variant_id}', [Value('Buffer')]),
+                             Call(f'Get_{field.name}_{variant_id}_{attribute}', [Value('Buffer')]))
                             for variant_id in field.variants],
                             unreachable_function_name(self.__types_index)),
                         [precondition]))
 
             body: List[Statement] = [
-                Assignment('First', MathCall(f'Get_{field.name}_First (Buffer)')),
-                Assignment('Last', MathCall(f'Get_{field.name}_Last (Buffer)'))]
-            postcondition = Postcondition(And(Equal(Value('First'),
-                                                    MathCall(f'Get_{field.name}_First (Buffer)')),
-                                              Equal(Value('Last'),
-                                                    MathCall(f'Get_{field.name}_Last (Buffer)'))))
+                Assignment('First', Call(f'Get_{field.name}_First', [Value('Buffer')])),
+                Assignment('Last', Call(f'Get_{field.name}_Last', [Value('Buffer')]))]
+            postcondition = Postcondition(
+                And(Equal(Value('First'),
+                          Call(f'Get_{field.name}_First', [Value('Buffer')])),
+                    Equal(Value('Last'),
+                          Call(f'Get_{field.name}_Last', [Value('Buffer')]))))
             if 'Payload' not in field.type.name:
-                predicate = (f'{package_name}.{field.type.name}.Is_Contained '
-                             '(Buffer (First .. Last))')
-                body.append(PragmaStatement('Assume', [predicate]))
-                postcondition.expr = And(postcondition.expr, LogCall(predicate))
+                predicate = Call(f'{package_name}.{field.type.name}.Is_Contained',
+                                 [Slice('Buffer', Value('First'), Value('Last'))])
+                body.append(PragmaStatement('Assume', [str(predicate)]))
+                postcondition.expr = And(postcondition.expr, predicate)
 
             functions.append(
                 Procedure(
@@ -611,16 +613,16 @@ class Generator:
                     f'Get_{field.name}',
                     field.type.name,
                     [('Buffer', self.__types_bytes)],
-                    IfExpression([(LogCall(f'Valid_{field.name}_{variant_id} (Buffer)'),
-                                   MathCall(f'Get_{field.name}_{variant_id} (Buffer)'))
-                                  for variant_id in field.variants],
-                                 unreachable_function_name(field.type.name)),
+                    If([(Call(f'Valid_{field.name}_{variant_id}', [Value('Buffer')]),
+                         Call(f'Get_{field.name}_{variant_id}', [Value('Buffer')]))
+                        for variant_id in field.variants],
+                       unreachable_function_name(field.type.name)),
                     [precondition]))
 
         return functions
 
     def __message_validation_function(self, variants: List[Variant]) -> Subprogram:
-        expr: LogExpr = FALSE
+        expr: Expr = FALSE
 
         for variant in variants:
             condition = self.__variant_condition(variant)
@@ -634,7 +636,7 @@ class Generator:
             [Precondition(COMMON_PRECONDITION)])
 
     def __message_length_function(self, variants: List[Variant]) -> Subprogram:
-        condition_expressions: List[Tuple[LogExpr, Expr]] = []
+        condition_expressions: List[Tuple[Expr, Expr]] = []
 
         for variant in variants:
             condition = self.__variant_condition(variant)
@@ -653,13 +655,13 @@ class Generator:
             'Message_Length',
             self.__types_length,
             [('Buffer', self.__types_bytes)],
-            IfExpression(condition_expressions, unreachable_function_name(self.__types_length)),
-            [Precondition(And(COMMON_PRECONDITION, LogCall('Is_Valid (Buffer)')))])
+            If(condition_expressions, unreachable_function_name(self.__types_length)),
+            [Precondition(And(COMMON_PRECONDITION, Call('Is_Valid', [Value('Buffer')])))])
 
-    def __variant_condition(self, variant: Variant) -> LogExpr:
+    def __variant_condition(self, variant: Variant) -> Expr:
         field_name, variant_id = variant.previous[-1]
         return And(
-            LogCall(f'Valid_{field_name}_{variant_id} (Buffer)'),
+            Call(f'Valid_{field_name}_{variant_id}', [Value('Buffer')]),
             variant.condition
         ).simplified(variant.facts).simplified(self.__value_to_call_facts(variant.previous))
 
@@ -673,19 +675,21 @@ class Generator:
         condition_fields = [field for field in message_fields if Value(field) in ref.condition]
         declarations = [Declaration(field,
                                     message_fields[field].type.name,
-                                    MathCall(f'{ref.pdu}.Get_{field} (Buffer)'))
+                                    Call(f'{ref.pdu}.Get_{field}', [Value('Buffer')]))
                         for field in condition_fields]
 
         condition = ref.condition
         for field in condition_fields:
             field_type = message_fields[field].type
             if isinstance(field_type, Enumeration) and field_type.always_valid:
-                condition = And(LogCall(f'{field}.Known'),
+                condition = And(Call(f'{field}.Known'),
                                 condition.simplified({Value(field): Value(f'{field}.Enum')}))
 
         success_statements: List[Statement] = [ReturnStatement(TRUE)]
-        aspects: List[Aspect] = [Precondition(And(LogCall(f'{ref.pdu}.Is_Contained (Buffer)'),
-                                                  LogCall(f'{ref.pdu}.Is_Valid (Buffer)')))]
+        aspects: List[Aspect] = [
+            Precondition(
+                And(Call(f'{ref.pdu}.Is_Contained', [Value('Buffer')]),
+                    Call(f'{ref.pdu}.Is_Valid', [Value('Buffer')])))]
         if ref.sdu != 'null':
             success_statements.insert(
                 0,
@@ -695,11 +699,14 @@ class Generator:
                       f' .. {ref.pdu}.Get_{ref.field}_Last (Buffer)))')]))
             aspects.append(
                 Postcondition(
-                    IfExpression(
-                        [(LogCall(f'{name}\'Result'),
-                          LogCall((f'{ref.sdu}.Is_Contained (Buffer ('
-                                   f'{ref.pdu}.Get_{ref.field}_First (Buffer)'
-                                   f' .. {ref.pdu}.Get_{ref.field}_Last (Buffer)))')))])))
+                    If(
+                        [(Call(f'{name}\'Result'),
+                          Call(f'{ref.sdu}.Is_Contained',
+                               [Slice('Buffer',
+                                      Call(f'{ref.pdu}.Get_{ref.field}_First',
+                                           [Value('Buffer')]),
+                                      Call(f'{ref.pdu}.Get_{ref.field}_Last',
+                                           [Value('Buffer')]))]))])))
 
         return Function(name,
                         'Boolean',
@@ -732,7 +739,7 @@ class Generator:
             self,
             field_name: str,
             variant_id: str,
-            variant: Variant) -> Tuple[MathExpr, MathExpr, Number]:
+            variant: Variant) -> Tuple[Expr, Expr, Number]:
 
         value_to_call = self.__value_to_call_facts(
             [(field_name, variant_id)] + variant.previous)
@@ -741,20 +748,21 @@ class Generator:
         offset = calculate_offset(variant.facts[Last(field_name)])
         return (first_byte, last_byte, offset)
 
-    def __value_to_call_facts(self, previous: List[Tuple[str, str]]) -> Dict[Attribute, MathExpr]:
-        result: Dict[Attribute, MathExpr] = {}
+    def __value_to_call_facts(self, previous: List[Tuple[str, str]]) -> Dict[Attribute, Expr]:
+        result: Dict[Attribute, Expr] = {}
         for field_name, vid in previous:
+            expr: Expr
             if isinstance(self.__fields[field_name].type, Array):
                 first = self.__fields[field_name].variants[vid].facts[First(field_name)].to_bytes()
                 last = self.__fields[field_name].variants[vid].facts[Last(field_name)].to_bytes()
-                call = MathCall(f'Buffer ({first} .. {last})')
+                expr = Slice('Buffer', first, last)
             else:
-                call = MathCall(f'Get_{field_name}_{vid} (Buffer)')
-                result[LengthValue(field_name)] = Cast(self.__types_length, call)
-            result[Value(field_name)] = call
+                expr = Call(f'Get_{field_name}_{vid}', [Value('Buffer')])
+                result[LengthValue(field_name)] = Call(self.__types_length, [expr])
+            result[Value(field_name)] = expr
         return result
 
-    def __buffer_constraints(self, last: MathExpr) -> LogExpr:
+    def __buffer_constraints(self, last: Expr) -> Expr:
         last = last.simplified()
         index_constraint = LessEqual(First('Buffer'), Div(Last(self.__types_index), Number(2)))
         if last != Last('Buffer'):
@@ -763,9 +771,9 @@ class Generator:
             return And(length_constraint, index_constraint)
         return index_constraint
 
-    def __valid_variants(self, field: Field) -> Iterator[LogExpr]:
+    def __valid_variants(self, field: Field) -> Iterator[Expr]:
         for variant_id, variant in field.variants.items():
-            expression: LogExpr = LogCall(f'Valid_{field.name}_{variant_id} (Buffer)')
+            expression: Expr = Call(f'Valid_{field.name}_{variant_id}', [Value('Buffer')])
             if field.condition is not TRUE:
                 expression = And(expression, field.condition)
             yield expression.simplified(
@@ -844,7 +852,11 @@ def unreachable_function_name(type_name: str) -> str:
     return f'Unreachable_{type_name}'.replace('.', '_')
 
 
-def calculate_offset(last: MathExpr) -> Number:
+def convert_function_name(name: str) -> str:
+    return f'Convert_To_{name}'
+
+
+def calculate_offset(last: Expr) -> Number:
     last = last.simplified({First('Buffer'): Number(0)})
     if isinstance(last, Number):
         return Number((8 - (last.value + 1) % 8) % 8)

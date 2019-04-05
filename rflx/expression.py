@@ -1,5 +1,6 @@
+import itertools
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple, Union
 
 
 class Expr(ABC):
@@ -12,66 +13,102 @@ class Expr(ABC):
         args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
         return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
 
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, Expr):
+            return False
+        return NotImplemented
 
-class LogExpr(Expr):
-    @abstractmethod
-    def __contains__(self, item: Expr) -> bool:
-        raise NotImplementedError
+    def __le__(self, other: object) -> bool:
+        if isinstance(other, Expr):
+            return self == other
+        return NotImplemented
 
-    @abstractmethod
-    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'LogExpr':
-        raise NotImplementedError
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, Expr):
+            return False
+        return NotImplemented
 
-    @abstractmethod
-    def symbol(self) -> str:
-        raise NotImplementedError
+    def __ge__(self, other: object) -> bool:
+        if isinstance(other, Expr):
+            return self == other
+        return NotImplemented
 
-
-class TrueExpr(LogExpr):
-    def __repr__(self) -> str:
-        return 'TRUE'
-
-    def __str__(self) -> str:
-        return 'True'
-
-    def __contains__(self, item: Expr) -> bool:
+    def __contains__(self, item: 'Expr') -> bool:
         return item == self
 
-    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
+    @abstractmethod
+    def __neg__(self) -> 'Expr':
+        raise NotImplementedError
+
+    def converted(self, replace_function: Callable[['Expr'], 'Expr']) -> 'Expr':
+        return replace_function(self)
+
+    @abstractmethod
+    def simplified(self, facts: Dict['Attribute', 'Expr'] = None) -> 'Expr':
+        raise NotImplementedError
+
+    def to_bytes(self) -> 'Expr':
         return self
 
-    def symbol(self) -> str:
-        return self.__str__()
+
+class BooleanTrue(Expr):
+    def __repr__(self) -> str:
+        return 'True'
+
+    def __neg__(self) -> Expr:
+        return FALSE
+
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
+        return self
 
 
-TRUE = TrueExpr()
+TRUE = BooleanTrue()
 
 
-class BinLogExpr(LogExpr):
-    def __init__(self, left: LogExpr, right: LogExpr) -> None:
+class BooleanFalse(Expr):
+    def __repr__(self) -> str:
+        return 'False'
+
+    def __neg__(self) -> Expr:
+        return TRUE
+
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
+        return self
+
+
+FALSE = BooleanFalse()
+
+
+class BinExpr(Expr):
+    def __init__(self, left: Expr, right: Expr) -> None:
         self.left = left
         self.right = right
 
     def __repr__(self) -> str:
-        return '({} {} {})'.format(self.left, self.__class__.__name__, self.right)
+        return '({}{}{})'.format(self.left, self.symbol(), self.right)
 
-    def __str__(self) -> str:
-        return '({} {} {})'.format(self.left, self.symbol(), self.right)
+    def __neg__(self) -> Expr:
+        return self.__class__(-self.left, self.right)
 
     def __contains__(self, item: Expr) -> bool:
-        return item in self.left or item in self.right
+        return item == self or item in self.left or item in self.right
 
-    @abstractmethod
-    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
-        raise NotImplementedError
+    def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
+        return self.__class__(self.left.converted(replace_function),
+                              self.right.converted(replace_function))
+
+    def to_bytes(self) -> Expr:
+        left = self.left.to_bytes()
+        right = self.right.to_bytes()
+        return self.__class__(left, right)
 
     @abstractmethod
     def symbol(self) -> str:
         raise NotImplementedError
 
 
-class And(BinLogExpr):
-    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
+class And(BinExpr):
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if left is TRUE and right is TRUE:
@@ -83,11 +120,11 @@ class And(BinLogExpr):
         return And(left, right)
 
     def symbol(self) -> str:
-        return 'and then'
+        return ' and then '
 
 
-class Or(BinLogExpr):
-    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> LogExpr:
+class Or(BinExpr):
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if left is TRUE or right is TRUE:
@@ -95,88 +132,31 @@ class Or(BinLogExpr):
         return Or(left, right)
 
     def symbol(self) -> str:
-        return 'or'
+        return ' or '
 
 
-class MathExpr(Expr):
-    def __lt__(self, other: object) -> bool:
-        if isinstance(other, MathExpr):
-            return False
-        return NotImplemented
-
-    def __le__(self, other: object) -> bool:
-        if isinstance(other, MathExpr):
-            return self == other
-        return NotImplemented
-
-    def __gt__(self, other: object) -> bool:
-        if isinstance(other, MathExpr):
-            return False
-        return NotImplemented
-
-    def __ge__(self, other: object) -> bool:
-        if isinstance(other, MathExpr):
-            return self == other
-        return NotImplemented
-
-    @abstractmethod
-    def __neg__(self) -> 'MathExpr':
-        raise NotImplementedError
-
-    @abstractmethod
-    def __contains__(self, item: 'MathExpr') -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
-    def converted(self, replace_function: Callable[['MathExpr'], 'MathExpr']) -> 'MathExpr':
-        raise NotImplementedError
-
-    @abstractmethod
-    def simplified(self, facts: Dict['Attribute', 'MathExpr'] = None) -> 'MathExpr':
-        raise NotImplementedError
-
-    @abstractmethod
-    def to_bytes(self) -> 'MathExpr':
-        raise NotImplementedError
-
-
-class UndefinedExpr(MathExpr):
+class UndefinedExpr(Expr):
     def __init__(self) -> None:
         pass
 
     def __repr__(self) -> str:
         return 'UNDEFINED'
 
-    def __str__(self) -> str:
-        return self.__repr__()
-
-    def __neg__(self) -> MathExpr:
+    def __neg__(self) -> Expr:
         return self
 
-    def __contains__(self, item: MathExpr) -> bool:
-        raise NotImplementedError
-
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        raise NotImplementedError
-
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
-        return self
-
-    def to_bytes(self) -> MathExpr:
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         return self
 
 
 UNDEFINED = UndefinedExpr()
 
 
-class Number(MathExpr):
+class Number(Expr):
     def __init__(self, value: int) -> None:
         self.value = value
 
     def __repr__(self) -> str:
-        return 'Number({})'.format(self.value)
-
-    def __str__(self) -> str:
         if self.value < 0:
             return '({})'.format(self.value)
         return str(self.value)
@@ -190,32 +170,29 @@ class Number(MathExpr):
     def __neg__(self) -> 'Number':
         return Number(-self.value)
 
-    def __contains__(self, item: MathExpr) -> bool:
-        return item == self
-
-    def __add__(self, other: 'Number') -> 'Number':
+    def __add__(self, other: object) -> 'Number':
         if isinstance(other, Number):
             return Number(self.value + other.value)
         return NotImplemented
 
-    def __sub__(self, other: 'Number') -> 'Number':
+    def __sub__(self, other: object) -> 'Number':
         if isinstance(other, Number):
             return Number(self.value - other.value)
         return NotImplemented
 
-    def __mul__(self, other: 'Number') -> 'Number':
+    def __mul__(self, other: object) -> 'Number':
         if isinstance(other, Number):
             return Number(self.value * other.value)
         return NotImplemented
 
-    def __floordiv__(self, other: 'Number') -> 'MathExpr':
+    def __floordiv__(self, other: object) -> Expr:
         if isinstance(other, Number):
             if self.value % other.value == 0:
                 return Number(self.value // other.value)
             return Div(Number(self.value), Number(other.value))
         return NotImplemented
 
-    def __pow__(self, other: 'Number') -> 'Number':
+    def __pow__(self, other: object) -> 'Number':
         if isinstance(other, Number):
             return Number(self.value ** other.value)
         return NotImplemented
@@ -223,57 +200,54 @@ class Number(MathExpr):
     def __lt__(self, other: object) -> bool:
         if isinstance(other, Number):
             return self.value < other.value
-        if isinstance(other, MathExpr):
+        if isinstance(other, Expr):
             return False
         return NotImplemented
 
     def __le__(self, other: object) -> bool:
         if isinstance(other, Number):
             return self.value <= other.value
-        if isinstance(other, MathExpr):
+        if isinstance(other, Expr):
             return False
         return NotImplemented
 
     def __gt__(self, other: object) -> bool:
         if isinstance(other, Number):
             return self.value > other.value
-        if isinstance(other, MathExpr):
+        if isinstance(other, Expr):
             return False
         return NotImplemented
 
     def __ge__(self, other: object) -> bool:
         if isinstance(other, Number):
             return self.value >= other.value
-        if isinstance(other, MathExpr):
+        if isinstance(other, Expr):
             return False
         return NotImplemented
 
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        return replace_function(self)
-
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         return self
 
-    def to_bytes(self) -> MathExpr:
+    def to_bytes(self) -> Expr:
         return Number(self.value // 8)
 
 
-class AssMathExpr(MathExpr):
-    def __init__(self, *terms: MathExpr) -> None:
+class AssExpr(Expr):
+    def __init__(self, *terms: Expr) -> None:
         self.terms = list(terms)
 
     def __repr__(self) -> str:
-        return '({})'.format(' {} '.format(self.symbol()).join(map(str, self.terms)))
+        return '({})'.format(self.symbol().join(map(str, self.terms)))
 
     @abstractmethod
-    def __neg__(self) -> MathExpr:
+    def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def __contains__(self, item: MathExpr) -> bool:
-        return any(item in term for term in self.terms)
+    def __contains__(self, item: Expr) -> bool:
+        return item == self or any(item in term for term in self.terms)
 
     def __lt__(self, other: object) -> bool:
-        if isinstance(other, AssMathExpr):
+        if isinstance(other, AssExpr):
             if len(self.terms) == len(other.terms):
                 lt = [x < y for x, y in zip(self.terms, other.terms)]
                 eq = [x == y for x, y in zip(self.terms, other.terms)]
@@ -282,14 +256,14 @@ class AssMathExpr(MathExpr):
         return NotImplemented
 
     def __le__(self, other: object) -> bool:
-        if isinstance(other, AssMathExpr):
+        if isinstance(other, AssExpr):
             if len(self.terms) == len(other.terms):
                 return all([x <= y for x, y in zip(self.terms, other.terms)])
             return False
         return NotImplemented
 
     def __gt__(self, other: object) -> bool:
-        if isinstance(other, AssMathExpr):
+        if isinstance(other, AssExpr):
             if len(self.terms) == len(other.terms):
                 gt = [x > y for x, y in zip(self.terms, other.terms)]
                 eq = [x == y for x, y in zip(self.terms, other.terms)]
@@ -298,20 +272,20 @@ class AssMathExpr(MathExpr):
         return NotImplemented
 
     def __ge__(self, other: object) -> bool:
-        if isinstance(other, AssMathExpr):
+        if isinstance(other, AssExpr):
             if len(self.terms) == len(other.terms):
                 return all([x >= y for x, y in zip(self.terms, other.terms)])
             return False
         return NotImplemented
 
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        terms: List[MathExpr] = []
+    def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
+        terms: List[Expr] = []
         for term in self.terms:
             terms.append(term.converted(replace_function))
         return self.__class__(*terms)
 
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
-        terms: List[MathExpr] = []
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
+        terms: List[Expr] = []
         all_terms = list(self.terms)
         total = self.neutral_element()
         for term in all_terms:
@@ -342,22 +316,22 @@ class AssMathExpr(MathExpr):
     def symbol(self) -> str:
         raise NotImplementedError
 
-    def to_bytes(self) -> MathExpr:
+    def to_bytes(self) -> Expr:
         return self.__class__(*[term.to_bytes() for term in self.terms])
 
 
-class Add(AssMathExpr):
-    def __neg__(self) -> MathExpr:
+class Add(AssExpr):
+    def __neg__(self) -> Expr:
         return Add(*[-term for term in self.terms])
 
     def operation(self, left: int, right: int) -> int:
         return left + right
 
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         expr = super().simplified(facts)
         if not isinstance(expr, Add):
             return expr
-        terms: List[MathExpr] = []
+        terms: List[Expr] = []
         for term in reversed(expr.terms):
             complement = False
             for other in terms:
@@ -375,11 +349,11 @@ class Add(AssMathExpr):
         return 0
 
     def symbol(self) -> str:
-        return '+'
+        return ' + '
 
 
-class Mul(AssMathExpr):
-    def __neg__(self) -> MathExpr:
+class Mul(AssExpr):
+    def __neg__(self) -> Expr:
         return Mul(*list(self.terms) + [Number(-1)]).simplified()
 
     def operation(self, left: int, right: int) -> int:
@@ -389,43 +363,11 @@ class Mul(AssMathExpr):
         return 1
 
     def symbol(self) -> str:
-        return '*'
+        return ' * '
 
 
-class BinMathExpr(MathExpr):
-    def __init__(self, left: 'MathExpr', right: 'MathExpr') -> None:
-        self.left = left
-        self.right = right
-
-    def __repr__(self) -> str:
-        return '({}{}{})'.format(self.left, self.symbol(), self.right)
-
-    def __neg__(self) -> MathExpr:
-        return self.__class__(-self.left, self.right)
-
-    def __contains__(self, item: MathExpr) -> bool:
-        return item in (self.left, self.right)
-
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        return self.__class__(self.left.converted(replace_function),
-                              self.right.converted(replace_function))
-
-    @abstractmethod
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
-        raise NotImplementedError
-
-    @abstractmethod
-    def symbol(self) -> str:
-        raise NotImplementedError
-
-    def to_bytes(self) -> MathExpr:
-        left = self.left.to_bytes()
-        right = self.right.to_bytes()
-        return self.__class__(left, right)
-
-
-class Sub(BinMathExpr):
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+class Sub(BinExpr):
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if isinstance(left, Number) and isinstance(right, Number):
@@ -440,8 +382,8 @@ class Sub(BinMathExpr):
         return ' - '
 
 
-class Div(BinMathExpr):
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+class Div(BinExpr):
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if isinstance(left, Number) and isinstance(right, Number):
@@ -449,7 +391,7 @@ class Div(BinMathExpr):
         if isinstance(left, Add) and isinstance(right, Number):
             return Add(*[Div(term, right) for term in left.terms]).simplified(facts)
         if isinstance(left, Mul) and isinstance(right, Number):
-            terms: List[MathExpr] = []
+            terms: List[Expr] = []
             for term in left.terms:
                 if isinstance(term, Number):
                     terms.append((term // right).simplified(facts))
@@ -462,8 +404,8 @@ class Div(BinMathExpr):
         return ' / '
 
 
-class Pow(BinMathExpr):
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+class Pow(BinExpr):
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if isinstance(left, Number) and isinstance(right, Number):
@@ -474,9 +416,11 @@ class Pow(BinMathExpr):
         return '**'
 
 
-class Attribute(MathExpr):
-    def __init__(self, name: str, negative: bool = False) -> None:
-        self.name = name
+class Attribute(Expr):
+    def __init__(self, name: Union[str, Expr], negative: bool = False) -> None:
+        if isinstance(name, str):
+            verify_identifier(name)
+        self.name = str(name)
         self.negative = negative
 
     def __repr__(self) -> str:
@@ -491,13 +435,7 @@ class Attribute(MathExpr):
     def __neg__(self) -> 'Attribute':
         return self.__class__(self.name, not self.negative)
 
-    def __contains__(self, item: MathExpr) -> bool:
-        return item == self
-
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        return replace_function(self)
-
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         if facts:
             positive_self = self.__class__(self.name)
             if positive_self in facts:
@@ -506,19 +444,16 @@ class Attribute(MathExpr):
                 return -facts[positive_self] if self.negative else facts[positive_self]
         return self
 
-    def to_bytes(self) -> MathExpr:
-        return self
-
 
 class Value(Attribute):
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         if self.negative:
             return '(-{})'.format(self.name)
         return self.name
 
 
 class LengthValue(Attribute):
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         if self.negative:
             return '(-{})'.format(self.name)
         return f'LengthValue({self.name})'
@@ -540,47 +475,43 @@ class Last(Attribute):
     pass
 
 
-class NumberArray(MathExpr):
-    def __init__(self, *elements: Number) -> None:
+class Aggregate(Expr):
+    def __init__(self, *elements: Expr) -> None:
         self.elements = list(elements)
 
     def __repr__(self) -> str:
         return '({})'.format(', '.join(map(str, self.elements)))
 
-    def __neg__(self) -> 'NumberArray':
+    def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def __contains__(self, item: MathExpr) -> bool:
-        raise NotImplementedError
-
-    def converted(self, replace_function: Callable[[MathExpr], MathExpr]) -> MathExpr:
-        raise NotImplementedError
-
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> MathExpr:
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         return self
 
-    def to_bytes(self) -> MathExpr:
-        raise NotImplementedError
 
-
-class Relation(LogExpr):
-    def __init__(self, left: MathExpr, right: MathExpr) -> None:
+class Relation(Expr):
+    def __init__(self, left: Expr, right: Expr) -> None:
         self.left = left
         self.right = right
 
     def __repr__(self) -> str:
-        return '{}({}, {})'.format(self.__class__.__name__, self.left, self.right)
-
-    def __str__(self) -> str:
         return '{} {} {}'.format(self.left, self.symbol(), self.right)
 
-    def __contains__(self, item: Expr) -> bool:
-        return isinstance(item, MathExpr) and item in (self.left, self.right)
+    @abstractmethod
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
 
-    def simplified(self, facts: Dict['Attribute', MathExpr] = None) -> 'Relation':
+    def __contains__(self, item: Expr) -> bool:
+        return item == self or item in (self.left, self.right)
+
+    def simplified(self, facts: Dict['Attribute', Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         return self.__class__(left, right)
+
+    def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
+        return self.__class__(self.left.converted(replace_function),
+                              self.right.converted(replace_function))
 
     @abstractmethod
     def symbol(self) -> str:
@@ -588,34 +519,145 @@ class Relation(LogExpr):
 
 
 class Less(Relation):
+    def __neg__(self) -> Expr:
+        return GreaterEqual(self.left, self.right)
+
     def symbol(self) -> str:
         return '<'
 
 
 class LessEqual(Relation):
+    def __neg__(self) -> Expr:
+        return Greater(self.left, self.right)
+
     def symbol(self) -> str:
         return '<='
 
 
 class Equal(Relation):
+    def __neg__(self) -> Expr:
+        return NotEqual(self.left, self.right)
+
     def symbol(self) -> str:
         return '='
 
 
 class GreaterEqual(Relation):
+    def __neg__(self) -> Expr:
+        return Less(self.left, self.right)
+
     def symbol(self) -> str:
         return '>='
 
 
 class Greater(Relation):
+    def __neg__(self) -> Expr:
+        return LessEqual(self.left, self.right)
+
     def symbol(self) -> str:
         return '>'
 
 
 class NotEqual(Relation):
+    def __neg__(self) -> Expr:
+        return Equal(self.left, self.right)
+
     def symbol(self) -> str:
         return '/='
 
 
+class Call(Expr):
+    def __init__(self, name: str, args: List[Expr] = None, negative: bool = False) -> None:
+        verify_identifier(name)
+        self.name = name
+        self.args = args or []
+        self.negative = negative
+
+    def __repr__(self) -> str:
+        args = ', '.join(map(str, self.args))
+        if args:
+            args = f' ({args})'
+        call = f'{self.name}{args}'
+        if self.negative:
+            return f'(-{call})'
+        return call
+
+    def __neg__(self) -> Expr:
+        return self.__class__(self.name, self.args, not self.negative)
+
+    def simplified(self, facts: Dict[Attribute, Expr] = None) -> Expr:
+        return self
+
+
+class Slice(Expr):
+    def __init__(self, name: str, first: Expr, last: Expr) -> None:
+        verify_identifier(name)
+        self.name = name
+        self.first = first
+        self.last = last
+
+    def __repr__(self) -> str:
+        return f'{self.name} ({self.first} .. {self.last})'
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def simplified(self, facts: Dict[Attribute, Expr] = None) -> Expr:
+        return Slice(self.name, self.first.simplified(facts), self.last.simplified(facts))
+
+
+class If(Expr):
+    def __init__(self, condition_expressions: List[Tuple[Expr, Expr]],
+                 else_expression: str = '') -> None:
+        self.condition_expressions = condition_expressions
+        self.else_expression = else_expression
+
+    def __repr__(self) -> str:
+        result = ''
+        for c, e in self.condition_expressions:
+            if not result:
+                result = f'(if {c} then {e}'
+            else:
+                result += f' elsif {c} then {e}'
+        if self.else_expression:
+            result += f' else {self.else_expression}'
+        result += ')'
+        return result
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def simplified(self, facts: Dict[Attribute, Expr] = None) -> Expr:
+        return If([(x.simplified(), y.simplified()) for x, y in self.condition_expressions],
+                  self.else_expression)
+
+
+class Case(Expr):
+    def __init__(self, control_expression: Expr,
+                 case_statements: List[Tuple[Expr, Expr]]) -> None:
+        self.control_expression = control_expression
+        self.case_statements = case_statements
+
+    def __repr__(self) -> str:
+        grouped_cases = [(' | '.join(str(c) for c, _ in choices), expr)
+                         for expr, choices in itertools.groupby(self.case_statements,
+                                                                lambda x: x[1])]
+        cases = ', '.join([f'when {choice} => {expr}'
+                           for choice, expr in grouped_cases])
+        return f'case {self.control_expression} is {cases}'
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def simplified(self, facts: Dict[Attribute, Expr] = None) -> Expr:
+        return Case(self.control_expression.simplified(),
+                    [(x.simplified(), y.simplified()) for x, y in self.case_statements])
+
+
 class ExpressionError(Exception):
     pass
+
+
+def verify_identifier(name: str) -> None:
+    if ' ' in name:
+        raise ExpressionError(f'whitespace in identifier "{name}"')

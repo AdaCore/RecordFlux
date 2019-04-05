@@ -4,8 +4,8 @@ from copy import copy
 from math import log
 from typing import Dict, List, Optional, Tuple
 
-from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, First, GreaterEqual, Last,
-                             Length, LessEqual, LogExpr, MathExpr, Number, Or, Pow, Sub, Value)
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Expr, First, GreaterEqual, Last,
+                             Length, LessEqual, Number, Or, Pow, Sub, Value)
 
 
 class Element(ABC):
@@ -24,11 +24,11 @@ class Type(Element):
         self.name = name
 
     @abstractproperty
-    def size(self) -> MathExpr:
+    def size(self) -> Expr:
         raise NotImplementedError
 
     @property
-    def constraints(self) -> LogExpr:
+    def constraints(self) -> Expr:
         return TRUE
 
     @property
@@ -38,12 +38,12 @@ class Type(Element):
 
 class Reference(Type):
     @property
-    def size(self) -> MathExpr:
+    def size(self) -> Expr:
         raise NotImplementedError
 
 
 class ModularInteger(Type):
-    def __init__(self, name: str, modulus: MathExpr) -> None:
+    def __init__(self, name: str, modulus: Expr) -> None:
         modulus_num = modulus.simplified()
         if not isinstance(modulus_num, Number):
             raise ModelError(f'modulus of "{name}" contains variable')
@@ -57,16 +57,16 @@ class ModularInteger(Type):
         self.__size = Number(int(log(modulus_int) / log(2)))
 
     @property
-    def modulus(self) -> MathExpr:
+    def modulus(self) -> Expr:
         return self.__modulus
 
     @property
-    def size(self) -> MathExpr:
+    def size(self) -> Expr:
         return self.__size
 
 
 class RangeInteger(Type):
-    def __init__(self, name: str, first: MathExpr, last: MathExpr, size: MathExpr) -> None:
+    def __init__(self, name: str, first: Expr, last: Expr, size: Expr) -> None:
         first_num = first.simplified()
         if not isinstance(first_num, Number):
             raise ModelError(f'first of "{name}" contains variable')
@@ -87,7 +87,7 @@ class RangeInteger(Type):
         self.__last = last
         self.__size = size
 
-        constraints: LogExpr = TRUE
+        constraints: Expr = TRUE
         if self.first.simplified() != self.base_first.simplified():
             constraints = GreaterEqual(Value(self.name), self.first)
         if self.last.simplified() != self.base_last.simplified():
@@ -95,27 +95,27 @@ class RangeInteger(Type):
         self.__constraints = constraints.simplified()
 
     @property
-    def first(self) -> MathExpr:
+    def first(self) -> Expr:
         return self.__first
 
     @property
-    def last(self) -> MathExpr:
+    def last(self) -> Expr:
         return self.__last
 
     @property
-    def size(self) -> MathExpr:
+    def size(self) -> Expr:
         return self.__size
 
     @property
-    def constraints(self) -> LogExpr:
+    def constraints(self) -> Expr:
         return self.__constraints
 
     @property
-    def base_first(self) -> MathExpr:
+    def base_first(self) -> Expr:
         return Number(0)
 
     @property
-    def base_last(self) -> MathExpr:
+    def base_last(self) -> Expr:
         return Sub(Pow(Number(2), self.size), Number(1))
 
 
@@ -146,7 +146,7 @@ class Array(Type):
         self.element_type = element_type
 
     @property
-    def size(self) -> MathExpr:
+    def size(self) -> Expr:
         raise ModelError(f'size of "{self.name}" undefined')
 
 
@@ -155,14 +155,14 @@ class Null(Type):
         super().__init__('NULL')
 
     @property
-    def size(self) -> MathExpr:
+    def size(self) -> Expr:
         return Number(0)
 
 
 class Refinement(Type):
     # pylint: disable=too-many-arguments
     def __init__(self, package: str, pdu: str, field: str, sdu: str,
-                 condition: LogExpr = TRUE) -> None:
+                 condition: Expr = TRUE) -> None:
         super().__init__('')
         self.package = package
         self.pdu = pdu
@@ -199,8 +199,8 @@ FINAL = Node('FINAL', Null())
 
 
 class Edge(Element):
-    def __init__(self, target: Node, condition: LogExpr = TRUE, length: MathExpr = UNDEFINED,
-                 first: MathExpr = UNDEFINED) -> None:
+    def __init__(self, target: Node, condition: Expr = TRUE, length: Expr = UNDEFINED,
+                 first: Expr = UNDEFINED) -> None:
         self.target = target
         self.condition = condition
         self.length = length
@@ -208,15 +208,15 @@ class Edge(Element):
 
 
 class Variant(Element):
-    def __init__(self, previous: List[Tuple[str, str]], condition: LogExpr,
-                 facts: Dict[Attribute, MathExpr]) -> None:
+    def __init__(self, previous: List[Tuple[str, str]], condition: Expr,
+                 facts: Dict[Attribute, Expr]) -> None:
         self.previous = previous
         self.condition = condition
         self.facts = facts
 
 
 class Field(Element):
-    def __init__(self, name: str, data_type: Type, condition: LogExpr,
+    def __init__(self, name: str, data_type: Type, condition: Expr,
                  variants: Dict[str, Variant]) -> None:
         self.name = name
         self.type = data_type
@@ -238,8 +238,8 @@ class Message(Element):
     def package(self) -> str:
         return self.full_name.rsplit('.', 1)[0]
 
-    def fields(self, facts: Dict[Attribute, MathExpr] = None,
-               first: MathExpr = UNDEFINED) -> Dict[str, Field]:
+    def fields(self, facts: Dict[Attribute, Expr] = None,
+               first: Expr = UNDEFINED) -> Dict[str, Field]:
         if self.initial_node is FINAL:
             return {}
 
@@ -259,7 +259,7 @@ class ModelError(Exception):
     pass
 
 
-def evaluate(facts: Dict[Attribute, MathExpr],
+def evaluate(facts: Dict[Attribute, Expr],
              in_edge: Edge,
              visited: List[Edge] = None,
              previous: List[Tuple[str, str]] = None,
@@ -307,7 +307,7 @@ def evaluate(facts: Dict[Attribute, MathExpr],
     return fields
 
 
-def create_facts(facts: Dict[Attribute, MathExpr], edge: Edge) -> Dict[Attribute, MathExpr]:
+def create_facts(facts: Dict[Attribute, Expr], edge: Edge) -> Dict[Attribute, Expr]:
     facts = dict(facts)
     facts[Length(edge.target.name)] = edge.length.simplified(facts)
     facts[First(edge.target.name)] = edge.first.simplified(facts)
@@ -315,7 +315,7 @@ def create_facts(facts: Dict[Attribute, MathExpr], edge: Edge) -> Dict[Attribute
     return facts
 
 
-def disjunction(cond: List[LogExpr]) -> LogExpr:
+def disjunction(cond: List[Expr]) -> Expr:
     if cond:
         res = cond.pop()
         for c in cond:
@@ -348,8 +348,8 @@ def extend_fields(fields: OrderedDict, new_fields: Dict[str, Field]) -> None:
             fields.move_to_end(new_field.name)
 
 
-def filter_fields(fields: Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]]
-                  ) -> Dict[str, List[Tuple[LogExpr, Dict[Attribute, MathExpr]]]]:
+def filter_fields(fields: Dict[str, List[Tuple[Expr, Dict[Attribute, Expr]]]]
+                  ) -> Dict[str, List[Tuple[Expr, Dict[Attribute, Expr]]]]:
     return {
         field:
         [

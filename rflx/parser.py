@@ -6,10 +6,9 @@ from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, Parse
                        WordEnd, WordStart, ZeroOrMore, alphanums, delimitedList, infixNotation,
                        nums, opAssoc)
 
-from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, Expr, First, Greater,
-                             GreaterEqual, Last, Length, LengthValue, Less, LessEqual, LogExpr,
-                             MathExpr, Mul, NotEqual, Number, NumberArray, Or, Pow, Relation, Sub,
-                             Value)
+from rflx.expression import (TRUE, UNDEFINED, Add, Aggregate, And, Attribute, Div, Equal, Expr,
+                             First, Greater, GreaterEqual, Last, Length, LengthValue, Less,
+                             LessEqual, Mul, NotEqual, Number, Or, Pow, Relation, Sub, Value)
 from rflx.model import (FINAL, Array, Edge, Enumeration, InitialNode, Message, ModelError,
                         ModularInteger, Node, RangeInteger, Reference, Refinement, Type)
 
@@ -49,8 +48,8 @@ class DerivationSpec(Type):
 
 
 class Then(SyntaxTree):
-    def __init__(self, name: str, first: MathExpr = None, length: MathExpr = None,
-                 constraint: LogExpr = None) -> None:
+    def __init__(self, name: str, first: Expr = None, length: Expr = None,
+                 constraint: Expr = None) -> None:
         self.name = name
         self.first = first
         self.length = length
@@ -428,7 +427,7 @@ def create_edges(nodes: Dict[str, Node], components: List[Component],
             nodes[component.name].edges.append(edge)
 
 
-def replace_value_by_length_value(self: MathExpr) -> MathExpr:
+def replace_value_by_length_value(self: Expr) -> Expr:
     return LengthValue(self.name) if isinstance(self, Value) else self
 
 
@@ -482,15 +481,15 @@ def fatalexceptions(parse_function: Callable) -> Callable:
 
 
 @fatalexceptions
-def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> MathExpr:
+def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> Expr:
     for t in tokens:
         if not Number(0) <= t <= Number(255):
             raise ParseFatalException(string, location, f'Number "{t}" is out of range 0 .. 255')
-    return NumberArray(*tokens)
+    return Aggregate(*tokens)
 
 
 @fatalexceptions
-def parse_term(string: str, location: int, tokens: ParseResults) -> MathExpr:
+def parse_term(string: str, location: int, tokens: ParseResults) -> Expr:
     if isinstance(tokens[0], str):
         return Value(tokens[0])
     return tokens[0]
@@ -514,13 +513,13 @@ def parse_relation(string: str, location: int, tokens: ParseResults) -> Relation
 
 
 @fatalexceptions
-def parse_logical_expression(string: str, location: int, tokens: ParseResults) -> LogExpr:
-    result: List[LogExpr] = tokens[0]
+def parse_logical_expression(string: str, location: int, tokens: ParseResults) -> Expr:
+    result: List[Expr] = tokens[0]
     while len(result) > 1:
         left = result.pop(0)
         operator = result.pop(0)
         right = result.pop(0)
-        expression: LogExpr
+        expression: Expr
         if operator == 'and':
             expression = And(left, right)
         elif operator == 'or':
@@ -532,13 +531,13 @@ def parse_logical_expression(string: str, location: int, tokens: ParseResults) -
 
 
 @fatalexceptions
-def parse_mathematical_expression(string: str, location: int, tokens: ParseResults) -> MathExpr:
-    result: List[MathExpr] = tokens[0]
+def parse_mathematical_expression(string: str, location: int, tokens: ParseResults) -> Expr:
+    result: List[Expr] = tokens[0]
     while len(result) > 1:
         left = result.pop(0)
         operator = result.pop(0)
         right = result.pop(0)
-        expression: MathExpr
+        expression: Expr
         if operator == '+':
             expression = Add(left, right)
         elif operator == '-':
