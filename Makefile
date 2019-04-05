@@ -1,7 +1,7 @@
 test: test_python test_spark prove_spark
 
 test_python:
-	coverage run -m unittest
+	coverage run --source=rflx -m unittest
 	mypy bin/*.py rflx/*.py tests/*.py
 	pylint bin/*.py rflx/*.py tests/*.py
 	flake8 bin/*.py rflx/*.py tests/*.py
