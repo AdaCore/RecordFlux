@@ -1,4 +1,4 @@
-package body Arrays.Message
+package body Arrays.Generic_Message
   with SPARK_Mode
 is
 
@@ -35,4 +35,4 @@ is
       pragma Assume (Arrays.AV_Enumeration_Vector.Is_Contained (Buffer (First .. Last)));
    end Get_AV_Enumeration_Vector;
 
-end Arrays.Message;
+end Arrays.Generic_Message;

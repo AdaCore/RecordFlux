@@ -1,4 +1,4 @@
-package body Enumeration.Message
+package body Enumeration.Generic_Message
   with SPARK_Mode
 is
 
@@ -7,4 +7,4 @@ is
       pragma Assume (Is_Contained (Buffer));
    end Label;
 
-end Enumeration.Message;
+end Enumeration.Generic_Message;

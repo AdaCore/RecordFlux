@@ -1,4 +1,4 @@
-package body UDP.Datagram
+package body UDP.Generic_Datagram
   with SPARK_Mode
 is
 
@@ -13,4 +13,4 @@ is
       Last := Get_Payload_Last (Buffer);
    end Get_Payload;
 
-end UDP.Datagram;
+end UDP.Generic_Datagram;

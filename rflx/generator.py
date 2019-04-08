@@ -2,11 +2,12 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Tuple
 
 from rflx.ada import (Aspect, Assignment, CallStatement, ComponentItem, ContextItem, Declaration,
-                      Discriminant, EnumerationType, ExpressionFunction, Function, Ghost,
-                      IfStatement, Import, ModularType, Package, Postcondition, Pragma,
-                      PragmaStatement, Precondition, Procedure, RangeSubtype, RangeType, RecordType,
-                      ReturnStatement, Statement, Subprogram, TypeDeclaration, Unit,
-                      UsePackageClause, UseTypeClause, VariantItem, VariantRecordType, WithClause)
+                      Discriminant, EnumerationType, ExpressionFunction, Function, GenericPackage,
+                      GenericPackageInstantiation, Ghost, IfStatement, Import, ModularType, Package,
+                      PackageDeclaration, Postcondition, Pragma, PragmaStatement, Precondition,
+                      Procedure, RangeSubtype, RangeType, RecordType, ReturnStatement, Statement,
+                      Subprogram, TypeDeclaration, Unit, UsePackageClause, UseTypeClause,
+                      VariantItem, VariantRecordType, WithClause)
 from rflx.expression import (FALSE, TRUE, Add, Aggregate, And, Attribute, Call, Case, Div, Equal,
                              Expr, GreaterEqual, If, Last, Length, LengthValue, Less, LessEqual,
                              Mul, Number, Or, Pow, Size, Slice, Sub, Value)
@@ -53,12 +54,15 @@ class Generator:
         for message in messages:
             if message.package not in self.__units:
                 self.__units[message.package] = Unit(self.__common_context(),
-                                                     Package(f'{self.__prefix}{message.package}',
-                                                             [], []))
+                                                     Package(f'{self.__prefix}{message.package}'))
 
             context: List[ContextItem] = []
-            package = Package(f'{self.__prefix}{message.full_name}', [], [])
-            self.__units[message.full_name] = Unit(context, package)
+            name = f'{self.__prefix}{message.generic_name}'
+            package = GenericPackage(name)
+            self.__units[name] = Unit(context, package)
+
+            instantiation = GenericPackageInstantiation(f'{self.__prefix}{message.full_name}', name)
+            self.__units[message.full_name] = Unit([WithClause([name])], instantiation)
 
             package.subprograms.extend(
                 self.__contain_functions())
@@ -122,8 +126,10 @@ class Generator:
         self.__create_unreachable_functions(messages)
 
     def __create_type(self, field_type: Type, message_package: str) -> None:
-        types = self.__units[message_package].package.types
-        subprograms = self.__units[message_package].package.subprograms
+        package = self.__units[message_package].package
+        assert isinstance(package, Package)
+        types = package.types
+        subprograms = package.subprograms
 
         if isinstance(field_type, ModularInteger):
             types.extend(modular_types(field_type))
@@ -168,6 +174,8 @@ class Generator:
 
         for message_package, functions in unreachable_functions.items():
             top_level_package = self.__units[message_package].package
+            assert isinstance(top_level_package, Package)
+
             top_level_package.subprograms.insert(
                 0,
                 Pragma('Warnings',
@@ -180,6 +188,8 @@ class Generator:
 
     def __process_refinements(self, refinements: List[Refinement]) -> None:
         for refinement in refinements:
+            package: PackageDeclaration
+
             if refinement.package not in self.__units:
                 context = self.__common_context()
                 package = Package(f'{self.__prefix}{refinement.package}', [], [])
@@ -189,6 +199,7 @@ class Generator:
             if contains_package in self.__units:
                 context = self.__units[contains_package].context
                 package = self.__units[contains_package].package
+                assert isinstance(package, Package)
             else:
                 context = []
                 package = Package(f'{self.__prefix}{contains_package}', [], [])

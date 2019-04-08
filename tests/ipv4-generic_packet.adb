@@ -1,4 +1,4 @@
-package body IPv4.Packet
+package body IPv4.Generic_Packet
   with SPARK_Mode
 is
 
@@ -20,4 +20,4 @@ is
       Last := Get_Payload_Last (Buffer);
    end Get_Payload;
 
-end IPv4.Packet;
+end IPv4.Generic_Packet;

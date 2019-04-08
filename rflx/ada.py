@@ -30,7 +30,7 @@ class MultiPartElement(Ada):
 
 
 class Unit(MultiPartElement):
-    def __init__(self, context: List['ContextItem'], package: 'Package') -> None:
+    def __init__(self, context: List['ContextItem'], package: 'PackageDeclaration') -> None:
         self.context = context
         self.package = package
 
@@ -72,20 +72,33 @@ class UseTypeClause(ContextItem):
         return f'use type {names};'
 
 
-class Package(MultiPartElement):
-    def __init__(self, name: str, types: List['TypeDeclaration'],
-                 subprograms: List['Subprogram']) -> None:
+class PackageDeclaration(MultiPartElement):
+    def __init__(self, name: str) -> None:
         self.name = name
-        self.types = types
-        self.subprograms = subprograms
+
+    @abstractmethod
+    def specification(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def definition(self) -> str:
+        raise NotImplementedError
+
+
+class Package(PackageDeclaration):
+    def __init__(self, name: str, types: List['TypeDeclaration'] = None,
+                 subprograms: List['Subprogram'] = None) -> None:
+        super().__init__(name)
+        self.types = types or []
+        self.subprograms = subprograms or []
 
     def specification(self) -> str:
-        return self.__representation(lambda x: x.specification(), False)
+        return self._representation(lambda x: x.specification(), False)
 
     def definition(self) -> str:
-        return self.__representation(lambda x: x.definition(), True)
+        return self._representation(lambda x: x.definition(), True)
 
-    def __representation(self, function: Callable, definition: bool) -> str:
+    def _representation(self, function: Callable, definition: bool) -> str:
         types = ''
         if not definition:
             types = '\n\n'.join(str(t) for t in unique(self.types) if str(t))
@@ -105,6 +118,23 @@ class Package(MultiPartElement):
             indicator = ' body '
 
         return f'package{indicator}{self.name}{aspect}is\n\n{types}{subprograms}end {self.name};'
+
+
+class GenericPackage(Package):
+    def specification(self) -> str:
+        return 'generic\n' + self._representation(lambda x: x.specification(), False)
+
+
+class GenericPackageInstantiation(PackageDeclaration):
+    def __init__(self, name: str, generic_package: str) -> None:
+        super().__init__(name)
+        self.generic_package = generic_package
+
+    def specification(self) -> str:
+        return f'package {self.name} is new {self.generic_package};'
+
+    def definition(self) -> str:
+        return ''
 
 
 class TypeDeclaration(Ada):

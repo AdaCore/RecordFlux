@@ -1,4 +1,4 @@
-package body TLV.Message
+package body TLV.Generic_Message
   with SPARK_Mode
 is
 
@@ -13,4 +13,4 @@ is
       Last := Get_Value_Last (Buffer);
    end Get_Value;
 
-end TLV.Message;
+end TLV.Generic_Message;

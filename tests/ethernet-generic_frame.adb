@@ -1,4 +1,4 @@
-package body Expression.Message
+package body Ethernet.Generic_Frame
   with SPARK_Mode
 is
 
@@ -13,4 +13,4 @@ is
       Last := Get_Payload_Last (Buffer);
    end Get_Payload;
 
-end Expression.Message;
+end Ethernet.Generic_Frame;

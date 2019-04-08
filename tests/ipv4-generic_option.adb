@@ -1,4 +1,4 @@
-package body IPv4.Option
+package body IPv4.Generic_Option
   with SPARK_Mode
 is
 
@@ -13,4 +13,4 @@ is
       Last := Get_Option_Data_Last (Buffer);
    end Get_Option_Data;
 
-end IPv4.Option;
+end IPv4.Generic_Option;

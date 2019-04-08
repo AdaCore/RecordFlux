@@ -235,6 +235,11 @@ class Message(Element):
         return NotImplemented
 
     @property
+    def generic_name(self) -> str:
+        package, name = self.full_name.rsplit('.', 1)
+        return f'{package}.Generic_{name}'
+
+    @property
     def package(self) -> str:
         return self.full_name.rsplit('.', 1)[0]
 
