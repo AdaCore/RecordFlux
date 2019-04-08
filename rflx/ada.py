@@ -126,12 +126,16 @@ class GenericPackage(Package):
 
 
 class GenericPackageInstantiation(PackageDeclaration):
-    def __init__(self, name: str, generic_package: str) -> None:
+    def __init__(self, name: str, generic_package: str, associations: List[str] = None) -> None:
         super().__init__(name)
         self.generic_package = generic_package
+        self.associations = associations or []
 
     def specification(self) -> str:
-        return f'package {self.name} is new {self.generic_package};'
+        associations = ', '.join(self.associations)
+        if associations:
+            associations = f' ({associations})'
+        return f'package {self.name} is new {self.generic_package}{associations};'
 
     def definition(self) -> str:
         return ''

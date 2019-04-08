@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Dict, Iterator, List, Tuple
 
-from rflx.ada import (Aspect, Assignment, CallStatement, ComponentItem, ContextItem, Declaration,
-                      Discriminant, EnumerationType, ExpressionFunction, Function, GenericPackage,
+from rflx.ada import (Aspect, Assignment, ComponentItem, ContextItem, Declaration, Discriminant,
+                      EnumerationType, ExpressionFunction, Function, GenericPackage,
                       GenericPackageInstantiation, Ghost, IfStatement, Import, ModularType, Package,
                       PackageDeclaration, Postcondition, Pragma, PragmaStatement, Precondition,
                       Procedure, RangeSubtype, RangeType, RecordType, ReturnStatement, Statement,
@@ -145,14 +145,23 @@ class Generator:
                     self.__create_type(field_type.element_type, message_package)
 
                 array_context: List[ContextItem] = []
+                array_package: PackageDeclaration
                 if isinstance(field_type.element_type, Reference):
-                    array_context = [WithClause([f'{self.__prefix}{message_package}.'
+                    array_context = [WithClause([f'{self.__prefix}Message_Sequence']),
+                                     WithClause([f'{self.__prefix}{message_package}.'
                                                  f'{field_type.element_type.name}'])]
-
-                array_package = Package(f'{self.__prefix}{message_package}.{field_type.name}',
-                                        self.__array_types(),
-                                        self.__contain_functions()
-                                        + self.__array_functions(field_type, message_package))
+                    array_package = GenericPackageInstantiation(
+                        f'{self.__prefix}{message_package}.{field_type.name}',
+                        'Message_Sequence',
+                        [f'{field_type.element_type.name}.Label',
+                         f'{field_type.element_type.name}.Is_Contained',
+                         f'{field_type.element_type.name}.Is_Valid',
+                         f'{field_type.element_type.name}.Message_Length'])
+                else:
+                    array_package = Package(f'{self.__prefix}{message_package}.{field_type.name}',
+                                            self.__array_types(),
+                                            self.__contain_functions()
+                                            + self.__array_functions(field_type))
 
                 self.__units[array_package.name] = Unit(array_context, array_package)
         else:
@@ -327,70 +336,9 @@ class Generator:
                            [ComponentItem('First', self.__types_index),
                             ComponentItem('Last', self.__types_index)])]
 
-    def __array_functions(self, array: Array, package: str) -> List[Subprogram]:
-        if isinstance(array.element_type, Reference):
-            return self.__message_array_functions(array, package)
+    def __array_functions(self, array: Array) -> List[Subprogram]:
+        assert not isinstance(array.element_type, Reference)
         return self.__scalar_array_functions(array)
-
-    def __message_array_functions(self, array: Array, package: str) -> List[Subprogram]:
-        element_name = array.element_type.name
-        contained_condition = Call(f'Is_Contained', [Value('Buffer')])
-
-        first_index_condition = And(GreaterEqual(Value('First\'Result.First'),
-                                                 First('Buffer')),
-                                    LessEqual(Value('First\'Result.Last'),
-                                              Last('Buffer')))
-        first_element_condition = Call(f'{package}.{element_name}.Is_Contained',
-                                       [Slice('Buffer',
-                                              Value('First\'Result.First'),
-                                              Value('First\'Result.Last'))])
-
-        cursor_conditions = And(GreaterEqual(Value('Cursor.First'), First('Buffer')),
-                                LessEqual(Value('Cursor.Last'), Last('Buffer')))
-        cursor_slice = Slice('Buffer', Value('Cursor.First'), Value('Cursor.Last'))
-
-        element_contained_condition = Call(f'{package}.{element_name}.Is_Contained',
-                                           [cursor_slice])
-        element_valid_condition = Call(f'{package}.{element_name}.Is_Valid',
-                                       [cursor_slice])
-
-        return [Function('First',
-                         'Cursor_Type',
-                         [('Buffer', self.__types_bytes)],
-                         [],
-                         [CallStatement(f'{package}.{element_name}.Label',
-                                        [Slice('Buffer',
-                                               Value('Buffer\'First'),
-                                               Value('Buffer\'Last'))]),
-                          ReturnStatement(Aggregate(First('Buffer'),
-                                                    Last('Buffer')))],
-                         [Precondition(contained_condition),
-                          Postcondition(And(first_index_condition,
-                                            first_element_condition))]),
-                Procedure('Next',
-                          [('Buffer', self.__types_bytes),
-                           ('Cursor', 'in out Cursor_Type')],
-                          [],
-                          [Assignment('Cursor',
-                                      Aggregate(Add(Value('Cursor.First'),
-                                                    Call('Types.Length_Type',
-                                                         [Call(f'{package}.{element_name}.'
-                                                               'Message_Length',
-                                                               [Value(cursor_slice)])])),
-                                                Last('Buffer'))),
-                           CallStatement(f'{package}.{element_name}.Label', [cursor_slice])],
-                          [Precondition(And(cursor_conditions,
-                                            And(element_contained_condition,
-                                                element_valid_condition))),
-                           Postcondition(And(cursor_conditions,
-                                             element_contained_condition))]),
-                ExpressionFunction('Valid_Element',
-                                   'Boolean',
-                                   [('Buffer', self.__types_bytes),
-                                    ('Cursor', 'Cursor_Type')],
-                                   element_valid_condition,
-                                   [Precondition(And(cursor_conditions,
-                                                     element_contained_condition))])]
 
     def __scalar_array_functions(self, array: Array) -> List[Subprogram]:
         element_size = array.element_type.size.to_bytes()
