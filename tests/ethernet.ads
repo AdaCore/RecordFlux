@@ -35,4 +35,14 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
+   function Valid_UINT48 (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((UINT48'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_UINT16 (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((UINT16'Size + Offset + (-1)) / 8) + 1));
+
 end Ethernet;

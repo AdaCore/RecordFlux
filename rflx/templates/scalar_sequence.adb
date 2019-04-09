@@ -1,4 +1,4 @@
-package body Arrays.Range_Vector
+package body {prefix}Scalar_Sequence
   with SPARK_Mode
 is
 
@@ -9,8 +9,8 @@ is
 
    function First (Buffer : Types.Bytes) return Cursor_Type is
    begin
-      if Buffer'Length >= 1 then
-         return (Buffer'First, Buffer'First);
+      if Buffer'Length >= Element_Type_Byte_Size then
+         return (Buffer'First, Buffer'First + Element_Type_Byte_Size - 1);
       else
          return (Types.Index_Type'Last, Types.Index_Type'First);
       end if;
@@ -18,11 +18,11 @@ is
 
    procedure Next (Buffer : Types.Bytes; Cursor : in out Cursor_Type) is
    begin
-      if Cursor.Last <= (Buffer'Last - 1) then
-         Cursor := ((Cursor.Last + 1), (Cursor.Last + 1));
+      if Cursor.Last <= (Buffer'Last - Element_Type_Byte_Size) then
+         Cursor := (Cursor.Last + 1, Cursor.Last + Element_Type_Byte_Size);
       else
          Cursor := (Types.Index_Type'Last, Types.Index_Type'First);
       end if;
    end Next;
 
-end Arrays.Range_Vector;
+end {prefix}Scalar_Sequence;

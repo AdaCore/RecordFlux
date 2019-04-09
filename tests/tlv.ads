@@ -51,4 +51,9 @@ is
    function Convert_To_Tag_Type_Base (Enum : Tag_Type) return Tag_Type_Base is
       (case Enum is when Msg_Data => 1, when Msg_Error => 3);
 
+   function Valid_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Length_Type'Size + Offset + (-1)) / 8) + 1));
+
 end TLV;

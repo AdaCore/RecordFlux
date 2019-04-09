@@ -77,6 +77,16 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
+   function Valid_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Length_Type'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_Modular_Integer (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Modular_Integer'Size + Offset + (-1)) / 8) + 1));
+
    function Valid_Range_Integer (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       ((Convert_To_Range_Integer_Base (Buffer, Offset) >= 1 and then Convert_To_Range_Integer_Base (Buffer, Offset) <= 100))
      with

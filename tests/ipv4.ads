@@ -192,6 +192,11 @@ is
    function Convert_To_Option_Class_Type_Base (Enum : Option_Class_Type) return Option_Class_Type_Base is
       (case Enum is when Control => 0, when Debugging_And_Measurement => 2);
 
+   function Valid_Option_Number_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Option_Number_Type'Size + Offset + (-1)) / 8) + 1));
+
    function Valid_Option_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (Convert_To_Option_Length_Type_Base (Buffer, Offset) >= 2)
      with
@@ -207,10 +212,35 @@ is
      with
        Pre => (Offset < 8 and then Buffer'Length = (((IHL_Type_Base'Size + Offset + (-1)) / 8) + 1));
 
+   function Valid_DCSP_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((DCSP_Type'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_ECN_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((ECN_Type'Size + Offset + (-1)) / 8) + 1));
+
    function Valid_Total_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (Convert_To_Total_Length_Type_Base (Buffer, Offset) >= 20)
      with
        Pre => (Offset < 8 and then Buffer'Length = (((Total_Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_Identification_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Identification_Type'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_Fragment_Offset_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Fragment_Offset_Type'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_TTL_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((TTL_Type'Size + Offset + (-1)) / 8) + 1));
 
    function Valid_Protocol_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)
@@ -223,5 +253,15 @@ is
 
    function Convert_To_Protocol_Type_Base (Enum : Protocol_Type_Enum) return Protocol_Type_Base is
       (case Enum is when PROTOCOL_UDP => 17);
+
+   function Valid_Header_Checksum_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Header_Checksum_Type'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_Address_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Address_Type'Size + Offset + (-1)) / 8) + 1));
 
 end IPv4;

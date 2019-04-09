@@ -45,9 +45,19 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
+   function Valid_Port_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Port_Type'Size + Offset + (-1)) / 8) + 1));
+
    function Valid_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (Convert_To_Length_Type_Base (Buffer, Offset) >= 8)
      with
        Pre => (Offset < 8 and then Buffer'Length = (((Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Valid_Checksum_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (True)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Checksum_Type'Size + Offset + (-1)) / 8) + 1));
 
 end UDP;

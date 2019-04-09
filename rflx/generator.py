@@ -1,13 +1,13 @@
 from pathlib import Path
-from typing import Dict, Iterator, List, Tuple
+from typing import Dict, Iterator, List, Tuple, Union
 
 from rflx.ada import (Aspect, Assignment, ComponentItem, ContextItem, Declaration, Discriminant,
                       EnumerationType, ExpressionFunction, Function, GenericPackage,
                       GenericPackageInstantiation, Ghost, IfStatement, Import, ModularType, Package,
                       PackageDeclaration, Postcondition, Pragma, PragmaStatement, Precondition,
-                      Procedure, RangeSubtype, RangeType, RecordType, ReturnStatement, Statement,
-                      Subprogram, TypeDeclaration, Unit, UsePackageClause, UseTypeClause,
-                      VariantItem, VariantRecordType, WithClause)
+                      Procedure, RangeSubtype, RangeType, ReturnStatement, Statement, Subprogram,
+                      TypeDeclaration, Unit, UsePackageClause, UseTypeClause, VariantItem,
+                      VariantRecordType, WithClause)
 from rflx.expression import (FALSE, TRUE, Add, Aggregate, And, Attribute, Call, Case, Div, Equal,
                              Expr, GreaterEqual, If, Last, Length, LengthValue, Less, LessEqual,
                              Mul, Number, Or, Pow, Size, Slice, Sub, Value)
@@ -133,9 +133,10 @@ class Generator:
 
         if isinstance(field_type, ModularInteger):
             types.extend(modular_types(field_type))
+            subprograms.extend(self.__integer_functions(field_type))
         elif isinstance(field_type, RangeInteger):
             types.extend(range_types(field_type))
-            subprograms.extend(self.__range_functions(field_type))
+            subprograms.extend(self.__integer_functions(field_type))
         elif isinstance(field_type, Enumeration):
             types.extend(enumeration_types(field_type))
             subprograms.extend(self.__enumeration_functions(field_type))
@@ -143,29 +144,39 @@ class Generator:
             if 'Payload' not in field_type.name:
                 if not isinstance(field_type.element_type, Reference):
                     self.__create_type(field_type.element_type, message_package)
-
-                array_context: List[ContextItem] = []
-                array_package: PackageDeclaration
-                if isinstance(field_type.element_type, Reference):
-                    array_context = [WithClause([f'{self.__prefix}Message_Sequence']),
-                                     WithClause([f'{self.__prefix}{message_package}.'
-                                                 f'{field_type.element_type.name}'])]
-                    array_package = GenericPackageInstantiation(
-                        f'{self.__prefix}{message_package}.{field_type.name}',
-                        'Message_Sequence',
-                        [f'{field_type.element_type.name}.Label',
-                         f'{field_type.element_type.name}.Is_Contained',
-                         f'{field_type.element_type.name}.Is_Valid',
-                         f'{field_type.element_type.name}.Message_Length'])
-                else:
-                    array_package = Package(f'{self.__prefix}{message_package}.{field_type.name}',
-                                            self.__array_types(),
-                                            self.__contain_functions()
-                                            + self.__array_functions(field_type))
-
-                self.__units[array_package.name] = Unit(array_context, array_package)
+                self.__create_array_unit(field_type, message_package)
         else:
             raise NotImplementedError(f'unsupported type "{type(field_type).__name__}"')
+
+    def __create_array_unit(self, array_type: Array, package_name: str) -> None:
+        element_type = array_type.element_type
+
+        array_context: List[ContextItem] = []
+        array_package: PackageDeclaration
+        if isinstance(element_type, Reference):
+            array_context = [WithClause([f'{self.__prefix}Message_Sequence']),
+                             WithClause([f'{self.__prefix}{package_name}.'
+                                         f'{element_type.name}'])]
+            array_package = GenericPackageInstantiation(
+                f'{self.__prefix}{package_name}.{array_type.name}',
+                'Message_Sequence',
+                [f'{element_type.name}.Label',
+                 f'{element_type.name}.Is_Contained',
+                 f'{element_type.name}.Is_Valid',
+                 f'{element_type.name}.Message_Length'])
+        else:
+            array_context = [WithClause([f'{self.__prefix}Scalar_Sequence']),
+                             WithClause([f'{self.__prefix}{package_name}'])]
+            array_package = GenericPackageInstantiation(
+                f'{self.__prefix}{package_name}.{array_type.name}',
+                f'Scalar_Sequence',
+                [element_type.name,
+                 str(element_type.size.to_bytes()),
+                 f'Valid_{element_type.name}',
+                 'Convert_To_' + (element_type.base_name if isinstance(element_type, RangeInteger)
+                                  else element_type.name)])
+
+        self.__units[array_package.name] = Unit(array_context, array_package)
 
     def __create_unreachable_functions(self, messages: List[Message]) -> None:
         unreachable_functions: Dict[str, List[Subprogram]] = {}
@@ -235,39 +246,18 @@ class Generator:
                                self.__types_index,
                                self.__types_length])]
 
-    def __range_functions(self, integer: RangeInteger) -> List[Subprogram]:
-        if integer.constraints == TRUE:
-            return []
-
+    def __integer_functions(self, integer: Union[ModularInteger, RangeInteger]) -> List[Subprogram]:
         integer_value = Call(convert_function_name(integer.base_name),
                              [Value('Buffer'),
                               Value('Offset')])
+        validation_expression = integer.constraints.simplified({Value(integer.name):
+                                                                integer_value})
 
-        return [ExpressionFunction(f'Valid_{integer.name}',
-                                   'Boolean',
-                                   [('Buffer', self.__types_bytes),
-                                    ('Offset', 'Natural')],
-                                   integer.constraints.simplified({Value(integer.name):
-                                                                   integer_value}),
-                                   [Precondition(And(Less(Value('Offset'),
-                                                          Number(8)),
-                                                     Equal(Length('Buffer'),
-                                                           Add(Div(Add(Size(integer.base_name),
-                                                                       Value('Offset'),
-                                                                       Number(-1)),
-                                                                   Number(8)),
-                                                               Number(1)))))])]
+        base_name = integer.base_name if integer.constraints != TRUE else integer.name
+
+        return [self.__type_validation_function(integer.name, base_name, validation_expression)]
 
     def __enumeration_functions(self, enum: Enumeration) -> List[Subprogram]:
-        common_precondition = And(Less(Value('Offset'),
-                                       Number(8)),
-                                  Equal(Length('Buffer'),
-                                        Add(Div(Add(Size(enum.base_name),
-                                                    Value('Offset'),
-                                                    Number(-1)),
-                                                Number(8)),
-                                            Number(1))))
-
         enum_value = Call(convert_function_name(enum.base_name),
                           [Value('Buffer'),
                            Value('Offset')])
@@ -282,18 +272,14 @@ class Generator:
 
             validation_expression = Case(enum_value, validation_cases)
 
-        validation_function = ExpressionFunction(f'Valid_{enum.name}',
-                                                 'Boolean',
-                                                 [('Buffer', self.__types_bytes),
-                                                  ('Offset', 'Natural')],
-                                                 validation_expression,
-                                                 [Precondition(common_precondition)])
+        validation_function = self.__type_validation_function(enum.name, enum.base_name,
+                                                              validation_expression)
 
         function_name = f'Convert_To_{enum.name}'
         parameters = [('Buffer', self.__types_bytes),
                       ('Offset', 'Natural')]
         precondition = Precondition(
-            And(common_precondition,
+            And(type_conversion_precondition(enum.base_name),
                 Call(f'Valid_{enum.name}', [Value('Buffer'), Value('Offset')])))
         conversion_cases: List[Tuple[Expr, Expr]] = []
         conversion_function: Subprogram
@@ -331,96 +317,14 @@ class Generator:
 
         return [validation_function, conversion_function, enum_to_base_function]
 
-    def __array_types(self) -> List[TypeDeclaration]:
-        return [RecordType('Cursor_Type',
-                           [ComponentItem('First', self.__types_index),
-                            ComponentItem('Last', self.__types_index)])]
-
-    def __array_functions(self, array: Array) -> List[Subprogram]:
-        assert not isinstance(array.element_type, Reference)
-        return self.__scalar_array_functions(array)
-
-    def __scalar_array_functions(self, array: Array) -> List[Subprogram]:
-        element_size = array.element_type.size.to_bytes()
-        element_size_minus_one = Sub(element_size, Number(1)).simplified()
-
-        contained_condition = COMMON_PRECONDITION
-
-        first_index_condition = And(GreaterEqual(Value('First\'Result.First'),
-                                                 First('Buffer')),
-                                    LessEqual(Value('First\'Result.Last'),
-                                              Last('Buffer')))
-
-        cursor_conditions = And(GreaterEqual(Value('Cursor.First'), First('Buffer')),
-                                LessEqual(Value('Cursor.Last'), Last('Buffer')))
-
-        type_constraints: Expr = TRUE
-
-        if array.element_type.constraints != TRUE or (isinstance(array.element_type, Enumeration)
-                                                      and not array.element_type.always_valid):
-            type_constraints = Call(f'Valid_{array.element_type.name}',
-                                    [Slice('Buffer', Value('Cursor.First'), Value('Cursor.Last')),
-                                     Number(0)])
-
-        element_name = array.element_type.name
-        if array.element_type.constraints != TRUE:
-            element_name = array.element_type.base_name
-        element_value = Call(convert_function_name(element_name),
-                             [Slice('Buffer', Value('Cursor.First'), Value('Cursor.Last')),
-                              Number(0)])
-
-        return [Function('First',
-                         'Cursor_Type',
-                         [('Buffer', self.__types_bytes)],
-                         [],
-                         [IfStatement([(GreaterEqual(Length('Buffer'), element_size),
-                                        [ReturnStatement(
-                                            Aggregate(First('Buffer'),
-                                                      Add(First('Buffer'),
-                                                          element_size_minus_one).simplified()))])],
-                                      [ReturnStatement(
-                                          Aggregate(Last(self.__types_index),
-                                                    First(self.__types_index)))])],
-                         [Precondition(contained_condition),
-                          Postcondition(first_index_condition)]),
-                Procedure('Next',
-                          [('Buffer', self.__types_bytes),
-                           ('Cursor', 'in out Cursor_Type')],
-                          [],
-                          [IfStatement([(LessEqual(Value('Cursor.Last'),
-                                                   Sub(Last('Buffer'),
-                                                       element_size)),
-                                         [Assignment('Cursor',
-                                                     Aggregate(Add(Value('Cursor.Last'),
-                                                                   Number(1)),
-                                                               Add(Value('Cursor.Last'),
-                                                                   element_size)))])],
-                                       [Assignment('Cursor',
-                                                   Aggregate(Last(self.__types_index),
-                                                             First(self.__types_index)))])],
-                          [Precondition(And(contained_condition,
-                                            cursor_conditions))]),
-                ExpressionFunction('Valid_Element',
-                                   'Boolean',
-                                   [('Buffer', self.__types_bytes),
-                                    ('Cursor', 'Cursor_Type')],
-                                   And(cursor_conditions,
-                                       And(LessEqual(Value('Cursor.First'),
-                                                     Value('Cursor.Last')),
-                                           And(Equal(Length(Slice('Buffer',
-                                                                  Value('Cursor.First'),
-                                                                  Value('Cursor.Last'))),
-                                                     element_size),
-                                               type_constraints))).simplified(),
-                                   [Precondition(contained_condition)]),
-                ExpressionFunction('Get_Element',
-                                   array.element_type.name,
-                                   [('Buffer', self.__types_bytes),
-                                    ('Cursor', 'Cursor_Type')],
-                                   element_value,
-                                   [Precondition(And(contained_condition,
-                                                     Call('Valid_Element',
-                                                          [Value('Buffer'), Value('Cursor')])))])]
+    def __type_validation_function(self, type_name: str, type_base_name: str,
+                                   validation_expression: Expr) -> Subprogram:
+        return ExpressionFunction(f'Valid_{type_name}',
+                                  'Boolean',
+                                  [('Buffer', self.__types_bytes),
+                                   ('Offset', 'Natural')],
+                                  validation_expression,
+                                  [Precondition(type_conversion_precondition(type_base_name))])
 
     def __contain_functions(self) -> List[Subprogram]:
         return [ExpressionFunction('Is_Contained',
@@ -796,6 +700,17 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
                                VariantItem('False', [ComponentItem('Raw', enum.base_name)])]))
 
     return types
+
+
+def type_conversion_precondition(type_name: str) -> Expr:
+    return And(Less(Value('Offset'),
+                    Number(8)),
+               Equal(Length('Buffer'),
+                     Add(Div(Add(Size(type_name),
+                                 Value('Offset'),
+                                 Number(-1)),
+                             Number(8)),
+                         Number(1))))
 
 
 def unreachable_function(type_name: str, base_name: str = None) -> Subprogram:
