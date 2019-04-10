@@ -3,8 +3,8 @@ from typing import Callable, Dict, Iterable, List, Tuple
 
 from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, ParseException,
                        ParseFatalException, ParseResults, Regex, StringEnd, Suppress, Token, Word,
-                       WordEnd, WordStart, ZeroOrMore, alphanums, delimitedList, infixNotation,
-                       nums, opAssoc)
+                       WordEnd, WordStart, ZeroOrMore, alphanums, alphas, delimitedList,
+                       infixNotation, nums, opAssoc)
 
 from rflx.expression import (TRUE, UNDEFINED, Add, Aggregate, And, Attribute, Div, Equal, Expr,
                              First, Greater, GreaterEqual, Last, Length, LengthValue, Less,
@@ -123,7 +123,7 @@ class Parser:
 
     @classmethod
     def identifier(cls) -> Token:
-        return (WordStart(alphanums) + Word(alphanums + '_') + WordEnd(alphanums + '_')
+        return (WordStart(alphas) + Word(alphanums + '_') + WordEnd(alphanums + '_')
                 ).setParseAction(verify_identifier).setName('Identifier')
 
     @classmethod
