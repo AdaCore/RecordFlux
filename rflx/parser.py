@@ -105,7 +105,7 @@ class Parser:
             try:
                 self.__grammar.parseFile(filehandle)
             except (ParseException, ParseFatalException) as e:
-                raise ParserError(e)
+                raise ParserError('\n' + ParseException.explain(e, 0))
 
     def parse_string(self, string: str) -> None:
         self.__grammar.parseString(string)
