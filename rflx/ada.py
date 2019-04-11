@@ -87,10 +87,12 @@ class PackageDeclaration(MultiPartElement):
 
 class Package(PackageDeclaration):
     def __init__(self, name: str, types: List['TypeDeclaration'] = None,
-                 subprograms: List['Subprogram'] = None) -> None:
+                 subprograms: List['Subprogram'] = None,
+                 declarations: List['BasicDeclaration'] = None) -> None:
         super().__init__(name)
         self.types = types or []
         self.subprograms = subprograms or []
+        self.declarations = declarations or []
 
     def specification(self) -> str:
         return self._representation(lambda x: x.specification(), False)
@@ -109,6 +111,12 @@ class Package(PackageDeclaration):
         if subprograms:
             subprograms += '\n\n'
 
+        declarations = ''
+        if not definition:
+            declarations = '\n\n'.join(str(t) for t in unique(self.declarations) if str(t))
+            if declarations:
+                declarations += '\n\n'
+
         if definition and not types and not subprograms:
             return ''
 
@@ -117,12 +125,22 @@ class Package(PackageDeclaration):
         if definition:
             indicator = ' body '
 
-        return f'package{indicator}{self.name}{aspect}is\n\n{types}{subprograms}end {self.name};'
+        return (f'package{indicator}{self.name}{aspect}is\n\n'
+                f'{types}{subprograms}{declarations}end {self.name};')
 
 
 class GenericPackage(Package):
+    def __init__(self,
+                 name: str,
+                 parameters: List['FormalDeclaration'],
+                 types: List['TypeDeclaration'] = None,
+                 subprograms: List['Subprogram'] = None) -> None:
+        super().__init__(name, types, subprograms)
+        self.parameters = parameters
+
     def specification(self) -> str:
-        return 'generic\n' + self._representation(lambda x: x.specification(), False)
+        parameters = ''.join(f'\n   {parameter}' for parameter in self.parameters)
+        return f'generic{parameters}\n' + self._representation(lambda x: x.specification(), False)
 
 
 class GenericPackageInstantiation(PackageDeclaration):
@@ -141,6 +159,34 @@ class GenericPackageInstantiation(PackageDeclaration):
         return ''
 
 
+class FormalDeclaration(Ada):
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+class FormalPackageDeclaration(FormalDeclaration):
+    def __init__(self, name: str, generic_name: str) -> None:
+        super().__init__(name)
+        self.generic_name = generic_name
+
+    def __str__(self) -> str:
+        return f'with package {self.name} is new {self.generic_name} (<>);'
+
+
+class BasicDeclaration(Ada):
+    pass
+
+
+class ObjectDeclaration(BasicDeclaration):
+    def __init__(self, identifier: str, type_name: str, expression: Expr) -> None:
+        self.identifier = identifier
+        self.type_name = type_name
+        self.expression = expression
+
+    def __str__(self) -> str:
+        return f'   {self.identifier} : constant {self.type_name} := {self.expression};'
+
+
 class TypeDeclaration(Ada):
     def __init__(self, name: str) -> None:
         self.name = name
@@ -152,8 +198,7 @@ class ModularType(TypeDeclaration):
         self.modulus = modulus
 
     def __str__(self) -> str:
-        return (f'   type {self.name} is mod {self.modulus};\n'
-                f'   function Convert_To_{self.name} is new Types.Convert_To_Mod ({self.name});')
+        return f'   type {self.name} is mod {self.modulus};'
 
 
 class RangeType(TypeDeclaration):
@@ -165,8 +210,7 @@ class RangeType(TypeDeclaration):
 
     def __str__(self) -> str:
         return (f'   type {self.name} is range {self.first} .. {self.last}'
-                f' with Size => {self.size};\n'
-                f'   function Convert_To_{self.name} is new Types.Convert_To_Int ({self.name});')
+                f' with Size => {self.size};')
 
 
 class EnumerationType(TypeDeclaration):
@@ -182,10 +226,18 @@ class EnumerationType(TypeDeclaration):
                 f'   for {self.name} use ({literal_representation});')
 
 
-class RangeSubtype(TypeDeclaration):
-    def __init__(self, name: str, base_name: str, first: Expr, last: Expr) -> None:
+class Subtype(TypeDeclaration):
+    def __init__(self, name: str, base_name: str) -> None:
         super().__init__(name)
         self.base_name = base_name
+
+    def __str__(self) -> str:
+        return f'   subtype {self.name} is {self.base_name};'
+
+
+class RangeSubtype(Subtype):
+    def __init__(self, name: str, base_name: str, first: Expr, last: Expr) -> None:
+        super().__init__(name, base_name)
         self.first = first
         self.last = last
 
@@ -344,6 +396,10 @@ class Subprogram(MultiPartElement):
     def definition(self) -> str:
         raise NotImplementedError
 
+    @abstractproperty
+    def signature(self) -> str:
+        raise NotImplementedError
+
     def _parameters(self) -> str:
         parameters = ''
         if self.parameters:
@@ -383,6 +439,10 @@ class Pragma(Subprogram):
     def definition(self) -> str:
         return ''
 
+    @property
+    def signature(self) -> str:
+        raise NotImplementedError
+
 
 class Function(Subprogram):
     # pylint: disable=too-many-arguments
@@ -393,15 +453,18 @@ class Function(Subprogram):
         self.return_type = return_type
 
     def specification(self) -> str:
-        return (f'   function {self.name}{self._parameters()} return {self.return_type}'
-                f'{self._with_clause()};')
+        return f'   {self.signature}{self._with_clause()};'
 
     def definition(self) -> str:
-        return (f'   function {self.name}{self._parameters()} return {self.return_type} is\n'
+        return (f'   {self.signature} is\n'
                 f'{self._declarations()}'
                 f'   begin\n'
                 f'{self._body()}\n'
                 f'   end {self.name};')
+
+    @property
+    def signature(self) -> str:
+        return f'function {self.name}{self._parameters()} return {self.return_type}'
 
 
 class ExpressionFunction(Subprogram):
@@ -413,25 +476,70 @@ class ExpressionFunction(Subprogram):
         self.expression = expression
 
     def specification(self) -> str:
-        signature = f'   function {self.name}{self._parameters()} return {self.return_type}'
         if self.expression:
-            return f'{signature} is\n      ({self.expression!s}){self._with_clause()};'
-        return f'{signature}{self._with_clause()};'
+            return f'   {self.signature} is\n      ({self.expression!s}){self._with_clause()};'
+        return f'   {self.signature}{self._with_clause()};'
 
     def definition(self) -> str:
         return ''
 
+    @property
+    def signature(self) -> str:
+        return f'function {self.name}{self._parameters()} return {self.return_type}'
+
 
 class Procedure(Subprogram):
     def specification(self) -> str:
-        return f'   procedure {self.name}{self._parameters()}{self._with_clause()};'
+        return f'   {self.signature}{self._with_clause()};'
 
     def definition(self) -> str:
-        return (f'   procedure {self.name}{self._parameters()} is\n'
+        return (f'   {self.signature} is\n'
                 f'{self._declarations()}'
                 f'   begin\n'
                 f'{self._body()}\n'
                 f'   end {self.name};')
+
+    @property
+    def signature(self) -> str:
+        return f'procedure {self.name}{self._parameters()}'
+
+
+class SubprogramRenaming(Subprogram):
+    def __init__(self, name: str, subprogram: Subprogram) -> None:
+        super().__init__(name)
+        self.subprogram = subprogram
+
+    def specification(self) -> str:
+        return f'   {self.subprogram.signature} renames {self.name};'
+
+    def definition(self) -> str:
+        return ''
+
+    @property
+    def signature(self) -> str:
+        raise NotImplementedError
+
+
+class GenericFunctionInstantiation(Subprogram):
+    def __init__(self, name: str, generic_function: Function,
+                 associations: List[str] = None) -> None:
+        super().__init__(name, generic_function.parameters)
+        self.generic_function = generic_function
+        self.associations = associations or []
+
+    def specification(self) -> str:
+        associations = ', '.join(self.associations)
+        if associations:
+            associations = f' ({associations})'
+        return f'   function {self.name} is new {self.generic_function.name}{associations};'
+
+    def definition(self) -> str:
+        return ''
+
+    @property
+    def signature(self) -> str:
+        return_type = self.generic_function.return_type
+        return f'function {self.name}{self._parameters()} return {return_type}'
 
 
 class Declaration(Ada):

@@ -225,9 +225,9 @@ class Field(Element):
 
 
 class Message(Element):
-    def __init__(self, full_name: str, node: Node) -> None:
+    def __init__(self, full_name: str, initial_node: Node) -> None:
         self.full_name = full_name
-        self.initial_node = node
+        self.initial_node = initial_node
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -258,6 +258,22 @@ class Message(Element):
             return evaluate(facts, initial_edge)
         except ModelError as e:
             raise ModelError(f'{e} in "{self.full_name}"')
+
+
+class DerivedMessage(Message):
+    def __init__(self, full_name: str, base_name: str, initial_node: Node) -> None:
+        super().__init__(full_name, FINAL)
+        self.base_name = base_name
+        self.initial_node = initial_node
+
+    @property
+    def generic_base_name(self) -> str:
+        package, name = self.base_name.rsplit('.', 1)
+        return f'{package}.Generic_{name}'
+
+    @property
+    def base_package(self) -> str:
+        return self.base_name.rsplit('.', 1)[0]
 
 
 class ModelError(Exception):

@@ -6,10 +6,8 @@ package Ethernet
 is
 
    type UINT48 is mod (2**48);
-   function Convert_To_UINT48 is new Types.Convert_To_Mod (UINT48);
 
    type UINT16 is range 0 .. ((2**16) - 1) with Size => 16;
-   function Convert_To_UINT16 is new Types.Convert_To_Int (UINT16);
 
    pragma Warnings (Off, "precondition is statically false");
 
@@ -35,10 +33,14 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
+   function Convert_To_UINT48 is new Types.Convert_To_Mod (UINT48);
+
    function Valid_UINT48 (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)
      with
        Pre => (Offset < 8 and then Buffer'Length = (((UINT48'Size + Offset + (-1)) / 8) + 1));
+
+   function Convert_To_UINT16 is new Types.Convert_To_Int (UINT16);
 
    function Valid_UINT16 (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)

@@ -6,6 +6,7 @@ with In_IPv4.Tests;
 with TLV.Tests;
 with Enumeration.Tests;
 with Arrays.Tests;
+with Derivation.Tests;
 with Expression.Tests;
 
 package body Test_Suite is
@@ -21,6 +22,7 @@ package body Test_Suite is
       Result.Add_Test (new TLV.Tests.Test);
       Result.Add_Test (new Enumeration.Tests.Test);
       Result.Add_Test (new Arrays.Tests.Test);
+      Result.Add_Test (new Derivation.Tests.Test);
       Result.Add_Test (new Expression.Tests.Test);
       return Result;
    end Suite;

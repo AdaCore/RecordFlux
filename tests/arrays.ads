@@ -6,24 +6,19 @@ package Arrays
 is
 
    type Length_Type is mod (2**8);
-   function Convert_To_Length_Type is new Types.Convert_To_Mod (Length_Type);
 
    type Modular_Integer is mod (2**16);
-   function Convert_To_Modular_Integer is new Types.Convert_To_Mod (Modular_Integer);
 
    type Range_Integer_Base is range 0 .. ((2**8) - 1) with Size => 8;
-   function Convert_To_Range_Integer_Base is new Types.Convert_To_Int (Range_Integer_Base);
 
    subtype Range_Integer is Range_Integer_Base range 1 .. 100;
 
    type Enumeration_Base is mod (2**8);
-   function Convert_To_Enumeration_Base is new Types.Convert_To_Mod (Enumeration_Base);
 
    type Enumeration is (ZERO, ONE, TWO) with Size => 8;
    for Enumeration use (ZERO => 0, ONE => 1, TWO => 2);
 
    type AV_Enumeration_Base is mod (2**8);
-   function Convert_To_AV_Enumeration_Base is new Types.Convert_To_Mod (AV_Enumeration_Base);
 
    type AV_Enumeration_Enum is (AV_ZERO, AV_ONE, AV_TWO) with Size => 8;
    for AV_Enumeration_Enum use (AV_ZERO => 0, AV_ONE => 1, AV_TWO => 2);
@@ -77,20 +72,28 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
+   function Convert_To_Length_Type is new Types.Convert_To_Mod (Length_Type);
+
    function Valid_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)
      with
        Pre => (Offset < 8 and then Buffer'Length = (((Length_Type'Size + Offset + (-1)) / 8) + 1));
+
+   function Convert_To_Modular_Integer is new Types.Convert_To_Mod (Modular_Integer);
 
    function Valid_Modular_Integer (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)
      with
        Pre => (Offset < 8 and then Buffer'Length = (((Modular_Integer'Size + Offset + (-1)) / 8) + 1));
 
+   function Convert_To_Range_Integer_Base is new Types.Convert_To_Int (Range_Integer_Base);
+
    function Valid_Range_Integer (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       ((Convert_To_Range_Integer_Base (Buffer, Offset) >= 1 and then Convert_To_Range_Integer_Base (Buffer, Offset) <= 100))
      with
        Pre => (Offset < 8 and then Buffer'Length = (((Range_Integer_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Convert_To_Enumeration_Base is new Types.Convert_To_Mod (Enumeration_Base);
 
    function Valid_Enumeration (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (case Convert_To_Enumeration_Base (Buffer, Offset) is when 0 | 1 | 2 => True, when others => False)
@@ -104,6 +107,8 @@ is
 
    function Convert_To_Enumeration_Base (Enum : Enumeration) return Enumeration_Base is
       (case Enum is when ZERO => 0, when ONE => 1, when TWO => 2);
+
+   function Convert_To_AV_Enumeration_Base is new Types.Convert_To_Mod (AV_Enumeration_Base);
 
    function Valid_AV_Enumeration (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)

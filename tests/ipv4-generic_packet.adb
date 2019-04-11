@@ -11,7 +11,7 @@ is
    begin
       First := Get_Options_First (Buffer);
       Last := Get_Options_Last (Buffer);
-      pragma Assume (IPv4.Options.Is_Contained (Buffer (First .. Last)));
+      pragma Assume (Options.Is_Contained (Buffer (First .. Last)));
    end Get_Options;
 
    procedure Get_Payload (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type) is

@@ -6,7 +6,6 @@ package Enumeration
 is
 
    type Priority_Base is mod (2**3);
-   function Convert_To_Priority_Base is new Types.Convert_To_Mod (Priority_Base);
 
    type Priority_Enum is (LOW, MEDIUM, HIGH) with Size => 3;
    for Priority_Enum use (LOW => 1, MEDIUM => 4, HIGH => 7);
@@ -34,6 +33,8 @@ is
        Pre => False;
 
    pragma Warnings (On, "precondition is statically false");
+
+   function Convert_To_Priority_Base is new Types.Convert_To_Mod (Priority_Base);
 
    function Valid_Priority (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)

@@ -9,8 +9,8 @@ from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, Parse
 from rflx.expression import (TRUE, UNDEFINED, Add, Aggregate, And, Attribute, Div, Equal, Expr,
                              First, Greater, GreaterEqual, Last, Length, LengthValue, Less,
                              LessEqual, Mul, NotEqual, Number, Or, Pow, Relation, Sub, Value)
-from rflx.model import (FINAL, Array, Edge, Enumeration, InitialNode, Message, ModelError,
-                        ModularInteger, Node, RangeInteger, Reference, Refinement, Type)
+from rflx.model import (FINAL, Array, DerivedMessage, Edge, Enumeration, InitialNode, Message,
+                        ModelError, ModularInteger, Node, RangeInteger, Reference, Refinement, Type)
 
 
 class SyntaxTree:
@@ -362,7 +362,7 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
                 raise ParserError(f'undefined type "{t.base}" in "{t.name}"')
             base = qualified_type_name(t.base, spec.package.identifier, messages,
                                        f'unsupported type "{t.base}" in "{t.name}"')
-            messages[full_name] = Message(full_name, messages[base].initial_node)
+            messages[full_name] = DerivedMessage(full_name, base, messages[base].initial_node)
             t = MessageSpec(t.name, [])
         elif isinstance(t, Refinement):
             continue

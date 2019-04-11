@@ -3,7 +3,8 @@ from typing import List
 
 from rflx.generator import Generator
 from rflx.model import Message, Refinement
-from tests.models import ARRAY_MESSAGE, ENUMERATION_MESSAGE, ETHERNET_FRAME, EXPRESSION_MESSAGE
+from tests.models import (ARRAY_MESSAGE, DERIVATION_MESSAGE, ENUMERATION_MESSAGE, ETHERNET_FRAME,
+                          EXPRESSION_MESSAGE)
 
 
 class TestGenerator(unittest.TestCase):
@@ -54,6 +55,14 @@ class TestGenerator(unittest.TestCase):
 
     def test_expression_dissector_def(self) -> None:
         generator = generate_dissector([EXPRESSION_MESSAGE], [])
+        self.assert_definition(generator)
+
+    def test_derivation_dissector_spec(self) -> None:
+        generator = generate_dissector([ARRAY_MESSAGE, DERIVATION_MESSAGE], [])
+        self.assert_specification(generator)
+
+    def test_derivation_dissector_def(self) -> None:
+        generator = generate_dissector([ARRAY_MESSAGE, DERIVATION_MESSAGE], [])
         self.assert_definition(generator)
 
 

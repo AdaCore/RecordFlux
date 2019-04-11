@@ -1,11 +1,12 @@
 import unittest
 from typing import Dict, List
 
-from rflx.parser import (FINAL, Aggregate, And, Array, Component, ContextSpec, DerivationSpec, Div,
-                         Edge, Enumeration, Equal, First, GreaterEqual, InitialNode, Last, Length,
-                         LessEqual, Message, MessageSpec, ModularInteger, Mul, Node, NotEqual,
-                         Number, PackageSpec, ParseFatalException, Parser, ParserError, Pow,
-                         RangeInteger, Reference, Refinement, Specification, Sub, Then, Value)
+from rflx.parser import (FINAL, Aggregate, And, Array, Component, ContextSpec, DerivationSpec,
+                         DerivedMessage, Div, Edge, Enumeration, Equal, First, GreaterEqual,
+                         InitialNode, Last, Length, LessEqual, Message, MessageSpec, ModularInteger,
+                         Mul, Node, NotEqual, Number, PackageSpec, ParseFatalException, Parser,
+                         ParserError, Pow, RangeInteger, Reference, Refinement, Specification, Sub,
+                         Then, Value)
 from tests.models import ETHERNET_FRAME
 
 
@@ -589,7 +590,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 end Test;
             """,
             [Message('Test.Foo', initial),
-             Message('Test.Bar', initial)])
+             DerivedMessage('Test.Bar', 'Test.Foo', initial)])
 
     def test_type_derivation_refinements(self) -> None:
         self.assert_refinements_string(

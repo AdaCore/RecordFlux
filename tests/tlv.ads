@@ -6,13 +6,11 @@ package TLV
 is
 
    type Tag_Type_Base is mod (2**2);
-   function Convert_To_Tag_Type_Base is new Types.Convert_To_Mod (Tag_Type_Base);
 
    type Tag_Type is (Msg_Data, Msg_Error) with Size => 2;
    for Tag_Type use (Msg_Data => 1, Msg_Error => 3);
 
    type Length_Type is mod (2**14);
-   function Convert_To_Length_Type is new Types.Convert_To_Mod (Length_Type);
 
    pragma Warnings (Off, "precondition is statically false");
 
@@ -38,6 +36,8 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
+   function Convert_To_Tag_Type_Base is new Types.Convert_To_Mod (Tag_Type_Base);
+
    function Valid_Tag_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (case Convert_To_Tag_Type_Base (Buffer, Offset) is when 1 | 3 => True, when others => False)
      with
@@ -50,6 +50,8 @@ is
 
    function Convert_To_Tag_Type_Base (Enum : Tag_Type) return Tag_Type_Base is
       (case Enum is when Msg_Data => 1, when Msg_Error => 3);
+
+   function Convert_To_Length_Type is new Types.Convert_To_Mod (Length_Type);
 
    function Valid_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)

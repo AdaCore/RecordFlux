@@ -1,6 +1,7 @@
-with IPv4.Options;
+with Message_Sequence;
 
 generic
+   with package Options is new Message_Sequence (<>);
 package IPv4.Generic_Packet
   with SPARK_Mode
 is
@@ -348,7 +349,7 @@ is
    procedure Get_Options (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Options (Buffer)),
-       Post => ((First = Get_Options_First (Buffer) and then Last = Get_Options_Last (Buffer)) and then IPv4.Options.Is_Contained (Buffer (First .. Last)));
+       Post => ((First = Get_Options_First (Buffer) and then Last = Get_Options_Last (Buffer)) and then Options.Is_Contained (Buffer (First .. Last)));
 
    function Valid_Payload_0000000000000000 (Buffer : Types.Bytes) return Boolean is
       ((Valid_Destination_000000000000000 (Buffer) and then ((Buffer'Length >= Types.Length_Type (Get_Total_Length_00000 (Buffer)) and then Buffer'First <= (Types.Index_Type'Last / 2)) and then Get_IHL_00 (Buffer) = 5)))

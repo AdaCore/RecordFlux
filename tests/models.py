@@ -1,7 +1,7 @@
 from rflx.expression import (Aggregate, And, Div, Equal, First, GreaterEqual, Last, Length,
                              LengthValue, LessEqual, Mul, NotEqual, Number, Pow, Sub, Value)
-from rflx.model import (FINAL, Array, Edge, Enumeration, InitialNode, Message, ModularInteger, Node,
-                        RangeInteger)
+from rflx.model import (FINAL, Array, DerivedMessage, Edge, Enumeration, InitialNode, Message,
+                        ModularInteger, Node, RangeInteger)
 
 
 def create_ethernet_frame() -> Message:
@@ -109,7 +109,12 @@ def create_expression_message() -> Message:
     return Message('Expression.Message', initial)
 
 
+def create_derivation_message() -> Message:
+    return DerivedMessage('Derivation.Message', ARRAY_MESSAGE.full_name, ARRAY_MESSAGE.initial_node)
+
+
 ETHERNET_FRAME = create_ethernet_frame()
 ENUMERATION_MESSAGE = create_enumeration_message()
 ARRAY_MESSAGE = create_array_message()
 EXPRESSION_MESSAGE = create_expression_message()
+DERIVATION_MESSAGE = create_derivation_message()

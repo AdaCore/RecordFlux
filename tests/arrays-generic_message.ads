@@ -1,9 +1,10 @@
-with Arrays.Modular_Vector;
-with Arrays.Range_Vector;
-with Arrays.Enumeration_Vector;
-with Arrays.AV_Enumeration_Vector;
+with Scalar_Sequence;
 
 generic
+   with package Modular_Vector is new Scalar_Sequence (<>);
+   with package Range_Vector is new Scalar_Sequence (<>);
+   with package Enumeration_Vector is new Scalar_Sequence (<>);
+   with package AV_Enumeration_Vector is new Scalar_Sequence (<>);
 package Arrays.Generic_Message
   with SPARK_Mode
 is
@@ -71,7 +72,7 @@ is
    procedure Get_Modular_Vector (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Modular_Vector (Buffer)),
-       Post => ((First = Get_Modular_Vector_First (Buffer) and then Last = Get_Modular_Vector_Last (Buffer)) and then Arrays.Modular_Vector.Is_Contained (Buffer (First .. Last)));
+       Post => ((First = Get_Modular_Vector_First (Buffer) and then Last = Get_Modular_Vector_Last (Buffer)) and then Modular_Vector.Is_Contained (Buffer (First .. Last)));
 
    function Valid_Range_Vector_000 (Buffer : Types.Bytes) return Boolean is
       ((Valid_Modular_Vector_00 (Buffer) and then (Buffer'Length >= (Types.Length_Type (Get_Length_0 (Buffer)) + 3) and then Buffer'First <= (Types.Index_Type'Last / 2))))
@@ -106,7 +107,7 @@ is
    procedure Get_Range_Vector (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Range_Vector (Buffer)),
-       Post => ((First = Get_Range_Vector_First (Buffer) and then Last = Get_Range_Vector_Last (Buffer)) and then Arrays.Range_Vector.Is_Contained (Buffer (First .. Last)));
+       Post => ((First = Get_Range_Vector_First (Buffer) and then Last = Get_Range_Vector_Last (Buffer)) and then Range_Vector.Is_Contained (Buffer (First .. Last)));
 
    function Valid_Enumeration_Vector_0000 (Buffer : Types.Bytes) return Boolean is
       ((Valid_Range_Vector_000 (Buffer) and then (Buffer'Length >= (Types.Length_Type (Get_Length_0 (Buffer)) + 5) and then Buffer'First <= (Types.Index_Type'Last / 2))))
@@ -141,7 +142,7 @@ is
    procedure Get_Enumeration_Vector (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_Enumeration_Vector (Buffer)),
-       Post => ((First = Get_Enumeration_Vector_First (Buffer) and then Last = Get_Enumeration_Vector_Last (Buffer)) and then Arrays.Enumeration_Vector.Is_Contained (Buffer (First .. Last)));
+       Post => ((First = Get_Enumeration_Vector_First (Buffer) and then Last = Get_Enumeration_Vector_Last (Buffer)) and then Enumeration_Vector.Is_Contained (Buffer (First .. Last)));
 
    function Valid_AV_Enumeration_Vector_00000 (Buffer : Types.Bytes) return Boolean is
       ((Valid_Enumeration_Vector_0000 (Buffer) and then (Buffer'Length >= (Types.Length_Type (Get_Length_0 (Buffer)) + 7) and then Buffer'First <= (Types.Index_Type'Last / 2))))
@@ -176,7 +177,7 @@ is
    procedure Get_AV_Enumeration_Vector (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
      with
        Pre => (Is_Contained (Buffer) and then Valid_AV_Enumeration_Vector (Buffer)),
-       Post => ((First = Get_AV_Enumeration_Vector_First (Buffer) and then Last = Get_AV_Enumeration_Vector_Last (Buffer)) and then Arrays.AV_Enumeration_Vector.Is_Contained (Buffer (First .. Last)));
+       Post => ((First = Get_AV_Enumeration_Vector_First (Buffer) and then Last = Get_AV_Enumeration_Vector_Last (Buffer)) and then AV_Enumeration_Vector.Is_Contained (Buffer (First .. Last)));
 
    function Is_Valid (Buffer : Types.Bytes) return Boolean is
       (Valid_AV_Enumeration_Vector_00000 (Buffer))
