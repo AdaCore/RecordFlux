@@ -424,17 +424,20 @@ class Subprogram(MultiPartElement):
         return with_clause
 
 
-class Pragma(Subprogram):
-    def __init__(self, name: str, parameters: List[str]) -> None:
+class Pragma(Subprogram, ContextItem):
+    def __init__(self, name: str, parameters: List[str] = None) -> None:
         super().__init__(name)
-        self.pragma_parameters = parameters
+        self.pragma_parameters = parameters or []
 
-    def specification(self) -> str:
+    def __str__(self) -> str:
         parameters = ''
         if self.pragma_parameters:
             parameters = ', '.join(self.pragma_parameters)
             parameters = f' ({parameters})'
-        return f'   pragma {self.name}{parameters};'
+        return f'pragma {self.name}{parameters};'
+
+    def specification(self) -> str:
+        return f'   {str(self)}'
 
     def definition(self) -> str:
         return ''

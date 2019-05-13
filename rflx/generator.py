@@ -155,7 +155,7 @@ class Generator:
 
         arrays = [field.type.name for field in fields if is_definite_array(field.type)]
 
-        context: List[ContextItem] = [WithClause([generic_name])]
+        context: List[ContextItem] = [Pragma('SPARK_Mode'), WithClause([generic_name])]
         context.extend(
             WithClause([f'{self.__prefix}{message.package}.{array}']) for array in arrays)
         instantiation = GenericPackageInstantiation(f'{self.__prefix}{message.full_name}',

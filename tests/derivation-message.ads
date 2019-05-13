@@ -1,3 +1,4 @@
+pragma SPARK_Mode;
 with Arrays.Generic_Message;
 with Derivation.Modular_Vector;
 with Derivation.Range_Vector;

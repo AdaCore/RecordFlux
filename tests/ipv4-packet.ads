@@ -1,3 +1,4 @@
+pragma SPARK_Mode;
 with IPv4.Generic_Packet;
 with IPv4.Options;
 
