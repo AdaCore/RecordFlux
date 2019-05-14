@@ -79,12 +79,18 @@ class Generator:
         package.subprograms.extend(
             self.__contain_functions())
 
+        facts: Dict[Attribute, Expr] = {}
+
         for field in self.__fields.values():
             if field.name == 'FINAL':
                 continue
 
             if not is_seen_type(f'{message.package}.{field.type.name}', seen_types):
                 self.__create_type(field.type, message.package)
+
+            if isinstance(field.type, Enumeration) and field.type.always_valid:
+                for literal in field.type.literals:
+                    facts[Value(literal)] = Aggregate(TRUE, Value(literal))
 
             if isinstance(field.type, Array) and is_definite_array(field.type):
                 if isinstance(field.type.element_type, Reference):
@@ -101,7 +107,8 @@ class Generator:
                     self.__variant_validation_function(
                         field,
                         variant_id,
-                        variant))
+                        variant,
+                        facts))
 
                 package.subprograms.extend(
                     self.__variant_accessor_functions(
@@ -111,7 +118,8 @@ class Generator:
 
             package.subprograms.append(
                 self.__field_validation_function(
-                    field))
+                    field,
+                    facts))
 
             package.subprograms.extend(
                 self.__field_accessor_functions(
@@ -120,11 +128,13 @@ class Generator:
         if self.__fields:
             package.subprograms.append(
                 self.__message_validation_function(
-                    self.__fields['FINAL'].variants.values()))
+                    self.__fields['FINAL'].variants.values(),
+                    facts))
 
             package.subprograms.append(
                 self.__message_length_function(
-                    self.__fields['FINAL'].variants.values()))
+                    self.__fields['FINAL'].variants.values(),
+                    facts))
 
     def __process_derived_message(self, message: DerivedMessage, seen_types: Set[str]) -> None:
         if message.package not in self.__units:
@@ -468,7 +478,8 @@ class Generator:
             self,
             field: Field,
             variant_id: str,
-            variant: Variant) -> Subprogram:
+            variant: Variant,
+            facts: Dict[Attribute, Expr]) -> Subprogram:
 
         type_constraints: Expr = TRUE
 
@@ -477,7 +488,10 @@ class Generator:
             type_constraints = Call(f'Valid_{field.type.name}',
                                     [Slice('Buffer', first_byte, last_byte), offset])
 
-        value_to_call = self.__value_to_call_facts([(field.name, variant_id)] + variant.previous)
+        substitutions = {
+            **self.__value_to_call_facts([(field.name, variant_id)] + variant.previous),
+            **facts
+        }
 
         return ExpressionFunction(
             f'Valid_{field.name}_{variant_id}',
@@ -489,8 +503,8 @@ class Generator:
                 And(
                     And(
                         self.__buffer_constraints(
-                            variant.facts[Last(field.name)].to_bytes()).simplified(value_to_call),
-                        variant.condition.simplified(variant.facts).simplified(value_to_call)),
+                            variant.facts[Last(field.name)].to_bytes()).simplified(substitutions),
+                        variant.condition.simplified(variant.facts).simplified(substitutions)),
                     type_constraints)
                 ).simplified(),
             [Precondition(COMMON_PRECONDITION)])
@@ -538,8 +552,8 @@ class Generator:
                     [precondition]))
         return functions
 
-    def __field_validation_function(self, field: Field) -> Subprogram:
-        variants: List[Expr] = list(self.__valid_variants(field))
+    def __field_validation_function(self, field: Field, facts: Dict[Attribute, Expr]) -> Subprogram:
+        variants: List[Expr] = list(self.__valid_variants(field, facts))
 
         expr = variants.pop()
         for e in variants:
@@ -611,11 +625,15 @@ class Generator:
 
         return functions
 
-    def __message_validation_function(self, variants: Iterable[Variant]) -> Subprogram:
+    def __message_validation_function(
+            self,
+            variants: Iterable[Variant],
+            facts: Dict[Attribute, Expr]) -> Subprogram:
+
         expr: Expr = FALSE
 
         for variant in variants:
-            condition = self.__variant_condition(variant)
+            condition = self.__variant_condition(variant, facts)
             expr = condition if expr == FALSE else Or(expr, condition)
 
         return ExpressionFunction(
@@ -625,11 +643,15 @@ class Generator:
             expr,
             [Precondition(COMMON_PRECONDITION)])
 
-    def __message_length_function(self, variants: Iterable[Variant]) -> Subprogram:
+    def __message_length_function(
+            self,
+            variants: Iterable[Variant],
+            facts: Dict[Attribute, Expr]) -> Subprogram:
+
         condition_expressions: List[Tuple[Expr, Expr]] = []
 
         for variant in variants:
-            condition = self.__variant_condition(variant)
+            condition = self.__variant_condition(variant, facts)
             length = Add(
                 Last(variant.previous[-1][0]),
                 -First(variant.previous[0][0]),
@@ -648,12 +670,13 @@ class Generator:
             If(condition_expressions, unreachable_function_name(self.__types_length)),
             [Precondition(And(COMMON_PRECONDITION, Call('Is_Valid', [Value('Buffer')])))])
 
-    def __variant_condition(self, variant: Variant) -> Expr:
+    def __variant_condition(self, variant: Variant, facts: Dict[Attribute, Expr]) -> Expr:
         field_name, variant_id = variant.previous[-1]
         return And(
             Call(f'Valid_{field_name}_{variant_id}', [Value('Buffer')]),
             variant.condition
-        ).simplified(variant.facts).simplified(self.__value_to_call_facts(variant.previous))
+        ).simplified(variant.facts).simplified({**self.__value_to_call_facts(variant.previous),
+                                                **facts})
 
     def __contains_function(self, ref: Refinement) -> Subprogram:
         sdu_name = ref.sdu.rsplit('.', 1)[1] if ref.sdu.startswith(ref.package) else ref.sdu \
@@ -761,7 +784,7 @@ class Generator:
             return And(length_constraint, index_constraint)
         return index_constraint
 
-    def __valid_variants(self, field: Field) -> Iterator[Expr]:
+    def __valid_variants(self, field: Field, facts: Dict[Attribute, Expr]) -> Iterator[Expr]:
         for variant_id, variant in field.variants.items():
             expression: Expr = Call(f'Valid_{field.name}_{variant_id}', [Value('Buffer')])
             if field.condition is not TRUE:
@@ -769,7 +792,8 @@ class Generator:
             yield expression.simplified(
                 variant.facts
             ).simplified(
-                self.__value_to_call_facts([(field.name, variant_id)] + variant.previous))
+                {**self.__value_to_call_facts([(field.name, variant_id)] + variant.previous),
+                 **facts})
 
     @property
     def __types(self) -> str:
