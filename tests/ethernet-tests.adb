@@ -16,22 +16,22 @@ package body Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer      : Types.Bytes := Read_File ("tests/ethernet_ipv4_udp.raw");
-      Destination : Ethernet.UINT48;
-      Source      : Ethernet.UINT48;
-      EtherType   : Ethernet.UINT16;
+      Destination : Ethernet.Address_Type;
+      Source      : Ethernet.Address_Type;
+      Type_Length : Ethernet.Type_Length_Type;
       First       : Types.Index_Type;
       Last        : Types.Index_Type;
    begin
       Ethernet.Frame.Label (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Get_Destination (Buffer);
-         Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
+         Assert (Destination'Image, Ethernet.Address_Type'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
          if Ethernet.Frame.Valid_Source (Buffer) then
             Source := Ethernet.Frame.Get_Source (Buffer);
-            Assert (Source'Image, Ethernet.UINT48'Image (16#000000000000#), "Invalid Source");
-            if Ethernet.Frame.Valid_EtherType (Buffer) then
-               EtherType := Ethernet.Frame.Get_EtherType (Buffer);
-               Assert (EtherType'Image, Ethernet.UINT16'Image (16#0800#), "Invalid EtherType");
+            Assert (Source'Image, Ethernet.Address_Type'Image (16#000000000000#), "Invalid Source");
+            if Ethernet.Frame.Valid_Type_Length (Buffer) then
+               Type_Length := Ethernet.Frame.Get_Type_Length (Buffer);
+               Assert (Type_Length'Image, Ethernet.Type_Length_Type'Image (16#0800#), "Invalid Type_Length");
                if Ethernet.Frame.Valid_Payload (Buffer) then
                   Ethernet.Frame.Get_Payload (Buffer, First, Last);
                   Assert (First'Image, Types.Index_Type'Image (15), "Invalid Payload'First");
@@ -48,22 +48,22 @@ package body Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer      : Types.Bytes := Read_File ("tests/ethernet_802.3.raw");
-      Destination : Ethernet.UINT48;
-      Source      : Ethernet.UINT48;
-      EtherType   : Ethernet.UINT16;
+      Destination : Ethernet.Address_Type;
+      Source      : Ethernet.Address_Type;
+      Type_Length : Ethernet.Type_Length_Type;
       First       : Types.Index_Type;
       Last        : Types.Index_Type;
    begin
       Ethernet.Frame.Label (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Get_Destination (Buffer);
-         Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
+         Assert (Destination'Image, Ethernet.Address_Type'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
          if Ethernet.Frame.Valid_Source (Buffer) then
             Source := Ethernet.Frame.Get_Source (Buffer);
-            Assert (Source'Image, Ethernet.UINT48'Image (16#000000000000#), "Invalid Source");
-            if Ethernet.Frame.Valid_EtherType (Buffer) then
-               EtherType := Ethernet.Frame.Get_EtherType (Buffer);
-               Assert (EtherType'Image, Ethernet.UINT16'Image (46), "Invalid EtherType");
+            Assert (Source'Image, Ethernet.Address_Type'Image (16#000000000000#), "Invalid Source");
+            if Ethernet.Frame.Valid_Type_Length (Buffer) then
+               Type_Length := Ethernet.Frame.Get_Type_Length (Buffer);
+               Assert (Type_Length'Image, Ethernet.Type_Length_Type'Image (46), "Invalid Type_Length");
                if Ethernet.Frame.Valid_Payload (Buffer) then
                   Ethernet.Frame.Get_Payload (Buffer, First, Last);
                   Assert (First'Image, Types.Index_Type'Image (15), "Invalid Payload'First");
@@ -80,30 +80,30 @@ package body Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer      : Types.Bytes := Read_File ("tests/ethernet_vlan_tag.raw");
-      Destination : Ethernet.UINT48;
-      Source      : Ethernet.UINT48;
-      TPID        : Ethernet.UINT16;
-      TCI         : Ethernet.UINT16;
-      EtherType   : Ethernet.UINT16;
+      Destination : Ethernet.Address_Type;
+      Source      : Ethernet.Address_Type;
+      TPID        : Ethernet.TPID_Type;
+      TCI         : Ethernet.TCI_Type;
+      Type_Length : Ethernet.Type_Length_Type;
       First       : Types.Index_Type;
       Last        : Types.Index_Type;
    begin
       Ethernet.Frame.Label (Buffer);
       if Ethernet.Frame.Valid_Destination (Buffer) then
          Destination := Ethernet.Frame.Get_Destination (Buffer);
-         Assert (Destination'Image, Ethernet.UINT48'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
+         Assert (Destination'Image, Ethernet.Address_Type'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
          if Ethernet.Frame.Valid_Source (Buffer) then
             Source := Ethernet.Frame.Get_Source (Buffer);
-            Assert (Source'Image, Ethernet.UINT48'Image (16#000000000000#), "Invalid Source");
+            Assert (Source'Image, Ethernet.Address_Type'Image (16#000000000000#), "Invalid Source");
             if Ethernet.Frame.Valid_TPID (Buffer) then
                TPID := Ethernet.Frame.Get_TPID (Buffer);
-               Assert (TPID'Image, Ethernet.UINT16'Image (16#8100#), "Invalid TPID");
+               Assert (TPID'Image, Ethernet.TPID_Type'Image (16#8100#), "Invalid TPID");
                if Ethernet.Frame.Valid_TCI (Buffer) then
                   TCI := Ethernet.Frame.Get_TCI (Buffer);
-                  Assert (TCI'Image, Ethernet.UINT16'Image (1), "Invalid TCI");
-                  if Ethernet.Frame.Valid_EtherType (Buffer) then
-                     EtherType := Ethernet.Frame.Get_EtherType (Buffer);
-                     Assert (EtherType'Image, Ethernet.UINT16'Image (16#0800#), "Invalid EtherType");
+                  Assert (TCI'Image, Ethernet.TCI_Type'Image (1), "Invalid TCI");
+                  if Ethernet.Frame.Valid_Type_Length (Buffer) then
+                     Type_Length := Ethernet.Frame.Get_Type_Length (Buffer);
+                     Assert (Type_Length'Image, Ethernet.Type_Length_Type'Image (16#0800#), "Invalid Type_Length");
                      if Ethernet.Frame.Valid_Payload (Buffer) then
                         Ethernet.Frame.Get_Payload (Buffer, First, Last);
                         Assert (First'Image, Types.Index_Type'Image (19), "Invalid Payload'First");
@@ -124,7 +124,7 @@ package body Ethernet.Tests is
       Buffer : Types.Bytes := Read_File ("tests/ethernet_invalid_too_short.raw");
    begin
       Ethernet.Frame.Label (Buffer);
-      Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
+      Assert (not Ethernet.Frame.Is_Valid (Buffer), "False positive");
    end Test_Invalid_Ethernet_II_Too_Short;
 
    procedure Test_Invalid_Ethernet_II_Too_Long (T : in out Aunit.Test_Cases.Test_Case'Class)
@@ -134,7 +134,7 @@ package body Ethernet.Tests is
       Buffer : Types.Bytes := Read_File ("tests/ethernet_invalid_too_long.raw");
    begin
       Ethernet.Frame.Label (Buffer);
-      Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
+      Assert (not Ethernet.Frame.Is_Valid (Buffer), "False positive");
    end Test_Invalid_Ethernet_II_Too_Long;
 
    procedure Test_Invalid_Ethernet_II_Undefined_Type (T : in out Aunit.Test_Cases.Test_Case'Class)
@@ -144,7 +144,7 @@ package body Ethernet.Tests is
       Buffer : Types.Bytes := Read_File ("tests/ethernet_undefined.raw");
    begin
       Ethernet.Frame.Label (Buffer);
-      Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
+      Assert (not Ethernet.Frame.Is_Valid (Buffer), "False positive");
    end Test_Invalid_Ethernet_II_Undefined_Type;
 
    procedure Test_Invalid_IEEE_802_3_Invalid_Length (T : in out Aunit.Test_Cases.Test_Case'Class)
@@ -154,7 +154,7 @@ package body Ethernet.Tests is
       Buffer : Types.Bytes := Read_File ("tests/ethernet_802.3_invalid_length.raw");
    begin
       Ethernet.Frame.Label (Buffer);
-      Assert (Not Ethernet.Frame.Is_Valid (Buffer), "False positive");
+      Assert (not Ethernet.Frame.Is_Valid (Buffer), "False positive");
    end Test_Invalid_IEEE_802_3_Invalid_Length;
 
    procedure Register_Tests (T : in out Test) is

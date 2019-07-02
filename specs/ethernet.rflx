@@ -1,27 +1,31 @@
 package Ethernet is
 
-   type UINT16 is range 0 .. 2**16 - 1 with Size => 16;
-   type UINT48 is mod 2**48;
+   type Address_Type is mod 2**48;
+   type Type_Length_Type is range 46 .. 2**16 - 1 with Size => 16;
+   type TPID_Type is range 16#8100# .. 16#8100# with Size => 16;
+   type TCI_Type is mod 2**16;
 
    type Frame is
       message
-         Destination : UINT48;
-         Source : UINT48;
-         TPID : UINT16
-            then TCI
-               if TPID = 16#8100#,
-            then EtherType
-               with First => TPID'First
-               if TPID /= 16#8100#;
-         TCI : UINT16;
-         EtherType : UINT16
+         Destination : Address_Type;
+         Source : Address_Type;
+         Type_Length_TPID : Type_Length_Type
+            then TPID
+               with First => Type_Length_TPID'First
+               if Type_Length_TPID = 16#8100#,
+            then Type_Length
+               with First => Type_Length_TPID'First
+               if Type_Length_TPID /= 16#8100#;
+         TPID : TPID_Type;
+         TCI : TCI_Type;
+         Type_Length : Type_Length_Type
             then Payload
-               with Length => EtherType * 8
-               if EtherType <= 1500,
+               with Length => Type_Length * 8
+               if Type_Length <= 1500,
             then Payload
-               with Length => Message'Last - EtherType'Last
-               if EtherType >= 1536;
-         Payload : Payload_Array
+               with Length => Message'Last - Type_Length'Last
+               if Type_Length >= 1536;
+         Payload : Payload_Type
             then null
                if Payload'Length / 8 >= 46 and Payload'Length / 8 <= 1500;
       end message;

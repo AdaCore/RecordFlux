@@ -1,6 +1,6 @@
 package In_Ethernet is
 
    for Ethernet.Frame use (Payload => IPv4.Packet)
-      if EtherType = 16#0800#;
+      if Type_Length = 16#0800#;
 
 end In_Ethernet;

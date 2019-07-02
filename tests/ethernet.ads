@@ -5,19 +5,37 @@ package Ethernet
   with SPARK_Mode
 is
 
-   type UINT48 is mod (2**48);
+   type Address_Type is mod (2**48);
 
-   type UINT16 is range 0 .. ((2**16) - 1) with Size => 16;
+   type Type_Length_Type_Base is range 0 .. ((2**16) - 1) with Size => 16;
+
+   subtype Type_Length_Type is Type_Length_Type_Base range 46 .. ((2**16) - 1);
+
+   type TPID_Type_Base is range 0 .. ((2**16) - 1) with Size => 16;
+
+   subtype TPID_Type is TPID_Type_Base range 33024 .. 33024;
+
+   type TCI_Type is mod (2**16);
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_UINT48 return UINT48 is
-      (UINT48'First)
+   function Unreachable_Address_Type return Address_Type is
+      (Address_Type'First)
      with
        Pre => False;
 
-   function Unreachable_UINT16 return UINT16 is
-      (UINT16'First)
+   function Unreachable_Type_Length_Type return Type_Length_Type is
+      (Type_Length_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_TPID_Type return TPID_Type is
+      (TPID_Type'First)
+     with
+       Pre => False;
+
+   function Unreachable_TCI_Type return TCI_Type is
+      (TCI_Type'First)
      with
        Pre => False;
 
@@ -33,18 +51,32 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert_To_UINT48 is new Types.Convert_To_Mod (UINT48);
+   function Convert_To_Address_Type is new Types.Convert_To_Mod (Address_Type);
 
-   function Valid_UINT48 (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Address_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)
      with
-       Pre => (Offset < 8 and then Buffer'Length = (((UINT48'Size + Offset + (-1)) / 8) + 1));
+       Pre => (Offset < 8 and then Buffer'Length = (((Address_Type'Size + Offset + (-1)) / 8) + 1));
 
-   function Convert_To_UINT16 is new Types.Convert_To_Int (UINT16);
+   function Convert_To_Type_Length_Type_Base is new Types.Convert_To_Int (Type_Length_Type_Base);
 
-   function Valid_UINT16 (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Type_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      (Convert_To_Type_Length_Type_Base (Buffer, Offset) >= 46)
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((Type_Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Convert_To_TPID_Type_Base is new Types.Convert_To_Int (TPID_Type_Base);
+
+   function Valid_TPID_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+      ((Convert_To_TPID_Type_Base (Buffer, Offset) >= 33024 and then Convert_To_TPID_Type_Base (Buffer, Offset) <= 33024))
+     with
+       Pre => (Offset < 8 and then Buffer'Length = (((TPID_Type_Base'Size + Offset + (-1)) / 8) + 1));
+
+   function Convert_To_TCI_Type is new Types.Convert_To_Mod (TCI_Type);
+
+   function Valid_TCI_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)
      with
-       Pre => (Offset < 8 and then Buffer'Length = (((UINT16'Size + Offset + (-1)) / 8) + 1));
+       Pre => (Offset < 8 and then Buffer'Length = (((TCI_Type'Size + Offset + (-1)) / 8) + 1));
 
 end Ethernet;

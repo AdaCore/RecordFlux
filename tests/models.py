@@ -5,36 +5,45 @@ from rflx.model import (FINAL, Array, DerivedMessage, Edge, Enumeration, Initial
 
 
 def create_ethernet_frame() -> Message:
-    uint48 = ModularInteger('UINT48', Pow(Number(2), Number(48)))
-    uint16 = RangeInteger('UINT16',
-                          Number(0),
-                          Sub(Pow(Number(2), Number(16)), Number(1)),
-                          Number(16))
-    payload_array = Array('Payload_Array')
+    address_type = ModularInteger('Address_Type', Pow(Number(2), Number(48)))
+    type_length_type = RangeInteger('Type_Length_Type',
+                                    Number(46),
+                                    Sub(Pow(Number(2), Number(16)), Number(1)),
+                                    Number(16))
+    tpid_type = RangeInteger('TPID_Type',
+                             Number(0x8100),
+                             Number(0x8100),
+                             Number(16))
+    tci_type = ModularInteger('TCI_Type',
+                              Pow(Number(2), Number(16)))
+    payload_type = Array('Payload_Type')
 
     initial = InitialNode()
-    destination = Node('Destination', uint48)
-    source = Node('Source', uint48)
-    tpid = Node('TPID', uint16)
-    tci = Node('TCI', uint16)
-    ether_type = Node('EtherType', uint16)
-    payload = Node('Payload', payload_array)
+    destination = Node('Destination', address_type)
+    source = Node('Source', address_type)
+    type_length_tpid = Node('Type_Length_TPID', type_length_type)
+    tpid = Node('TPID', tpid_type)
+    tci = Node('TCI', tci_type)
+    type_length = Node('Type_Length', type_length_type)
+    payload = Node('Payload', payload_type)
 
     initial.edges = [Edge(destination)]
     destination.edges = [Edge(source)]
-    source.edges = [Edge(tpid)]
-    tpid.edges = [Edge(tci,
-                       Equal(Value('TPID'), Number(0x8100))),
-                  Edge(ether_type,
-                       NotEqual(Value('TPID'), Number(0x8100)),
-                       first=First('TPID'))]
-    tci.edges = [Edge(ether_type)]
-    ether_type.edges = [Edge(payload,
-                             LessEqual(Value('EtherType'), Number(1500)),
-                             Mul(LengthValue('EtherType'), Number(8))),
-                        Edge(payload,
-                             GreaterEqual(Value('EtherType'), Number(1536)),
-                             Sub(Last('Message'), Last('EtherType')))]
+    source.edges = [Edge(type_length_tpid)]
+    type_length_tpid.edges = [Edge(tpid,
+                                   Equal(Value('Type_Length_TPID'), Number(0x8100)),
+                                   first=First('Type_Length_TPID')),
+                              Edge(type_length,
+                                   NotEqual(Value('Type_Length_TPID'), Number(0x8100)),
+                                   first=First('Type_Length_TPID'))]
+    tpid.edges = [Edge(tci)]
+    tci.edges = [Edge(type_length)]
+    type_length.edges = [Edge(payload,
+                              LessEqual(Value('Type_Length'), Number(1500)),
+                              Mul(LengthValue('Type_Length'), Number(8))),
+                         Edge(payload,
+                              GreaterEqual(Value('Type_Length'), Number(1536)),
+                              Sub(Last('Message'), Last('Type_Length')))]
     payload.edges = [Edge(FINAL,
                           And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
                               LessEqual(Div(Length('Payload'), Number(8)), Number(1500))))]

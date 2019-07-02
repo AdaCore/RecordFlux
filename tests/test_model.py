@@ -216,7 +216,7 @@ class TestModel(unittest.TestCase):
         expected = OrderedDict([
             ('Destination',
              Field('Destination',
-                   ModularInteger('UINT48', Pow(Number(2), Number(48))),
+                   ModularInteger('Address_Type', Pow(Number(2), Number(48))),
                    TRUE,
                    {
                        '0':
@@ -231,7 +231,7 @@ class TestModel(unittest.TestCase):
                    })),
             ('Source',
              Field('Source',
-                   ModularInteger('UINT48', Pow(Number(2), Number(48))),
+                   ModularInteger('Address_Type', Pow(Number(2), Number(48))),
                    TRUE,
                    {
                        '00':
@@ -249,14 +249,14 @@ class TestModel(unittest.TestCase):
                                Last('Source'): Number(95)
                            })
                    })),
-            ('TPID',
-             Field('TPID',
-                   RangeInteger('UINT16',
-                                Number(0),
+            ('Type_Length_TPID',
+             Field('Type_Length_TPID',
+                   RangeInteger('Type_Length_Type',
+                                Number(46),
                                 Sub(Pow(Number(2), Number(16)), Number(1)),
                                 Number(16)),
-                   Or(NotEqual(Value('TPID'), Number(0x8100)),
-                      Equal(Value('TPID'), Number(0x8100))),
+                   Or(NotEqual(Value('Type_Length_TPID'), Number(0x8100)),
+                      Equal(Value('Type_Length_TPID'), Number(0x8100))),
                    {
                        '000':
                        Variant(
@@ -272,16 +272,16 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
-                               Length('TPID'): Number(16),
-                               First('TPID'): Number(96),
-                               Last('TPID'): Number(111)
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111)
                            })
                    })),
-            ('TCI',
-             Field('TCI',
-                   RangeInteger('UINT16',
-                                Number(0),
-                                Sub(Pow(Number(2), Number(16)), Number(1)),
+            ('TPID',
+             Field('TPID',
+                   RangeInteger('TPID_Type',
+                                Number(0x8100),
+                                Number(0x8100),
                                 Number(16)),
                    TRUE,
                    {
@@ -290,9 +290,9 @@ class TestModel(unittest.TestCase):
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000')
+                               ('Type_Length_TPID', '000')
                            ],
-                           Equal(Value('TPID'), Number(0x8100)),
+                           Equal(Value('Type_Length_TPID'), Number(0x8100)),
                            {
                                Length('Destination'): Number(48),
                                First('Destination'): Number(0),
@@ -300,30 +300,27 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
                                Length('TPID'): Number(16),
                                First('TPID'): Number(96),
                                Last('TPID'): Number(111),
-                               Length('TCI'): Number(16),
-                               First('TCI'): Number(112),
-                               Last('TCI'): Number(127)
                            })
                    })),
-            ('EtherType',
-             Field('EtherType',
-                   RangeInteger('UINT16',
-                                Number(0),
-                                Sub(Pow(Number(2), Number(16)), Number(1)),
-                                Number(16)),
-                   Or(GreaterEqual(Value('EtherType'), Number(1536)),
-                      LessEqual(Value('EtherType'), Number(1500))),
+            ('TCI',
+             Field('TCI',
+                   ModularInteger('TCI_Type',
+                                  Pow(Number(2), Number(16))),
+                   TRUE,
                    {
                        '00000':
                        Variant(
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('TCI', '0000')
+                               ('Type_Length_TPID', '000'),
+                               ('TPID', '0000')
                            ],
                            TRUE,
                            {
@@ -333,55 +330,36 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
                                Length('TPID'): Number(16),
                                First('TPID'): Number(96),
                                Last('TPID'): Number(111),
                                Length('TCI'): Number(16),
                                First('TCI'): Number(112),
-                               Last('TCI'): Number(127),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(128),
-                               Last('EtherType'): Number(143)
-                           }),
-                       '0001':
-                       Variant(
-                           [
-                               ('Destination', '0'),
-                               ('Source', '00'),
-                               ('TPID', '000')
-                           ],
-                           NotEqual(Value('TPID'), Number(0x8100)),
-                           {
-                               Length('Destination'): Number(48),
-                               First('Destination'): Number(0),
-                               Last('Destination'): Number(47),
-                               Length('Source'): Number(48),
-                               First('Source'): Number(48),
-                               Last('Source'): Number(95),
-                               Length('TPID'): Number(16),
-                               First('TPID'): Number(96),
-                               Last('TPID'): Number(111),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(96),
-                               Last('EtherType'): Number(111)
+                               Last('TCI'): Number(127)
                            })
                    })),
-            ('Payload',
-             Field('Payload',
-                   Array('Payload_Array'),
-                   And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
-                       LessEqual(Div(Length('Payload'), Number(8)), Number(1500))),
+            ('Type_Length',
+             Field('Type_Length',
+                   RangeInteger('Type_Length_Type',
+                                Number(46),
+                                Sub(Pow(Number(2), Number(16)), Number(1)),
+                                Number(16)),
+                   Or(GreaterEqual(Value('Type_Length'), Number(1536)),
+                      LessEqual(Value('Type_Length'), Number(1500))),
                    {
                        '000000':
                        Variant(
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('TCI', '0000'),
-                               ('EtherType', '00000')
+                               ('Type_Length_TPID', '000'),
+                               ('TPID', '0000'),
+                               ('TCI', '00000')
                            ],
-                           LessEqual(Value('EtherType'), Number(1500)),
+                           TRUE,
                            {
                                Length('Destination'): Number(48),
                                First('Destination'): Number(0),
@@ -389,30 +367,27 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
                                Length('TPID'): Number(16),
                                First('TPID'): Number(96),
                                Last('TPID'): Number(111),
                                Length('TCI'): Number(16),
                                First('TCI'): Number(112),
                                Last('TCI'): Number(127),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(128),
-                               Last('EtherType'): Number(143),
-                               Length('Payload'): Mul(LengthValue('EtherType'), Number(8)),
-                               First('Payload'): Number(144),
-                               Last('Payload'): Add(Mul(LengthValue('EtherType'), Number(8)),
-                                                    Number(143))
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(128),
+                               Last('Type_Length'): Number(143)
                            }),
-                       '000001':
+                       '0001':
                        Variant(
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('TCI', '0000'),
-                               ('EtherType', '00000')
+                               ('Type_Length_TPID', '000'),
                            ],
-                           GreaterEqual(Value('EtherType'), Number(1536)),
+                           NotEqual(Value('Type_Length_TPID'), Number(0x8100)),
                            {
                                Length('Destination'): Number(48),
                                First('Destination'): Number(0),
@@ -420,15 +395,85 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(96),
+                               Last('Type_Length'): Number(111)
+                           })
+                   })),
+            ('Payload',
+             Field('Payload',
+                   Array('Payload_Type'),
+                   And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
+                       LessEqual(Div(Length('Payload'), Number(8)), Number(1500))),
+                   {
+                       '0000000':
+                       Variant(
+                           [
+                               ('Destination', '0'),
+                               ('Source', '00'),
+                               ('Type_Length_TPID', '000'),
+                               ('TPID', '0000'),
+                               ('TCI', '00000'),
+                               ('Type_Length', '000000')
+                           ],
+                           LessEqual(Value('Type_Length'), Number(1500)),
+                           {
+                               Length('Destination'): Number(48),
+                               First('Destination'): Number(0),
+                               Last('Destination'): Number(47),
+                               Length('Source'): Number(48),
+                               First('Source'): Number(48),
+                               Last('Source'): Number(95),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
                                Length('TPID'): Number(16),
                                First('TPID'): Number(96),
                                Last('TPID'): Number(111),
                                Length('TCI'): Number(16),
                                First('TCI'): Number(112),
                                Last('TCI'): Number(127),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(128),
-                               Last('EtherType'): Number(143),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(128),
+                               Last('Type_Length'): Number(143),
+                               Length('Payload'): Mul(LengthValue('Type_Length'), Number(8)),
+                               First('Payload'): Number(144),
+                               Last('Payload'): Add(Mul(LengthValue('Type_Length'), Number(8)),
+                                                    Number(143))
+                           }),
+                       '0000001':
+                       Variant(
+                           [
+                               ('Destination', '0'),
+                               ('Source', '00'),
+                               ('Type_Length_TPID', '000'),
+                               ('TPID', '0000'),
+                               ('TCI', '00000'),
+                               ('Type_Length', '000000')
+                           ],
+                           GreaterEqual(Value('Type_Length'), Number(1536)),
+                           {
+                               Length('Destination'): Number(48),
+                               First('Destination'): Number(0),
+                               Last('Destination'): Number(47),
+                               Length('Source'): Number(48),
+                               First('Source'): Number(48),
+                               Last('Source'): Number(95),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
+                               Length('TPID'): Number(16),
+                               First('TPID'): Number(96),
+                               Last('TPID'): Number(111),
+                               Length('TCI'): Number(16),
+                               First('TCI'): Number(112),
+                               Last('TCI'): Number(127),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(128),
+                               Last('Type_Length'): Number(143),
                                Length('Payload'): Add(Last('Message'), Number(-143)),
                                First('Payload'): Number(144),
                                Last('Payload'): Last('Message')
@@ -438,10 +483,10 @@ class TestModel(unittest.TestCase):
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('EtherType', '0001')
+                               ('Type_Length_TPID', '000'),
+                               ('Type_Length', '0001')
                            ],
-                           LessEqual(Value('EtherType'), Number(1500)),
+                           LessEqual(Value('Type_Length'), Number(1500)),
                            {
                                Length('Destination'): Number(48),
                                First('Destination'): Number(0),
@@ -449,15 +494,15 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
-                               Length('TPID'): Number(16),
-                               First('TPID'): Number(96),
-                               Last('TPID'): Number(111),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(96),
-                               Last('EtherType'): Number(111),
-                               Length('Payload'): Mul(LengthValue('EtherType'), Number(8)),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(96),
+                               Last('Type_Length'): Number(111),
+                               Length('Payload'): Mul(LengthValue('Type_Length'), Number(8)),
                                First('Payload'): Number(112),
-                               Last('Payload'): Add(Mul(LengthValue('EtherType'), Number(8)),
+                               Last('Payload'): Add(Mul(LengthValue('Type_Length'), Number(8)),
                                                     Number(111))
                            }),
                        '00011':
@@ -465,10 +510,10 @@ class TestModel(unittest.TestCase):
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('EtherType', '0001')
+                               ('Type_Length_TPID', '000'),
+                               ('Type_Length', '0001')
                            ],
-                           GreaterEqual(Value('EtherType'), Number(1536)),
+                           GreaterEqual(Value('Type_Length'), Number(1536)),
                            {
                                Length('Destination'): Number(48),
                                First('Destination'): Number(0),
@@ -476,12 +521,12 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
-                               Length('TPID'): Number(16),
-                               First('TPID'): Number(96),
-                               Last('TPID'): Number(111),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(96),
-                               Last('EtherType'): Number(111),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(96),
+                               Last('Type_Length'): Number(111),
                                Length('Payload'): Add(Last('Message'), Number(-111)),
                                First('Payload'): Number(112),
                                Last('Payload'): Last('Message')
@@ -492,15 +537,16 @@ class TestModel(unittest.TestCase):
                    Null(),
                    TRUE,
                    {
-                       '0000000':
+                       '00000000':
                        Variant(
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('TCI', '0000'),
-                               ('EtherType', '00000'),
-                               ('Payload', '000000')
+                               ('Type_Length_TPID', '000'),
+                               ('TPID', '0000'),
+                               ('TCI', '00000'),
+                               ('Type_Length', '000000'),
+                               ('Payload', '0000000')
                            ],
                            And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
                                LessEqual(Div(Length('Payload'), Number(8)), Number(1500))),
@@ -511,29 +557,33 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
                                Length('TPID'): Number(16),
                                First('TPID'): Number(96),
                                Last('TPID'): Number(111),
                                Length('TCI'): Number(16),
                                First('TCI'): Number(112),
                                Last('TCI'): Number(127),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(128),
-                               Last('EtherType'): Number(143),
-                               Length('Payload'): Mul(LengthValue('EtherType'), Number(8)),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(128),
+                               Last('Type_Length'): Number(143),
+                               Length('Payload'): Mul(LengthValue('Type_Length'), Number(8)),
                                First('Payload'): Number(144),
-                               Last('Payload'): Add(Mul(LengthValue('EtherType'), Number(8)),
+                               Last('Payload'): Add(Mul(LengthValue('Type_Length'), Number(8)),
                                                     Number(143))
                            }),
-                       '0000010':
+                       '00000010':
                        Variant(
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('TCI', '0000'),
-                               ('EtherType', '00000'),
-                               ('Payload', '000001')
+                               ('Type_Length_TPID', '000'),
+                               ('TPID', '0000'),
+                               ('TCI', '00000'),
+                               ('Type_Length', '000000'),
+                               ('Payload', '0000001')
                            ],
                            And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
                                LessEqual(Div(Length('Payload'), Number(8)), Number(1500))),
@@ -544,15 +594,18 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
                                Length('TPID'): Number(16),
                                First('TPID'): Number(96),
                                Last('TPID'): Number(111),
                                Length('TCI'): Number(16),
                                First('TCI'): Number(112),
                                Last('TCI'): Number(127),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(128),
-                               Last('EtherType'): Number(143),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(128),
+                               Last('Type_Length'): Number(143),
                                Length('Payload'): Add(Last('Message'), Number(-143)),
                                First('Payload'): Number(144),
                                Last('Payload'): Last('Message')
@@ -562,8 +615,8 @@ class TestModel(unittest.TestCase):
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('EtherType', '0001'),
+                               ('Type_Length_TPID', '000'),
+                               ('Type_Length', '0001'),
                                ('Payload', '00010')
                            ],
                            And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
@@ -575,15 +628,15 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
-                               Length('TPID'): Number(16),
-                               First('TPID'): Number(96),
-                               Last('TPID'): Number(111),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(96),
-                               Last('EtherType'): Number(111),
-                               Length('Payload'): Mul(LengthValue('EtherType'), Number(8)),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(96),
+                               Last('Type_Length'): Number(111),
+                               Length('Payload'): Mul(LengthValue('Type_Length'), Number(8)),
                                First('Payload'): Number(112),
-                               Last('Payload'): Add(Mul(LengthValue('EtherType'), Number(8)),
+                               Last('Payload'): Add(Mul(LengthValue('Type_Length'), Number(8)),
                                                     Number(111))
                            }),
                        '000110':
@@ -591,8 +644,8 @@ class TestModel(unittest.TestCase):
                            [
                                ('Destination', '0'),
                                ('Source', '00'),
-                               ('TPID', '000'),
-                               ('EtherType', '0001'),
+                               ('Type_Length_TPID', '000'),
+                               ('Type_Length', '0001'),
                                ('Payload', '00011')
                            ],
                            And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
@@ -604,12 +657,12 @@ class TestModel(unittest.TestCase):
                                Length('Source'): Number(48),
                                First('Source'): Number(48),
                                Last('Source'): Number(95),
-                               Length('TPID'): Number(16),
-                               First('TPID'): Number(96),
-                               Last('TPID'): Number(111),
-                               Length('EtherType'): Number(16),
-                               First('EtherType'): Number(96),
-                               Last('EtherType'): Number(111),
+                               Length('Type_Length_TPID'): Number(16),
+                               First('Type_Length_TPID'): Number(96),
+                               Last('Type_Length_TPID'): Number(111),
+                               Length('Type_Length'): Number(16),
+                               First('Type_Length'): Number(96),
+                               Last('Type_Length'): Number(111),
                                Length('Payload'): Add(Last('Message'), Number(-111)),
                                First('Payload'): Number(112),
                                Last('Payload'): Last('Message')
