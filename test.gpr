@@ -7,6 +7,10 @@ project Test is
     for Create_Missing_Dirs use "True";
     for Main use ("test.adb");
 
+    package Builder is
+        for Default_Switches ("Ada") use ("-gnatdF");
+    end Builder;
+
     package Prove is
         for Proof_Switches ("Ada") use
         (

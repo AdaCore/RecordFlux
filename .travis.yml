@@ -22,4 +22,4 @@ jobs:
       services:
         - docker
       script:
-        - docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2018.spark /bin/sh -c "make test_spark"
+        - docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2019.spark /bin/sh -c "make test_spark && make prove_spark"
