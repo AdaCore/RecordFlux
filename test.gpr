@@ -1,24 +1,22 @@
 with "aunit";
 
 project Test is
+   type AUnit_Type is ("yes", "no");
+   AUnit : AUnit_Type := external ("aunit", "yes");
 
-    for Source_Dirs use ("tests");
-    for Object_Dir use "build";
-    for Create_Missing_Dirs use "True";
-    for Main use ("test.adb");
+   case AUnit is
+      when "yes" =>
+         for Source_Dirs use ("generated", "tests");
+         for Main use ("test.adb");
+      when "no" =>
+         for Source_Dirs use ("generated");
+   end case;
 
-    package Builder is
-        for Default_Switches ("Ada") use ("-gnatdF");
-    end Builder;
+   for Object_Dir use "build";
+   for Create_Missing_Dirs use "True";
 
-    package Prove is
-        for Proof_Switches ("Ada") use
-        (
-            "-j0",              -- Use all cores
-            "--level=1",        -- Use all provers, short timeout
-            "--warnings=error", -- Treat warnings as errors
-            "-U"                -- Analyze all files
-        );
-    end Prove;
+   package Prove is
+      for Proof_Switches ("Ada") use ("-j0", "--level=1", "--warnings=error");
+   end Prove;
 
 end Test;

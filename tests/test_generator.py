@@ -9,7 +9,7 @@ from tests.models import (ARRAY_MESSAGE, DERIVATION_MESSAGE, ENUMERATION_MESSAGE
 
 class TestGenerator(unittest.TestCase):
     def setUp(self) -> None:
-        self.testdir = "tests"
+        self.testdir = "generated"
         self.maxDiff = None  # pylint: disable=invalid-name
 
     def assert_specification(self, generator: Generator) -> None:
