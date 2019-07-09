@@ -7,7 +7,7 @@ from rflx.parser import Parser
 
 class TestIntegration(unittest.TestCase):
     def setUp(self) -> None:
-        self.testdir = "tests"
+        self.testdir = "generated"
         self.specdir = "specs"
         self.maxDiff = None  # pylint: disable=invalid-name
 
