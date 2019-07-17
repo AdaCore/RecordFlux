@@ -10,6 +10,8 @@ is
    type Bytes is array (Index_Type range <>) of Byte
       with Predicate => Bytes'Length > 0;
 
+   type Bytes_Ptr is access Bytes;
+
    type Payload_Type is new Bytes;
 
    procedure Bytes_Put (Buffer : Bytes);

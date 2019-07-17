@@ -1,8 +1,8 @@
 with "aunit";
 
 project Test is
-   type AUnit_Type is ("yes", "no");
-   AUnit : AUnit_Type := external ("aunit", "yes");
+   type Flag_Type is ("yes", "no");
+   AUnit : Flag_Type := external ("aunit", "yes");
 
    case AUnit is
       when "yes" =>
