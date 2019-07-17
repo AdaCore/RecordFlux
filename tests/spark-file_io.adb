@@ -6,9 +6,12 @@ package body SPARK.File_IO
 is
 
    function Read_File (Name : String) return Bytes is
+     (Read_File_Ptr (Name).all);
+
+   function Read_File_Ptr (Name : String) return Bytes_Ptr is
       package Byte_IO is new Ada.Sequential_IO (Byte);
       Input_File : Byte_IO.File_Type;
-      Buffer : Bytes (1 .. Index_Type (Ada.Directories.Size (Name)));
+      Buffer : Bytes_Ptr := new Bytes (1 .. Index_Type (Ada.Directories.Size (Name)));
       Value : Byte := 0;
       I : Length_Type := 0;
    begin
@@ -20,6 +23,6 @@ is
       end loop;
       Byte_IO.Close (Input_File);
       return Buffer;
-   end Read_File;
+   end Read_File_Ptr;
 
 end SPARK.File_IO;

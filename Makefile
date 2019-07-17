@@ -14,6 +14,9 @@ test_spark:
 prove_spark:
 	gnatprove -Ptest --checks-as-errors
 
+prove_spark_ci:
+	gnatprove -Ptest --checks-as-errors -Xaunit=no
+
 clean:
 	gprclean -Ptest
 	rmdir build
