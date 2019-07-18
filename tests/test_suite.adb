@@ -1,29 +1,29 @@
-with Types.Tests;
-with Ethernet.Tests;
-with IPv4.Tests;
-with In_Ethernet.Tests;
-with In_IPv4.Tests;
-with TLV.Tests;
-with Enumeration.Tests;
-with Arrays.Tests;
-with Derivation.Tests;
-with Expression.Tests;
+with RFLX.Types.Tests;
+with RFLX.Ethernet.Tests;
+with RFLX.IPv4.Tests;
+with RFLX.In_Ethernet.Tests;
+with RFLX.In_IPv4.Tests;
+with RFLX.TLV.Tests;
+with RFLX.Enumeration.Tests;
+with RFLX.Arrays.Tests;
+with RFLX.Derivation.Tests;
+--  with RFLX.Expression.Tests;  --  ISSUE: Componolit/RecordFlux#60
 
 package body Test_Suite is
 
    function Suite return Access_Test_Suite is
       Result : constant Access_Test_Suite := new AUnit.Test_Suites.Test_Suite;
    begin
-      Result.Add_Test (new Types.Tests.Test);
-      Result.Add_Test (new Ethernet.Tests.Test);
-      Result.Add_Test (new IPv4.Tests.Test);
-      Result.Add_Test (new In_Ethernet.Tests.Test);
-      Result.Add_Test (new In_IPv4.Tests.Test);
-      Result.Add_Test (new TLV.Tests.Test);
-      Result.Add_Test (new Enumeration.Tests.Test);
-      Result.Add_Test (new Arrays.Tests.Test);
-      Result.Add_Test (new Derivation.Tests.Test);
-      Result.Add_Test (new Expression.Tests.Test);
+      Result.Add_Test (new RFLX.Types.Tests.Test);
+      Result.Add_Test (new RFLX.Ethernet.Tests.Test);
+      Result.Add_Test (new RFLX.IPv4.Tests.Test);
+      Result.Add_Test (new RFLX.In_Ethernet.Tests.Test);
+      Result.Add_Test (new RFLX.In_IPv4.Tests.Test);
+      Result.Add_Test (new RFLX.TLV.Tests.Test);
+      Result.Add_Test (new RFLX.Enumeration.Tests.Test);
+      Result.Add_Test (new RFLX.Arrays.Tests.Test);
+      Result.Add_Test (new RFLX.Derivation.Tests.Test);
+      --  Result.Add_Test (new RFLX.Expression.Tests.Test);  --  ISSUE: Componolit/RecordFlux#60
       return Result;
    end Suite;
 
