@@ -1,5 +1,5 @@
 with Types;
-use type Types.Bytes, Types.Index_Type, Types.Length_Type;
+use type Types.Bytes, Types.Index_Type, Types.Length_Type, Types.Bit_Index_Type, Types.Bit_Length_Type;
 
 package Enumeration with
   SPARK_Mode
@@ -31,13 +31,13 @@ is
 
    function Convert_To_Priority_Base is new Types.Convert_To_Mod (Priority_Base);
 
-   function Valid_Priority (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Priority (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Priority_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Priority_Base'Size + Types.Bit_Length_Type (Offset)));
 
-   function Convert_To_Priority (Buffer : Types.Bytes; Offset : Natural) return Priority with
-     Pre => ((Offset < 8 and then Buffer'Length = (((Priority_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Priority (Buffer, Offset));
+   function Convert_To_Priority (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Priority with
+     Pre => (Buffer'Length = Types.Byte_Index ((Priority_Base'Size + Types.Bit_Length_Type (Offset))) and then Valid_Priority (Buffer, Offset));
 
    function Convert_To_Priority_Base (Enum : Priority_Enum) return Priority_Base is
      (case Enum is when LOW => 1, when MEDIUM => 4, when HIGH => 7);

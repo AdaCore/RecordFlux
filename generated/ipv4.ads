@@ -1,5 +1,5 @@
 with Types;
-use type Types.Bytes, Types.Index_Type, Types.Length_Type;
+use type Types.Bytes, Types.Index_Type, Types.Length_Type, Types.Bit_Index_Type, Types.Bit_Length_Type;
 
 package IPv4 with
   SPARK_Mode
@@ -21,15 +21,15 @@ is
 
    function Convert_To_Flag_Type_Base is new Types.Convert_To_Mod (Flag_Type_Base);
 
-   function Valid_Flag_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Flag_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (case Convert_To_Flag_Type_Base (Buffer, Offset) is when 0 | 1 => True, when others => False)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Flag_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Flag_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
-   function Convert_To_Flag_Type (Buffer : Types.Bytes; Offset : Natural) return Flag_Type is
+   function Convert_To_Flag_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Flag_Type is
      (case Convert_To_Flag_Type_Base (Buffer, Offset) is when 0 => Flag_False, when 1 => Flag_True, when others => Unreachable_Flag_Type)
     with
-     Pre => ((Offset < 8 and then Buffer'Length = (((Flag_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Flag_Type (Buffer, Offset));
+     Pre => (Buffer'Length = Types.Byte_Index ((Flag_Type_Base'Size + Types.Bit_Length_Type (Offset))) and then Valid_Flag_Type (Buffer, Offset));
 
    function Convert_To_Flag_Type_Base (Enum : Flag_Type) return Flag_Type_Base is
      (case Enum is when Flag_False => 0, when Flag_True => 1);
@@ -50,15 +50,15 @@ is
 
    function Convert_To_Option_Class_Type_Base is new Types.Convert_To_Mod (Option_Class_Type_Base);
 
-   function Valid_Option_Class_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Option_Class_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (case Convert_To_Option_Class_Type_Base (Buffer, Offset) is when 0 | 2 => True, when others => False)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Option_Class_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Option_Class_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
-   function Convert_To_Option_Class_Type (Buffer : Types.Bytes; Offset : Natural) return Option_Class_Type is
+   function Convert_To_Option_Class_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Option_Class_Type is
      (case Convert_To_Option_Class_Type_Base (Buffer, Offset) is when 0 => Control, when 2 => Debugging_And_Measurement, when others => Unreachable_Option_Class_Type)
     with
-     Pre => ((Offset < 8 and then Buffer'Length = (((Option_Class_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Option_Class_Type (Buffer, Offset));
+     Pre => (Buffer'Length = Types.Byte_Index ((Option_Class_Type_Base'Size + Types.Bit_Length_Type (Offset))) and then Valid_Option_Class_Type (Buffer, Offset));
 
    function Convert_To_Option_Class_Type_Base (Enum : Option_Class_Type) return Option_Class_Type_Base is
      (case Enum is when Control => 0, when Debugging_And_Measurement => 2);
@@ -76,10 +76,10 @@ is
 
    function Convert_To_Option_Number_Type is new Types.Convert_To_Mod (Option_Number_Type);
 
-   function Valid_Option_Number_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Option_Number_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Option_Number_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Option_Number_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type Option_Length_Type_Base is range 0 .. ((2**8) - 1) with Size => 8;
 
@@ -96,10 +96,10 @@ is
 
    function Convert_To_Option_Length_Type_Base is new Types.Convert_To_Int (Option_Length_Type_Base);
 
-   function Valid_Option_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Option_Length_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (Convert_To_Option_Length_Type_Base (Buffer, Offset) >= 2)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Option_Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Option_Length_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
    type Version_Type_Base is range 0 .. ((2**4) - 1) with Size => 4;
 
@@ -116,10 +116,10 @@ is
 
    function Convert_To_Version_Type_Base is new Types.Convert_To_Int (Version_Type_Base);
 
-   function Valid_Version_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Version_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      ((Convert_To_Version_Type_Base (Buffer, Offset) >= 4 and then Convert_To_Version_Type_Base (Buffer, Offset) <= 4))
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Version_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Version_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
    type IHL_Type_Base is range 0 .. ((2**4) - 1) with Size => 4;
 
@@ -136,10 +136,10 @@ is
 
    function Convert_To_IHL_Type_Base is new Types.Convert_To_Int (IHL_Type_Base);
 
-   function Valid_IHL_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_IHL_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (Convert_To_IHL_Type_Base (Buffer, Offset) >= 5)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((IHL_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((IHL_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
    type DCSP_Type is mod (2**6);
 
@@ -154,10 +154,10 @@ is
 
    function Convert_To_DCSP_Type is new Types.Convert_To_Mod (DCSP_Type);
 
-   function Valid_DCSP_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_DCSP_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((DCSP_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((DCSP_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type ECN_Type is mod (2**2);
 
@@ -172,10 +172,10 @@ is
 
    function Convert_To_ECN_Type is new Types.Convert_To_Mod (ECN_Type);
 
-   function Valid_ECN_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_ECN_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((ECN_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((ECN_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type Total_Length_Type_Base is range 0 .. ((2**16) - 1) with Size => 16;
 
@@ -192,10 +192,10 @@ is
 
    function Convert_To_Total_Length_Type_Base is new Types.Convert_To_Int (Total_Length_Type_Base);
 
-   function Valid_Total_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Total_Length_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (Convert_To_Total_Length_Type_Base (Buffer, Offset) >= 20)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Total_Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Total_Length_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
    type Identification_Type is mod (2**16);
 
@@ -210,10 +210,10 @@ is
 
    function Convert_To_Identification_Type is new Types.Convert_To_Mod (Identification_Type);
 
-   function Valid_Identification_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Identification_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Identification_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Identification_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type Fragment_Offset_Type is mod (2**13);
 
@@ -228,10 +228,10 @@ is
 
    function Convert_To_Fragment_Offset_Type is new Types.Convert_To_Mod (Fragment_Offset_Type);
 
-   function Valid_Fragment_Offset_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Fragment_Offset_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Fragment_Offset_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Fragment_Offset_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type TTL_Type is mod (2**8);
 
@@ -246,10 +246,10 @@ is
 
    function Convert_To_TTL_Type is new Types.Convert_To_Mod (TTL_Type);
 
-   function Valid_TTL_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_TTL_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((TTL_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((TTL_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type Protocol_Type_Base is mod (2**8);
 
@@ -277,13 +277,13 @@ is
 
    function Convert_To_Protocol_Type_Base is new Types.Convert_To_Mod (Protocol_Type_Base);
 
-   function Valid_Protocol_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Protocol_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Protocol_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Protocol_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
-   function Convert_To_Protocol_Type (Buffer : Types.Bytes; Offset : Natural) return Protocol_Type with
-     Pre => ((Offset < 8 and then Buffer'Length = (((Protocol_Type_Base'Size + Offset + (-1)) / 8) + 1)) and then Valid_Protocol_Type (Buffer, Offset));
+   function Convert_To_Protocol_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Protocol_Type with
+     Pre => (Buffer'Length = Types.Byte_Index ((Protocol_Type_Base'Size + Types.Bit_Length_Type (Offset))) and then Valid_Protocol_Type (Buffer, Offset));
 
    function Convert_To_Protocol_Type_Base (Enum : Protocol_Type_Enum) return Protocol_Type_Base is
      (case Enum is when PROTOCOL_UDP => 17);
@@ -301,10 +301,10 @@ is
 
    function Convert_To_Header_Checksum_Type is new Types.Convert_To_Mod (Header_Checksum_Type);
 
-   function Valid_Header_Checksum_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Header_Checksum_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Header_Checksum_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Header_Checksum_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type Address_Type is mod (2**32);
 
@@ -319,10 +319,10 @@ is
 
    function Convert_To_Address_Type is new Types.Convert_To_Mod (Address_Type);
 
-   function Valid_Address_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Address_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Address_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Address_Type'Size + Types.Bit_Length_Type (Offset)));
 
    pragma Warnings (Off, "precondition is statically false");
 

@@ -21,22 +21,22 @@ is
       Ada.Text_IO.New_Line;
    end Bytes_Put;
 
-   function Convert_To_Mod (Buffer : Bytes; Offset : Natural := 0) return Int
+   function Convert_To_Mod (Buffer : Bytes; Offset : Offset_Type := 0) return Int
    is
       Current : Byte;
       Carry : Byte := 0;
       Next_Carry : Byte;
       Value : Int := 0;
-      Fraction : Boolean := (Int'Size + Offset) mod 8 /= 0;
+      Fraction : Boolean := (Int'Size + Natural (Offset)) mod 8 /= 0;
    begin
       for I in reverse Length_Type range 0 .. Buffer'Length - 1 loop
          Current := Buffer (Buffer'First + (Buffer'Length - I - 1));
          if Fraction and I = Buffer'Length - 1 then
-            Current := Current and (2**((Int'Size + Offset) mod 8) - 1);
+            Current := Current and (2**((Int'Size + Natural (Offset)) mod 8) - 1);
          end if;
          if Offset > 0 then
-            Next_Carry := Current and (2**Offset - 1);
-            Current := Current / 2**Offset + Carry * 2**(8 - Offset);
+            Next_Carry := Current and (2**Natural (Offset) - 1);
+            Current := Current / 2**Natural (Offset) + Carry * 2**(8 - Natural (Offset));
             Carry := Next_Carry;
          end if;
          if I < (Int'Size - 1) / 8 + 1 then
@@ -46,22 +46,22 @@ is
       return Value;
    end Convert_To_Mod;
 
-   function Convert_To_Int (Buffer : Bytes; Offset : Natural := 0) return Int
+   function Convert_To_Int (Buffer : Bytes; Offset : Offset_Type := 0) return Int
    is
       Current : Byte;
       Carry : Byte := 0;
       Next_Carry : Byte;
       Value : Int := 0;
-      Fraction : Boolean := (Int'Size + Offset) mod 8 /= 0;
+      Fraction : Boolean := (Int'Size + Natural (Offset)) mod 8 /= 0;
    begin
       for I in reverse Length_Type range 0 .. Buffer'Length - 1 loop
          Current := Buffer (Buffer'First + (Buffer'Length - I - 1));
          if Fraction and I = Buffer'Length - 1 then
-            Current := Current and (2**((Int'Size + Offset) mod 8) - 1);
+            Current := Current and (2**((Int'Size + Natural (Offset)) mod 8) - 1);
          end if;
          if Offset > 0 then
-            Next_Carry := Current and (2**Offset - 1);
-            Current := Current / 2**Offset + Carry * 2**(8 - Offset);
+            Next_Carry := Current and (2**Natural (Offset) - 1);
+            Current := Current / 2**Natural (Offset) + Carry * 2**(8 - Natural (Offset));
             Carry := Next_Carry;
          end if;
          if I < (Int'Size - 1) / 8 + 1 then

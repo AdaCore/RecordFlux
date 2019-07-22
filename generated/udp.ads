@@ -1,5 +1,5 @@
 with Types;
-use type Types.Bytes, Types.Index_Type, Types.Length_Type;
+use type Types.Bytes, Types.Index_Type, Types.Length_Type, Types.Bit_Index_Type, Types.Bit_Length_Type;
 
 package UDP with
   SPARK_Mode
@@ -18,10 +18,10 @@ is
 
    function Convert_To_Port_Type is new Types.Convert_To_Mod (Port_Type);
 
-   function Valid_Port_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Port_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Port_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Port_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type Length_Type_Base is range 0 .. ((2**16) - 1) with Size => 16;
 
@@ -38,10 +38,10 @@ is
 
    function Convert_To_Length_Type_Base is new Types.Convert_To_Int (Length_Type_Base);
 
-   function Valid_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Length_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (Convert_To_Length_Type_Base (Buffer, Offset) >= 8)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Length_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
    type Checksum_Type is mod (2**16);
 
@@ -56,10 +56,10 @@ is
 
    function Convert_To_Checksum_Type is new Types.Convert_To_Mod (Checksum_Type);
 
-   function Valid_Checksum_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Checksum_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Checksum_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Checksum_Type'Size + Types.Bit_Length_Type (Offset)));
 
    pragma Warnings (Off, "precondition is statically false");
 

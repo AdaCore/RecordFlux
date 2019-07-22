@@ -7,6 +7,18 @@ is
    type Length_Type is new Natural;
    subtype Index_Type is Length_Type range 1 .. Length_Type'Last;
 
+   type Bit_Length_Type is range 0 .. 2**34 - 1;
+   subtype Bit_Index_Type is Bit_Length_Type range 1 .. Bit_Length_Type'Last;
+
+   function Byte_Index (Bit_Index : Bit_Index_Type) return Index_Type is
+     (Length_Type ((Bit_Index - 1) / 8) + 1);
+
+   function First_Bit_Index (Index : Index_Type) return Bit_Index_Type is
+     ((Bit_Length_Type (Index) - 1) * 8 + 1);
+
+   function Last_Bit_Index (Index : Index_Type) return Bit_Index_Type is
+     ((Bit_Length_Type (Index) - 1) * 8 + 8);
+
    type Bytes is array (Index_Type range <>) of Byte
       with Predicate => Bytes'Length > 0;
 
@@ -16,16 +28,18 @@ is
 
    procedure Bytes_Put (Buffer : Bytes);
 
+   type Offset_Type is mod 8;
+
    generic
       type Int is mod <>;
-   function Convert_To_Mod (Buffer : Bytes; Offset : Natural := 0) return Int
+   function Convert_To_Mod (Buffer : Bytes; Offset : Offset_Type := 0) return Int
      with
-       Pre => Offset < 8 and then Buffer'Length = ((Int'Size + Offset - 1) / 8) + 1;
+       Pre => Buffer'Length = Byte_Index (Int'Size + Bit_Length_Type (Offset));
 
    generic
       type Int is range <>;
-   function Convert_To_Int (Buffer : Bytes; Offset : Natural := 0) return Int
+   function Convert_To_Int (Buffer : Bytes; Offset : Offset_Type := 0) return Int
      with
-       Pre => Offset < 8 and then Buffer'Length = ((Int'Size + Offset - 1) / 8) + 1;
+       Pre => Buffer'Length = Byte_Index (Int'Size + Bit_Length_Type (Offset));
 
 end Types;

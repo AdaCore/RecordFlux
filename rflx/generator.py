@@ -13,8 +13,8 @@ from rflx.ada import (Aspect, Assignment, ComponentItem, ContextItem, Declaratio
                       UnitPart, UsePackageClause, UseTypeClause, VariantItem, VariantRecordType,
                       WithClause)
 from rflx.expression import (FALSE, TRUE, Add, Aggregate, And, Attribute, Call, Case, Div, Equal,
-                             Expr, GreaterEqual, If, Last, Length, LengthValue, Less, LessEqual,
-                             Mul, Number, Or, Pow, Size, Slice, Sub, Value)
+                             Expr, GreaterEqual, If, Last, Length, LengthValue, LessEqual, Mul,
+                             Number, Or, Pow, Size, Slice, Sub, Value)
 from rflx.model import (Array, DerivedMessage, Enumeration, Field, First, Message, ModularInteger,
                         RangeInteger, Reference, Refinement, Type, Variant)
 
@@ -293,7 +293,9 @@ class Generator:
         return [WithClause([self.__types]),
                 UseTypeClause([self.__types_bytes,
                                self.__types_index,
-                               self.__types_length])]
+                               self.__types_length,
+                               self.__types_bit_index,
+                               self.__types_bit_length])]
 
     def __range_functions(self, integer: RangeInteger) -> SubprogramUnitPart:
         unit = SubprogramUnitPart()
@@ -302,12 +304,13 @@ class Generator:
             if isinstance(range_type, RangeSubtype):
                 continue
             unit.specification.append(
-                GenericFunctionInstantiation(convert_function_name(range_type.name),
-                                             FunctionSpecification(f'Types.Convert_To_Int',
-                                                                   range_type.name,
-                                                                   [('Buffer', self.__types_bytes),
-                                                                    ('Offset', 'Natural')]),
-                                             [range_type.name]))
+                GenericFunctionInstantiation(
+                    convert_function_name(range_type.name),
+                    FunctionSpecification(f'Types.Convert_To_Int',
+                                          range_type.name,
+                                          [('Buffer', self.__types_bytes),
+                                           ('Offset', self.__types_offset)]),
+                    [range_type.name]))
 
         unit.specification.append(self.__integer_validation_function(integer))
 
@@ -318,12 +321,13 @@ class Generator:
 
         for modular_type in modular_types(integer):
             unit.specification.append(
-                GenericFunctionInstantiation(convert_function_name(modular_type.name),
-                                             FunctionSpecification(f'Types.Convert_To_Mod',
-                                                                   modular_type.name,
-                                                                   [('Buffer', self.__types_bytes),
-                                                                    ('Offset', 'Natural')]),
-                                             [modular_type.name]))
+                GenericFunctionInstantiation(
+                    convert_function_name(modular_type.name),
+                    FunctionSpecification(f'Types.Convert_To_Mod',
+                                          modular_type.name,
+                                          [('Buffer', self.__types_bytes),
+                                           ('Offset', self.__types_offset)]),
+                    [modular_type.name]))
 
         unit.specification.append(self.__integer_validation_function(integer))
 
@@ -350,7 +354,7 @@ class Generator:
             FunctionSpecification(f'Types.Convert_To_Mod',
                                   enum.base_name,
                                   [('Buffer', self.__types_bytes),
-                                   ('Offset', 'Natural')]),
+                                   ('Offset', self.__types_offset)]),
             [enum.base_name]))
 
         enum_value = Call(convert_function_name(enum.base_name),
@@ -374,9 +378,9 @@ class Generator:
             convert_function_name(enum.name),
             enum.name,
             [('Buffer', self.__types_bytes),
-             ('Offset', 'Natural')])
+             ('Offset', self.__types_offset)])
         precondition = Precondition(
-            And(type_conversion_precondition(enum.base_name),
+            And(self.type_conversion_precondition(enum.base_name),
                 Call(f'Valid_{enum.name}', [Value('Buffer'), Value('Offset')])))
         conversion_cases: List[Tuple[Expr, Expr]] = []
 
@@ -416,9 +420,9 @@ class Generator:
             FunctionSpecification(f'Valid_{type_name}',
                                   'Boolean',
                                   [('Buffer', self.__types_bytes),
-                                   ('Offset', 'Natural')]),
+                                   ('Offset', self.__types_offset)]),
             validation_expression,
-            [Precondition(type_conversion_precondition(type_base_name))])
+            [Precondition(self.type_conversion_precondition(type_base_name))])
 
     def __contain_functions(self) -> SubprogramUnitPart:
         label_procedure = ProcedureSpecification('Label', [('Buffer', self.__types_bytes)])
@@ -782,6 +786,13 @@ class Generator:
                 {**self.__value_to_call_facts([(field.name, variant_id)] + variant.previous),
                  **facts})
 
+    def type_conversion_precondition(self, type_name: str) -> Expr:
+        return Equal(Length('Buffer'),
+                     Call(self.__types_byte_index,
+                          [Add(Size(type_name),
+                               Call(self.__types_bit_length,
+                                    [Value('Offset')]))]))
+
     @property
     def __types(self) -> str:
         return f'{self.__prefix}Types'
@@ -797,6 +808,22 @@ class Generator:
     @property
     def __types_length(self) -> str:
         return f'{self.__prefix}Types.Length_Type'
+
+    @property
+    def __types_bit_index(self) -> str:
+        return f'{self.__prefix}Types.Bit_Index_Type'
+
+    @property
+    def __types_bit_length(self) -> str:
+        return f'{self.__prefix}Types.Bit_Length_Type'
+
+    @property
+    def __types_byte_index(self) -> str:
+        return f'{self.__prefix}Types.Byte_Index'
+
+    @property
+    def __types_offset(self) -> str:
+        return f'{self.__prefix}Types.Offset_Type'
 
 
 def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
@@ -838,17 +865,6 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
                                VariantItem('False', [ComponentItem('Raw', enum.base_name)])]))
 
     return types
-
-
-def type_conversion_precondition(type_name: str) -> Expr:
-    return And(Less(Value('Offset'),
-                    Number(8)),
-               Equal(Length('Buffer'),
-                     Add(Div(Add(Size(type_name),
-                                 Value('Offset'),
-                                 Number(-1)),
-                             Number(8)),
-                         Number(1))))
 
 
 def renamed_subprogram_specification(specification: SubprogramSpecification,
