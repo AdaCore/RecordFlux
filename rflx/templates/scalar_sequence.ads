@@ -3,8 +3,8 @@ with {prefix}Types; use type {prefix}Types.Length_Type;
 generic
    type Element_Type is private;
    Element_Type_Byte_Size : Types.Length_Type;
-   with function Valid_Element_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean;
-   with function Convert_To_Element_Type (Buffer : Types.Bytes; Offset : Natural) return Element_Type;
+   with function Valid_Element_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean;
+   with function Convert_To_Element_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Element_Type;
 package {prefix}Scalar_Sequence
   with SPARK_Mode
 is

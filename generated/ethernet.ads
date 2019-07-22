@@ -1,5 +1,5 @@
 with Types;
-use type Types.Bytes, Types.Index_Type, Types.Length_Type;
+use type Types.Bytes, Types.Index_Type, Types.Length_Type, Types.Bit_Index_Type, Types.Bit_Length_Type;
 
 package Ethernet with
   SPARK_Mode
@@ -18,10 +18,10 @@ is
 
    function Convert_To_Address_Type is new Types.Convert_To_Mod (Address_Type);
 
-   function Valid_Address_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Address_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Address_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Address_Type'Size + Types.Bit_Length_Type (Offset)));
 
    type Type_Length_Type_Base is range 0 .. ((2**16) - 1) with Size => 16;
 
@@ -38,10 +38,10 @@ is
 
    function Convert_To_Type_Length_Type_Base is new Types.Convert_To_Int (Type_Length_Type_Base);
 
-   function Valid_Type_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_Type_Length_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (Convert_To_Type_Length_Type_Base (Buffer, Offset) >= 46)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((Type_Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((Type_Length_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
    type TPID_Type_Base is range 0 .. ((2**16) - 1) with Size => 16;
 
@@ -58,10 +58,10 @@ is
 
    function Convert_To_TPID_Type_Base is new Types.Convert_To_Int (TPID_Type_Base);
 
-   function Valid_TPID_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_TPID_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      ((Convert_To_TPID_Type_Base (Buffer, Offset) >= 33024 and then Convert_To_TPID_Type_Base (Buffer, Offset) <= 33024))
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((TPID_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((TPID_Type_Base'Size + Types.Bit_Length_Type (Offset)));
 
    type TCI_Type is mod (2**16);
 
@@ -76,10 +76,10 @@ is
 
    function Convert_To_TCI_Type is new Types.Convert_To_Mod (TCI_Type);
 
-   function Valid_TCI_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
+   function Valid_TCI_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean is
      (True)
     with
-     Pre => (Offset < 8 and then Buffer'Length = (((TCI_Type'Size + Offset + (-1)) / 8) + 1));
+     Pre => Buffer'Length = Types.Byte_Index ((TCI_Type'Size + Types.Bit_Length_Type (Offset)));
 
    pragma Warnings (Off, "precondition is statically false");
 

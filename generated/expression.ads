@@ -1,5 +1,5 @@
 with Types;
-use type Types.Bytes, Types.Index_Type, Types.Length_Type;
+use type Types.Bytes, Types.Index_Type, Types.Length_Type, Types.Bit_Index_Type, Types.Bit_Length_Type;
 
 package Expression with
   SPARK_Mode
