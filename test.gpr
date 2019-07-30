@@ -19,4 +19,12 @@ project Test is
       for Proof_Switches ("Ada") use ("-j0", "--level=1", "--warnings=error");
    end Prove;
 
+   package Builder is
+      for Default_Switches ("Ada") use ("-g", "-gnata");
+   end Builder;
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-Es");
+   end Binder;
+
 end Test;
