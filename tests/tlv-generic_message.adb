@@ -1,5 +1,5 @@
-package body TLV.Generic_Message
-  with SPARK_Mode
+package body TLV.Generic_Message with
+  SPARK_Mode
 is
 
    procedure Label (Buffer : Types.Bytes) is

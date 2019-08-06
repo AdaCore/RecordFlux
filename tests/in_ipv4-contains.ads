@@ -3,13 +3,12 @@ use IPv4;
 with IPv4.Packet;
 with UDP.Datagram;
 
-package In_IPv4.Contains
-  with SPARK_Mode
+package In_IPv4.Contains with
+  SPARK_Mode
 is
 
-   function UDP_Datagram_In_IPv4_Packet_Payload (Buffer : Types.Bytes) return Boolean
-     with
-       Pre => (IPv4.Packet.Is_Contained (Buffer) and then IPv4.Packet.Is_Valid (Buffer)),
-       Post => (if UDP_Datagram_In_IPv4_Packet_Payload'Result then UDP.Datagram.Is_Contained (Buffer (IPv4.Packet.Get_Payload_First (Buffer) .. IPv4.Packet.Get_Payload_Last (Buffer))));
+   function UDP_Datagram_In_IPv4_Packet_Payload (Buffer : Types.Bytes) return Boolean with
+     Pre => (IPv4.Packet.Is_Contained (Buffer) and then IPv4.Packet.Is_Valid (Buffer)),
+     Post => (if UDP_Datagram_In_IPv4_Packet_Payload'Result then UDP.Datagram.Is_Contained (Buffer (IPv4.Packet.Get_Payload_First (Buffer) .. IPv4.Packet.Get_Payload_Last (Buffer))));
 
 end In_IPv4.Contains;

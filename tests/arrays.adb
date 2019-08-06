@@ -1,5 +1,5 @@
-package body Arrays
-  with SPARK_Mode
+package body Arrays with
+  SPARK_Mode
 is
 
    function Convert_To_AV_Enumeration (Buffer : Types.Bytes; Offset : Natural) return AV_Enumeration is

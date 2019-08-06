@@ -87,10 +87,8 @@ class PackageDeclaration(Declaration):
         self.formal_parameters = formal_parameters
 
     def __str__(self) -> str:
-        aspect = '\n  with SPARK_Mode\n'
-
         return (f'{generic_formal_part(self.formal_parameters)}'
-                f'package {self.name}{aspect}is\n\n'
+                f'package {self.name} with\n  SPARK_Mode\nis\n\n'
                 f'{declarative_items(self.declarations)}'
                 f'{declarative_items(self.private_declarations, True)}'
                 f'end {self.name};\n')
@@ -105,9 +103,7 @@ class PackageBody(Declaration):
         if not self.declarations:
             return ''
 
-        aspect = '\n  with SPARK_Mode\n'
-
-        return (f'package body {self.name}{aspect}is\n\n'
+        return (f'package body {self.name} with\n  SPARK_Mode\nis\n\n'
                 f'{declarative_items(self.declarations)}end {self.name};\n')
 
 
@@ -467,7 +463,8 @@ class SubprogramBody(Subprogram):
         return '\n'.join(indent(str(s), 3) for s in self.statements)
 
     def __str__(self) -> str:
-        return (f'{self.specification}{with_clause(self.aspects)} is\n'
+        aspects = f'{with_clause(self.aspects)}\n' if self.aspects else ' '
+        return (f'{self.specification}{aspects}is\n'
                 f'{self._declarations()}'
                 f'begin\n'
                 f'{self._statements()}\n'
@@ -482,8 +479,9 @@ class ExpressionFunctionDeclaration(Subprogram):
         self.aspects = aspects or []
 
     def __str__(self) -> str:
+        aspects = f'\n{with_clause(self.aspects)}' if self.aspects else ''
         return (f'{self.specification} is\n'
-                f'   ({self.expression!s}){with_clause(self.aspects)};')
+                f'  ({self.expression!s}){aspects};')
 
 
 class GenericFunctionInstantiation(Subprogram):
@@ -681,12 +679,7 @@ def declarative_items(declarations: List[Declaration], private: bool = False) ->
 def with_clause(aspects: List[Aspect]) -> str:
     if not aspects:
         return ''
-    result = '\n  with\n    '
-    for i, aspect in enumerate(aspects):
-        result += str(aspect)
-        if i + 1 < len(aspects):
-            result += ',\n    '
-    return result
+    return ' with\n' + ',\n'.join(indent(str(aspect), 2) for aspect in aspects)
 
 
 T = TypeVar('T')  # pylint: disable=invalid-name

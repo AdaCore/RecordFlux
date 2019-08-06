@@ -1,5 +1,5 @@
-package body In_Ethernet.Contains
-  with SPARK_Mode
+package body In_Ethernet.Contains with
+  SPARK_Mode
 is
 
    function IPv4_Packet_In_Ethernet_Frame_Payload (Buffer : Types.Bytes) return Boolean is

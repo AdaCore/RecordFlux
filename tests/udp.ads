@@ -1,8 +1,8 @@
 with Types;
 use type Types.Bytes, Types.Index_Type, Types.Length_Type;
 
-package UDP
-  with SPARK_Mode
+package UDP with
+  SPARK_Mode
 is
 
    type Port_Type is mod (2**16);
@@ -10,18 +10,18 @@ is
    pragma Warnings (Off, "precondition is statically false");
 
    function Unreachable_Port_Type return Port_Type is
-      (Port_Type'First)
-     with
-       Pre => False;
+     (Port_Type'First)
+    with
+     Pre => False;
 
    pragma Warnings (On, "precondition is statically false");
 
    function Convert_To_Port_Type is new Types.Convert_To_Mod (Port_Type);
 
    function Valid_Port_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
-      (True)
-     with
-       Pre => (Offset < 8 and then Buffer'Length = (((Port_Type'Size + Offset + (-1)) / 8) + 1));
+     (True)
+    with
+     Pre => (Offset < 8 and then Buffer'Length = (((Port_Type'Size + Offset + (-1)) / 8) + 1));
 
    type Length_Type_Base is range 0 .. ((2**16) - 1) with Size => 16;
 
@@ -30,52 +30,52 @@ is
    pragma Warnings (Off, "precondition is statically false");
 
    function Unreachable_Length_Type return Length_Type is
-      (Length_Type'First)
-     with
-       Pre => False;
+     (Length_Type'First)
+    with
+     Pre => False;
 
    pragma Warnings (On, "precondition is statically false");
 
    function Convert_To_Length_Type_Base is new Types.Convert_To_Int (Length_Type_Base);
 
    function Valid_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
-      (Convert_To_Length_Type_Base (Buffer, Offset) >= 8)
-     with
-       Pre => (Offset < 8 and then Buffer'Length = (((Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
+     (Convert_To_Length_Type_Base (Buffer, Offset) >= 8)
+    with
+     Pre => (Offset < 8 and then Buffer'Length = (((Length_Type_Base'Size + Offset + (-1)) / 8) + 1));
 
    type Checksum_Type is mod (2**16);
 
    pragma Warnings (Off, "precondition is statically false");
 
    function Unreachable_Checksum_Type return Checksum_Type is
-      (Checksum_Type'First)
-     with
-       Pre => False;
+     (Checksum_Type'First)
+    with
+     Pre => False;
 
    pragma Warnings (On, "precondition is statically false");
 
    function Convert_To_Checksum_Type is new Types.Convert_To_Mod (Checksum_Type);
 
    function Valid_Checksum_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
-      (True)
-     with
-       Pre => (Offset < 8 and then Buffer'Length = (((Checksum_Type'Size + Offset + (-1)) / 8) + 1));
+     (True)
+    with
+     Pre => (Offset < 8 and then Buffer'Length = (((Checksum_Type'Size + Offset + (-1)) / 8) + 1));
 
    pragma Warnings (Off, "precondition is statically false");
 
    function Unreachable_Types_Index_Type return Types.Index_Type is
-      (Types.Index_Type'First)
-     with
-       Pre => False;
+     (Types.Index_Type'First)
+    with
+     Pre => False;
 
    pragma Warnings (On, "precondition is statically false");
 
    pragma Warnings (Off, "precondition is statically false");
 
    function Unreachable_Types_Length_Type return Types.Length_Type is
-      (Types.Length_Type'First)
-     with
-       Pre => False;
+     (Types.Length_Type'First)
+    with
+     Pre => False;
 
    pragma Warnings (On, "precondition is statically false");
 

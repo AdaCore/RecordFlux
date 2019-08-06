@@ -1,5 +1,5 @@
-package body IPv4
-  with SPARK_Mode
+package body IPv4 with
+  SPARK_Mode
 is
 
    function Convert_To_Protocol_Type (Buffer : Types.Bytes; Offset : Natural) return Protocol_Type is
