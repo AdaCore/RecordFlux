@@ -20,12 +20,11 @@ class TestIntegration(unittest.TestCase):
         generator.generate_dissector(parser.messages, parser.refinements)
 
         for unit in generator.units():
-            basename = unit.package.name.lower().replace('.', '-')
-            with open(f'{self.testdir}/{basename}.ads', 'r') as f:
-                self.assertEqual(unit.specification(), f.read())
-            if unit.definition().strip():
-                with open(f'{self.testdir}/{basename}.adb', 'r') as f:
-                    self.assertEqual(unit.definition(), f.read())
+            with open(f'{self.testdir}/{unit.name}.ads', 'r') as f:
+                self.assertEqual(unit.specification, f.read())
+            if unit.body:
+                with open(f'{self.testdir}/{unit.name}.adb', 'r') as f:
+                    self.assertEqual(unit.body, f.read())
 
     def test_ethernet(self) -> None:
         self.assert_dissector(['ethernet'])

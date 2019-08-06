@@ -10,27 +10,10 @@ is
    type Tag_Type is (Msg_Data, Msg_Error) with Size => 2;
    for Tag_Type use (Msg_Data => 1, Msg_Error => 3);
 
-   type Length_Type is mod (2**14);
-
    pragma Warnings (Off, "precondition is statically false");
 
    function Unreachable_Tag_Type return Tag_Type is
       (Tag_Type'First)
-     with
-       Pre => False;
-
-   function Unreachable_Length_Type return Length_Type is
-      (Length_Type'First)
-     with
-       Pre => False;
-
-   function Unreachable_Types_Index_Type return Types.Index_Type is
-      (Types.Index_Type'First)
-     with
-       Pre => False;
-
-   function Unreachable_Types_Length_Type return Types.Length_Type is
-      (Types.Length_Type'First)
      with
        Pre => False;
 
@@ -51,11 +34,40 @@ is
    function Convert_To_Tag_Type_Base (Enum : Tag_Type) return Tag_Type_Base is
       (case Enum is when Msg_Data => 1, when Msg_Error => 3);
 
+   type Length_Type is mod (2**14);
+
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_Length_Type return Length_Type is
+      (Length_Type'First)
+     with
+       Pre => False;
+
+   pragma Warnings (On, "precondition is statically false");
+
    function Convert_To_Length_Type is new Types.Convert_To_Mod (Length_Type);
 
    function Valid_Length_Type (Buffer : Types.Bytes; Offset : Natural) return Boolean is
       (True)
      with
        Pre => (Offset < 8 and then Buffer'Length = (((Length_Type'Size + Offset + (-1)) / 8) + 1));
+
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_Types_Index_Type return Types.Index_Type is
+      (Types.Index_Type'First)
+     with
+       Pre => False;
+
+   pragma Warnings (On, "precondition is statically false");
+
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_Types_Length_Type return Types.Length_Type is
+      (Types.Length_Type'First)
+     with
+       Pre => False;
+
+   pragma Warnings (On, "precondition is statically false");
 
 end TLV;

@@ -2,19 +2,21 @@ from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Set, Tuple, Union
 
 from rflx.ada import (Aspect, Assignment, ComponentItem, ContextItem, Declaration, Discriminant,
-                      EnumerationType, ExpressionFunction, FormalDeclaration,
-                      FormalPackageDeclaration, Function, GenericFunctionInstantiation,
-                      GenericPackage, GenericPackageInstantiation, Ghost, IfStatement, Import,
-                      ModularType, ObjectDeclaration, Package, PackageDeclaration, Postcondition,
-                      Pragma, PragmaStatement, Precondition, Procedure, RangeSubtype, RangeType,
-                      ReturnStatement, Statement, Subprogram, SubprogramRenaming, Subtype,
-                      TypeDeclaration, Unit, UsePackageClause, UseTypeClause, VariantItem,
-                      VariantRecordType, WithClause)
+                      EnumerationType, ExpressionFunctionDeclaration, FormalDeclaration,
+                      FormalPackageDeclaration, FunctionSpecification, GenericFunctionInstantiation,
+                      GenericPackageInstantiation, Ghost, IfStatement, Import, InstantiationUnit,
+                      ModularType, ObjectDeclaration, PackageBody, PackageDeclaration, PackageUnit,
+                      Postcondition, Pragma, PragmaStatement, Precondition, ProcedureSpecification,
+                      RangeSubtype, RangeType, ReturnStatement, Statement, Subprogram,
+                      SubprogramBody, SubprogramDeclaration, SubprogramRenamingDeclaration,
+                      SubprogramSpecification, SubprogramUnitPart, Subtype, TypeDeclaration, Unit,
+                      UnitPart, UsePackageClause, UseTypeClause, VariantItem, VariantRecordType,
+                      WithClause)
 from rflx.expression import (FALSE, TRUE, Add, Aggregate, And, Attribute, Call, Case, Div, Equal,
                              Expr, GreaterEqual, If, Last, Length, LengthValue, Less, LessEqual,
                              Mul, Number, Or, Pow, Size, Slice, Sub, Value)
 from rflx.model import (Array, DerivedMessage, Enumeration, Field, First, Message, ModularInteger,
-                        Null, RangeInteger, Reference, Refinement, Type, Variant)
+                        RangeInteger, Reference, Refinement, Type, Variant)
 
 COMMON_PRECONDITION = Call('Is_Contained', [Value('Buffer')])
 
@@ -36,17 +38,17 @@ class Generator:
     def write_units(self, directory: Path) -> List[Path]:
         written_files = []
 
-        for unit in self.units():
-            filename = directory.joinpath(unit.package.name.lower().replace('.', '-') + '.ads')
+        for unit in self.__units.values():
+            filename = directory.joinpath(unit.name + '.ads')
             written_files.append(filename)
             with open(filename, 'w') as f:
-                f.write(unit.specification())
+                f.write(unit.specification)
 
-            if unit.definition().strip():
-                filename = filename.with_suffix('.adb')
+            if unit.body:
+                filename = directory.joinpath(unit.name + '.adb')
                 written_files.append(filename)
                 with open(filename, 'w') as f:
-                    f.write(unit.definition())
+                    f.write(unit.body)
 
         return written_files
 
@@ -73,11 +75,13 @@ class Generator:
         context: List[ContextItem] = []
         generic_name = f'{self.__prefix}{message.generic_name}'
         parameters: List[FormalDeclaration] = []
-        package = GenericPackage(generic_name, parameters)
-        self.__units[generic_name] = Unit(context, package)
+        unit = PackageUnit(
+            context,
+            PackageDeclaration(generic_name, formal_parameters=parameters),
+            PackageBody(generic_name))
+        self.__units[generic_name] = unit
 
-        package.subprograms.extend(
-            self.__contain_functions())
+        unit += self.__contain_functions()
 
         facts: Dict[Attribute, Expr] = {}
 
@@ -103,38 +107,17 @@ class Generator:
                     FormalPackageDeclaration(field.type.name, name))
 
             for variant_id, variant in field.variants.items():
-                package.subprograms.append(
-                    self.__variant_validation_function(
-                        field,
-                        variant_id,
-                        variant,
-                        facts))
+                unit += self.__variant_validation_function(field, variant_id, variant, facts)
+                unit += self.__variant_accessor_functions(field, variant_id, variant)
 
-                package.subprograms.extend(
-                    self.__variant_accessor_functions(
-                        field,
-                        variant_id,
-                        variant))
-
-            package.subprograms.append(
-                self.__field_validation_function(
-                    field,
-                    facts))
-
-            package.subprograms.extend(
-                self.__field_accessor_functions(
-                    field))
+            unit += self.__field_validation_function(field, facts)
+            unit += self.__field_accessor_functions(field)
 
         if self.__fields:
-            package.subprograms.append(
-                self.__message_validation_function(
-                    self.__fields['FINAL'].variants.values(),
-                    facts))
-
-            package.subprograms.append(
-                self.__message_length_function(
-                    self.__fields['FINAL'].variants.values(),
-                    facts))
+            unit += self.__message_validation_function(
+                self.__fields['FINAL'].variants.values(), facts)
+            unit += self.__message_length_function(
+                self.__fields['FINAL'].variants.values(), facts)
 
     def __process_derived_message(self, message: DerivedMessage, seen_types: Set[str]) -> None:
         if message.package not in self.__units:
@@ -154,8 +137,10 @@ class Generator:
                 self.__create_subtype(field.type, message.package, message.base_package)
 
     def __create_protocol_unit(self, package_name: str, context: List[ContextItem]) -> None:
-        self.__units[package_name] = Unit(self.__common_context() + context,
-                                          Package(f'{self.__prefix}{package_name}'))
+        name = f'{self.__prefix}{package_name}'
+        self.__units[package_name] = PackageUnit(self.__common_context() + context,
+                                                 PackageDeclaration(name),
+                                                 PackageBody(name))
 
     def __create_message_unit(self, message: Message, fields: Iterable[Field]) -> None:
         if isinstance(message, DerivedMessage):
@@ -171,23 +156,23 @@ class Generator:
         instantiation = GenericPackageInstantiation(f'{self.__prefix}{message.full_name}',
                                                     generic_name,
                                                     arrays)
-        self.__units[message.full_name] = Unit(context, instantiation)
+        self.__units[message.full_name] = InstantiationUnit(context, instantiation)
 
     def __create_type(self, field_type: Type, message_package: str) -> None:
-        package = self.__units[message_package].package
-        assert isinstance(package, Package)
-        types = package.types
-        subprograms = package.subprograms
+        unit = self.__units[message_package]
 
         if isinstance(field_type, ModularInteger):
-            types.extend(modular_types(field_type))
-            subprograms.extend(self.__modular_functions(field_type))
+            unit += UnitPart(modular_types(field_type))
+            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
+            unit += self.__modular_functions(field_type)
         elif isinstance(field_type, RangeInteger):
-            types.extend(range_types(field_type))
-            subprograms.extend(self.__range_functions(field_type))
+            unit += UnitPart(range_types(field_type))
+            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
+            unit += self.__range_functions(field_type)
         elif isinstance(field_type, Enumeration):
-            types.extend(enumeration_types(field_type))
-            subprograms.extend(self.__enumeration_functions(field_type))
+            unit += UnitPart(enumeration_types(field_type))
+            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
+            unit += self.__enumeration_functions(field_type)
         elif isinstance(field_type, Array):
             if is_definite_array(field_type):
                 if not isinstance(field_type.element_type, Reference):
@@ -197,42 +182,41 @@ class Generator:
             raise NotImplementedError(f'unsupported type "{type(field_type).__name__}"')
 
     def __create_subtype(self, field_type: Type, message_package: str, base_package: str) -> None:
-        package = self.__units[message_package].package
-        assert isinstance(package, Package)
-        types = package.types
-        subprograms = package.subprograms
-        declarations = package.declarations
+        unit = self.__units[message_package]
 
-        if isinstance(field_type, ModularInteger):
-            types.extend(
-                Subtype(enum_type.name, f'{base_package}.{enum_type.name}')
-                for enum_type in modular_types(field_type))
-            subprograms.extend(
-                SubprogramRenaming(f'{base_package}.{subprogram.name}', subprogram)
-                for subprogram in self.__modular_functions(field_type))
-        elif isinstance(field_type, RangeInteger):
-            types.extend(
-                Subtype(enum_type.name, f'{base_package}.{enum_type.name}')
-                for enum_type in range_types(field_type))
-            subprograms.extend(
-                SubprogramRenaming(f'{base_package}.{subprogram.name}', subprogram)
-                for subprogram in self.__range_functions(field_type))
-        elif isinstance(field_type, Enumeration):
-            types.extend(
-                Subtype(enum_type.name, f'{base_package}.{enum_type.name}')
-                for enum_type in enumeration_types(field_type))
-            subprograms.extend(
-                SubprogramRenaming(f'{base_package}.{subprogram.name}', subprogram)
-                for subprogram in self.__enumeration_functions(field_type))
-            type_name = field_type.enum_name if field_type.always_valid else field_type.name
-            declarations.extend(
-                ObjectDeclaration(literal, type_name, Value(f'{base_package}.{literal}'))
-                for literal in field_type.literals)
+        if isinstance(field_type, (ModularInteger, RangeInteger, Enumeration)):
+            types: List[TypeDeclaration]
+            subprograms: List[Subprogram]
+            if isinstance(field_type, ModularInteger):
+                types = modular_types(field_type)
+                subprograms = self.__modular_functions(field_type).specification
+            elif isinstance(field_type, RangeInteger):
+                types = range_types(field_type)
+                subprograms = self.__range_functions(field_type).specification
+            elif isinstance(field_type, Enumeration):
+                types = enumeration_types(field_type)
+                subprograms = self.__enumeration_functions(field_type).specification
+
+            unit += UnitPart(
+                [Subtype(t.name, f'{base_package}.{t.name}') for t in types])
+            unit += UnitPart(
+                [SubprogramRenamingDeclaration(
+                    renamed_subprogram_specification(s.specification, s.name),
+                    f'{base_package}.{s.name}')
+                 for s in subprograms])
+
+            if isinstance(field_type, Enumeration):
+                type_name = field_type.enum_name if field_type.always_valid else field_type.name
+                unit += UnitPart(
+                    [ObjectDeclaration(literal, type_name, Value(f'{base_package}.{literal}'), True)
+                     for literal in field_type.literals])
+
         elif isinstance(field_type, Array):
             if is_definite_array(field_type):
                 if not isinstance(field_type.element_type, Reference):
                     self.__create_subtype(field_type.element_type, message_package, base_package)
                 self.__create_array_unit(field_type, message_package)
+
         else:
             raise NotImplementedError(f'unsupported type "{type(field_type).__name__}"')
 
@@ -240,7 +224,7 @@ class Generator:
         element_type = array_type.element_type
 
         array_context: List[ContextItem] = []
-        array_package: PackageDeclaration
+        array_package: GenericPackageInstantiation
         if isinstance(element_type, Reference):
             array_context = [WithClause([f'{self.__prefix}Message_Sequence']),
                              WithClause([f'{self.__prefix}{package_name}.'
@@ -265,72 +249,45 @@ class Generator:
                                        if isinstance(element_type, RangeInteger)
                                        else element_type.name)])
 
-        self.__units[array_package.name] = Unit(array_context, array_package)
+        self.__units[array_package.name] = InstantiationUnit(array_context, array_package)
 
     def __create_unreachable_functions(self, messages: List[Message]) -> None:
-        unreachable_functions: Dict[str, List[Subprogram]] = {}
-
         for message in messages:
             if isinstance(message, DerivedMessage):
                 continue
 
-            if message.package not in unreachable_functions:
-                unreachable_functions[message.package] = []
-
-            for field in message.fields().values():
-                if not isinstance(field.type, Null):
-                    unreachable_functions[message.package].extend(
-                        self.__type_dependent_unreachable_function(field.type))
-
-            unreachable_functions[message.package].append(unreachable_function(self.__types_length))
-
-        for message_package, functions in unreachable_functions.items():
-            top_level_package = self.__units[message_package].package
-            assert isinstance(top_level_package, Package)
-
-            top_level_package.subprograms.insert(
-                0,
-                Pragma('Warnings',
-                       ['On', '"precondition is statically false"']))
-            top_level_package.subprograms[0:0] = functions
-            top_level_package.subprograms.insert(
-                0,
-                Pragma('Warnings',
-                       ['Off', '"precondition is statically false"']))
+            self.__units[message.package] += UnitPart(
+                unreachable_function(self.__types_index)
+                + unreachable_function(self.__types_length))
 
     def __process_refinements(self, refinements: List[Refinement]) -> None:
-        for refinement in refinements:
-            package: PackageDeclaration
+        unit: Unit
 
+        for refinement in refinements:
             if refinement.package not in self.__units:
-                context = self.__common_context()
-                package = Package(f'{self.__prefix}{refinement.package}', [], [])
-                self.__units[refinement.package] = Unit(context, package)
+                name = f'{self.__prefix}{refinement.package}'
+                unit = PackageUnit(self.__common_context(), PackageDeclaration(name),
+                                   PackageBody(name))
+                self.__units[refinement.package] = unit
+
+            context = []
+            pdu_package = self.__prefix + refinement.pdu.rsplit('.', 1)[0]
+            if pdu_package != refinement.package:
+                context.extend([WithClause([pdu_package]), UsePackageClause([pdu_package])])
+            context.append(WithClause([f'{self.__prefix}{refinement.pdu}']))
+            if refinement.sdu != 'null':
+                context.append(WithClause([f'{self.__prefix}{refinement.sdu}']))
 
             contains_package = f'{refinement.package}.Contains'
             if contains_package in self.__units:
-                context = self.__units[contains_package].context
-                package = self.__units[contains_package].package
-                assert isinstance(package, Package)
+                unit = self.__units[contains_package]
+                unit.context.extend(context)
             else:
-                context = []
-                package = Package(f'{self.__prefix}{contains_package}', [], [])
-                self.__units[contains_package] = Unit(context, package)
+                name = f'{self.__prefix}{contains_package}'
+                unit = PackageUnit(context, PackageDeclaration(name), PackageBody(name))
+                self.__units[contains_package] = unit
 
-            pdu_package = self.__prefix + refinement.pdu.rsplit('.', 1)[0]
-            if pdu_package != refinement.package:
-                pdu_top_level_context = [WithClause([pdu_package]), UsePackageClause([pdu_package])]
-                context.extend(pdu_top_level_context)
-
-            pdu_context = WithClause([f'{self.__prefix}{refinement.pdu}'])
-            context.append(pdu_context)
-
-            if refinement.sdu != 'null':
-                sdu_context = WithClause([f'{self.__prefix}{refinement.sdu}'])
-                context.append(sdu_context)
-
-            package.subprograms.append(
-                self.__contains_function(refinement))
+            unit += self.__contains_function(refinement)
 
     def __common_context(self) -> List[ContextItem]:
         return [WithClause([self.__types]),
@@ -338,39 +295,39 @@ class Generator:
                                self.__types_index,
                                self.__types_length])]
 
-    def __range_functions(self, integer: RangeInteger) -> List[Subprogram]:
-        functions: List[Subprogram] = []
+    def __range_functions(self, integer: RangeInteger) -> SubprogramUnitPart:
+        unit = SubprogramUnitPart()
 
         for range_type in range_types(integer):
             if isinstance(range_type, RangeSubtype):
                 continue
-            functions.append(
+            unit.specification.append(
                 GenericFunctionInstantiation(convert_function_name(range_type.name),
-                                             Function(f'Types.Convert_To_Int',
-                                                      range_type.name,
-                                                      [('Buffer', self.__types_bytes),
-                                                       ('Offset', 'Natural')]),
+                                             FunctionSpecification(f'Types.Convert_To_Int',
+                                                                   range_type.name,
+                                                                   [('Buffer', self.__types_bytes),
+                                                                    ('Offset', 'Natural')]),
                                              [range_type.name]))
 
-        functions.append(self.__integer_validation_function(integer))
+        unit.specification.append(self.__integer_validation_function(integer))
 
-        return functions
+        return unit
 
-    def __modular_functions(self, integer: ModularInteger) -> List[Subprogram]:
-        functions: List[Subprogram] = []
+    def __modular_functions(self, integer: ModularInteger) -> SubprogramUnitPart:
+        unit = SubprogramUnitPart()
 
         for modular_type in modular_types(integer):
-            functions.append(
+            unit.specification.append(
                 GenericFunctionInstantiation(convert_function_name(modular_type.name),
-                                             Function(f'Types.Convert_To_Mod',
-                                                      modular_type.name,
-                                                      [('Buffer', self.__types_bytes),
-                                                       ('Offset', 'Natural')]),
+                                             FunctionSpecification(f'Types.Convert_To_Mod',
+                                                                   modular_type.name,
+                                                                   [('Buffer', self.__types_bytes),
+                                                                    ('Offset', 'Natural')]),
                                              [modular_type.name]))
 
-        functions.append(self.__integer_validation_function(integer))
+        unit.specification.append(self.__integer_validation_function(integer))
 
-        return functions
+        return unit
 
     def __integer_validation_function(self, integer: Union[ModularInteger,
                                                            RangeInteger]) -> Subprogram:
@@ -384,7 +341,18 @@ class Generator:
 
         return self.__type_validation_function(integer.name, base_name, validation_expression)
 
-    def __enumeration_functions(self, enum: Enumeration) -> List[Subprogram]:
+    def __enumeration_functions(self, enum: Enumeration) -> SubprogramUnitPart:
+        specification: List[Subprogram] = []
+        body: List[Subprogram] = []
+
+        specification.append(GenericFunctionInstantiation(
+            convert_function_name(enum.base_name),
+            FunctionSpecification(f'Types.Convert_To_Mod',
+                                  enum.base_name,
+                                  [('Buffer', self.__types_bytes),
+                                   ('Offset', 'Natural')]),
+            [enum.base_name]))
+
         enum_value = Call(convert_function_name(enum.base_name),
                           [Value('Buffer'),
                            Value('Offset')])
@@ -399,16 +367,18 @@ class Generator:
 
             validation_expression = Case(enum_value, validation_cases)
 
-        validation_function = self.__type_validation_function(enum.name, enum.base_name,
-                                                              validation_expression)
+        specification.append(self.__type_validation_function(enum.name, enum.base_name,
+                                                             validation_expression))
 
-        parameters = [('Buffer', self.__types_bytes),
-                      ('Offset', 'Natural')]
+        conversion_function = FunctionSpecification(
+            convert_function_name(enum.name),
+            enum.name,
+            [('Buffer', self.__types_bytes),
+             ('Offset', 'Natural')])
         precondition = Precondition(
             And(type_conversion_precondition(enum.base_name),
                 Call(f'Valid_{enum.name}', [Value('Buffer'), Value('Offset')])))
         conversion_cases: List[Tuple[Expr, Expr]] = []
-        conversion_function: Subprogram
 
         if enum.always_valid:
             conversion_cases.extend((value, Aggregate(Value('True'), Value(key)))
@@ -416,70 +386,60 @@ class Generator:
             conversion_cases.append((Value('others'),
                                      Aggregate(Value('False'), Value('Raw'))))
 
-            conversion_function = Function(convert_function_name(enum.name),
-                                           enum.name,
-                                           parameters,
-                                           [Declaration('Raw', enum.base_name, enum_value)],
-                                           [ReturnStatement(Case(Value('Raw'), conversion_cases))],
-                                           [precondition])
+            specification.append(SubprogramDeclaration(conversion_function, [precondition]))
+            body.append(SubprogramBody(conversion_function,
+                                       [ObjectDeclaration('Raw', enum.base_name, enum_value)],
+                                       [ReturnStatement(Case(Value('Raw'), conversion_cases))]))
         else:
             conversion_cases.extend((value, Value(key)) for key, value in enum.literals.items())
             conversion_cases.append((Value('others'),
                                      Call(unreachable_function_name(enum.name))))
 
-            conversion_function = ExpressionFunction(convert_function_name(enum.name),
-                                                     enum.name,
-                                                     parameters,
-                                                     Case(enum_value, conversion_cases),
-                                                     [precondition])
+            specification.append(ExpressionFunctionDeclaration(conversion_function,
+                                                               Case(enum_value, conversion_cases),
+                                                               [precondition]))
 
-        enum_to_base_function = ExpressionFunction(
-            convert_function_name(enum.base_name),
-            enum.base_name,
-            [('Enum', enum.enum_name if enum.always_valid else enum.name)],
+        specification.append(ExpressionFunctionDeclaration(
+            FunctionSpecification(
+                convert_function_name(enum.base_name),
+                enum.base_name,
+                [('Enum', enum.enum_name if enum.always_valid else enum.name)]),
             Case(
                 Value('Enum'),
-                [(Value(key), value) for key, value in enum.literals.items()]))
+                [(Value(key), value) for key, value in enum.literals.items()])))
 
-        base_conversion_function = GenericFunctionInstantiation(
-            convert_function_name(enum.base_name),
-            Function(f'Types.Convert_To_Mod',
-                     enum.base_name,
-                     [('Buffer', self.__types_bytes),
-                      ('Offset', 'Natural')]),
-            [enum.base_name])
-
-        return [base_conversion_function,
-                validation_function,
-                conversion_function,
-                enum_to_base_function]
+        return SubprogramUnitPart(specification, body)
 
     def __type_validation_function(self, type_name: str, type_base_name: str,
                                    validation_expression: Expr) -> Subprogram:
-        return ExpressionFunction(f'Valid_{type_name}',
+        return ExpressionFunctionDeclaration(
+            FunctionSpecification(f'Valid_{type_name}',
                                   'Boolean',
                                   [('Buffer', self.__types_bytes),
-                                   ('Offset', 'Natural')],
-                                  validation_expression,
-                                  [Precondition(type_conversion_precondition(type_base_name))])
+                                   ('Offset', 'Natural')]),
+            validation_expression,
+            [Precondition(type_conversion_precondition(type_base_name))])
 
-    def __contain_functions(self) -> List[Subprogram]:
-        return [ExpressionFunction('Is_Contained',
-                                   'Boolean',
-                                   [('Buffer', self.__types_bytes)],
-                                   aspects=[Ghost(), Import()]),
-                Procedure('Label',
-                          [('Buffer', self.__types_bytes)],
-                          [],
-                          [PragmaStatement('Assume', ['Is_Contained (Buffer)'])],
-                          aspects=[Ghost(), Postcondition(COMMON_PRECONDITION)])]
+    def __contain_functions(self) -> SubprogramUnitPart:
+        label_procedure = ProcedureSpecification('Label', [('Buffer', self.__types_bytes)])
+        return SubprogramUnitPart(
+            [SubprogramDeclaration(
+                FunctionSpecification('Is_Contained',
+                                      'Boolean',
+                                      [('Buffer', self.__types_bytes)]),
+                aspects=[Ghost(), Import()]),
+             SubprogramDeclaration(label_procedure,
+                                   aspects=[Ghost(), Postcondition(COMMON_PRECONDITION)])],
+            [SubprogramBody(label_procedure,
+                            [],
+                            [PragmaStatement('Assume', ['Is_Contained (Buffer)'])])])
 
     def __variant_validation_function(
             self,
             field: Field,
             variant_id: str,
             variant: Variant,
-            facts: Dict[Attribute, Expr]) -> Subprogram:
+            facts: Dict[Attribute, Expr]) -> UnitPart:
 
         type_constraints: Expr = TRUE
 
@@ -493,27 +453,30 @@ class Generator:
             **facts
         }
 
-        return ExpressionFunction(
-            f'Valid_{field.name}_{variant_id}',
-            'Boolean',
-            [('Buffer', self.__types_bytes)],
-            And(Call(f'Valid_{variant.previous[-1][0]}_{variant.previous[-1][1]}',
-                     [Value('Buffer')])
-                if variant.previous else TRUE,
-                And(
+        return UnitPart(
+            [ExpressionFunctionDeclaration(
+                FunctionSpecification(
+                    f'Valid_{field.name}_{variant_id}',
+                    'Boolean',
+                    [('Buffer', self.__types_bytes)]),
+                And(Call(f'Valid_{variant.previous[-1][0]}_{variant.previous[-1][1]}',
+                         [Value('Buffer')])
+                    if variant.previous else TRUE,
                     And(
-                        self.__buffer_constraints(
-                            variant.facts[Last(field.name)].to_bytes()).simplified(substitutions),
-                        variant.condition.simplified(variant.facts).simplified(substitutions)),
-                    type_constraints)
-                ).simplified(),
-            [Precondition(COMMON_PRECONDITION)])
+                        And(
+                            self.__buffer_constraints(
+                                variant.facts[Last(field.name)].to_bytes()
+                            ).simplified(substitutions),
+                            variant.condition.simplified(variant.facts).simplified(substitutions)),
+                        type_constraints)
+                    ).simplified(),
+                [Precondition(COMMON_PRECONDITION)])])
 
     def __variant_accessor_functions(
             self,
             field: Field,
             variant_id: str,
-            variant: Variant) -> List[Subprogram]:
+            variant: Variant) -> UnitPart:
 
         first_byte, last_byte, offset = self.__field_location(field.name, variant_id, variant)
 
@@ -522,37 +485,41 @@ class Generator:
             And(COMMON_PRECONDITION,
                 Call(f'Valid_{field.name}_{variant_id}', [Value('Buffer')])))
 
-        functions: List[Subprogram] = []
+        specification = []
         if isinstance(field.type, Array):
-            functions.append(
-                ExpressionFunction(
-                    f'{name}_First',
-                    self.__types_index,
-                    [('Buffer', self.__types_bytes)],
+            specification.append(
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        f'{name}_First',
+                        self.__types_index,
+                        [('Buffer', self.__types_bytes)]),
                     first_byte,
                     [precondition]))
-            functions.append(
-                ExpressionFunction(
-                    f'{name}_Last',
-                    self.__types_index,
-                    [('Buffer', self.__types_bytes)],
+            specification.append(
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        f'{name}_Last',
+                        self.__types_index,
+                        [('Buffer', self.__types_bytes)]),
                     last_byte,
                     [precondition]))
         else:
-            functions.append(
-                ExpressionFunction(
-                    name,
-                    field.type.name,
-                    [('Buffer', self.__types_bytes)],
+            specification.append(
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        name,
+                        field.type.name,
+                        [('Buffer', self.__types_bytes)]),
                     Call(convert_function_name(field.type.name
                                                if field.type.constraints == TRUE
                                                else field.type.base_name),
                          [Slice('Buffer', first_byte, last_byte),
                           offset]),
                     [precondition]))
-        return functions
 
-    def __field_validation_function(self, field: Field, facts: Dict[Attribute, Expr]) -> Subprogram:
+        return UnitPart(specification)
+
+    def __field_validation_function(self, field: Field, facts: Dict[Attribute, Expr]) -> UnitPart:
         variants: List[Expr] = list(self.__valid_variants(field, facts))
 
         expr = variants.pop()
@@ -560,25 +527,29 @@ class Generator:
             if e is not TRUE:
                 expr = Or(expr, e)
 
-        return ExpressionFunction(
-            f'Valid_{field.name}',
-            'Boolean',
-            [('Buffer', self.__types_bytes)],
-            expr,
-            [Precondition(COMMON_PRECONDITION)])
+        return UnitPart(
+            [ExpressionFunctionDeclaration(
+                FunctionSpecification(
+                    f'Valid_{field.name}',
+                    'Boolean',
+                    [('Buffer', self.__types_bytes)]),
+                expr,
+                [Precondition(COMMON_PRECONDITION)])])
 
-    def __field_accessor_functions(self, field: Field) -> List[Subprogram]:
+    def __field_accessor_functions(self, field: Field) -> UnitPart:
         precondition = Precondition(And(COMMON_PRECONDITION,
                                         Call(f'Valid_{field.name}', [Value('Buffer')])))
 
-        functions: List[Subprogram] = []
+        specification: List[Declaration] = []
+        body: List[Declaration] = []
         if isinstance(field.type, Array):
             for attribute in ['First', 'Last']:
-                functions.append(
-                    ExpressionFunction(
-                        f'Get_{field.name}_{attribute}',
-                        self.__types_index,
-                        [('Buffer', self.__types_bytes)],
+                specification.append(
+                    ExpressionFunctionDeclaration(
+                        FunctionSpecification(
+                            f'Get_{field.name}_{attribute}',
+                            self.__types_index,
+                            [('Buffer', self.__types_bytes)]),
                         If([
                             (Call(f'Valid_{field.name}_{variant_id}', [Value('Buffer')]),
                              Call(f'Get_{field.name}_{variant_id}_{attribute}', [Value('Buffer')]))
@@ -586,7 +557,7 @@ class Generator:
                             unreachable_function_name(self.__types_index)),
                         [precondition]))
 
-            body: List[Statement] = [
+            statements: List[Statement] = [
                 Assignment('First', Call(f'Get_{field.name}_First', [Value('Buffer')])),
                 Assignment('Last', Call(f'Get_{field.name}_Last', [Value('Buffer')]))]
             postcondition = Postcondition(
@@ -597,38 +568,44 @@ class Generator:
             if is_definite_array(field.type):
                 predicate = Call(f'{field.type.name}.Is_Contained',
                                  [Slice('Buffer', Value('First'), Value('Last'))])
-                body.append(PragmaStatement('Assume', [str(predicate)]))
+                statements.append(PragmaStatement('Assume', [str(predicate)]))
                 postcondition.expr = And(postcondition.expr, predicate)
 
-            functions.append(
-                Procedure(
-                    f'Get_{field.name}',
-                    [('Buffer', self.__types_bytes),
-                     ('First', f'out {self.__types_index}'),
-                     ('Last', f'out {self.__types_index}')],
-                    [],
-                    body,
+            spec = ProcedureSpecification(
+                f'Get_{field.name}',
+                [('Buffer', self.__types_bytes),
+                 ('First', f'out {self.__types_index}'),
+                 ('Last', f'out {self.__types_index}')])
+            specification.append(
+                SubprogramDeclaration(
+                    spec,
                     [precondition,
                      postcondition]))
+            body.append(
+                SubprogramBody(
+                    spec,
+                    [],
+                    statements))
 
         else:
-            functions.append(
-                ExpressionFunction(
-                    f'Get_{field.name}',
-                    field.type.name,
-                    [('Buffer', self.__types_bytes)],
+            specification.append(
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        f'Get_{field.name}',
+                        field.type.name,
+                        [('Buffer', self.__types_bytes)]),
                     If([(Call(f'Valid_{field.name}_{variant_id}', [Value('Buffer')]),
                          Call(f'Get_{field.name}_{variant_id}', [Value('Buffer')]))
                         for variant_id in field.variants],
                        unreachable_function_name(field.type.name)),
                     [precondition]))
 
-        return functions
+        return UnitPart(specification, body)
 
     def __message_validation_function(
             self,
             variants: Iterable[Variant],
-            facts: Dict[Attribute, Expr]) -> Subprogram:
+            facts: Dict[Attribute, Expr]) -> UnitPart:
 
         expr: Expr = FALSE
 
@@ -636,17 +613,19 @@ class Generator:
             condition = self.__variant_condition(variant, facts)
             expr = condition if expr == FALSE else Or(expr, condition)
 
-        return ExpressionFunction(
-            'Is_Valid',
-            'Boolean',
-            [('Buffer', self.__types_bytes)],
-            expr,
-            [Precondition(COMMON_PRECONDITION)])
+        return UnitPart(
+            [ExpressionFunctionDeclaration(
+                FunctionSpecification(
+                    'Is_Valid',
+                    'Boolean',
+                    [('Buffer', self.__types_bytes)]),
+                expr,
+                [Precondition(COMMON_PRECONDITION)])])
 
     def __message_length_function(
             self,
             variants: Iterable[Variant],
-            facts: Dict[Attribute, Expr]) -> Subprogram:
+            facts: Dict[Attribute, Expr]) -> UnitPart:
 
         condition_expressions: List[Tuple[Expr, Expr]] = []
 
@@ -663,12 +642,14 @@ class Generator:
             ).to_bytes().simplified()
             condition_expressions.append((condition, length))
 
-        return ExpressionFunction(
-            'Message_Length',
-            self.__types_length,
-            [('Buffer', self.__types_bytes)],
-            If(condition_expressions, unreachable_function_name(self.__types_length)),
-            [Precondition(And(COMMON_PRECONDITION, Call('Is_Valid', [Value('Buffer')])))])
+        return UnitPart(
+            [ExpressionFunctionDeclaration(
+                FunctionSpecification(
+                    'Message_Length',
+                    self.__types_length,
+                    [('Buffer', self.__types_bytes)]),
+                If(condition_expressions, unreachable_function_name(self.__types_length)),
+                [Precondition(And(COMMON_PRECONDITION, Call('Is_Valid', [Value('Buffer')])))])])
 
     def __variant_condition(self, variant: Variant, facts: Dict[Attribute, Expr]) -> Expr:
         field_name, variant_id = variant.previous[-1]
@@ -678,7 +659,7 @@ class Generator:
         ).simplified(variant.facts).simplified({**self.__value_to_call_facts(variant.previous),
                                                 **facts})
 
-    def __contains_function(self, ref: Refinement) -> Subprogram:
+    def __contains_function(self, ref: Refinement) -> SubprogramUnitPart:
         sdu_name = ref.sdu.rsplit('.', 1)[1] if ref.sdu.startswith(ref.package) else ref.sdu \
             if ref.sdu != 'null' else 'Null'
         pdu_name = ref.pdu.rsplit('.', 1)[1] if ref.pdu.startswith(ref.package) else ref.pdu
@@ -686,10 +667,11 @@ class Generator:
 
         message_fields = self.__message_fields[ref.pdu]
         condition_fields = [field for field in message_fields if Value(field) in ref.condition]
-        declarations = [Declaration(field,
-                                    message_fields[field].type.name,
-                                    Call(f'{ref.pdu}.Get_{field}', [Value('Buffer')]))
-                        for field in condition_fields]
+        declarations: List[Declaration] = [
+            ObjectDeclaration(field,
+                              message_fields[field].type.name,
+                              Call(f'{ref.pdu}.Get_{field}', [Value('Buffer')]))
+            for field in condition_fields]
 
         condition = ref.condition
         for field in condition_fields:
@@ -721,21 +703,26 @@ class Generator:
                                       Call(f'{ref.pdu}.Get_{ref.field}_Last',
                                            [Value('Buffer')]))]))])))
 
-        return Function(name,
-                        'Boolean',
-                        [('Buffer', self.__types_bytes)],
-                        declarations,
-                        [IfStatement(
-                            [(condition,
-                              success_statements)]),
-                         ReturnStatement(FALSE)],
-                        aspects)
+        spec = FunctionSpecification(name, 'Boolean', [('Buffer', self.__types_bytes)])
 
-    def __type_dependent_unreachable_function(self, field_type: Type) -> List[Subprogram]:
-        functions: List[Subprogram] = []
+        return SubprogramUnitPart(
+            [SubprogramDeclaration(
+                spec,
+                aspects
+            )],
+            [SubprogramBody(
+                spec,
+                declarations,
+                [IfStatement(
+                    [(condition,
+                      success_statements)]),
+                 ReturnStatement(FALSE)])])
+
+    def __type_dependent_unreachable_function(self, field_type: Type) -> List[Declaration]:
+        declarations: List[Declaration] = []
 
         if isinstance(field_type, Array) and not isinstance(field_type.element_type, Reference):
-            functions.extend(self.__type_dependent_unreachable_function(field_type.element_type))
+            declarations.extend(self.__type_dependent_unreachable_function(field_type.element_type))
 
         type_name = field_type.name
         if isinstance(field_type, Array):
@@ -744,9 +731,9 @@ class Generator:
         if isinstance(field_type, Enumeration) and field_type.always_valid:
             base_name = field_type.base_name
 
-        functions.append(unreachable_function(type_name, base_name))
+        declarations.extend(unreachable_function(type_name, base_name))
 
-        return functions
+        return declarations
 
     def __field_location(
             self,
@@ -864,13 +851,24 @@ def type_conversion_precondition(type_name: str) -> Expr:
                          Number(1))))
 
 
-def unreachable_function(type_name: str, base_name: str = None) -> Subprogram:
-    return ExpressionFunction(
-        unreachable_function_name(type_name),
-        type_name,
-        [],
-        First(type_name) if not base_name else Aggregate(Value('False'), First(base_name)),
-        [Precondition(FALSE)])
+def renamed_subprogram_specification(specification: SubprogramSpecification,
+                                     name: str) -> SubprogramSpecification:
+    if isinstance(specification, ProcedureSpecification):
+        return ProcedureSpecification(name, specification.parameters)
+    if isinstance(specification, FunctionSpecification):
+        return FunctionSpecification(name, specification.return_type, specification.parameters)
+    raise NotImplementedError('unhandled subprogram specification "{type(specification).__name__}"')
+
+
+def unreachable_function(type_name: str, base_name: str = None) -> List[Declaration]:
+    return [Pragma('Warnings', ['Off', '"precondition is statically false"']),
+            ExpressionFunctionDeclaration(
+                FunctionSpecification(
+                    unreachable_function_name(type_name),
+                    type_name),
+                First(type_name) if not base_name else Aggregate(Value('False'), First(base_name)),
+                [Precondition(FALSE)]),
+            Pragma('Warnings', ['On', '"precondition is statically false"'])]
 
 
 def unreachable_function_name(type_name: str) -> str:
