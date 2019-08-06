@@ -2,8 +2,8 @@ with Types;
 use type Types.Bytes, Types.Index_Type, Types.Length_Type;
 with Arrays;
 
-package Derivation
-  with SPARK_Mode
+package Derivation with
+  SPARK_Mode
 is
 
    subtype Length_Type is Arrays.Length_Type;

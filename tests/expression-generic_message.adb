@@ -1,5 +1,5 @@
-package body Expression.Generic_Message
-  with SPARK_Mode
+package body Expression.Generic_Message with
+  SPARK_Mode
 is
 
    procedure Label (Buffer : Types.Bytes) is

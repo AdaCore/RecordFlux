@@ -1,5 +1,5 @@
-package body In_IPv4.Contains
-  with SPARK_Mode
+package body In_IPv4.Contains with
+  SPARK_Mode
 is
 
    function UDP_Datagram_In_IPv4_Packet_Payload (Buffer : Types.Bytes) return Boolean is

@@ -1,5 +1,5 @@
-package body IPv4.Generic_Packet
-  with SPARK_Mode
+package body IPv4.Generic_Packet with
+  SPARK_Mode
 is
 
    procedure Label (Buffer : Types.Bytes) is

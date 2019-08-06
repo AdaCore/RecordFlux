@@ -1,5 +1,5 @@
-package body Ethernet.Generic_Frame
-  with SPARK_Mode
+package body Ethernet.Generic_Frame with
+  SPARK_Mode
 is
 
    procedure Label (Buffer : Types.Bytes) is
