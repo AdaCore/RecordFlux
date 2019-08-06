@@ -12,6 +12,10 @@ is
      with
        Pre => False;
 
+   pragma Warnings (On, "precondition is statically false");
+
+   pragma Warnings (Off, "precondition is statically false");
+
    function Unreachable_Types_Length_Type return Types.Length_Type is
       (Types.Length_Type'First)
      with

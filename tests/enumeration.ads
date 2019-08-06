@@ -27,11 +27,6 @@ is
      with
        Pre => False;
 
-   function Unreachable_Types_Length_Type return Types.Length_Type is
-      (Types.Length_Type'First)
-     with
-       Pre => False;
-
    pragma Warnings (On, "precondition is statically false");
 
    function Convert_To_Priority_Base is new Types.Convert_To_Mod (Priority_Base);
@@ -47,5 +42,23 @@ is
 
    function Convert_To_Priority_Base (Enum : Priority_Enum) return Priority_Base is
       (case Enum is when LOW => 1, when MEDIUM => 4, when HIGH => 7);
+
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_Types_Index_Type return Types.Index_Type is
+      (Types.Index_Type'First)
+     with
+       Pre => False;
+
+   pragma Warnings (On, "precondition is statically false");
+
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_Types_Length_Type return Types.Length_Type is
+      (Types.Length_Type'First)
+     with
+       Pre => False;
+
+   pragma Warnings (On, "precondition is statically false");
 
 end Enumeration;

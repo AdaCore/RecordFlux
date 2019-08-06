@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
-from typing import Callable, Dict, Iterator, List, Set, Tuple, TypeVar
+from typing import Dict, Iterator, List, Sequence, Set, Tuple, TypeVar, Union
 
 from rflx.expression import Case, Expr, Number
 
@@ -11,38 +11,16 @@ class Ada(ABC):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
+    def __hash__(self) -> int:
+        return hash(repr(self))
+
     def __repr__(self) -> str:
         args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
         return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
 
-    def __hash__(self) -> int:
-        return hash(repr(self))
-
-
-class MultiPartElement(Ada):
     @abstractmethod
-    def specification(self) -> str:
+    def __str__(self) -> str:
         raise NotImplementedError
-
-    @abstractmethod
-    def definition(self) -> str:
-        raise NotImplementedError
-
-
-class Unit(MultiPartElement):
-    def __init__(self, context: List['ContextItem'], package: 'PackageDeclaration') -> None:
-        self.context = context
-        self.package = package
-
-    def specification(self) -> str:
-        context_clause = ''
-        if self.context:
-            context_clause = '\n'.join(map(str, unique(self.context)))
-            context_clause = f'{context_clause}\n\n'
-        return f'{context_clause}{self.package.specification()}\n'
-
-    def definition(self) -> str:
-        return f'{self.package.definition()}\n'
 
 
 class ContextItem(Ada):
@@ -72,96 +50,22 @@ class UseTypeClause(ContextItem):
         return f'use type {names};'
 
 
-class PackageDeclaration(MultiPartElement):
+class Declaration(Ada):
     def __init__(self, name: str) -> None:
         self.name = name
 
     @abstractmethod
-    def specification(self) -> str:
+    def __str__(self) -> str:
         raise NotImplementedError
-
-    @abstractmethod
-    def definition(self) -> str:
-        raise NotImplementedError
-
-
-class Package(PackageDeclaration):
-    def __init__(self, name: str, types: List['TypeDeclaration'] = None,
-                 subprograms: List['Subprogram'] = None,
-                 declarations: List['BasicDeclaration'] = None) -> None:
-        super().__init__(name)
-        self.types = types or []
-        self.subprograms = subprograms or []
-        self.declarations = declarations or []
-
-    def specification(self) -> str:
-        return self._representation(lambda x: x.specification(), False)
-
-    def definition(self) -> str:
-        return self._representation(lambda x: x.definition(), True)
-
-    def _representation(self, function: Callable, definition: bool) -> str:
-        types = ''
-        if not definition:
-            types = '\n\n'.join(str(t) for t in unique(self.types) if str(t))
-            if types:
-                types += '\n\n'
-
-        subprograms = '\n\n'.join([function(f) for f in unique(self.subprograms) if function(f)])
-        if subprograms:
-            subprograms += '\n\n'
-
-        declarations = ''
-        if not definition:
-            declarations = '\n\n'.join(str(t) for t in unique(self.declarations) if str(t))
-            if declarations:
-                declarations += '\n\n'
-
-        if definition and not types and not subprograms:
-            return ''
-
-        indicator = ' '
-        aspect = '\n  with SPARK_Mode\n'
-        if definition:
-            indicator = ' body '
-
-        return (f'package{indicator}{self.name}{aspect}is\n\n'
-                f'{types}{subprograms}{declarations}end {self.name};')
-
-
-class GenericPackage(Package):
-    def __init__(self,
-                 name: str,
-                 parameters: List['FormalDeclaration'],
-                 types: List['TypeDeclaration'] = None,
-                 subprograms: List['Subprogram'] = None) -> None:
-        super().__init__(name, types, subprograms)
-        self.parameters = parameters
-
-    def specification(self) -> str:
-        parameters = ''.join(f'\n   {parameter}' for parameter in self.parameters)
-        return f'generic{parameters}\n' + self._representation(lambda x: x.specification(), False)
-
-
-class GenericPackageInstantiation(PackageDeclaration):
-    def __init__(self, name: str, generic_package: str, associations: List[str] = None) -> None:
-        super().__init__(name)
-        self.generic_package = generic_package
-        self.associations = associations or []
-
-    def specification(self) -> str:
-        associations = ', '.join(self.associations)
-        if associations:
-            associations = f' ({associations})'
-        return f'package {self.name} is new {self.generic_package}{associations};'
-
-    def definition(self) -> str:
-        return ''
 
 
 class FormalDeclaration(Ada):
     def __init__(self, name: str) -> None:
         self.name = name
+
+    @abstractmethod
+    def __str__(self) -> str:
+        raise NotImplementedError
 
 
 class FormalPackageDeclaration(FormalDeclaration):
@@ -173,23 +77,71 @@ class FormalPackageDeclaration(FormalDeclaration):
         return f'with package {self.name} is new {self.generic_name} (<>);'
 
 
-class BasicDeclaration(Ada):
-    pass
-
-
-class ObjectDeclaration(BasicDeclaration):
-    def __init__(self, identifier: str, type_name: str, expression: Expr) -> None:
-        self.identifier = identifier
-        self.type_name = type_name
-        self.expression = expression
+class PackageDeclaration(Declaration):
+    def __init__(self, name: str, declarations: List[Declaration] = None,
+                 private_declarations: List[Declaration] = None,
+                 formal_parameters: List[FormalDeclaration] = None) -> None:
+        super().__init__(name)
+        self.declarations = declarations or []
+        self.private_declarations = private_declarations or []
+        self.formal_parameters = formal_parameters
 
     def __str__(self) -> str:
-        return f'   {self.identifier} : constant {self.type_name} := {self.expression};'
+        aspect = '\n  with SPARK_Mode\n'
+
+        return (f'{generic_formal_part(self.formal_parameters)}'
+                f'package {self.name}{aspect}is\n\n'
+                f'{declarative_items(self.declarations)}'
+                f'{declarative_items(self.private_declarations, True)}'
+                f'end {self.name};\n')
 
 
-class TypeDeclaration(Ada):
-    def __init__(self, name: str) -> None:
-        self.name = name
+class PackageBody(Declaration):
+    def __init__(self, name: str, declarations: List[Declaration] = None) -> None:
+        super().__init__(name)
+        self.declarations = declarations or []
+
+    def __str__(self) -> str:
+        if not self.declarations:
+            return ''
+
+        aspect = '\n  with SPARK_Mode\n'
+
+        return (f'package body {self.name}{aspect}is\n\n'
+                f'{declarative_items(self.declarations)}end {self.name};\n')
+
+
+class GenericPackageInstantiation(Declaration):
+    def __init__(self, name: str, generic_package: str, associations: List[str] = None) -> None:
+        super().__init__(name)
+        self.generic_package = generic_package
+        self.associations = associations or []
+
+    def __str__(self) -> str:
+        associations = ', '.join(self.associations)
+        if associations:
+            associations = f' ({associations})'
+        return f'package {self.name} is new {self.generic_package}{associations};\n'
+
+
+class ObjectDeclaration(Declaration):
+    def __init__(self, name: str, type_name: str, expression: Expr = None,
+                 constant: bool = False) -> None:
+        super().__init__(name)
+        self.type_name = type_name
+        self.expression = expression
+        self.constant = constant
+
+    def __str__(self) -> str:
+        constant = 'constant ' if self.constant else ''
+        expression = f' := {self.expression}' if self.expression else ''
+        return f'{self.name} : {constant}{self.type_name}{expression};'
+
+
+class TypeDeclaration(Declaration):
+    @abstractmethod
+    def __str__(self) -> str:
+        raise NotImplementedError
 
 
 class ModularType(TypeDeclaration):
@@ -198,7 +150,7 @@ class ModularType(TypeDeclaration):
         self.modulus = modulus
 
     def __str__(self) -> str:
-        return f'   type {self.name} is mod {self.modulus};'
+        return f'type {self.name} is mod {self.modulus};'
 
 
 class RangeType(TypeDeclaration):
@@ -209,7 +161,7 @@ class RangeType(TypeDeclaration):
         self.size = size
 
     def __str__(self) -> str:
-        return (f'   type {self.name} is range {self.first} .. {self.last}'
+        return (f'type {self.name} is range {self.first} .. {self.last}'
                 f' with Size => {self.size};')
 
 
@@ -222,8 +174,8 @@ class EnumerationType(TypeDeclaration):
     def __str__(self) -> str:
         literal_specification = ', '.join(self.literals.keys())
         literal_representation = ', '.join([f'{k} => {v}' for k, v in self.literals.items()])
-        return (f'   type {self.name} is ({literal_specification}) with Size => {self.size};\n'
-                f'   for {self.name} use ({literal_representation});')
+        return (f'type {self.name} is ({literal_specification}) with Size => {self.size};\n'
+                f'for {self.name} use ({literal_representation});')
 
 
 class Subtype(TypeDeclaration):
@@ -232,7 +184,7 @@ class Subtype(TypeDeclaration):
         self.base_name = base_name
 
     def __str__(self) -> str:
-        return f'   subtype {self.name} is {self.base_name};'
+        return f'subtype {self.name} is {self.base_name};'
 
 
 class RangeSubtype(Subtype):
@@ -242,7 +194,7 @@ class RangeSubtype(Subtype):
         self.last = last
 
     def __str__(self) -> str:
-        return f'   subtype {self.name} is {self.base_name} range {self.first} .. {self.last};'
+        return f'subtype {self.name} is {self.base_name} range {self.first} .. {self.last};'
 
 
 class DerivedType(TypeDeclaration):
@@ -251,37 +203,39 @@ class DerivedType(TypeDeclaration):
         self.type_name = type_name
 
     def __str__(self) -> str:
-        return f'   type {self.name} is new {self.type_name};'
+        return f'type {self.name} is new {self.type_name};'
+
+
+class ComponentItem(Ada):
+    def __init__(self, name: str, type_: str) -> None:
+        self.name = name
+        self.type = type_
+
+    def __str__(self) -> str:
+        return f'      {self.name} : {self.type};\n'
+
+
+class VariantItem(Ada):
+    def __init__(self, discrete_choice: str, components: List[ComponentItem]) -> None:
+        self.discrete_choice = discrete_choice
+        self.components = components
+
+    def __str__(self) -> str:
+        components = '\n'.join(f'      {component}' for component in self.components)
+        return f'         when {self.discrete_choice} =>\n{components}'
 
 
 class RecordType(TypeDeclaration):
-    def __init__(self, name: str, components: List['ComponentItem']) -> None:
+    def __init__(self, name: str, components: List[ComponentItem]) -> None:
         super().__init__(name)
         self.components = components
 
     def __str__(self) -> str:
         components = ''.join(map(str, self.components))
-        return (f'   type {self.name} is\n'
-                f'      record\n'
+        return (f'type {self.name} is\n'
+                f'   record\n'
                 f'{components}'
-                f'      end record;')
-
-
-class VariantRecordType(TypeDeclaration):
-    def __init__(self, name: str, discriminant: 'Discriminant',
-                 variants: List['VariantItem']) -> None:
-        super().__init__(name)
-        self.discriminant = discriminant
-        self.variants = variants
-
-    def __str__(self) -> str:
-        variants = ''.join(map(str, self.variants))
-        return (f'   type {self.name} ({self.discriminant}) is\n'
-                f'      record\n'
-                f'         case {self.discriminant.name} is\n'
-                f'{variants}'
-                f'         end case;\n'
-                f'      end record;')
+                f'   end record;')
 
 
 class Discriminant(Ada):
@@ -297,23 +251,21 @@ class Discriminant(Ada):
         return f'{self.name} : {self.type}{default}'
 
 
-class VariantItem(Ada):
-    def __init__(self, discrete_choice: str, components: List['ComponentItem']) -> None:
-        self.discrete_choice = discrete_choice
-        self.components = components
+class VariantRecordType(TypeDeclaration):
+    def __init__(self, name: str, discriminant: Discriminant,
+                 variants: List[VariantItem]) -> None:
+        super().__init__(name)
+        self.discriminant = discriminant
+        self.variants = variants
 
     def __str__(self) -> str:
-        components = '\n'.join(f'      {component}' for component in self.components)
-        return f'            when {self.discrete_choice} =>\n{components}'
-
-
-class ComponentItem(Ada):
-    def __init__(self, name: str, type_: str) -> None:
-        self.name = name
-        self.type = type_
-
-    def __str__(self) -> str:
-        return f'         {self.name} : {self.type};\n'
+        variants = ''.join(map(str, self.variants))
+        return (f'type {self.name} ({self.discriminant}) is\n'
+                f'   record\n'
+                f'      case {self.discriminant.name} is\n'
+                f'{variants}'
+                f'      end case;\n'
+                f'   end record;')
 
 
 class Aspect(Ada):
@@ -377,189 +329,10 @@ class Import(Aspect):
         return ''
 
 
-class Subprogram(MultiPartElement):
-    # pylint: disable=too-many-arguments
-    def __init__(self, name: str, parameters: List[Tuple[str, str]] = None,
-                 declarations: List['Declaration'] = None, body: List['Statement'] = None,
-                 aspects: List[Aspect] = None) -> None:
-        self.name = name
-        self.parameters = parameters or []
-        self.declarations = declarations or []
-        self.body = body or []
-        self.aspects = aspects or []
-
-    @abstractmethod
-    def specification(self) -> str:
-        raise NotImplementedError
-
-    @abstractmethod
-    def definition(self) -> str:
-        raise NotImplementedError
-
-    @abstractproperty
-    def signature(self) -> str:
-        raise NotImplementedError
-
-    def _parameters(self) -> str:
-        parameters = ''
-        if self.parameters:
-            parameters = '; '.join([f'{p_name} : {p_type}' for p_name, p_type in self.parameters])
-            parameters = f' ({parameters})'
-        return parameters
-
-    def _declarations(self) -> str:
-        return ''.join(f'      {declaration}\n' for declaration in self.declarations)
-
-    def _body(self) -> str:
-        return '\n'.join(map(str, self.body))
-
-    def _with_clause(self) -> str:
-        if not self.aspects:
-            return ''
-        with_clause = '\n     with\n       '
-        for i, aspect in enumerate(self.aspects):
-            with_clause += str(aspect)
-            if i + 1 < len(self.aspects):
-                with_clause += ',\n       '
-        return with_clause
-
-
-class Pragma(Subprogram, ContextItem):
-    def __init__(self, name: str, parameters: List[str] = None) -> None:
-        super().__init__(name)
-        self.pragma_parameters = parameters or []
-
-    def __str__(self) -> str:
-        parameters = ''
-        if self.pragma_parameters:
-            parameters = ', '.join(self.pragma_parameters)
-            parameters = f' ({parameters})'
-        return f'pragma {self.name}{parameters};'
-
-    def specification(self) -> str:
-        return f'   {str(self)}'
-
-    def definition(self) -> str:
-        return ''
-
-    @property
-    def signature(self) -> str:
-        raise NotImplementedError
-
-
-class Function(Subprogram):
-    # pylint: disable=too-many-arguments
-    def __init__(self, name: str, return_type: str, parameters: List[Tuple[str, str]] = None,
-                 declarations: List['Declaration'] = None, body: List['Statement'] = None,
-                 aspects: List[Aspect] = None) -> None:
-        super().__init__(name, parameters, declarations, body, aspects)
-        self.return_type = return_type
-
-    def specification(self) -> str:
-        return f'   {self.signature}{self._with_clause()};'
-
-    def definition(self) -> str:
-        return (f'   {self.signature} is\n'
-                f'{self._declarations()}'
-                f'   begin\n'
-                f'{self._body()}\n'
-                f'   end {self.name};')
-
-    @property
-    def signature(self) -> str:
-        return f'function {self.name}{self._parameters()} return {self.return_type}'
-
-
-class ExpressionFunction(Subprogram):
-    # pylint: disable=too-many-arguments
-    def __init__(self, name: str, return_type: str, parameters: List[Tuple[str, str]] = None,
-                 expression: Expr = None, aspects: List[Aspect] = None) -> None:
-        super().__init__(name, parameters, aspects=aspects)
-        self.return_type = return_type
-        self.expression = expression
-
-    def specification(self) -> str:
-        if self.expression:
-            return f'   {self.signature} is\n      ({self.expression!s}){self._with_clause()};'
-        return f'   {self.signature}{self._with_clause()};'
-
-    def definition(self) -> str:
-        return ''
-
-    @property
-    def signature(self) -> str:
-        return f'function {self.name}{self._parameters()} return {self.return_type}'
-
-
-class Procedure(Subprogram):
-    def specification(self) -> str:
-        return f'   {self.signature}{self._with_clause()};'
-
-    def definition(self) -> str:
-        return (f'   {self.signature} is\n'
-                f'{self._declarations()}'
-                f'   begin\n'
-                f'{self._body()}\n'
-                f'   end {self.name};')
-
-    @property
-    def signature(self) -> str:
-        return f'procedure {self.name}{self._parameters()}'
-
-
-class SubprogramRenaming(Subprogram):
-    def __init__(self, name: str, subprogram: Subprogram) -> None:
-        super().__init__(name)
-        self.subprogram = subprogram
-
-    def specification(self) -> str:
-        return f'   {self.subprogram.signature} renames {self.name};'
-
-    def definition(self) -> str:
-        return ''
-
-    @property
-    def signature(self) -> str:
-        raise NotImplementedError
-
-
-class GenericFunctionInstantiation(Subprogram):
-    def __init__(self, name: str, generic_function: Function,
-                 associations: List[str] = None) -> None:
-        super().__init__(name, generic_function.parameters)
-        self.generic_function = generic_function
-        self.associations = associations or []
-
-    def specification(self) -> str:
-        associations = ', '.join(self.associations)
-        if associations:
-            associations = f' ({associations})'
-        return f'   function {self.name} is new {self.generic_function.name}{associations};'
-
-    def definition(self) -> str:
-        return ''
-
-    @property
-    def signature(self) -> str:
-        return_type = self.generic_function.return_type
-        return f'function {self.name}{self._parameters()} return {return_type}'
-
-
-class Declaration(Ada):
-    def __init__(self, name: str, type_: str, default: Expr = None) -> None:
-        self.name = name
-        self.type = type_
-        self.default = default
-
-    def __str__(self) -> str:
-        default = ''
-        if self.default:
-            default = f' := {self.default}'
-        return f'{self.name} : {self.type}{default};'
-
-
 class Statement(Ada):
-    pass
+    @abstractmethod
+    def __str__(self) -> str:
+        raise NotImplementedError
 
 
 class Assignment(Statement):
@@ -568,7 +341,7 @@ class Assignment(Statement):
         self.expression = expression
 
     def __str__(self) -> str:
-        return f'      {self.name} := {self.expression};'
+        return f'{self.name} := {self.expression};'
 
 
 class CallStatement(Statement):
@@ -578,7 +351,7 @@ class CallStatement(Statement):
 
     def __str__(self) -> str:
         arguments = ', '.join(map(str, self.arguments))
-        return f'      {self.name} ({arguments});'
+        return f'{self.name} ({arguments});'
 
 
 class PragmaStatement(Statement):
@@ -591,7 +364,7 @@ class PragmaStatement(Statement):
         if self.pragma_parameters:
             parameters = ', '.join(self.pragma_parameters)
             parameters = f' ({parameters})'
-        return f'      pragma {self.name}{parameters};'
+        return f'pragma {self.name}{parameters};'
 
 
 class ReturnStatement(Statement):
@@ -600,8 +373,8 @@ class ReturnStatement(Statement):
 
     def __str__(self) -> str:
         if isinstance(self.expression, Case):
-            return f'      return ({self.expression});'
-        return f'      return {self.expression};'
+            return f'return ({self.expression});'
+        return f'return {self.expression};'
 
 
 class IfStatement(Statement):
@@ -614,17 +387,306 @@ class IfStatement(Statement):
         result = ''
         for condition, statements in self.condition_statements:
             if not result:
-                result = f'      if {condition} then\n'
+                result = f'if {condition} then\n'
             else:
-                result += f'      elsif {condition} then\n'
+                result += f'elsif {condition} then\n'
             for statement in statements:
                 result += f'   {statement}\n'
         if self.else_statements:
-            result += '      else\n'
+            result += 'else\n'
             for statement in self.else_statements:
-                result += f'   {statement}\n'
-        result += '      end if;'
+                result += f'{statement}\n'
+        result += 'end if;'
         return result
+
+
+class SubprogramSpecification(Ada):
+    def __init__(self, name: str, parameters: List[Tuple[str, str]] = None) -> None:
+        self.name = name
+        self.parameters = parameters or []
+
+    def _parameters(self) -> str:
+        parameters = ''
+        if self.parameters:
+            parameters = '; '.join([f'{p_name} : {p_type}' for p_name, p_type in self.parameters])
+            parameters = f' ({parameters})'
+        return parameters
+
+    @abstractmethod
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+
+class ProcedureSpecification(SubprogramSpecification):
+    def __str__(self) -> str:
+        return f'procedure {self.name}{self._parameters()}'
+
+
+class FunctionSpecification(SubprogramSpecification):
+    def __init__(self, name: str, return_type: str,
+                 parameters: List[Tuple[str, str]] = None) -> None:
+        super().__init__(name, parameters)
+        self.return_type = return_type
+
+    def __str__(self) -> str:
+        return f'function {self.name}{self._parameters()} return {self.return_type}'
+
+
+class Subprogram(Declaration):
+    def __init__(self, specification: SubprogramSpecification) -> None:
+        super().__init__(specification.name)
+        self.specification = specification
+
+    @abstractmethod
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+
+class SubprogramDeclaration(Subprogram):
+    def __init__(self, specification: SubprogramSpecification,
+                 aspects: List[Aspect] = None) -> None:
+        super().__init__(specification)
+        self.aspects = aspects or []
+
+    def __str__(self) -> str:
+        return f'{self.specification}{with_clause(self.aspects)};'
+
+
+class SubprogramBody(Subprogram):
+    def __init__(self, specification: SubprogramSpecification, declarations: List[Declaration],
+                 statements: List[Statement], aspects: List[Aspect] = None) -> None:
+        super().__init__(specification)
+        self.declarations = declarations or []
+        self.statements = statements or []
+        self.aspects = aspects or []
+
+    def _declarations(self) -> str:
+        return ''.join(indent(f'{declaration}\n', 3) for declaration in self.declarations)
+
+    def _statements(self) -> str:
+        return '\n'.join(indent(str(s), 3) for s in self.statements)
+
+    def __str__(self) -> str:
+        return (f'{self.specification}{with_clause(self.aspects)} is\n'
+                f'{self._declarations()}'
+                f'begin\n'
+                f'{self._statements()}\n'
+                f'end {self.specification.name};')
+
+
+class ExpressionFunctionDeclaration(Subprogram):
+    def __init__(self, specification: FunctionSpecification, expression: Expr,
+                 aspects: List[Aspect] = None) -> None:
+        super().__init__(specification)
+        self.expression = expression
+        self.aspects = aspects or []
+
+    def __str__(self) -> str:
+        return (f'{self.specification} is\n'
+                f'   ({self.expression!s}){with_clause(self.aspects)};')
+
+
+class GenericFunctionInstantiation(Subprogram):
+    def __init__(self, name: str, specification: FunctionSpecification,
+                 associations: List[str] = None) -> None:
+        super().__init__(specification)
+        self.name = name
+        self.parameters = specification.parameters
+        self.associations = associations or []
+
+    def __str__(self) -> str:
+        associations = ', '.join(self.associations)
+        if associations:
+            associations = f' ({associations})'
+        return f'function {self.name} is new {self.specification.name}{associations};'
+
+
+class SubprogramRenamingDeclaration(Subprogram):
+    def __init__(self, specification: SubprogramSpecification, subprogram_name: str) -> None:
+        super().__init__(specification)
+        self.subprogram_name = subprogram_name
+
+    def __str__(self) -> str:
+        return f'{self.specification} renames {self.subprogram_name};'
+
+
+class Pragma(Declaration, ContextItem):
+    def __init__(self, name: str, parameters: List[str] = None) -> None:
+        super().__init__(name)
+        self.pragma_parameters = parameters or []
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return False
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(repr(self))
+
+    def __str__(self) -> str:
+        parameters = ''
+        if self.pragma_parameters:
+            parameters = ', '.join(self.pragma_parameters)
+            parameters = f' ({parameters})'
+        return f'pragma {self.name}{parameters};'
+
+
+class Unit(Ada):
+    def __init__(self, context: List[ContextItem]) -> None:
+        self.context = context
+
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def __iadd__(self, other: object) -> 'Unit':
+        raise NotImplementedError
+
+    @abstractmethod
+    def __imul__(self, other: object) -> 'Unit':
+        raise NotImplementedError
+
+    @abstractproperty
+    def specification(self) -> str:
+        raise NotImplementedError
+
+    @abstractproperty
+    def body(self) -> str:
+        raise NotImplementedError
+
+    @abstractproperty
+    def name(self) -> str:
+        raise NotImplementedError
+
+
+class PackageUnit(Unit):
+    def __init__(self, context: List[ContextItem], specification: PackageDeclaration,
+                 body: PackageBody) -> None:
+        assert specification.name == body.name, 'name of specification and body differ'
+        super().__init__(context)
+        self.__specification = specification
+        self.__body = body
+
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+    def __iadd__(self, other: object) -> 'PackageUnit':
+        if isinstance(other, (UnitPart, SubprogramUnitPart)):
+            self.__specification.declarations = (self.__specification.declarations
+                                                 + list(other.specification))
+            self.__body.declarations = self.__body.declarations + list(other.body)
+            return self
+        return NotImplemented
+
+    def __imul__(self, other: object) -> 'PackageUnit':
+        if isinstance(other, (UnitPart, SubprogramUnitPart)):
+            self.__specification.declarations = (list(other.specification)
+                                                 + self.__specification.declarations)
+            self.__body.declarations = list(other.body) + self.__body.declarations
+            return self
+        return NotImplemented
+
+    @property
+    def specification(self) -> str:
+        context_clause = ''
+        if self.context:
+            context_clause = '\n'.join(map(str, unique(self.context)))
+            context_clause = f'{context_clause}\n\n'
+        return f'{context_clause}{self.__specification}'
+
+    @property
+    def body(self) -> str:
+        return str(self.__body)
+
+    @property
+    def name(self) -> str:
+        return self.__specification.name.lower().replace('.', '-')
+
+
+class InstantiationUnit(Unit):
+    def __init__(self, context: List[ContextItem],
+                 specification: GenericPackageInstantiation) -> None:
+        super().__init__(context)
+        self.__specification = specification
+
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+    def __iadd__(self, other: object) -> Unit:
+        return NotImplemented
+
+    def __imul__(self, other: object) -> Unit:
+        return NotImplemented
+
+    @property
+    def specification(self) -> str:
+        context_clause = ''
+        if self.context:
+            context_clause = '\n'.join(map(str, unique(self.context)))
+            context_clause = f'{context_clause}\n\n'
+        return f'{context_clause}{self.__specification}'
+
+    @property
+    def body(self) -> str:
+        return ''
+
+    @property
+    def name(self) -> str:
+        return self.__specification.name.lower().replace('.', '-')
+
+
+class UnitPart:
+    def __init__(self, specification: Sequence[Declaration] = None,
+                 body: Sequence[Declaration] = None) -> None:
+        self.specification = specification or []
+        self.body = body or []
+
+    def __add__(self, other: object) -> 'UnitPart':
+        if isinstance(other, Union[self.__class__, SubprogramUnitPart]):
+            return UnitPart(self.specification + other.specification, self.body + other.body)
+        return NotImplemented
+
+
+class SubprogramUnitPart:
+    def __init__(self, specification: List[Subprogram] = None,
+                 body: List[Subprogram] = None) -> None:
+        self.specification = specification or []
+        self.body = body or []
+
+    def __add__(self, other: object) -> 'SubprogramUnitPart':
+        if isinstance(other, Union[self.__class__, UnitPart]):
+            return SubprogramUnitPart(self.specification + other.specification,
+                                      self.body + other.body)
+        return NotImplemented
+
+
+def indent(string: str, indentation: int) -> str:
+    return '\n'.join((indentation * ' ' + l if l else '') for l in string.split('\n'))
+
+
+def generic_formal_part(parameters: List[FormalDeclaration] = None) -> str:
+    if parameters is None:
+        return ''
+    return 'generic' + (''.join(f'\n   {p}' for p in parameters) if parameters else '') + '\n'
+
+
+def declarative_items(declarations: List[Declaration], private: bool = False) -> str:
+    result = '\n\n'.join(indent(str(d), 3) for d in unique(declarations) if str(d))
+    if result:
+        result = '\nprivate\n{result}' if private else result
+        result += '\n\n'
+    return result
+
+
+def with_clause(aspects: List[Aspect]) -> str:
+    if not aspects:
+        return ''
+    result = '\n  with\n    '
+    for i, aspect in enumerate(aspects):
+        result += str(aspect)
+        if i + 1 < len(aspects):
+            result += ',\n    '
+    return result
 
 
 T = TypeVar('T')  # pylint: disable=invalid-name
