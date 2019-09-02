@@ -1,0 +1,83 @@
+-- The Constrained Application Protocol (CoAP), RFC7252
+
+package CoAP is
+
+   type Version_Type is (V1) with Size => 2;
+
+   type Type_Type is (Confirmable     => 0,
+                      Non_Confirmable => 1,
+                      Acknowledgement => 2,
+                      Reset           => 3) with Size => 2;
+
+   type Token_Length_Type is range 0 .. 8 with Size => 4;
+
+   type Class_Type is (Request      => 0,
+                       Success      => 2,
+                       Client_Error => 4,
+                       Server_Error => 5) with Size => 3;
+
+   type Method_Type is (Get    => 1,
+                        Post   => 2,
+                        Put    => 3,
+                        Delete => 4) with Size => 5;
+
+   type Success_Type is (Create  => 1,
+                         Deleted => 2,
+                         Valid   => 3,
+                         Changed => 4,
+                         Content => 5) with Size => 5;
+
+   type Client_Error_Type is (Bad_Request                =>  0,
+                              Unauthorized               =>  1,
+                              Bad_Option                 =>  2,
+                              Forbidden                  =>  3,
+                              Not_Found                  =>  4,
+                              Method_Not_Allowed         =>  5,
+                              Not_Acceptable             =>  6,
+                              Precondition_Failed        => 12,
+                              Request_Entity_Too_Large   => 13,
+                              Unsupported_Content_Format => 15) with Size => 5;
+
+   type Server_Error_Type is (Internal_Server_Error  => 0,
+                              Not_Implemented        => 1,
+                              Bad_Gateway            => 2,
+                              Service_Unavailable    => 3,
+                              Gateway_Timeout        => 4,
+                              Proxying_Not_Supported => 5) with Size => 5;
+
+   type Message_ID_Type is mod 2**16;
+
+   type Payload_Marker_Type is (Present => 255) with Size => 8;
+
+   type Datagram is
+      message
+         Ver    : Version_Type;
+         T      : Type_Type;
+         TKL    : Token_Length_Type;
+         Class  : Class_Type
+            then Method       if Class = Request,
+            then Success      if Class = Success,
+            then Client_Error if Class = Client_Error,
+            then Server_Error if Class = Server_Error;
+         Method  : Method_Type
+            then Message_ID;
+         Success : Success_Type
+            then Message_ID;
+         Client_Error : Client_Error_Type
+            then Message_ID;
+         Server_Error : Server_Error_Type
+            then Message_ID;
+         Message_ID   : Message_ID_Type
+            then Token
+               with Length => TKL * 8;
+         Token : Payload_Type;
+
+         --  FIXME: Options - missing
+
+         Payload_Marker : Payload_Marker_Type
+            then Payload
+               with Length => Total_Length * 8 - (Payload_Marker'Last - Ver'First + 1);
+         Payload : Payload_Type;
+      end message;
+
+end CoaP;
