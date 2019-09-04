@@ -16,10 +16,10 @@ class TestIntegration(unittest.TestCase):
         for basename in basenames:
             parser.parse(f'{self.specdir}/{basename}.rflx')
 
-        generator = Generator()
+        generator = Generator('RFLX.')
         generator.generate_dissector(parser.messages, parser.refinements)
 
-        for unit in generator.units():
+        for unit in generator.units.values():
             with open(f'{self.testdir}/{unit.name}.ads', 'r') as f:
                 self.assertEqual(unit.specification, f.read())
             if unit.body:

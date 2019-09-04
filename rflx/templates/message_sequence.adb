@@ -1,23 +1,53 @@
-package body {prefix}Message_Sequence
-  with SPARK_Mode
+package body {prefix}Message_Sequence with
+  SPARK_Mode
 is
 
-   procedure Label (Buffer : Types.Bytes) is
-   begin
-      pragma Assume (Is_Contained (Buffer));
-   end Label;
+   function Create return Context_Type is
+     (Types.Index_Type'First, Types.Index_Type'First, Types.Bit_Index_Type'First, Types.Bit_Index_Type'First, 0, null, Types.Bit_Index_Type'First, S_Initial);
 
-   function First (Buffer : Types.Bytes) return Cursor_Type is
+   procedure Initialize (Context : out Context_Type; Buffer : in out Types.Bytes_Ptr; Buffer_First : Types.Index_Type; Buffer_Last : Types.Index_Type; First : Types.Bit_Index_Type; Last : Types.Bit_Index_Type) is
+      Buffer_Address : constant Types.Integer_Address := Types.Bytes_Address (Buffer);
    begin
-      Element_Label (Buffer (Buffer'First .. Buffer'Last));
-      return (Buffer'First, Buffer'Last);
-   end First;
+      Context := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer_Address => Buffer_Address, Buffer => Buffer, Index => First, State => S_Processing);
+      Buffer := null;
+   end Initialize;
 
-   procedure Next (Buffer : Types.Bytes; Cursor : in out Cursor_Type) is
+   procedure Take_Buffer (Context : in out Context_Type; Buffer : out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index_Type; First, Last : Types.Bit_Index_Type) is
    begin
-      Cursor := (Cursor.First + Types.Length_Type (Element_Length (Buffer (Cursor.First .. Cursor.Last))),
-                 Buffer'Last);
-      Element_Label (Buffer (Cursor.First .. Cursor.Last));
-   end Next;
+      Buffer := Context.Buffer;
+      Context.Buffer := null;
+   end Take_Buffer;
+
+   function Valid_Element (Context : Context_Type) return Boolean is
+     (Context.State = S_Processing and Context.Index <= Context.Last);
+
+   function Valid (Context : Context_Type) return Boolean is
+     (Context.State = S_Valid);
+
+   function Has_Buffer (Context : Context_Type) return Boolean is
+     (Context.Buffer /= null);
+
+   procedure Switch (Context : in out Context_Type; Element_Context : out Element_Context_Type) is
+      Buffer : Types.Bytes_Ptr := Context.Buffer;
+   begin
+      Context.Buffer := null;
+      pragma Warnings (Off, "unused assignment to ""Buffer""");
+      Element_Initialize (Element_Context, Buffer, Context.Index, Context.Last);
+      pragma Warnings (On, "unused assignment to ""Buffer""");
+   end Switch;
+
+   procedure Update (Context : in out Context_Type; Element_Context : in out Element_Context_Type) is
+      Buffer        : Types.Bytes_Ptr;
+      Valid_Element : Boolean := Element_Valid_Message (Element_Context);
+   begin
+      Element_Take_Buffer (Element_Context, Buffer);
+      Context.Index := Element_Index (Element_Context);
+      Context.Buffer := Buffer;
+      if not Valid_Element then
+         Context.State := S_Invalid;
+      elsif Context.Index = Context.Last + 1 then
+         Context.State := S_Valid;
+      end if;
+   end Update;
 
 end {prefix}Message_Sequence;

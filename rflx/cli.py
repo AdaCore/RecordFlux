@@ -4,7 +4,6 @@ from typing import List, Tuple, Union
 
 import pkg_resources
 
-from rflx.expression import ExpressionError
 from rflx.generator import Generator
 from rflx.model import ModelError
 from rflx.parser import Parser, ParserError
@@ -56,7 +55,7 @@ def main(argv: List[str]) -> Union[int, str]:
         args.func(args)
     except ParserError as e:
         return f'{parser.prog}: parser error: {e}'
-    except (ModelError, ExpressionError) as e:
+    except ModelError as e:
         return f'{parser.prog}: model error: {e}'
     except InternalError as e:
         return f'{parser.prog}: internal error: {e}'

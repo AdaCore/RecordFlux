@@ -1,53 +1,98 @@
-with {prefix}Types; use type {prefix}Types.Length_Type;
+with {prefix}Types; use type {prefix}Types.Bytes_Ptr, {prefix}Types.Length_Type, {prefix}Types.Bit_Length_Type, {prefix}Types.Integer_Address;
 
 generic
    type Element_Type is private;
-   Element_Type_Byte_Size : Types.Length_Type;
-   with function Valid_Element_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Boolean;
-   with function Convert_To_Element_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Element_Type;
-package {prefix}Scalar_Sequence
-  with SPARK_Mode
+   type Element_Base_Type is (<>);
+   with function Convert_To_Element_Base_Type (Buffer : Types.Bytes; Offset : Types.Offset_Type) return Element_Base_Type;
+   with function Valid_Element_Type (Element : Element_Base_Type) return Boolean;
+   with function Convert_To_Element_Type (Element : Element_Base_Type) return Element_Type;
+package {prefix}Scalar_Sequence with
+  SPARK_Mode
 is
 
-   type Cursor_Type is
+   type Context_Type (Buffer_First, Buffer_Last : Types.Index_Type := Types.Index_Type'First; First, Last : Types.Bit_Index_Type := Types.Bit_Index_Type'First; Buffer_Address : Types.Integer_Address := 0) is private with
+     Default_Initial_Condition => False;
+
+   function Create return Context_Type;
+
+   procedure Initialize (Context : out Context_Type; Buffer : in out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index_Type; First, Last : Types.Bit_Index_Type) with
+     Pre =>
+       (not Context'Constrained
+        and then Buffer /= null
+        and then Buffer'First = Buffer_First
+        and then Buffer'Last = Buffer_Last
+        and then Types.Byte_Index (First) >= Buffer'First
+        and then Types.Byte_Index (Last) <= Buffer'Last
+        and then First <= Last
+        and then Last <= Types.Bit_Index_Type'Last / 2),
+     Post =>
+       (Buffer = null
+        and Has_Buffer (Context)
+        and Context.Buffer_First = Buffer_First
+        and Context.Buffer_Last = Buffer_Last
+        and Context.Buffer_Address = Types.Bytes_Address (Buffer)'Old);
+
+   procedure Take_Buffer (Context : in out Context_Type; Buffer : out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index_Type) with
+     Pre =>
+       (Has_Buffer (Context)
+        and then Context.Buffer_First = Buffer_First
+        and then Context.Buffer_Last = Buffer_Last),
+     Post =>
+       (not Has_Buffer (Context)
+        and Buffer /= null
+        and Buffer'First = Buffer_First
+        and Buffer'Last = Buffer_Last
+        and Context.Buffer_Address = Types.Bytes_Address (Buffer)
+        and Context.Buffer_Address = Context.Buffer_Address'Old);
+
+   procedure Next (Context : in out Context_Type) with
+     Pre =>
+       (Has_Buffer (Context)
+        and then Valid_Element (Context)),
+     Post =>
+       (Has_Buffer (Context)
+        and Context.Buffer_First = Context.Buffer_First'Old
+        and Context.Buffer_Last = Context.Buffer_Last'Old
+        and Context.Buffer_Address = Context.Buffer_Address'Old);
+
+   function Valid_Element (Context : Context_Type) return Boolean with
+     Contract_Cases =>
+       (Has_Buffer (Context) => (Valid_Element'Result or not Valid_Element'Result)
+        and Has_Buffer (Context),
+        not Has_Buffer (Context) => (Valid_Element'Result or not Valid_Element'Result)
+        and not Has_Buffer (Context));
+
+   function Get_Element (Context : Context_Type) return Element_Type with
+     Pre =>
+       Valid_Element (Context);
+
+   function Valid (Context : Context_Type) return Boolean;
+
+   function Has_Buffer (Context : Context_Type) return Boolean;
+
+private
+
+   type State_Type is (S_Initial, S_Processing, S_Valid, S_Invalid);
+
+   use Types;
+
+   type Context_Type (Buffer_First, Buffer_Last : Types.Index_Type := Types.Index_Type'First; First, Last : Types.Bit_Index_Type := Types.Bit_Index_Type'First; Buffer_Address : Types.Integer_Address := 0) is
       record
-         First : Types.Index_Type;
-         Last : Types.Index_Type;
-      end record;
-
-   function Is_Contained (Buffer : Types.Bytes) return Boolean
-     with
-       Ghost,
-       Import;
-
-   procedure Label (Buffer : Types.Bytes)
-     with
-       Ghost,
-       Post => Is_Contained (Buffer);
-
-   function First (Buffer : Types.Bytes) return Cursor_Type
-     with
-       Pre => Is_Contained (Buffer),
-       Post => First'Result.First >= Buffer'First and then First'Result.Last <= Buffer'Last;
-
-   procedure Next (Buffer : Types.Bytes; Cursor : in out Cursor_Type)
-     with
-       Pre => (Is_Contained (Buffer)
-               and then Cursor.First >= Buffer'First
-               and then Cursor.Last <= Buffer'Last);
-
-   function Valid_Element (Buffer : Types.Bytes; Cursor : Cursor_Type) return Boolean is
-     (Cursor.First >= Buffer'First
-      and then Cursor.Last <= Buffer'Last
-      and then Cursor.First <= Cursor.Last
-      and then Buffer (Cursor.First .. Cursor.Last)'Length = Element_Type_Byte_Size
-      and then Valid_Element_Type (Buffer (Cursor.First .. Cursor.Last), 0))
-     with
-       Pre => Is_Contained (Buffer);
-
-   function Get_Element (Buffer : Types.Bytes; Cursor : Cursor_Type) return Element_Type is
-      (Convert_To_Element_Type (Buffer (Cursor.First .. Cursor.Last), 0))
-     with
-       Pre => Is_Contained (Buffer) and then Valid_Element (Buffer, Cursor);
+         Buffer       : Types.Bytes_Ptr := null;
+         Index        : Types.Bit_Index_Type := Types.Bit_Index_Type'First;
+         State        : State_Type := S_Initial;
+         Next_Element : Element_Base_Type := Element_Base_Type'First;
+      end record with
+     Dynamic_Predicate =>
+       ((if Buffer /= null then
+          (Buffer'First = Buffer_First
+           and Buffer'Last = Buffer_Last
+           and Types.Bytes_Address (Buffer) = Buffer_Address))
+        and Types.Byte_Index (First) >= Buffer_First
+        and Types.Byte_Index (Last) <= Buffer_Last
+        and First <= Last
+        and Last <= (Types.Bit_Index_Type'Last / 2)
+        and Index >= First
+        and Index - Last <= 1);
 
 end {prefix}Scalar_Sequence;

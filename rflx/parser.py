@@ -1,16 +1,16 @@
-from collections import OrderedDict
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Callable, Dict, Iterable, List, MutableMapping, Tuple
 
 from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, ParseException,
                        ParseFatalException, ParseResults, Regex, StringEnd, Suppress, Token, Word,
                        WordEnd, WordStart, ZeroOrMore, alphanums, alphas, delimitedList,
                        infixNotation, nums, opAssoc)
 
-from rflx.expression import (TRUE, UNDEFINED, Add, Aggregate, And, Attribute, Div, Equal, Expr,
-                             First, Greater, GreaterEqual, Last, Length, LengthValue, Less,
-                             LessEqual, Mul, NotEqual, Number, Or, Pow, Relation, Sub, Value)
-from rflx.model import (FINAL, Array, DerivedMessage, Edge, Enumeration, InitialNode, Message,
-                        ModelError, ModularInteger, Node, RangeInteger, Reference, Refinement, Type)
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, Expr, First, Greater,
+                             GreaterEqual, Last, Length, Less, LessEqual, Mul, NotEqual, Number, Or,
+                             Pow, Relation, Sub, Variable)
+from rflx.model import (FINAL, INITIAL, Array, DerivedMessage, Enumeration, Field, Link, Message,
+                        ModelError, ModularInteger, Payload, RangeInteger, Reference, Refinement,
+                        Type)
 
 
 class SyntaxTree:
@@ -18,9 +18,6 @@ class SyntaxTree:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         return NotImplemented
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
     def __repr__(self) -> str:
         args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
@@ -48,12 +45,12 @@ class DerivationSpec(Type):
 
 
 class Then(SyntaxTree):
-    def __init__(self, name: str, first: Expr = None, length: Expr = None,
-                 constraint: Expr = None) -> None:
+    def __init__(self, name: str, first: Expr = UNDEFINED, length: Expr = UNDEFINED,
+                 condition: Expr = TRUE) -> None:
         self.name = name
         self.first = first
         self.length = length
-        self.constraint = constraint
+        self.condition = condition
 
 
 class Component(SyntaxTree):
@@ -331,7 +328,7 @@ class Parser:
 
 
 def convert_to_messages(spec: Specification) -> Dict[str, Message]:
-    types: Dict[str, Type] = {}
+    types: Dict[str, Type] = {Payload().name: Payload()}
     messages: Dict[str, Message] = {}
 
     for t in spec.package.types:
@@ -353,16 +350,15 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
                                       '(no multiple of 8)')
                 t = Array(t.name, types[t.element_type.name])
         elif isinstance(t, MessageSpec):
-            nodes: Dict[str, Node] = OrderedDict()
-            create_graph(nodes, types, t.components, t.name)
-            messages[full_name] = Message(full_name, next(iter(nodes.values()), FINAL))
+            messages[full_name] = create_message(full_name, types, t.components, t.name)
         elif isinstance(t, DerivationSpec):
             base = t.base
             if base not in types and base not in messages:
                 raise ParserError(f'undefined type "{t.base}" in "{t.name}"')
             base = qualified_type_name(t.base, spec.package.identifier, messages,
                                        f'unsupported type "{t.base}" in "{t.name}"')
-            messages[full_name] = DerivedMessage(full_name, base, messages[base].initial_node)
+            messages[full_name] = DerivedMessage(full_name, base, messages[base].structure,
+                                                 messages[base].types)
             t = MessageSpec(t.name, [])
         elif isinstance(t, Refinement):
             continue
@@ -374,61 +370,46 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
     return messages
 
 
-def create_graph(nodes: Dict[str, Node], types: Dict[str, Type],
-                 components: List[Component], message_name: str) -> None:
-
-    if not components:
-        return
-
+def create_message(full_name: str, types: Dict[str, Type], components: List[Component],
+                   message_name: str) -> Message:
     components = list(components)
 
-    if components[0].name != 'null':
+    if components and components[0].name != 'null':
         components.insert(0, Component('null', ''))
 
-    create_nodes(nodes, types, components, message_name)
-    create_edges(nodes, components, message_name)
-
-    if next(iter(nodes.values())).edges[0].first != UNDEFINED:
-        raise ParserError(f'invalid first expression in initial node in "{message_name}"')
-
-
-def create_nodes(nodes: Dict[str, Node], types: Dict[str, Type],
-                 components: List[Component], message_name: str) -> None:
+    field_types: MutableMapping[Field, Type] = {}
 
     for component in components:
-        if component.name == 'null':
-            nodes[component.name] = InitialNode()
-            continue
-        if 'Payload' in component.type:
-            types[component.type] = Array(component.type)
-        if component.type not in types:
-            raise ParserError(f'undefined type "{component.type}" in "{message_name}"')
-        if isinstance(types[component.type], MessageSpec):
-            raise ParserError(f'unsupported type "{component.type}" in "{message_name}"')
-        nodes[component.name] = Node(component.name, types[component.type])
+        if component.name != 'null':
+            if component.type not in types:
+                raise ParserError(f'undefined type "{component.type}" in "{message_name}"')
+            if isinstance(types[component.type], MessageSpec):
+                raise ParserError(f'unsupported type "{component.type}" in "{message_name}"')
+            field_types[Field(component.name)] = types[component.type]
 
+    structure: List[Link] = []
 
-def create_edges(nodes: Dict[str, Node], components: List[Component],
-                 message_name: str) -> None:
     for i, component in enumerate(components):
+        if component.name == 'null' and any(then.first != UNDEFINED for then in component.thens):
+            raise ParserError(f'invalid first expression in initial node in "{message_name}"')
+
+        source_node = Field(component.name) if component.name != 'null' else INITIAL
+
         if not component.thens:
-            nodes[component.name].edges.append(
-                Edge(nodes[components[i + 1].name]) if i + 1 < len(components) else Edge(FINAL))
+            target_node = Field(components[i + 1].name) if i + 1 < len(components) else FINAL
+            structure.append(Link(source_node, target_node))
+
         for then in component.thens:
-            if then.name not in nodes and then.name != 'null':
+            target_node = Field(then.name) if then.name != 'null' else FINAL
+            if target_node not in field_types.keys() | {FINAL}:
                 raise ParserError(f'undefined component "{then.name}" in "{message_name}"')
-            edge = Edge(nodes[then.name]) if then.name != 'null' else Edge(FINAL)
-            if then.constraint:
-                edge.condition = then.constraint
-            if then.first:
-                edge.first = then.first.converted(replace_value_by_length_value)
-            if then.length:
-                edge.length = then.length.converted(replace_value_by_length_value)
-            nodes[component.name].edges.append(edge)
+            structure.append(Link(source_node,
+                                  target_node,
+                                  then.condition,
+                                  then.length,
+                                  then.first))
 
-
-def replace_value_by_length_value(self: Expr) -> Expr:
-    return LengthValue(self.name) if isinstance(self, Value) else self
+    return Message(full_name, structure, field_types)
 
 
 def convert_to_refinements(spec: Specification, messages: Dict[str, Message]) -> List[Refinement]:
@@ -437,17 +418,22 @@ def convert_to_refinements(spec: Specification, messages: Dict[str, Message]) ->
         if isinstance(t, Refinement):
             pdu = qualified_type_name(t.pdu, spec.package.identifier, messages.keys(),
                                       f'undefined type "{t.pdu}" in refinement')
-            if t.field not in messages[pdu].fields():
-                raise ParserError(f'invalid field "{t.field}" in refinement of "{t.pdu}"')
-            sdu = t.sdu
-            if sdu != 'null':
-                sdu = qualified_type_name(t.sdu, spec.package.identifier, messages.keys(),
-                                          f'undefined type "{t.sdu}" in refinement of "{t.pdu}"')
+            if t.field not in messages[pdu].fields:
+                raise ParserError(f'invalid field "{t.field.name}" in refinement of "{t.pdu}"')
+            sdu = qualified_type_name(t.sdu, spec.package.identifier, messages.keys(),
+                                      f'undefined type "{t.sdu}" in refinement of "{t.pdu}"')
             refinement = Refinement(spec.package.identifier, pdu, t.field, sdu, t.condition)
             if refinement in refinements:
-                raise ParserError(f'duplicate refinement of field "{t.field}" with "{t.sdu}"'
+                raise ParserError(f'duplicate refinement of field "{t.field.name}" with "{t.sdu}"'
                                   f' in "{t.pdu}"')
             refinements.append(refinement)
+            for variable in t.condition.variables:
+                literals = [l for e in messages[pdu].types.values() if isinstance(e, Enumeration)
+                            for l in e.literals.keys()]
+                if (Field(str(variable.name)) not in messages[pdu].fields
+                        and str(variable.name) not in literals):
+                    raise ParserError(f'unknown field or literal "{variable.name}" in refinement'
+                                      f' condition of "{t.pdu}"')
         elif isinstance(t, DerivationSpec):
             for r in refinements:
                 if r.pdu == f'{t.base}' or r.pdu == f'{spec.package.identifier}.{t.base}':
@@ -482,16 +468,13 @@ def fatalexceptions(parse_function: Callable) -> Callable:
 
 @fatalexceptions
 def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> Expr:
-    for t in tokens:
-        if not Number(0) <= t <= Number(255):
-            raise ParseFatalException(string, location, f'Number "{t}" is out of range 0 .. 255')
-    return Aggregate(*tokens)
+    raise ParserError('unsupported array aggregate')  # ISSUE: Componolit/RecordFlux#60
 
 
 @fatalexceptions
 def parse_term(string: str, location: int, tokens: ParseResults) -> Expr:
     if isinstance(tokens[0], str):
-        return Value(tokens[0])
+        return Variable(tokens[0])
     return tokens[0]
 
 
@@ -557,9 +540,9 @@ def parse_mathematical_expression(string: str, location: int, tokens: ParseResul
 @fatalexceptions
 def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
     return Then(tokens[1],
-                tokens[2][0]['first'] if tokens[2] and 'first' in tokens[2][0] else None,
-                tokens[2][0]['length'] if tokens[2] and 'length' in tokens[2][0] else None,
-                tokens[3][0] if tokens[3] else None)
+                tokens[2][0]['first'] if tokens[2] and 'first' in tokens[2][0] else UNDEFINED,
+                tokens[2][0]['length'] if tokens[2] and 'length' in tokens[2][0] else UNDEFINED,
+                tokens[3][0] if tokens[3] else TRUE)
 
 
 @fatalexceptions
@@ -634,4 +617,4 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
 def parse_refinement(string: str, location: int, tokens: ParseResults) -> Type:
     if 'constraint' not in tokens:
         tokens.append(TRUE)
-    return Refinement('', *tokens)
+    return Refinement('', tokens[0], Field(tokens[1]), tokens[2], tokens[3])

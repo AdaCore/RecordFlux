@@ -1,12 +1,13 @@
 import unittest
+from itertools import zip_longest
 from typing import Dict, List
 
-from rflx.parser import (FINAL, Aggregate, And, Array, Component, ContextSpec, DerivationSpec,
-                         DerivedMessage, Div, Edge, Enumeration, Equal, First, GreaterEqual,
-                         InitialNode, Last, Length, LessEqual, Message, MessageSpec, ModularInteger,
-                         Mul, Node, NotEqual, Number, PackageSpec, ParseFatalException, Parser,
-                         ParserError, Pow, RangeInteger, Reference, Refinement, Specification, Sub,
-                         Then, Value)
+from rflx.parser import (FINAL, INITIAL, UNDEFINED, And, Array, Component, ContextSpec,
+                         DerivationSpec, DerivedMessage, Div, Enumeration, Equal, Field, First,
+                         GreaterEqual, Last, Length, LessEqual, Link, Message, MessageSpec,
+                         ModularInteger, Mul, NotEqual, Number, PackageSpec, ParseFatalException,
+                         Parser, ParserError, Pow, RangeInteger, Reference, Refinement,
+                         Specification, Sub, Then, Variable)
 from tests.models import ETHERNET_FRAME
 
 
@@ -29,16 +30,25 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         parser.parse_string(string)
         self.assertEqual(parser.specifications(), specifications)
 
-    def assert_messages(self, filenames: List[str], messages: List[Message]) -> None:
+    def assert_messages_files(self, filenames: List[str], messages: List[Message]) -> None:
         parser = Parser()
         for filename in filenames:
             parser.parse(filename)
-        self.assertEqual(parser.messages, messages, filenames)
+        self.assert_messages(parser.messages, messages)
 
     def assert_messages_string(self, string: str, messages: List[Message]) -> None:
         parser = Parser()
         parser.parse_string(string)
-        self.assertEqual(parser.messages, messages)
+        self.assert_messages(parser.messages, messages)
+
+    def assert_messages(self, actual_messages: List[Message],
+                        expected_messages: List[Message]) -> None:
+        for actual, expected in zip_longest(actual_messages, expected_messages):
+            self.assertEqual(actual.full_name, expected.full_name)
+            self.assertEqual(actual.structure, expected.structure, expected.full_name)
+            self.assertEqual(actual.types, expected.types, expected.full_name)
+            self.assertEqual(actual.fields, expected.fields, expected.full_name)
+        self.assertEqual(actual_messages, expected_messages)
 
     def assert_refinements_string(self, string: str, refinements: List[Refinement]) -> None:
         parser = Parser()
@@ -59,30 +69,33 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaisesRegex(ParseFatalException, regex):
             Parser().parse_string(string)
 
-    def test_mathematical_expression_array(self) -> None:
-        self.assertEqual(
-            Parser.mathematical_expression().parseString('(1, 2)')[0],
-            Aggregate(Number(1), Number(2)))
+    # ISSUE: Componolit/RecordFlux#60
 
-    def test_mathematical_expression_array_no_number(self) -> None:
-        with self.assertRaisesRegex(ParseFatalException, r'^Expected Number'):
-            Parser.mathematical_expression().parseString('(1, Foo)')
+    # def test_mathematical_expression_array(self) -> None:
+    #     self.assertEqual(
+    #         Parser.mathematical_expression().parseString('(1, 2)')[0],
+    #         Aggregate(Number(1), Number(2)))
 
-    def test_mathematical_expression_array_out_of_range(self) -> None:
-        with self.assertRaisesRegex(ParseFatalException, r'^Number "256" is out of range 0 .. 255'):
-            Parser.mathematical_expression().parseString('(1, 2, 256)')
+    # def test_mathematical_expression_array_no_number(self) -> None:
+    #     with self.assertRaisesRegex(ParseFatalException, r'^Expected Number'):
+    #         Parser.mathematical_expression().parseString('(1, Foo)')
+
+    # def test_mathematical_expression_array_out_of_range(self) -> None:
+    #     with self.assertRaisesRegex(ParseFatalException,
+    #                                 r'^Number "256" is out of range 0 .. 255'):
+    #         Parser.mathematical_expression().parseString('(1, 2, 256)')
 
     def test_empty_file_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/empty_file.rflx'], {})
 
     def test_empty_file_message(self) -> None:
-        self.assert_messages([f'{self.testdir}/empty_file.rflx'], [])
+        self.assert_messages_files([f'{self.testdir}/empty_file.rflx'], [])
 
     def test_comment_only_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/comment_only.rflx'], {})
 
     def test_comment_only_message(self) -> None:
-        self.assert_messages([f'{self.testdir}/comment_only.rflx'], [])
+        self.assert_messages_files([f'{self.testdir}/comment_only.rflx'], [])
 
     def test_package_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/package.rflx'],
@@ -90,7 +103,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                           PackageSpec('Test', []))})
 
     def test_package_message(self) -> None:
-        self.assert_messages([f'{self.testdir}/package.rflx'], [])
+        self.assert_messages_files([f'{self.testdir}/package.rflx'], [])
 
     def test_context_spec(self) -> None:
         self.assert_specifications([f'{self.testdir}/context.rflx'],
@@ -98,7 +111,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                           PackageSpec('Test', []))})
 
     def test_context_message(self) -> None:
-        self.assert_messages([f'{self.testdir}/context.rflx'], [])
+        self.assert_messages_files([f'{self.testdir}/context.rflx'], [])
 
     def test_duplicate_package(self) -> None:
         self.assert_parser_error([f'{self.testdir}/package.rflx', f'{self.testdir}/package.rflx'],
@@ -298,6 +311,21 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             """,
             r'^invalid field "Bar" in refinement of "PDU"$')
 
+    def test_refinement_invalid_condition(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is mod 256;
+                   type PDU is
+                      message
+                         Foo : T;
+                      end message;
+                   for PDU use (Foo => PDU)
+                      if X < Y + 1;
+                end Test;
+            """,
+            r'^unknown field or literal "X" in refinement condition of "PDU"$')
+
     def test_derivation_duplicate_type(self) -> None:
         self.assert_parser_error_string(
             """
@@ -460,7 +488,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                          MessageSpec('PDU',
                                      [Component('null', '', [
                                          Then('Foo',
-                                              None,
+                                              UNDEFINED,
                                               Number(1))]),
                                       Component('Foo', 'T', [
                                           Then('Bar',
@@ -468,7 +496,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                Number(1),
                                                And(Equal(Length('Foo'),
                                                    Number(1)),
-                                                   LessEqual(Value('Foo'),
+                                                   LessEqual(Variable('Foo'),
                                                              Number(30)))),
                                           Then('Baz')]),
                                       Component('Bar', 'T'),
@@ -480,33 +508,44 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assert_specifications([f'{self.testdir}/message_type.rflx'], spec)
 
     def test_message_type_message(self) -> None:
-        t = ModularInteger('T', Number(256))
+        simple_structure = [
+            Link(INITIAL, Field('Bar')),
+            Link(Field('Bar'), Field('Baz'), ),
+            Link(Field('Baz'), FINAL)
+        ]
 
-        initial = InitialNode()
-        simple_initial = InitialNode()
-        pdu_foo = Node('Foo', t)
-        pdu_bar = Node('Bar', t)
-        pdu_baz = Node('Baz', t)
+        simple_types = {
+            Field('Bar'): ModularInteger('T', Number(256)),
+            Field('Baz'): ModularInteger('T', Number(256))
+        }
 
-        initial.edges = [Edge(pdu_foo,
-                              length=Number(1))]
-        simple_initial.edges = [Edge(pdu_bar)]
-        pdu_foo.edges = [Edge(pdu_bar,
-                              And(Equal(Length('Foo'),
-                                        Number(1)),
-                                  LessEqual(Value('Foo'),
-                                            Number(30))),
-                              Number(1),
-                              Number(1)),
-                         Edge(pdu_baz)]
-        pdu_bar.edges = [Edge(pdu_baz)]
-        pdu_baz.edges = [Edge(FINAL)]
+        simple_message = Message('Test.Simple_PDU', simple_structure, simple_types)
 
-        messages = [Message('Test.PDU', initial),
-                    Message('Test.Simple_PDU', simple_initial),
-                    Message('Test.Empty_PDU', FINAL)]
+        structure = [
+            Link(INITIAL, Field('Foo'), length=Number(1)),
+            Link(Field('Foo'), Field('Bar'),
+                 And(Equal(Length('Foo'),
+                           Number(1)),
+                     LessEqual(Variable('Foo'),
+                               Number(30))),
+                 Number(1),
+                 Number(1)),
+            Link(Field('Foo'), Field('Baz')),
+            Link(Field('Bar'), Field('Baz')),
+            Link(Field('Baz'), FINAL)
+        ]
 
-        self.assert_messages([f'{self.testdir}/message_type.rflx'], messages)
+        types = {
+            **simple_types,
+            **{Field('Foo'): ModularInteger('T', Number(256))},
+        }
+
+        message = Message('Test.PDU', structure, types)
+
+        empty_message = Message('Test.Empty_PDU', [], {})
+
+        self.assert_messages_files([f'{self.testdir}/message_type.rflx'],
+                                   [message, simple_message, empty_message])
 
     def test_type_refinement_spec(self) -> None:
         spec = {
@@ -517,7 +556,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                              MessageSpec('PDU',
                                          [Component('null', '', [
                                              Then('Foo',
-                                                  None,
+                                                  UNDEFINED,
                                                   Number(1))]),
                                           Component('Foo', 'T', [
                                               Then('Bar',
@@ -525,7 +564,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                    Number(1),
                                                    And(Equal(Length('Foo'),
                                                        Number(1)),
-                                                       LessEqual(Value('Foo'),
+                                                       LessEqual(Variable('Foo'),
                                                                  Number(30)))),
                                               Then('Baz')]),
                                           Component('Bar', 'T'),
@@ -539,12 +578,12 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 PackageSpec('In_Test',
                             [Refinement('',
                                         'Test.Simple_PDU',
-                                        'Bar',
+                                        Field('Bar'),
                                         'Test.PDU',
-                                        Equal(Value('Baz'), Number(42))),
+                                        Equal(Variable('Baz'), Number(42))),
                              Refinement('',
                                         'Test.PDU',
-                                        'Bar',
+                                        Field('Bar'),
                                         'Test.Simple_PDU')]))}
         self.assert_specifications([f'{self.testdir}/message_type.rflx',
                                     f'{self.testdir}/type_refinement.rflx'], spec)
@@ -572,11 +611,14 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_type_derivation_message(self) -> None:
         t = ModularInteger('T', Number(256))
 
-        initial = InitialNode()
-        node = Node('Baz', t)
+        structure = [
+            Link(INITIAL, Field('Baz')),
+            Link(Field('Baz'), FINAL)
+        ]
 
-        initial.edges = [Edge(node)]
-        node.edges = [Edge(FINAL)]
+        types = {
+            Field('Baz'): t
+        }
 
         self.assert_messages_string(
             """
@@ -589,8 +631,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type Bar is new Foo;
                 end Test;
             """,
-            [Message('Test.Foo', initial),
-             DerivedMessage('Test.Bar', 'Test.Foo', initial)])
+            [Message('Test.Foo', structure, types),
+             DerivedMessage('Test.Bar', 'Test.Foo', structure, types)])
 
     def test_type_derivation_refinements(self) -> None:
         self.assert_refinements_string(
@@ -608,9 +650,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    for Bar use (Baz => Bar);
                 end Test;
             """,
-            [Refinement('Test', 'Test.Foo', 'Baz', 'Test.Foo'),
-             Refinement('Test', 'Test.Bar', 'Baz', 'Test.Foo'),
-             Refinement('Test', 'Test.Bar', 'Baz', 'Test.Bar')])
+            [Refinement('Test', 'Test.Foo', Field('Baz'), 'Test.Foo'),
+             Refinement('Test', 'Test.Bar', Field('Baz'), 'Test.Foo'),
+             Refinement('Test', 'Test.Bar', Field('Baz'), 'Test.Bar')])
 
     def test_ethernet_spec(self) -> None:
         spec = {'Ethernet': Specification(
@@ -633,33 +675,33 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                       Component('Type_Length_TPID', 'Type_Length_Type', [
                                           Then('TPID',
                                                First('Type_Length_TPID'),
-                                               None,
-                                               Equal(Value('Type_Length_TPID'),
+                                               UNDEFINED,
+                                               Equal(Variable('Type_Length_TPID'),
                                                      Number(33024))),
                                           Then('Type_Length',
                                                First('Type_Length_TPID'),
-                                               None,
-                                               NotEqual(Value('Type_Length_TPID'),
+                                               UNDEFINED,
+                                               NotEqual(Variable('Type_Length_TPID'),
                                                         Number(33024)))]),
                                       Component('TPID', 'TPID_Type'),
                                       Component('TCI', 'TCI_Type'),
                                       Component('Type_Length', 'Type_Length_Type', [
                                           Then('Payload',
-                                               None,
-                                               Mul(Value('Type_Length'),
+                                               UNDEFINED,
+                                               Mul(Variable('Type_Length'),
                                                    Number(8)),
-                                               LessEqual(Value('Type_Length'),
+                                               LessEqual(Variable('Type_Length'),
                                                          Number(1500))),
                                           Then('Payload',
-                                               None,
+                                               UNDEFINED,
                                                Sub(Last('Message'),
                                                    Last('Type_Length')),
-                                               GreaterEqual(Value('Type_Length'),
+                                               GreaterEqual(Variable('Type_Length'),
                                                             Number(1536)))]),
                                       Component('Payload', 'Payload_Type', [
                                           Then('null',
-                                               None,
-                                               None,
+                                               UNDEFINED,
+                                               UNDEFINED,
                                                And(GreaterEqual(Div(Length('Payload'),
                                                                     Number(8)),
                                                                 Number(46)),
@@ -670,4 +712,4 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assert_specifications([f'{self.specdir}/ethernet.rflx'], spec)
 
     def test_ethernet_message(self) -> None:
-        self.assert_messages([f'{self.specdir}/ethernet.rflx'], [ETHERNET_FRAME])
+        self.assert_messages_files([f'{self.specdir}/ethernet.rflx'], [ETHERNET_FRAME])

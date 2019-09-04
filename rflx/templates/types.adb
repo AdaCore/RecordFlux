@@ -1,27 +1,16 @@
-with Ada.Text_IO;
-
-package body {prefix}Types
-  with SPARK_Mode => Off
+package body {prefix}Types with
+  SPARK_Mode
 is
 
-   procedure Bytes_Put (Buffer : Bytes)
-     with SPARK_Mode => Off
+   function Bytes_Address (Buffer : Bytes_Ptr) return Integer_Address with
+     SPARK_Mode => Off
    is
-      package Modular_Text_IO is new Ada.Text_IO.Modular_IO (Byte);
-      S : String (1 .. 6);
    begin
-      for I in Length_Type range Buffer'First .. Buffer'Last loop
-         Modular_Text_IO.Put(To => S, Item => Buffer (I), Base => 16);
-         if S (4) = '#' then
-            Ada.Text_IO.Put ("0" & S (5) & " ");
-         else
-            Ada.Text_IO.Put (S (4 .. 5) & " ");
-         end if;
-      end loop;
-      Ada.Text_IO.New_Line;
-   end Bytes_Put;
+      return Integer_Address (System.Storage_Elements.To_Integer (Buffer.all'Address));
+   end Bytes_Address;
 
-   function Convert_To_Mod (Buffer : Bytes; Offset : Offset_Type := 0) return Int
+   function Convert_To_Mod (Buffer : Bytes; Offset : Offset_Type := 0) return Int with
+     SPARK_Mode => Off
    is
       Current : Byte;
       Carry : Byte := 0;
@@ -46,7 +35,8 @@ is
       return Value;
    end Convert_To_Mod;
 
-   function Convert_To_Int (Buffer : Bytes; Offset : Offset_Type := 0) return Int
+   function Convert_To_Int (Buffer : Bytes; Offset : Offset_Type := 0) return Int with
+     SPARK_Mode => Off
    is
       Current : Byte;
       Carry : Byte := 0;
