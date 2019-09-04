@@ -11,7 +11,7 @@ package UDP is
          Length : Length_Type;
          Checksum : Checksum_Type
             then Payload
-               with Length => Length - (Checksum'Last - Source_Port'First + 1);
+               with Length => (Length - 8) * 8;
          Payload : Payload_Type;
       end message;
 
