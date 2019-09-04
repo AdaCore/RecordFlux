@@ -1,11 +1,10 @@
+import itertools
 from abc import ABC, abstractproperty
-from collections import OrderedDict
-from copy import copy
 from math import log
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
-from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Expr, First, GreaterEqual, Last,
-                             Length, LessEqual, Number, Or, Pow, Sub, Value)
+from rflx.expression import (TRUE, UNDEFINED, And, Expr, GreaterEqual, LessEqual, Number, Or, Pow,
+                             Sub, Variable)
 
 
 class Element(ABC):
@@ -36,13 +35,13 @@ class Type(Element):
         return f'{self.name}_Base'
 
 
-class Reference(Type):
+class Scalar(Type):
     @property
     def size(self) -> Expr:
         raise NotImplementedError
 
 
-class ModularInteger(Type):
+class ModularInteger(Scalar):
     def __init__(self, name: str, modulus: Expr) -> None:
         modulus_num = modulus.simplified()
         if not isinstance(modulus_num, Number):
@@ -65,7 +64,7 @@ class ModularInteger(Type):
         return self.__size
 
 
-class RangeInteger(Type):
+class RangeInteger(Scalar):
     def __init__(self, name: str, first: Expr, last: Expr, size: Expr) -> None:
         first_num = first.simplified()
         if not isinstance(first_num, Number):
@@ -89,9 +88,9 @@ class RangeInteger(Type):
 
         constraints: Expr = TRUE
         if self.first.simplified() != self.base_first.simplified():
-            constraints = GreaterEqual(Value(self.name), self.first)
+            constraints = GreaterEqual(Variable('Value'), self.first)
         if self.last.simplified() != self.base_last.simplified():
-            constraints = And(constraints, LessEqual(Value(self.name), self.last))
+            constraints = And(constraints, LessEqual(Variable('Value'), self.last))
         self.__constraints = constraints.simplified()
 
     @property
@@ -119,7 +118,7 @@ class RangeInteger(Type):
         return Sub(Pow(Number(2), self.size), Number(1))
 
 
-class Enumeration(Type):
+class Enumeration(Scalar):
     def __init__(self, name: str, literals: Dict[str, Number], size: Number,
                  always_valid: bool) -> None:
         if log(max(map(int, literals.values())) + 1) / log(2) > int(size):
@@ -140,8 +139,14 @@ class Enumeration(Type):
         return f'{self.name}_Enum'
 
 
-class Array(Type):
-    def __init__(self, name: str, element_type: Type = Reference('')) -> None:
+class Composite(Type):
+    @property
+    def size(self) -> Expr:
+        raise NotImplementedError
+
+
+class Array(Composite):
+    def __init__(self, name: str, element_type: Type) -> None:
         super().__init__(name)
         self.element_type = element_type
 
@@ -150,18 +155,190 @@ class Array(Type):
         raise ModelError(f'size of "{self.name}" undefined')
 
 
-class Null(Type):
+class Payload(Composite):
     def __init__(self) -> None:
-        super().__init__('NULL')
+        super().__init__('Payload_Type')
 
     @property
     def size(self) -> Expr:
-        return Number(0)
+        raise NotImplementedError
+
+
+class Reference(Type):
+    @property
+    def size(self) -> Expr:
+        raise NotImplementedError
+
+
+class Field(NamedTuple):
+    name: str
+
+    @property
+    def affixed_name(self) -> str:
+        return f'F_{self.name}'
+
+
+INITIAL = Field('Initial')
+FINAL = Field('Final')
+
+
+class Link(NamedTuple):
+    source: Field
+    target: Field
+    condition: Expr = TRUE
+    length: Expr = UNDEFINED
+    first: Expr = UNDEFINED
+
+
+class Message(Element):
+    def __init__(self, full_name: str, structure: Sequence[Link],
+                 types: Mapping[Field, Type]) -> None:
+        self.full_name = full_name
+        self.structure = structure
+        self.__types = types
+
+        if structure or types:
+            self.__verify()
+
+            self.__fields = self.__compute_topological_sorting()
+            self.__types = {f: self.__types[f]
+                            for f in self.__fields}
+            self.__paths = {f: self.__compute_paths(f)
+                            for f in self.all_fields}
+            self.__definite_predecessors = {f: self.__compute_definite_predecessors(f)
+                                            for f in self.all_fields}
+            self.__field_condition = {f: self.__compute_field_condition(f).simplified()
+                                      for f in self.all_fields}
+        else:
+            self.__fields = ()
+            self.__paths = {}
+            self.__definite_predecessors = {}
+            self.__field_condition = {}
+
+    @property
+    def generic_name(self) -> str:
+        package, name = self.full_name.rsplit('.', 1)
+        return f'{package}.Generic_{name}'
+
+    @property
+    def package(self) -> str:
+        return self.full_name.rsplit('.', 1)[0]
+
+    @property
+    def fields(self) -> Tuple[Field, ...]:
+        """Return fields topologically sorted."""
+        return self.__fields
+
+    @property
+    def all_fields(self) -> Tuple[Field, ...]:
+        return (INITIAL, *self.__fields, FINAL)
+
+    @property
+    def definite_fields(self) -> Tuple[Field, ...]:
+        """Return all fields which are part of all possible paths."""
+        return self.__definite_predecessors[FINAL]
+
+    @property
+    def types(self) -> Mapping[Field, Type]:
+        """Return fields and corresponding types topologically sorted."""
+        return self.__types
+
+    def incoming(self, field: Field) -> Sequence[Link]:
+        return [l for l in self.structure if l.target == field]
+
+    def outgoing(self, field: Field) -> Sequence[Link]:
+        return [l for l in self.structure if l.source == field]
+
+    def predecessors(self, field: Field) -> Tuple[Field, ...]:
+        if field == INITIAL:
+            return ()
+        if field == FINAL:
+            return self.fields
+        return self.fields[:self.fields.index(field)]
+
+    def successors(self, field: Field) -> Tuple[Field, ...]:
+        if field == INITIAL:
+            return self.fields
+        if field == FINAL:
+            return ()
+        return self.fields[self.fields.index(field) + 1:]
+
+    def direct_predecessors(self, field: Field) -> Sequence[Field]:
+        return list(dict.fromkeys([l.source for l in self.incoming(field)]))
+
+    def direct_successors(self, field: Field) -> Sequence[Field]:
+        return list(dict.fromkeys([l.target for l in self.outgoing(field)]))
+
+    def definite_predecessors(self, field: Field) -> Tuple[Field, ...]:
+        """Return preceding fields which are part of all possible paths."""
+        return self.__definite_predecessors[field]
+
+    def field_condition(self, field: Field) -> Expr:
+        return self.__field_condition[field]
+
+    def __verify(self) -> None:
+        type_fields = self.__types.keys() | {INITIAL, FINAL}
+        structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
+        for f in structure_fields - type_fields:
+            raise ModelError(f'missing type for field "{f.name}" of "{self.full_name}"')
+        for f in type_fields - structure_fields:
+            raise ModelError(f'superfluous field "{f.name}" in field types of "{self.full_name}"')
+        if len(self.outgoing(INITIAL)) != 1:
+            raise ModelError(f'ambiguous first field in "{self.full_name}"')
+
+    def __compute_topological_sorting(self) -> Tuple[Field, ...]:
+        """Return fields topologically sorted (Kahn's algorithm)."""
+        result: Tuple[Field, ...] = ()
+        fields = [INITIAL]
+        visited = set()
+        while fields:
+            n = fields.pop(0)
+            result += (n,)
+            for e in self.outgoing(n):
+                visited.add(e)
+                if set(self.incoming(e.target)) <= visited:
+                    fields.append(e.target)
+        if set(self.structure) - visited:
+            raise ModelError(f'structure of "{self.full_name}" contains cycle')
+        return result[1:-1]
+
+    def __compute_paths(self, final: Field) -> Set[Tuple[Link, ...]]:
+        if final == INITIAL:
+            return {()}
+        return set(itertools.chain.from_iterable(
+            ((p + (l,) for p in self.__compute_paths(l.source)) for l in self.incoming(final))))
+
+    def __compute_definite_predecessors(self, final: Field) -> Tuple[Field, ...]:
+        return tuple(f for f in self.__fields
+                     if all(any(f == pf.source for pf in p)
+                            for p in self.__paths[final]))
+
+    def __compute_field_condition(self, final: Field) -> Expr:
+        if final == INITIAL:
+            return TRUE
+        return Or(*[And(self.__compute_field_condition(l.source), l.condition)
+                    for l in self.incoming(final)])
+
+
+class DerivedMessage(Message):
+    def __init__(self, full_name: str, base_name: str, structure: Sequence[Link],
+                 types: Mapping[Field, Type]) -> None:
+        super().__init__(full_name, structure, types)
+        self.base_name = base_name
+
+    @property
+    def generic_base_name(self) -> str:
+        package, name = self.base_name.rsplit('.', 1)
+        return f'{package}.Generic_{name}'
+
+    @property
+    def base_package(self) -> str:
+        return self.base_name.rsplit('.', 1)[0]
 
 
 class Refinement(Type):
     # pylint: disable=too-many-arguments
-    def __init__(self, package: str, pdu: str, field: str, sdu: str,
+    def __init__(self, package: str, pdu: str, field: Field, sdu: str,
                  condition: Expr = TRUE) -> None:
         super().__init__('')
         self.package = package
@@ -183,219 +360,5 @@ class Refinement(Type):
         raise NotImplementedError
 
 
-class Node(Element):
-    def __init__(self, name: str, data_type: Type, edges: List['Edge'] = None) -> None:
-        self.name = name
-        self.type = data_type
-        self.edges = edges or []
-
-
-class InitialNode(Node):
-    def __init__(self, edges: List['Edge'] = None) -> None:
-        super().__init__('INITIAL', Null(), edges)
-
-
-FINAL = Node('FINAL', Null())
-
-
-class Edge(Element):
-    def __init__(self, target: Node, condition: Expr = TRUE, length: Expr = UNDEFINED,
-                 first: Expr = UNDEFINED) -> None:
-        self.target = target
-        self.condition = condition
-        self.length = length
-        self.first = first
-
-
-class Variant(Element):
-    def __init__(self, previous: List[Tuple[str, str]], condition: Expr,
-                 facts: Dict[Attribute, Expr]) -> None:
-        self.previous = previous
-        self.condition = condition
-        self.facts = facts
-
-
-class Field(Element):
-    def __init__(self, name: str, data_type: Type, condition: Expr,
-                 variants: Dict[str, Variant]) -> None:
-        self.name = name
-        self.type = data_type
-        self.condition = condition
-        self.variants = variants
-
-
-class Message(Element):
-    def __init__(self, full_name: str, initial_node: Node) -> None:
-        self.full_name = full_name
-        self.initial_node = initial_node
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-
-    @property
-    def generic_name(self) -> str:
-        package, name = self.full_name.rsplit('.', 1)
-        return f'{package}.Generic_{name}'
-
-    @property
-    def package(self) -> str:
-        return self.full_name.rsplit('.', 1)[0]
-
-    def fields(self, facts: Dict[Attribute, Expr] = None,
-               first: Expr = UNDEFINED) -> Dict[str, Field]:
-        if self.initial_node is FINAL:
-            return {}
-
-        if facts is None:
-            facts = {}
-        try:
-            initial_edge = Edge(self.initial_node.edges[0].target,
-                                self.initial_node.edges[0].condition,
-                                self.initial_node.edges[0].length,
-                                first)
-            return evaluate(facts, initial_edge)
-        except ModelError as e:
-            raise ModelError(f'{e} in "{self.full_name}"')
-
-
-class DerivedMessage(Message):
-    def __init__(self, full_name: str, base_name: str, initial_node: Node) -> None:
-        super().__init__(full_name, FINAL)
-        self.base_name = base_name
-        self.initial_node = initial_node
-
-    @property
-    def generic_base_name(self) -> str:
-        package, name = self.base_name.rsplit('.', 1)
-        return f'{package}.Generic_{name}'
-
-    @property
-    def base_package(self) -> str:
-        return self.base_name.rsplit('.', 1)[0]
-
-
 class ModelError(Exception):
     pass
-
-
-def evaluate(facts: Dict[Attribute, Expr],
-             in_edge: Edge,
-             visited: List[Edge] = None,
-             previous: List[Tuple[str, str]] = None,
-             variant_id: str = '0') -> Dict[str, Field]:
-    if not previous:
-        previous = []
-
-    node = in_edge.target
-
-    if in_edge.length is UNDEFINED:
-        in_edge.length = node.type.size
-    if in_edge.first is UNDEFINED:
-        in_edge.first = Number(0)
-
-    facts = create_facts(facts, in_edge) if node is not FINAL else facts
-
-    fields = OrderedDict([
-        (node.name,
-         Field(node.name,
-               node.type,
-               disjunction([e.condition for e in node.edges]),
-               {
-                   variant_id: Variant(previous,
-                                       in_edge.condition,
-                                       facts)
-               }
-               )
-         )
-    ])
-
-    for i, out_edge in enumerate(node.edges):
-        visited = create_visited_edges(visited, out_edge)
-
-        edge = copy(out_edge)
-        if edge.first is UNDEFINED:
-            edge.first = Add(in_edge.first, in_edge.length)
-
-        extend_fields(fields,
-                      evaluate(facts,
-                               edge,
-                               visited,
-                               previous + [(node.name, variant_id)],
-                               f'{variant_id}{encode_id(i)}'))
-
-    return fields
-
-
-def create_facts(facts: Dict[Attribute, Expr], edge: Edge) -> Dict[Attribute, Expr]:
-    facts = dict(facts)
-    facts[Length(edge.target.name)] = edge.length.simplified(facts)
-    facts[First(edge.target.name)] = edge.first.simplified(facts)
-    facts[Last(edge.target.name)] = Add(edge.first, edge.length, Number(-1)).simplified(facts)
-    return facts
-
-
-def disjunction(cond: List[Expr]) -> Expr:
-    if cond:
-        res = cond.pop()
-        for c in cond:
-            res = Or(res, c)
-    else:
-        res = TRUE
-    return res
-
-
-def create_visited_edges(visited: Optional[List[Edge]], edge: Edge) -> List[Edge]:
-    if not visited:
-        visited = []
-    if edge in visited:
-        raise ModelError('cyclic')
-    return list(visited + [edge])
-
-
-def extend_fields(fields: OrderedDict, new_fields: Dict[str, Field]) -> None:
-    for new_field in new_fields.values():
-        found = False
-        for field in fields.values():
-            if field.name == new_field.name:
-                if field.type != new_field.type:
-                    raise ModelError('duplicate node "{field.name}"')
-                field.variants.update(new_field.variants)
-                found = True
-        if not found:
-            fields[new_field.name] = new_field
-        else:
-            fields.move_to_end(new_field.name)
-
-
-def filter_fields(fields: Dict[str, List[Tuple[Expr, Dict[Attribute, Expr]]]]
-                  ) -> Dict[str, List[Tuple[Expr, Dict[Attribute, Expr]]]]:
-    return {
-        field:
-        [
-            (
-                condition,
-                {attr: expr for attr, expr in expressions.items() if attr.name == field}
-            )
-            for condition, expressions in variants
-        ]
-        for field, variants in fields.items()
-    }
-
-
-def encode_id(number: int) -> str:
-    if number < 0:
-        raise ValueError('number must be positive')
-
-    alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    base36 = ''
-    while number:
-        number, i = divmod(number, 36)
-        base36 = alphabet[i] + base36
-
-    if not base36:
-        return alphabet[0]
-    if len(base36) == 1:
-        return base36
-    return f'_{base36}_'

@@ -1,7 +1,42 @@
 from rflx.expression import (Aggregate, And, Div, Equal, First, GreaterEqual, Last, Length,
-                             LengthValue, LessEqual, Mul, NotEqual, Number, Pow, Sub, Value)
-from rflx.model import (FINAL, Array, DerivedMessage, Edge, Enumeration, InitialNode, Message,
-                        ModularInteger, Node, RangeInteger)
+                             LessEqual, Mul, NotEqual, Number, Pow, Sub, Variable)
+from rflx.model import (FINAL, INITIAL, Array, DerivedMessage, Enumeration, Field, Link, Message,
+                        ModularInteger, Payload, RangeInteger, Reference, Refinement)
+
+
+def create_null_message() -> Message:
+    return Message('Null.Message', [], {})
+
+
+def create_tlv_message() -> Message:
+    tag_type = Enumeration('Tag_Type',
+                           {'Msg_Data': Number(1), 'Msg_Error': Number(3)},
+                           Number(2),
+                           False)
+    length_type = ModularInteger('Length_Type', Pow(Number(2), Number(14)))
+
+    structure = [
+        Link(INITIAL, Field('Tag')),
+        Link(Field('Tag'), Field('Length'),
+             Equal(Variable('Tag'), Variable('Msg_Data'))),
+        Link(Field('Tag'), FINAL,
+             Equal(Variable('Tag'), Variable('Msg_Error'))),
+        Link(Field('Length'), Field('Value'),
+             length=Mul(Variable('Length'), Number(8))),
+        Link(Field('Value'), FINAL)
+    ]
+
+    types = {
+        Field('Tag'): tag_type,
+        Field('Length'): length_type,
+        Field('Value'): Payload()
+    }
+
+    return Message('TLV.Message', structure, types)
+
+
+def create_null_message_in_tlv_message() -> Refinement:
+    return Refinement('In_TLV', 'TLV.Message', Field('Value'), 'Null.Message')
 
 
 def create_ethernet_frame() -> Message:
@@ -16,39 +51,41 @@ def create_ethernet_frame() -> Message:
                              Number(16))
     tci_type = ModularInteger('TCI_Type',
                               Pow(Number(2), Number(16)))
-    payload_type = Array('Payload_Type')
 
-    initial = InitialNode()
-    destination = Node('Destination', address_type)
-    source = Node('Source', address_type)
-    type_length_tpid = Node('Type_Length_TPID', type_length_type)
-    tpid = Node('TPID', tpid_type)
-    tci = Node('TCI', tci_type)
-    type_length = Node('Type_Length', type_length_type)
-    payload = Node('Payload', payload_type)
+    structure = [
+        Link(INITIAL, Field('Destination')),
+        Link(Field('Destination'), Field('Source')),
+        Link(Field('Source'), Field('Type_Length_TPID')),
+        Link(Field('Type_Length_TPID'), Field('TPID'),
+             Equal(Variable('Type_Length_TPID'), Number(0x8100)),
+             first=First('Type_Length_TPID')),
+        Link(Field('Type_Length_TPID'), Field('Type_Length'),
+             NotEqual(Variable('Type_Length_TPID'), Number(0x8100)),
+             first=First('Type_Length_TPID')),
+        Link(Field('TPID'), Field('TCI')),
+        Link(Field('TCI'), Field('Type_Length')),
+        Link(Field('Type_Length'), Field('Payload'),
+             LessEqual(Variable('Type_Length'), Number(1500)),
+             Mul(Variable('Type_Length'), Number(8))),
+        Link(Field('Type_Length'), Field('Payload'),
+             GreaterEqual(Variable('Type_Length'), Number(1536)),
+             Sub(Last('Message'), Last('Type_Length'))),
+        Link(Field('Payload'), FINAL,
+             And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
+             LessEqual(Div(Length('Payload'), Number(8)), Number(1500))))
+    ]
 
-    initial.edges = [Edge(destination)]
-    destination.edges = [Edge(source)]
-    source.edges = [Edge(type_length_tpid)]
-    type_length_tpid.edges = [Edge(tpid,
-                                   Equal(Value('Type_Length_TPID'), Number(0x8100)),
-                                   first=First('Type_Length_TPID')),
-                              Edge(type_length,
-                                   NotEqual(Value('Type_Length_TPID'), Number(0x8100)),
-                                   first=First('Type_Length_TPID'))]
-    tpid.edges = [Edge(tci)]
-    tci.edges = [Edge(type_length)]
-    type_length.edges = [Edge(payload,
-                              LessEqual(Value('Type_Length'), Number(1500)),
-                              Mul(LengthValue('Type_Length'), Number(8))),
-                         Edge(payload,
-                              GreaterEqual(Value('Type_Length'), Number(1536)),
-                              Sub(Last('Message'), Last('Type_Length')))]
-    payload.edges = [Edge(FINAL,
-                          And(GreaterEqual(Div(Length('Payload'), Number(8)), Number(46)),
-                              LessEqual(Div(Length('Payload'), Number(8)), Number(1500))))]
+    types = {
+        Field('Destination'): address_type,
+        Field('Source'): address_type,
+        Field('Type_Length_TPID'): type_length_type,
+        Field('TPID'): tpid_type,
+        Field('TCI'): tci_type,
+        Field('Type_Length'): type_length_type,
+        Field('Payload'): Payload()
+    }
 
-    return Message('Ethernet.Frame', initial)
+    return Message('Ethernet.Frame', structure, types)
 
 
 def create_enumeration_message() -> Message:
@@ -57,13 +94,16 @@ def create_enumeration_message() -> Message:
                                 Number(3),
                                 True)
 
-    initial = InitialNode()
-    priority = Node('Priority', priority_type)
+    structure = [
+        Link(INITIAL, Field('Priority')),
+        Link(Field('Priority'), FINAL)
+    ]
 
-    initial.edges = [Edge(priority)]
-    priority.edges = [Edge(FINAL)]
+    types = {
+        Field('Priority'): priority_type
+    }
 
-    return Message('Enumeration.Message', initial)
+    return Message('Enumeration.Message', structure, types)
 
 
 def create_array_message() -> Message:
@@ -87,43 +127,89 @@ def create_array_message() -> Message:
                                True)
     av_enum_vector_type = Array('AV_Enumeration_Vector', av_enum_type)
 
-    initial = InitialNode()
-    length = Node('Length', length_type)
-    modular_vector = Node('Modular_Vector', modular_vector_type)
-    range_vector = Node('Range_Vector', range_vector_type)
-    enum_vector = Node('Enumeration_Vector', enum_vector_type)
-    av_enum_vector = Node('AV_Enumeration_Vector', av_enum_vector_type)
+    structure = [
+        Link(INITIAL, Field('Length')),
+        Link(Field('Length'), Field('Modular_Vector'),
+             length=Mul(Variable('Length'), Number(8))),
+        Link(Field('Modular_Vector'), Field('Range_Vector'),
+             length=Number(16)),
+        Link(Field('Range_Vector'), Field('Enumeration_Vector'),
+             length=Number(16)),
+        Link(Field('Enumeration_Vector'), Field('AV_Enumeration_Vector'),
+             length=Number(16)),
+        Link(Field('AV_Enumeration_Vector'), FINAL)
+    ]
 
-    initial.edges = [Edge(length)]
-    length.edges = [Edge(modular_vector, length=Mul(LengthValue('Length'), Number(8)))]
-    modular_vector.edges = [Edge(range_vector, length=Number(16))]
-    range_vector.edges = [Edge(enum_vector, length=Number(16))]
-    enum_vector.edges = [Edge(av_enum_vector, length=Number(16))]
-    av_enum_vector.edges = [Edge(FINAL)]
+    types = {
+        Field('Length'): length_type,
+        Field('Modular_Vector'): modular_vector_type,
+        Field('Range_Vector'): range_vector_type,
+        Field('Enumeration_Vector'): enum_vector_type,
+        Field('AV_Enumeration_Vector'): av_enum_vector_type
+    }
 
-    return Message('Arrays.Message', initial)
+    return Message('Arrays.Message', structure, types)
+
+
+def create_array_inner_message() -> Message:
+    length_type = ModularInteger('Length_Type', Pow(Number(2), Number(8)))
+
+    structure = [
+        Link(INITIAL, Field('Length')),
+        Link(Field('Length'), Field('Payload'),
+             length=Mul(Variable('Length'), Number(8))),
+        Link(Field('Payload'), FINAL)
+    ]
+
+    types = {
+        Field('Length'): length_type,
+        Field('Payload'): Payload()
+    }
+
+    return Message('Arrays.Inner_Message', structure, types)
+
+
+def create_array_messages_message() -> Message:
+    structure = [
+        Link(INITIAL, Field('Length')),
+        Link(Field('Length'), Field('Messages'),
+             length=Mul(Variable('Length'), Number(8))),
+        Link(Field('Messages'), FINAL)
+    ]
+
+    types = {
+        Field('Length'): ModularInteger('Length_Type', Pow(Number(2), Number(8))),
+        Field('Messages'): Array('Inner_Messages', Reference('Inner_Message'))
+    }
+
+    return Message('Arrays.Messages_Message', structure, types)
 
 
 def create_expression_message() -> Message:
-    payload_array = Array('Payload_Array')
+    structure = [
+        Link(INITIAL, Field('Payload'), length=Number(16)),
+        Link(Field('Payload'), FINAL, Equal(Variable('Payload'), Aggregate(Number(1), Number(2))))
+    ]
 
-    initial = InitialNode()
-    payload = Node('Payload', payload_array)
+    types = {
+        Field('Payload'): Payload()
+    }
 
-    initial.edges = [Edge(payload,
-                          length=Number(16))]
-    payload.edges = [Edge(FINAL,
-                          Equal(Value('Payload'), Aggregate(Number(1), Number(2))))]
-
-    return Message('Expression.Message', initial)
+    return Message('Expression.Message', structure, types)
 
 
 def create_derivation_message() -> Message:
-    return DerivedMessage('Derivation.Message', ARRAY_MESSAGE.full_name, ARRAY_MESSAGE.initial_node)
+    return DerivedMessage('Derivation.Message', ARRAY_MESSAGE.full_name, ARRAY_MESSAGE.structure,
+                          ARRAY_MESSAGE.types)
 
 
+NULL_MESSAGE = create_null_message()
+TLV_MESSAGE = create_tlv_message()
+NULL_MESSAGE_IN_TLV_MESSAGE = create_null_message_in_tlv_message()
 ETHERNET_FRAME = create_ethernet_frame()
 ENUMERATION_MESSAGE = create_enumeration_message()
 ARRAY_MESSAGE = create_array_message()
+ARRAY_INNER_MESSAGE = create_array_inner_message()
+ARRAY_MESSAGES_MESSAGE = create_array_messages_message()
 EXPRESSION_MESSAGE = create_expression_message()
 DERIVATION_MESSAGE = create_derivation_message()
