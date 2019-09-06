@@ -16,7 +16,13 @@ project Test is
    for Create_Missing_Dirs use "True";
 
    package Prove is
-      for Proof_Switches ("Ada") use ("-j0", "--level=1", "--warnings=error");
+      for Proof_Switches ("Ada") use (
+         "-j0",
+         "--prover=z3,cvc4",
+         "--steps=6000",
+         "--warnings=error",
+         "--no-axiom-guard"  --  WORKAROUND: Componolit/Workarounds#5
+      );
    end Prove;
 
    package Builder is
