@@ -47,7 +47,7 @@ package CoAP is
 
    type Message_ID_Type is mod 2**16;
 
-   type Payload_Marker_Type is (Present => 255) with Size => 8;
+   type Marker_Type is (Present => 255) with Size => 8;
 
    type Datagram is
       message
@@ -74,7 +74,7 @@ package CoAP is
 
          --  FIXME: Options - missing
 
-         Payload_Marker : Payload_Marker_Type
+         Payload_Marker : Marker_Type
             then Payload
                with Length => Total_Length * 8 - (Payload_Marker'Last - Ver'First + 1);
          Payload : Payload_Type;
