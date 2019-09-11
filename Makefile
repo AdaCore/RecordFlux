@@ -29,10 +29,10 @@ test_spark: $(test-files)
 	$(test-bin)
 
 prove_spark: $(test-files)
-	gnatprove -P$(project) --checks-as-errors
+	gnatprove -P$(project)
 
 prove_spark_ci: $(test-files)
-	gnatprove -P$(project) --checks-as-errors -Xaunit=no
+	gnatprove -P$(project) -Xaunit=no --report=statistics
 
 clean:
 	gprclean -Ptest
