@@ -1,11 +1,10 @@
 sudo: required
 
-jobs:
+matrix:
   include:
     - name: "Python Tests"
       language: python
-      python:
-        - 3.6
+      python: 3.6
       install:
         - pip install codecov
         - pip install flake8
@@ -18,8 +17,13 @@ jobs:
         - codecov
 
     - name: "SPARK Tests"
-      language: c
-      services:
-        - docker
-      script:
-        - docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2019.spark /bin/sh -c "make test_spark && make prove_spark_ci"
+      env: TARGET="test_spark"
+
+    - name: "SPARK Tests (without prefix)"
+      env: TARGET="test_spark NOPREFIX=1"
+
+    - name: "SPARK Verification"
+      env: TARGET="prove_spark_ci"
+
+script:
+  - docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2019.spark /bin/sh -c "make ${TARGET}"
