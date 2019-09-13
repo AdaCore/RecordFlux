@@ -5,187 +5,185 @@
 [![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://python.org/)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 
-RecordFlux is a toolset for the dissection, generation and verification of communication protocols. It comprises a protocol specification language and a code generator.
+RecordFlux is a toolset for the formal specification of messages and the generation of verifiable binary parsers.
 
-## Protocol Specification Language
+## Message Specification Language
 
-The RecordFlux Protocol Specification Language aims to be a closed, declarative Domain Specific Language (DSL) which allows to specify real-world binary protocols. Its syntax is inspired by [Ada](https://www.adacore.com/about-ada). At this stage, the specification is restricted to the definition of protocol message formats. A detailed description of the language elements can be found in the [Language Reference](/doc/Language-Reference.md).
+The RecordFlux Message Specification Language is a domain-specific language to formally specify message formats of existing real-world binary protocols. Its syntax is inspired by [Ada](https://www.adacore.com/about-ada). A detailed description of the language elements can be found in the [Language Reference](/doc/Language-Reference.md).
 
-### Example
+## Code Generation
 
-The following sample specification describes a protocol `Foo` with one protocol message type `Bar`. Three fields are specified for `Bar`:
+The code generator generates parsers based on message specifications. The generated parser allows to validate and dissect messages and thereby respects all specified restrictions between message fields and related messages. Adding the generation of messages is planned. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a message is validated before accessed).
 
-- A `Tag` field with 2 bit,
-- a `Value_Length` field with 14 bit, and
-- a `Value` field, whose length is specified by the value in `Value_Length`.
+The code generator creates a number of packages for a specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message a child package is generated which contains validation and access functions for every field of the message.
 
-The `Tag` can have two valid values: `1` (`Msg_Data`) and `3` (`Msg_Error`). In the case `Tag` has a value of `1` the fields `Value_Length` and `Value` follow. `Bar` contains only one field, if the value of `Tag` is `3`. All other values of `Tag` lead to an invalid message.
+A user of the generated code has to validate a message field or the whole message before accessing the data of a particular message field. The SPARK verifcation tools in combination with the generated contracts make it possible to ensure this property, and so prevent incorrect usage.
+
+## Usage
+
+The `rflx` tool is used to verify a specification and generate code based on it. It offers the two sub-commands `check` and `generate` for this purpose.
+
+## Example
+
+In the following, the complete process of specifying a message, generating code, and using the generated code is demonstrated using a small example.
+
+### Specification
+
+The following sample specification describes a protocol `TLV` with one message type `Message` consisting of three fields:
+
+- A field `Tag` of 2 bit length,
+- a field `Value_Length` of 14 bit length, and
+- a field `Value`, whose length is specified by the value in `Value_Length`.
+
+The `Tag` can have two valid values: `1` (`Msg_Data`) and `3` (`Msg_Error`). In case `Tag` has a value of `1` the fields `Value_Length` and `Value` follow. `Message` contains only the `Tag` field, if the value of `Tag` is `3`. All other values of `Tag` lead to an invalid message.
+
+The structure of messages is often non-linear because of optional fields. For this reason the specification uses a graph-based representation. The order of fields is defined by then clauses. Then clauses are also used to state conditions and aspects of the following field. A more detailed description can be found in the [Language Reference](doc/Language-Reference.md#message-type).
 
 ```
-package Foo is
+package TLV is
 
    type Tag_Type is (Msg_Data => 1, Msg_Error => 3) with Size => 2;
    type Length_Type is mod 2**14;
 
-   type Bar is
+   type Message is
       message
-         Tag          : Tag_Type
-            then Value_Length
+         Tag    : Tag_Type
+            then Length
                if Tag = Msg_Data,
             then null
                if Tag = Msg_Error;
-         Value_Length : Length_Type
+         Length : Length_Type
             then Value
-               with Length = Value_Length;
-         Value        : Payload_Type;
+               with Length => Length * 8;
+         Value  : Payload_Type;
        end message;
 
-end Foo;
+end TLV;
 ```
 
-## Code Generation
+### Generating Code
 
-The code generator is able to generate dissector code based on a set of protocol specifications. The generated code allows to validate and parse protocol messages and thereby respects all specified restrictions in and between protocols. Adding the generation of messages is in planning. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a protocol message is validated before accessed).
-
-The code generator creates a number of packages for a protocol specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message type a child package is generated which contains validation and access functions for each field of the message.
-
-A user of the generated code has to validate a protocol field or the whole protocol message before accessing the data of a particular protocol field. The SPARK toolset in combination with the generated verification conditions make it possible to ensure this property, and so prevent incorrect usage.
-
-### Example
-
-The file `foo.ads` contains all basic types of the package `Foo`:
+With the sub-command `check` the correctness of the given specification file can be checked.
 
 ```
-package Foo is
-
-   type Tag_Type is (Msg_Data, Msg_Error) with Size => 8;
-   for Tag_Type use (Msg_Data => 1, Msg_Error => 255);
-
-   type Length_Type is mod (2**8);
-
-end Foo;
-```
-
-The file `foo-bar.ads` contains the specification of all functions related to the message `Bar`:
-
-```
-package Foo.Bar is
-
-   procedure Label (Buffer : Types.Bytes)
-     with
-       Post => Is_Contained (Buffer);
-
-   function Valid_Tag (Buffer : Types.Bytes) return Boolean
-     with
-       Pre => Is_Contained (Buffer);
-
-   function Tag (Buffer : Types.Bytes) return Tag_Type
-     with
-       Pre => (Is_Contained (Buffer) and then Valid_Tag (Buffer));
-
-   function Valid_Value_Length (Buffer : Types.Bytes) return Boolean
-     with
-       Pre => Is_Contained (Buffer);
-
-   function Value_Length (Buffer : Types.Bytes) return Length_Type
-     with
-       Pre => (Is_Contained (Buffer) and then Valid_Value_Length (Buffer));
-
-   function Valid_Value (Buffer : Types.Bytes) return Boolean
-     with
-       Pre => Is_Contained (Buffer);
-
-   function Value_First (Buffer : Types.Bytes) return Types.Index_Type
-     with
-       Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer));
-
-   function Value_Last (Buffer : Types.Bytes) return Types.Index_Type
-     with
-       Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer));
-
-   procedure Value (Buffer : Types.Bytes; First : out Types.Index_Type; Last : out Types.Index_Type)
-     with
-       Pre => (Is_Contained (Buffer) and then Valid_Value (Buffer)),
-       Post => (First = Value_First (Buffer) and then Last = Value_Last (Buffer));
-
-   function Is_Valid (Buffer : Types.Bytes) return Boolean
-     with
-       Pre => Is_Contained (Buffer);
-
-end Foo.Bar;
-```
-
-The check of the `Is_Contained` predicate in the precondition of each access and validation function ensures that always the right input buffer is used. This is important if multiple protocol layers or [type refinements](/doc/Language-Reference.md#type-refinement) are used. At the lowest protocol layer the predicate has to be added manually to the input buffer by calling `Label`.
-
-The generated code could be used in the following way:
-
-```
-with Foo.Bar;
-
-procedure Main is
-   Buffer : Types.Bytes := Read;
-   First  : Types.Index_Type;
-   Last   : Types.Index_Type;
-begin
-   Foo.Bar.Label (Buffer);
-   if Foo.Bar.Is_Valid (Buffer) then
-      if Foo.Bar.Tag (Buffer) = Msg_Data then
-         Foo.Bar.Value (Buffer, First, Last);
-         --  use value in Buffer (First .. Last)
-      else
-         --  report error
-      end if;
-   end if;
-end Main;
-```
-
-In this example `Read` is a function which returns a byte array. After stating that `Buffer` may contain a message `Bar` of the protocol `Foo` (`Label`) its validity is checked (`Is_Valid`). In the case that a valid message is contained the value of `Tag` is read. Only if the value of `Tag` is `Msg_Data`, the `Value` field of the message is present and thus allowed to be accessed.
-
-*Note: For the sake of simplicity, the code examples are limited to the parts relevant to the user, omitting implementation details.*
-
-## Dependencies
-
-- Python (3.6, 3.7)
-- [PyParsing](https://github.com/pyparsing/pyparsing/)
-- [GNAT Community 2018](https://www.adacore.com/download)
-
-## Usage
-
-The `rflx` tool is used to verify a protocol specification and generate code based on it. Therefore it offers the two sub-commands `check` and `generate`.
-
-### Example
-
-With the sub-command `check` the correctness of the given specification files can be verified.
-
-```
-$ rflx check specs/ipv4.rflx specs/udp.rflx specs/in_ipv4.rflx                                                                                                                     :(
-Parsing specs/ipv4.rflx... OK
-Parsing specs/udp.rflx... OK
-Parsing specs/in_ipv4.rflx... OK
+$ rflx check specs/tlv.rflx
+Parsing specs/tlv.rflx... OK
 ```
 
 The sub-command `generate` is used to generate the code based on the specification. The target directory and the specification files have to be given. By adding `-d` or `-l` the generation can be limited to the dissector code or to the internally used library files, respectively.
 
 ```
-$ rflx generate -d tests specs/ipv4.rflx specs/udp.rflx specs/in_ipv4.rflx
-Parsing specs/ipv4.rflx... OK
-Parsing specs/udp.rflx... OK
-Parsing specs/in_ipv4.rflx... OK
+$ rflx generate specs/tlv.rflx generated
+Parsing specs/tlv.rflx... OK
 Generating... OK
-Created tests/ipv4.ads
-Created tests/ipv4-option.ads
-Created tests/ipv4-option.adb
-Created tests/ipv4-packet.ads
-Created tests/ipv4-packet.adb
-Created tests/ipv4-options.ads
-Created tests/ipv4-options.adb
-Created tests/udp.ads
-Created tests/udp-datagram.ads
-Created tests/udp-datagram.adb
-Created tests/in_ipv4.ads
-Created tests/in_ipv4-contains.ads
-Created tests/in_ipv4-contains.adb
+Created generated/rflx-tlv.ads
+Created generated/rflx-tlv-generic_message.ads
+Created generated/rflx-tlv-generic_message.adb
+Created generated/rflx-tlv-message.ads
+Created generated/rflx.ads
+Created generated/rflx-types.ads
+Created generated/rflx-types.adb
+Created generated/rflx-message_sequence.ads
+Created generated/rflx-message_sequence.adb
+Created generated/rflx-scalar_sequence.ads
+Created generated/rflx-scalar_sequence.adb
 ```
+
+### Use of Generated Code
+
+All scalar types defined in the specification are represented by a similar Ada type in the generated code. For `TLV` the following types are defined in the package `RFLX.TLV`:
+
+- `type Tag_Type is (Msg_Data, Msg_Error) with Size => 2`
+- `for Tag_Type use (Msg_Data => 1, Msg_Error => 3);`
+- `type Length_Type is mod 2**14`
+
+All types and subprograms related to `Message` can be found in the package `RFLX.TLV.Message`:
+
+- `type Context_Type`
+    - Stores buffer and internal state
+- `function Create return Context_Type`
+    - Return default initialized context
+- `procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr)`
+    - Initialize context with buffer
+- `procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index_Type)`
+    - Initialize context with buffer and explicit bounds
+- `procedure Take_Buffer (Context : in out Context_Type; Buffer : out RFLX.Types.Bytes_Ptr)`
+    - Get buffer and remove it from context (note: buffer cannot put back into context, thus further verification of message is not possible after this action)
+- `function Has_Buffer (Context : Context_Type) return Boolean`
+    - Check if context contains buffer (i.e. non-null pointer)
+- `procedure Verify (Context : in out Context_Type; Field : Field_Type)`
+    - Verify validity of field
+- `procedure Verify_Message (Context : in out Context_Type)`
+    - Verify all fields of message
+- `function Structural_Valid (Context : Context_Type; Field : Field_Type) return Boolean`
+    - Check if composite field is structural valid (i.e. location and length of field is correct, but content is not necessarily valid)
+- `function Present (Context : Context_Type; Field : Field_Type) return Boolean`
+    - Check if composite field is structural valid and has non-zero length
+- `function Valid (Context : Context_Type; Field : Field_Type) return Boolean`
+    - Check if field is valid (i.e. it has valid structure and valid content)
+- `function Incomplete (Context : Context_Type; Field : Field_Type) return Boolean`
+    - Check if buffer was too short to verify field
+- `function Structural_Valid_Message (Context : Context_Type) return Boolean`
+    - Check if all fields of message are at least structural valid
+- `function Valid_Message (Context : Context_Type) return Boolean`
+    - Check if all fields of message are valid
+- `function Incomplete_Message (Context : Context_Type) return Boolean`
+    - Check if buffer was too short to verify message
+- `function Get_Tag (Context : Context_Type) return Tag_Type`
+    - Get value of `Tag` field
+- `function Get_Length (Context : Context_Type) return Length_Type`
+    - Get value of `Length` field
+- `generic with procedure Process_Value (Value : RFLX.Types.Bytes); procedure Get_Value (Context : Context_Type)`
+    - Access content of `Value` field
+
+A simple program to parse a `TLV.Message` could be as follows:
+
+```
+with Ada.Text_IO;
+with RFLX.Types;
+with RFLX.TLV.Message;
+
+procedure Main is
+   Buffer  : RFLX.Types.Bytes_Ptr := new RFLX.Types.Bytes'(64, 4, 0, 0, 0, 0);
+   Context : RFLX.TLV.Message.Context_Type := RFLX.TLV.Message.Create;
+begin
+   RFLX.TLV.Message.Initialize (Context, Buffer);
+   RFLX.TLV.Message.Verify_Message (Context);
+   if RFLX.TLV.Message.Structural_Valid_Message (Context) then
+      case RFLX.TLV.Message.Get_Tag (Context) is
+         when RFLX.TLV.Msg_Data =>
+            if RFLX.TLV.Message.Present (Context, RFLX.TLV.Message.F_Value) then
+               Ada.Text_IO.Put_Line ("Data message with value of"
+                                     & RFLX.TLV.Message.Get_Length (Context)'Img
+                                     & " byte length");
+            else
+               Ada.Text_IO.Put_Line ("Data message without value");
+            end if;
+         when RFLX.TLV.Msg_Error =>
+            Ada.Text_IO.Put_Line ("Error message");
+      end case;
+   else
+      Ada.Text_IO.Put_Line ("Invalid message");
+   end if;
+end Main;
+```
+
+In case that a valid message is contained in `Buffer` the value of `Tag` is read. If the value of `Tag` is `Msg_Data` and the `Value` field is present, the content of `Value` can be accessed.
+
+## Dependencies
+
+- [Python >=3.6](https://www.python.org)
+- [PyParsing 2.4.0](https://github.com/pyparsing/pyparsing/)
+- [GNAT Community 2019](https://www.adacore.com/download)
+
+## Known Issues
+
+### GNAT Community 2019
+
+- GNAT shows an incorrect warning for `Initialize (Context, Buffer)`. It can be suppressed by adding `pragma Warnings (Off, "unused assignment to ""Buffer""")`.
+- GNATprove is not able to prove the generated code, if only CVC4 and Z3 are used. Adding `--no-axiom-guard` circumvents this problem.
+
+These issues should be fixed in the next GNAT Community release.
 
 ## Licence
 
