@@ -10,7 +10,7 @@ matrix:
         - pip install flake8
         - pip install mypy
         - pip install pylint
-        - pip install pyparsing==2.4.0
+        - pip install pyparsing
       script:
         - make test_python
       after_success:
