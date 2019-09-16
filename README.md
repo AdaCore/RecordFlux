@@ -173,7 +173,7 @@ In case that a valid message is contained in `Buffer` the value of `Tag` is read
 ## Dependencies
 
 - [Python >=3.6](https://www.python.org)
-- [PyParsing 2.4.0](https://github.com/pyparsing/pyparsing/)
+- [PyParsing](https://github.com/pyparsing/pyparsing/)
 - [GNAT Community 2019](https://www.adacore.com/download)
 
 ## Known Issues

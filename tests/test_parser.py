@@ -194,7 +194,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type T is mod 2**128;
                 end Test;
             """,
-            r'modulus of "T" exceeds limit \(2\*\*64\) .*')
+            r'^modulus of "T" exceeds limit \(2\*\*64\)')
 
     def test_invalid_enumeration_type_size(self) -> None:
         self.assert_parse_exception_string(
@@ -391,7 +391,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'^Expected ";" \(at char 198\), \(line:7, col:37\)$')
+            r'^Expected ";"')
 
     def test_multiple_initial_nodes(self) -> None:
         self.assert_parse_exception_string(
@@ -409,7 +409,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'^reserved word "null" used as identifier \(at char 225\), \(line:8, col:26\)$')
+            r'^reserved word "null" used as identifier')
 
     def test_reserved_word_in_type_name(self) -> None:
         self.assert_parse_exception_string(
@@ -418,7 +418,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type Type is mod 256;
                 end Test;
             """,
-            r'^reserved word "Type" used as identifier \(at char 57\), \(line:3, col:25\)$')
+            r'^reserved word "Type" used as identifier')
 
     def test_reserved_word_in_message_component(self) -> None:
         self.assert_parse_exception_string(
@@ -431,7 +431,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'^Found unwanted token, "Message" \(at char 157\), \(line:6, col:26\)$')
+            r'^Found unwanted token, "Message"')
 
     def test_integer_type_spec(self) -> None:
         spec = {'Test': Specification(
