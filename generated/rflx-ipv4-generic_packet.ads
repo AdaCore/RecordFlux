@@ -10,340 +10,340 @@ is
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
-   type All_Field_Type is (F_Initial, F_Version, F_IHL, F_DSCP, F_ECN, F_Total_Length, F_Identification, F_Flag_R, F_Flag_DF, F_Flag_MF, F_Fragment_Offset, F_TTL, F_Protocol, F_Header_Checksum, F_Source, F_Destination, F_Options, F_Payload, F_Final);
+   type Virtual_Field is (F_Initial, F_Version, F_IHL, F_DSCP, F_ECN, F_Total_Length, F_Identification, F_Flag_R, F_Flag_DF, F_Flag_MF, F_Fragment_Offset, F_TTL, F_Protocol, F_Header_Checksum, F_Source, F_Destination, F_Options, F_Payload, F_Final);
 
-   subtype Field_Type is All_Field_Type range F_Version .. F_Payload;
+   subtype Field is Virtual_Field range F_Version .. F_Payload;
 
-   type Context_Type (Buffer_First, Buffer_Last : RFLX.Types.Index_Type := RFLX.Types.Index_Type'First; First, Last : RFLX.Types.Bit_Index_Type := RFLX.Types.Bit_Index_Type'First; Buffer_Address : RFLX.Types.Integer_Address := 0) is private with
+   type Context (Buffer_First, Buffer_Last : RFLX.Types.Index := RFLX.Types.Index'First; First, Last : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First; Buffer_Address : RFLX.Types.Integer_Address := 0) is private with
      Default_Initial_Condition =>
        False;
 
-   function Create return Context_Type;
+   function Create return Context;
 
-   procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr) with
      Pre =>
-       not Context'Constrained
+       not Ctx'Constrained
           and then Buffer /= null
-          and then Buffer'Last <= RFLX.Types.Index_Type'Last / 2,
+          and then Buffer'Last <= RFLX.Types.Index'Last / 2,
      Post =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context)
-          and then Context.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
-          and then Context.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx)
+          and then Ctx.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
+          and then Ctx.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
           and then Buffer = null;
 
-   procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index_Type) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index) with
      Pre =>
-       not Context'Constrained
+       not Ctx'Constrained
           and then Buffer /= null
           and then RFLX.Types.Byte_Index (First) >= Buffer'First
           and then RFLX.Types.Byte_Index (Last) <= Buffer'Last
           and then First <= Last
-          and then Last <= RFLX.Types.Bit_Index_Type'Last / 2,
+          and then Last <= RFLX.Types.Bit_Index'Last / 2,
      Post =>
-       Valid_Context (Context)
+       Valid_Context (Ctx)
           and then Buffer = null
-          and then Has_Buffer (Context)
-          and then Context.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
-          and then Context.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
-          and then Context.Buffer_Address = RFLX.Types.Bytes_Address (Buffer)'Old
-          and then Context.First = First
-          and then Context.Last = Last;
+          and then Has_Buffer (Ctx)
+          and then Ctx.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
+          and then Ctx.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
+          and then Ctx.Buffer_Address = RFLX.Types.Bytes_Address (Buffer)'Old
+          and then Ctx.First = First
+          and then Ctx.Last = Last;
 
-   procedure Take_Buffer (Context : in out Context_Type; Buffer : out RFLX.Types.Bytes_Ptr) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX.Types.Bytes_Ptr) with
      Pre =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context),
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx),
      Post =>
-       Valid_Context (Context)
-          and then not Has_Buffer (Context)
+       Valid_Context (Ctx)
+          and then not Has_Buffer (Ctx)
           and then Buffer /= null
-          and then Context.Buffer_First = Buffer'First
-          and then Context.Buffer_Last = Buffer'Last
-          and then Context.Buffer_Address = RFLX.Types.Bytes_Address (Buffer)
-          and then Context.Buffer_First = Context.Buffer_First'Old
-          and then Context.Buffer_Last = Context.Buffer_Last'Old
-          and then Context.Buffer_Address = Context.Buffer_Address'Old
-          and then Context.First = Context.First'Old
-          and then Context.Last = Context.Last'Old
-          and then Present (Context, F_Version) = Present (Context, F_Version)'Old
-          and then Present (Context, F_IHL) = Present (Context, F_IHL)'Old
-          and then Present (Context, F_DSCP) = Present (Context, F_DSCP)'Old
-          and then Present (Context, F_ECN) = Present (Context, F_ECN)'Old
-          and then Present (Context, F_Total_Length) = Present (Context, F_Total_Length)'Old
-          and then Present (Context, F_Identification) = Present (Context, F_Identification)'Old
-          and then Present (Context, F_Flag_R) = Present (Context, F_Flag_R)'Old
-          and then Present (Context, F_Flag_DF) = Present (Context, F_Flag_DF)'Old
-          and then Present (Context, F_Flag_MF) = Present (Context, F_Flag_MF)'Old
-          and then Present (Context, F_Fragment_Offset) = Present (Context, F_Fragment_Offset)'Old
-          and then Present (Context, F_TTL) = Present (Context, F_TTL)'Old
-          and then Present (Context, F_Protocol) = Present (Context, F_Protocol)'Old
-          and then Present (Context, F_Header_Checksum) = Present (Context, F_Header_Checksum)'Old
-          and then Present (Context, F_Source) = Present (Context, F_Source)'Old
-          and then Present (Context, F_Destination) = Present (Context, F_Destination)'Old
-          and then Present (Context, F_Options) = Present (Context, F_Options)'Old
-          and then Present (Context, F_Payload) = Present (Context, F_Payload)'Old;
+          and then Ctx.Buffer_First = Buffer'First
+          and then Ctx.Buffer_Last = Buffer'Last
+          and then Ctx.Buffer_Address = RFLX.Types.Bytes_Address (Buffer)
+          and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+          and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+          and then Ctx.Buffer_Address = Ctx.Buffer_Address'Old
+          and then Ctx.First = Ctx.First'Old
+          and then Ctx.Last = Ctx.Last'Old
+          and then Present (Ctx, F_Version) = Present (Ctx, F_Version)'Old
+          and then Present (Ctx, F_IHL) = Present (Ctx, F_IHL)'Old
+          and then Present (Ctx, F_DSCP) = Present (Ctx, F_DSCP)'Old
+          and then Present (Ctx, F_ECN) = Present (Ctx, F_ECN)'Old
+          and then Present (Ctx, F_Total_Length) = Present (Ctx, F_Total_Length)'Old
+          and then Present (Ctx, F_Identification) = Present (Ctx, F_Identification)'Old
+          and then Present (Ctx, F_Flag_R) = Present (Ctx, F_Flag_R)'Old
+          and then Present (Ctx, F_Flag_DF) = Present (Ctx, F_Flag_DF)'Old
+          and then Present (Ctx, F_Flag_MF) = Present (Ctx, F_Flag_MF)'Old
+          and then Present (Ctx, F_Fragment_Offset) = Present (Ctx, F_Fragment_Offset)'Old
+          and then Present (Ctx, F_TTL) = Present (Ctx, F_TTL)'Old
+          and then Present (Ctx, F_Protocol) = Present (Ctx, F_Protocol)'Old
+          and then Present (Ctx, F_Header_Checksum) = Present (Ctx, F_Header_Checksum)'Old
+          and then Present (Ctx, F_Source) = Present (Ctx, F_Source)'Old
+          and then Present (Ctx, F_Destination) = Present (Ctx, F_Destination)'Old
+          and then Present (Ctx, F_Options) = Present (Ctx, F_Options)'Old
+          and then Present (Ctx, F_Payload) = Present (Ctx, F_Payload)'Old;
 
-   function Has_Buffer (Context : Context_Type) return Boolean with
+   function Has_Buffer (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   procedure Field_Range (Context : Context_Type; Field : Field_Type; First : out RFLX.Types.Bit_Index_Type; Last : out RFLX.Types.Bit_Index_Type) with
+   procedure Field_Range (Ctx : Context; Fld : Field; First : out RFLX.Types.Bit_Index; Last : out RFLX.Types.Bit_Index) with
      Pre =>
-       Valid_Context (Context)
-          and then Present (Context, Field),
+       Valid_Context (Ctx)
+          and then Present (Ctx, Fld),
      Post =>
-       Present (Context, Field)
-          and then Context.First <= First
-          and then Context.Last >= Last
+       Present (Ctx, Fld)
+          and then Ctx.First <= First
+          and then Ctx.Last >= Last
           and then First <= Last;
 
-   function Index (Context : Context_Type) return RFLX.Types.Bit_Index_Type with
+   function Index (Ctx : Context) return RFLX.Types.Bit_Index with
      Pre =>
-       Valid_Context (Context),
+       Valid_Context (Ctx),
      Post =>
-       Index'Result >= Context.First
-          and then Index'Result - Context.Last <= 1;
+       Index'Result >= Ctx.First
+          and then Index'Result - Ctx.Last <= 1;
 
-   procedure Verify (Context : in out Context_Type; Field : Field_Type) with
+   procedure Verify (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Context (Context),
+       Valid_Context (Ctx),
      Post =>
-       Valid_Context (Context)
-          and then (if Field /= F_Version then (if Valid (Context, F_Version)'Old then Valid (Context, F_Version)))
-          and then (if Field /= F_IHL then (if Valid (Context, F_IHL)'Old then Valid (Context, F_IHL)))
-          and then (if Field /= F_DSCP then (if Valid (Context, F_DSCP)'Old then Valid (Context, F_DSCP)))
-          and then (if Field /= F_ECN then (if Valid (Context, F_ECN)'Old then Valid (Context, F_ECN)))
-          and then (if Field /= F_Total_Length then (if Valid (Context, F_Total_Length)'Old then Valid (Context, F_Total_Length)))
-          and then (if Field /= F_Identification then (if Valid (Context, F_Identification)'Old then Valid (Context, F_Identification)))
-          and then (if Field /= F_Flag_R then (if Valid (Context, F_Flag_R)'Old then Valid (Context, F_Flag_R)))
-          and then (if Field /= F_Flag_DF then (if Valid (Context, F_Flag_DF)'Old then Valid (Context, F_Flag_DF)))
-          and then (if Field /= F_Flag_MF then (if Valid (Context, F_Flag_MF)'Old then Valid (Context, F_Flag_MF)))
-          and then (if Field /= F_Fragment_Offset then (if Valid (Context, F_Fragment_Offset)'Old then Valid (Context, F_Fragment_Offset)))
-          and then (if Field /= F_TTL then (if Valid (Context, F_TTL)'Old then Valid (Context, F_TTL)))
-          and then (if Field /= F_Protocol then (if Valid (Context, F_Protocol)'Old then Valid (Context, F_Protocol)))
-          and then (if Field /= F_Header_Checksum then (if Valid (Context, F_Header_Checksum)'Old then Valid (Context, F_Header_Checksum)))
-          and then (if Field /= F_Source then (if Valid (Context, F_Source)'Old then Valid (Context, F_Source)))
-          and then (if Field /= F_Destination then (if Valid (Context, F_Destination)'Old then Valid (Context, F_Destination)))
-          and then (if Field /= F_Options then (if Valid (Context, F_Options)'Old then Valid (Context, F_Options)))
-          and then (if Field /= F_Payload then (if Valid (Context, F_Payload)'Old then Valid (Context, F_Payload)))
-          and then Has_Buffer (Context) = Has_Buffer (Context)'Old
-          and then Context.Buffer_First = Context.Buffer_First'Old
-          and then Context.Buffer_Last = Context.Buffer_Last'Old
-          and then Context.Buffer_Address = Context.Buffer_Address'Old
-          and then Context.First = Context.First'Old
-          and then Context.Last = Context.Last'Old;
+       Valid_Context (Ctx)
+          and then (if Fld /= F_Version then (if Valid (Ctx, F_Version)'Old then Valid (Ctx, F_Version)))
+          and then (if Fld /= F_IHL then (if Valid (Ctx, F_IHL)'Old then Valid (Ctx, F_IHL)))
+          and then (if Fld /= F_DSCP then (if Valid (Ctx, F_DSCP)'Old then Valid (Ctx, F_DSCP)))
+          and then (if Fld /= F_ECN then (if Valid (Ctx, F_ECN)'Old then Valid (Ctx, F_ECN)))
+          and then (if Fld /= F_Total_Length then (if Valid (Ctx, F_Total_Length)'Old then Valid (Ctx, F_Total_Length)))
+          and then (if Fld /= F_Identification then (if Valid (Ctx, F_Identification)'Old then Valid (Ctx, F_Identification)))
+          and then (if Fld /= F_Flag_R then (if Valid (Ctx, F_Flag_R)'Old then Valid (Ctx, F_Flag_R)))
+          and then (if Fld /= F_Flag_DF then (if Valid (Ctx, F_Flag_DF)'Old then Valid (Ctx, F_Flag_DF)))
+          and then (if Fld /= F_Flag_MF then (if Valid (Ctx, F_Flag_MF)'Old then Valid (Ctx, F_Flag_MF)))
+          and then (if Fld /= F_Fragment_Offset then (if Valid (Ctx, F_Fragment_Offset)'Old then Valid (Ctx, F_Fragment_Offset)))
+          and then (if Fld /= F_TTL then (if Valid (Ctx, F_TTL)'Old then Valid (Ctx, F_TTL)))
+          and then (if Fld /= F_Protocol then (if Valid (Ctx, F_Protocol)'Old then Valid (Ctx, F_Protocol)))
+          and then (if Fld /= F_Header_Checksum then (if Valid (Ctx, F_Header_Checksum)'Old then Valid (Ctx, F_Header_Checksum)))
+          and then (if Fld /= F_Source then (if Valid (Ctx, F_Source)'Old then Valid (Ctx, F_Source)))
+          and then (if Fld /= F_Destination then (if Valid (Ctx, F_Destination)'Old then Valid (Ctx, F_Destination)))
+          and then (if Fld /= F_Options then (if Valid (Ctx, F_Options)'Old then Valid (Ctx, F_Options)))
+          and then (if Fld /= F_Payload then (if Valid (Ctx, F_Payload)'Old then Valid (Ctx, F_Payload)))
+          and then Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+          and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+          and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+          and then Ctx.Buffer_Address = Ctx.Buffer_Address'Old
+          and then Ctx.First = Ctx.First'Old
+          and then Ctx.Last = Ctx.Last'Old;
 
-   procedure Verify_Message (Context : in out Context_Type) with
+   procedure Verify_Message (Ctx : in out Context) with
      Pre =>
-       Valid_Context (Context),
+       Valid_Context (Ctx),
      Post =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context) = Has_Buffer (Context)'Old
-          and then Context.Buffer_First = Context.Buffer_First'Old
-          and then Context.Buffer_Last = Context.Buffer_Last'Old
-          and then Context.Buffer_Address = Context.Buffer_Address'Old
-          and then Context.First = Context.First'Old
-          and then Context.Last = Context.Last'Old;
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+          and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+          and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+          and then Ctx.Buffer_Address = Ctx.Buffer_Address'Old
+          and then Ctx.First = Ctx.First'Old
+          and then Ctx.Last = Ctx.Last'Old;
 
-   function Present (Context : Context_Type; Field : Field_Type) return Boolean with
+   function Present (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Structural_Valid (Context : Context_Type; Field : Field_Type) return Boolean with
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Valid (Context : Context_Type; Field : Field_Type) return Boolean with
+   function Valid (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Context),
+       Valid_Context (Ctx),
      Post =>
-       (if Valid'Result then Present (Context, Field)
-          and then Structural_Valid (Context, Field));
+       (if Valid'Result then Present (Ctx, Fld)
+          and then Structural_Valid (Ctx, Fld));
 
-   function Incomplete (Context : Context_Type; Field : Field_Type) return Boolean with
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Structural_Valid_Message (Context : Context_Type) return Boolean with
+   function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Valid_Message (Context : Context_Type) return Boolean with
+   function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Incomplete_Message (Context : Context_Type) return Boolean with
+   function Incomplete_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Get_Version (Context : Context_Type) return Version_Type with
+   function Get_Version (Ctx : Context) return Version with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Version);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Version);
 
-   function Get_IHL (Context : Context_Type) return IHL_Type with
+   function Get_IHL (Ctx : Context) return IHL with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_IHL);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_IHL);
 
-   function Get_DSCP (Context : Context_Type) return DCSP_Type with
+   function Get_DSCP (Ctx : Context) return DCSP with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_DSCP);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_DSCP);
 
-   function Get_ECN (Context : Context_Type) return ECN_Type with
+   function Get_ECN (Ctx : Context) return ECN with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_ECN);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_ECN);
 
-   function Get_Total_Length (Context : Context_Type) return Total_Length_Type with
+   function Get_Total_Length (Ctx : Context) return Total_Length with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Total_Length);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Total_Length);
 
-   function Get_Identification (Context : Context_Type) return Identification_Type with
+   function Get_Identification (Ctx : Context) return Identification with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Identification);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Identification);
 
-   function Get_Flag_R (Context : Context_Type) return Flag_Type with
+   function Get_Flag_R (Ctx : Context) return Flag with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Flag_R);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Flag_R);
 
-   function Get_Flag_DF (Context : Context_Type) return Flag_Type with
+   function Get_Flag_DF (Ctx : Context) return Flag with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Flag_DF);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Flag_DF);
 
-   function Get_Flag_MF (Context : Context_Type) return Flag_Type with
+   function Get_Flag_MF (Ctx : Context) return Flag with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Flag_MF);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Flag_MF);
 
-   function Get_Fragment_Offset (Context : Context_Type) return Fragment_Offset_Type with
+   function Get_Fragment_Offset (Ctx : Context) return Fragment_Offset with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Fragment_Offset);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Fragment_Offset);
 
-   function Get_TTL (Context : Context_Type) return TTL_Type with
+   function Get_TTL (Ctx : Context) return TTL with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_TTL);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_TTL);
 
-   function Get_Protocol (Context : Context_Type) return Protocol_Type with
+   function Get_Protocol (Ctx : Context) return Protocol with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Protocol);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Protocol);
 
-   function Get_Header_Checksum (Context : Context_Type) return Header_Checksum_Type with
+   function Get_Header_Checksum (Ctx : Context) return Header_Checksum with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Header_Checksum);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Header_Checksum);
 
-   function Get_Source (Context : Context_Type) return Address_Type with
+   function Get_Source (Ctx : Context) return Address with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Source);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Source);
 
-   function Get_Destination (Context : Context_Type) return Address_Type with
+   function Get_Destination (Ctx : Context) return Address with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Destination);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Destination);
 
    generic
       with procedure Process_Options (Options : RFLX.Types.Bytes);
-   procedure Get_Options (Context : Context_Type) with
+   procedure Get_Options (Ctx : Context) with
      Pre =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context)
-          and then Present (Context, F_Options);
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx)
+          and then Present (Ctx, F_Options);
 
    generic
       with procedure Process_Payload (Payload : RFLX.Types.Bytes);
-   procedure Get_Payload (Context : Context_Type) with
+   procedure Get_Payload (Ctx : Context) with
      Pre =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context)
-          and then Present (Context, F_Payload);
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx)
+          and then Present (Ctx, F_Payload);
 
-   procedure Switch (Context : in out Context_Type; Sequence_Context : out Options_Sequence.Context_Type) with
+   procedure Switch (Ctx : in out Context; Sequence_Context : out Options_Sequence.Context) with
      Pre =>
-       Valid_Context (Context)
-          and then not Context'Constrained
+       Valid_Context (Ctx)
+          and then not Ctx'Constrained
           and then not Sequence_Context'Constrained
-          and then Has_Buffer (Context)
-          and then Present (Context, F_Options),
+          and then Has_Buffer (Ctx)
+          and then Present (Ctx, F_Options),
      Post =>
-       Valid_Context (Context)
-          and then not Has_Buffer (Context)
-          and then Present (Context, F_Options)
+       Valid_Context (Ctx)
+          and then not Has_Buffer (Ctx)
+          and then Present (Ctx, F_Options)
           and then Options_Sequence.Has_Buffer (Sequence_Context)
-          and then Context.Buffer_First = Sequence_Context.Buffer_First
-          and then Context.Buffer_Last = Sequence_Context.Buffer_Last
-          and then Context.Buffer_Address = Sequence_Context.Buffer_Address;
+          and then Ctx.Buffer_First = Sequence_Context.Buffer_First
+          and then Ctx.Buffer_Last = Sequence_Context.Buffer_Last
+          and then Ctx.Buffer_Address = Sequence_Context.Buffer_Address;
 
-   procedure Update (Context : in out Context_Type; Sequence_Context : in out Options_Sequence.Context_Type) with
+   procedure Update (Ctx : in out Context; Sequence_Context : in out Options_Sequence.Context) with
      Pre =>
-       Valid_Context (Context)
-          and then not Has_Buffer (Context)
-          and then Present (Context, F_Options)
+       Valid_Context (Ctx)
+          and then not Has_Buffer (Ctx)
+          and then Present (Ctx, F_Options)
           and then Options_Sequence.Has_Buffer (Sequence_Context)
-          and then Context.Buffer_First = Sequence_Context.Buffer_First
-          and then Context.Buffer_Last = Sequence_Context.Buffer_Last
-          and then Context.Buffer_Address = Sequence_Context.Buffer_Address,
+          and then Ctx.Buffer_First = Sequence_Context.Buffer_First
+          and then Ctx.Buffer_Last = Sequence_Context.Buffer_Last
+          and then Ctx.Buffer_Address = Sequence_Context.Buffer_Address,
      Post =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context)
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx)
           and then not Options_Sequence.Has_Buffer (Sequence_Context);
 
-   function Valid_Context (Context : Context_Type) return Boolean;
+   function Valid_Context (Ctx : Context) return Boolean;
 
 private
 
-   type State_Type is (S_Valid, S_Structural_Valid, S_Invalid, S_Preliminary, S_Incomplete);
+   type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Preliminary, S_Incomplete);
 
-   type Result_Type (Field : All_Field_Type := F_Initial) is
+   type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
-         case Field is
+         case Fld is
             when F_Initial | F_Options | F_Payload | F_Final =>
                null;
             when F_Version =>
-               Version_Value : Version_Type_Base;
+               Version_Value : Version_Base;
             when F_IHL =>
-               IHL_Value : IHL_Type_Base;
+               IHL_Value : IHL_Base;
             when F_DSCP =>
-               DSCP_Value : DCSP_Type;
+               DSCP_Value : DCSP;
             when F_ECN =>
-               ECN_Value : ECN_Type;
+               ECN_Value : ECN;
             when F_Total_Length =>
-               Total_Length_Value : Total_Length_Type_Base;
+               Total_Length_Value : Total_Length_Base;
             when F_Identification =>
-               Identification_Value : Identification_Type;
+               Identification_Value : Identification;
             when F_Flag_R =>
-               Flag_R_Value : Flag_Type_Base;
+               Flag_R_Value : Flag_Base;
             when F_Flag_DF =>
-               Flag_DF_Value : Flag_Type_Base;
+               Flag_DF_Value : Flag_Base;
             when F_Flag_MF =>
-               Flag_MF_Value : Flag_Type_Base;
+               Flag_MF_Value : Flag_Base;
             when F_Fragment_Offset =>
-               Fragment_Offset_Value : Fragment_Offset_Type;
+               Fragment_Offset_Value : Fragment_Offset;
             when F_TTL =>
-               TTL_Value : TTL_Type;
+               TTL_Value : TTL;
             when F_Protocol =>
-               Protocol_Value : Protocol_Type_Base;
+               Protocol_Value : Protocol_Base;
             when F_Header_Checksum =>
-               Header_Checksum_Value : Header_Checksum_Type;
+               Header_Checksum_Value : Header_Checksum;
             when F_Source =>
-               Source_Value : Address_Type;
+               Source_Value : Address;
             when F_Destination =>
-               Destination_Value : Address_Type;
+               Destination_Value : Address;
          end case;
       end record;
 
-   function Valid_Type (Value : Result_Type) return Boolean is
-     ((case Value.Field is
+   function Valid_Value (Value : Field_Dependent_Value) return Boolean is
+     ((case Value.Fld is
          when F_Version =>
             Valid (Value.Version_Value),
          when F_IHL =>
@@ -379,53 +379,53 @@ private
          when F_Initial | F_Final =>
             False));
 
-   type Cursor_Type (State : State_Type := S_Invalid) is
+   type Field_Cursor (State : Cursor_State := S_Invalid) is
       record
          case State is
             when S_Valid | S_Structural_Valid | S_Preliminary =>
-               First : RFLX.Types.Bit_Index_Type;
-               Last : RFLX.Types.Bit_Length_Type;
-               Value : Result_Type;
+               First : RFLX.Types.Bit_Index;
+               Last : RFLX.Types.Bit_Length;
+               Value : Field_Dependent_Value;
             when S_Invalid | S_Incomplete =>
                null;
          end case;
       end record with
      Dynamic_Predicate =>
        (if State = S_Valid
-          or State = S_Structural_Valid then Valid_Type (Value));
+          or State = S_Structural_Valid then Valid_Value (Value));
 
-   type Cursors_Type is array (Field_Type) of Cursor_Type;
+   type Field_Cursors is array (Field) of Field_Cursor;
 
-   function Valid_Context (Buffer_First, Buffer_Last : RFLX.Types.Index_Type; First, Last : RFLX.Types.Bit_Index_Type; Buffer_Address : RFLX.Types.Integer_Address; Buffer : RFLX.Types.Bytes_Ptr; Index : RFLX.Types.Bit_Index_Type; Field : All_Field_Type; Cursors : Cursors_Type) return Boolean is
+   function Valid_Context (Buffer_First, Buffer_Last : RFLX.Types.Index; First, Last : RFLX.Types.Bit_Index; Buffer_Address : RFLX.Types.Integer_Address; Buffer : RFLX.Types.Bytes_Ptr; Index : RFLX.Types.Bit_Index; Fld : Virtual_Field; Cursors : Field_Cursors) return Boolean is
      ((if Buffer /= null then Buffer'First = Buffer_First
         and then Buffer'Last = Buffer_Last
         and then RFLX.Types.Bytes_Address (Buffer) = Buffer_Address)
       and then RFLX.Types.Byte_Index (First) >= Buffer_First
       and then RFLX.Types.Byte_Index (Last) <= Buffer_Last
       and then First <= Last
-      and then Last <= RFLX.Types.Bit_Index_Type'Last / 2
+      and then Last <= RFLX.Types.Bit_Index'Last / 2
       and then Index >= First
       and then Index - Last <= 1
-      and then (for all F in Field_Type'First .. Field_Type'Last =>
+      and then (for all F in Field'First .. Field'Last =>
         (if Cursors (F).State = S_Valid
         or Cursors (F).State = S_Structural_Valid then Cursors (F).First >= First
         and then Cursors (F).Last <= Last
         and then Cursors (F).First <= (Cursors (F).Last + 1)
-        and then Cursors (F).Value.Field = F))
-      and then (case Field is
+        and then Cursors (F).Value.Fld = F))
+      and then (case Fld is
            when F_Initial =>
               True,
            when F_Version =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size,
            when F_IHL =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
                  and then (Cursors (F_IHL).State = S_Valid
                    or Cursors (F_IHL).State = S_Structural_Valid)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size,
            when F_DSCP =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -433,9 +433,9 @@ private
                    or Cursors (F_IHL).State = S_Structural_Valid)
                  and then (Cursors (F_DSCP).State = S_Valid
                    or Cursors (F_DSCP).State = S_Structural_Valid)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size,
            when F_ECN =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -445,10 +445,10 @@ private
                    or Cursors (F_DSCP).State = S_Structural_Valid)
                  and then (Cursors (F_ECN).State = S_Valid
                    or Cursors (F_ECN).State = S_Structural_Valid)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size,
            when F_Total_Length =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -460,12 +460,12 @@ private
                    or Cursors (F_ECN).State = S_Structural_Valid)
                  and then (Cursors (F_Total_Length).State = S_Valid
                    or Cursors (F_Total_Length).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size,
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size,
            when F_Identification =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -479,13 +479,13 @@ private
                    or Cursors (F_Total_Length).State = S_Structural_Valid)
                  and then (Cursors (F_Identification).State = S_Valid
                    or Cursors (F_Identification).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size,
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size,
            when F_Flag_R =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -501,15 +501,15 @@ private
                    or Cursors (F_Identification).State = S_Structural_Valid)
                  and then (Cursors (F_Flag_R).State = S_Valid
                    or Cursors (F_Flag_R).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size,
            when F_Flag_DF =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -527,16 +527,16 @@ private
                    or Cursors (F_Flag_R).State = S_Structural_Valid)
                  and then (Cursors (F_Flag_DF).State = S_Valid
                    or Cursors (F_Flag_DF).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size,
            when F_Flag_MF =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -556,17 +556,17 @@ private
                    or Cursors (F_Flag_DF).State = S_Structural_Valid)
                  and then (Cursors (F_Flag_MF).State = S_Valid
                    or Cursors (F_Flag_MF).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size,
            when F_Fragment_Offset =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -588,18 +588,18 @@ private
                    or Cursors (F_Flag_MF).State = S_Structural_Valid)
                  and then (Cursors (F_Fragment_Offset).State = S_Valid
                    or Cursors (F_Fragment_Offset).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset_Type'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset'Size,
            when F_TTL =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -623,19 +623,19 @@ private
                    or Cursors (F_Fragment_Offset).State = S_Structural_Valid)
                  and then (Cursors (F_TTL).State = S_Valid
                    or Cursors (F_TTL).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset_Type'Size
-                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL_Type'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset'Size
+                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL'Size,
            when F_Protocol =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -661,20 +661,20 @@ private
                    or Cursors (F_TTL).State = S_Structural_Valid)
                  and then (Cursors (F_Protocol).State = S_Valid
                    or Cursors (F_Protocol).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset_Type'Size
-                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL_Type'Size
-                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Type_Base'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset'Size
+                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL'Size
+                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Base'Size,
            when F_Header_Checksum =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -702,21 +702,21 @@ private
                    or Cursors (F_Protocol).State = S_Structural_Valid)
                  and then (Cursors (F_Header_Checksum).State = S_Valid
                    or Cursors (F_Header_Checksum).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset_Type'Size
-                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL_Type'Size
-                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Type_Base'Size
-                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum_Type'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset'Size
+                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL'Size
+                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Base'Size
+                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum'Size,
            when F_Source =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -746,22 +746,22 @@ private
                    or Cursors (F_Header_Checksum).State = S_Structural_Valid)
                  and then (Cursors (F_Source).State = S_Valid
                    or Cursors (F_Source).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset_Type'Size
-                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL_Type'Size
-                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Type_Base'Size
-                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum_Type'Size
-                 and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address_Type'Size,
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset'Size
+                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL'Size
+                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Base'Size
+                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum'Size
+                 and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address'Size,
            when F_Destination =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -793,25 +793,25 @@ private
                    or Cursors (F_Source).State = S_Structural_Valid)
                  and then (Cursors (F_Destination).State = S_Valid
                    or Cursors (F_Destination).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) = 5
-                   or RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) > 5)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset_Type'Size
-                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL_Type'Size
-                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Type_Base'Size
-                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum_Type'Size
-                 and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address_Type'Size
-                 and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address_Type'Size,
+                 and then (RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) = 5
+                   or RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) > 5)
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset'Size
+                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL'Size
+                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Base'Size
+                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum'Size
+                 and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address'Size
+                 and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address'Size,
            when F_Options =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -845,25 +845,25 @@ private
                    or Cursors (F_Destination).State = S_Structural_Valid)
                  and then (Cursors (F_Options).State = S_Valid
                    or Cursors (F_Options).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) = 5
-                   or RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) > 5)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset_Type'Size
-                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL_Type'Size
-                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Type_Base'Size
-                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum_Type'Size
-                 and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address_Type'Size
-                 and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address_Type'Size,
+                 and then (RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) = 5
+                   or RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) > 5)
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset'Size
+                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL'Size
+                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Base'Size
+                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum'Size
+                 and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address'Size
+                 and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address'Size,
            when F_Payload | F_Final =>
               (Cursors (F_Version).State = S_Valid
                    or Cursors (F_Version).State = S_Structural_Valid)
@@ -897,37 +897,37 @@ private
                    or Cursors (F_Destination).State = S_Structural_Valid)
                  and then (Cursors (F_Payload).State = S_Valid
                    or Cursors (F_Payload).State = S_Structural_Valid)
-                 and then RFLX.Types.Bit_Length_Type (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
                  and then Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-                 and then (RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) = 5
-                   or RFLX.Types.Bit_Length_Type (Cursors (F_IHL).Value.IHL_Value) > 5)
-                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Type_Base'Size
-                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Type_Base'Size
-                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP_Type'Size
-                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN_Type'Size
-                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Type_Base'Size
-                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification_Type'Size
-                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Type_Base'Size
-                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset_Type'Size
-                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL_Type'Size
-                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Type_Base'Size
-                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum_Type'Size
-                 and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address_Type'Size
-                 and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address_Type'Size));
+                 and then (RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) = 5
+                   or RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) > 5)
+                 and then (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = Version_Base'Size
+                 and then (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IHL_Base'Size
+                 and then (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = DCSP'Size
+                 and then (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = ECN'Size
+                 and then (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = Total_Length_Base'Size
+                 and then (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = Identification'Size
+                 and then (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Flag_Base'Size
+                 and then (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = Fragment_Offset'Size
+                 and then (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = TTL'Size
+                 and then (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = Protocol_Base'Size
+                 and then (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = Header_Checksum'Size
+                 and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address'Size
+                 and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address'Size));
 
-   type Context_Type (Buffer_First, Buffer_Last : RFLX.Types.Index_Type := RFLX.Types.Index_Type'First; First, Last : RFLX.Types.Bit_Index_Type := RFLX.Types.Bit_Index_Type'First; Buffer_Address : RFLX.Types.Integer_Address := 0) is
+   type Context (Buffer_First, Buffer_Last : RFLX.Types.Index := RFLX.Types.Index'First; First, Last : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First; Buffer_Address : RFLX.Types.Integer_Address := 0) is
       record
          Buffer : RFLX.Types.Bytes_Ptr := null;
-         Index : RFLX.Types.Bit_Index_Type := RFLX.Types.Bit_Index_Type'First;
-         Field : All_Field_Type := F_Initial;
-         Cursors : Cursors_Type := (others => (State => S_Invalid));
+         Index : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First;
+         Fld : Virtual_Field := F_Initial;
+         Cursors : Field_Cursors := (others => (State => S_Invalid));
       end record with
      Dynamic_Predicate =>
-       Valid_Context (Buffer_First, Buffer_Last, First, Last, Buffer_Address, Buffer, Index, Field, Cursors);
+       Valid_Context (Buffer_First, Buffer_Last, First, Last, Buffer_Address, Buffer, Index, Fld, Cursors);
 
-   function Valid_Context (Context : Context_Type) return Boolean is
-     (Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Buffer_Address, Context.Buffer, Context.Index, Context.Field, Context.Cursors));
+   function Valid_Context (Ctx : Context) return Boolean is
+     (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer_Address, Ctx.Buffer, Ctx.Index, Ctx.Fld, Ctx.Cursors));
 
 end RFLX.IPv4.Generic_Packet;

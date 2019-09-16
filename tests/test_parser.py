@@ -643,7 +643,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                          null
                             then Baz
                                with Length => 42;
-                         Baz : Payload_Type;
+                         Baz : Payload;
                       end message;
                    for Foo use (Baz => Foo);
                    type Bar is new Foo;
@@ -658,21 +658,21 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         spec = {'Ethernet': Specification(
             ContextSpec([]),
             PackageSpec('Ethernet',
-                        [ModularInteger('Address_Type', Pow(Number(2), Number(48))),
-                         RangeInteger('Type_Length_Type',
+                        [ModularInteger('Address', Pow(Number(2), Number(48))),
+                         RangeInteger('Type_Length',
                                       Number(46),
                                       Sub(Pow(Number(2), Number(16)), Number(1)),
                                       Number(16)),
-                         RangeInteger('TPID_Type',
+                         RangeInteger('TPID',
                                       Number(0x8100),
                                       Number(0x8100),
                                       Number(16)),
-                         ModularInteger('TCI_Type',
+                         ModularInteger('TCI',
                                         Pow(Number(2), Number(16))),
                          MessageSpec('Frame',
-                                     [Component('Destination', 'Address_Type'),
-                                      Component('Source', 'Address_Type'),
-                                      Component('Type_Length_TPID', 'Type_Length_Type', [
+                                     [Component('Destination', 'Address'),
+                                      Component('Source', 'Address'),
+                                      Component('Type_Length_TPID', 'Type_Length', [
                                           Then('TPID',
                                                First('Type_Length_TPID'),
                                                UNDEFINED,
@@ -683,9 +683,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                UNDEFINED,
                                                NotEqual(Variable('Type_Length_TPID'),
                                                         Number(33024)))]),
-                                      Component('TPID', 'TPID_Type'),
-                                      Component('TCI', 'TCI_Type'),
-                                      Component('Type_Length', 'Type_Length_Type', [
+                                      Component('TPID', 'TPID'),
+                                      Component('TCI', 'TCI'),
+                                      Component('Type_Length', 'Type_Length', [
                                           Then('Payload',
                                                UNDEFINED,
                                                Mul(Variable('Type_Length'),
@@ -698,7 +698,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                    Last('Type_Length')),
                                                GreaterEqual(Variable('Type_Length'),
                                                             Number(1536)))]),
-                                      Component('Payload', 'Payload_Type', [
+                                      Component('Payload', 'Payload', [
                                           Then('null',
                                                UNDEFINED,
                                                UNDEFINED,

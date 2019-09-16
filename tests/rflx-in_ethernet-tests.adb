@@ -22,8 +22,8 @@ package body RFLX.In_Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer                 : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Ethernet_Frame_Context : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
-      IPv4_Packet_Context    : IPv4.Packet.Context_Type := IPv4.Packet.Create;
+      Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
+      IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
       Valid                  : Boolean;
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);

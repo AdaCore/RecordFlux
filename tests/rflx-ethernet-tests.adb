@@ -11,7 +11,7 @@ package body RFLX.Ethernet.Tests is
       return AUnit.Format ("Ethernet");
    end Name;
 
-   Payload_Length : Types.Length_Type;
+   Payload_Length : Types.Length;
 
    procedure Store_Payload_Length (Buffer : Types.Bytes) is
    begin
@@ -28,33 +28,33 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer         : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Context        : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
-      Destination    : Ethernet.Address_Type;
-      Source         : Ethernet.Address_Type;
-      Type_Length    : Ethernet.Type_Length_Type;
+      Context        : Ethernet.Frame.Context := Ethernet.Frame.Create;
+      Destination    : Ethernet.Address;
+      Source         : Ethernet.Address;
+      Type_Length    : Ethernet.Type_Length;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
 
       Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Destination);
       if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Destination) then
          Destination := Ethernet.Frame.Get_Destination (Context);
-         Assert (Destination'Image, Ethernet.Address_Type'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
+         Assert (Destination'Image, Ethernet.Address'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
 
          Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Source);
          if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Source) then
             Source := Ethernet.Frame.Get_Source (Context);
-            Assert (Source'Image, Ethernet.Address_Type'Image (16#000000000000#), "Invalid Source");
+            Assert (Source'Image, Ethernet.Address'Image (16#000000000000#), "Invalid Source");
 
             Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Type_Length_TPID);
             Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Type_Length);
             if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Type_Length) then
                Type_Length := Ethernet.Frame.Get_Type_Length (Context);
-               Assert (Type_Length'Image, Ethernet.Type_Length_Type'Image (16#0800#), "Invalid Type_Length");
+               Assert (Type_Length'Image, Ethernet.Type_Length'Image (16#0800#), "Invalid Type_Length");
 
                Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Payload);
                if Ethernet.Frame.Present (Context, Ethernet.Frame.F_Payload) then
                   Get_Payload_Length (Context);
-                  Assert (Payload_Length'Image, Types.Length_Type'Image (46), "Invalid Payload length");
+                  Assert (Payload_Length'Image, Types.Length'Image (46), "Invalid Payload length");
                else
                   Assert (False, "Structural invalid Payload");
                end if;
@@ -77,33 +77,33 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer         : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3.raw");
-      Context        : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
-      Destination    : Ethernet.Address_Type;
-      Source         : Ethernet.Address_Type;
-      Type_Length    : Ethernet.Type_Length_Type;
+      Context        : Ethernet.Frame.Context := Ethernet.Frame.Create;
+      Destination    : Ethernet.Address;
+      Source         : Ethernet.Address;
+      Type_Length    : Ethernet.Type_Length;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
 
       Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Destination);
       if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Destination) then
          Destination := Ethernet.Frame.Get_Destination (Context);
-         Assert (Destination'Image, Ethernet.Address_Type'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
+         Assert (Destination'Image, Ethernet.Address'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
 
          Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Source);
          if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Source) then
             Source := Ethernet.Frame.Get_Source (Context);
-            Assert (Source'Image, Ethernet.Address_Type'Image (16#000000000000#), "Invalid Source");
+            Assert (Source'Image, Ethernet.Address'Image (16#000000000000#), "Invalid Source");
 
             Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Type_Length_TPID);
             Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Type_Length);
             if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Type_Length) then
                Type_Length := Ethernet.Frame.Get_Type_Length (Context);
-               Assert (Type_Length'Image, Ethernet.Type_Length_Type'Image (46), "Invalid Type_Length");
+               Assert (Type_Length'Image, Ethernet.Type_Length'Image (46), "Invalid Type_Length");
 
                Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Payload);
                if Ethernet.Frame.Present (Context, Ethernet.Frame.F_Payload) then
                   Get_Payload_Length (Context);
-                  Assert (Payload_Length'Image, Types.Length_Type'Image (46), "Invalid Payload length");
+                  Assert (Payload_Length'Image, Types.Length'Image (46), "Invalid Payload length");
                else
                   Assert (False, "Invalid Payload");
                end if;
@@ -126,12 +126,12 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer         : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
-      Context        : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
-      Destination    : Ethernet.Address_Type;
-      Source         : Ethernet.Address_Type;
-      TPID           : Ethernet.TPID_Type;
-      TCI            : Ethernet.TCI_Type;
-      Type_Length    : Ethernet.Type_Length_Type;
+      Context        : Ethernet.Frame.Context := Ethernet.Frame.Create;
+      Destination    : Ethernet.Address;
+      Source         : Ethernet.Address;
+      TPID           : Ethernet.TPID;
+      TCI            : Ethernet.TCI;
+      Type_Length    : Ethernet.Type_Length;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
 
@@ -139,22 +139,22 @@ package body RFLX.Ethernet.Tests is
 
       if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Destination) then
          Destination := Ethernet.Frame.Get_Destination (Context);
-         Assert (Destination'Image, Ethernet.Address_Type'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
+         Assert (Destination'Image, Ethernet.Address'Image (16#FFFFFFFFFFFF#), "Invalid Destination");
          if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Source) then
             Source := Ethernet.Frame.Get_Source (Context);
-            Assert (Source'Image, Ethernet.Address_Type'Image (16#000000000000#), "Invalid Source");
+            Assert (Source'Image, Ethernet.Address'Image (16#000000000000#), "Invalid Source");
             if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_TPID) then
                TPID := Ethernet.Frame.Get_Tpid (Context);
-               Assert (TPID'Image, Ethernet.TPID_Type'Image (16#8100#), "Invalid TPID");
+               Assert (TPID'Image, Ethernet.TPID'Image (16#8100#), "Invalid TPID");
                if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_TCI) then
                   TCI := Ethernet.Frame.Get_Tci (Context);
-                  Assert (TCI'Image, Ethernet.TCI_Type'Image (1), "Invalid TCI");
+                  Assert (TCI'Image, Ethernet.TCI'Image (1), "Invalid TCI");
                   if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Type_Length) then
                      Type_Length := Ethernet.Frame.Get_Type_Length (Context);
-                     Assert (Type_Length'Image, Ethernet.Type_Length_Type'Image (16#0800#), "Invalid Type_Length");
+                     Assert (Type_Length'Image, Ethernet.Type_Length'Image (16#0800#), "Invalid Type_Length");
                      if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Payload) then
                         Get_Payload_Length (Context);
-                        Assert (Payload_Length'Image, Types.Length_Type'Image (47), "Invalid Payload length");
+                        Assert (Payload_Length'Image, Types.Length'Image (47), "Invalid Payload length");
                      end if;
                   end if;
                end if;
@@ -171,7 +171,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_invalid_too_short.raw");
-      Context : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
+      Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
 
@@ -187,7 +187,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_invalid_too_long.raw");
-      Context : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
+      Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
 
@@ -203,7 +203,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_undefined.raw");
-      Context : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
+      Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
 
@@ -219,7 +219,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3_invalid_length.raw");
-      Context : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
+      Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
 
@@ -235,7 +235,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := new Types.Bytes'(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2);
-      Context : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
+      Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
 

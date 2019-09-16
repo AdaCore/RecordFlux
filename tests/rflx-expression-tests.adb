@@ -13,7 +13,7 @@ package body RFLX.Expression.Tests is
       return AUnit.Format ("Expression");
    end Name;
 
-   Payload_Content : Types.Bytes (Types.Index_Type'First .. Types.Index_Type'First + 1);
+   Payload_Content : Types.Bytes (Types.Index'First .. Types.Index'First + 1);
 
    procedure Store_Payload (Buffer : Types.Bytes) is
    begin
@@ -27,7 +27,7 @@ package body RFLX.Expression.Tests is
    is
       pragma Unreferenced (T);
       Buffer : Types.Bytes_Ptr := new Types.Bytes'(1, 2);
-      Context : Expression.Message.Context_Type := Expression.Message.Create;
+      Context : Expression.Message.Context := Expression.Message.Create;
    begin
       Expression.Message.Initialize (Context, Buffer);
 
@@ -47,7 +47,7 @@ package body RFLX.Expression.Tests is
    is
       pragma Unreferenced (T);
       Buffer : Types.Bytes_Ptr := new Types.Bytes'(1, 1);
-      Context : Expression.Message.Context_Type := Expression.Message.Create;
+      Context : Expression.Message.Context := Expression.Message.Create;
    begin
       Expression.Message.Initialize (Context, Buffer);
 

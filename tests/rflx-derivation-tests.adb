@@ -27,9 +27,9 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
-      Context          : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length           : Derivation.Length_Type;
-      Sequence_Context : Derivation.Modular_Vector.Context_Type := Derivation.Modular_Vector.Create;
+      Context          : Derivation.Message.Context := Derivation.Message.Create;
+      Length           : Derivation.Length;
+      Sequence_Context : Derivation.Modular_Vector.Context := Derivation.Modular_Vector.Create;
       Element          : Derivation.Modular_Integer;
    begin
       Derivation.Message.Initialize (Context, Buffer);
@@ -37,7 +37,7 @@ package body RFLX.Derivation.Tests is
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          if Derivation.Message.Present (Context, Derivation.Message.F_Modular_Vector) then
             Derivation.Message.Switch (Context, Sequence_Context);
@@ -79,9 +79,9 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
-      Context          : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length           : Derivation.Length_Type;
-      Sequence_Context : Derivation.Modular_Vector.Context_Type := Derivation.Modular_Vector.Create;
+      Context          : Derivation.Message.Context := Derivation.Message.Create;
+      Length           : Derivation.Length;
+      Sequence_Context : Derivation.Modular_Vector.Context := Derivation.Modular_Vector.Create;
       Element          : Derivation.Modular_Integer;
       I                : Natural := 1;
    begin
@@ -90,7 +90,7 @@ package body RFLX.Derivation.Tests is
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          if Derivation.Message.Present (Context, Derivation.Message.F_Modular_Vector) then
             Derivation.Message.Switch (Context, Sequence_Context);
@@ -130,9 +130,9 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
-      Context          : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length           : Derivation.Length_Type;
-      Sequence_Context : Derivation.Range_Vector.Context_Type := Derivation.Range_Vector.Create;
+      Context          : Derivation.Message.Context := Derivation.Message.Create;
+      Length           : Derivation.Length;
+      Sequence_Context : Derivation.Range_Vector.Context := Derivation.Range_Vector.Create;
       Element          : Derivation.Range_Integer;
    begin
       Derivation.Message.Initialize (Context, Buffer);
@@ -140,7 +140,7 @@ package body RFLX.Derivation.Tests is
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          if Derivation.Message.Present (Context, Derivation.Message.F_Range_Vector) then
             Derivation.Message.Switch (Context, Sequence_Context);
@@ -183,9 +183,9 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
-      Context          : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length           : Derivation.Length_Type;
-      Sequence_Context : Derivation.Range_Vector.Context_Type := Derivation.Range_Vector.Create;
+      Context          : Derivation.Message.Context := Derivation.Message.Create;
+      Length           : Derivation.Length;
+      Sequence_Context : Derivation.Range_Vector.Context := Derivation.Range_Vector.Create;
       Element          : Derivation.Range_Integer;
       I                : Natural := 1;
    begin
@@ -194,7 +194,7 @@ package body RFLX.Derivation.Tests is
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          if Derivation.Message.Present (Context, Derivation.Message.F_Range_Vector) then
             Derivation.Message.Switch (Context, Sequence_Context);
@@ -234,9 +234,9 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
-      Context          : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length           : Derivation.Length_Type;
-      Sequence_Context : Derivation.Enumeration_Vector.Context_Type := Derivation.Enumeration_Vector.Create;
+      Context          : Derivation.Message.Context := Derivation.Message.Create;
+      Length           : Derivation.Length;
+      Sequence_Context : Derivation.Enumeration_Vector.Context := Derivation.Enumeration_Vector.Create;
       Element          : Derivation.Enumeration;
    begin
       Derivation.Message.Initialize (Context, Buffer);
@@ -244,7 +244,7 @@ package body RFLX.Derivation.Tests is
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          if Derivation.Message.Present (Context, Derivation.Message.F_Enumeration_Vector) then
             Derivation.Message.Switch (Context, Sequence_Context);
@@ -287,9 +287,9 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
-      Context          : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length           : Derivation.Length_Type;
-      Sequence_Context : Derivation.Enumeration_Vector.Context_Type := Derivation.Enumeration_Vector.Create;
+      Context          : Derivation.Message.Context := Derivation.Message.Create;
+      Length           : Derivation.Length;
+      Sequence_Context : Derivation.Enumeration_Vector.Context := Derivation.Enumeration_Vector.Create;
       Element          : Derivation.Enumeration;
       I                : Natural := 1;
    begin
@@ -298,7 +298,7 @@ package body RFLX.Derivation.Tests is
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          if Derivation.Message.Present (Context, Derivation.Message.F_Enumeration_Vector) then
             Derivation.Message.Switch (Context, Sequence_Context);
@@ -338,9 +338,9 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
-      Context          : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length           : Derivation.Length_Type;
-      Sequence_Context : Derivation.Av_Enumeration_Vector.Context_Type := Derivation.Av_Enumeration_Vector.Create;
+      Context          : Derivation.Message.Context := Derivation.Message.Create;
+      Length           : Derivation.Length;
+      Sequence_Context : Derivation.Av_Enumeration_Vector.Context := Derivation.Av_Enumeration_Vector.Create;
       Element          : Derivation.AV_Enumeration;
    begin
       Derivation.Message.Initialize (Context, Buffer);
@@ -348,7 +348,7 @@ package body RFLX.Derivation.Tests is
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          if Derivation.Message.Present (Context, Derivation.Message.F_AV_Enumeration_Vector) then
             Derivation.Message.Switch (Context, Sequence_Context);
@@ -399,9 +399,9 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
-      Context          : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length           : Derivation.Length_Type;
-      Sequence_Context : Derivation.Av_Enumeration_Vector.Context_Type := Derivation.Av_Enumeration_Vector.Create;
+      Context          : Derivation.Message.Context := Derivation.Message.Create;
+      Length           : Derivation.Length;
+      Sequence_Context : Derivation.Av_Enumeration_Vector.Context := Derivation.Av_Enumeration_Vector.Create;
       Element          : Derivation.AV_Enumeration;
       I                : Natural := 1;
    begin
@@ -410,7 +410,7 @@ package body RFLX.Derivation.Tests is
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          if Derivation.Message.Present (Context, Derivation.Message.F_AV_Enumeration_Vector) then
             Derivation.Message.Switch (Context, Sequence_Context);
@@ -454,20 +454,20 @@ package body RFLX.Derivation.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
-      Context : Derivation.Message.Context_Type := Derivation.Message.Create;
-      Length  : Derivation.Length_Type;
+      Context : Derivation.Message.Context := Derivation.Message.Create;
+      Length  : Derivation.Length;
    begin
       Derivation.Message.Initialize (Context, Buffer);
 
       Derivation.Message.Verify_Message (Context);
       if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
          Length := Derivation.Message.Get_Length (Context);
-         Assert (Length'Image, Derivation.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Derivation.Length'Image (4), "Unexpected Length");
 
          Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Derivation.Modular_Vector.Context_Type := Derivation.Modular_Vector.Create;
+            Sequence_Context : Derivation.Modular_Vector.Context := Derivation.Modular_Vector.Create;
             Element          : Derivation.Modular_Integer;
             I                : Natural := 1;
          begin
@@ -502,7 +502,7 @@ package body RFLX.Derivation.Tests is
          Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Derivation.Range_Vector.Context_Type := Derivation.Range_Vector.Create;
+            Sequence_Context : Derivation.Range_Vector.Context := Derivation.Range_Vector.Create;
             Element          : Derivation.Range_Integer;
             I                : Natural := 1;
          begin
@@ -537,7 +537,7 @@ package body RFLX.Derivation.Tests is
          Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Derivation.Enumeration_Vector.Context_Type := Derivation.Enumeration_Vector.Create;
+            Sequence_Context : Derivation.Enumeration_Vector.Context := Derivation.Enumeration_Vector.Create;
             Element          : Derivation.Enumeration;
             I                : Natural := 1;
          begin
@@ -572,7 +572,7 @@ package body RFLX.Derivation.Tests is
          Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Derivation.Av_Enumeration_Vector.Context_Type := Derivation.Av_Enumeration_Vector.Create;
+            Sequence_Context : Derivation.Av_Enumeration_Vector.Context := Derivation.Av_Enumeration_Vector.Create;
             Element          : Derivation.AV_Enumeration;
             I                : Natural := 1;
          begin

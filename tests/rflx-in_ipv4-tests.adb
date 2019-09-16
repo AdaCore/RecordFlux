@@ -25,8 +25,8 @@ package body RFLX.In_IPv4.Tests is
    is
       pragma Unreferenced (T);
       Buffer               : Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
-      IPv4_Packet_Context  : IPv4.Packet.Context_Type := IPv4.Packet.Create;
-      UDP_Datagram_Context : UDP.Datagram.Context_Type := UDP.Datagram.Create;
+      IPv4_Packet_Context  : IPv4.Packet.Context := IPv4.Packet.Create;
+      UDP_Datagram_Context : UDP.Datagram.Context := UDP.Datagram.Create;
       Valid                : Boolean;
    begin
       IPv4.Packet.Initialize (IPv4_Packet_Context, Buffer);
@@ -50,9 +50,9 @@ package body RFLX.In_IPv4.Tests is
    is
       pragma Unreferenced (T);
       Buffer                 : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Ethernet_Frame_Context : Ethernet.Frame.Context_Type := Ethernet.Frame.Create;
-      IPv4_Packet_Context    : IPv4.Packet.Context_Type := IPv4.Packet.Create;
-      UDP_Datagram_Context   : UDP.Datagram.Context_Type := UDP.Datagram.Create;
+      Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
+      IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
+      UDP_Datagram_Context   : UDP.Datagram.Context := UDP.Datagram.Create;
       Valid                  : Boolean;
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);

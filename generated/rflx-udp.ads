@@ -1,86 +1,86 @@
 with RFLX.Types;
-use type RFLX.Types.Bytes, RFLX.Types.Bytes_Ptr, RFLX.Types.Index_Type, RFLX.Types.Length_Type, RFLX.Types.Bit_Index_Type, RFLX.Types.Bit_Length_Type;
+use type RFLX.Types.Bytes, RFLX.Types.Bytes_Ptr, RFLX.Types.Index, RFLX.Types.Length, RFLX.Types.Bit_Index, RFLX.Types.Bit_Length;
 
 package RFLX.UDP with
   SPARK_Mode
 is
 
-   type Port_Type is mod 2**16;
+   type Port is mod 2**16;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Port_Type return Port_Type is
-     (Port_Type'First)
+   function Unreachable_Port return Port is
+     (Port'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Mod (Port_Type);
+   function Convert is new RFLX.Types.Convert_To_Mod (Port);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
-   function Valid (Value : Port_Type) return Boolean is
+   function Valid (Value : Port) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Value""");
 
-   function Convert (Value : Port_Type) return Port_Type is
+   function Convert (Value : Port) return Port is
      (Value)
     with
      Pre =>
        Valid (Value);
 
-   type Length_Type_Base is range 0 .. 2**16 - 1 with
+   type Length_Base is range 0 .. 2**16 - 1 with
      Size =>
        16;
 
-   subtype Length_Type is Length_Type_Base range 8 .. 2**16 - 1;
+   subtype Length is Length_Base range 8 .. 2**16 - 1;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Length_Type return Length_Type is
-     (Length_Type'First)
+   function Unreachable_Length return Length is
+     (Length'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Int (Length_Type_Base);
+   function Convert is new RFLX.Types.Convert_To_Int (Length_Base);
 
-   function Valid (Value : Length_Type_Base) return Boolean is
+   function Valid (Value : Length_Base) return Boolean is
      (Value >= 8);
 
-   function Convert (Value : Length_Type_Base) return Length_Type is
+   function Convert (Value : Length_Base) return Length is
      (Value)
     with
      Pre =>
        Valid (Value);
 
-   type Checksum_Type is mod 2**16;
+   type Checksum is mod 2**16;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Checksum_Type return Checksum_Type is
-     (Checksum_Type'First)
+   function Unreachable_Checksum return Checksum is
+     (Checksum'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Mod (Checksum_Type);
+   function Convert is new RFLX.Types.Convert_To_Mod (Checksum);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
-   function Valid (Value : Checksum_Type) return Boolean is
+   function Valid (Value : Checksum) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Value""");
 
-   function Convert (Value : Checksum_Type) return Checksum_Type is
+   function Convert (Value : Checksum) return Checksum is
      (Value)
     with
      Pre =>

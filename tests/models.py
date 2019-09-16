@@ -9,11 +9,11 @@ def create_null_message() -> Message:
 
 
 def create_tlv_message() -> Message:
-    tag_type = Enumeration('Tag_Type',
+    tag_type = Enumeration('Tag',
                            {'Msg_Data': Number(1), 'Msg_Error': Number(3)},
                            Number(2),
                            False)
-    length_type = ModularInteger('Length_Type', Pow(Number(2), Number(14)))
+    length_type = ModularInteger('Length', Pow(Number(2), Number(14)))
 
     structure = [
         Link(INITIAL, Field('Tag')),
@@ -40,16 +40,16 @@ def create_null_message_in_tlv_message() -> Refinement:
 
 
 def create_ethernet_frame() -> Message:
-    address_type = ModularInteger('Address_Type', Pow(Number(2), Number(48)))
-    type_length_type = RangeInteger('Type_Length_Type',
+    address_type = ModularInteger('Address', Pow(Number(2), Number(48)))
+    type_length_type = RangeInteger('Type_Length',
                                     Number(46),
                                     Sub(Pow(Number(2), Number(16)), Number(1)),
                                     Number(16))
-    tpid_type = RangeInteger('TPID_Type',
+    tpid_type = RangeInteger('TPID',
                              Number(0x8100),
                              Number(0x8100),
                              Number(16))
-    tci_type = ModularInteger('TCI_Type',
+    tci_type = ModularInteger('TCI',
                               Pow(Number(2), Number(16)))
 
     structure = [
@@ -107,7 +107,7 @@ def create_enumeration_message() -> Message:
 
 
 def create_array_message() -> Message:
-    length_type = ModularInteger('Length_Type', Pow(Number(2), Number(8)))
+    length_type = ModularInteger('Length', Pow(Number(2), Number(8)))
 
     modular_type = ModularInteger('Modular_Integer', Pow(Number(2), Number(16)))
     modular_vector_type = Array('Modular_Vector', modular_type)
@@ -152,7 +152,7 @@ def create_array_message() -> Message:
 
 
 def create_array_inner_message() -> Message:
-    length_type = ModularInteger('Length_Type', Pow(Number(2), Number(8)))
+    length_type = ModularInteger('Length', Pow(Number(2), Number(8)))
 
     structure = [
         Link(INITIAL, Field('Length')),
@@ -178,7 +178,7 @@ def create_array_messages_message() -> Message:
     ]
 
     types = {
-        Field('Length'): ModularInteger('Length_Type', Pow(Number(2), Number(8))),
+        Field('Length'): ModularInteger('Length', Pow(Number(2), Number(8))),
         Field('Messages'): Array('Inner_Messages', Reference('Inner_Message'))
     }
 
