@@ -2,348 +2,348 @@ package body RFLX.IPv4.Generic_Packet with
   SPARK_Mode
 is
 
-   function Create return Context_Type is
-     ((RFLX.Types.Index_Type'First, RFLX.Types.Index_Type'First, RFLX.Types.Bit_Index_Type'First, RFLX.Types.Bit_Index_Type'First, 0, null, RFLX.Types.Bit_Index_Type'First, F_Initial, (others => (State => S_Invalid))));
+   function Create return Context is
+     ((RFLX.Types.Index'First, RFLX.Types.Index'First, RFLX.Types.Bit_Index'First, RFLX.Types.Bit_Index'First, 0, null, RFLX.Types.Bit_Index'First, F_Initial, (others => (State => S_Invalid))));
 
-   procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr) is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr) is
    begin
-      Initialize (Context, Buffer, RFLX.Types.First_Bit_Index (Buffer'First), RFLX.Types.Last_Bit_Index (Buffer'Last));
+      Initialize (Ctx, Buffer, RFLX.Types.First_Bit_Index (Buffer'First), RFLX.Types.Last_Bit_Index (Buffer'Last));
    end Initialize;
 
-   procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index_Type) is
-      Buffer_First : constant RFLX.Types.Index_Type := Buffer'First;
-      Buffer_Last : constant RFLX.Types.Index_Type := Buffer'Last;
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index) is
+      Buffer_First : constant RFLX.Types.Index := Buffer'First;
+      Buffer_Last : constant RFLX.Types.Index := Buffer'Last;
       Buffer_Address : constant RFLX.Types.Integer_Address := RFLX.Types.Bytes_Address (Buffer);
    begin
-      Context := (Buffer_First, Buffer_Last, First, Last, Buffer_Address, Buffer, First, F_Initial, (others => (State => S_Invalid)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, Buffer_Address, Buffer, First, F_Initial, (others => (State => S_Invalid)));
       Buffer := null;
    end Initialize;
 
-   procedure Take_Buffer (Context : in out Context_Type; Buffer : out RFLX.Types.Bytes_Ptr) is
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX.Types.Bytes_Ptr) is
    begin
-      Buffer := Context.Buffer;
-      Context.Buffer := null;
+      Buffer := Ctx.Buffer;
+      Ctx.Buffer := null;
    end Take_Buffer;
 
-   function Has_Buffer (Context : Context_Type) return Boolean is
-     (Context.Buffer /= null);
+   function Has_Buffer (Ctx : Context) return Boolean is
+     (Ctx.Buffer /= null);
 
-   procedure Field_Range (Context : Context_Type; Field : Field_Type; First : out RFLX.Types.Bit_Index_Type; Last : out RFLX.Types.Bit_Index_Type) is
+   procedure Field_Range (Ctx : Context; Fld : Field; First : out RFLX.Types.Bit_Index; Last : out RFLX.Types.Bit_Index) is
    begin
-      First := Context.Cursors (Field).First;
-      Last := Context.Cursors (Field).Last;
+      First := Ctx.Cursors (Fld).First;
+      Last := Ctx.Cursors (Fld).Last;
    end Field_Range;
 
-   function Index (Context : Context_Type) return RFLX.Types.Bit_Index_Type is
-     (Context.Index);
+   function Index (Ctx : Context) return RFLX.Types.Bit_Index is
+     (Ctx.Index);
 
-   function Preliminary_Valid (Context : Context_Type; Field : Field_Type) return Boolean is
-     ((Context.Cursors (Field).State = S_Valid
-        or Context.Cursors (Field).State = S_Structural_Valid
-        or Context.Cursors (Field).State = S_Preliminary)
-      and then Context.Cursors (Field).Value.Field = Field);
+   function Preliminary_Valid (Ctx : Context; Fld : Field) return Boolean is
+     ((Ctx.Cursors (Fld).State = S_Valid
+        or Ctx.Cursors (Fld).State = S_Structural_Valid
+        or Ctx.Cursors (Fld).State = S_Preliminary)
+      and then Ctx.Cursors (Fld).Value.Fld = Fld);
 
-   function Preliminary_Valid_Predecessors (Context : Context_Type; Field : All_Field_Type) return Boolean is
-     ((case Field is
+   function Preliminary_Valid_Predecessors (Ctx : Context; Fld : Virtual_Field) return Boolean is
+     ((case Fld is
          when F_Initial | F_Version =>
             True,
          when F_IHL =>
-            Preliminary_Valid (Context, F_Version),
+            Preliminary_Valid (Ctx, F_Version),
          when F_DSCP =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL),
          when F_ECN =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP),
          when F_Total_Length =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN),
          when F_Identification =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length),
          when F_Flag_R =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification),
          when F_Flag_DF =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R),
          when F_Flag_MF =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF),
          when F_Fragment_Offset =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF)
-               and then Preliminary_Valid (Context, F_Flag_MF),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF)
+               and then Preliminary_Valid (Ctx, F_Flag_MF),
          when F_TTL =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF)
-               and then Preliminary_Valid (Context, F_Flag_MF)
-               and then Preliminary_Valid (Context, F_Fragment_Offset),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF)
+               and then Preliminary_Valid (Ctx, F_Flag_MF)
+               and then Preliminary_Valid (Ctx, F_Fragment_Offset),
          when F_Protocol =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF)
-               and then Preliminary_Valid (Context, F_Flag_MF)
-               and then Preliminary_Valid (Context, F_Fragment_Offset)
-               and then Preliminary_Valid (Context, F_TTL),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF)
+               and then Preliminary_Valid (Ctx, F_Flag_MF)
+               and then Preliminary_Valid (Ctx, F_Fragment_Offset)
+               and then Preliminary_Valid (Ctx, F_TTL),
          when F_Header_Checksum =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF)
-               and then Preliminary_Valid (Context, F_Flag_MF)
-               and then Preliminary_Valid (Context, F_Fragment_Offset)
-               and then Preliminary_Valid (Context, F_TTL)
-               and then Preliminary_Valid (Context, F_Protocol),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF)
+               and then Preliminary_Valid (Ctx, F_Flag_MF)
+               and then Preliminary_Valid (Ctx, F_Fragment_Offset)
+               and then Preliminary_Valid (Ctx, F_TTL)
+               and then Preliminary_Valid (Ctx, F_Protocol),
          when F_Source =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF)
-               and then Preliminary_Valid (Context, F_Flag_MF)
-               and then Preliminary_Valid (Context, F_Fragment_Offset)
-               and then Preliminary_Valid (Context, F_TTL)
-               and then Preliminary_Valid (Context, F_Protocol)
-               and then Preliminary_Valid (Context, F_Header_Checksum),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF)
+               and then Preliminary_Valid (Ctx, F_Flag_MF)
+               and then Preliminary_Valid (Ctx, F_Fragment_Offset)
+               and then Preliminary_Valid (Ctx, F_TTL)
+               and then Preliminary_Valid (Ctx, F_Protocol)
+               and then Preliminary_Valid (Ctx, F_Header_Checksum),
          when F_Destination =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF)
-               and then Preliminary_Valid (Context, F_Flag_MF)
-               and then Preliminary_Valid (Context, F_Fragment_Offset)
-               and then Preliminary_Valid (Context, F_TTL)
-               and then Preliminary_Valid (Context, F_Protocol)
-               and then Preliminary_Valid (Context, F_Header_Checksum)
-               and then Preliminary_Valid (Context, F_Source),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF)
+               and then Preliminary_Valid (Ctx, F_Flag_MF)
+               and then Preliminary_Valid (Ctx, F_Fragment_Offset)
+               and then Preliminary_Valid (Ctx, F_TTL)
+               and then Preliminary_Valid (Ctx, F_Protocol)
+               and then Preliminary_Valid (Ctx, F_Header_Checksum)
+               and then Preliminary_Valid (Ctx, F_Source),
          when F_Options | F_Payload =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF)
-               and then Preliminary_Valid (Context, F_Flag_MF)
-               and then Preliminary_Valid (Context, F_Fragment_Offset)
-               and then Preliminary_Valid (Context, F_TTL)
-               and then Preliminary_Valid (Context, F_Protocol)
-               and then Preliminary_Valid (Context, F_Header_Checksum)
-               and then Preliminary_Valid (Context, F_Source)
-               and then Preliminary_Valid (Context, F_Destination),
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF)
+               and then Preliminary_Valid (Ctx, F_Flag_MF)
+               and then Preliminary_Valid (Ctx, F_Fragment_Offset)
+               and then Preliminary_Valid (Ctx, F_TTL)
+               and then Preliminary_Valid (Ctx, F_Protocol)
+               and then Preliminary_Valid (Ctx, F_Header_Checksum)
+               and then Preliminary_Valid (Ctx, F_Source)
+               and then Preliminary_Valid (Ctx, F_Destination),
          when F_Final =>
-            Preliminary_Valid (Context, F_Version)
-               and then Preliminary_Valid (Context, F_IHL)
-               and then Preliminary_Valid (Context, F_DSCP)
-               and then Preliminary_Valid (Context, F_ECN)
-               and then Preliminary_Valid (Context, F_Total_Length)
-               and then Preliminary_Valid (Context, F_Identification)
-               and then Preliminary_Valid (Context, F_Flag_R)
-               and then Preliminary_Valid (Context, F_Flag_DF)
-               and then Preliminary_Valid (Context, F_Flag_MF)
-               and then Preliminary_Valid (Context, F_Fragment_Offset)
-               and then Preliminary_Valid (Context, F_TTL)
-               and then Preliminary_Valid (Context, F_Protocol)
-               and then Preliminary_Valid (Context, F_Header_Checksum)
-               and then Preliminary_Valid (Context, F_Source)
-               and then Preliminary_Valid (Context, F_Destination)
-               and then Preliminary_Valid (Context, F_Payload)));
+            Preliminary_Valid (Ctx, F_Version)
+               and then Preliminary_Valid (Ctx, F_IHL)
+               and then Preliminary_Valid (Ctx, F_DSCP)
+               and then Preliminary_Valid (Ctx, F_ECN)
+               and then Preliminary_Valid (Ctx, F_Total_Length)
+               and then Preliminary_Valid (Ctx, F_Identification)
+               and then Preliminary_Valid (Ctx, F_Flag_R)
+               and then Preliminary_Valid (Ctx, F_Flag_DF)
+               and then Preliminary_Valid (Ctx, F_Flag_MF)
+               and then Preliminary_Valid (Ctx, F_Fragment_Offset)
+               and then Preliminary_Valid (Ctx, F_TTL)
+               and then Preliminary_Valid (Ctx, F_Protocol)
+               and then Preliminary_Valid (Ctx, F_Header_Checksum)
+               and then Preliminary_Valid (Ctx, F_Source)
+               and then Preliminary_Valid (Ctx, F_Destination)
+               and then Preliminary_Valid (Ctx, F_Payload)));
 
-   function Valid_Predecessors (Context : Context_Type; Field : Field_Type) return Boolean is
-     ((case Field is
+   function Valid_Predecessors (Ctx : Context; Fld : Field) return Boolean is
+     ((case Fld is
          when F_Version =>
             True,
          when F_IHL =>
-            Present (Context, F_Version),
+            Present (Ctx, F_Version),
          when F_DSCP =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL),
          when F_ECN =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP),
          when F_Total_Length =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN),
          when F_Identification =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length),
          when F_Flag_R =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification),
          when F_Flag_DF =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R),
          when F_Flag_MF =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R)
-               and then Present (Context, F_Flag_DF),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R)
+               and then Present (Ctx, F_Flag_DF),
          when F_Fragment_Offset =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R)
-               and then Present (Context, F_Flag_DF)
-               and then Present (Context, F_Flag_MF),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R)
+               and then Present (Ctx, F_Flag_DF)
+               and then Present (Ctx, F_Flag_MF),
          when F_TTL =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R)
-               and then Present (Context, F_Flag_DF)
-               and then Present (Context, F_Flag_MF)
-               and then Present (Context, F_Fragment_Offset),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R)
+               and then Present (Ctx, F_Flag_DF)
+               and then Present (Ctx, F_Flag_MF)
+               and then Present (Ctx, F_Fragment_Offset),
          when F_Protocol =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R)
-               and then Present (Context, F_Flag_DF)
-               and then Present (Context, F_Flag_MF)
-               and then Present (Context, F_Fragment_Offset)
-               and then Present (Context, F_TTL),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R)
+               and then Present (Ctx, F_Flag_DF)
+               and then Present (Ctx, F_Flag_MF)
+               and then Present (Ctx, F_Fragment_Offset)
+               and then Present (Ctx, F_TTL),
          when F_Header_Checksum =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R)
-               and then Present (Context, F_Flag_DF)
-               and then Present (Context, F_Flag_MF)
-               and then Present (Context, F_Fragment_Offset)
-               and then Present (Context, F_TTL)
-               and then Present (Context, F_Protocol),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R)
+               and then Present (Ctx, F_Flag_DF)
+               and then Present (Ctx, F_Flag_MF)
+               and then Present (Ctx, F_Fragment_Offset)
+               and then Present (Ctx, F_TTL)
+               and then Present (Ctx, F_Protocol),
          when F_Source =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R)
-               and then Present (Context, F_Flag_DF)
-               and then Present (Context, F_Flag_MF)
-               and then Present (Context, F_Fragment_Offset)
-               and then Present (Context, F_TTL)
-               and then Present (Context, F_Protocol)
-               and then Present (Context, F_Header_Checksum),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R)
+               and then Present (Ctx, F_Flag_DF)
+               and then Present (Ctx, F_Flag_MF)
+               and then Present (Ctx, F_Fragment_Offset)
+               and then Present (Ctx, F_TTL)
+               and then Present (Ctx, F_Protocol)
+               and then Present (Ctx, F_Header_Checksum),
          when F_Destination =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R)
-               and then Present (Context, F_Flag_DF)
-               and then Present (Context, F_Flag_MF)
-               and then Present (Context, F_Fragment_Offset)
-               and then Present (Context, F_TTL)
-               and then Present (Context, F_Protocol)
-               and then Present (Context, F_Header_Checksum)
-               and then Present (Context, F_Source),
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R)
+               and then Present (Ctx, F_Flag_DF)
+               and then Present (Ctx, F_Flag_MF)
+               and then Present (Ctx, F_Fragment_Offset)
+               and then Present (Ctx, F_TTL)
+               and then Present (Ctx, F_Protocol)
+               and then Present (Ctx, F_Header_Checksum)
+               and then Present (Ctx, F_Source),
          when F_Options | F_Payload =>
-            Present (Context, F_Version)
-               and then Present (Context, F_IHL)
-               and then Present (Context, F_DSCP)
-               and then Present (Context, F_ECN)
-               and then Present (Context, F_Total_Length)
-               and then Present (Context, F_Identification)
-               and then Present (Context, F_Flag_R)
-               and then Present (Context, F_Flag_DF)
-               and then Present (Context, F_Flag_MF)
-               and then Present (Context, F_Fragment_Offset)
-               and then Present (Context, F_TTL)
-               and then Present (Context, F_Protocol)
-               and then Present (Context, F_Header_Checksum)
-               and then Present (Context, F_Source)
-               and then Present (Context, F_Destination)))
+            Present (Ctx, F_Version)
+               and then Present (Ctx, F_IHL)
+               and then Present (Ctx, F_DSCP)
+               and then Present (Ctx, F_ECN)
+               and then Present (Ctx, F_Total_Length)
+               and then Present (Ctx, F_Identification)
+               and then Present (Ctx, F_Flag_R)
+               and then Present (Ctx, F_Flag_DF)
+               and then Present (Ctx, F_Flag_MF)
+               and then Present (Ctx, F_Fragment_Offset)
+               and then Present (Ctx, F_TTL)
+               and then Present (Ctx, F_Protocol)
+               and then Present (Ctx, F_Header_Checksum)
+               and then Present (Ctx, F_Source)
+               and then Present (Ctx, F_Destination)))
     with
      Post =>
-       (if Valid_Predecessors'Result then Preliminary_Valid_Predecessors (Context, Field));
+       (if Valid_Predecessors'Result then Preliminary_Valid_Predecessors (Ctx, Fld));
 
-   function Valid_Target (Source_Field, Target_Field : All_Field_Type) return Boolean is
+   function Valid_Target (Source_Field, Target_Field : Virtual_Field) return Boolean is
      ((case Source_Field is
          when F_Initial =>
             Target_Field = F_Version,
@@ -385,14 +385,14 @@ is
          when F_Final =>
             False));
 
-   function Composite_Field (Field : Field_Type) return Boolean is
-     ((case Field is
+   function Composite_Field (Fld : Field) return Boolean is
+     ((case Fld is
          when F_Version | F_IHL | F_DSCP | F_ECN | F_Total_Length | F_Identification | F_Flag_R | F_Flag_DF | F_Flag_MF | F_Fragment_Offset | F_TTL | F_Protocol | F_Header_Checksum | F_Source | F_Destination =>
             False,
          when F_Options | F_Payload =>
             True));
 
-   function Field_Condition (Context : Context_Type; Source_Field, Target_Field : All_Field_Type) return Boolean is
+   function Field_Condition (Ctx : Context; Source_Field, Target_Field : Virtual_Field) return Boolean is
      ((case Source_Field is
          when F_Initial =>
             (case Target_Field is
@@ -427,7 +427,7 @@ is
          when F_Total_Length =>
             (case Target_Field is
                   when F_Identification =>
-                     RFLX.Types.Bit_Length_Type (Context.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) * 4,
+                     RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4,
                   when others =>
                      False),
          when F_Identification =>
@@ -439,7 +439,7 @@ is
          when F_Flag_R =>
             (case Target_Field is
                   when F_Flag_DF =>
-                     Context.Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False),
+                     Ctx.Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False),
                   when others =>
                      False),
          when F_Flag_DF =>
@@ -487,9 +487,9 @@ is
          when F_Destination =>
             (case Target_Field is
                   when F_Payload =>
-                     RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) = 5,
+                     RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) = 5,
                   when F_Options =>
-                     RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) > 5,
+                     RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) > 5,
                   when others =>
                      False),
          when F_Options =>
@@ -509,465 +509,465 @@ is
     with
      Pre =>
        Valid_Target (Source_Field, Target_Field)
-          and then Preliminary_Valid_Predecessors (Context, Target_Field);
+          and then Preliminary_Valid_Predecessors (Ctx, Target_Field);
 
-   function Field_Length (Context : Context_Type; Field : Field_Type) return RFLX.Types.Bit_Length_Type is
-     ((case Context.Field is
+   function Field_Length (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length is
+     ((case Ctx.Fld is
          when F_Initial =>
-            (case Field is
+            (case Fld is
                   when F_Version =>
-                     Version_Type_Base'Size,
+                     Version_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Version =>
-            (case Field is
+            (case Fld is
                   when F_IHL =>
-                     IHL_Type_Base'Size,
+                     IHL_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_IHL =>
-            (case Field is
+            (case Fld is
                   when F_DSCP =>
-                     DCSP_Type'Size,
+                     DCSP'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_DSCP =>
-            (case Field is
+            (case Fld is
                   when F_ECN =>
-                     ECN_Type'Size,
+                     ECN'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_ECN =>
-            (case Field is
+            (case Fld is
                   when F_Total_Length =>
-                     Total_Length_Type_Base'Size,
+                     Total_Length_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Total_Length =>
-            (case Field is
+            (case Fld is
                   when F_Identification =>
-                     Identification_Type'Size,
+                     Identification'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Identification =>
-            (case Field is
+            (case Fld is
                   when F_Flag_R =>
-                     Flag_Type_Base'Size,
+                     Flag_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Flag_R =>
-            (case Field is
+            (case Fld is
                   when F_Flag_DF =>
-                     Flag_Type_Base'Size,
+                     Flag_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Flag_DF =>
-            (case Field is
+            (case Fld is
                   when F_Flag_MF =>
-                     Flag_Type_Base'Size,
+                     Flag_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Flag_MF =>
-            (case Field is
+            (case Fld is
                   when F_Fragment_Offset =>
-                     Fragment_Offset_Type'Size,
+                     Fragment_Offset'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Fragment_Offset =>
-            (case Field is
+            (case Fld is
                   when F_TTL =>
-                     TTL_Type'Size,
+                     TTL'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_TTL =>
-            (case Field is
+            (case Fld is
                   when F_Protocol =>
-                     Protocol_Type_Base'Size,
+                     Protocol_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Protocol =>
-            (case Field is
+            (case Fld is
                   when F_Header_Checksum =>
-                     Header_Checksum_Type'Size,
+                     Header_Checksum'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Header_Checksum =>
-            (case Field is
+            (case Fld is
                   when F_Source =>
-                     Address_Type'Size,
+                     Address'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Source =>
-            (case Field is
+            (case Fld is
                   when F_Destination =>
-                     Address_Type'Size,
+                     Address'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Destination =>
-            (case Field is
+            (case Fld is
                   when F_Payload =>
-                     (RFLX.Types.Bit_Length_Type (Context.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - 160),
+                     (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - 160),
                   when F_Options =>
-                     (RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) * 32 - 160),
+                     (RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * 32 - 160),
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Options =>
-            (case Field is
+            (case Fld is
                   when F_Payload =>
-                     (RFLX.Types.Bit_Length_Type (Context.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) * (-32)),
+                     (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32)),
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length_Type),
+                     RFLX.Types.Unreachable_Bit_Length),
          when F_Payload | F_Final =>
             0))
     with
      Pre =>
-       Valid_Target (Context.Field, Field)
-          and then Valid_Predecessors (Context, Field)
-          and then Field_Condition (Context, Context.Field, Field);
+       Valid_Target (Ctx.Fld, Fld)
+          and then Valid_Predecessors (Ctx, Fld)
+          and then Field_Condition (Ctx, Ctx.Fld, Fld);
 
-   function Field_First (Context : Context_Type; Field : Field_Type) return RFLX.Types.Bit_Index_Type is
-     ((case Context.Field is
+   function Field_First (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Index is
+     ((case Ctx.Fld is
          when F_Initial | F_Version | F_IHL | F_DSCP | F_ECN | F_Total_Length | F_Identification | F_Flag_R | F_Flag_DF | F_Flag_MF | F_Fragment_Offset | F_TTL | F_Protocol | F_Header_Checksum | F_Source | F_Destination | F_Options | F_Payload | F_Final =>
-            Context.Index))
+            Ctx.Index))
     with
      Pre =>
-       Valid_Target (Context.Field, Field)
-          and then Valid_Predecessors (Context, Field)
-          and then Field_Condition (Context, Context.Field, Field);
+       Valid_Target (Ctx.Fld, Fld)
+          and then Valid_Predecessors (Ctx, Fld)
+          and then Field_Condition (Ctx, Ctx.Fld, Fld);
 
-   function Field_Postcondition (Context : Context_Type; Field : Field_Type) return Boolean is
-     ((case Field is
+   function Field_Postcondition (Ctx : Context; Fld : Field) return Boolean is
+     ((case Fld is
          when F_Version =>
-            Field_Condition (Context, Field, F_IHL),
+            Field_Condition (Ctx, Fld, F_IHL),
          when F_IHL =>
-            Field_Condition (Context, Field, F_DSCP),
+            Field_Condition (Ctx, Fld, F_DSCP),
          when F_DSCP =>
-            Field_Condition (Context, Field, F_ECN),
+            Field_Condition (Ctx, Fld, F_ECN),
          when F_ECN =>
-            Field_Condition (Context, Field, F_Total_Length),
+            Field_Condition (Ctx, Fld, F_Total_Length),
          when F_Total_Length =>
-            Field_Condition (Context, Field, F_Identification),
+            Field_Condition (Ctx, Fld, F_Identification),
          when F_Identification =>
-            Field_Condition (Context, Field, F_Flag_R),
+            Field_Condition (Ctx, Fld, F_Flag_R),
          when F_Flag_R =>
-            Field_Condition (Context, Field, F_Flag_DF),
+            Field_Condition (Ctx, Fld, F_Flag_DF),
          when F_Flag_DF =>
-            Field_Condition (Context, Field, F_Flag_MF),
+            Field_Condition (Ctx, Fld, F_Flag_MF),
          when F_Flag_MF =>
-            Field_Condition (Context, Field, F_Fragment_Offset),
+            Field_Condition (Ctx, Fld, F_Fragment_Offset),
          when F_Fragment_Offset =>
-            Field_Condition (Context, Field, F_TTL),
+            Field_Condition (Ctx, Fld, F_TTL),
          when F_TTL =>
-            Field_Condition (Context, Field, F_Protocol),
+            Field_Condition (Ctx, Fld, F_Protocol),
          when F_Protocol =>
-            Field_Condition (Context, Field, F_Header_Checksum),
+            Field_Condition (Ctx, Fld, F_Header_Checksum),
          when F_Header_Checksum =>
-            Field_Condition (Context, Field, F_Source),
+            Field_Condition (Ctx, Fld, F_Source),
          when F_Source =>
-            Field_Condition (Context, Field, F_Destination),
+            Field_Condition (Ctx, Fld, F_Destination),
          when F_Destination =>
-            Field_Condition (Context, Field, F_Payload)
-               or Field_Condition (Context, Field, F_Options),
+            Field_Condition (Ctx, Fld, F_Payload)
+               or Field_Condition (Ctx, Fld, F_Options),
          when F_Options =>
-            Field_Condition (Context, Field, F_Payload),
+            Field_Condition (Ctx, Fld, F_Payload),
          when F_Payload =>
-            Field_Condition (Context, Field, F_Final)))
+            Field_Condition (Ctx, Fld, F_Final)))
     with
      Pre =>
-       Valid_Predecessors (Context, Field)
-          and then Preliminary_Valid (Context, Field);
+       Valid_Predecessors (Ctx, Fld)
+          and then Preliminary_Valid (Ctx, Fld);
 
-   function Valid_Context (Context : Context_Type; Field : Field_Type) return Boolean is
-     (Valid_Target (Context.Field, Field)
-      and then Valid_Predecessors (Context, Field)
-      and then Context.Buffer /= null);
+   function Valid_Context (Ctx : Context; Fld : Field) return Boolean is
+     (Valid_Target (Ctx.Fld, Fld)
+      and then Valid_Predecessors (Ctx, Fld)
+      and then Ctx.Buffer /= null);
 
-   function Sufficient_Buffer_Length (Context : Context_Type; Field : Field_Type) return Boolean is
-     (Context.Buffer /= null
-      and then Context.First <= RFLX.Types.Bit_Index_Type'Last / 2
-      and then Field_First (Context, Field) <= RFLX.Types.Bit_Index_Type'Last / 2
-      and then Field_Length (Context, Field) >= 0
-      and then Field_Length (Context, Field) <= RFLX.Types.Bit_Length_Type'Last / 2
-      and then (Field_First (Context, Field) + Field_Length (Context, Field)) <= RFLX.Types.Bit_Length_Type'Last / 2
-      and then Context.First <= Field_First (Context, Field)
-      and then Context.Last >= ((Field_First (Context, Field) + Field_Length (Context, Field))) - 1)
+   function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Buffer /= null
+      and then Ctx.First <= RFLX.Types.Bit_Index'Last / 2
+      and then Field_First (Ctx, Fld) <= RFLX.Types.Bit_Index'Last / 2
+      and then Field_Length (Ctx, Fld) >= 0
+      and then Field_Length (Ctx, Fld) <= RFLX.Types.Bit_Length'Last / 2
+      and then (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld)) <= RFLX.Types.Bit_Length'Last / 2
+      and then Ctx.First <= Field_First (Ctx, Fld)
+      and then Ctx.Last >= ((Field_First (Ctx, Fld) + Field_Length (Ctx, Fld))) - 1)
     with
      Pre =>
-       Valid_Context (Context, Field)
-          and then Field_Condition (Context, Context.Field, Field);
+       Valid_Context (Ctx, Fld)
+          and then Field_Condition (Ctx, Ctx.Fld, Fld);
 
-   function Get_Field_Value (Context : Context_Type; Field : Field_Type) return Result_Type with
+   function Get_Field_Value (Ctx : Context; Fld : Field) return Field_Dependent_Value with
      Pre =>
-       Valid_Context (Context, Field)
-          and then Field_Condition (Context, Context.Field, Field)
-          and then Sufficient_Buffer_Length (Context, Field),
+       Valid_Context (Ctx, Fld)
+          and then Field_Condition (Ctx, Ctx.Fld, Fld)
+          and then Sufficient_Buffer_Length (Ctx, Fld),
      Post =>
-       Get_Field_Value'Result.Field = Field
+       Get_Field_Value'Result.Fld = Fld
    is
-      First : constant RFLX.Types.Bit_Index_Type := Field_First (Context, Field);
-      Length : constant RFLX.Types.Bit_Length_Type := Field_Length (Context, Field);
-      function Buffer_First return RFLX.Types.Index_Type is
+      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, Fld);
+      Length : constant RFLX.Types.Bit_Length := Field_Length (Ctx, Fld);
+      function Buffer_First return RFLX.Types.Index is
         (RFLX.Types.Byte_Index (First));
-      function Buffer_Last return RFLX.Types.Index_Type is
+      function Buffer_Last return RFLX.Types.Index is
         (RFLX.Types.Byte_Index ((First + Length - 1)))
        with
         Pre =>
           Length >= 1;
-      function Offset return RFLX.Types.Offset_Type is
-        (RFLX.Types.Offset_Type ((8 - ((First + Length - 1)) mod 8) mod 8));
+      function Offset return RFLX.Types.Offset is
+        (RFLX.Types.Offset ((8 - ((First + Length - 1)) mod 8) mod 8));
    begin
-      return ((case Field is
+      return ((case Fld is
             when F_Version =>
-               (Field => F_Version, Version_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Version, Version_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_IHL =>
-               (Field => F_IHL, IHL_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_IHL, IHL_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_DSCP =>
-               (Field => F_DSCP, DSCP_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_DSCP, DSCP_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_ECN =>
-               (Field => F_ECN, ECN_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_ECN, ECN_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Total_Length =>
-               (Field => F_Total_Length, Total_Length_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Total_Length, Total_Length_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Identification =>
-               (Field => F_Identification, Identification_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Identification, Identification_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Flag_R =>
-               (Field => F_Flag_R, Flag_R_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Flag_R, Flag_R_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Flag_DF =>
-               (Field => F_Flag_DF, Flag_DF_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Flag_DF, Flag_DF_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Flag_MF =>
-               (Field => F_Flag_MF, Flag_MF_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Flag_MF, Flag_MF_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Fragment_Offset =>
-               (Field => F_Fragment_Offset, Fragment_Offset_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Fragment_Offset, Fragment_Offset_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_TTL =>
-               (Field => F_TTL, TTL_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_TTL, TTL_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Protocol =>
-               (Field => F_Protocol, Protocol_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Protocol, Protocol_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Header_Checksum =>
-               (Field => F_Header_Checksum, Header_Checksum_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Header_Checksum, Header_Checksum_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Source =>
-               (Field => F_Source, Source_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Source, Source_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Destination =>
-               (Field => F_Destination, Destination_Value => Convert (Context.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Destination, Destination_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Options =>
-               (Field => F_Options),
+               (Fld => F_Options),
             when F_Payload =>
-               (Field => F_Payload)));
+               (Fld => F_Payload)));
    end Get_Field_Value;
 
-   procedure Verify (Context : in out Context_Type; Field : Field_Type) is
-      First : RFLX.Types.Bit_Index_Type;
-      Last : RFLX.Types.Bit_Length_Type;
-      Value : Result_Type;
+   procedure Verify (Ctx : in out Context; Fld : Field) is
+      First : RFLX.Types.Bit_Index;
+      Last : RFLX.Types.Bit_Length;
+      Value : Field_Dependent_Value;
    begin
-      if Valid_Context (Context, Field) then
-         if Field_Condition (Context, Context.Field, Field) then
-            if Sufficient_Buffer_Length (Context, Field) then
-               First := Field_First (Context, Field);
-               Last := ((First + Field_Length (Context, Field))) - 1;
-               Value := Get_Field_Value (Context, Field);
-               Context.Cursors (Field) := (State => S_Preliminary, First => First, Last => Last, Value => Value);
-               if Valid_Type (Value)
-                  and then Field_Postcondition (Context, Field) then
-                  if Composite_Field (Field) then
-                     Context.Cursors (Field) := (State => S_Structural_Valid, First => First, Last => Last, Value => Value);
+      if Valid_Context (Ctx, Fld) then
+         if Field_Condition (Ctx, Ctx.Fld, Fld) then
+            if Sufficient_Buffer_Length (Ctx, Fld) then
+               First := Field_First (Ctx, Fld);
+               Last := ((First + Field_Length (Ctx, Fld))) - 1;
+               Value := Get_Field_Value (Ctx, Fld);
+               Ctx.Cursors (Fld) := (State => S_Preliminary, First => First, Last => Last, Value => Value);
+               if Valid_Value (Value)
+                  and then Field_Postcondition (Ctx, Fld) then
+                  if Composite_Field (Fld) then
+                     Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => First, Last => Last, Value => Value);
                   else
-                     Context.Cursors (Field) := (State => S_Valid, First => First, Last => Last, Value => Value);
+                     Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Value);
                   end if;
-                  Context.Index := (Last + 1);
-                  Context.Field := Field;
+                  Ctx.Index := (Last + 1);
+                  Ctx.Fld := Fld;
                else
-                  Context.Cursors (Field) := (State => S_Invalid);
+                  Ctx.Cursors (Fld) := (State => S_Invalid);
                end if;
             else
-               Context.Cursors (Field) := (State => S_Incomplete);
+               Ctx.Cursors (Fld) := (State => S_Incomplete);
             end if;
          else
-            Context.Cursors (Field) := (State => S_Invalid);
+            Ctx.Cursors (Fld) := (State => S_Invalid);
          end if;
       end if;
    end Verify;
 
-   procedure Verify_Message (Context : in out Context_Type) is
+   procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Context, F_Version);
-      Verify (Context, F_IHL);
-      Verify (Context, F_DSCP);
-      Verify (Context, F_ECN);
-      Verify (Context, F_Total_Length);
-      Verify (Context, F_Identification);
-      Verify (Context, F_Flag_R);
-      Verify (Context, F_Flag_DF);
-      Verify (Context, F_Flag_MF);
-      Verify (Context, F_Fragment_Offset);
-      Verify (Context, F_TTL);
-      Verify (Context, F_Protocol);
-      Verify (Context, F_Header_Checksum);
-      Verify (Context, F_Source);
-      Verify (Context, F_Destination);
-      Verify (Context, F_Options);
-      Verify (Context, F_Payload);
+      Verify (Ctx, F_Version);
+      Verify (Ctx, F_IHL);
+      Verify (Ctx, F_DSCP);
+      Verify (Ctx, F_ECN);
+      Verify (Ctx, F_Total_Length);
+      Verify (Ctx, F_Identification);
+      Verify (Ctx, F_Flag_R);
+      Verify (Ctx, F_Flag_DF);
+      Verify (Ctx, F_Flag_MF);
+      Verify (Ctx, F_Fragment_Offset);
+      Verify (Ctx, F_TTL);
+      Verify (Ctx, F_Protocol);
+      Verify (Ctx, F_Header_Checksum);
+      Verify (Ctx, F_Source);
+      Verify (Ctx, F_Destination);
+      Verify (Ctx, F_Options);
+      Verify (Ctx, F_Payload);
    end Verify_Message;
 
-   function Present (Context : Context_Type; Field : Field_Type) return Boolean is
-     ((Context.Cursors (Field).State = S_Valid
-        or Context.Cursors (Field).State = S_Structural_Valid)
-      and then Context.Cursors (Field).Value.Field = Field
-      and then Context.Cursors (Field).First < (Context.Cursors (Field).Last + 1));
+   function Present (Ctx : Context; Fld : Field) return Boolean is
+     ((Ctx.Cursors (Fld).State = S_Valid
+        or Ctx.Cursors (Fld).State = S_Structural_Valid)
+      and then Ctx.Cursors (Fld).Value.Fld = Fld
+      and then Ctx.Cursors (Fld).First < (Ctx.Cursors (Fld).Last + 1));
 
-   function Structural_Valid (Context : Context_Type; Field : Field_Type) return Boolean is
-     ((Context.Cursors (Field).State = S_Valid
-        or Context.Cursors (Field).State = S_Structural_Valid));
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
+     ((Ctx.Cursors (Fld).State = S_Valid
+        or Ctx.Cursors (Fld).State = S_Structural_Valid));
 
-   function Valid (Context : Context_Type; Field : Field_Type) return Boolean is
-     (Context.Cursors (Field).State = S_Valid
-      and then Context.Cursors (Field).Value.Field = Field
-      and then Context.Cursors (Field).First < (Context.Cursors (Field).Last + 1));
+   function Valid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Valid
+      and then Ctx.Cursors (Fld).Value.Fld = Fld
+      and then Ctx.Cursors (Fld).First < (Ctx.Cursors (Fld).Last + 1));
 
-   function Incomplete (Context : Context_Type; Field : Field_Type) return Boolean is
-     (Context.Cursors (Field).State = S_Incomplete);
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Incomplete);
 
-   function Structural_Valid_Message (Context : Context_Type) return Boolean is
-     (Valid (Context, F_Version)
-      and then Valid (Context, F_IHL)
-      and then Valid (Context, F_DSCP)
-      and then Valid (Context, F_ECN)
-      and then Valid (Context, F_Total_Length)
-      and then Valid (Context, F_Identification)
-      and then RFLX.Types.Bit_Length_Type (Context.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) * 4
-      and then Valid (Context, F_Flag_R)
-      and then Valid (Context, F_Flag_DF)
-      and then Context.Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-      and then Valid (Context, F_Flag_MF)
-      and then Valid (Context, F_Fragment_Offset)
-      and then Valid (Context, F_TTL)
-      and then Valid (Context, F_Protocol)
-      and then Valid (Context, F_Header_Checksum)
-      and then Valid (Context, F_Source)
-      and then Valid (Context, F_Destination)
-      and then ((Structural_Valid (Context, F_Payload)
-          and then RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) = 5)
-        or (Structural_Valid (Context, F_Options)
-          and then RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) > 5
-          and then Structural_Valid (Context, F_Payload))));
+   function Structural_Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Version)
+      and then Valid (Ctx, F_IHL)
+      and then Valid (Ctx, F_DSCP)
+      and then Valid (Ctx, F_ECN)
+      and then Valid (Ctx, F_Total_Length)
+      and then Valid (Ctx, F_Identification)
+      and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
+      and then Valid (Ctx, F_Flag_R)
+      and then Valid (Ctx, F_Flag_DF)
+      and then Ctx.Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
+      and then Valid (Ctx, F_Flag_MF)
+      and then Valid (Ctx, F_Fragment_Offset)
+      and then Valid (Ctx, F_TTL)
+      and then Valid (Ctx, F_Protocol)
+      and then Valid (Ctx, F_Header_Checksum)
+      and then Valid (Ctx, F_Source)
+      and then Valid (Ctx, F_Destination)
+      and then ((Structural_Valid (Ctx, F_Payload)
+          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) = 5)
+        or (Structural_Valid (Ctx, F_Options)
+          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) > 5
+          and then Structural_Valid (Ctx, F_Payload))));
 
-   function Valid_Message (Context : Context_Type) return Boolean is
-     (Valid (Context, F_Version)
-      and then Valid (Context, F_IHL)
-      and then Valid (Context, F_DSCP)
-      and then Valid (Context, F_ECN)
-      and then Valid (Context, F_Total_Length)
-      and then Valid (Context, F_Identification)
-      and then RFLX.Types.Bit_Length_Type (Context.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) * 4
-      and then Valid (Context, F_Flag_R)
-      and then Valid (Context, F_Flag_DF)
-      and then Context.Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
-      and then Valid (Context, F_Flag_MF)
-      and then Valid (Context, F_Fragment_Offset)
-      and then Valid (Context, F_TTL)
-      and then Valid (Context, F_Protocol)
-      and then Valid (Context, F_Header_Checksum)
-      and then Valid (Context, F_Source)
-      and then Valid (Context, F_Destination)
-      and then ((Valid (Context, F_Payload)
-          and then RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) = 5)
-        or (Valid (Context, F_Options)
-          and then RFLX.Types.Bit_Length_Type (Context.Cursors (F_IHL).Value.IHL_Value) > 5
-          and then Valid (Context, F_Payload))));
+   function Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Version)
+      and then Valid (Ctx, F_IHL)
+      and then Valid (Ctx, F_DSCP)
+      and then Valid (Ctx, F_ECN)
+      and then Valid (Ctx, F_Total_Length)
+      and then Valid (Ctx, F_Identification)
+      and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
+      and then Valid (Ctx, F_Flag_R)
+      and then Valid (Ctx, F_Flag_DF)
+      and then Ctx.Cursors (F_Flag_R).Value.Flag_R_Value = Convert (Flag_False)
+      and then Valid (Ctx, F_Flag_MF)
+      and then Valid (Ctx, F_Fragment_Offset)
+      and then Valid (Ctx, F_TTL)
+      and then Valid (Ctx, F_Protocol)
+      and then Valid (Ctx, F_Header_Checksum)
+      and then Valid (Ctx, F_Source)
+      and then Valid (Ctx, F_Destination)
+      and then ((Valid (Ctx, F_Payload)
+          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) = 5)
+        or (Valid (Ctx, F_Options)
+          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) > 5
+          and then Valid (Ctx, F_Payload))));
 
-   function Incomplete_Message (Context : Context_Type) return Boolean is
-     (Incomplete (Context, F_Version)
-      or Incomplete (Context, F_IHL)
-      or Incomplete (Context, F_DSCP)
-      or Incomplete (Context, F_ECN)
-      or Incomplete (Context, F_Total_Length)
-      or Incomplete (Context, F_Identification)
-      or Incomplete (Context, F_Flag_R)
-      or Incomplete (Context, F_Flag_DF)
-      or Incomplete (Context, F_Flag_MF)
-      or Incomplete (Context, F_Fragment_Offset)
-      or Incomplete (Context, F_TTL)
-      or Incomplete (Context, F_Protocol)
-      or Incomplete (Context, F_Header_Checksum)
-      or Incomplete (Context, F_Source)
-      or Incomplete (Context, F_Destination)
-      or Incomplete (Context, F_Options)
-      or Incomplete (Context, F_Payload));
+   function Incomplete_Message (Ctx : Context) return Boolean is
+     (Incomplete (Ctx, F_Version)
+      or Incomplete (Ctx, F_IHL)
+      or Incomplete (Ctx, F_DSCP)
+      or Incomplete (Ctx, F_ECN)
+      or Incomplete (Ctx, F_Total_Length)
+      or Incomplete (Ctx, F_Identification)
+      or Incomplete (Ctx, F_Flag_R)
+      or Incomplete (Ctx, F_Flag_DF)
+      or Incomplete (Ctx, F_Flag_MF)
+      or Incomplete (Ctx, F_Fragment_Offset)
+      or Incomplete (Ctx, F_TTL)
+      or Incomplete (Ctx, F_Protocol)
+      or Incomplete (Ctx, F_Header_Checksum)
+      or Incomplete (Ctx, F_Source)
+      or Incomplete (Ctx, F_Destination)
+      or Incomplete (Ctx, F_Options)
+      or Incomplete (Ctx, F_Payload));
 
-   function Get_Version (Context : Context_Type) return Version_Type is
-     (Context.Cursors (F_Version).Value.Version_Value);
+   function Get_Version (Ctx : Context) return Version is
+     (Ctx.Cursors (F_Version).Value.Version_Value);
 
-   function Get_IHL (Context : Context_Type) return IHL_Type is
-     (Context.Cursors (F_IHL).Value.IHL_Value);
+   function Get_IHL (Ctx : Context) return IHL is
+     (Ctx.Cursors (F_IHL).Value.IHL_Value);
 
-   function Get_DSCP (Context : Context_Type) return DCSP_Type is
-     (Context.Cursors (F_DSCP).Value.DSCP_Value);
+   function Get_DSCP (Ctx : Context) return DCSP is
+     (Ctx.Cursors (F_DSCP).Value.DSCP_Value);
 
-   function Get_ECN (Context : Context_Type) return ECN_Type is
-     (Context.Cursors (F_ECN).Value.ECN_Value);
+   function Get_ECN (Ctx : Context) return ECN is
+     (Ctx.Cursors (F_ECN).Value.ECN_Value);
 
-   function Get_Total_Length (Context : Context_Type) return Total_Length_Type is
-     (Context.Cursors (F_Total_Length).Value.Total_Length_Value);
+   function Get_Total_Length (Ctx : Context) return Total_Length is
+     (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value);
 
-   function Get_Identification (Context : Context_Type) return Identification_Type is
-     (Context.Cursors (F_Identification).Value.Identification_Value);
+   function Get_Identification (Ctx : Context) return Identification is
+     (Ctx.Cursors (F_Identification).Value.Identification_Value);
 
-   function Get_Flag_R (Context : Context_Type) return Flag_Type is
-     (Convert (Context.Cursors (F_Flag_R).Value.Flag_R_Value));
+   function Get_Flag_R (Ctx : Context) return Flag is
+     (Convert (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value));
 
-   function Get_Flag_DF (Context : Context_Type) return Flag_Type is
-     (Convert (Context.Cursors (F_Flag_DF).Value.Flag_DF_Value));
+   function Get_Flag_DF (Ctx : Context) return Flag is
+     (Convert (Ctx.Cursors (F_Flag_DF).Value.Flag_DF_Value));
 
-   function Get_Flag_MF (Context : Context_Type) return Flag_Type is
-     (Convert (Context.Cursors (F_Flag_MF).Value.Flag_MF_Value));
+   function Get_Flag_MF (Ctx : Context) return Flag is
+     (Convert (Ctx.Cursors (F_Flag_MF).Value.Flag_MF_Value));
 
-   function Get_Fragment_Offset (Context : Context_Type) return Fragment_Offset_Type is
-     (Context.Cursors (F_Fragment_Offset).Value.Fragment_Offset_Value);
+   function Get_Fragment_Offset (Ctx : Context) return Fragment_Offset is
+     (Ctx.Cursors (F_Fragment_Offset).Value.Fragment_Offset_Value);
 
-   function Get_TTL (Context : Context_Type) return TTL_Type is
-     (Context.Cursors (F_TTL).Value.TTL_Value);
+   function Get_TTL (Ctx : Context) return TTL is
+     (Ctx.Cursors (F_TTL).Value.TTL_Value);
 
-   function Get_Protocol (Context : Context_Type) return Protocol_Type is
-     (Convert (Context.Cursors (F_Protocol).Value.Protocol_Value));
+   function Get_Protocol (Ctx : Context) return Protocol is
+     (Convert (Ctx.Cursors (F_Protocol).Value.Protocol_Value));
 
-   function Get_Header_Checksum (Context : Context_Type) return Header_Checksum_Type is
-     (Context.Cursors (F_Header_Checksum).Value.Header_Checksum_Value);
+   function Get_Header_Checksum (Ctx : Context) return Header_Checksum is
+     (Ctx.Cursors (F_Header_Checksum).Value.Header_Checksum_Value);
 
-   function Get_Source (Context : Context_Type) return Address_Type is
-     (Context.Cursors (F_Source).Value.Source_Value);
+   function Get_Source (Ctx : Context) return Address is
+     (Ctx.Cursors (F_Source).Value.Source_Value);
 
-   function Get_Destination (Context : Context_Type) return Address_Type is
-     (Context.Cursors (F_Destination).Value.Destination_Value);
+   function Get_Destination (Ctx : Context) return Address is
+     (Ctx.Cursors (F_Destination).Value.Destination_Value);
 
-   procedure Get_Options (Context : Context_Type) is
-      First : constant RFLX.Types.Index_Type := RFLX.Types.Byte_Index (Context.Cursors (F_Options).First);
-      Last : constant RFLX.Types.Index_Type := RFLX.Types.Byte_Index (Context.Cursors (F_Options).Last);
+   procedure Get_Options (Ctx : Context) is
+      First : constant RFLX.Types.Index := RFLX.Types.Byte_Index (Ctx.Cursors (F_Options).First);
+      Last : constant RFLX.Types.Index := RFLX.Types.Byte_Index (Ctx.Cursors (F_Options).Last);
    begin
-      Process_Options (Context.Buffer.all (First .. Last));
+      Process_Options (Ctx.Buffer.all (First .. Last));
    end Get_Options;
 
-   procedure Get_Payload (Context : Context_Type) is
-      First : constant RFLX.Types.Index_Type := RFLX.Types.Byte_Index (Context.Cursors (F_Payload).First);
-      Last : constant RFLX.Types.Index_Type := RFLX.Types.Byte_Index (Context.Cursors (F_Payload).Last);
+   procedure Get_Payload (Ctx : Context) is
+      First : constant RFLX.Types.Index := RFLX.Types.Byte_Index (Ctx.Cursors (F_Payload).First);
+      Last : constant RFLX.Types.Index := RFLX.Types.Byte_Index (Ctx.Cursors (F_Payload).Last);
    begin
-      Process_Payload (Context.Buffer.all (First .. Last));
+      Process_Payload (Ctx.Buffer.all (First .. Last));
    end Get_Payload;
 
-   procedure Switch (Context : in out Context_Type; Sequence_Context : out Options_Sequence.Context_Type) is
+   procedure Switch (Ctx : in out Context; Sequence_Context : out Options_Sequence.Context) is
       Buffer : RFLX.Types.Bytes_Ptr;
    begin
-      Take_Buffer (Context, Buffer);
+      Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Options_Sequence.Initialize (Sequence_Context, Buffer, Context.Buffer_First, Context.Buffer_Last, Context.Cursors (F_Options).First, Context.Cursors (F_Options).Last);
+      Options_Sequence.Initialize (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.Cursors (F_Options).First, Ctx.Cursors (F_Options).Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch;
 
-   procedure Update (Context : in out Context_Type; Sequence_Context : in out Options_Sequence.Context_Type) is
+   procedure Update (Ctx : in out Context; Sequence_Context : in out Options_Sequence.Context) is
       Valid_Sequence : constant Boolean := Options_Sequence.Valid (Sequence_Context);
       Buffer : RFLX.Types.Bytes_Ptr;
    begin
-      Options_Sequence.Take_Buffer (Sequence_Context, Buffer, Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last);
-      Context.Buffer := Buffer;
+      Options_Sequence.Take_Buffer (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last);
+      Ctx.Buffer := Buffer;
       if Valid_Sequence then
-         Context.Cursors (F_Options) := (State => S_Valid, First => Context.Cursors (F_Options).First, Last => Context.Cursors (F_Options).Last, Value => Context.Cursors (F_Options).Value);
+         Ctx.Cursors (F_Options) := (State => S_Valid, First => Ctx.Cursors (F_Options).First, Last => Ctx.Cursors (F_Options).Last, Value => Ctx.Cursors (F_Options).Value);
       end if;
    end Update;
 

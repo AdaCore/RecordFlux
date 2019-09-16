@@ -1,64 +1,64 @@
 package IPv4 is
 
-   type Version_Type is range 4 .. 4 with Size => 4;
-   type IHL_Type is range 5 .. 15 with Size => 4;
-   type DCSP_Type is mod 2**6;
-   type ECN_Type is mod 2**2;
-   type Total_Length_Type is range 20 .. 2**16 - 1 with Size => 16;
-   type Identification_Type is mod 2**16;
-   type Flag_Type is (Flag_False, Flag_True) with Size => 1;
-   type Fragment_Offset_Type is mod 2**13;
-   type TTL_Type is mod 2**8;
-   type Protocol_Type is (PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
-   type Header_Checksum_Type is mod 2**16;
-   type Address_Type is mod 2**32;
+   type Version is range 4 .. 4 with Size => 4;
+   type IHL is range 5 .. 15 with Size => 4;
+   type DCSP is mod 2**6;
+   type ECN is mod 2**2;
+   type Total_Length is range 20 .. 2**16 - 1 with Size => 16;
+   type Identification is mod 2**16;
+   type Flag is (Flag_False, Flag_True) with Size => 1;
+   type Fragment_Offset is mod 2**13;
+   type TTL is mod 2**8;
+   type Protocol is (PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
+   type Header_Checksum is mod 2**16;
+   type Address is mod 2**32;
 
-   type Option_Class_Type is (Control => 0, Debugging_And_Measurement => 2) with Size => 2;
-   type Option_Number_Type is mod 2**5;
-   type Option_Length_Type is range 2 .. 2**8 - 1 with Size => 8;
+   type Option_Class is (Control => 0, Debugging_And_Measurement => 2) with Size => 2;
+   type Option_Number is mod 2**5;
+   type Option_Length is range 2 .. 2**8 - 1 with Size => 8;
 
    type Option is
       message
-         Copied : Flag_Type;
-         Option_Class : Option_Class_Type;
-         Option_Number : Option_Number_Type
+         Copied : Flag;
+         Option_Class : Option_Class;
+         Option_Number : Option_Number
             then null
                if Option_Class = Control and Option_Number = 1,
             then Option_Length
                if Option_Number > 1;
-         Option_Length : Option_Length_Type
+         Option_Length : Option_Length
             then Option_Data
                with Length => (Option_Length - 2) * 8
                if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
                   or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
                   or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
                   or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
-         Option_Data : Payload_Type;
+         Option_Data : Payload;
       end message;
 
    type Options is array of Option;
 
    type Packet is
       message
-         Version : Version_Type;
-         IHL : IHL_Type;
-         DSCP : DCSP_Type;
-         ECN : ECN_Type;
-         Total_Length : Total_Length_Type
+         Version : Version;
+         IHL : IHL;
+         DSCP : DCSP;
+         ECN : ECN;
+         Total_Length : Total_Length
             then Identification
                if Total_Length >= IHL * 4;
-         Identification : Identification_Type;
-         Flag_R : Flag_Type
+         Identification : Identification;
+         Flag_R : Flag
             then Flag_DF
                if Flag_R = Flag_False;
-         Flag_DF : Flag_Type;
-         Flag_MF : Flag_Type;
-         Fragment_Offset : Fragment_Offset_Type;
-         TTL : TTL_Type;
-         Protocol : Protocol_Type;
-         Header_Checksum : Header_Checksum_Type;
-         Source : Address_Type;
-         Destination : Address_Type
+         Flag_DF : Flag;
+         Flag_MF : Flag;
+         Fragment_Offset : Fragment_Offset;
+         TTL : TTL;
+         Protocol : Protocol;
+         Header_Checksum : Header_Checksum;
+         Source : Address;
+         Destination : Address
             then Payload
                with Length => Total_Length * 8 - (5 * 32)
                if IHL = 5,
@@ -68,7 +68,7 @@ package IPv4 is
          Options : Options
             then Payload
                with Length => Total_Length * 8 - (IHL * 32);
-         Payload : Payload_Type;
+         Payload : Payload;
       end message;
 
 end IPv4;

@@ -11,7 +11,7 @@ package body RFLX.TLV.Tests is
       return AUnit.Format ("TLV");
    end Name;
 
-   Value_Length : Types.Length_Type;
+   Value_Length : Types.Length;
 
    procedure Store_Value_Length (Buffer : Types.Bytes) is
    begin
@@ -28,25 +28,25 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := new Types.Bytes'(64, 4, 0, 0, 0, 0);
-      Context : TLV.Message.Context_Type := TLV.Message.Create;
-      Tag     : TLV.Tag_Type;
-      Length  : TLV.Length_Type;
+      Context : TLV.Message.Context := TLV.Message.Create;
+      Tag     : TLV.Tag;
+      Length  : TLV.Length;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Verify_Message (Context);
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
          Tag := TLV.Message.Get_Tag (Context);
-         Assert (Tag'Image, TLV.Tag_Type'Image (TLV.Msg_Data), "Unexpected Tag");
+         Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Data), "Unexpected Tag");
          Assert (Convert (Tag) = 1, "Invalid conversion of Tag");
          Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
          if TLV.Message.Valid (Context, TLV.Message.F_Length) then
             Length := TLV.Message.Get_Length (Context);
-            Assert (Length'Image, TLV.Length_Type'Image (4), "Unexpected Length");
+            Assert (Length'Image, TLV.Length'Image (4), "Unexpected Length");
             Assert (TLV.Message.Present (Context, TLV.Message.F_Value), "Invalid Value");
             if TLV.Message.Present (Context, TLV.Message.F_Value) then
                Get_Value_Length (Context);
-               Assert (Value_Length'Image, Types.Length_Type'Image (4), "Unexpected Value length");
+               Assert (Value_Length'Image, Types.Length'Image (4), "Unexpected Value length");
             end if;
          end if;
       end if;
@@ -59,20 +59,20 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := new Types.Bytes'(64, 0);
-      Context : TLV.Message.Context_Type := TLV.Message.Create;
-      Tag     : TLV.Tag_Type;
-      Length  : TLV.Length_Type;
+      Context : TLV.Message.Context := TLV.Message.Create;
+      Tag     : TLV.Tag;
+      Length  : TLV.Length;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Verify_Message (Context);
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
          Tag := TLV.Message.Get_Tag (Context);
-         Assert (Tag'Image, TLV.Tag_Type'Image (TLV.Msg_Data), "Unexpected Tag");
+         Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Data), "Unexpected Tag");
          Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
          if TLV.Message.Valid (Context, TLV.Message.F_Length) then
             Length := TLV.Message.Get_Length (Context);
-            Assert (Length'Image, TLV.Length_Type'Image (0), "Unexpected Length");
+            Assert (Length'Image, TLV.Length'Image (0), "Unexpected Length");
             Assert (not TLV.Message.Present (Context, TLV.Message.F_Value), "Valid Value");
          end if;
       end if;
@@ -85,15 +85,15 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := new Types.Bytes'(1 => 192);
-      Context : TLV.Message.Context_Type := TLV.Message.Create;
-      Tag     : TLV.Tag_Type;
+      Context : TLV.Message.Context := TLV.Message.Create;
+      Tag     : TLV.Tag;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Verify_Message (Context);
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
          Tag := TLV.Message.Get_Tag (Context);
-         Assert (Tag'Image, TLV.Tag_Type'Image (TLV.Msg_Error), "Unexpected Tag");
+         Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Error), "Unexpected Tag");
       end if;
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
       Assert (TLV.Message.Valid_Message (Context), "Invalid Message");
@@ -104,7 +104,7 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := new Types.Bytes'(0, 0);
-      Context : TLV.Message.Context_Type := TLV.Message.Create;
+      Context : TLV.Message.Context := TLV.Message.Create;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Verify_Message (Context);

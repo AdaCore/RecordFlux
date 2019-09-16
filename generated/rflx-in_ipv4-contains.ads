@@ -7,14 +7,14 @@ package RFLX.In_IPv4.Contains with
   SPARK_Mode
 is
 
-   function UDP_Datagram_In_IPv4_Packet_Payload (Context : IPv4.Packet.Context_Type) return Boolean is
-     (IPv4.Packet.Has_Buffer (Context)
-      and then IPv4.Packet.Present (Context, IPv4.Packet.F_Payload)
-      and then IPv4.Packet.Valid (Context, IPv4.Packet.F_Protocol)
-      and then IPv4.Packet.Get_Protocol (Context).Known
-      and then IPv4.Packet.Get_Protocol (Context).Enum = PROTOCOL_UDP);
+   function UDP_Datagram_In_IPv4_Packet_Payload (Ctx : IPv4.Packet.Context) return Boolean is
+     (IPv4.Packet.Has_Buffer (Ctx)
+      and then IPv4.Packet.Present (Ctx, IPv4.Packet.F_Payload)
+      and then IPv4.Packet.Valid (Ctx, IPv4.Packet.F_Protocol)
+      and then IPv4.Packet.Get_Protocol (Ctx).Known
+      and then IPv4.Packet.Get_Protocol (Ctx).Enum = PROTOCOL_UDP);
 
-   procedure Switch (IPv4_Packet_Context : in out IPv4.Packet.Context_Type; UDP_Datagram_Context : out UDP.Datagram.Context_Type) with
+   procedure Switch (IPv4_Packet_Context : in out IPv4.Packet.Context; UDP_Datagram_Context : out UDP.Datagram.Context) with
      Pre =>
        not IPv4_Packet_Context'Constrained
           and then not UDP_Datagram_Context'Constrained

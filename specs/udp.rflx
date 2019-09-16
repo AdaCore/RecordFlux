@@ -1,18 +1,18 @@
 package UDP is
 
-   type Port_Type is mod 2**16;
-   type Length_Type is range 8 .. 2**16 - 1 with Size => 16;
-   type Checksum_Type is mod 2**16;
+   type Port is mod 2**16;
+   type Length is range 8 .. 2**16 - 1 with Size => 16;
+   type Checksum is mod 2**16;
 
    type Datagram is
       message
-         Source_Port : Port_Type;
-         Destination_Port : Port_Type;
-         Length : Length_Type;
-         Checksum : Checksum_Type
+         Source_Port : Port;
+         Destination_Port : Port;
+         Length : Length;
+         Checksum : Checksum
             then Payload
                with Length => (Length - 8) * 8;
-         Payload : Payload_Type;
+         Payload : Payload;
       end message;
 
 end UDP;

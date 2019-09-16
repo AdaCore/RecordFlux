@@ -1,22 +1,22 @@
 with RFLX.Types;
-use type RFLX.Types.Bytes, RFLX.Types.Bytes_Ptr, RFLX.Types.Index_Type, RFLX.Types.Length_Type, RFLX.Types.Bit_Index_Type, RFLX.Types.Bit_Length_Type;
+use type RFLX.Types.Bytes, RFLX.Types.Bytes_Ptr, RFLX.Types.Index, RFLX.Types.Length, RFLX.Types.Bit_Index, RFLX.Types.Bit_Length;
 with RFLX.Arrays;
 
 package RFLX.Derivation with
   SPARK_Mode
 is
 
-   subtype Length_Type is Arrays.Length_Type;
+   subtype Length is Arrays.Length;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset_Type) return Length_Type renames Arrays.Convert;
+   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Length renames Arrays.Convert;
 
-   function Valid (Value : Length_Type) return Boolean renames Arrays.Valid;
+   function Valid (Value : Length) return Boolean renames Arrays.Valid;
 
-   function Convert (Value : Length_Type) return Length_Type renames Arrays.Convert;
+   function Convert (Value : Length) return Length renames Arrays.Convert;
 
    subtype Modular_Integer is Arrays.Modular_Integer;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset_Type) return Modular_Integer renames Arrays.Convert;
+   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Modular_Integer renames Arrays.Convert;
 
    function Valid (Value : Modular_Integer) return Boolean renames Arrays.Valid;
 
@@ -26,7 +26,7 @@ is
 
    subtype Range_Integer is Arrays.Range_Integer;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset_Type) return Range_Integer_Base renames Arrays.Convert;
+   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Range_Integer_Base renames Arrays.Convert;
 
    function Valid (Value : Range_Integer_Base) return Boolean renames Arrays.Valid;
 
@@ -36,7 +36,7 @@ is
 
    subtype Enumeration is Arrays.Enumeration;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset_Type) return Enumeration_Base renames Arrays.Convert;
+   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Enumeration_Base renames Arrays.Convert;
 
    function Valid (Value : Enumeration_Base) return Boolean renames Arrays.Valid;
 
@@ -56,7 +56,7 @@ is
 
    subtype AV_Enumeration is Arrays.AV_Enumeration;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset_Type) return AV_Enumeration_Base renames Arrays.Convert;
+   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return AV_Enumeration_Base renames Arrays.Convert;
 
    function Valid (Value : AV_Enumeration_Base) return Boolean renames Arrays.Valid;
 

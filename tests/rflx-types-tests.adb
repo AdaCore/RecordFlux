@@ -13,20 +13,20 @@ package body RFLX.Types.Tests is
    is
       pragma Unreferenced (T);
    begin
-      Assert (First_Bit_Index (Index_Type'First)'Img, " 1", "Invalid first bit index for Index_Type'First");
-      Assert (First_Bit_Index (Index_Type'Last)'Img, " 17179869169", "Invalid first bit index for Index_Type'Last");
+      Assert (First_Bit_Index (Index'First)'Img, " 1", "Invalid first bit index for Index'First");
+      Assert (First_Bit_Index (Index'Last)'Img, " 17179869169", "Invalid first bit index for Index'Last");
 
-      Assert (Last_Bit_Index (Index_Type'First)'Img, " 8", "Invalid last bit index for Index_Type'First");
-      Assert (Last_Bit_Index (Index_Type'Last)'Img, " 17179869176", "Invalid last bit index for Index_Type'Last");
+      Assert (Last_Bit_Index (Index'First)'Img, " 8", "Invalid last bit index for Index'First");
+      Assert (Last_Bit_Index (Index'Last)'Img, " 17179869176", "Invalid last bit index for Index'Last");
 
-      Assert (Byte_Index (First_Bit_Index (Index_Type'First))'Img, " 1", "Invalid conversion between byte index and first bit index");
-      Assert (Byte_Index (First_Bit_Index (Index_Type'Last))'Img, " 2147483647", "Invalid conversion between byte index and first bit index");
+      Assert (Byte_Index (First_Bit_Index (Index'First))'Img, " 1", "Invalid conversion between byte index and first bit index");
+      Assert (Byte_Index (First_Bit_Index (Index'Last))'Img, " 2147483647", "Invalid conversion between byte index and first bit index");
 
-      Assert (Byte_Index (Last_Bit_Index (Index_Type'First))'Img, " 1", "Invalid conversion between byte index and last bit index");
-      Assert (Byte_Index (Last_Bit_Index (Index_Type'Last))'Img, " 2147483647", "Invalid conversion between byte index and last bit index");
+      Assert (Byte_Index (Last_Bit_Index (Index'First))'Img, " 1", "Invalid conversion between byte index and last bit index");
+      Assert (Byte_Index (Last_Bit_Index (Index'Last))'Img, " 2147483647", "Invalid conversion between byte index and last bit index");
 
-      Assert (Byte_Index (Bit_Index_Type'First)'Img, " 1", "Invalid byte index for Bit_Index_Type'First");
-      Assert (Byte_Index (Bit_Index_Type'Last)'Img, " 2147483647", "Invalid byte index for Bit_Index_Type'Last");
+      Assert (Byte_Index (Bit_Index'First)'Img, " 1", "Invalid byte index for Bit_Index'First");
+      Assert (Byte_Index (Bit_Index'Last)'Img, " 2147483647", "Invalid byte index for Bit_Index'Last");
    end Test_Index_Calculations;
 
    procedure Test_Convert_To_Mod (T : in out Aunit.Test_Cases.Test_Case'Class) with

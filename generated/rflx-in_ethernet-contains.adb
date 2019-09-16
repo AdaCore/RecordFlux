@@ -2,9 +2,9 @@ package body RFLX.In_Ethernet.Contains with
   SPARK_Mode
 is
 
-   procedure Switch (Ethernet_Frame_Context : in out Ethernet.Frame.Context_Type; IPv4_Packet_Context : out IPv4.Packet.Context_Type) is
-      First : RFLX.Types.Bit_Index_Type;
-      Last : RFLX.Types.Bit_Index_Type;
+   procedure Switch (Ethernet_Frame_Context : in out Ethernet.Frame.Context; IPv4_Packet_Context : out IPv4.Packet.Context) is
+      First : RFLX.Types.Bit_Index;
+      Last : RFLX.Types.Bit_Index;
       Buffer : RFLX.Types.Bytes_Ptr;
    begin
       Ethernet.Frame.Field_Range (Ethernet_Frame_Context, Ethernet.Frame.F_Payload, First, Last);

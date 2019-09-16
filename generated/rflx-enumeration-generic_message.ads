@@ -8,155 +8,155 @@ is
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
-   type All_Field_Type is (F_Initial, F_Priority, F_Final);
+   type Virtual_Field is (F_Initial, F_Priority, F_Final);
 
-   subtype Field_Type is All_Field_Type range F_Priority .. F_Priority;
+   subtype Field is Virtual_Field range F_Priority .. F_Priority;
 
-   type Context_Type (Buffer_First, Buffer_Last : RFLX.Types.Index_Type := RFLX.Types.Index_Type'First; First, Last : RFLX.Types.Bit_Index_Type := RFLX.Types.Bit_Index_Type'First; Buffer_Address : RFLX.Types.Integer_Address := 0) is private with
+   type Context (Buffer_First, Buffer_Last : RFLX.Types.Index := RFLX.Types.Index'First; First, Last : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First; Buffer_Address : RFLX.Types.Integer_Address := 0) is private with
      Default_Initial_Condition =>
        False;
 
-   function Create return Context_Type;
+   function Create return Context;
 
-   procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr) with
      Pre =>
-       not Context'Constrained
+       not Ctx'Constrained
           and then Buffer /= null
-          and then Buffer'Last <= RFLX.Types.Index_Type'Last / 2,
+          and then Buffer'Last <= RFLX.Types.Index'Last / 2,
      Post =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context)
-          and then Context.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
-          and then Context.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx)
+          and then Ctx.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
+          and then Ctx.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
           and then Buffer = null;
 
-   procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index_Type) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index) with
      Pre =>
-       not Context'Constrained
+       not Ctx'Constrained
           and then Buffer /= null
           and then RFLX.Types.Byte_Index (First) >= Buffer'First
           and then RFLX.Types.Byte_Index (Last) <= Buffer'Last
           and then First <= Last
-          and then Last <= RFLX.Types.Bit_Index_Type'Last / 2,
+          and then Last <= RFLX.Types.Bit_Index'Last / 2,
      Post =>
-       Valid_Context (Context)
+       Valid_Context (Ctx)
           and then Buffer = null
-          and then Has_Buffer (Context)
-          and then Context.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
-          and then Context.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
-          and then Context.Buffer_Address = RFLX.Types.Bytes_Address (Buffer)'Old
-          and then Context.First = First
-          and then Context.Last = Last;
+          and then Has_Buffer (Ctx)
+          and then Ctx.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
+          and then Ctx.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
+          and then Ctx.Buffer_Address = RFLX.Types.Bytes_Address (Buffer)'Old
+          and then Ctx.First = First
+          and then Ctx.Last = Last;
 
-   procedure Take_Buffer (Context : in out Context_Type; Buffer : out RFLX.Types.Bytes_Ptr) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX.Types.Bytes_Ptr) with
      Pre =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context),
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx),
      Post =>
-       Valid_Context (Context)
-          and then not Has_Buffer (Context)
+       Valid_Context (Ctx)
+          and then not Has_Buffer (Ctx)
           and then Buffer /= null
-          and then Context.Buffer_First = Buffer'First
-          and then Context.Buffer_Last = Buffer'Last
-          and then Context.Buffer_Address = RFLX.Types.Bytes_Address (Buffer)
-          and then Context.Buffer_First = Context.Buffer_First'Old
-          and then Context.Buffer_Last = Context.Buffer_Last'Old
-          and then Context.Buffer_Address = Context.Buffer_Address'Old
-          and then Context.First = Context.First'Old
-          and then Context.Last = Context.Last'Old
-          and then Present (Context, F_Priority) = Present (Context, F_Priority)'Old;
+          and then Ctx.Buffer_First = Buffer'First
+          and then Ctx.Buffer_Last = Buffer'Last
+          and then Ctx.Buffer_Address = RFLX.Types.Bytes_Address (Buffer)
+          and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+          and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+          and then Ctx.Buffer_Address = Ctx.Buffer_Address'Old
+          and then Ctx.First = Ctx.First'Old
+          and then Ctx.Last = Ctx.Last'Old
+          and then Present (Ctx, F_Priority) = Present (Ctx, F_Priority)'Old;
 
-   function Has_Buffer (Context : Context_Type) return Boolean with
+   function Has_Buffer (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   procedure Field_Range (Context : Context_Type; Field : Field_Type; First : out RFLX.Types.Bit_Index_Type; Last : out RFLX.Types.Bit_Index_Type) with
+   procedure Field_Range (Ctx : Context; Fld : Field; First : out RFLX.Types.Bit_Index; Last : out RFLX.Types.Bit_Index) with
      Pre =>
-       Valid_Context (Context)
-          and then Present (Context, Field),
+       Valid_Context (Ctx)
+          and then Present (Ctx, Fld),
      Post =>
-       Present (Context, Field)
-          and then Context.First <= First
-          and then Context.Last >= Last
+       Present (Ctx, Fld)
+          and then Ctx.First <= First
+          and then Ctx.Last >= Last
           and then First <= Last;
 
-   function Index (Context : Context_Type) return RFLX.Types.Bit_Index_Type with
+   function Index (Ctx : Context) return RFLX.Types.Bit_Index with
      Pre =>
-       Valid_Context (Context),
+       Valid_Context (Ctx),
      Post =>
-       Index'Result >= Context.First
-          and then Index'Result - Context.Last <= 1;
+       Index'Result >= Ctx.First
+          and then Index'Result - Ctx.Last <= 1;
 
-   procedure Verify (Context : in out Context_Type; Field : Field_Type) with
+   procedure Verify (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Context (Context),
+       Valid_Context (Ctx),
      Post =>
-       Valid_Context (Context)
-          and then (if Field /= F_Priority then (if Valid (Context, F_Priority)'Old then Valid (Context, F_Priority)))
-          and then Has_Buffer (Context) = Has_Buffer (Context)'Old
-          and then Context.Buffer_First = Context.Buffer_First'Old
-          and then Context.Buffer_Last = Context.Buffer_Last'Old
-          and then Context.Buffer_Address = Context.Buffer_Address'Old
-          and then Context.First = Context.First'Old
-          and then Context.Last = Context.Last'Old;
+       Valid_Context (Ctx)
+          and then (if Fld /= F_Priority then (if Valid (Ctx, F_Priority)'Old then Valid (Ctx, F_Priority)))
+          and then Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+          and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+          and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+          and then Ctx.Buffer_Address = Ctx.Buffer_Address'Old
+          and then Ctx.First = Ctx.First'Old
+          and then Ctx.Last = Ctx.Last'Old;
 
-   procedure Verify_Message (Context : in out Context_Type) with
+   procedure Verify_Message (Ctx : in out Context) with
      Pre =>
-       Valid_Context (Context),
+       Valid_Context (Ctx),
      Post =>
-       Valid_Context (Context)
-          and then Has_Buffer (Context) = Has_Buffer (Context)'Old
-          and then Context.Buffer_First = Context.Buffer_First'Old
-          and then Context.Buffer_Last = Context.Buffer_Last'Old
-          and then Context.Buffer_Address = Context.Buffer_Address'Old
-          and then Context.First = Context.First'Old
-          and then Context.Last = Context.Last'Old;
+       Valid_Context (Ctx)
+          and then Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+          and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+          and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+          and then Ctx.Buffer_Address = Ctx.Buffer_Address'Old
+          and then Ctx.First = Ctx.First'Old
+          and then Ctx.Last = Ctx.Last'Old;
 
-   function Present (Context : Context_Type; Field : Field_Type) return Boolean with
+   function Present (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Structural_Valid (Context : Context_Type; Field : Field_Type) return Boolean with
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Valid (Context : Context_Type; Field : Field_Type) return Boolean with
+   function Valid (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Context),
+       Valid_Context (Ctx),
      Post =>
-       (if Valid'Result then Present (Context, Field)
-          and then Structural_Valid (Context, Field));
+       (if Valid'Result then Present (Ctx, Fld)
+          and then Structural_Valid (Ctx, Fld));
 
-   function Incomplete (Context : Context_Type; Field : Field_Type) return Boolean with
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Structural_Valid_Message (Context : Context_Type) return Boolean with
+   function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Valid_Message (Context : Context_Type) return Boolean with
+   function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Incomplete_Message (Context : Context_Type) return Boolean with
+   function Incomplete_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Context);
+       Valid_Context (Ctx);
 
-   function Get_Priority (Context : Context_Type) return Priority with
+   function Get_Priority (Ctx : Context) return Priority with
      Pre =>
-       Valid_Context (Context)
-          and then Valid (Context, F_Priority);
+       Valid_Context (Ctx)
+          and then Valid (Ctx, F_Priority);
 
-   function Valid_Context (Context : Context_Type) return Boolean;
+   function Valid_Context (Ctx : Context) return Boolean;
 
 private
 
-   type State_Type is (S_Valid, S_Structural_Valid, S_Invalid, S_Preliminary, S_Incomplete);
+   type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Preliminary, S_Incomplete);
 
-   type Result_Type (Field : All_Field_Type := F_Initial) is
+   type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
-         case Field is
+         case Fld is
             when F_Initial | F_Final =>
                null;
             when F_Priority =>
@@ -164,47 +164,47 @@ private
          end case;
       end record;
 
-   function Valid_Type (Value : Result_Type) return Boolean is
-     ((case Value.Field is
+   function Valid_Value (Value : Field_Dependent_Value) return Boolean is
+     ((case Value.Fld is
          when F_Priority =>
             Valid (Value.Priority_Value),
          when F_Initial | F_Final =>
             False));
 
-   type Cursor_Type (State : State_Type := S_Invalid) is
+   type Field_Cursor (State : Cursor_State := S_Invalid) is
       record
          case State is
             when S_Valid | S_Structural_Valid | S_Preliminary =>
-               First : RFLX.Types.Bit_Index_Type;
-               Last : RFLX.Types.Bit_Length_Type;
-               Value : Result_Type;
+               First : RFLX.Types.Bit_Index;
+               Last : RFLX.Types.Bit_Length;
+               Value : Field_Dependent_Value;
             when S_Invalid | S_Incomplete =>
                null;
          end case;
       end record with
      Dynamic_Predicate =>
        (if State = S_Valid
-          or State = S_Structural_Valid then Valid_Type (Value));
+          or State = S_Structural_Valid then Valid_Value (Value));
 
-   type Cursors_Type is array (Field_Type) of Cursor_Type;
+   type Field_Cursors is array (Field) of Field_Cursor;
 
-   function Valid_Context (Buffer_First, Buffer_Last : RFLX.Types.Index_Type; First, Last : RFLX.Types.Bit_Index_Type; Buffer_Address : RFLX.Types.Integer_Address; Buffer : RFLX.Types.Bytes_Ptr; Index : RFLX.Types.Bit_Index_Type; Field : All_Field_Type; Cursors : Cursors_Type) return Boolean is
+   function Valid_Context (Buffer_First, Buffer_Last : RFLX.Types.Index; First, Last : RFLX.Types.Bit_Index; Buffer_Address : RFLX.Types.Integer_Address; Buffer : RFLX.Types.Bytes_Ptr; Index : RFLX.Types.Bit_Index; Fld : Virtual_Field; Cursors : Field_Cursors) return Boolean is
      ((if Buffer /= null then Buffer'First = Buffer_First
         and then Buffer'Last = Buffer_Last
         and then RFLX.Types.Bytes_Address (Buffer) = Buffer_Address)
       and then RFLX.Types.Byte_Index (First) >= Buffer_First
       and then RFLX.Types.Byte_Index (Last) <= Buffer_Last
       and then First <= Last
-      and then Last <= RFLX.Types.Bit_Index_Type'Last / 2
+      and then Last <= RFLX.Types.Bit_Index'Last / 2
       and then Index >= First
       and then Index - Last <= 1
-      and then (for all F in Field_Type'First .. Field_Type'Last =>
+      and then (for all F in Field'First .. Field'Last =>
         (if Cursors (F).State = S_Valid
         or Cursors (F).State = S_Structural_Valid then Cursors (F).First >= First
         and then Cursors (F).Last <= Last
         and then Cursors (F).First <= (Cursors (F).Last + 1)
-        and then Cursors (F).Value.Field = F))
-      and then (case Field is
+        and then Cursors (F).Value.Fld = F))
+      and then (case Fld is
            when F_Initial =>
               True,
            when F_Priority | F_Final =>
@@ -212,17 +212,17 @@ private
                    or Cursors (F_Priority).State = S_Structural_Valid)
                  and then (Cursors (F_Priority).Last - Cursors (F_Priority).First + 1) = Priority_Base'Size));
 
-   type Context_Type (Buffer_First, Buffer_Last : RFLX.Types.Index_Type := RFLX.Types.Index_Type'First; First, Last : RFLX.Types.Bit_Index_Type := RFLX.Types.Bit_Index_Type'First; Buffer_Address : RFLX.Types.Integer_Address := 0) is
+   type Context (Buffer_First, Buffer_Last : RFLX.Types.Index := RFLX.Types.Index'First; First, Last : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First; Buffer_Address : RFLX.Types.Integer_Address := 0) is
       record
          Buffer : RFLX.Types.Bytes_Ptr := null;
-         Index : RFLX.Types.Bit_Index_Type := RFLX.Types.Bit_Index_Type'First;
-         Field : All_Field_Type := F_Initial;
-         Cursors : Cursors_Type := (others => (State => S_Invalid));
+         Index : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First;
+         Fld : Virtual_Field := F_Initial;
+         Cursors : Field_Cursors := (others => (State => S_Invalid));
       end record with
      Dynamic_Predicate =>
-       Valid_Context (Buffer_First, Buffer_Last, First, Last, Buffer_Address, Buffer, Index, Field, Cursors);
+       Valid_Context (Buffer_First, Buffer_Last, First, Last, Buffer_Address, Buffer, Index, Fld, Cursors);
 
-   function Valid_Context (Context : Context_Type) return Boolean is
-     (Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Buffer_Address, Context.Buffer, Context.Index, Context.Field, Context.Cursors));
+   function Valid_Context (Ctx : Context) return Boolean is
+     (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer_Address, Ctx.Buffer, Ctx.Index, Ctx.Fld, Ctx.Cursors));
 
 end RFLX.Enumeration.Generic_Message;

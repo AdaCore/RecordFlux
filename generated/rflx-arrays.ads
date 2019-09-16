@@ -1,32 +1,32 @@
 with RFLX.Types;
-use type RFLX.Types.Bytes, RFLX.Types.Bytes_Ptr, RFLX.Types.Index_Type, RFLX.Types.Length_Type, RFLX.Types.Bit_Index_Type, RFLX.Types.Bit_Length_Type;
+use type RFLX.Types.Bytes, RFLX.Types.Bytes_Ptr, RFLX.Types.Index, RFLX.Types.Length, RFLX.Types.Bit_Index, RFLX.Types.Bit_Length;
 
 package RFLX.Arrays with
   SPARK_Mode
 is
 
-   type Length_Type is mod 2**8;
+   type Length is mod 2**8;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Length_Type return Length_Type is
-     (Length_Type'First)
+   function Unreachable_Length return Length is
+     (Length'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Mod (Length_Type);
+   function Convert is new RFLX.Types.Convert_To_Mod (Length);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
-   function Valid (Value : Length_Type) return Boolean is
+   function Valid (Value : Length) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Value""");
 
-   function Convert (Value : Length_Type) return Length_Type is
+   function Convert (Value : Length) return Length is
      (Value)
     with
      Pre =>

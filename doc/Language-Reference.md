@@ -68,7 +68,7 @@ The set of values of an enumeration type consists of the list of declared enumer
 #### Example
 
 ```Ada
-type Packet_Type is (Msg_Error, Msg_Data) with Size => 1;
+type Packet is (Msg_Error, Msg_Data) with Size => 1;
 type Day is (Mon => 1, Tue => 2, Wed => 3, Thu => 4, Fri => 5, Sat => 6, Sun => 7) with Size => 3;
 ```
 
@@ -152,7 +152,7 @@ A type refinement describes the relation of a component in a message type to ano
 
 #### Static Semantics
 
-A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only components of type `Payload_Type` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to components of the refined type. To indicate that a refined component is empty (i.e. does not exit) under a certain condition, a null message can be used as message type.
+A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only components of type `Payload` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to components of the refined type. To indicate that a refined component is empty (i.e. does not exit) under a certain condition, a null message can be used as message type.
 
 #### Example
 

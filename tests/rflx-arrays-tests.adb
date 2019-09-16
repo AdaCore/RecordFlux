@@ -30,9 +30,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Modular_Vector.Context_Type := Arrays.Modular_Vector.Create;
+      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;
       Element          : Arrays.Modular_Integer;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -40,7 +40,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          if Arrays.Message.Present (Context, Arrays.Message.F_Modular_Vector) then
             Arrays.Message.Switch (Context, Sequence_Context);
@@ -82,9 +82,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Modular_Vector.Context_Type := Arrays.Modular_Vector.Create;
+      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;
       Element          : Arrays.Modular_Integer;
       I                : Natural := 1;
    begin
@@ -93,7 +93,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          if Arrays.Message.Present (Context, Arrays.Message.F_Modular_Vector) then
             Arrays.Message.Switch (Context, Sequence_Context);
@@ -133,9 +133,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Range_Vector.Context_Type := Arrays.Range_Vector.Create;
+      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Range_Vector.Context := Arrays.Range_Vector.Create;
       Element          : Arrays.Range_Integer;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -143,7 +143,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          if Arrays.Message.Present (Context, Arrays.Message.F_Range_Vector) then
             Arrays.Message.Switch (Context, Sequence_Context);
@@ -186,9 +186,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Range_Vector.Context_Type := Arrays.Range_Vector.Create;
+      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Range_Vector.Context := Arrays.Range_Vector.Create;
       Element          : Arrays.Range_Integer;
       I                : Natural := 1;
    begin
@@ -197,7 +197,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          if Arrays.Message.Present (Context, Arrays.Message.F_Range_Vector) then
             Arrays.Message.Switch (Context, Sequence_Context);
@@ -237,9 +237,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
-      Context          : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Enumeration_Vector.Context_Type := Arrays.Enumeration_Vector.Create;
+      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Enumeration_Vector.Context := Arrays.Enumeration_Vector.Create;
       Element          : Arrays.Enumeration;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -247,7 +247,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          if Arrays.Message.Present (Context, Arrays.Message.F_Enumeration_Vector) then
             Arrays.Message.Switch (Context, Sequence_Context);
@@ -290,9 +290,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
-      Context          : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Enumeration_Vector.Context_Type := Arrays.Enumeration_Vector.Create;
+      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Enumeration_Vector.Context := Arrays.Enumeration_Vector.Create;
       Element          : Arrays.Enumeration;
       I                : Natural := 1;
    begin
@@ -301,7 +301,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          if Arrays.Message.Present (Context, Arrays.Message.F_Enumeration_Vector) then
             Arrays.Message.Switch (Context, Sequence_Context);
@@ -341,9 +341,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
-      Context          : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Av_Enumeration_Vector.Context_Type := Arrays.Av_Enumeration_Vector.Create;
+      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Av_Enumeration_Vector.Context := Arrays.Av_Enumeration_Vector.Create;
       Element          : Arrays.AV_Enumeration;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -351,7 +351,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          if Arrays.Message.Present (Context, Arrays.Message.F_AV_Enumeration_Vector) then
             Arrays.Message.Switch (Context, Sequence_Context);
@@ -402,9 +402,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
-      Context          : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Av_Enumeration_Vector.Context_Type := Arrays.Av_Enumeration_Vector.Create;
+      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Av_Enumeration_Vector.Context := Arrays.Av_Enumeration_Vector.Create;
       Element          : Arrays.AV_Enumeration;
       I                : Natural := 1;
    begin
@@ -413,7 +413,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          if Arrays.Message.Present (Context, Arrays.Message.F_AV_Enumeration_Vector) then
             Arrays.Message.Switch (Context, Sequence_Context);
@@ -457,20 +457,20 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
-      Context : Arrays.Message.Context_Type := Arrays.Message.Create;
-      Length  : Arrays.Length_Type;
+      Context : Arrays.Message.Context := Arrays.Message.Create;
+      Length  : Arrays.Length;
    begin
       Arrays.Message.Initialize (Context, Buffer);
 
       Arrays.Message.Verify_Message (Context);
       if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
          Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (4), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
 
          Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Arrays.Modular_Vector.Context_Type := Arrays.Modular_Vector.Create;
+            Sequence_Context : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;
             Element          : Arrays.Modular_Integer;
             I                : Natural := 1;
          begin
@@ -505,7 +505,7 @@ package body RFLX.Arrays.Tests is
          Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Arrays.Range_Vector.Context_Type := Arrays.Range_Vector.Create;
+            Sequence_Context : Arrays.Range_Vector.Context := Arrays.Range_Vector.Create;
             Element          : Arrays.Range_Integer;
             I                : Natural := 1;
          begin
@@ -540,7 +540,7 @@ package body RFLX.Arrays.Tests is
          Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Arrays.Enumeration_Vector.Context_Type := Arrays.Enumeration_Vector.Create;
+            Sequence_Context : Arrays.Enumeration_Vector.Context := Arrays.Enumeration_Vector.Create;
             Element          : Arrays.Enumeration;
             I                : Natural := 1;
          begin
@@ -575,7 +575,7 @@ package body RFLX.Arrays.Tests is
          Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Arrays.Av_Enumeration_Vector.Context_Type := Arrays.Av_Enumeration_Vector.Create;
+            Sequence_Context : Arrays.Av_Enumeration_Vector.Context := Arrays.Av_Enumeration_Vector.Create;
             Element          : Arrays.AV_Enumeration;
             I                : Natural := 1;
          begin
@@ -622,17 +622,17 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(5, 1, 0, 2, 0, 0);
-      Context          : Arrays.Messages_Message.Context_Type := Arrays.Messages_Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Inner_Messages.Context_Type := Arrays.Inner_Messages.Create;
-      Element_Context  : Arrays.Inner_Message.Context_Type := Arrays.Inner_Message.Create;
+      Context          : Arrays.Messages_Message.Context := Arrays.Messages_Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Inner_Messages.Context := Arrays.Inner_Messages.Create;
+      Element_Context  : Arrays.Inner_Message.Context := Arrays.Inner_Message.Create;
    begin
       Arrays.Messages_Message.Initialize (Context, Buffer);
 
       Arrays.Messages_Message.Verify_Message (Context);
       if Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Length) then
          Length := Arrays.Messages_Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (5), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (5), "Unexpected Length");
 
          if Arrays.Messages_Message.Present (Context, Arrays.Messages_Message.F_Messages) then
             Arrays.Messages_Message.Switch (Context, Sequence_Context);
@@ -643,7 +643,7 @@ package body RFLX.Arrays.Tests is
                Arrays.Inner_Message.Verify_Message (Element_Context);
                if Arrays.Inner_Message.Valid (Element_Context, Arrays.Inner_Message.F_Length) then
                   Length := Arrays.Inner_Message.Get_Length (Element_Context);
-                  Assert (Length'Image, Arrays.Length_Type'Image (1), "Unexpected Length of element 1");
+                  Assert (Length'Image, Arrays.Length'Image (1), "Unexpected Length of element 1");
                end if;
                Assert (Arrays.Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
 
@@ -655,7 +655,7 @@ package body RFLX.Arrays.Tests is
                   Arrays.Inner_Message.Verify_Message (Element_Context);
                   if Arrays.Inner_Message.Valid (Element_Context, Arrays.Inner_Message.F_Length) then
                      Length := Arrays.Inner_Message.Get_Length (Element_Context);
-                     Assert (Length'Image, Arrays.Length_Type'Image (2), "Unexpected Length of element 2");
+                     Assert (Length'Image, Arrays.Length'Image (2), "Unexpected Length of element 2");
                   end if;
                   Assert (Arrays.Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
 
@@ -687,10 +687,10 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : Types.Bytes_Ptr := new Types.Bytes'(5, 1, 0, 2, 0, 0);
-      Context          : Arrays.Messages_Message.Context_Type := Arrays.Messages_Message.Create;
-      Length           : Arrays.Length_Type;
-      Sequence_Context : Arrays.Inner_Messages.Context_Type := Arrays.Inner_Messages.Create;
-      Element_Context  : Arrays.Inner_Message.Context_Type := Arrays.Inner_Message.Create;
+      Context          : Arrays.Messages_Message.Context := Arrays.Messages_Message.Create;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Inner_Messages.Context := Arrays.Inner_Messages.Create;
+      Element_Context  : Arrays.Inner_Message.Context := Arrays.Inner_Message.Create;
       I                : Natural := 1;
    begin
       Arrays.Messages_Message.Initialize (Context, Buffer);
@@ -698,7 +698,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Messages_Message.Verify_Message (Context);
       if Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Length) then
          Length := Arrays.Messages_Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length_Type'Image (5), "Unexpected Length");
+         Assert (Length'Image, Arrays.Length'Image (5), "Unexpected Length");
 
          if Arrays.Messages_Message.Present (Context, Arrays.Messages_Message.F_Messages) then
             Arrays.Messages_Message.Switch (Context, Sequence_Context);

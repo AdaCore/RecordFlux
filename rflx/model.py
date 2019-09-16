@@ -157,7 +157,7 @@ class Array(Composite):
 
 class Payload(Composite):
     def __init__(self) -> None:
-        super().__init__('Payload_Type')
+        super().__init__('Payload')
 
     @property
     def size(self) -> Expr:

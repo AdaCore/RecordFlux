@@ -42,20 +42,20 @@ The structure of messages is often non-linear because of optional fields. For th
 ```
 package TLV is
 
-   type Tag_Type is (Msg_Data => 1, Msg_Error => 3) with Size => 2;
-   type Length_Type is mod 2**14;
+   type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 2;
+   type Length is mod 2**14;
 
    type Message is
       message
-         Tag    : Tag_Type
+         Tag    : Tag
             then Length
                if Tag = Msg_Data,
             then null
                if Tag = Msg_Error;
-         Length : Length_Type
+         Length : Length
             then Value
                with Length => Length * 8;
-         Value  : Payload_Type;
+         Value  : Payload;
        end message;
 
 end TLV;
@@ -93,47 +93,47 @@ Created generated/rflx-scalar_sequence.adb
 
 All scalar types defined in the specification are represented by a similar Ada type in the generated code. For `TLV` the following types are defined in the package `RFLX.TLV`:
 
-- `type Tag_Type is (Msg_Data, Msg_Error) with Size => 2`
-- `for Tag_Type use (Msg_Data => 1, Msg_Error => 3);`
-- `type Length_Type is mod 2**14`
+- `type Tag is (Msg_Data, Msg_Error) with Size => 2`
+- `for Tag use (Msg_Data => 1, Msg_Error => 3);`
+- `type Length is mod 2**14`
 
 All types and subprograms related to `Message` can be found in the package `RFLX.TLV.Message`:
 
-- `type Context_Type`
+- `type Context`
     - Stores buffer and internal state
-- `function Create return Context_Type`
+- `function Create return Context`
     - Return default initialized context
-- `procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr)`
+- `procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr)`
     - Initialize context with buffer
-- `procedure Initialize (Context : out Context_Type; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index_Type)`
+- `procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index_Type)`
     - Initialize context with buffer and explicit bounds
-- `procedure Take_Buffer (Context : in out Context_Type; Buffer : out RFLX.Types.Bytes_Ptr)`
+- `procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX.Types.Bytes_Ptr)`
     - Get buffer and remove it from context (note: buffer cannot put back into context, thus further verification of message is not possible after this action)
-- `function Has_Buffer (Context : Context_Type) return Boolean`
+- `function Has_Buffer (Ctx : Context) return Boolean`
     - Check if context contains buffer (i.e. non-null pointer)
-- `procedure Verify (Context : in out Context_Type; Field : Field_Type)`
+- `procedure Verify (Ctx : in out Context; Fld : Field)`
     - Verify validity of field
-- `procedure Verify_Message (Context : in out Context_Type)`
+- `procedure Verify_Message (Ctx : in out Context)`
     - Verify all fields of message
-- `function Structural_Valid (Context : Context_Type; Field : Field_Type) return Boolean`
+- `function Structural_Valid (Ctx : Context; Fld : Field) return Boolean`
     - Check if composite field is structural valid (i.e. location and length of field is correct, but content is not necessarily valid)
-- `function Present (Context : Context_Type; Field : Field_Type) return Boolean`
+- `function Present (Ctx : Context; Fld : Field) return Boolean`
     - Check if composite field is structural valid and has non-zero length
-- `function Valid (Context : Context_Type; Field : Field_Type) return Boolean`
+- `function Valid (Ctx : Context; Fld : Field) return Boolean`
     - Check if field is valid (i.e. it has valid structure and valid content)
-- `function Incomplete (Context : Context_Type; Field : Field_Type) return Boolean`
+- `function Incomplete (Ctx : Context; Fld : Field) return Boolean`
     - Check if buffer was too short to verify field
-- `function Structural_Valid_Message (Context : Context_Type) return Boolean`
+- `function Structural_Valid_Message (Ctx : Context) return Boolean`
     - Check if all fields of message are at least structural valid
-- `function Valid_Message (Context : Context_Type) return Boolean`
+- `function Valid_Message (Ctx : Context) return Boolean`
     - Check if all fields of message are valid
-- `function Incomplete_Message (Context : Context_Type) return Boolean`
+- `function Incomplete_Message (Ctx : Context) return Boolean`
     - Check if buffer was too short to verify message
-- `function Get_Tag (Context : Context_Type) return Tag_Type`
+- `function Get_Tag (Ctx : Context) return Tag_Type`
     - Get value of `Tag` field
-- `function Get_Length (Context : Context_Type) return Length_Type`
+- `function Get_Length (Ctx : Context) return Length_Type`
     - Get value of `Length` field
-- `generic with procedure Process_Value (Value : RFLX.Types.Bytes); procedure Get_Value (Context : Context_Type)`
+- `generic with procedure Process_Value (Value : RFLX.Types.Bytes); procedure Get_Value (Ctx : Context)`
     - Access content of `Value` field
 
 A simple program to parse a `TLV.Message` could be as follows:
@@ -145,7 +145,7 @@ with RFLX.TLV.Message;
 
 procedure Main is
    Buffer  : RFLX.Types.Bytes_Ptr := new RFLX.Types.Bytes'(64, 4, 0, 0, 0, 0);
-   Context : RFLX.TLV.Message.Context_Type := RFLX.TLV.Message.Create;
+   Context : RFLX.TLV.Message.Context := RFLX.TLV.Message.Create;
 begin
    RFLX.TLV.Message.Initialize (Context, Buffer);
    RFLX.TLV.Message.Verify_Message (Context);

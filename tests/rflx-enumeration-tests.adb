@@ -19,7 +19,7 @@ package body RFLX.Enumeration.Tests is
    is
       pragma Unreferenced (T);
       Buffer   : Types.Bytes_Ptr := new Types.Bytes'(32, 0);
-      Context  : Enumeration.Message.Context_Type := Enumeration.Message.Create;
+      Context  : Enumeration.Message.Context := Enumeration.Message.Create;
       Priority : Enumeration.Priority;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
@@ -44,7 +44,7 @@ package body RFLX.Enumeration.Tests is
    is
       pragma Unreferenced (T);
       Buffer   : Types.Bytes_Ptr := new Types.Bytes'(160, 0);
-      Context  : Enumeration.Message.Context_Type := Enumeration.Message.Create;
+      Context  : Enumeration.Message.Context := Enumeration.Message.Create;
       Priority : Enumeration.Priority;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
