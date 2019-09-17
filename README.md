@@ -70,7 +70,7 @@ $ rflx check specs/tlv.rflx
 Parsing specs/tlv.rflx... OK
 ```
 
-The sub-command `generate` is used to generate the code based on the specification. The target directory and the specification files have to be given. By adding `-d` or `-l` the generation can be limited to the dissector code or to the internally used library files, respectively.
+The sub-command `generate` is used to generate the code based on the specification. The target directory and the specification files have to be given.
 
 ```
 $ rflx generate specs/tlv.rflx generated

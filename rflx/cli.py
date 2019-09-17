@@ -32,10 +32,6 @@ def main(argv: List[str]) -> Union[int, str]:
     parser_check.set_defaults(func=check)
 
     parser_generate = subparsers.add_parser('generate', help='generate code')
-    parser_generate.add_argument('-d', '--dissector', action='store_true',
-                                 help='generate dissector code')
-    parser_generate.add_argument('-l', '--library', action='store_true',
-                                 help='generate library code')
     parser_generate.add_argument('-p', '--prefix', type=str, default='RFLX',
                                  help=('add prefix to generated packages '
                                        f'(default: {DEFAULT_PREFIX})'))
@@ -75,10 +71,8 @@ def generate(args: argparse.Namespace) -> None:
         raise Error(f'directory not found: "{directory}"')
 
     messages, refinements = parse(args.files)
-    if args.dissector or (not args.dissector and not args.library):
-        generate_dissector(messages, refinements, directory, args.prefix)
-    if args.library or (not args.dissector and not args.library):
-        generate_library(directory, args.prefix)
+    generate_dissector(messages, refinements, directory, args.prefix)
+    generate_library(directory, args.prefix)
 
 
 def parse(files: List) -> Tuple[List, List]:
