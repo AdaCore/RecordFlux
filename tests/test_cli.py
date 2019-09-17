@@ -46,7 +46,7 @@ class TestCLI(TestCase):
 
     def test_main_generate_no_output_files(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(cli.main(['rflx', 'generate', '-d', 'tests/package.rflx', tmpdir]),
+            self.assertEqual(cli.main(['rflx', 'generate', 'tests/package.rflx', tmpdir]),
                              0)
 
     def test_main_generate_non_existent_directory(self) -> None:
@@ -57,13 +57,13 @@ class TestCLI(TestCase):
     def test_main_generate_missing_template_direcotry(self) -> None:
         with TemporaryDirectory() as tmpdir:
             with mock.patch('pkg_resources.resource_filename', lambda *x: 'non-existent directory'):
-                self.assertRegex(str(cli.main(['rflx', 'generate', '-l', tmpdir])),
+                self.assertRegex(str(cli.main(['rflx', 'generate', 'specs/tlv.rflx', tmpdir])),
                                  r'internal error: library directory not found$')
 
     def test_main_generate_missing_template_files(self) -> None:
         with TemporaryDirectory() as tmpdir:
             with mock.patch('pkg_resources.resource_filename', lambda *x: tmpdir):
-                self.assertRegex(str(cli.main(['rflx', 'generate', '-l', tmpdir])),
+                self.assertRegex(str(cli.main(['rflx', 'generate', 'specs/tlv.rflx', tmpdir])),
                                  r'internal error: library file not found')
 
 
