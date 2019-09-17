@@ -22,6 +22,9 @@ matrix:
     - name: "SPARK Tests (without prefix)"
       env: TARGET="test_spark NOPREFIX=1"
 
+    - name: "SPARK Tests (with optimization)"
+      env: TARGET="test_spark_optimized"
+
     - name: "SPARK Verification"
       env: TARGET="prove_spark_ci"
 
