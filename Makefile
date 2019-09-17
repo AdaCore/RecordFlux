@@ -28,6 +28,10 @@ test_spark: $(test-files)
 	gprbuild -P$(project)
 	$(test-bin)
 
+test_spark_optimized: $(test-files)
+	gprbuild -P$(project) -Xoptimization=yes
+	$(test-bin)
+
 prove_spark: $(test-files)
 	gnatprove -P$(project)
 
