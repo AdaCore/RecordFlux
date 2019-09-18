@@ -9,7 +9,8 @@ from rflx.model import ModelError
 from rflx.parser import Parser, ParserError
 
 TEMPLATE_DIR = ('rflx', 'templates/')
-LIBRARY_FILES = ('types.ads', 'types.adb', 'message_sequence.ads', 'message_sequence.adb',
+LIBRARY_FILES = ('lemmas.ads', 'lemmas.adb', 'types.ads', 'types.adb',
+                 'message_sequence.ads', 'message_sequence.adb',
                  'scalar_sequence.ads', 'scalar_sequence.adb')
 DEFAULT_PREFIX = 'RFLX'
 
