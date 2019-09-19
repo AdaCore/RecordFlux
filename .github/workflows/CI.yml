@@ -1,0 +1,45 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  Python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Test
+      run: |
+        make test_python
+        coverage xml
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1.0.2
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        file: ./coverage.xml
+
+  SPARK:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [
+          "test_spark",
+          "test_spark NOPREFIX=1",
+          "test_spark_optimized",
+          "prove_spark_ci"
+          ]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run
+      run: |
+        docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2019.spark /bin/sh -c "make ${{ matrix.target }}"
