@@ -24,6 +24,7 @@ is
      Pre =>
        not Ctx'Constrained
           and then Buffer /= null
+          and then Buffer'Length > 0
           and then Buffer'Last <= RFLX.Types.Index'Last / 2,
      Post =>
        Valid_Context (Ctx)
@@ -36,6 +37,7 @@ is
      Pre =>
        not Ctx'Constrained
           and then Buffer /= null
+          and then Buffer'Length > 0
           and then RFLX.Types.Byte_Index (First) >= Buffer'First
           and then RFLX.Types.Byte_Index (Last) <= Buffer'Last
           and then First <= Last

@@ -21,8 +21,7 @@ is
    function Last_Bit_Index (Idx : Index) return Bit_Index is
      ((Bit_Length (Idx) - 1) * 8 + 8);
 
-   type Bytes is array (Index range <>) of Byte with
-     Predicate => Bytes'Length > 0;
+   type Bytes is array (Index range <>) of Byte;
 
    type Bytes_Ptr is access Bytes;
 
@@ -34,12 +33,12 @@ is
    function Bytes_First (Buffer : Bytes_Ptr) return Index is
      (Buffer'First)
      with
-       Pre => Buffer /= null;
+       Pre => Buffer /= null and then Buffer'Length > 0;
 
    function Bytes_Last (Buffer : Bytes_Ptr) return Index is
      (Buffer'Last)
      with
-       Pre => Buffer /= null;
+       Pre => Buffer /= null and then Buffer'Length > 0;
 
    type Offset is mod 8;
 

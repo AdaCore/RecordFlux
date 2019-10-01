@@ -17,10 +17,10 @@ from rflx.ada import (ArrayType, Assignment, CallStatement, Component, ContextIt
                       Subtype, TypeDeclaration, Unit, UnitPart, UsePackageClause, UseTypeClause,
                       Variant, VariantPart, WithClause)
 from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, Aggregate, And, Call, Case, Constrained,
-                             Div, Equal, Expr, First, ForAllIn, GreaterEqual, If, Indexed, Last,
-                             Length, Less, LessEqual, Mod, Name, NamedAggregate, Not, NotEqual,
-                             Number, Old, Or, Pow, Range, Result, Selected, Size, Slice, Sub,
-                             Variable)
+                             Div, Equal, Expr, First, ForAllIn, Greater, GreaterEqual, If, Indexed,
+                             Last, Length, Less, LessEqual, Mod, Name, NamedAggregate, Not,
+                             NotEqual, Number, Old, Or, Pow, Range, Result, Selected, Size, Slice,
+                             Sub, Variable)
 from rflx.model import (FINAL, INITIAL, Array, Composite, DerivedMessage, Enumeration, Field,
                         Message, ModularInteger, Payload, RangeInteger, Reference, Refinement,
                         Scalar, Type)
@@ -506,6 +506,8 @@ class Generator:
                 [Precondition(
                     And(Not(Constrained('Ctx')),
                         NotEqual(Name('Buffer'), NULL),
+                        # WORKAROUND: Componolit/Workarounds#10
+                        Greater(Length('Buffer'), Number(0)),
                         LessEqual(Last('Buffer'), Div(Last(self.types_index), Number(2))))),
                  Postcondition(
                      And(VALID_CONTEXT,
@@ -538,6 +540,8 @@ class Generator:
                 [Precondition(
                     And(Not(Constrained('Ctx')),
                         NotEqual(Name('Buffer'), NULL),
+                        # WORKAROUND: Componolit/Workarounds#10
+                        Greater(Length('Buffer'), Number(0)),
                         GreaterEqual(Call(self.types_byte_index, [Name('First')]), First('Buffer')),
                         LessEqual(Call(self.types_byte_index, [Name('Last')]), Last('Buffer')),
                         LessEqual(Name('First'), Name('Last')),
