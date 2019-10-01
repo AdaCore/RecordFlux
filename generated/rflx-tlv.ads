@@ -22,7 +22,7 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Mod (Tag_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Tag_Base);
 
    function Valid (Value : Tag_Base) return Boolean is
      ((case Value is
@@ -62,7 +62,7 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Mod (Length);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
 
    pragma Warnings (Off, "unused variable ""Value""");
 

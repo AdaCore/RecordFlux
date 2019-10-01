@@ -20,7 +20,7 @@ is
          Last := Types.Byte_Index (Last_Bit);
          Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
          if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-            Ctx.Next_Element := Convert_To_Element_Base_Type (Ctx.Buffer.all (First .. Last), Offset);
+            Ctx.Next_Element := Extract_Element_Base_Type (Ctx.Buffer.all (First .. Last), Offset);
          end if;
       else
          Ctx.State := S_Invalid;

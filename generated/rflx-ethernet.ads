@@ -17,7 +17,7 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Mod (Address);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
@@ -48,7 +48,7 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Int (Type_Length_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Type_Length_Base);
 
    function Valid (Value : Type_Length_Base) return Boolean is
      (Value >= 46);
@@ -75,7 +75,7 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Int (TPID_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TPID_Base);
 
    function Valid (Value : TPID_Base) return Boolean is
      (Value >= 33024
@@ -99,7 +99,7 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Mod (TCI);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TCI);
 
    pragma Warnings (Off, "unused variable ""Value""");
 

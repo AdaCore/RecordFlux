@@ -3,7 +3,7 @@ with {prefix}Types; use type {prefix}Types.Bytes_Ptr, {prefix}Types.Length, {pre
 generic
    type Element_Type is private;
    type Element_Base_Type is (<>);
-   with function Convert_To_Element_Base_Type (Buffer : Types.Bytes; Offset : Types.Offset) return Element_Base_Type;
+   with function Extract_Element_Base_Type (Buffer : Types.Bytes; Offset : Types.Offset) return Element_Base_Type;
    with function Valid_Element_Type (Element : Element_Base_Type) return Boolean;
    with function Convert_To_Element_Type (Element : Element_Base_Type) return Element_Type;
 package {prefix}Scalar_Sequence with

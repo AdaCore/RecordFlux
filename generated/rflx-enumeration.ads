@@ -32,7 +32,7 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Convert is new RFLX.Types.Convert_To_Mod (Priority_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Priority_Base);
 
    pragma Warnings (Off, "unused variable ""Value""");
 

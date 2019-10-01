@@ -281,13 +281,13 @@ is
    begin
       return ((case Fld is
             when F_Copied =>
-               (Fld => F_Copied, Copied_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Copied, Copied_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Option_Class =>
-               (Fld => F_Option_Class, Option_Class_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Option_Class, Option_Class_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Option_Number =>
-               (Fld => F_Option_Number, Option_Number_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Option_Number, Option_Number_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Option_Length =>
-               (Fld => F_Option_Length, Option_Length_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Option_Length, Option_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Option_Data =>
                (Fld => F_Option_Data)));
    end Get_Field_Value;
