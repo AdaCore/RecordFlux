@@ -192,7 +192,7 @@ is
    begin
       return ((case Fld is
             when F_Length =>
-               (Fld => F_Length, Length_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Payload =>
                (Fld => F_Payload)));
    end Get_Field_Value;

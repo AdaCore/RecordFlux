@@ -718,35 +718,35 @@ is
    begin
       return ((case Fld is
             when F_Version =>
-               (Fld => F_Version, Version_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Version, Version_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_IHL =>
-               (Fld => F_IHL, IHL_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_IHL, IHL_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_DSCP =>
-               (Fld => F_DSCP, DSCP_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_DSCP, DSCP_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_ECN =>
-               (Fld => F_ECN, ECN_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_ECN, ECN_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Total_Length =>
-               (Fld => F_Total_Length, Total_Length_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Total_Length, Total_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Identification =>
-               (Fld => F_Identification, Identification_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Identification, Identification_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Flag_R =>
-               (Fld => F_Flag_R, Flag_R_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Flag_R, Flag_R_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Flag_DF =>
-               (Fld => F_Flag_DF, Flag_DF_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Flag_DF, Flag_DF_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Flag_MF =>
-               (Fld => F_Flag_MF, Flag_MF_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Flag_MF, Flag_MF_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Fragment_Offset =>
-               (Fld => F_Fragment_Offset, Fragment_Offset_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Fragment_Offset, Fragment_Offset_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_TTL =>
-               (Fld => F_TTL, TTL_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_TTL, TTL_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Protocol =>
-               (Fld => F_Protocol, Protocol_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Protocol, Protocol_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Header_Checksum =>
-               (Fld => F_Header_Checksum, Header_Checksum_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Header_Checksum, Header_Checksum_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Source =>
-               (Fld => F_Source, Source_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Source, Source_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Destination =>
-               (Fld => F_Destination, Destination_Value => Convert (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+               (Fld => F_Destination, Destination_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
             when F_Options =>
                (Fld => F_Options),
             when F_Payload =>

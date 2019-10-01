@@ -8,7 +8,7 @@ is
 
    subtype Length is Arrays.Length;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Length renames Arrays.Convert;
+   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Length renames Arrays.Extract;
 
    function Valid (Value : Length) return Boolean renames Arrays.Valid;
 
@@ -16,7 +16,7 @@ is
 
    subtype Modular_Integer is Arrays.Modular_Integer;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Modular_Integer renames Arrays.Convert;
+   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Modular_Integer renames Arrays.Extract;
 
    function Valid (Value : Modular_Integer) return Boolean renames Arrays.Valid;
 
@@ -26,7 +26,7 @@ is
 
    subtype Range_Integer is Arrays.Range_Integer;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Range_Integer_Base renames Arrays.Convert;
+   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Range_Integer_Base renames Arrays.Extract;
 
    function Valid (Value : Range_Integer_Base) return Boolean renames Arrays.Valid;
 
@@ -36,7 +36,7 @@ is
 
    subtype Enumeration is Arrays.Enumeration;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Enumeration_Base renames Arrays.Convert;
+   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Enumeration_Base renames Arrays.Extract;
 
    function Valid (Value : Enumeration_Base) return Boolean renames Arrays.Valid;
 
@@ -56,7 +56,7 @@ is
 
    subtype AV_Enumeration is Arrays.AV_Enumeration;
 
-   function Convert (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return AV_Enumeration_Base renames Arrays.Convert;
+   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return AV_Enumeration_Base renames Arrays.Extract;
 
    function Valid (Value : AV_Enumeration_Base) return Boolean renames Arrays.Valid;
 

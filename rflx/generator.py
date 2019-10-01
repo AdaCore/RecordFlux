@@ -920,7 +920,7 @@ class Generator:
             if field in message.fields and isinstance(message.types[field], Scalar):
                 aggregate.append(
                     (f'{field.name}_Value',
-                     Call('Convert',
+                     Call('Extract',
                           [Slice('Ctx.Buffer.all',
                                  Name('Buffer_First'),
                                  Name('Buffer_Last')),
@@ -1729,7 +1729,7 @@ class Generator:
                 [element_type.name,
                  element_type.base_name if not isinstance(element_type, ModularInteger)
                  else element_type.name,
-                 'Convert',
+                 'Extract',
                  'Valid',
                  'Convert'])
 
@@ -1817,13 +1817,7 @@ class Generator:
                 continue
 
             specification.append(
-                GenericFunctionInstantiation(
-                    'Convert',
-                    FunctionSpecification(f'{self.types}.Convert_To_Int',
-                                          range_type.name,
-                                          [Parameter(['Buffer'], self.types_bytes),
-                                           Parameter(['Offset'], self.types_offset)]),
-                    [range_type.name]))
+                self.__extract_function(range_type.name))
 
         specification.append(
             type_validation_function(
@@ -1838,13 +1832,7 @@ class Generator:
 
         for modular_type in modular_types(integer):
             specification.append(
-                GenericFunctionInstantiation(
-                    'Convert',
-                    FunctionSpecification(f'{self.types}.Convert_To_Mod',
-                                          modular_type.name,
-                                          [Parameter(['Buffer'], self.types_bytes),
-                                           Parameter(['Offset'], self.types_offset)]),
-                    [modular_type.name]))
+                self.__extract_function(modular_type.name))
 
         specification.append(Pragma('Warnings', ['Off', '"unused variable ""Value"""']))
         specification.append(
@@ -1860,14 +1848,7 @@ class Generator:
         specification: List[Declaration] = []
 
         specification.append(
-            GenericFunctionInstantiation(
-                'Convert',
-                FunctionSpecification(
-                    f'{self.types}.Convert_To_Mod',
-                    enum.base_name,
-                    [Parameter(['Buffer'], self.types_bytes),
-                     Parameter(['Offset'], self.types_offset)]),
-                [enum.base_name]))
+            self.__extract_function(enum.base_name))
 
         enum_value = Name('Value')
 
@@ -1936,6 +1917,19 @@ class Generator:
                 [(Name(key), value) for key, value in enum.literals.items()])))
 
         return UnitPart(specification)
+
+    def __extract_function(self, type_name: str) -> Subprogram:
+        return GenericFunctionInstantiation(
+            'Extract',
+            FunctionSpecification(f'{self.types}.Extract',
+                                  type_name,
+                                  [Parameter(['Buffer'], self.types_bytes),
+                                   Parameter(['Offset'], self.types_offset)]),
+            [self.types_index,
+             self.types_byte,
+             self.types_bytes,
+             self.types_offset,
+             type_name])
 
     @staticmethod
     def __create_contains_function(refinement: Refinement,
@@ -2024,6 +2018,10 @@ class Generator:
     @property
     def types(self) -> str:
         return f'{self.prefix}Types'
+
+    @property
+    def types_byte(self) -> str:
+        return f'{self.types}.Byte'
 
     @property
     def types_bytes(self) -> str:
