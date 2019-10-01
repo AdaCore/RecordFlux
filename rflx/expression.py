@@ -947,6 +947,7 @@ class Range(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
+    @property
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
