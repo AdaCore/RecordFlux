@@ -43,16 +43,6 @@ is
    type Offset is mod 8;
 
    generic
-      type Int is mod <>;
-   function Convert_To_Mod (Buffer : Bytes; Offset : Types.Offset := 0) return Int with
-     Pre => Buffer'Length = Byte_Index (Int'Size + Bit_Length (Offset));
-
-   generic
-      type Int is range <>;
-   function Convert_To_Int (Buffer : Bytes; Offset : Types.Offset := 0) return Int with
-     Pre => Buffer'Length = Byte_Index (Int'Size + Bit_Length (Offset));
-
-   generic
       type Index_Type   is (<>);
       type Element_Type is (<>);
       type Array_Type   is array (Index_Type range <>) of Element_Type;
