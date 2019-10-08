@@ -104,6 +104,12 @@ is
       type Result_Type is mod 2**Long_Integer'Size;
       Result : Result_Type := 0;
 
+      function LIS return Natural is (Long_Integer'Size) with Post => LIS'Result = Long_Integer'Size;
+      pragma Assert (2**(LIS - 2) - 1 = 2**(Long_Integer'Size - 2) - 1);
+      pragma Annotate (GNATprove, False_Positive, "assertion",
+                       "solvers cannot show correspondence between integers and exponentiation abstraction");
+      pragma Annotate (GNATprove, False_Positive, "overflow",
+                       "solvers cannot show that overflow does not occur for 2**62");
       Pow2_LSE_Offset : constant Long_Integer := 2**LSE_Offset;
 
    begin

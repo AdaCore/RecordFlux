@@ -29,6 +29,18 @@ package body RFLX.Types.Tests is
       Assert (Byte_Index (Bit_Index'Last)'Img, " 2147483647", "Invalid byte index for Bit_Index'Last");
    end Test_Index_Calculations;
 
+   generic
+      type Offset_Type is (<>);
+   function Identity (X : Offset_Type) return Offset_Type;
+
+   function Identity (X : Offset_Type) return Offset_Type is
+      (X);
+
+   --  Simulate an offset value that is determined at runtime.
+   --  This prevents the false assumption that the offset is statically determined at compile time,
+   --  which could affect the ability to prove the precondition of the Extract function.
+   function Dynamic_Offset is new Identity (Offset);
+
    procedure Test_Extract_Modular_Integer (T : in out Aunit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
@@ -51,13 +63,13 @@ package body RFLX.Types.Tests is
       Assert (R13'Image, U13'Image (8128), "Invalid conversion with offset 2");
       R13 := Extract_U13 (Buffer (Buffer'First + 1 .. Buffer'Last), 3);
       Assert (R13'Image, U13'Image (8160), "Invalid conversion with offset 3");
-      R13 := Extract_U13 (Buffer, 4);
+      R13 := Extract_U13 (Buffer, Dynamic_Offset (4));
       Assert (R13'Image, U13'Image (8176), "Invalid conversion with offset 4");
-      R13 := Extract_U13 (Buffer, 5);
+      R13 := Extract_U13 (Buffer, Dynamic_Offset (5));
       Assert (R13'Image, U13'Image (8184), "Invalid conversion with offset 5");
-      R13 := Extract_U13 (Buffer, 6);
+      R13 := Extract_U13 (Buffer, Dynamic_Offset (6));
       Assert (R13'Image, U13'Image (8188), "Invalid conversion with offset 6");
-      R13 := Extract_U13 (Buffer, 7);
+      R13 := Extract_U13 (Buffer, Dynamic_Offset (7));
       Assert (R13'Image, U13'Image (8190), "Invalid conversion with offset 7");
 
       R8 := Extract_U8 (Buffer (Buffer'Last .. Buffer'Last), 0);
