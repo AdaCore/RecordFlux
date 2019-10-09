@@ -37,7 +37,7 @@ jobs:
           "test_spark NOPREFIX=1",
           "test_spark_optimized",
           "prove_spark_ci",
-          "prove_spark_ci GNATPROVE_ARGS='--prover=cvc4 --steps=100000'"
+          "prove_spark_ci GNATPROVE_ARGS='--prover=cvc4 --steps=100000 -u rflx-tlv -u rflx-in_tlv'"
           ]
     steps:
     - uses: actions/checkout@v1
