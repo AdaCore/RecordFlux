@@ -1,7 +1,9 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import List
 
-from rflx.generator import Generator
+from rflx.generator import LIBRARY_FILES, Generator
 from rflx.model import Message, Refinement
 from tests.models import (ARRAY_INNER_MESSAGE, ARRAY_MESSAGE, ARRAY_MESSAGES_MESSAGE,
                           DERIVATION_MESSAGE, ENUMERATION_MESSAGE, ETHERNET_FRAME, NULL_MESSAGE,
@@ -12,6 +14,15 @@ class TestGenerator(unittest.TestCase):
     def setUp(self) -> None:
         self.testdir = "generated"
         self.maxDiff = None  # pylint: disable=invalid-name
+
+    def test_library_files(self) -> None:
+        generator = Generator('RFLX.')
+        with TemporaryDirectory() as tmpdir:
+            generator.write_library_files(Path(tmpdir))
+            for filename in LIBRARY_FILES:
+                with open(tmpdir + '/' + 'rflx-' + filename) as library_file:
+                    with open(self.testdir + '/' + 'rflx-' + filename) as expected_file:
+                        self.assertEqual(library_file.read(), expected_file.read(), filename)
 
     def assert_specification(self, generator: Generator) -> None:
         for unit in generator.units.values():
