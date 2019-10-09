@@ -2,24 +2,14 @@ import argparse
 from pathlib import Path
 from typing import List, Tuple, Union
 
-import pkg_resources
-
-from rflx.generator import Generator
+from rflx.generator import Generator, InternalError
 from rflx.model import ModelError
 from rflx.parser import Parser, ParserError
 
-TEMPLATE_DIR = ('rflx', 'templates/')
-LIBRARY_FILES = ('lemmas.ads', 'lemmas.adb', 'types.ads', 'types.adb',
-                 'message_sequence.ads', 'message_sequence.adb',
-                 'scalar_sequence.ads', 'scalar_sequence.adb')
 DEFAULT_PREFIX = 'RFLX'
 
 
 class Error(Exception):
-    pass
-
-
-class InternalError(Error):
     pass
 
 
@@ -72,8 +62,23 @@ def generate(args: argparse.Namespace) -> None:
         raise Error(f'directory not found: "{directory}"')
 
     messages, refinements = parse(args.files)
-    generate_dissector(messages, refinements, directory, args.prefix)
-    generate_library(directory, args.prefix)
+    if not messages and not refinements:
+        return
+
+    prefix = args.prefix
+    if prefix and prefix[-1] != '.':
+        prefix = f'{prefix}.'
+
+    generator = Generator(prefix)
+
+    print('Generating... ', end='')
+    generator.generate_dissector(messages, refinements)
+    written_files = generator.write_units(directory)
+    written_files += generator.write_library_files(directory)
+    print('OK')
+
+    for f in written_files:
+        print(f'Created {f}')
 
 
 def parse(files: List) -> Tuple[List, List]:
@@ -88,50 +93,3 @@ def parse(files: List) -> Tuple[List, List]:
         print('OK')
 
     return (parser.messages, parser.refinements)
-
-
-def generate_dissector(messages: List, refinements: List, directory: Path, prefix: str) -> None:
-    if not messages and not refinements:
-        return
-
-    if prefix and prefix[-1] != '.':
-        prefix = f'{prefix}.'
-
-    generator = Generator(prefix)
-
-    print('Generating... ', end='')
-    generator.generate_dissector(messages, refinements)
-    written_files = generator.write_units(directory)
-    print('OK')
-
-    for f in written_files:
-        print(f'Created {f}')
-
-
-def generate_library(directory: Path, prefix: str) -> None:
-    template_dir = Path(pkg_resources.resource_filename(*TEMPLATE_DIR))
-    if not template_dir.is_dir():
-        raise InternalError('library directory not found')
-
-    if prefix == DEFAULT_PREFIX:
-        filename = prefix.lower() + '.ads'
-        file_path = Path(directory).joinpath(filename)
-
-        with open(file_path, 'w') as library_file:
-            library_file.write(f'package {prefix} is\n\nend {prefix};')
-            print(f'Created {file_path}')
-
-    if prefix and prefix[-1] != '.':
-        prefix = f'{prefix}.'
-
-    for template_filename in LIBRARY_FILES:
-        if not template_dir.joinpath(template_filename).is_file():
-            raise InternalError(f'library file not found: "{template_filename}"')
-
-        filename = prefix.replace('.', '-').lower() + template_filename
-        file_path = Path(directory).joinpath(filename)
-
-        with open(template_dir.joinpath(template_filename)) as template_file:
-            with open(file_path, 'w') as library_file:
-                library_file.write(template_file.read().format(prefix=prefix))
-                print(f'Created {file_path}')

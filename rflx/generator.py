@@ -3,6 +3,8 @@ import itertools
 from pathlib import Path
 from typing import Dict, List, Mapping, Sequence, Set, Tuple
 
+import pkg_resources
+
 from rflx.ada import (ArrayType, Assignment, CallStatement, Component, ContextItem, Declaration,
                       DefaultInitialCondition, Discriminant, DynamicPredicate, EnumerationType,
                       ExpressionFunctionDeclaration, FormalDeclaration, FormalPackageDeclaration,
@@ -25,6 +27,10 @@ from rflx.model import (FINAL, INITIAL, Array, Composite, DerivedMessage, Enumer
                         Message, ModularInteger, Payload, RangeInteger, Reference, Refinement,
                         Scalar, Type)
 
+TEMPLATE_DIR = ('rflx', 'templates/')
+LIBRARY_FILES = ('lemmas.ads', 'lemmas.adb', 'types.ads', 'types.adb',
+                 'message_sequence.ads', 'message_sequence.adb',
+                 'scalar_sequence.ads', 'scalar_sequence.adb')
 NULL = Name('null')
 VALID_CONTEXT = Call('Valid_Context', [Name('Ctx')])  # WORKAROUND: Componolit/Workarounds#1
 
@@ -38,6 +44,36 @@ class Generator:
     def generate_dissector(self, messages: List[Message], refinements: List[Refinement]) -> None:
         self.__process_messages(messages)
         self.__process_refinements(refinements)
+
+    def write_library_files(self, directory: Path) -> List[Path]:
+        written_files = []
+
+        template_dir = Path(pkg_resources.resource_filename(*TEMPLATE_DIR))
+        if not template_dir.is_dir():
+            raise InternalError('library directory not found')
+
+        if self.prefix:
+            prefix = self.prefix[1:]
+            filename = prefix.lower() + '.ads'
+            file_path = Path(directory).joinpath(filename)
+
+            with open(file_path, 'w') as library_file:
+                library_file.write(f'package {prefix} is\n\nend {prefix};')
+                written_files.append(file_path)
+
+        for template_filename in LIBRARY_FILES:
+            if not template_dir.joinpath(template_filename).is_file():
+                raise InternalError(f'library file not found: "{template_filename}"')
+
+            filename = self.prefix.replace('.', '-').lower() + template_filename
+            file_path = Path(directory).joinpath(filename)
+
+            with open(template_dir.joinpath(template_filename)) as template_file:
+                with open(file_path, 'w') as library_file:
+                    library_file.write(template_file.read().format(prefix=self.prefix))
+                    written_files.append(file_path)
+
+        return written_files
 
     def write_units(self, directory: Path) -> List[Path]:
         written_files = []
@@ -2066,6 +2102,10 @@ class Generator:
     @property
     def types_unreachable_bit_length(self) -> str:
         return f'{self.types}.Unreachable_Bit_Length'
+
+
+class InternalError(Exception):
+    pass
 
 
 def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
