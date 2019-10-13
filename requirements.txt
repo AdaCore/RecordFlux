@@ -4,3 +4,4 @@ isort
 mypy
 pylint
 pyparsing
+z3-solver

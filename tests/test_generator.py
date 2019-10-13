@@ -5,6 +5,7 @@ from typing import List
 
 from rflx.generator import LIBRARY_FILES, Generator
 from rflx.model import Message, Refinement
+
 from tests.models import (ARRAY_INNER_MESSAGE, ARRAY_MESSAGE, ARRAY_MESSAGES_MESSAGE,
                           DERIVATION_MESSAGE, ENUMERATION_MESSAGE, ETHERNET_FRAME, NULL_MESSAGE,
                           NULL_MESSAGE_IN_TLV_MESSAGE, TLV_MESSAGE)

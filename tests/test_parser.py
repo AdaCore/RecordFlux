@@ -8,6 +8,7 @@ from rflx.parser import (FINAL, INITIAL, UNDEFINED, And, Array, Component, Conte
                          ModularInteger, Mul, NotEqual, Number, PackageSpec, ParseFatalException,
                          Parser, ParserError, Pow, RangeInteger, Reference, Refinement,
                          Specification, Sub, Then, Variable)
+
 from tests.models import ETHERNET_FRAME
 
 
