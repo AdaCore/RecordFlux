@@ -1,4 +1,6 @@
 VERBOSE ?= @
+PYLINT = $(notdir $(firstword $(shell which pylint pylint3 2> /dev/null)))
+export MYPYPATH = $(PWD)/stubs
 
 build-dir := build
 noprefix-dir := build/noprefix
@@ -20,9 +22,9 @@ test: test_python test_spark prove_spark
 test_python:
 	coverage run --branch --source=rflx -m unittest -b
 	mypy bin/*.py rflx/*.py tests/*.py
-	pylint bin/*.py rflx/*.py tests/*.py
-	flake8 bin/*.py rflx/*.py tests/*.py
-	isort -c -w 100 bin/*.py rflx/*.py tests/*.py
+	$(PYLINT) bin/*.py rflx/*.py tests/*.py stubs/*.pyi
+	flake8 bin/*.py rflx/*.py tests/*.py stubs/*.pyi
+	isort -c -w 100 bin/*.py rflx/*.py tests/*.py stubs/*.pyi
 
 test_spark: $(test-files)
 	gprbuild -P$(project)
