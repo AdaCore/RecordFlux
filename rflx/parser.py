@@ -4,7 +4,6 @@ from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, Parse
                        ParseFatalException, ParseResults, Regex, StringEnd, Suppress, Token, Word,
                        WordEnd, WordStart, ZeroOrMore, alphanums, alphas, delimitedList,
                        infixNotation, nums, opAssoc)
-
 from rflx.expression import (TRUE, UNDEFINED, Add, And, Attribute, Div, Equal, Expr, First, Greater,
                              GreaterEqual, Last, Length, Less, LessEqual, Mul, NotEqual, Number, Or,
                              Pow, Relation, Sub, Variable)

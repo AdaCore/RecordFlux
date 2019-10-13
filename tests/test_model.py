@@ -4,6 +4,7 @@ from rflx.expression import (TRUE, UNDEFINED, Add, And, Div, Equal, First, Great
                              Length, LessEqual, Mul, NotEqual, Number, Or, Pow, Sub, Variable)
 from rflx.model import (FINAL, INITIAL, Array, Field, Link, Message, ModelError, ModularInteger,
                         RangeInteger)
+
 from tests.models import ETHERNET_FRAME
 
 SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)

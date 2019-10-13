@@ -1,9 +1,11 @@
+# pylint: disable=too-many-lines
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
 from enum import Enum
-from typing import Callable, List, Mapping, Sequence, Tuple, Union
+from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
+import z3
 from rflx.common import indent, indent_next, unique, verify_identifier
 
 
@@ -19,6 +21,7 @@ class Precedence(Enum):
 
 
 class Expr(ABC):
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
@@ -78,6 +81,10 @@ class Expr(ABC):
             return f'({expr})'
         return str(expr)
 
+    @abstractmethod
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
 
 class BooleanLiteral(Expr):
     @abstractmethod
@@ -99,6 +106,9 @@ class BooleanTrue(BooleanLiteral):
     def __neg__(self) -> Expr:
         return FALSE
 
+    def z3expr(self) -> z3.BoolRef:
+        return z3.BoolVal(True)
+
 
 TRUE = BooleanTrue()
 
@@ -109,6 +119,9 @@ class BooleanFalse(BooleanLiteral):
 
     def __neg__(self) -> Expr:
         return TRUE
+
+    def z3expr(self) -> z3.BoolRef:
+        return z3.BoolVal(False)
 
 
 FALSE = BooleanFalse()
@@ -130,6 +143,12 @@ class Not(Expr):
 
     def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
         return self
+
+    def z3expr(self) -> z3.BoolRef:
+        z3expr = self.expr.z3expr()
+        if isinstance(z3expr, z3.BoolRef):
+            return z3.Not(z3expr)
+        raise TypeError
 
 
 class BinExpr(Expr):
@@ -314,6 +333,10 @@ class And(LogExpr):
     def symbol(self) -> str:
         return ' and then '
 
+    def z3expr(self) -> z3.BoolRef:
+        z3exprs = [t.z3expr() for t in self.terms]
+        return z3.And(*[t for t in z3exprs if isinstance(t, z3.BoolRef)])
+
 
 class Or(LogExpr):
     def __neg__(self) -> Expr:
@@ -339,6 +362,10 @@ class Or(LogExpr):
     @property
     def symbol(self) -> str:
         return ' or '
+
+    def z3expr(self) -> z3.BoolRef:
+        z3exprs = [t.z3expr() for t in self.terms]
+        return z3.Or(*[t for t in z3exprs if isinstance(t, z3.BoolRef)])
 
 
 class Number(Expr):
@@ -426,6 +453,9 @@ class Number(Expr):
     def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
         return self
 
+    def z3expr(self) -> z3.ArithRef:
+        return z3.IntVal(self.value)
+
 
 class Add(AssExpr):
     def __str__(self) -> str:
@@ -474,6 +504,17 @@ class Add(AssExpr):
     def symbol(self) -> str:
         return ' + '
 
+    def z3expr(self) -> z3.ArithRef:
+        z3expr = self.terms[0].z3expr()
+        for t in self.terms[1:]:
+            tmp = t.z3expr()
+            if not isinstance(z3expr, z3.ArithRef) or not isinstance(tmp, z3.ArithRef):
+                raise ValueError
+            z3expr = z3expr + tmp
+        if not isinstance(z3expr, z3.ArithRef):
+            raise ValueError
+        return z3expr
+
 
 class Mul(AssExpr):
     def __neg__(self) -> Expr:
@@ -492,6 +533,17 @@ class Mul(AssExpr):
     @property
     def symbol(self) -> str:
         return ' * '
+
+    def z3expr(self) -> z3.ArithRef:
+        z3expr = self.terms[0].z3expr()
+        for t in self.terms[1:]:
+            tmp = t.z3expr()
+            if not isinstance(z3expr, z3.ArithRef) or not isinstance(tmp, z3.ArithRef):
+                raise ValueError
+            z3expr = z3expr * tmp
+        if not isinstance(z3expr, z3.ArithRef):
+            raise ValueError
+        return z3expr
 
 
 class Sub(BinExpr):
@@ -514,6 +566,15 @@ class Sub(BinExpr):
     def symbol(self) -> str:
         return ' - '
 
+    def z3expr(self) -> z3.ArithRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            result = left - right
+        if isinstance(result, z3.ArithRef):
+            return result
+        raise ValueError
+
 
 class Div(BinExpr):
     @property
@@ -530,6 +591,15 @@ class Div(BinExpr):
     @property
     def symbol(self) -> str:
         return ' / '
+
+    def z3expr(self) -> z3.ArithRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            result = left / right
+        if isinstance(result, z3.ArithRef):
+            return result
+        raise ValueError
 
 
 class Pow(BinExpr):
@@ -548,6 +618,15 @@ class Pow(BinExpr):
     def symbol(self) -> str:
         return '**'
 
+    def z3expr(self) -> z3.ArithRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            result = left ** right
+        if isinstance(result, z3.ArithRef):
+            return result
+        raise ValueError
+
 
 class Mod(BinExpr):
     @property
@@ -564,6 +643,15 @@ class Mod(BinExpr):
     @property
     def symbol(self) -> str:
         return ' mod '
+
+    def z3expr(self) -> z3.ArithRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            result = left % right
+        if isinstance(result, z3.ArithRef):
+            return result
+        raise ValueError
 
 
 class Name(Expr):
@@ -603,6 +691,13 @@ class Name(Expr):
     @property
     def representation(self) -> str:
         return str(self.name)
+
+    def z3expr(self) -> z3.ArithRef:
+        if isinstance(self.name, str):
+            if self.negative:
+                return -z3.Int(self.name)
+            return z3.Int(self.name)
+        raise ValueError
 
 
 class Variable(Name):
@@ -691,6 +786,9 @@ class Aggregate(Expr):
     def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
         return self.__class__(*[e.simplified(facts) for e in self.elements])
 
+    def z3expr(self) -> z3.ExprRef:
+        return z3.BoolVal(False)
+
 
 class NamedAggregate(Expr):
     def __init__(self, *elements: Tuple[str, Expr]) -> None:
@@ -711,6 +809,9 @@ class NamedAggregate(Expr):
     def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
         return self.__class__(*[(n, e.simplified(facts)) for n, e in self.elements])
 
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
 
 class Relation(BinExpr):
     @abstractmethod
@@ -730,6 +831,13 @@ class Less(Relation):
     def symbol(self) -> str:
         return ' < '
 
+    def z3expr(self) -> z3.BoolRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            return left < right
+        raise ValueError
+
 
 class LessEqual(Relation):
     def __neg__(self) -> Expr:
@@ -738,6 +846,13 @@ class LessEqual(Relation):
     @property
     def symbol(self) -> str:
         return ' <= '
+
+    def z3expr(self) -> z3.BoolRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            return left <= right
+        raise ValueError
 
 
 class Equal(Relation):
@@ -748,6 +863,14 @@ class Equal(Relation):
     def symbol(self) -> str:
         return ' = '
 
+    def z3expr(self) -> z3.BoolRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        result = left == right
+        if not isinstance(left == right, z3.BoolRef):
+            raise ValueError
+        return result
+
 
 class GreaterEqual(Relation):
     def __neg__(self) -> Expr:
@@ -756,6 +879,13 @@ class GreaterEqual(Relation):
     @property
     def symbol(self) -> str:
         return ' >= '
+
+    def z3expr(self) -> z3.BoolRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            return left >= right
+        raise ValueError
 
 
 class Greater(Relation):
@@ -766,6 +896,13 @@ class Greater(Relation):
     def symbol(self) -> str:
         return ' > '
 
+    def z3expr(self) -> z3.BoolRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            return left > right
+        raise ValueError
+
 
 class NotEqual(Relation):
     def __neg__(self) -> Expr:
@@ -774,6 +911,16 @@ class NotEqual(Relation):
     @property
     def symbol(self) -> str:
         return ' /= '
+
+    def z3expr(self) -> z3.BoolRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
+            result = left != right
+            if not isinstance(result, z3.BoolRef):
+                raise ValueError
+            return result
+        raise ValueError
 
 
 class Call(Expr):
@@ -799,6 +946,9 @@ class Call(Expr):
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         return self
 
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
 
 class Slice(Expr):
     def __init__(self, name: str, first: Expr, last: Expr) -> None:
@@ -819,6 +969,9 @@ class Slice(Expr):
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         return Slice(self.name, self.first.simplified(facts), self.last.simplified(facts))
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
 
 
 class If(Expr):
@@ -851,6 +1004,33 @@ class If(Expr):
                    for c, e in self.condition_expressions],
                   self.else_expression)
 
+    @staticmethod
+    def ifexpr(conditions: Sequence[Tuple[Expr, Expr]],
+               elseexpr: Optional[Expr]) -> z3.ExprRef:
+        if conditions:
+            c = conditions[0][0].z3expr()
+            e = conditions[0][1].z3expr()
+            r = If.ifexpr(conditions[1:], elseexpr)
+            if not isinstance(c, z3.BoolRef):
+                raise ValueError
+            return z3.If(c, e, r)
+        if elseexpr:
+            return elseexpr.z3expr()
+        return z3.BoolVal(False)
+
+    @property
+    def variables(self) -> List['Variable']:
+        variables = []
+        for ce in self.condition_expressions:
+            variables.extend(ce[0].variables)
+            variables.extend(ce[1].variables)
+        if self.else_expression:
+            variables.extend(self.else_expression.variables)
+        return list(unique(variables))
+
+    def z3expr(self) -> z3.ExprRef:
+        return If.ifexpr(self.condition_expressions, self.else_expression)
+
 
 class Case(Expr):
     def __init__(self, control_expression: Expr,
@@ -878,6 +1058,27 @@ class Case(Expr):
             return self.case_statements[0][1]
         return Case(self.control_expression.simplified(facts),
                     [(c.simplified(facts), e.simplified(facts)) for c, e in self.case_statements])
+
+    @property
+    def variables(self) -> List['Variable']:
+        variables = self.control_expression.variables
+        for cs in self.case_statements:
+            variables.extend(cs[0].variables)
+            variables.extend(cs[1].variables)
+        return list(unique(variables))
+
+    @staticmethod
+    def caseexpr(control: Expr,
+                 statements: Sequence[Tuple[Expr, Expr]]) -> Union[z3.ExprRef, z3.BoolRef]:
+        if statements:
+            condition, expression = statements[0]
+            return z3.If(control.z3expr() == condition.z3expr(),
+                         expression.z3expr(),
+                         Case.caseexpr(control, statements[1:]))
+        return z3.BoolVal(False)
+
+    def z3expr(self) -> Union[z3.BoolRef, z3.ExprRef]:
+        return Case.caseexpr(self.control_expression, self.case_statements)
 
 
 class QuantifiedExpression(Expr):
@@ -907,6 +1108,13 @@ class QuantifiedExpression(Expr):
 
     @abstractproperty
     def keyword(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def variables(self) -> List['Variable']:
+        return list(unique(self.iterable.variables + self.predicate.variables))
+
+    def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
@@ -953,3 +1161,6 @@ class Range(Expr):
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         return self.__class__(self.lower.simplified(facts), self.upper.simplified(facts))
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError

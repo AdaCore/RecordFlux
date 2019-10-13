@@ -38,6 +38,7 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'pyparsing',
+        'z3-solver',
     ],
     extras_require={
         'test': requirements,
