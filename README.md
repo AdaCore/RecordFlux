@@ -1,7 +1,6 @@
 # RecordFlux
 
 [![Build Status](https://github.com/Componolit/RecordFlux/workflows/CI/badge.svg)](https://github.com/Componolit/RecordFlux/actions)
-[![Build Status](https://travis-ci.org/Componolit/RecordFlux.svg?branch=master)](https://travis-ci.org/Componolit/RecordFlux)
 [![Code Coverage](https://codecov.io/github/Componolit/RecordFlux/coverage.svg?branch=master)](https://codecov.io/github/Componolit/RecordFlux)
 [![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://python.org/)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
