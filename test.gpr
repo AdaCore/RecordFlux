@@ -21,6 +21,7 @@ project Test is
          "-j0",
          "--prover=z3,cvc4",
          "--steps=3500",
+         "--memlimit=1000",
          "--checks-as-errors",
          "--warnings=error",
          "--no-axiom-guard"  --  WORKAROUND: Componolit/Workarounds#5
