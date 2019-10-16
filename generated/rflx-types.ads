@@ -55,6 +55,17 @@ is
              and then Natural (((Offset_Type'Pos (Offset) + Value_Type'Size - 1) / Element_Type'Size) * Element_Type'Size) < Long_Integer'Size - 1
              and then (Element_Type'Size - Natural (Offset_Type'Pos (Offset) mod Element_Type'Size)) < Long_Integer'Size - 1;
 
+   generic
+      type Index_Type   is (<>);
+      type Element_Type is (<>);
+      type Array_Type   is array (Index_Type range <>) of Element_Type;
+      type Offset_Type  is (<>);
+      type Value_Type   is (<>);
+   procedure Insert (Value  :        Value_Type;
+                     Data   : in out Array_Type;
+                     Offset :        Offset_Type) with
+     Pre => (Offset_Type'Pos (Offset) + Value_Type'Size - 1) / Element_Type'Size < Data'Length;
+
    pragma Warnings (Off, "precondition is statically false");
 
    function Unreachable_Bit_Length return Bit_Length is

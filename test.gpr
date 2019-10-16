@@ -28,6 +28,8 @@ project Test is
       );
 
       --  Improving proof time
+      for Proof_Switches ("rflx-lemmas.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-lemmas.adb") use ("--steps=380");
       case AUnit is
          when "yes" =>
             for Proof_Switches ("rflx-types-tests.adb") use ("--steps=380");
