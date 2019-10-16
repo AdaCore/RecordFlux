@@ -1,3 +1,5 @@
+with RFLX.Types;
+
 package SPARK.Assertions
   with SPARK_Mode
 is
@@ -11,5 +13,9 @@ is
    procedure Assert (Actual    : String;
                      Expected  : String;
                      Message   : String);
+
+   procedure Assert (Actual   : RFLX.Types.Bytes;
+                     Expected : RFLX.Types.Bytes;
+                     Message  : String);
 
 end SPARK.Assertions;

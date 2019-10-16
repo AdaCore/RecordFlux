@@ -129,12 +129,121 @@ package body RFLX.Types.Tests is
       Assert (R8'Image, U8'Image (255), "Invalid conversion with offset 0");
    end Test_Extract_Range_Integer;
 
+   procedure Test_Insert_Modular_Integer (T : in out Aunit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+
+      type U2 is mod 2**2;
+      procedure Insert_U2 is new Insert (Index, Byte, Bytes, Offset, U2);
+
+      type U13 is mod 2**13;
+      procedure Insert_U13 is new Insert (Index, Byte, Bytes, Offset, U13);
+
+      Buffer : Bytes (Index'First .. Index'First + 2);
+   begin
+      Buffer := (0, 0, 0);
+      Insert_U2 (1, Buffer (Buffer'First .. Buffer'First), 0);
+      Assert (Buffer, (1, 0, 0), "Invalid insertion of U2 in zero-initialized buffer with offset 0");
+      Buffer := (0, 0, 0);
+      Insert_U2 (1, Buffer (Buffer'First .. Buffer'First), 1);
+      Assert (Buffer, (2, 0, 0), "Invalid insertion of U2 in zero-initialized buffer with offset 1");
+      Buffer := (0, 0, 0);
+      Insert_U2 (1, Buffer (Buffer'First .. Buffer'First), 2);
+      Assert (Buffer, (4, 0, 0), "Invalid insertion of U2 in zero-initialized buffer with offset 2");
+      Buffer := (0, 0, 0);
+      Insert_U2 (1, Buffer (Buffer'First .. Buffer'First), 3);
+      Assert (Buffer, (8, 0, 0), "Invalid insertion of U2 in zero-initialized buffer with offset 3");
+      Buffer := (0, 0, 0);
+      Insert_U2 (1, Buffer (Buffer'First .. Buffer'First), 4);
+      Assert (Buffer, (16, 0, 0), "Invalid insertion of U2 in zero-initialized buffer with offset 4");
+      Buffer := (0, 0, 0);
+      Insert_U2 (1, Buffer (Buffer'First .. Buffer'First), 5);
+      Assert (Buffer, (32, 0, 0), "Invalid insertion of U2 in zero-initialized buffer with offset 5");
+      Buffer := (0, 0, 0);
+      Insert_U2 (1, Buffer (Buffer'First .. Buffer'First), 6);
+      Assert (Buffer, (64, 0, 0), "Invalid insertion of U2 in zero-initialized buffer with offset 6");
+
+      Buffer := (255, 255, 255);
+      Insert_U2 (2, Buffer (Buffer'First .. Buffer'First), 0);
+      Assert (Buffer, (254, 255, 255), "Invalid insertion of U2 in filled buffer with offset 0");
+      Buffer := (255, 255, 255);
+      Insert_U2 (2, Buffer (Buffer'First .. Buffer'First), 1);
+      Assert (Buffer, (253, 255, 255), "Invalid insertion of U2 in filled buffer with offset 1");
+      Buffer := (255, 255, 255);
+      Insert_U2 (2, Buffer (Buffer'First .. Buffer'First), 2);
+      Assert (Buffer, (251, 255, 255), "Invalid insertion of U2 in filled buffer with offset 2");
+      Buffer := (255, 255, 255);
+      Insert_U2 (2, Buffer (Buffer'First .. Buffer'First), 3);
+      Assert (Buffer, (247, 255, 255), "Invalid insertion of U2 in filled buffer with offset 3");
+      Buffer := (255, 255, 255);
+      Insert_U2 (2, Buffer (Buffer'First .. Buffer'First), 4);
+      Assert (Buffer, (239, 255, 255), "Invalid insertion of U2 in filled buffer with offset 4");
+      Buffer := (255, 255, 255);
+      Insert_U2 (2, Buffer (Buffer'First .. Buffer'First), 5);
+      Assert (Buffer, (223, 255, 255), "Invalid insertion of U2 in filled buffer with offset 5");
+      Buffer := (255, 255, 255);
+      Insert_U2 (2, Buffer (Buffer'First .. Buffer'First), 6);
+      Assert (Buffer, (191, 255, 255), "Invalid insertion of U2 in filled buffer with offset 6");
+
+      Buffer := (0, 0, 0);
+      Insert_U13 (5461, Buffer (Buffer'First + 1 .. Buffer'Last), 0);
+      Assert (Buffer, (0, 21, 85), "Invalid insertion of U13 in zero-initialized buffer with offset 0");
+      Buffer := (0, 0, 0);
+      Insert_U13 (5461, Buffer (Buffer'First + 1 .. Buffer'Last), 1);
+      Assert (Buffer, (0, 42, 170), "Invalid insertion of U13 in zero-initialized buffer with offset 1");
+      Buffer := (0, 0, 0);
+      Insert_U13 (5461, Buffer (Buffer'First + 1 .. Buffer'Last), 2);
+      Assert (Buffer, (0, 85, 84), "Invalid insertion of U13 in zero-initialized buffer with offset 2");
+      Buffer := (0, 0, 0);
+      Insert_U13 (5461, Buffer (Buffer'First + 1 .. Buffer'Last), 3);
+      Assert (Buffer, (0, 170, 168), "Invalid insertion of U13 in zero-initialized buffer with offset 3");
+      Buffer := (0, 0, 0);
+      Insert_U13 (5461, Buffer, Dynamic_Offset (4));
+      Assert (Buffer, (1, 85, 80), "Invalid insertion of U13 in zero-initialized buffer with offset 4");
+      Buffer := (0, 0, 0);
+      Insert_U13 (5461, Buffer, Dynamic_Offset (5));
+      Assert (Buffer, (2, 170, 160), "Invalid insertion of U13 in zero-initialized buffer with offset 5");
+      Buffer := (0, 0, 0);
+      Insert_U13 (5461, Buffer, Dynamic_Offset (6));
+      Assert (Buffer, (5, 85, 64), "Invalid insertion of U13 in zero-initialized buffer with offset 6");
+      Buffer := (0, 0, 0);
+      Insert_U13 (5461, Buffer, Dynamic_Offset (7));
+      Assert (Buffer, (10, 170, 128), "Invalid insertion of U13 in zero-initialized buffer with offset 7");
+
+      Buffer := (255, 255, 255);
+      Insert_U13 (5461, Buffer (Buffer'First + 1 .. Buffer'Last), 0);
+      Assert (Buffer, (255, 245, 85), "Invalid insertion of U13 in filled buffer with offset 0");
+      Buffer := (255, 255, 255);
+      Insert_U13 (5461, Buffer (Buffer'First + 1 .. Buffer'Last), 1);
+      Assert (Buffer, (255, 234, 171), "Invalid insertion of U13 in filled buffer with offset 1");
+      Buffer := (255, 255, 255);
+      Insert_U13 (5461, Buffer (Buffer'First + 1 .. Buffer'Last), 2);
+      Assert (Buffer, (255, 213, 87), "Invalid insertion of U13 in filled buffer with offset 2");
+      Buffer := (255, 255, 255);
+      Insert_U13 (5461, Buffer (Buffer'First + 1 .. Buffer'Last), 3);
+      Assert (Buffer, (255, 170, 175), "Invalid insertion of U13 in filled buffer with offset 3");
+      Buffer := (255, 255, 255);
+      Insert_U13 (5461, Buffer, Dynamic_Offset (4));
+      Assert (Buffer, (255, 85, 95), "Invalid insertion of U13 in filled buffer with offset 4");
+      Buffer := (255, 255, 255);
+      Insert_U13 (5461, Buffer, Dynamic_Offset (5));
+      Assert (Buffer, (254, 170, 191), "Invalid insertion of U13 in filled buffer with offset 5");
+      Buffer := (255, 255, 255);
+      Insert_U13 (5461, Buffer, Dynamic_Offset (6));
+      Assert (Buffer, (253, 85, 127), "Invalid insertion of U13 in filled buffer with offset 6");
+      Buffer := (255, 255, 255);
+      Insert_U13 (5461, Buffer, Dynamic_Offset (7));
+      Assert (Buffer, (250, 170, 255), "Invalid insertion of U13 in filled buffer with offset 7");
+   end Test_Insert_Modular_Integer;
+
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
       Register_Routine (T, Test_Index_Calculations'Access, "Index calculations");
       Register_Routine (T, Test_Extract_Modular_Integer'Access, "Extract modular integer");
       Register_Routine (T, Test_Extract_Range_Integer'Access, "Extract range integer");
+      Register_Routine (T, Test_Insert_Modular_Integer'Access, "Insert modular integer");
    end Register_Tests;
 
 end RFLX.Types.Tests;
