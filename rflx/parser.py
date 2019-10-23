@@ -426,7 +426,7 @@ def convert_to_refinements(spec: Specification, messages: Dict[str, Message]) ->
                 raise ParserError(f'duplicate refinement of field "{t.field.name}" with "{t.sdu}"'
                                   f' in "{t.pdu}"')
             refinements.append(refinement)
-            for variable in t.condition.variables:
+            for variable in t.condition.variables():
                 literals = [l for e in messages[pdu].types.values() if isinstance(e, Enumeration)
                             for l in e.literals.keys()]
                 if (Field(str(variable.name)) not in messages[pdu].fields

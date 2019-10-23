@@ -3,7 +3,7 @@ import unittest
 from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, Aggregate, And, Case, Div, Equal, First,
                              ForAllOf, Greater, GreaterEqual, If, Last, Length, Less, LessEqual,
                              Mod, Mul, Name, NamedAggregate, Not, NotEqual, Number, Or, Pow, Range,
-                             Slice, Sub, Variable)
+                             Size, Slice, Sub, Variable)
 
 EXPR = Equal(UNDEFINED, UNDEFINED)
 
@@ -24,7 +24,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_true_variables(self) -> None:
         self.assertEqual(
-            TRUE.variables,
+            TRUE.variables(),
             [])
 
     def test_false_neg(self) -> None:
@@ -39,7 +39,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_false_variables(self) -> None:
         self.assertEqual(
-            FALSE.variables,
+            FALSE.variables(),
             [])
 
     def test_not_neg(self) -> None:
@@ -74,7 +74,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_and_variables(self) -> None:
         self.assertEqual(
-            And(Variable('X'), Variable('Y'), Name('Z')).variables,
+            And(Variable('X'), Variable('Y'), Name('Z')).variables(),
             [Variable('X'), Variable('Y')])
 
     def test_and_contains(self) -> None:
@@ -104,7 +104,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_or_variables(self) -> None:
         self.assertEqual(
-            Or(Variable('X'), Variable('Y'), Name('Z')).variables,
+            Or(Variable('X'), Variable('Y'), Name('Z')).variables(),
             [Variable('X'), Variable('Y')])
 
     def test_or_contains(self) -> None:
@@ -239,7 +239,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_add_variables(self) -> None:
         self.assertEqual(
-            Add(Variable('X'), Variable('Y'), Name('Z')).variables,
+            Add(Variable('X'), Variable('Y'), Name('Z')).variables(),
             [Variable('X'), Variable('Y')])
 
     def test_add_simplified(self) -> None:
@@ -346,7 +346,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_mul_variables(self) -> None:
         self.assertEqual(
-            Mul(Variable('X'), Variable('Y'), Name('Z')).variables,
+            Mul(Variable('X'), Variable('Y'), Name('Z')).variables(),
             [Variable('X'), Variable('Y')])
 
     def test_mul_simplified(self) -> None:
@@ -367,7 +367,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_sub_variables(self) -> None:
         self.assertEqual(
-            Sub(Variable('X'), Name('Y')).variables,
+            Sub(Variable('X'), Name('Y')).variables(),
             [Variable('X')])
 
     def test_sub_simplified(self) -> None:
@@ -391,10 +391,10 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_div_variables(self) -> None:
         self.assertEqual(
-            Div(Variable('X'), Name('Y')).variables,
+            Div(Variable('X'), Name('Y')).variables(),
             [Variable('X')])
         self.assertEqual(
-            Div(Variable('X'), Variable('Y')).variables,
+            Div(Variable('X'), Variable('Y')).variables(),
             [Variable('X'), Variable('Y')])
 
     def test_div_simplified(self) -> None:
@@ -421,7 +421,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_pow_variables(self) -> None:
         self.assertEqual(
-            Pow(Variable('X'), Variable('Y')).variables,
+            Pow(Variable('X'), Variable('Y')).variables(),
             [Variable('X'), Variable('Y')])
 
     def test_mod_simplified(self) -> None:
@@ -437,7 +437,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_mod_variables(self) -> None:
         self.assertEqual(
-            Mod(Variable('X'), Variable('Y')).variables,
+            Mod(Variable('X'), Variable('Y')).variables(),
             [Variable('X'), Variable('Y')])
 
     def test_term_simplified(self) -> None:
@@ -458,7 +458,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_variable_neg_variables(self) -> None:
         self.assertEqual(
-            (-Variable('X')).variables,
+            (-Variable('X')).variables(),
             [Variable('X', True)])
 
     def test_variable_simplified(self) -> None:
@@ -528,10 +528,10 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_relation_variables(self) -> None:
         self.assertEqual(
-            Less(Variable('X'), Name('Y')).variables,
+            Less(Variable('X'), Name('Y')).variables(),
             [Variable('X')])
         self.assertEqual(
-            Less(Variable('X'), Variable('Y')).variables,
+            Less(Variable('X'), Variable('Y')).variables(),
             [Variable('X'), Variable('Y')])
 
     def test_less_neg(self) -> None:
@@ -616,7 +616,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(
             If([(Variable('X'), Number(21)),
                 (Variable('Y'), Add(Number(21), Number(21))),
-                (Add(Number(21), Number(21)), Variable('Z'))]).variables,
+                (Add(Number(21), Number(21)), Variable('Z'))]).variables(),
             [Variable('X'), Variable('Y'), Variable('Z')])
 
     def test_case_simplified(self) -> None:
@@ -635,7 +635,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             Case(Add(Number(21), Number(21)),
                  [(Variable('X'), Number(21)),
                   (Variable('Y'), Add(Number(21), Number(21))),
-                  (Add(Number(21), Number(21)), Variable('Z'))]).variables,
+                  (Add(Number(21), Number(21)), Variable('Z'))]).variables(),
             [Variable('X'), Variable('Y'), Variable('Z')])
 
     def test_range_simplified(self) -> None:
@@ -651,7 +651,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_quantified_expression_variables(self) -> None:
         self.assertEqual(
             ForAllOf('A', Name('List'), Add(Variable('X'),
-                                            Add(Variable('Y'), Variable('Z')))).variables,
+                                            Add(Variable('Y'), Variable('Z')))).variables(),
             [Variable('X'), Variable('Y'), Variable('Z')])
 
     def test_expr_contains(self) -> None:
@@ -671,46 +671,66 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_expr_variables(self) -> None:
         self.assertEqual(
             Or(Greater(Variable('Y'), Number(42)),
-               And(TRUE, Less(Variable('X'), Number(42)))).variables,
+               And(TRUE, Less(Variable('X'), Number(42)))).variables(),
             [Variable('Y'), Variable('X')])
         self.assertEqual(
             Or(Greater(Variable('Y'), Number(42)),
-               And(TRUE, Less(Variable('X'), Number(42)))).variables,
+               And(TRUE, Less(Variable('X'), Number(42)))).variables(),
             [Variable('Y'), Variable('X')])
         self.assertEqual(
             Or(Greater(Variable('Y'), Number(42)),
-               And(TRUE, Less(Variable('X'), Number(42)))).variables,
+               And(TRUE, Less(Variable('X'), Number(42)))).variables(),
             [Variable('Y'), Variable('X')])
         self.assertEqual(
             Or(Greater(Variable('Y'), Number(42)),
-               And(TRUE, Less(Variable('X'), Number(1)))).variables,
+               And(TRUE, Less(Variable('X'), Number(1)))).variables(),
             [Variable('Y'), Variable('X')])
 
     def test_expr_variables_duplicates(self) -> None:
         self.assertEqual(
-            And(Variable('X'), Variable('Y'), Variable('X')).variables,
+            And(Variable('X'), Variable('Y'), Variable('X')).variables(),
             [Variable('X'), Variable('Y')])
         self.assertEqual(
-            Or(Variable('X'), Variable('Y'), Variable('X')).variables,
+            Or(Variable('X'), Variable('Y'), Variable('X')).variables(),
             [Variable('X'), Variable('Y')])
         self.assertEqual(
-            Add(Variable('X'), Variable('Y'), Variable('X')).variables,
+            Add(Variable('X'), Variable('Y'), Variable('X')).variables(),
             [Variable('X'), Variable('Y')])
         self.assertEqual(
-            Mul(Variable('X'), Variable('Y'), Variable('X')).variables,
+            Mul(Variable('X'), Variable('Y'), Variable('X')).variables(),
             [Variable('X'), Variable('Y')])
         self.assertEqual(
-            Sub(Variable('X'), Variable('X')).variables,
+            Sub(Variable('X'), Variable('X')).variables(),
             [Variable('X')])
         self.assertEqual(
-            Div(Variable('X'), Variable('X')).variables,
+            Div(Variable('X'), Variable('X')).variables(),
             [Variable('X')])
         self.assertEqual(
             Or(Greater(Variable('X'), Number(42)),
-               And(TRUE, Less(Variable('X'), Number(1)))).variables,
+               And(TRUE, Less(Variable('X'), Number(1)))).variables(),
             [Variable('X')])
 
     def test_name_variables(self) -> None:
         self.assertEqual(
-            Name('Z').variables,
+            Name('Z').variables(),
             [])
+
+    def test_length_z3variables(self) -> None:
+        self.assertEqual(
+            Length('Z').variables(True),
+            [Variable('Z__Length')])
+
+    def test_last_z3variables(self) -> None:
+        self.assertEqual(
+            Last('Z').variables(True),
+            [Variable('Z__Last')])
+
+    def test_first_z3variables(self) -> None:
+        self.assertEqual(
+            First('Z').variables(True),
+            [Variable('Z__First')])
+
+    def test_size_z3variables(self) -> None:
+        self.assertEqual(
+            Size('Z').variables(True),
+            [Variable('Z__Size')])
