@@ -11,7 +11,8 @@ package Test is
             then Bar
                with First => 1, Length => 1
                if Foo'Length = 1 and Foo <= 16#1E#,
-            then Baz;
+            then Baz
+               if Foo'Length = 1 and Foo > 16#1E#;
          Bar : T;
          Baz : T;
       end message;

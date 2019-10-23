@@ -2,8 +2,8 @@ import unittest
 
 from rflx.expression import (TRUE, UNDEFINED, Add, And, Div, Equal, First, GreaterEqual, Last,
                              Length, LessEqual, Mul, NotEqual, Number, Or, Pow, Sub, Variable)
-from rflx.model import (FINAL, INITIAL, Array, Field, Link, Message, ModelError, ModularInteger,
-                        RangeInteger)
+from rflx.model import (FINAL, INITIAL, Array, Enumeration, Field, Link, Message, ModelError,
+                        ModularInteger, RangeInteger)
 
 from tests.models import ETHERNET_FRAME
 
@@ -316,3 +316,21 @@ class TestModel(unittest.TestCase):
         self.assertTupleEqual(
             ETHERNET_FRAME.successors(FINAL),
             ())
+
+    def disabled_test_nonexistent_variable(self) -> None:
+        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        enum_type = Enumeration('Bar', {'Val1': Number(0), 'Val2': Number(1)}, Number(8), True)
+        structure = [
+            Link(INITIAL, Field('F1')),
+            Link(Field('F1'), Field('F2'),
+                Equal(Variable('F1'), Variable('Val1'))),
+            Link(Field('F1'), FINAL,
+                Equal(Variable('F1'), Variable('Val3'))),
+            Link(Field('F2'), FINAL)]
+
+        types = {
+            Field('F1'): enum_type,
+            Field('F2'): foo_type
+        }
+        with self.assertRaises(ModelError):
+            Message('X', structure, types)

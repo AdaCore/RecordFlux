@@ -3,8 +3,8 @@ from abc import ABC, abstractproperty
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
-from rflx.expression import (TRUE, UNDEFINED, And, Expr, GreaterEqual, LessEqual, Number, Or, Pow,
-                             Sub, Variable)
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Expr, GreaterEqual, If, LessEqual, Number,
+                             Or, Pow, ProofResult, Sub, Variable)
 
 
 class Element(ABC):
@@ -199,7 +199,6 @@ class Message(Element):
 
         if structure or types:
             self.__verify()
-
             self.__fields = self.__compute_topological_sorting()
             self.__types = {f: self.__types[f]
                             for f in self.__fields}
@@ -209,6 +208,7 @@ class Message(Element):
                                             for f in self.all_fields}
             self.__field_condition = {f: self.__compute_field_condition(f).simplified()
                                       for f in self.all_fields}
+            self.__prove()
         else:
             self.__fields = ()
             self.__paths = {}
@@ -285,6 +285,28 @@ class Message(Element):
             raise ModelError(f'superfluous field "{f.name}" in field types of "{self.full_name}"')
         if len(self.outgoing(INITIAL)) != 1:
             raise ModelError(f'ambiguous first field in "{self.full_name}"')
+
+    def __verify_conditions(self) -> None:
+        literals = {n for t in self.types.values()
+                       if isinstance(t, Enumeration) for n in t.literals}
+        fields = {f.name for f in self.fields}
+        variables = {v for f in self.all_fields for v in self.field_condition(f).variables()}
+        undefined = {v.name for v in variables} - fields - literals
+        if undefined:
+            raise ModelError('Undefined variables ({undef})'.format(undef=', '.join(undefined)))
+
+    def __prove(self) -> None:
+        for f in self.__fields:
+            literals = {n for t in self.types.values()
+                           if isinstance(t, Enumeration) for n in t.literals}
+
+            pred = LessEqual(Add(*[If([(c.condition, Number(1))], Number(0))
+                                          for c in self.outgoing(f)]),
+                             Number(1))
+            result = pred.solve(literals)
+            if result != ProofResult.sat:
+                raise ModelError("{name}: Conflicting conditions ({result}: {pred})".format(
+                    name=f.name, result=result, pred=pred))
 
     def __compute_topological_sorting(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted (Kahn's algorithm)."""

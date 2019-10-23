@@ -20,6 +20,12 @@ class Precedence(Enum):
     literal = 7
 
 
+class ProofResult(Enum):
+    sat = z3.sat
+    unsat = z3.unsat
+    unknown = z3.unknown
+
+
 class Expr(ABC):
 
     def __eq__(self, other: object) -> bool:
@@ -65,8 +71,7 @@ class Expr(ABC):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    @property
-    def variables(self) -> List['Variable']:
+    def variables(self, z3: bool = False) -> List['Variable']:
         return []
 
     def converted(self, replace_function: Callable[['Expr'], 'Expr']) -> 'Expr':
@@ -84,6 +89,15 @@ class Expr(ABC):
     @abstractmethod
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+    def solve(self, fixed: Optional[List['Variable']]) -> ProofResult:
+        cond = self.z3expr()
+        variables = {v for v in self.variables(True) if v.name not in fixed}
+        if variables:
+            cond = z3.ForAll(list([v.z3expr() for v in variables]), cond)
+        solver = z3.Solver()
+        solver.add(cond)
+        return ProofResult(solver.check())
 
 
 class BooleanLiteral(Expr):
@@ -169,9 +183,8 @@ class BinExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    @property
-    def variables(self) -> List['Variable']:
-        return list(unique(self.left.variables + self.right.variables))
+    def variables(self, z3: bool = False) -> List['Variable']:
+        return list(unique(self.left.variables(z3) + self.right.variables(z3)))
 
     def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
         left = self.left.converted(replace_function)
@@ -240,9 +253,8 @@ class AssExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    @property
-    def variables(self) -> List['Variable']:
-        return list(unique([v for t in self.terms for v in t.variables]))
+    def variables(self, z3: bool = False) -> List['Variable']:
+        return list(unique([v for t in self.terms for v in t.variables(z3)]))
 
     def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
         terms: List[Expr] = []
@@ -335,7 +347,10 @@ class And(LogExpr):
 
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
-        return z3.And(*[t for t in z3exprs if isinstance(t, z3.BoolRef)])
+        boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
+        if len(z3exprs) != len(boolexprs):
+            raise ValueError
+        return z3.And(*boolexprs)
 
 
 class Or(LogExpr):
@@ -365,7 +380,10 @@ class Or(LogExpr):
 
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
-        return z3.Or(*[t for t in z3exprs if isinstance(t, z3.BoolRef)])
+        boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
+        if len(z3exprs) != len(boolexprs):
+            raise ValueError
+        return z3.Or(*boolexprs)
 
 
 class Number(Expr):
@@ -692,18 +710,20 @@ class Name(Expr):
     def representation(self) -> str:
         return str(self.name)
 
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError(str(type(self)))
+
+
+class Variable(Name):
+    def variables(self, z3: bool = False) -> List['Variable']:
+        return [self]
+
     def z3expr(self) -> z3.ArithRef:
         if isinstance(self.name, str):
             if self.negative:
                 return -z3.Int(self.name)
             return z3.Int(self.name)
         raise ValueError
-
-
-class Variable(Name):
-    @property
-    def variables(self) -> List['Variable']:
-        return [self]
 
 
 class Attribute(Name):
@@ -713,19 +733,43 @@ class Attribute(Name):
 
 
 class Size(Attribute):
-    pass
+    def variables(self, z3: bool = False) -> List['Variable']:
+        if z3:
+            return [Variable(self.name + '__Size')]
+        return []
+
+    def z3expr(self) -> z3.ExprRef:
+        return z3.Int(self.name + '__Size')
 
 
 class Length(Attribute):
-    pass
+    def variables(self, z3: bool = False) -> List['Variable']:
+        if z3:
+            return [Variable(self.name + '__Length')]
+        return []
+
+    def z3expr(self) -> z3.ExprRef:
+        return z3.Int(self.name + '__Length')
 
 
 class First(Attribute):
-    pass
+    def variables(self, z3: bool = False) -> List['Variable']:
+        if z3:
+            return [Variable(self.name + '__First')]
+        return []
+
+    def z3expr(self) -> z3.ExprRef:
+        return z3.Int(self.name + '__First')
 
 
 class Last(Attribute):
-    pass
+    def variables(self, z3: bool = False) -> List['Variable']:
+        if z3:
+            return [Variable(self.name + '__Last')]
+        return []
+
+    def z3expr(self) -> z3.ExprRef:
+        return z3.Int(self.name + '__Last')
 
 
 class Old(Attribute):
@@ -764,6 +808,9 @@ class Selected(Name):
 class UndefinedExpr(Name):
     def __init__(self, name: str = 'UNDEFINED') -> None:
         super().__init__(name)
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
 
 
 UNDEFINED = UndefinedExpr()
@@ -915,12 +962,10 @@ class NotEqual(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            result = left != right
-            if not isinstance(result, z3.BoolRef):
-                raise ValueError
-            return result
-        raise ValueError
+        result = left != right
+        if not isinstance(result, z3.BoolRef):
+            raise ValueError
+        return result
 
 
 class Call(Expr):
@@ -1018,14 +1063,13 @@ class If(Expr):
             return elseexpr.z3expr()
         return z3.BoolVal(False)
 
-    @property
-    def variables(self) -> List['Variable']:
+    def variables(self, z3: bool = False) -> List['Variable']:
         variables = []
         for ce in self.condition_expressions:
-            variables.extend(ce[0].variables)
-            variables.extend(ce[1].variables)
+            variables.extend(ce[0].variables(z3))
+            variables.extend(ce[1].variables(z3))
         if self.else_expression:
-            variables.extend(self.else_expression.variables)
+            variables.extend(self.else_expression.variables(z3))
         return list(unique(variables))
 
     def z3expr(self) -> z3.ExprRef:
@@ -1059,12 +1103,11 @@ class Case(Expr):
         return Case(self.control_expression.simplified(facts),
                     [(c.simplified(facts), e.simplified(facts)) for c, e in self.case_statements])
 
-    @property
-    def variables(self) -> List['Variable']:
-        variables = self.control_expression.variables
+    def variables(self, z3: bool = False) -> List['Variable']:
+        variables = self.control_expression.variables(z3)
         for cs in self.case_statements:
-            variables.extend(cs[0].variables)
-            variables.extend(cs[1].variables)
+            variables.extend(cs[0].variables(z3))
+            variables.extend(cs[1].variables(z3))
         return list(unique(variables))
 
     @staticmethod
@@ -1110,9 +1153,8 @@ class QuantifiedExpression(Expr):
     def keyword(self) -> str:
         raise NotImplementedError
 
-    @property
-    def variables(self) -> List['Variable']:
-        return list(unique(self.iterable.variables + self.predicate.variables))
+    def variables(self, z3: bool = False) -> List['Variable']:
+        return list(unique(self.iterable.variables(z3) + self.predicate.variables(z3)))
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
