@@ -4,7 +4,6 @@ from rflx.expression import (TRUE, UNDEFINED, Add, And, Div, Equal, First, Great
                              Length, LessEqual, Mul, NotEqual, Number, Or, Pow, Sub, Variable)
 from rflx.model import (FINAL, INITIAL, Array, Enumeration, Field, Link, Message, ModelError,
                         ModularInteger, RangeInteger)
-
 from tests.models import ETHERNET_FRAME
 
 SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
@@ -323,14 +322,12 @@ class TestModel(unittest.TestCase):
         structure = [
             Link(INITIAL, Field('F1')),
             Link(Field('F1'), Field('F2'),
-                Equal(Variable('F1'), Variable('Val1'))),
-            Link(Field('F1'), FINAL,
-                Equal(Variable('F1'), Variable('Val3'))),
+                 Equal(Variable('F1'), Variable('Val3'))),
             Link(Field('F2'), FINAL)]
 
         types = {
             Field('F1'): enum_type,
             Field('F2'): foo_type
         }
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, 'undefined variables (Val3)'):
             Message('X', structure, types)

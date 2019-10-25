@@ -3,8 +3,8 @@ from abc import ABC, abstractproperty
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
-from rflx.expression import (TRUE, UNDEFINED, Add, And, Expr, GreaterEqual, If, LessEqual, Number,
-                             Or, Pow, ProofResult, Sub, Variable)
+from rflx.expression import (TRUE, UNDEFINED, Add, And, Expr, Greater, GreaterEqual, If, LessEqual,
+                             Not, Number, Or, Pow, ProofResult, Sub, Variable)
 
 
 class Element(ABC):
@@ -288,25 +288,38 @@ class Message(Element):
 
     def __verify_conditions(self) -> None:
         literals = {n for t in self.types.values()
-                       if isinstance(t, Enumeration) for n in t.literals}
-        fields = {f.name for f in self.fields}
+                    if isinstance(t, Enumeration) for n in t.literals}
+        fields = {f.name for f in self.fields if isinstance(f.name, str)}
         variables = {v for f in self.all_fields for v in self.field_condition(f).variables()}
-        undefined = {v.name for v in variables} - fields - literals
+        undefined = {v.name for v in variables if isinstance(v.name, str)} - fields - literals
         if undefined:
             raise ModelError('Undefined variables ({undef})'.format(undef=', '.join(undefined)))
 
     def __prove(self) -> None:
-        for f in self.__fields:
-            literals = {n for t in self.types.values()
-                           if isinstance(t, Enumeration) for n in t.literals}
 
-            pred = LessEqual(Add(*[If([(c.condition, Number(1))], Number(0))
-                                          for c in self.outgoing(f)]),
-                             Number(1))
-            result = pred.solve(literals)
+        literals = {n for t in self.types.values()
+                    if isinstance(t, Enumeration) for n in t.literals}
+
+        for f in (INITIAL, *self.__fields):
+            conflict = LessEqual(Add(*[If([(c.condition, Number(1))], Number(0))
+                                       for c in self.outgoing(f)]),
+                                 Number(1))
+            result = conflict.solve(literals)
             if result != ProofResult.sat:
-                raise ModelError("{name}: Conflicting conditions ({result}: {pred})".format(
-                    name=f.name, result=result, pred=pred))
+                message = str(conflict).replace('\n', '')
+                raise ModelError(f'conflicting conditions for field "{f.name}"'
+                                 + f' ({result}: {message})')
+
+        for f in (*self.__fields, FINAL):
+            reachability = Greater(Add(*[If([(Not(And(*[p.condition for p in paths])).simplified(),
+                                              Number(0))],
+                                            Number(1))
+                                       for paths in self.__compute_paths(f)]),
+                                   Number(0))
+            result = reachability.solve(literals)
+            if result != ProofResult.sat:
+                message = str(reachability).replace('\n', '')
+                raise ModelError(f'unreachable field "{f.name}" ({result}: {message})')
 
     def __compute_topological_sorting(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted (Kahn's algorithm)."""
