@@ -8,7 +8,6 @@ from rflx.parser import (FINAL, INITIAL, UNDEFINED, And, Array, Component, Conte
                          ModularInteger, Mul, NotEqual, Number, PackageSpec, ParseFatalException,
                          Parser, ParserError, Pow, RangeInteger, Reference, Refinement,
                          Specification, Sub, Then, Variable)
-
 from tests.models import ETHERNET_FRAME
 
 
@@ -500,10 +499,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                    LessEqual(Variable('Foo'),
                                                              Number(30)))),
                                           Then('Baz',
-                                               condition = And(Equal(Length('Foo'),
-                                                                     Number(1)),
-                                                               Greater(Variable('Foo'),
-                                                                       Number(30))))]),
+                                               condition=And(Equal(Length('Foo'),
+                                                                   Number(1)),
+                                                             Greater(Variable('Foo'),
+                                                                     Number(30))))]),
                                       Component('Bar', 'T'),
                                       Component('Baz', 'T')]),
                          MessageSpec('Simple_PDU',
@@ -539,7 +538,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                  And(Equal(Length('Foo'),
                            Number(1)),
                      Greater(Variable('Foo'),
-                               Number(30)))),
+                             Number(30)))),
             Link(Field('Bar'), Field('Baz')),
             Link(Field('Baz'), FINAL)
         ]
@@ -576,10 +575,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                                        LessEqual(Variable('Foo'),
                                                                  Number(30)))),
                                               Then('Baz',
-                                                   condition = And(Equal(Length('Foo'),
-                                                                         Number(1)),
-                                                                   Greater(Variable('Foo'),
-                                                                           Number(30))))]),
+                                                   condition=And(Equal(Length('Foo'),
+                                                                       Number(1)),
+                                                                 Greater(Variable('Foo'),
+                                                                         Number(30))))]),
                                           Component('Bar', 'T'),
                                           Component('Baz', 'T')]),
                              MessageSpec('Simple_PDU',

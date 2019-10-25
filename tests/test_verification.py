@@ -4,7 +4,7 @@ from rflx.model import ModelError
 from rflx.parser import Parser
 
 
-class TestVerification(unittest.TestCase):  # pylint: disable=too-many-public-methods
+class TestVerification(unittest.TestCase):
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
 
@@ -12,25 +12,27 @@ class TestVerification(unittest.TestCase):  # pylint: disable=too-many-public-me
         with self.assertRaisesRegex(ModelError, regex):
             Parser().parse_string(string)
 
-    def test_exclusive_valid(self) -> None:  # pylint: disable=no-self-use
+    @staticmethod
+    def test_exclusive_valid() -> None:
         parser = Parser()
         parser.parse_string(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
                 type Bar is
-                message
-                    F1 : Element
-                        then null
-                            if F1 > 100,
-                        then F2
-                            if F1 <= 100;
-                    F2 : Element;
-                end message;
+                    message
+                        F1 : Element
+                            then null
+                                if F1 > 100,
+                            then F2
+                                if F1 <= 100;
+                        F2 : Element;
+                    end message;
             end Foo;
             """)
 
-    def test_exclusive_enum_valid(self) -> None:  # pylint: disable=no-self-use
+    @staticmethod
+    def test_exclusive_enum_valid() -> None:
         parser = Parser()
         parser.parse_string(
             """
@@ -38,14 +40,14 @@ class TestVerification(unittest.TestCase):  # pylint: disable=too-many-public-me
                 type Kind is (Val1 => 1, Val2 => 2) with Size => 8;
                 type Element is range 0..2**32-1 with Size => 32;
                 type Bar is
-                message
-                    F1 : Kind
-                        then null
-                            if F1 = Val1,
-                        then F2
-                            if F1 = Val2;
-                    F2 : Element;
-                end message;
+                    message
+                        F1 : Kind
+                            then null
+                                if F1 = Val1,
+                            then F2
+                                if F1 = Val2;
+                        F2 : Element;
+                    end message;
             end Foo;
             """)
 
@@ -55,50 +57,101 @@ class TestVerification(unittest.TestCase):  # pylint: disable=too-many-public-me
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
                 type Bar is
-                message
-                    F1 : Element
-                        then null
-                            if F1 > 50,
-                        then F2
-                            if F1 < 100;
-                    F2 : Element;
-                end message;
+                    message
+                        F1 : Element
+                            then null
+                                if F1 > 50,
+                            then F2
+                                if F1 < 100;
+                        F2 : Element;
+                    end message;
             end Foo;
             """,
-            r'^F1: Conflicting conditions')
+            r'^conflicting conditions for field "F1"')
 
-    def test_exclusive_with_length_valid(self) -> None:  # pylint: disable=no-self-use
+    @staticmethod
+    def test_exclusive_with_length_valid() -> None:
         parser = Parser()
         parser.parse_string(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
                 type Bar is
-                message
-                    F1 : Element
-                        then null
-                            if F1'Length = 32 and F1 < 50,
-                        then F2
-                            if F1'Length = 32 and F1 > 100;
-                    F2 : Element;
-                end message;
+                    message
+                        F1 : Element
+                            then null
+                                if F1'Length = 32 and F1 < 50,
+                            then F2
+                                if F1'Length = 32 and F1 > 100;
+                        F2 : Element;
+                    end message;
             end Foo;
             """)
 
-    def test_exclusive_with_length_invalid(self) -> None:  # pylint: disable=no-self-use
+    def test_exclusive_with_length_invalid(self) -> None:
         self.assert_parse_exception_string(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
                 type Bar is
-                message
-                    F1 : Element
-                        then null
-                            if F1'Length = 32,
-                        then F2
-                            if F1'Length = 32;
-                    F2 : Element;
-                end message;
+                    message
+                        F1 : Element
+                            then null
+                                if F1'Length = 32,
+                            then F2
+                                if F1'Length = 32;
+                        F2 : Element;
+                    end message;
             end Foo;
             """,
-            r'^F1: Conflicting conditions')
+            r'^conflicting conditions for field "F1"')
+
+    def test_no_valid_path(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is range 0..2**32-1 with Size => 32;
+                type Bar is
+                    message
+                        F1 : Element
+                            then F2
+                                if F1 <= 100,
+                            then F3
+                                if F1 > 100;
+                        F2 : Element
+                            then F3
+                                if F1 > 100;
+                        F3 : Element
+                            then null
+                                if F1 <= 100;
+                    end message;
+            end Foo;
+            """,
+            r'^unreachable field "Final"')
+
+    def test_invalid_path_1(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is range 0..2**32-1 with Size => 32;
+                type Bar is
+                    message
+                        F1 : Element then null if 1 = 2;
+                    end message;
+            end Foo;
+            """,
+            r'^unreachable field "Final"')
+
+    def test_invalid_path_2(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is range 0..2**32-1 with Size => 32;
+                type Bar is
+                    message
+                        F1 : Element then F2 if 1 = 2;
+                        F2 : Element;
+                    end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2"')

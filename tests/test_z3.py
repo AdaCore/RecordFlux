@@ -1,6 +1,7 @@
 import unittest
 
 import z3
+
 from rflx.expression import (FALSE, TRUE, Add, And, Case, Div, Equal, Greater, GreaterEqual, If,
                              Less, LessEqual, Mod, Mul, Not, NotEqual, Number, Or, Pow, Sub,
                              Variable)
@@ -58,10 +59,10 @@ class TestZ3(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_add(self) -> None:
         self.assertEqual(
             Add(Number(42), Number(1)).z3expr(),
-            z3.IntVal(42) + z3.IntVal(1))
+            z3.IntVal(0) + z3.IntVal(42) + z3.IntVal(1))
         self.assertEqual(
             Add(Number(42), Number(1), Number(10)).z3expr(),
-            z3.IntVal(42) + z3.IntVal(1) + z3.IntVal(10))
+            z3.IntVal(0) + z3.IntVal(42) + z3.IntVal(1) + z3.IntVal(10))
 
     def test_mul(self) -> None:
         self.assertEqual(
