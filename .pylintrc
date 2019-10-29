@@ -1,6 +1,7 @@
 [MESSAGES CONTROL]
 
-# Disable the message, report, category or checker with the given id(s).
+# Enable/disable the message, report, category or checker with the given id(s).
+enable=useless-suppression
 disable=missing-docstring, bad-continuation
 
 [BASIC]
