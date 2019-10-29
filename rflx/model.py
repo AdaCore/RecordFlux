@@ -3,8 +3,8 @@ from abc import ABC, abstractproperty
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
-from rflx.expression import (TRUE, UNDEFINED, Add, And, Expr, Greater, GreaterEqual, If, LessEqual,
-                             Not, Number, Or, Pow, ProofResult, Sub, Variable)
+from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, Greater, GreaterEqual,
+                             If, LessEqual, Not, Number, Or, Pow, ProofResult, Sub, Variable)
 
 
 class Element(ABC):
@@ -320,6 +320,15 @@ class Message(Element):
             if result != ProofResult.sat:
                 message = str(reachability).replace('\n', '')
                 raise ModelError(f'unreachable field "{f.name}" ({result}: {message})')
+
+        for f in (INITIAL, *self.__fields):
+            for index, c in enumerate(self.outgoing(f)):
+                contradiction = Equal(c.condition, FALSE)
+                result = contradiction.solve(literals)
+                if result == ProofResult.sat:
+                    message = str(contradiction).replace('\n', '')
+                    raise ModelError(f'contradicting condition {index} from field "{f.name}" to'
+                                     + f' "{c.target.name}" ({result}: {message})')
 
     def __compute_topological_sorting(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted (Kahn's algorithm)."""

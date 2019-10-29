@@ -155,3 +155,20 @@ class TestVerification(unittest.TestCase):
             end Foo;
             """,
             r'^unreachable field "F2"')
+
+    def test_contradiction(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is range 0..2**32-1 with Size => 32;
+                type Bar is
+                    message
+                        F1 : Element
+                            then F2 if 1 = 2,
+                            then F2 if F1 < 50,
+                            then null if F1 > 100;
+                        F2 : Element;
+                    end message;
+            end Foo;
+            """,
+            r'^contradicting condition 0 from field "F1" to "F2"')
