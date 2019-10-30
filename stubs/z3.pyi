@@ -1,4 +1,4 @@
-#  pylint: disable=pointless-statement,unused-argument,invalid-name,no-self-use
+#  pylint: disable=unused-argument,invalid-name,no-self-use
 from typing import Iterable, Optional
 
 class Context:  # noqa: E302, conflicts with isort
