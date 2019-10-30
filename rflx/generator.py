@@ -53,7 +53,7 @@ class Generator:
             raise InternalError('library directory not found')
 
         if self.prefix:
-            prefix = self.prefix[1:]
+            prefix = self.prefix[:-1]
             filename = prefix.lower() + '.ads'
             file_path = Path(directory).joinpath(filename)
 

@@ -19,9 +19,9 @@ class TestGenerator(unittest.TestCase):
         generator = Generator('RFLX.')
         with TemporaryDirectory() as tmpdir:
             generator.write_library_files(Path(tmpdir))
-            for filename in LIBRARY_FILES:
-                with open(tmpdir + '/' + 'rflx-' + filename) as library_file:
-                    with open(self.testdir + '/' + 'rflx-' + filename) as expected_file:
+            for filename in [f'rflx-{f}' for f in LIBRARY_FILES] + ['rflx.ads']:
+                with open(tmpdir + '/' + filename) as library_file:
+                    with open(self.testdir + '/' + filename) as expected_file:
                         self.assertEqual(library_file.read(), expected_file.read(), filename)
 
     def assert_specification(self, generator: Generator) -> None:
