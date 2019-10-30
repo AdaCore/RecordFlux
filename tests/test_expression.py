@@ -734,3 +734,8 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(
             Size('Z').variables(True),
             [Variable('Z__Size')])
+
+    def test_not_variables(self) -> None:
+        self.assertEqual(
+            Not(Variable('X')).variables(),
+            [Variable('X')])
