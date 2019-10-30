@@ -154,6 +154,9 @@ class Not(Expr):
     def __neg__(self) -> Expr:
         return self.expr
 
+    def variables(self, proof: bool = False) -> List['Variable']:
+        return self.expr.variables(proof)
+
     @property
     def precedence(self) -> Precedence:
         return Precedence.highest_precedence_operator
