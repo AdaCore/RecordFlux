@@ -1858,7 +1858,7 @@ class Generator:
         specification.append(
             type_validation_function(
                 integer,
-                integer.constraints.simplified({Name(integer.name): Name('Value')})))
+                integer.constraints('Value').simplified()))
         specification.append(integer_conversion_function(integer.name, integer.base_name))
 
         return SubprogramUnitPart(specification)
@@ -1874,7 +1874,7 @@ class Generator:
         specification.append(
             type_validation_function(
                 integer,
-                integer.constraints.simplified({Name(integer.name): Name('Value')})))
+                integer.constraints('Value').simplified()))
         specification.append(Pragma('Warnings', ['On', '"unused variable ""Value"""']))
         specification.append(integer_conversion_function(integer.name, integer.name))
 
@@ -1890,7 +1890,7 @@ class Generator:
 
         validation_expression: Expr
         if enum.always_valid:
-            validation_expression = Name('True')
+            validation_expression = enum.constraints('Value').simplified()
         else:
             validation_cases: List[Tuple[Expr, Expr]] = []
             validation_cases.extend(

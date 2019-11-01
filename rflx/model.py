@@ -1,10 +1,10 @@
 import itertools
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
-from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, Greater, GreaterEqual,
-                             If, LessEqual, Not, Number, Or, Pow, ProofResult, Sub, Variable)
+from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, GreaterEqual, If, Less,
+                             LessEqual, Number, Or, Pow, ProofResult, Sub, Variable)
 
 
 class Element(ABC):
@@ -26,9 +26,9 @@ class Type(Element):
     def size(self) -> Expr:
         raise NotImplementedError
 
-    @property
-    def constraints(self) -> Expr:
-        return TRUE
+    @abstractmethod
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        raise NotImplementedError
 
     @property
     def base_name(self) -> str:
@@ -63,6 +63,11 @@ class ModularInteger(Scalar):
     def size(self) -> Expr:
         return self.__size
 
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        if proof:
+            return Less(Variable(name), self.__modulus)
+        return TRUE
+
 
 class RangeInteger(Scalar):
     def __init__(self, name: str, first: Expr, last: Expr, size: Expr) -> None:
@@ -86,13 +91,6 @@ class RangeInteger(Scalar):
         self.__last = last
         self.__size = size
 
-        constraints: Expr = TRUE
-        if self.first.simplified() != self.base_first.simplified():
-            constraints = GreaterEqual(Variable('Value'), self.first)
-        if self.last.simplified() != self.base_last.simplified():
-            constraints = And(constraints, LessEqual(Variable('Value'), self.last))
-        self.__constraints = constraints.simplified()
-
     @property
     def first(self) -> Expr:
         return self.__first
@@ -105,9 +103,13 @@ class RangeInteger(Scalar):
     def size(self) -> Expr:
         return self.__size
 
-    @property
-    def constraints(self) -> Expr:
-        return self.__constraints
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        c: Expr = TRUE
+        if self.first.simplified() != self.base_first.simplified():
+            c = GreaterEqual(Variable(name), self.first)
+        if self.last.simplified() != self.base_last.simplified():
+            c = And(c, LessEqual(Variable(name), self.last))
+        return c.simplified()
 
     @property
     def base_first(self) -> Expr:
@@ -130,6 +132,11 @@ class Enumeration(Scalar):
         self.__size = size
         self.always_valid = always_valid
 
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        if proof:
+            return Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()])
+        return TRUE
+
     @property
     def size(self) -> Number:
         return self.__size
@@ -144,6 +151,9 @@ class Composite(Type):
     def size(self) -> Expr:
         raise NotImplementedError
 
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        raise NotImplementedError
+
 
 class Array(Composite):
     def __init__(self, name: str, element_type: Type) -> None:
@@ -154,6 +164,9 @@ class Array(Composite):
     def size(self) -> Expr:
         raise ModelError(f'size of "{self.name}" undefined')
 
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        raise NotImplementedError
+
 
 class Payload(Composite):
     def __init__(self) -> None:
@@ -163,10 +176,16 @@ class Payload(Composite):
     def size(self) -> Expr:
         raise NotImplementedError
 
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        return TRUE
+
 
 class Reference(Type):
     @property
     def size(self) -> Expr:
+        raise NotImplementedError
+
+    def constraints(self, name: str, proof: bool = False) -> Expr:
         raise NotImplementedError
 
 
@@ -398,6 +417,9 @@ class Refinement(Type):
                     and self.field == other.field
                     and self.sdu == other.sdu)
         return NotImplemented
+
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        raise NotImplementedError
 
     @property
     def size(self) -> Number:

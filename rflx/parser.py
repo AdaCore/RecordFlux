@@ -29,6 +29,9 @@ class MessageSpec(Type):
         super().__init__(name)
         self.components = components
 
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        raise NotImplementedError
+
     @property
     def size(self) -> Number:
         raise NotImplementedError
@@ -38,6 +41,9 @@ class DerivationSpec(Type):
     def __init__(self, name: str, base: str) -> None:
         super().__init__(name)
         self.base = base
+
+    def constraints(self, name: str, proof: bool = False) -> Expr:
+        raise NotImplementedError
 
     @property
     def size(self) -> Number:
