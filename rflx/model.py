@@ -314,36 +314,41 @@ class Message(Element):
         if undefined:
             raise ModelError('Undefined variables ({undef})'.format(undef=', '.join(undefined)))
 
-    def __prove(self) -> None:
+    def __with_constraints(self, expr: Expr) -> Expr:
+        literals = {n for t in self.types.values()
+                    if isinstance(t, Enumeration) for n in t.literals}
+        type_constraints = And(*[self.types[Field(v.name)].constraints(name=v.name, proof=True)
+                                 for v in expr.variables()
+                                 if isinstance(v.name, str) and v.name not in literals])
+        return And(type_constraints, expr)
 
+    def __prove(self) -> None:
         literals = {n for t in self.types.values()
                     if isinstance(t, Enumeration) for n in t.literals}
 
         for f in (INITIAL, *self.__fields):
-            conflict = LessEqual(Add(*[If([(c.condition, Number(1))], Number(0))
+            conflict = LessEqual(Add(*[If([(self.__with_constraints(c.condition), Number(1))],
+                                          Number(0))
                                        for c in self.outgoing(f)]),
                                  Number(1))
-            result = conflict.solve(literals)
+            result = conflict.forall(literals)
             if result != ProofResult.sat:
                 message = str(conflict).replace('\n', '')
                 raise ModelError(f'conflicting conditions for field "{f.name}"'
                                  + f' ({result}: {message})')
 
         for f in (*self.__fields, FINAL):
-            reachability = Greater(Add(*[If([(Not(And(*[p.condition for p in paths])).simplified(),
-                                              Number(0))],
-                                            Number(1))
-                                       for paths in self.__compute_paths(f)]),
-                                   Number(0))
-            result = reachability.solve(literals)
+            reachability = Or(*[And(*[self.__with_constraints(p.condition) for p in paths])
+                                for paths in self.__compute_paths(f)])
+            result = reachability.exists(literals)
             if result != ProofResult.sat:
                 message = str(reachability).replace('\n', '')
                 raise ModelError(f'unreachable field "{f.name}" ({result}: {message})')
 
         for f in (INITIAL, *self.__fields):
             for index, c in enumerate(self.outgoing(f)):
-                contradiction = Equal(c.condition, FALSE)
-                result = contradiction.solve(literals)
+                contradiction = Equal(self.__with_constraints(c.condition), FALSE)
+                result = contradiction.forall(literals)
                 if result == ProofResult.sat:
                     message = str(contradiction).replace('\n', '')
                     raise ModelError(f'contradicting condition {index} from field "{f.name}" to'
