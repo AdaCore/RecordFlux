@@ -88,6 +88,10 @@ def ForAll(v: Iterable[ExprRef], cond: ExprRef) -> ExprRef:
     ...
 
 
+def Exists(v: Iterable[ExprRef], cond: ExprRef) -> ExprRef:
+    ...
+
+
 def simplify(e: ExprRef) -> ExprRef:
     ...
 

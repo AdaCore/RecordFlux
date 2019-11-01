@@ -91,16 +91,25 @@ class Expr(ABC):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def solve(self, fixed: Optional[Iterable['str']] = None) -> ProofResult:
+    def __solve(self, fixed: Optional[Iterable['str']] = None, forall: bool = False) -> ProofResult:
         fixed = fixed or []
         cond = self.z3expr()
         variables = {v for v in self.variables(True)
                      if isinstance(v.name, str) and v.name not in fixed}
         if variables:
-            cond = z3.ForAll([v.z3expr() for v in variables], cond)
+            if forall:
+                cond = z3.ForAll([v.z3expr() for v in variables], cond)
+            else:
+                cond = z3.Exists([v.z3expr() for v in variables], cond)
         solver = z3.Solver()
         solver.add(cond)
         return ProofResult(solver.check())
+
+    def forall(self, fixed: Optional[Iterable['str']] = None) -> ProofResult:
+        return self.__solve(fixed, True)
+
+    def exists(self, fixed: Optional[Iterable['str']] = None) -> ProofResult:
+        return self.__solve(fixed)
 
 
 class BooleanLiteral(Expr):
