@@ -316,7 +316,7 @@ class TestModel(unittest.TestCase):
             ETHERNET_FRAME.successors(FINAL),
             ())
 
-    def disabled_test_nonexistent_variable(self) -> None:
+    def test_nonexistent_variable(self) -> None:
         foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
         enum_type = Enumeration('Bar', {'Val1': Number(0), 'Val2': Number(1)}, Number(8), True)
         structure = [
@@ -329,5 +329,22 @@ class TestModel(unittest.TestCase):
             Field('F1'): enum_type,
             Field('F2'): foo_type
         }
-        with self.assertRaisesRegex(ModelError, 'undefined variables (Val3)'):
+        with self.assertRaisesRegex(ModelError, '^undefined variable "Val3" referenced in '
+                                    + 'condition 0 from field "F1" to "F2"'):
+            Message('X', structure, types)
+
+    def test_subsequent_variable(self) -> None:
+        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        structure = [
+            Link(INITIAL, Field('F1')),
+            Link(Field('F1'), Field('F2'),
+                 Equal(Variable('F2'), Number(42))),
+            Link(Field('F2'), FINAL)]
+
+        types = {
+            Field('F1'): foo_type,
+            Field('F2'): foo_type
+        }
+        with self.assertRaisesRegex(ModelError, '^subsequent field "F2" referenced in '
+                                    + 'condition 0 from field "F1" to "F2"'):
             Message('X', structure, types)

@@ -230,6 +230,7 @@ class Message(Element):
                                             for f in self.all_fields}
             self.__field_condition = {f: self.__compute_field_condition(f).simplified()
                                       for f in self.all_fields}
+            self.__verify_conditions()
             self.__prove()
         else:
             self.__fields = ()
@@ -312,10 +313,18 @@ class Message(Element):
         literals = {n for t in self.types.values()
                     if isinstance(t, Enumeration) for n in t.literals}
         fields = {f.name for f in self.fields if isinstance(f.name, str)}
-        variables = {v for f in self.all_fields for v in self.field_condition(f).variables()}
-        undefined = {v.name for v in variables if isinstance(v.name, str)} - fields - literals
-        if undefined:
-            raise ModelError('Undefined variables ({undef})'.format(undef=', '.join(undefined)))
+        seen_fields = set()
+        for f in (INITIAL, *self.__compute_topological_sorting()):
+            seen_fields.add(f.name)
+            for index, c in enumerate(self.outgoing(f)):
+                for v in c.condition.variables():
+                    if v.name not in literals and v.name not in seen_fields:
+                        if v.name in fields:
+                            raise ModelError(f'subsequent field "{v}" referenced in condition '
+                                             + f'{index} from field "{f.name}" to '
+                                             + f'"{c.target.name}"')
+                        raise ModelError(f'undefined variable "{v}" referenced in condition {index}'
+                                         + f' from field "{f.name}" to "{c.target.name}"')
 
     def __with_constraints(self, expr: Expr) -> Expr:
         literals = {l for v in self.types.values()
