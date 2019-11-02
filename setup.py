@@ -39,6 +39,7 @@ setup(
     install_requires=[
         'pyparsing',
         'z3-solver',
+        'pydotplus',
     ],
     extras_require={
         'test': requirements,

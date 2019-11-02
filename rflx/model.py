@@ -299,6 +299,13 @@ class Message(Element):
     def field_condition(self, field: Field) -> Expr:
         return self.__field_condition[field]
 
+    def field_size(self, field: Field) -> Expr:
+        if field == FINAL:
+            return Number(0)
+        if field not in self.fields:
+            raise ValueError(f'field {field} not found')
+        return self.types[field].size
+
     def __verify(self) -> None:
         type_fields = self.__types.keys() | {INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
@@ -321,10 +328,10 @@ class Message(Element):
                     if v.name not in literals and v.name not in seen_fields:
                         if v.name in fields:
                             raise ModelError(f'subsequent field "{v}" referenced in condition '
-                                             + f'{index} from field "{f.name}" to '
-                                             + f'"{c.target.name}"')
+                                             f'{index} from field "{f.name}" to '
+                                             f'"{c.target.name}"')
                         raise ModelError(f'undefined variable "{v}" referenced in condition {index}'
-                                         + f' from field "{f.name}" to "{c.target.name}"')
+                                         f' from field "{f.name}" to "{c.target.name}"')
 
     def __with_constraints(self, expr: Expr) -> Expr:
         literals = {l for v in self.types.values()
@@ -344,7 +351,7 @@ class Message(Element):
             if result != ProofResult.sat:
                 message = str(conflict).replace('\n', '')
                 raise ModelError(f'conflicting conditions for field "{f.name}"'
-                                 + f' ({result}: {message})')
+                                 f' ({result}: {message})')
 
     def __prove_reachability(self) -> None:
         for f in (*self.__fields, FINAL):
@@ -363,7 +370,7 @@ class Message(Element):
                 if result == ProofResult.sat:
                     message = str(contradiction).replace('\n', '')
                     raise ModelError(f'contradicting condition {index} from field "{f.name}" to'
-                                     + f' "{c.target.name}" ({result}: {message})')
+                                     f' "{c.target.name}" ({result}: {message})')
 
     def __prove(self) -> None:
         self.__prove_conflicting_conditions()

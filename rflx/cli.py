@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Tuple, Union
 
 from rflx.generator import Generator, InternalError
+from rflx.graph import Graph
 from rflx.model import ModelError
 from rflx.parser import Parser, ParserError
 
@@ -93,3 +94,19 @@ def parse(files: List) -> Tuple[List, List]:
         print('OK')
 
     return (parser.messages, parser.refinements)
+
+
+def graph(args: argparse.Namespace) -> None:
+    directory = Path(args.directory)
+    if not directory.is_dir():
+        raise Error(f'directory not found: "{directory}"')
+
+    messages, _ = parse(args.files)
+
+    for m in messages:
+        message = m.full_name.replace('.', '_')
+        filename = Path(directory).joinpath(message).with_suffix(f'.{args.format}')
+        with open(filename, 'wb') as f:
+            print(f'Creating graph {filename}... ', end='')
+            Graph(m).write(f, fmt=args.format)
+            print('OK')
