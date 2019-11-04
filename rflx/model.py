@@ -134,7 +134,9 @@ class Enumeration(Scalar):
 
     def constraints(self, name: str, proof: bool = False) -> Expr:
         if proof:
-            return Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()])
+            return And(
+                And(*[Equal(Variable(n), v) for n, v in self.literals.items()]),
+                Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()]))
         return TRUE
 
     @property
