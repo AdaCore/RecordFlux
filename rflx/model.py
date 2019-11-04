@@ -322,44 +322,41 @@ class Message(Element):
                                  if isinstance(v.name, str) and v.name not in literals])
         return And(type_constraints, expr)
 
-    def __prove_conflicting_conditions(self, literals: Iterable['str']) -> None:
+    def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.__fields):
             conflict = LessEqual(Add(*[If([(self.__with_constraints(c.condition), Number(1))],
                                           Number(0))
                                        for c in self.outgoing(f)]),
                                  Number(1))
-            result = conflict.forall(literals)
+            result = conflict.forall()
             if result != ProofResult.sat:
                 message = str(conflict).replace('\n', '')
                 raise ModelError(f'conflicting conditions for field "{f.name}"'
                                  + f' ({result}: {message})')
 
-    def __prove_reachability(self, literals: Iterable['str']) -> None:
+    def __prove_reachability(self) -> None:
         for f in (*self.__fields, FINAL):
             reachability = Or(*[And(*[self.__with_constraints(p.condition) for p in paths])
                                 for paths in self.__compute_paths(f)])
-            result = reachability.exists(literals)
+            result = reachability.exists()
             if result != ProofResult.sat:
                 message = str(reachability).replace('\n', '')
                 raise ModelError(f'unreachable field "{f.name}" ({result}: {message})')
 
-    def __prove_contradictions(self, literals: Iterable['str']) -> None:
+    def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.__fields):
             for index, c in enumerate(self.outgoing(f)):
                 contradiction = Equal(self.__with_constraints(c.condition), FALSE)
-                result = contradiction.forall(literals)
+                result = contradiction.forall()
                 if result == ProofResult.sat:
                     message = str(contradiction).replace('\n', '')
                     raise ModelError(f'contradicting condition {index} from field "{f.name}" to'
                                      + f' "{c.target.name}" ({result}: {message})')
 
     def __prove(self) -> None:
-        literals = {n for t in self.types.values()
-                    if isinstance(t, Enumeration) for n in t.literals}
-
-        self.__prove_conflicting_conditions(literals)
-        self.__prove_reachability(literals)
-        self.__prove_contradictions(literals)
+        self.__prove_conflicting_conditions()
+        self.__prove_reachability()
+        self.__prove_contradictions()
 
     def __compute_topological_sorting(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted (Kahn's algorithm)."""
