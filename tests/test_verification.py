@@ -229,3 +229,21 @@ class TestVerification(unittest.TestCase):
             end Foo;
             """,
             r'^contradicting condition 0 from field "F1" to "F2"')
+
+    def test_tlv_valid_enum(self) -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+            package Foo is
+                type Tag is (T1, T2, T3) with Size => 8;
+                type Length is range 0 .. 2**14 with Size => 16;
+                type Bar is
+                    message
+                        L : Length;
+                        T : Tag
+                            then V
+                            if T /= T2 and L <= 2**13;
+                        V : Payload;
+                    end message;
+            end Foo;
+            """)
