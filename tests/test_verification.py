@@ -215,7 +215,7 @@ class TestVerification(unittest.TestCase):
             """,
             r'^unreachable field "F2"')
 
-    def test_invalid_type_condition_enum(self) -> None:
+    def disabled_test_invalid_type_condition_enum(self) -> None:
         self.assert_parse_exception_string(
             """
             package Foo is
@@ -228,9 +228,10 @@ class TestVerification(unittest.TestCase):
                     end message;
             end Foo;
             """,
-            r'^contradicting condition 0 from field "F1" to "F2"')
+            r'^invalid type of "E4" in condition 0 from field "F1" to "F2"')
 
-    def test_tlv_valid_enum(self) -> None:
+    @staticmethod
+    def test_tlv_valid_enum() -> None:
         parser = Parser()
         parser.parse_string(
             """
