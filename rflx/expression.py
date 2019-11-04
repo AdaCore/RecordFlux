@@ -3,7 +3,7 @@ import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
 from enum import Enum
-from typing import Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import z3
 

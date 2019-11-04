@@ -1,7 +1,7 @@
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from math import log
-from typing import Dict, Iterable, Mapping, NamedTuple, Sequence, Set, Tuple
+from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, GreaterEqual, If, Less,
                              LessEqual, Number, Or, Pow, ProofResult, Sub, Variable)
