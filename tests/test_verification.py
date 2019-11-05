@@ -201,7 +201,7 @@ class TestVerification(unittest.TestCase):
             """,
             r'^unreachable field "F2"')
 
-    def test_invalid_type_condition_modular(self) -> None:
+    def test_invalid_type_condition_modular_upper(self) -> None:
         self.assert_parse_exception_string(
             """
             package Foo is
@@ -209,6 +209,20 @@ class TestVerification(unittest.TestCase):
                 type Bar is
                     message
                         F1 : Element then F2 if F1 > 1000;
+                        F2 : Element;
+                    end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2"')
+
+    def test_invalid_type_condition_modular_lower(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element then F2 if F1 < 0;
                         F2 : Element;
                     end message;
             end Foo;
