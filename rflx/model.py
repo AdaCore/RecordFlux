@@ -65,7 +65,8 @@ class ModularInteger(Scalar):
 
     def constraints(self, name: str, proof: bool = False) -> Expr:
         if proof:
-            return Less(Variable(name), self.__modulus)
+            return And(Less(Variable(name), self.__modulus),
+                       GreaterEqual(Variable(name), Number(0)))
         return TRUE
 
 
