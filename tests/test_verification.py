@@ -177,7 +177,7 @@ class TestVerification(unittest.TestCase):
         self.assert_parse_exception_string(
             """
             package Foo is
-                type Element is range 100..1000 with Size => 32;
+                type Element is range 100 .. 1000 with Size => 32;
                 type Bar is
                     message
                         F1 : Element then F2 if F1 < 100;
@@ -191,7 +191,7 @@ class TestVerification(unittest.TestCase):
         self.assert_parse_exception_string(
             """
             package Foo is
-                type Element is range 5..50000 with Size => 32;
+                type Element is range 5 .. 50000 with Size => 32;
                 type Bar is
                     message
                         F1 : Element then F2 if F1 > 60000;
@@ -215,6 +215,7 @@ class TestVerification(unittest.TestCase):
             """,
             r'^unreachable field "F2"')
 
+    # ISSUE: Componolit/RecordFlux#87
     def disabled_test_invalid_type_condition_enum(self) -> None:
         self.assert_parse_exception_string(
             """
@@ -243,7 +244,7 @@ class TestVerification(unittest.TestCase):
                         L : Length;
                         T : Tag
                             then V
-                            if T /= T2 and L <= 2**13;
+                                if T /= T2 and L <= 2**13;
                         V : Payload;
                     end message;
             end Foo;

@@ -135,7 +135,7 @@ class Enumeration(Scalar):
     def constraints(self, name: str, proof: bool = False) -> Expr:
         if proof:
             return And(
-                And(*[Equal(Variable(n), v) for n, v in self.literals.items()]),
+                And(*[Equal(Variable(l), v) for l, v in self.literals.items()]),
                 Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()]))
         return TRUE
 
@@ -317,8 +317,8 @@ class Message(Element):
             raise ModelError('Undefined variables ({undef})'.format(undef=', '.join(undefined)))
 
     def __with_constraints(self, expr: Expr) -> Expr:
-        literals = {n for t in self.types.values()
-                    if isinstance(t, Enumeration) for n in t.literals}
+        literals = {l for v in self.types.values()
+                    if isinstance(v, Enumeration) for l in v.literals}
         type_constraints = And(*[self.types[Field(v.name)].constraints(name=v.name, proof=True)
                                  for v in expr.variables()
                                  if isinstance(v.name, str) and v.name not in literals])
@@ -338,8 +338,8 @@ class Message(Element):
 
     def __prove_reachability(self) -> None:
         for f in (*self.__fields, FINAL):
-            reachability = Or(*[And(*[self.__with_constraints(p.condition) for p in paths])
-                                for paths in self.__compute_paths(f)])
+            reachability = Or(*[And(*[self.__with_constraints(l.condition) for l in path])
+                                for path in self.__paths[f]])
             result = reachability.exists()
             if result != ProofResult.sat:
                 message = str(reachability).replace('\n', '')
