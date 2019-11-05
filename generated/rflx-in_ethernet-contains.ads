@@ -11,7 +11,7 @@ is
      (Ethernet.Frame.Has_Buffer (Ctx)
       and then Ethernet.Frame.Present (Ctx, Ethernet.Frame.F_Payload)
       and then Ethernet.Frame.Valid (Ctx, Ethernet.Frame.F_Type_Length)
-      and then Ethernet.Frame.Get_Type_Length (Ctx) = 2048);
+      and then Ethernet.Frame.Get_Type_Length (Ctx) = 16#800#);
 
    procedure Switch (Ethernet_Frame_Context : in out Ethernet.Frame.Context; IPv4_Packet_Context : out IPv4.Packet.Context) with
      Pre =>

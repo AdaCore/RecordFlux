@@ -739,3 +739,30 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(
             Not(Variable('X')).variables(),
             [Variable('X')])
+
+    def test_number_str(self) -> None:
+        self.assertEqual(str(Number(15)), "15")
+
+    def test_number_str_long(self) -> None:
+        self.assertEqual(str(Number(539535)), "539535")
+
+    def test_number_str_neg_long(self) -> None:
+        self.assertEqual(str(Number(-539535)), "(-539535)")
+
+    def test_number_str_hex(self) -> None:
+        self.assertEqual(str(Number(4096, 16)), "16#1000#")
+
+    def test_number_str_neg_hex(self) -> None:
+        self.assertEqual(str(Number(-4096, 16)), "(-16#1000#)")
+
+    def test_number_str_dec(self) -> None:
+        self.assertEqual(str(Number(4096, 10)), "10#4096#")
+
+    def test_number_str_oct(self) -> None:
+        self.assertEqual(str(Number(45432, 8)), "8#130570#")
+
+    def test_number_str_neg_oct(self) -> None:
+        self.assertEqual(str(Number(-45432, 8)), "(-8#130570#)")
+
+    def test_number_str_bin(self) -> None:
+        self.assertEqual(str(Number(454, 2)), "2#111000110#")

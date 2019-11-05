@@ -146,14 +146,16 @@ class Parser:
     @classmethod
     def numeric_literal(cls) -> Token:
         numeral = Word(nums) + ZeroOrMore(Optional(Word('_')) + Word(nums))
-        numeral.setParseAction(lambda t: int(''.join(t.asList()).replace('_', '')))
+        numeral.setParseAction(lambda t: (int(''.join(t.asList()).replace('_', '')), 0))
 
         extended_digit = Word(nums + 'ABCDEF')
         based_numeral = extended_digit + ZeroOrMore(Optional('_') + extended_digit)
         based_literal = numeral + Literal('#') - based_numeral - Literal('#')
-        based_literal.setParseAction(lambda t: int(t[2].replace('_', ''), int(t[0])))
+        based_literal.setParseAction(lambda t: (int(t[2].replace('_', ''), int(t[0][0])),
+                                                int(t[0][0])))
 
-        return (based_literal | numeral).setParseAction(lambda t: Number(t[0])).setName('Number')
+        return (based_literal | numeral).setParseAction(
+            lambda t: Number(t[0][0], t[0][1])).setName('Number')
 
     @classmethod
     def logical_expression(cls) -> Token:

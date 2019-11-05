@@ -400,13 +400,28 @@ class Or(LogExpr):
 
 
 class Number(Expr):
-    def __init__(self, value: int) -> None:
+    def __init__(self, value: int, base: int = 0) -> None:
         self.value = value
+        self.base = base
 
     def __str__(self) -> str:
+        value = self.value if self.value >= 0 else -self.value
+        if self.base == 0:
+            data = '{}'.format(value)
+        elif self.base == 2:
+            data = '2#{:b}#'.format(value)
+        elif self.base == 8:
+            data = '8#{:o}#'.format(value)
+        elif self.base == 10:
+            data = '10#{}#'.format(value)
+        elif self.base == 16:
+            data = '16#{:X}#'.format(value)
+        else:
+            raise NotImplementedError(f'unsupported base {self.base}')
+
         if self.value < 0:
-            return '({})'.format(self.value)
-        return str(self.value)
+            return f'(-{data})'
+        return data
 
     def __hash__(self) -> int:
         return hash(self.value)

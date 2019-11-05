@@ -294,8 +294,8 @@ private
                    or Cursors (F_Source).State = S_Structural_Valid)
                  and then (Cursors (F_Type_Length_TPID).State = S_Valid
                    or Cursors (F_Type_Length_TPID).State = S_Structural_Valid)
-                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 33024
-                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 33024)
+                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#
+                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#)
                  and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address'Size
                  and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address'Size
                  and then (Cursors (F_Type_Length_TPID).Last - Cursors (F_Type_Length_TPID).First + 1) = Type_Length_Base'Size,
@@ -308,8 +308,8 @@ private
                    or Cursors (F_Type_Length_TPID).State = S_Structural_Valid)
                  and then (Cursors (F_TPID).State = S_Valid
                    or Cursors (F_TPID).State = S_Structural_Valid)
-                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 33024
-                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 33024)
+                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#
+                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#)
                  and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address'Size
                  and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address'Size
                  and then (Cursors (F_Type_Length_TPID).Last - Cursors (F_Type_Length_TPID).First + 1) = Type_Length_Base'Size
@@ -325,8 +325,8 @@ private
                    or Cursors (F_TPID).State = S_Structural_Valid)
                  and then (Cursors (F_TCI).State = S_Valid
                    or Cursors (F_TCI).State = S_Structural_Valid)
-                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 33024
-                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 33024)
+                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#
+                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#)
                  and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address'Size
                  and then (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Address'Size
                  and then (Cursors (F_Type_Length_TPID).Last - Cursors (F_Type_Length_TPID).First + 1) = Type_Length_Base'Size
@@ -341,8 +341,8 @@ private
                    or Cursors (F_Type_Length_TPID).State = S_Structural_Valid)
                  and then (Cursors (F_Type_Length).State = S_Valid
                    or Cursors (F_Type_Length).State = S_Structural_Valid)
-                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 33024
-                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 33024)
+                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#
+                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#)
                  and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) <= 1500
                    or RFLX.Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) >= 1536)
                  and then (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Address'Size
@@ -360,8 +360,8 @@ private
                    or Cursors (F_Type_Length).State = S_Structural_Valid)
                  and then (Cursors (F_Payload).State = S_Valid
                    or Cursors (F_Payload).State = S_Structural_Valid)
-                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 33024
-                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 33024)
+                 and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#
+                   or RFLX.Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#)
                  and then (RFLX.Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) <= 1500
                    or RFLX.Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) >= 1536)
                  and then (((Cursors (F_Payload).Last - Cursors (F_Payload).First + 1)) / 8 >= 46

@@ -46,8 +46,8 @@ def create_ethernet_frame() -> Message:
                                     Sub(Pow(Number(2), Number(16)), Number(1)),
                                     Number(16))
     tpid_type = RangeInteger('TPID',
-                             Number(0x8100),
-                             Number(0x8100),
+                             Number(0x8100, 16),
+                             Number(0x8100, 16),
                              Number(16))
     tci_type = ModularInteger('TCI',
                               Pow(Number(2), Number(16)))
@@ -57,10 +57,10 @@ def create_ethernet_frame() -> Message:
         Link(Field('Destination'), Field('Source')),
         Link(Field('Source'), Field('Type_Length_TPID')),
         Link(Field('Type_Length_TPID'), Field('TPID'),
-             Equal(Variable('Type_Length_TPID'), Number(0x8100)),
+             Equal(Variable('Type_Length_TPID'), Number(0x8100, 16)),
              first=First('Type_Length_TPID')),
         Link(Field('Type_Length_TPID'), Field('Type_Length'),
-             NotEqual(Variable('Type_Length_TPID'), Number(0x8100)),
+             NotEqual(Variable('Type_Length_TPID'), Number(0x8100, 16)),
              first=First('Type_Length_TPID')),
         Link(Field('TPID'), Field('TCI')),
         Link(Field('TCI'), Field('Type_Length')),

@@ -160,9 +160,9 @@ is
          when F_Type_Length_TPID =>
             (case Target_Field is
                   when F_TPID =>
-                     RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 33024,
+                     RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#,
                   when F_Type_Length =>
-                     RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 33024,
+                     RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#,
                   when others =>
                      False),
          when F_TPID =>
@@ -415,7 +415,7 @@ is
       and then Valid (Ctx, F_Source)
       and then Valid (Ctx, F_Type_Length_TPID)
       and then ((Valid (Ctx, F_TPID)
-          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 33024
+          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#
           and then Valid (Ctx, F_TCI)
           and then Valid (Ctx, F_Type_Length)
           and then ((Structural_Valid (Ctx, F_Payload)
@@ -427,7 +427,7 @@ is
               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 >= 46
               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 <= 1500)))
         or (Valid (Ctx, F_Type_Length)
-          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 33024
+          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#
           and then ((Structural_Valid (Ctx, F_Payload)
               and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length).Value.Type_Length_Value) <= 1500
               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 >= 46
@@ -442,7 +442,7 @@ is
       and then Valid (Ctx, F_Source)
       and then Valid (Ctx, F_Type_Length_TPID)
       and then ((Valid (Ctx, F_TPID)
-          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 33024
+          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#
           and then Valid (Ctx, F_TCI)
           and then Valid (Ctx, F_Type_Length)
           and then ((Valid (Ctx, F_Payload)
@@ -454,7 +454,7 @@ is
               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 >= 46
               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 <= 1500)))
         or (Valid (Ctx, F_Type_Length)
-          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 33024
+          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#
           and then ((Valid (Ctx, F_Payload)
               and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Type_Length).Value.Type_Length_Value) <= 1500
               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 >= 46

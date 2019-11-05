@@ -159,16 +159,16 @@ class TestModel(unittest.TestCase):
             ETHERNET_FRAME.field_condition(Field('TPID')),
             Equal(
                 Variable('Type_Length_TPID'),
-                Number(33024)))
+                Number(33024, 16)))
         self.assertEqual(
             ETHERNET_FRAME.field_condition(Field('Type_Length')),
             Or(
                 NotEqual(
                     Variable('Type_Length_TPID'),
-                    Number(33024)),
+                    Number(33024, 16)),
                 Equal(
                     Variable('Type_Length_TPID'),
-                    Number(33024))))
+                    Number(33024, 16))))
         self.assertEqual(
             ETHERNET_FRAME.field_condition(Field('Payload')),
             Or(
@@ -176,10 +176,10 @@ class TestModel(unittest.TestCase):
                     Or(
                         NotEqual(
                             Variable('Type_Length_TPID'),
-                            Number(33024)),
+                            Number(33024, 16)),
                         Equal(
                             Variable('Type_Length_TPID'),
-                            Number(33024))),
+                            Number(33024, 16))),
                     LessEqual(
                         Variable('Type_Length'),
                         Number(1500))),
@@ -187,10 +187,10 @@ class TestModel(unittest.TestCase):
                     Or(
                         NotEqual(
                             Variable('Type_Length_TPID'),
-                            Number(33024)),
+                            Number(33024, 16)),
                         Equal(
                             Variable('Type_Length_TPID'),
-                            Number(33024))),
+                            Number(33024, 16))),
                     GreaterEqual(
                         Variable('Type_Length'),
                         Number(1536)))))
@@ -202,7 +202,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(
             ETHERNET_FRAME.incoming(Field('Type_Length')),
             [Link(Field('Type_Length_TPID'), Field('Type_Length'),
-                  NotEqual(Variable('Type_Length_TPID'), Number(0x8100)),
+                  NotEqual(Variable('Type_Length_TPID'), Number(0x8100, 16)),
                   first=First('Type_Length_TPID')),
              Link(Field('TCI'), Field('Type_Length'))])
         self.assertEqual(
