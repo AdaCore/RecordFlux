@@ -66,6 +66,26 @@ class TestCLI(TestCase):
                 self.assertRegex(str(cli.main(['rflx', 'generate', 'specs/tlv.rflx', tmpdir])),
                                  r'internal error: library file not found')
 
+    def test_main_graph(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            self.assertEqual(cli.main(['rflx', 'graph', 'specs/tlv.rflx', tmpdir]),
+                             0)
+
+    def test_main_graph_non_existent_file(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            self.assertRegex(str(cli.main(['rflx', 'graph', 'non-existent file', tmpdir])),
+                             r'error: file not found: "non-existent file"$')
+
+    def test_main_graph_non_existent_directory(self) -> None:
+        self.assertRegex(str(cli.main(['rflx', 'graph', 'specs/tlv.rflx',
+                                       'non-existent directory'])),
+                         r'error: directory not found: "non-existent directory"$')
+
+    def test_main_graph_no_output_files(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            self.assertEqual(cli.main(['rflx', 'graph', 'tests/package.rflx', tmpdir]),
+                             0)
+
 
 def raise_model_error() -> None:
     raise ModelError
