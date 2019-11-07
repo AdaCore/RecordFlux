@@ -323,15 +323,15 @@ class Message(Element):
         seen_fields = set()
         for f in (INITIAL, *self.__compute_topological_sorting()):
             seen_fields.add(f.name)
-            for index, c in enumerate(self.outgoing(f)):
-                for v in c.condition.variables():
+            for index, l in enumerate(self.outgoing(f)):
+                for v in l.condition.variables():
                     if v.name not in literals and v.name not in seen_fields:
                         if v.name in fields:
                             raise ModelError(f'subsequent field "{v}" referenced in condition '
                                              f'{index} from field "{f.name}" to '
-                                             f'"{c.target.name}"')
+                                             f'"{l.target.name}"')
                         raise ModelError(f'undefined variable "{v}" referenced in condition {index}'
-                                         f' from field "{f.name}" to "{c.target.name}"')
+                                         f' from field "{f.name}" to "{l.target.name}"')
 
     def __with_constraints(self, expr: Expr) -> Expr:
         literals = {l for v in self.types.values()
