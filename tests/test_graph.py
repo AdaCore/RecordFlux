@@ -22,6 +22,25 @@ class TestGraph(unittest.TestCase):
         self.assertEqual([n.get_name() for n in g.get_nodes()],
                          ['graph', 'edge', 'node', 'Initial', 'F1', 'Final'])
 
+    def test_empty_message_graph(self) -> None:
+        m = Message('Test', [], {})
+        expected = (
+            """
+            digraph Test {
+                graph [ranksep="0.8 equally", splines=ortho];
+                edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
+                node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
+                      shape=box, style="rounded,filled", width="1.5"];
+                Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
+                Initial -> Final [xlabel="(⊤, 0, ⋆)"];
+                Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
+            }
+            """)
+
+        out = BytesIO(b'')
+        Graph(m).write(out, fmt='raw')
+        self.assertEqual(out.getvalue().split(), bytes(expected, 'utf-8').split())
+
     def test_dot_graph(self) -> None:
         f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
         m = Message('Test',

@@ -1,14 +1,17 @@
+from copy import copy
 from typing import BinaryIO
 
 from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
-from rflx.model import Link, Message
+from rflx.model import FINAL, INITIAL, Link, Message
 
 
 class Graph():
     def __init__(self, message: Message) -> None:
-        self.__message = message
+        self.__message = copy(message)
+        if not self.__message.structure:
+            self.__message.structure = [Link(INITIAL, FINAL)]
 
     def __target_size(self, link: Link) -> str:
         return str(self.__message.field_size(link.target))
