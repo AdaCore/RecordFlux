@@ -263,3 +263,17 @@ class TestVerification(unittest.TestCase):
                     end message;
             end Foo;
             """)
+
+    def test_invalid_fixed_size_field_with_length(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element then F2 with Length => 300;
+                        F2 : Element;
+                    end message;
+            end Foo;
+            """,
+            r'^fixed field "F2" with length attribute')

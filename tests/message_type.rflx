@@ -4,12 +4,9 @@ package Test is
 
    type PDU is
       message
-         null
-            then Foo
-               with Length => 1;
          Foo : T
             then Bar
-               with First => 1, Length => 1
+               with First => 1
                if Foo'Length = 1 and Foo <= 16#1E#,
             then Baz
                if Foo'Length = 1 and Foo > 16#1E#;
