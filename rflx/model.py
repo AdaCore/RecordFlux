@@ -333,6 +333,12 @@ class Message(Element):
                         raise ModelError(f'undefined variable "{v}" referenced in condition {index}'
                                          f' from field "{f.name}" to "{l.target.name}"')
 
+                if l.target != FINAL:
+                    t = self.types[l.target]
+                    unconstrained = isinstance(t, (Payload, Array))
+                    if not unconstrained and l.length != UNDEFINED:
+                        raise ModelError(f'fixed field "{l.target.name}" with length attribute')
+
     def __with_constraints(self, expr: Expr) -> Expr:
         literals = {l for v in self.types.values()
                     if isinstance(v, Enumeration) for l in v.literals}
