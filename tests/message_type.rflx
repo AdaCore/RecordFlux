@@ -6,7 +6,6 @@ package Test is
       message
          Foo : T
             then Bar
-               with First => 1
                if Foo'Length = 1 and Foo <= 16#1E#,
             then Baz
                if Foo'Length = 1 and Foo > 16#1E#;

@@ -4,6 +4,7 @@ from rflx.model import ModelError
 from rflx.parser import Parser
 
 
+# pylint: disable=too-many-public-methods
 class TestVerification(unittest.TestCase):
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
@@ -277,3 +278,46 @@ class TestVerification(unittest.TestCase):
             end Foo;
             """,
             r'^fixed field "F2" with length attribute')
+
+    @staticmethod
+    def test_valid_first() -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element then F2 with First => F1'First;
+                        F2 : Element;
+                    end message;
+            end Foo;
+            """)
+
+    def test_invalid_first(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element then F2 with First => F1'First + 8;
+                        F2 : Element;
+                    end message;
+            end Foo;
+            """,
+            r'^invalid start for field "F2" in condition 0 from field "F1" to "F2"')
+
+    def test_invalid_first_is_last(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element then F2 with First => F1'Last;
+                        F2 : Element;
+                    end message;
+            end Foo;
+            """,
+            r'^invalid start for field "F2" in condition 0 from field "F1" to "F2"')
