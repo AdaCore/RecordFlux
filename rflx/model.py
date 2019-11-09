@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod, abstractproperty
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
-from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, GreaterEqual, If, Less,
-                             LessEqual, Number, Or, Pow, ProofResult, Sub, Variable)
+from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, First, GreaterEqual, If,
+                             Less, LessEqual, Number, Or, Pow, ProofResult, Sub, Variable)
 
 
 class Element(ABC):
@@ -332,6 +332,10 @@ class Message(Element):
                                              f'"{l.target.name}"')
                         raise ModelError(f'undefined variable "{v}" referenced in condition {index}'
                                          f' from field "{f.name}" to "{l.target.name}"')
+
+                if l.first != UNDEFINED and not isinstance(l.first, First):
+                    raise ModelError(f'invalid start for field "{l.target.name}" in condition'
+                                     f' {index} from field "{f.name}" to "{l.target.name}"')
 
                 if l.target != FINAL:
                     t = self.types[l.target]

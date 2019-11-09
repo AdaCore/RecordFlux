@@ -488,7 +488,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                          MessageSpec('PDU',
                                      [Component('Foo', 'T', [
                                       Then('Bar',
-                                           Number(1),
+                                           UNDEFINED,
                                            UNDEFINED,
                                            And(Equal(Length('Foo'),
                                                Number(1)),
@@ -527,8 +527,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                  And(Equal(Length('Foo'),
                            Number(1)),
                      LessEqual(Variable('Foo'),
-                               Number(30, 16))),
-                 first=Number(1)),
+                               Number(30, 16)))),
             Link(Field('Foo'), Field('Baz'),
                  And(Equal(Length('Foo'),
                            Number(1)),
@@ -559,7 +558,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                              MessageSpec('PDU',
                                          [Component('Foo', 'T', [
                                           Then('Bar',
-                                               Number(1),
+                                               UNDEFINED,
                                                UNDEFINED,
                                                And(Equal(Length('Foo'),
                                                    Number(1)),
