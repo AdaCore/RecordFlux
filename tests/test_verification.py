@@ -306,7 +306,7 @@ class TestVerification(unittest.TestCase):
                     end message;
             end Foo;
             """,
-            r'^invalid start for field "F2" in condition 0 from field "F1" to "F2"')
+            r'^invalid start for field "F2" in First expression 0 from field "F1" to "F2"')
 
     def test_invalid_first_is_last(self) -> None:
         self.assert_parse_exception_string(
@@ -320,4 +320,51 @@ class TestVerification(unittest.TestCase):
                     end message;
             end Foo;
             """,
-            r'^invalid start for field "F2" in condition 0 from field "F1" to "F2"')
+            r'^invalid start for field "F2" in First expression 0 from field "F1" to "F2"')
+
+    def test_invalid_first_forward_reference(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element then F2 with First => F3'First;
+                        F2 : Element;
+                        F3 : Element;
+                    end message;
+            end Foo;
+            """,
+            r'^subsequent field "F3' "'" 'First" referenced in First expression 0 from field "F1"'
+            r' to "F2"')
+
+    @staticmethod
+    def test_valid_length_reference() -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element then F2 with Length => F1;
+                        F2 : Payload;
+                    end message;
+            end Foo;
+            """)
+
+    def test_invalid_length_forward_reference(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        null then F1 with Length => F2;
+                        F1 : Payload;
+                        F2 : Element;
+                    end message;
+            end Foo;
+            """,
+            r'^subsequent field "F2" referenced in Length expression 0 from field "Initial"'
+            r' to "F1"')

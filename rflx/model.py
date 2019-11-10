@@ -316,26 +316,39 @@ class Message(Element):
         if len(self.outgoing(INITIAL)) != 1:
             raise ModelError(f'ambiguous first field in "{self.full_name}"')
 
+    @staticmethod
+    def __check_vars(expression: Expr, state: Tuple[Set[str], Set[str], Set[str]], link: Link,
+                     index: int, name: str) -> None:
+        variables, literals, seen = state
+        for v in expression.variables(True):
+            if v.name not in literals and v.name not in seen:
+                if v.name in variables:
+                    raise ModelError(f'subsequent field "{v}" referenced in {name} '
+                                     f'expression {index} from field "{link.source.name}" to '
+                                     f'"{link.target.name}"')
+                raise ModelError(f'undefined variable "{v}" referenced in {name} expression'
+                                 f' {index} from field "{link.source.name}" to '
+                                 f'"{link.target.name}"')
+
     def __verify_conditions(self) -> None:
         literals = {n for t in self.types.values()
                     if isinstance(t, Enumeration) for n in t.literals}
-        fields = {f.name for f in self.fields if isinstance(f.name, str)}
-        seen_fields = set()
+        variables = {v for f in self.fields if isinstance(f.name, str)
+                     for v in [f.name, f"{f.name}'First", f"{f.name}'Length", f"{f.name}'Last"]}
+        variables.add("Message'Last")
+        seen = set({"Message'Last"})
         for f in (INITIAL, *self.__compute_topological_sorting()):
-            seen_fields.add(f.name)
+            for v in [f.name, f"{f.name}'Length", f"{f.name}'First", f"{f.name}'Last"]:
+                seen.add(v)
             for index, l in enumerate(self.outgoing(f)):
-                for v in l.condition.variables():
-                    if v.name not in literals and v.name not in seen_fields:
-                        if v.name in fields:
-                            raise ModelError(f'subsequent field "{v}" referenced in condition '
-                                             f'{index} from field "{f.name}" to '
-                                             f'"{l.target.name}"')
-                        raise ModelError(f'undefined variable "{v}" referenced in condition {index}'
-                                         f' from field "{f.name}" to "{l.target.name}"')
+                self.__check_vars(l.condition, (variables, literals, seen), l, index, 'if')
+                self.__check_vars(l.length, (variables, literals, seen), l, index, 'Length')
+                self.__check_vars(l.first, (variables, literals, seen), l, index, 'First')
 
                 if l.first != UNDEFINED and not isinstance(l.first, First):
-                    raise ModelError(f'invalid start for field "{l.target.name}" in condition'
-                                     f' {index} from field "{f.name}" to "{l.target.name}"')
+                    raise ModelError(f'invalid start for field "{l.target.name}" in First'
+                                     f' expression {index} from field "{f.name}" to'
+                                     f' "{l.target.name}"')
 
                 if l.target != FINAL:
                     t = self.types[l.target]
