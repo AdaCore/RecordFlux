@@ -718,22 +718,22 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_length_z3variables(self) -> None:
         self.assertEqual(
             Length('Z').variables(True),
-            [Variable('Z__Length')])
+            [Variable("Z'Length")])
 
     def test_last_z3variables(self) -> None:
         self.assertEqual(
             Last('Z').variables(True),
-            [Variable('Z__Last')])
+            [Variable("Z'Last")])
 
     def test_first_z3variables(self) -> None:
         self.assertEqual(
             First('Z').variables(True),
-            [Variable('Z__First')])
+            [Variable("Z'First")])
 
     def test_size_z3variables(self) -> None:
         self.assertEqual(
             Size('Z').variables(True),
-            [Variable('Z__Size')])
+            [Variable("Z'Size")])
 
     def test_not_variables(self) -> None:
         self.assertEqual(

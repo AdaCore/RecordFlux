@@ -757,13 +757,13 @@ class Attribute(Name):
     def z3expr(self) -> z3.ExprRef:
         if not isinstance(self.name, str):
             raise TypeError
-        return z3.Int(f'{self.name}__{self.__class__.__name__}')
+        return z3.Int(f"{self.name}'{self.__class__.__name__}")
 
     def variables(self, proof: bool = False) -> List['Variable']:
         if proof:
             if not isinstance(self.name, str):
                 raise TypeError
-            return [Variable(f'{self.name}__{self.__class__.__name__}')]
+            return [Variable(f"{self.name}'{self.__class__.__name__}")]
         return []
 
 
