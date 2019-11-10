@@ -330,7 +330,7 @@ class TestModel(unittest.TestCase):
             Field('F2'): foo_type
         }
         with self.assertRaisesRegex(ModelError, '^undefined variable "Val3" referenced in '
-                                    + 'condition 0 from field "F1" to "F2"'):
+                                    + 'if expression 0 from field "F1" to "F2"'):
             Message('X', structure, types)
 
     def test_subsequent_variable(self) -> None:
@@ -346,5 +346,5 @@ class TestModel(unittest.TestCase):
             Field('F2'): foo_type
         }
         with self.assertRaisesRegex(ModelError, '^subsequent field "F2" referenced in '
-                                    + 'condition 0 from field "F1" to "F2"'):
+                                    + 'if expression 0 from field "F1" to "F2"'):
             Message('X', structure, types)
