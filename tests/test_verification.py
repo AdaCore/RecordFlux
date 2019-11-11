@@ -259,6 +259,7 @@ class TestVerification(unittest.TestCase):
                         L : Length;
                         T : Tag
                             then V
+                                with Length => L
                                 if T /= T2 and L <= 2**13;
                         V : Payload;
                     end message;
@@ -368,3 +369,34 @@ class TestVerification(unittest.TestCase):
             """,
             r'^subsequent field "F2" referenced in Length expression 0 from field "Initial"'
             r' to "F1"')
+
+    def test_invalid_positive_field_length(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element then F2 with Length => F1 - 300;
+                        F2 : Payload;
+                    end message;
+            end Foo;
+            """,
+            r'^negative length for field "F2" on path F1 -> F2')
+
+    @staticmethod
+    def test_valid_length_from_message_last() -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element;
+                        F2 : Element
+                            then null
+                                with Length => Message'Last - F1'Last;
+                    end message;
+            end Foo;
+            """)

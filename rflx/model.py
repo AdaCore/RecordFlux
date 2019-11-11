@@ -4,7 +4,8 @@ from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, First, GreaterEqual, If,
-                             Less, LessEqual, Number, Or, Pow, ProofResult, Sub, Variable)
+                             Last, Length, Less, LessEqual, Number, Or, Pow, ProofResult, Sub,
+                             Variable)
 
 
 class Element(ABC):
@@ -105,6 +106,10 @@ class RangeInteger(Scalar):
         return self.__size
 
     def constraints(self, name: str, proof: bool = False) -> Expr:
+        if proof:
+            return And(GreaterEqual(Variable(name), self.first),
+                       LessEqual(Variable(name), self.last))
+
         c: Expr = TRUE
         if self.first.simplified() != self.base_first.simplified():
             c = GreaterEqual(Variable(name), self.first)
@@ -356,13 +361,15 @@ class Message(Element):
                     if not unconstrained and l.length != UNDEFINED:
                         raise ModelError(f'fixed field "{l.target.name}" with length attribute')
 
-    def __with_constraints(self, expr: Expr) -> Expr:
+    def __type_constraints(self, expr: Expr) -> Expr:
         literals = {l for v in self.types.values()
                     if isinstance(v, Enumeration) for l in v.literals}
-        type_constraints = And(*[self.types[Field(v.name)].constraints(name=v.name, proof=True)
-                                 for v in expr.variables()
-                                 if isinstance(v.name, str) and v.name not in literals])
-        return And(type_constraints, expr)
+        return And(*[self.types[Field(v.name)].constraints(name=v.name, proof=True)
+                     for v in expr.variables()
+                     if isinstance(v.name, str) and v.name not in literals])
+
+    def __with_constraints(self, expr: Expr) -> Expr:
+        return And(self.__type_constraints(expr), expr)
 
     def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.__fields):
@@ -395,7 +402,46 @@ class Message(Element):
                     raise ModelError(f'contradicting condition {index} from field "{f.name}" to'
                                      f' "{c.target.name}" ({result}: {message})')
 
+    def __link_expression(self, link: Link) -> Expr:
+        first: Expr
+        if link.source == INITIAL:
+            first = First('Message')
+        elif link.first != UNDEFINED:
+            first = link.first
+        else:
+            first = Add(Last(link.source.name), Number(1))
+
+        if link.length != UNDEFINED:
+            length = link.length
+        else:
+            length = self.field_size(link.target)
+
+        name = link.target.name
+        return And(*[Equal(First(name), first),
+                     Equal(Length(name), length),
+                     Equal(Last(name), Sub(Add(first, length), Number(1))),
+                     GreaterEqual(First('Message'), Number(0)),
+                     GreaterEqual(Last('Message'), Last(name)),
+                     link.condition])
+
+    def __prove_field_positions(self) -> None:
+        for f in self.__fields:
+            for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
+                path_expressions = And(*[self.__link_expression(l) for l in p])
+                length = l.length if l.length != UNDEFINED else self.field_size(l.target)
+                positive = If([(And(self.__type_constraints(And(path_expressions, length)),
+                                    path_expressions),
+                                GreaterEqual(length, Number(0)))],
+                              TRUE)
+                result = positive.forall()
+                if result != ProofResult.sat:
+                    path_message = ' -> '.join([l.target.name for l in p])
+                    message = str(positive.simplified()).replace('\n\t', '')
+                    raise ModelError(f'negative length for field "{f.name}" on path {path_message}'
+                                     f' ({result}: {message})')
+
     def __prove(self) -> None:
+        self.__prove_field_positions()
         self.__prove_conflicting_conditions()
         self.__prove_reachability()
         self.__prove_contradictions()
