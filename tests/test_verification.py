@@ -400,3 +400,32 @@ class TestVerification(unittest.TestCase):
                     end message;
             end Foo;
             """)
+
+    def test_payload_no_length(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Bar is
+                    message
+                        F1 : Element;
+                        F2 : Payload;
+                    end message;
+            end Foo;
+            """,
+            r'^unconstrained field "F2" without length attribute')
+
+    def test_array_no_length(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type Element is mod 2**8;
+                type Element_List is array of Element;
+                type Bar is
+                    message
+                        F1 : Element;
+                        F2 : Element_List;
+                    end message;
+            end Foo;
+            """,
+            r'^unconstrained field "F2" without length attribute')

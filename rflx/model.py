@@ -360,6 +360,9 @@ class Message(Element):
                     unconstrained = isinstance(t, (Payload, Array))
                     if not unconstrained and l.length != UNDEFINED:
                         raise ModelError(f'fixed field "{l.target.name}" with length attribute')
+                    if unconstrained and l.length == UNDEFINED:
+                        raise ModelError(f'unconstrained field "{l.target.name}" without length'
+                                         f' attribute')
 
     def __type_constraints(self, expr: Expr) -> Expr:
         literals = {l for v in self.types.values()
