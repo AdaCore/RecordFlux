@@ -405,15 +405,16 @@ class Message(Element):
                     raise ModelError(f'contradicting condition {index} from field "{f.name}" to'
                                      f' "{c.target.name}" ({result}: {message})')
 
-    def __link_expression(self, link: Link) -> Expr:
-        first: Expr
+    @staticmethod
+    def __link_first(link: Link) -> Expr:
         if link.source == INITIAL:
-            first = First('Message')
-        elif link.first != UNDEFINED:
-            first = link.first
-        else:
-            first = Add(Last(link.source.name), Number(1))
+            return First('Message')
+        if link.first != UNDEFINED:
+            return link.first
+        return Add(Last(link.source.name), Number(1))
 
+    def __link_expression(self, link: Link) -> Expr:
+        first = self.__link_first(link)
         if link.length != UNDEFINED:
             length = link.length
         else:
@@ -442,6 +443,18 @@ class Message(Element):
                     message = str(positive.simplified()).replace('\n\t', '')
                     raise ModelError(f'negative length for field "{f.name}" on path {path_message}'
                                      f' ({result}: {message})')
+
+                first = l.first if l.first != UNDEFINED else self.__link_first(l)
+                start = If([(And(self.__type_constraints(And(path_expressions, first)),
+                                 path_expressions),
+                             GreaterEqual(first, First('Message')))],
+                           TRUE)
+                result = start.forall()
+                if result != ProofResult.sat:
+                    path_message = ' -> '.join([l.target.name for l in p])
+                    message = str(start.simplified()).replace('\n\t', '')
+                    raise ModelError(f'start of field "{f.name}" on path {path_message} before'
+                                     f' message start ({result}: {message})')
 
     def __prove(self) -> None:
         self.__prove_field_positions()
