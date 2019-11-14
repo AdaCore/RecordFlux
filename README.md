@@ -11,13 +11,25 @@ RecordFlux is a toolset for the formal specification of messages and the generat
 
 The RecordFlux Message Specification Language is a domain-specific language to formally specify message formats of existing real-world binary protocols. Its syntax is inspired by [Ada](https://www.adacore.com/about-ada). A detailed description of the language elements can be found in the [Language Reference](/doc/Language-Reference.md).
 
+## Model Verification
+
+Formal message specification created in the RecordFlux DSL are automatically verified using the [Z3 theorem prover](https://github.com/Z3Prover/z3). The following invariants are proven at the specification level:
+
+* Field conditions are mutually exclusive
+* Field conditions do not contradict each other
+* For every field in a message there exists at least on reachable path
+* Message fields are always located after the first message bit
+* There is no path where a field has a negative length
+* Message fields cover all bits of a message on all paths
+* Overlaid fields are congruent with exactly one other field
+
 ## Code Generation
 
 The code generator generates parsers based on message specifications. The generated parser allows to validate and dissect messages and thereby respects all specified restrictions between message fields and related messages. Adding the generation of messages is planned. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a message is validated before accessed).
 
 The code generator creates a number of packages for a specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message a child package is generated which contains validation and access functions for every field of the message.
 
-A user of the generated code has to validate a message field or the whole message before accessing the data of a particular message field. The SPARK verifcation tools in combination with the generated contracts make it possible to ensure this property, and so prevent incorrect usage.
+A user of the generated code has to validate a message field or the whole message before accessing the data of a particular message field. The SPARK verification tools in combination with the generated contracts make it possible to ensure this property, and so prevent incorrect usage.
 
 ## Usage
 
@@ -174,7 +186,9 @@ In case that a valid message is contained in `Buffer` the value of `Tag` is read
 
 - [Python >=3.6](https://www.python.org)
 - [PyParsing](https://github.com/pyparsing/pyparsing/)
+- [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
 - [GNAT Community 2019](https://www.adacore.com/download)
+- [Z3](https://github.com/Z3Prover/z3)
 
 ## Known Issues
 
