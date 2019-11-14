@@ -4,7 +4,7 @@ from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, First, GreaterEqual, If,
-                             Last, Length, Less, LessEqual, Number, Or, Pow, ProofResult, Sub,
+                             Last, Length, Less, LessEqual, Not, Number, Or, Pow, ProofResult, Sub,
                              Variable)
 
 
@@ -413,17 +413,21 @@ class Message(Element):
             return link.first
         return Add(Last(link.source.name), Number(1))
 
-    def __link_expression(self, link: Link) -> Expr:
-        first = self.__link_first(link)
+    def __link_length(self, link: Link) -> Expr:
         if link.length != UNDEFINED:
-            length = link.length
-        else:
-            length = self.field_size(link.target)
+            return link.length
+        return self.field_size(link.target)
 
+    def __link_last(self, link: Link) -> Expr:
+        return Sub(Add(self.__link_first(link),
+                       self.__link_length(link)),
+                   Number(1))
+
+    def __link_expression(self, link: Link) -> Expr:
         name = link.target.name
-        return And(*[Equal(First(name), first),
-                     Equal(Length(name), length),
-                     Equal(Last(name), Sub(Add(first, length), Number(1))),
+        return And(*[Equal(First(name), self.__link_first(link)),
+                     Equal(Length(name), self.__link_length(link)),
+                     Equal(Last(name), self.__link_last(link)),
                      GreaterEqual(First('Message'), Number(0)),
                      GreaterEqual(Last('Message'), Last(name)),
                      link.condition])
