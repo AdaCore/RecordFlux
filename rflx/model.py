@@ -436,7 +436,7 @@ class Message(Element):
         for f in self.__fields:
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 path_expressions = And(*[self.__link_expression(l) for l in p])
-                length = l.length if l.length != UNDEFINED else self.field_size(l.target)
+                length = self.__link_length(l)
                 positive = If([(And(self.__type_constraints(And(path_expressions, length)),
                                     path_expressions),
                                 GreaterEqual(length, Number(0)))],
@@ -494,12 +494,27 @@ class Message(Element):
                 raise ModelError(f'path {path_message} does not cover whole message'
                                  f' ({result}: {message})')
 
+    def __prove_overlays(self) -> None:
+        for f in (INITIAL, *self.__fields):
+            for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
+                if l.first != UNDEFINED and isinstance(l.first, First):
+                    path_expressions = And(*[self.__link_expression(l) for l in p])
+                    overlaid = If([(path_expressions,
+                                    Equal(self.__link_last(l), Last(l.first.name)))],
+                                  TRUE)
+                    result = overlaid.forall()
+                    if result != ProofResult.sat:
+                        message = str(overlaid).replace('\n', '')
+                        raise ModelError(f'field "{f.name}" not congruent with overlaid field '
+                                         f'"{l.first.name}" ({result}: {message})')
+
     def __prove(self) -> None:
         self.__prove_field_positions()
         self.__prove_conflicting_conditions()
         self.__prove_reachability()
         self.__prove_contradictions()
         self.__prove_coverage()
+        self.__prove_overlays()
 
     def __compute_topological_sorting(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted (Kahn's algorithm)."""
