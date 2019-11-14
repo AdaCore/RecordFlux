@@ -429,3 +429,22 @@ class TestVerification(unittest.TestCase):
             end Foo;
             """,
             r'^unconstrained field "F2" without length attribute')
+
+    def test_incongruent_overlay(self) -> None:
+        self.assert_parse_exception_string(
+            """
+            package Foo is
+                type U8 is mod 2**8;
+                type U16 is mod 2**16;
+                type Bar is
+                    message
+                        F1 : U8;
+                        F2 : U8
+                            then F3
+                            with First => F1'First;
+                        F3 : U16;
+                        F4 : U16;
+                    end message;
+            end Foo;
+            """,
+            r'^field "F3" not congruent with overlaid field "F1"')
