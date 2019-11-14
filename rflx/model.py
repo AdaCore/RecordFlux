@@ -460,11 +460,46 @@ class Message(Element):
                     raise ModelError(f'start of field "{f.name}" on path {path_message} before'
                                      f' message start ({result}: {message})')
 
+    def __prove_coverage(self) -> None:
+        """
+        Prove that the fields of a message cover all message bits, i.e. there are no holes in the
+        message definition.
+
+        Idea: Let f be the bits covered by the message. By definition
+            (1) f >= Message'First and f <= Message'Last
+        holds. For every field add a conjunction of the form
+            (2) Not(f >= Field'First and f <= Field'Last),
+        effectively pruning the range that this field covers from the bit range of the message. For
+        the overall expression, prove that it is false for all f, i.e. no bits are left.
+        """
+        for path in [p[:-1] for p in self.__paths[FINAL] if p]:
+            # Calculate (1)
+            message_range = And(GreaterEqual(Variable('f'), First('Message')),
+                                LessEqual(Variable('f'), Last('Message')))
+            # Calculate (2) for all fields
+            fields = And(*[Not(And(GreaterEqual(Variable('f'), self.__link_first(l)),
+                                   LessEqual(Variable('f'), self.__link_last(l)))) for l in path])
+            # Define that the end of the last field of a path is the end of the message
+            last_field = Equal(self.__link_last(path[-1]), Last('Message'))
+            # Constraints for links and types
+            path_expressions = self.__with_constraints(And(*[self.__link_expression(l)
+                                                             for l in path]))
+
+            # Coverage expression must be False, i.e. no bits left
+            coverage = Not(And(*[fields, last_field, path_expressions, message_range]))
+            result = coverage.forall()
+            if result != ProofResult.sat:
+                path_message = ' -> '.join([l.target.name for l in path[:-1]])
+                message = str(coverage).replace('\n\t', '')
+                raise ModelError(f'path {path_message} does not cover whole message'
+                                 f' ({result}: {message})')
+
     def __prove(self) -> None:
         self.__prove_field_positions()
         self.__prove_conflicting_conditions()
         self.__prove_reachability()
         self.__prove_contradictions()
+        self.__prove_coverage()
 
     def __compute_topological_sorting(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted (Kahn's algorithm)."""
