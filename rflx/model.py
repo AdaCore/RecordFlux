@@ -342,7 +342,7 @@ class Message(Element):
                      for v in [f.name, f"{f.name}'First", f"{f.name}'Length", f"{f.name}'Last"]}
         variables.add("Message'Last")
         seen = set({"Message'Last"})
-        for f in (INITIAL, *self.__compute_topological_sorting()):
+        for f in (INITIAL, *self.fields):
             for v in [f.name, f"{f.name}'Length", f"{f.name}'First", f"{f.name}'Last"]:
                 seen.add(v)
             for index, l in enumerate(self.outgoing(f)):
@@ -406,28 +406,28 @@ class Message(Element):
                                      f' "{c.target.name}" ({result}: {message})')
 
     @staticmethod
-    def __link_first(link: Link) -> Expr:
+    def __target_first(link: Link) -> Expr:
         if link.source == INITIAL:
             return First('Message')
         if link.first != UNDEFINED:
             return link.first
         return Add(Last(link.source.name), Number(1))
 
-    def __link_length(self, link: Link) -> Expr:
+    def __target_length(self, link: Link) -> Expr:
         if link.length != UNDEFINED:
             return link.length
         return self.field_size(link.target)
 
-    def __link_last(self, link: Link) -> Expr:
-        return Sub(Add(self.__link_first(link),
-                       self.__link_length(link)),
+    def __target_last(self, link: Link) -> Expr:
+        return Sub(Add(self.__target_first(link),
+                       self.__target_length(link)),
                    Number(1))
 
     def __link_expression(self, link: Link) -> Expr:
         name = link.target.name
-        return And(*[Equal(First(name), self.__link_first(link)),
-                     Equal(Length(name), self.__link_length(link)),
-                     Equal(Last(name), self.__link_last(link)),
+        return And(*[Equal(First(name), self.__target_first(link)),
+                     Equal(Length(name), self.__target_length(link)),
+                     Equal(Last(name), self.__target_last(link)),
                      GreaterEqual(First('Message'), Number(0)),
                      GreaterEqual(Last('Message'), Last(name)),
                      link.condition])
@@ -436,7 +436,7 @@ class Message(Element):
         for f in self.__fields:
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 path_expressions = And(*[self.__link_expression(l) for l in p])
-                length = self.__link_length(l)
+                length = self.__target_length(l)
                 positive = If([(And(self.__type_constraints(And(path_expressions, length)),
                                     path_expressions),
                                 GreaterEqual(length, Number(0)))],
@@ -448,7 +448,7 @@ class Message(Element):
                     raise ModelError(f'negative length for field "{f.name}" on path {path_message}'
                                      f' ({result}: {message})')
 
-                first = l.first if l.first != UNDEFINED else self.__link_first(l)
+                first = l.first if l.first != UNDEFINED else self.__target_first(l)
                 start = If([(And(self.__type_constraints(And(path_expressions, first)),
                                  path_expressions),
                              GreaterEqual(first, First('Message')))],
@@ -477,10 +477,10 @@ class Message(Element):
             message_range = And(GreaterEqual(Variable('f'), First('Message')),
                                 LessEqual(Variable('f'), Last('Message')))
             # Calculate (2) for all fields
-            fields = And(*[Not(And(GreaterEqual(Variable('f'), self.__link_first(l)),
-                                   LessEqual(Variable('f'), self.__link_last(l)))) for l in path])
+            fields = And(*[Not(And(GreaterEqual(Variable('f'), self.__target_first(l)),
+                                   LessEqual(Variable('f'), self.__target_last(l)))) for l in path])
             # Define that the end of the last field of a path is the end of the message
-            last_field = Equal(self.__link_last(path[-1]), Last('Message'))
+            last_field = Equal(self.__target_last(path[-1]), Last('Message'))
             # Constraints for links and types
             path_expressions = self.__with_constraints(And(*[self.__link_expression(l)
                                                              for l in path]))
@@ -489,7 +489,7 @@ class Message(Element):
             coverage = Not(And(*[fields, last_field, path_expressions, message_range]))
             result = coverage.forall()
             if result != ProofResult.sat:
-                path_message = ' -> '.join([l.target.name for l in path[:-1]])
+                path_message = ' -> '.join([l.target.name for l in path])
                 message = str(coverage).replace('\n\t', '')
                 raise ModelError(f'path {path_message} does not cover whole message'
                                  f' ({result}: {message})')
@@ -500,7 +500,7 @@ class Message(Element):
                 if l.first != UNDEFINED and isinstance(l.first, First):
                     path_expressions = And(*[self.__link_expression(l) for l in p])
                     overlaid = If([(path_expressions,
-                                    Equal(self.__link_last(l), Last(l.first.name)))],
+                                    Equal(self.__target_last(l), Last(l.first.name)))],
                                   TRUE)
                     result = overlaid.forall()
                     if result != ProofResult.sat:
