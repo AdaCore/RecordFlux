@@ -13,13 +13,13 @@ The RecordFlux Message Specification Language is a domain-specific language to f
 
 ## Model Verification
 
-Formal message specification created in the RecordFlux DSL are automatically verified using the [Z3 theorem prover](https://github.com/Z3Prover/z3). The following invariants are proven at the specification level:
+Message specifications are automatically verified using the [Z3 theorem prover](https://github.com/Z3Prover/z3). The following invariants are proven at the specification level:
 
 * Field conditions are mutually exclusive
 * Field conditions do not contradict each other
-* For every field in a message there exists at least on reachable path
+* Each field is reachable on at least one path from the initial node
 * Message fields are always located after the first message bit
-* There is no path where a field has a negative length
+* Field length is never negative
 * Message fields cover all bits of a message on all paths
 * Overlaid fields are congruent with exactly one other field
 
