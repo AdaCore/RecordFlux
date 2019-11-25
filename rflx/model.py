@@ -351,7 +351,7 @@ class Message(Element):
                 self.__check_vars(l.first, (variables, literals, seen), l, index, 'First')
 
                 if l.first != UNDEFINED and not isinstance(l.first, First):
-                    raise ModelError(f'invalid start for field "{l.target.name}" in First'
+                    raise ModelError(f'invalid First for field "{l.target.name}" in First'
                                      f' expression {index} from field "{f.name}" to'
                                      f' "{l.target.name}"')
 
@@ -359,10 +359,11 @@ class Message(Element):
                     t = self.types[l.target]
                     unconstrained = isinstance(t, (Payload, Array))
                     if not unconstrained and l.length != UNDEFINED:
-                        raise ModelError(f'fixed field "{l.target.name}" with length attribute')
+                        raise ModelError(f'fixed size field "{l.target.name}" with length'
+                                         f' expression')
                     if unconstrained and l.length == UNDEFINED:
                         raise ModelError(f'unconstrained field "{l.target.name}" without length'
-                                         f' attribute')
+                                         f' expression')
 
     def __type_constraints(self, expr: Expr) -> Expr:
         literals = {l for v in self.types.values()

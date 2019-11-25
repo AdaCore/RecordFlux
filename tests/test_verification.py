@@ -279,7 +279,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^fixed field "F2" with length attribute')
+            r'^fixed size field "F2" with length expression')
 
     @staticmethod
     def test_valid_first() -> None:
@@ -308,7 +308,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^invalid start for field "F2" in First expression 0 from field "F1" to "F2"')
+            r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"')
 
     def test_invalid_first_is_last(self) -> None:
         self.assert_parse_exception_string(
@@ -322,7 +322,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^invalid start for field "F2" in First expression 0 from field "F1" to "F2"')
+            r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"')
 
     def test_invalid_first_forward_reference(self) -> None:
         self.assert_parse_exception_string(
@@ -371,7 +371,7 @@ class TestVerification(TestCase):
             r'^subsequent field "F2" referenced in Length expression 0 from field "Initial"'
             r' to "F1"')
 
-    def test_invalid_positive_field_length(self) -> None:
+    def test_invalid_negative_field_length(self) -> None:
         self.assert_parse_exception_string(
             """
             package Foo is
@@ -414,7 +414,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unconstrained field "F2" without length attribute')
+            r'^unconstrained field "F2" without length expression')
 
     def test_array_no_length(self) -> None:
         self.assert_parse_exception_string(
@@ -429,7 +429,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unconstrained field "F2" without length attribute')
+            r'^unconstrained field "F2" without length expression')
 
     def test_incongruent_overlay(self) -> None:
         self.assert_parse_exception_string(
