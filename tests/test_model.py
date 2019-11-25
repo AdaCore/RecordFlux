@@ -1,4 +1,4 @@
-import unittest
+from unittest import TestCase
 
 from rflx.expression import (TRUE, UNDEFINED, Add, And, Div, Equal, First, GreaterEqual, Last,
                              Length, LessEqual, Mul, NotEqual, Number, Or, Pow, Sub, Variable)
@@ -10,7 +10,7 @@ SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
 
 
 # pylint: disable=too-many-public-methods
-class TestModel(unittest.TestCase):
+class TestModel(TestCase):
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
 
