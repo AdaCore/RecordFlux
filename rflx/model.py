@@ -329,10 +329,10 @@ class Message(Element):
             if v.name not in literals and v.name not in seen:
                 if v.name in variables:
                     raise ModelError(f'subsequent field "{v}" referenced in {name} '
-                                     f'expression {index} from field "{link.source.name}" to '
+                                     f'{index} from field "{link.source.name}" to '
                                      f'"{link.target.name}"')
-                raise ModelError(f'undefined variable "{v}" referenced in {name} expression'
-                                 f' {index} from field "{link.source.name}" to '
+                raise ModelError(f'undefined variable "{v}" referenced in {name} '
+                                 f'{index} from field "{link.source.name}" to '
                                  f'"{link.target.name}"')
 
     def __verify_conditions(self) -> None:
@@ -346,9 +346,11 @@ class Message(Element):
             for v in [f.name, f"{f.name}'Length", f"{f.name}'First", f"{f.name}'Last"]:
                 seen.add(v)
             for index, l in enumerate(self.outgoing(f)):
-                self.__check_vars(l.condition, (variables, literals, seen), l, index, 'if')
-                self.__check_vars(l.length, (variables, literals, seen), l, index, 'Length')
-                self.__check_vars(l.first, (variables, literals, seen), l, index, 'First')
+                self.__check_vars(l.condition, (variables, literals, seen), l, index, 'condition')
+                self.__check_vars(l.length, (variables, literals, seen), l, index,
+                                  'Length expression')
+                self.__check_vars(l.first, (variables, literals, seen), l, index,
+                                  'First expression')
 
                 if l.first != UNDEFINED and not isinstance(l.first, First):
                     raise ModelError(f'invalid First for field "{l.target.name}" in First'
