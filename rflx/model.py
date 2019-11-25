@@ -449,7 +449,7 @@ class Message(Element):
                     raise ModelError(f'negative length for field "{f.name}" on path {path_message}'
                                      f' ({result}: {message})')
 
-                first = l.first if l.first != UNDEFINED else self.__target_first(l)
+                first = self.__target_first(l)
                 start = If([(And(self.__type_constraints(And(path_expressions, first)),
                                  path_expressions),
                              GreaterEqual(first, First('Message')))],
