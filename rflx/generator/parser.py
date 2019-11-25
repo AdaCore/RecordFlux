@@ -6,9 +6,9 @@ from rflx.ada import (Assignment, CallStatement, Case, ExpressionFunctionDeclara
                       Parameter, Postcondition, PragmaStatement, Precondition,
                       ProcedureSpecification, ReturnStatement, Subprogram, SubprogramBody,
                       SubprogramDeclaration, UnitPart)
-from rflx.expression import (FALSE, TRUE, Add, And, Call, Div, Equal, Expr, GreaterEqual, If,
-                             Indexed, Last, Less, LessEqual, Mod, Name, NamedAggregate, NotEqual,
-                             Number, Old, Or, Result, Selected, Slice, Sub)
+from rflx.expression import (FALSE, TRUE, Add, And, AndThen, Call, Div, Equal, Expr, GreaterEqual,
+                             If, Indexed, Last, Less, LessEqual, Mod, Name, NamedAggregate,
+                             NotEqual, Number, Old, Or, Result, Selected, Slice, Sub)
 from rflx.model import FINAL, INITIAL, Composite, Enumeration, Field, Message, Scalar, Type
 
 from .common import NULL, VALID_CONTEXT, GeneratorCommon, length_dependent_condition
@@ -83,9 +83,7 @@ class ParserGenerator:
                     And(
                         Call('Has_Buffer',
                              [Name('Ctx')]),
-                        Call('Valid_Predecessor',
-                             [Name('Ctx'), Name('Fld')]),
-                        Call('Path_Condition',
+                        Call('Valid_Next',
                              [Name('Ctx'), Name('Fld')])
                     )
                 )]),
@@ -138,12 +136,10 @@ class ParserGenerator:
                          [(Name(f.affixed_name), result(f, message)) for f in message.fields])
                 )],
                 [Precondition(
-                    And(
+                    AndThen(
                         Call('Has_Buffer',
                              [Name('Ctx')]),
-                        Call('Valid_Predecessor',
-                             [Name('Ctx'), Name('Fld')]),
-                        Call('Path_Condition',
+                        Call('Valid_Next',
                              [Name('Ctx'), Name('Fld')]),
                         Call('Sufficient_Buffer_Length',
                              [Name('Ctx'), Name('Fld')]))),
@@ -175,7 +171,7 @@ class ParserGenerator:
                 specification,
                 [ObjectDeclaration(['Value'], 'Field_Dependent_Value')],
                 [IfStatement(
-                    [(And(
+                    [(AndThen(
                         Call('Has_Buffer',
                              [Name('Ctx')]),
                         Call('Invalid',
@@ -331,7 +327,7 @@ class ParserGenerator:
                 [Precondition(VALID_CONTEXT)])],
             [ExpressionFunctionDeclaration(
                 specification,
-                And(
+                AndThen(
                     Call('Structural_Valid', [Indexed('Ctx.Cursors', Name('Fld'))]),
                     Less(
                         Selected(
@@ -387,7 +383,7 @@ class ParserGenerator:
                              Call('Present', [Name('Ctx'), Name('Fld')])))]))])],
             [ExpressionFunctionDeclaration(
                 specification,
-                And(
+                AndThen(
                     Equal(
                         Selected(
                             Indexed('Ctx.Cursors', Name('Fld')),
@@ -425,6 +421,37 @@ class ParserGenerator:
                             Name('Fld')),
                         'State'),
                     Name('S_Incomplete')))]
+        )
+
+    @staticmethod
+    def create_invalid_function() -> UnitPart:
+        specification = FunctionSpecification(
+            'Invalid',
+            'Boolean',
+            [Parameter(['Ctx'], 'Context'),
+             Parameter(['Fld'], 'Field')])
+
+        return UnitPart(
+            [SubprogramDeclaration(
+                specification,
+                [Precondition(VALID_CONTEXT)])],
+            [ExpressionFunctionDeclaration(
+                specification,
+                Or(
+                    Equal(
+                        Selected(
+                            Indexed(
+                                'Ctx.Cursors',
+                                Name('Fld')),
+                            'State'),
+                        Name('S_Invalid')),
+                    Equal(
+                        Selected(
+                            Indexed(
+                                'Ctx.Cursors',
+                                Name('Fld')),
+                            'State'),
+                        Name('S_Incomplete'))))]
         )
 
     def create_structural_valid_message_function(self, message: Message) -> UnitPart:
@@ -562,7 +589,7 @@ def valid_message_condition(message: Message, field: Field = INITIAL,
     return Or(
         *[l.condition
           if l.target == FINAL else
-          And(
+          AndThen(
               Call(
                   'Structural_Valid'
                   if structural and isinstance(message.types[l.target], Composite) else
