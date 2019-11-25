@@ -1,11 +1,11 @@
 import itertools
 from typing import Mapping, Sequence
 
-from rflx.expression import (TRUE, UNDEFINED, Add, And, Call, Div, Equal, Expr, First, ForAllIn,
-                             GreaterEqual, If, Indexed, Last, Length, LessEqual, Name, Not,
+from rflx.expression import (TRUE, UNDEFINED, Add, And, AndThen, Call, Div, Equal, Expr, First,
+                             ForAllIn, GreaterEqual, If, Indexed, Last, Length, LessEqual, Name,
                              NotEqual, Number, Or, Selected, Size, Sub, ValueRange, Variable)
 from rflx.model import (FINAL, INITIAL, Enumeration, Field, Link, Message, ModularInteger,
-                        RangeInteger, Scalar)
+                        RangeInteger, Scalar, Type)
 
 from .types import Types
 
@@ -86,6 +86,42 @@ class GeneratorCommon:
                    if isinstance(t, Enumeration))}
         }
 
+    def public_substitution(self, message: Message) -> Mapping[Name, Expr]:
+        return {
+            **{First('Message'):
+               Selected(Name('Ctx'), 'First')},
+            **{Last('Message'):
+               Selected(Name('Ctx'), 'Last')},
+            **{First(f.name):
+               Call('Field_First', [Name('Ctx'), Name(f.affixed_name)])
+               for f in message.fields},
+            **{Last(f.name):
+               Call('Field_Last', [Name('Ctx'), Name(f.affixed_name)])
+               for f in message.fields},
+            **{Length(f.name):
+               Call('Field_Length', [Name('Ctx'), Name(f.affixed_name)])
+               for f in message.fields},
+            **{Variable(f.name):
+               Call(
+                   self.types.bit_length,
+                   [Call(f'Get_{f.name}', [Name('Ctx')])])
+               for f, t in message.types.items() if not isinstance(t, Enumeration)},
+            **{Variable(f.name):
+               Call(
+                   self.types.bit_length,
+                   [Call(
+                       'Convert',
+                       [Call(f'Get_{f.name}', [Name('Ctx')])])])
+               for f, t in message.types.items() if isinstance(t, Enumeration)},
+            **{Variable(l):
+               Call(
+                   self.types.bit_length,
+                   [Call('Convert', [Name(l)])])
+               for l in itertools.chain.from_iterable(
+                   t.literals.keys() for t in message.types.values()
+                   if isinstance(t, Enumeration))}
+        }
+
     def message_structure_invariant(self, message: Message,
                                     link: Link = None, prefix: bool = True) -> Expr:
         def prefixed(name: str) -> Expr:
@@ -103,7 +139,8 @@ class GeneratorCommon:
 
         field_type = message.types[target]
         condition = link.condition.simplified(self.substitution(message, prefix))
-        length = (Size(base_type_name(field_type)) if isinstance(field_type, Scalar)
+        length = (Size(Selected(message.package, base_type_name(field_type)))
+                  if isinstance(field_type, Scalar)
                   else link.length.simplified(self.substitution(message, prefix)))
         first = (Name(prefixed('First')) if source == INITIAL
                  else link.first.simplified(
@@ -113,11 +150,11 @@ class GeneratorCommon:
                           Number(1))}}))
 
         return If([(
-            And(
+            AndThen(
                 Call('Structural_Valid', [Indexed(prefixed('Cursors'), Name(target.affixed_name))]),
                 condition
             ),
-            And(
+            AndThen(
                 Equal(
                     Add(
                         Sub(
@@ -150,11 +187,11 @@ class GeneratorCommon:
 
     def context_predicate(self, message: Message, composite_fields: Sequence[Field]) -> Expr:
         def valid_predecessors_invariant() -> Expr:
-            return And(
+            return AndThen(
                 *[If([(
                     Call('Structural_Valid', [Indexed('Cursors', Name(f.affixed_name))]),
                     Or(*[
-                        And(
+                        AndThen(
                             Call('Structural_Valid' if l.source in composite_fields else 'Valid',
                                  [Indexed('Cursors', Name(l.source.affixed_name))]),
                             Equal(Selected(Indexed('Cursors', Name(f.affixed_name)),
@@ -168,16 +205,17 @@ class GeneratorCommon:
             )
 
         def invalid_successors_invariant() -> Expr:
-            return And(
+            return AndThen(
                 *[If([(
-                    And(*[Call('Invalid', [Indexed('Cursors', Name(p.affixed_name))])
+                    AndThen(
+                        *[Call('Invalid', [Indexed('Cursors', Name(p.affixed_name))])
                           for p in message.direct_predecessors(f)]),
                     Call('Invalid', [Indexed('Cursors', Name(f.affixed_name))])
                 )])
                     for f in message.fields if f not in message.direct_successors(INITIAL)]
             )
 
-        return And(
+        return AndThen(
             If([
                 (NotEqual(
                     Name(Name('Buffer')),
@@ -237,6 +275,41 @@ class GeneratorCommon:
             self.message_structure_invariant(message, prefix=False)
         )
 
+    def valid_path_to_next_field_condition(
+        self, message: Message, field: Field, field_type: Type
+    ) -> Sequence[Expr]:
+        return [
+            If(
+                [
+                    (
+                        l.condition,
+                        And(
+                            Equal(
+                                Call(
+                                    'Predecessor', [Name('Ctx'), Name(l.target.affixed_name)],
+                                ),
+                                Name(field.affixed_name),
+                            ),
+                            Call('Valid_Next', [Name('Ctx'), Name(l.target.affixed_name)])
+                            if l.target != FINAL
+                            else TRUE,
+                        ),
+                    )
+                ]
+            ).simplified(
+                {
+                    **{
+                        Variable(field.name): Call('Convert', [Name('Value')])
+                        if isinstance(field_type, Enumeration) and field_type.always_valid
+                        else Name('Value')
+                    },
+                    **self.public_substitution(message),
+                }
+            )
+            for l in message.outgoing(field)
+            if l.target != FINAL
+        ]
+
 
 def base_type_name(scalar_type: Scalar) -> str:
     if isinstance(scalar_type, (RangeInteger, Enumeration)):
@@ -257,16 +330,3 @@ def length_dependent_condition(message: Message) -> bool:
          for l in message.structure
          for v in l.condition.variables(True)]
     )
-
-
-def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
-    return [
-        Not(Call('Has_Buffer', [Name('Ctx')])),
-        Call(f'{sequence_name(message, field)}.Has_Buffer',
-             [Name('Sequence_Context')]),
-        Equal(Name('Ctx.Buffer_First'),
-              Name('Sequence_Context.Buffer_First')),
-        Equal(Name('Ctx.Buffer_Last'),
-              Name('Sequence_Context.Buffer_Last')),
-        Call('Present', [Name('Ctx'), Name(field.affixed_name)]),
-    ]

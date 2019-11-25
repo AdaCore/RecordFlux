@@ -356,7 +356,7 @@ class And(LogExpr):
 
     @property
     def symbol(self) -> str:
-        return ' and then '
+        return ' and '
 
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
@@ -364,6 +364,12 @@ class And(LogExpr):
         if len(z3exprs) != len(boolexprs):
             raise TypeError
         return z3.And(*boolexprs)
+
+
+class AndThen(And):
+    @property
+    def symbol(self) -> str:
+        return ' and then '
 
 
 class Or(LogExpr):
@@ -1032,22 +1038,14 @@ class Call(Name):
         raise NotImplementedError
 
 
-class Slice(Expr):
-    def __init__(self, name: str, first: Expr, last: Expr) -> None:
-        verify_identifier(name)
-        self.name = name
+class Slice(Name):
+    def __init__(self, name: Union[str, Expr], first: Expr, last: Expr) -> None:
+        super().__init__(name)
         self.first = first
         self.last = last
 
     def __str__(self) -> str:
         return f'{self.name} ({self.first} .. {self.last})'
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.literal
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         return Slice(self.name, self.first.simplified(facts), self.last.simplified(facts))

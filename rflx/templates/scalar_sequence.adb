@@ -7,7 +7,7 @@ is
 
    procedure Read_Next_Element (Ctx : in out Context) with
      Pre => Has_Buffer (Ctx),
-     Post => Has_Buffer (Ctx) and Ctx.Buffer_First = Ctx.Buffer_First'Old and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+     Post => Has_Buffer (Ctx) and Ctx.Buffer_First = Ctx.Buffer_First'Old and Ctx.Buffer_Last = Ctx.Buffer_Last'Old and Ctx.First = Ctx.First'Old and Ctx.Last = Ctx.Last'Old and Index (Ctx) = Index (Ctx)'Old
    is
       Last_Bit : Types.Bit_Index;
       First    : Types.Index;
@@ -60,10 +60,33 @@ is
    function Get_Element (Ctx : Context) return Element_Type is
      (Convert (Ctx.Next_Element));
 
+   procedure Append_Element (Ctx : in out Context; Value : Element_Type) is
+      Last_Bit : Types.Bit_Index;
+      First    : Types.Index;
+      Last     : Types.Index;
+      Offset   : Types.Offset;
+   begin
+      Last_Bit := Ctx.Index + Element_Base_Type'Size - 1;
+      First := Types.Byte_Index (Ctx.Index);
+      Last := Types.Byte_Index (Last_Bit);
+      Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
+      if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
+         Insert (Convert (Value), Ctx.Buffer.all (First .. Last), Offset);
+      end if;
+      Ctx.Index := Ctx.Index + Element_Base_Type'Size;
+      if Ctx.Index = Ctx.Last + 1 then
+         Ctx.State := S_Valid;
+         return;
+      end if;
+   end;
+
    function Valid (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid);
 
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
+
+   function Index (Ctx : Context) return Types.Bit_Index is
+      (Ctx.Index);
 
 end {prefix}Scalar_Sequence;

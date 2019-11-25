@@ -484,6 +484,14 @@ class Statement(Ada):
         raise NotImplementedError
 
 
+class NullStatement(Statement):
+    def __init__(self) -> None:
+        pass
+
+    def __str__(self) -> str:
+        return 'null;'
+
+
 class Assignment(Statement):
     def __init__(self, name: Union[str, Expr], expression: Expr) -> None:
         if isinstance(name, str):
@@ -645,7 +653,7 @@ class Subprogram(Declaration):
 class SubprogramDeclaration(Subprogram):
     def __init__(self, specification: SubprogramSpecification,
                  aspects: List[Aspect] = None,
-                 formal_parameters: List[FormalDeclaration] = None) -> None:
+                 formal_parameters: Sequence[FormalDeclaration] = None) -> None:
         super().__init__(specification)
         self.aspects = aspects or []
         self.formal_parameters = formal_parameters
@@ -689,6 +697,22 @@ class ExpressionFunctionDeclaration(Subprogram):
         aspects = f'\n{aspect_specification(self.aspects)}' if self.aspects else ''
         return (f'{self.specification} is\n'
                 f'  ({self.expression!s}){aspects};')
+
+
+class GenericProcedureInstantiation(Subprogram):
+    def __init__(self, name: str, specification: ProcedureSpecification,
+                 associations: List[str] = None) -> None:
+        verify_identifier(name)
+        super().__init__(specification)
+        self.name = name
+        self.parameters = specification.parameters
+        self.associations = associations or []
+
+    def __str__(self) -> str:
+        associations = ', '.join(self.associations)
+        if associations:
+            associations = f' ({associations})'
+        return f'procedure {self.name} is new {self.specification.name}{associations};'
 
 
 class GenericFunctionInstantiation(Subprogram):
@@ -842,7 +866,7 @@ class SubprogramUnitPart(NamedTuple):
     private: Sequence[Subprogram] = []
 
 
-def generic_formal_part(parameters: List[FormalDeclaration] = None) -> str:
+def generic_formal_part(parameters: Sequence[FormalDeclaration] = None) -> str:
     if parameters is None:
         return ''
     return 'generic' + (''.join(f'\n   {p}' for p in parameters) if parameters else '') + '\n'

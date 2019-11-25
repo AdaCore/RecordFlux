@@ -28,8 +28,15 @@ project Test is
       );
 
       --  Improving proof time
-      for Proof_Switches ("rflx-lemmas.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-arrays.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-derivation.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-enumeration.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-ethernet.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-ipv4.ads") use ("--steps=380");
       for Proof_Switches ("rflx-lemmas.adb") use ("--steps=380");
+      for Proof_Switches ("rflx-lemmas.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-tlv.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-udp.ads") use ("--steps=380");
       case AUnit is
          when "yes" =>
             for Proof_Switches ("rflx-types-tests.adb") use ("--steps=380");
@@ -47,8 +54,15 @@ project Test is
 
    package Compiler is
       --  WORKAROUND: Componolit/Workarounds#9
-      for Switches ("rflx-lemmas.ads") use ("-gnato13");
+      for Switches ("rflx-arrays.ads") use ("-gnato13");
+      for Switches ("rflx-derivation.ads") use ("-gnato13");
+      for Switches ("rflx-enumeration.ads") use ("-gnato13");
+      for Switches ("rflx-ethernet.ads") use ("-gnato13");
+      for Switches ("rflx-ipv4.ads") use ("-gnato13");
       for Switches ("rflx-lemmas.adb") use ("-gnato13");
+      for Switches ("rflx-lemmas.ads") use ("-gnato13");
+      for Switches ("rflx-tlv.ads") use ("-gnato13");
+      for Switches ("rflx-udp.ads") use ("-gnato13");
    end Compiler;
 
    package Binder is

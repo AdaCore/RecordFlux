@@ -4,8 +4,10 @@ generic
    type Element_Type is private;
    type Element_Base_Type is (<>);
    with function Extract (Buffer : Types.Bytes; Offset : Types.Offset) return Element_Base_Type;
+   with procedure Insert (Value : Element_Base_Type; Buffer : in out Types.Bytes; Offset : Types.Offset);
    with function Valid (Element : Element_Base_Type) return Boolean;
    with function Convert (Element : Element_Base_Type) return Element_Type;
+   with function Convert (Element : Element_Type) return Element_Base_Type;
 package {prefix}Scalar_Sequence with
   SPARK_Mode
 is
@@ -31,7 +33,10 @@ is
        (Buffer = null
         and Has_Buffer (Ctx)
         and Ctx.Buffer_First = Buffer_First
-        and Ctx.Buffer_Last = Buffer_Last);
+        and Ctx.Buffer_Last = Buffer_Last
+        and Ctx.First = First
+        and Ctx.Last = Last
+        and Index (Ctx) = First);
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index) with
      Pre =>
@@ -42,7 +47,10 @@ is
        (not Has_Buffer (Ctx)
         and Buffer /= null
         and Buffer'First = Buffer_First
-        and Buffer'Last = Buffer_Last);
+        and Buffer'Last = Buffer_Last
+        and Ctx.First = Ctx.First'Old
+        and Ctx.Last = Ctx.Last'Old
+        and Index (Ctx) = Index (Ctx)'Old);
 
    procedure Next (Ctx : in out Context) with
      Pre =>
@@ -51,7 +59,9 @@ is
      Post =>
        (Has_Buffer (Ctx)
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
-        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old);
+        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+        and Ctx.First = Ctx.First'Old
+        and Ctx.Last = Ctx.Last'Old);
 
    function Valid_Element (Ctx : Context) return Boolean with
      Contract_Cases =>
@@ -64,9 +74,32 @@ is
      Pre =>
        Valid_Element (Ctx);
 
+   procedure Append_Element (Ctx : in out Context; Value : Element_Type) with
+     Pre =>
+       (Has_Buffer (Ctx)
+        and then Valid (Convert (Value))
+        and then Available_Space (Ctx) >= Element_Base_Type'Size),
+     Post =>
+       (Has_Buffer (Ctx)
+        and Ctx.Buffer_First = Ctx.Buffer_First'Old
+        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+        and Ctx.First = Ctx.First'Old
+        and Ctx.Last = Ctx.Last'Old
+        and Index (Ctx) = Index (Ctx)'Old + Element_Base_Type'Size);
+
    function Valid (Ctx : Context) return Boolean;
 
    function Has_Buffer (Ctx : Context) return Boolean;
+
+   function Index (Ctx : Context) return Types.Bit_Index with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
+   function Available_Space (Ctx : Context) return Types.Bit_Length with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
 
 private
 
@@ -91,5 +124,8 @@ private
         and Last <= (Types.Bit_Index'Last / 2)
         and Index >= First
         and Index - Last <= 1);
+
+   function Available_Space (Ctx : Context) return Types.Bit_Length is
+      (Ctx.Last - Ctx.Index + 1);
 
 end {prefix}Scalar_Sequence;

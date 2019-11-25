@@ -100,7 +100,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_and_str(self) -> None:
         self.assertEqual(
             str(And(Variable('X'), Variable('Y'))),
-            'X\n   and then Y')
+            'X\n   and Y')
         self.assertEqual(
             str(And()),
             'True')
