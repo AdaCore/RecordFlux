@@ -1,11 +1,12 @@
-import unittest
+from unittest import TestCase, mock
 
-from rflx.model import ModelError
+from rflx.expression import Add, First, Greater, Last, LessEqual, Number, Pow, Sub, Variable
+from rflx.model import FINAL, INITIAL, Field, Link, Message, ModelError, ModularInteger
 from rflx.parser import Parser
 
 
 # pylint: disable=too-many-public-methods
-class TestVerification(unittest.TestCase):
+class TestVerification(TestCase):
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
 
@@ -448,3 +449,56 @@ class TestVerification(unittest.TestCase):
             end Foo;
             """,
             r'^field "F3" not congruent with overlaid field "F1"')
+
+    def test_field_coverage_1(self) -> None:
+        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        structure = [
+            Link(INITIAL, Field('F1')),
+            Link(Field('F1'), Field('F2'), first=Add(First('Message'), Number(64))),
+            Link(Field('F2'), FINAL)]
+
+        types = {
+            Field('F1'): foo_type,
+            Field('F2'): foo_type
+        }
+        with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
+            with self.assertRaisesRegex(ModelError, '^path F1 -> F2 does not cover whole message'):
+                Message('X', structure, types)
+
+    def test_field_coverage_2(self) -> None:
+        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        structure = [
+            Link(INITIAL, Field('F1')),
+            Link(Field('F1'), Field('F2')),
+            Link(Field('F2'), Field('F4'), Greater(Variable('F1'), Number(100))),
+            Link(Field('F2'), Field('F3'), LessEqual(Variable('F1'), Number(100)),
+                 first=Add(Last('F2'), Number(64))),
+            Link(Field('F3'), Field('F4')),
+            Link(Field('F4'), FINAL)]
+
+        types = {
+            Field('F1'): foo_type,
+            Field('F2'): foo_type,
+            Field('F3'): foo_type,
+            Field('F4'): foo_type
+        }
+        with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
+            with self.assertRaisesRegex(ModelError,
+                                        '^path F1 -> F2 -> F3 -> F4 does not cover whole message'):
+                Message('X', structure, types)
+
+    def test_field_after_message_start(self) -> None:
+        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        structure = [
+            Link(INITIAL, Field('F1')),
+            Link(Field('F1'), Field('F2'), first=Sub(First('Message'), Number(1000))),
+            Link(Field('F2'), FINAL)]
+
+        types = {
+            Field('F1'): foo_type,
+            Field('F2'): foo_type
+        }
+        with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
+            with self.assertRaisesRegex(ModelError, '^start of field "F2" on path F1 -> F2 before'
+                                                    ' message start'):
+                Message('X', structure, types)
