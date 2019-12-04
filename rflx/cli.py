@@ -82,7 +82,7 @@ def generate(args: argparse.Namespace) -> None:
 
     generator = Generator(prefix)
 
-    print('Generating... ', end='')
+    print('Generating... ', end='', flush=True)
     generator.generate_dissector(messages, refinements)
     written_files = generator.write_units(directory)
     written_files += generator.write_library_files(directory)
@@ -99,7 +99,7 @@ def parse(files: List) -> Tuple[List, List]:
         if not Path(f).is_file():
             raise Error(f'file not found: "{f}"')
 
-        print(f'Parsing {f}... ', end='')
+        print(f'Parsing {f}... ', end='', flush=True)
         parser.parse(f)
         print('OK')
 
@@ -117,6 +117,6 @@ def graph(args: argparse.Namespace) -> None:
         message = m.full_name.replace('.', '_')
         filename = Path(directory).joinpath(message).with_suffix(f'.{args.format}')
         with open(filename, 'wb') as f:
-            print(f'Creating graph {filename}... ', end='')
+            print(f'Creating graph {filename}... ', end='', flush=True)
             Graph(m).write(f, fmt=args.format)
             print('OK')
