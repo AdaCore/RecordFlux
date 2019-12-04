@@ -465,7 +465,7 @@ class TestVerification(TestCase):
         }
         with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
             with self.assertRaisesRegex(ModelError, '^path F1 -> F2 does not cover whole message'):
-                Message('X', structure, types)
+                Message('P.M', structure, types)
 
     def test_field_coverage_2(self) -> None:
         foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
@@ -487,7 +487,7 @@ class TestVerification(TestCase):
         with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
             with self.assertRaisesRegex(ModelError,
                                         '^path F1 -> F2 -> F3 -> F4 does not cover whole message'):
-                Message('X', structure, types)
+                Message('P.M', structure, types)
 
     def test_field_after_message_start(self) -> None:
         foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
@@ -503,7 +503,7 @@ class TestVerification(TestCase):
         with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
             with self.assertRaisesRegex(ModelError, '^start of field "F2" on path F1 -> F2 before'
                                                     ' message start'):
-                Message('X', structure, types)
+                Message('P.M', structure, types)
 
     @staticmethod
     def test_valid_use_message_length() -> None:

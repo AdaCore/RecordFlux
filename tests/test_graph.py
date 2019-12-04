@@ -12,7 +12,7 @@ class TestGraph(unittest.TestCase):
 
     def test_graph_object(self) -> None:
         f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
-        m = Message('Test',
+        m = Message('P.M',
                     structure=[Link(INITIAL, Field('F1')),
                                Link(Field('F1'), FINAL)],
                     types={Field('F1'): f_type})
@@ -23,10 +23,10 @@ class TestGraph(unittest.TestCase):
                          ['graph', 'edge', 'node', 'Initial', 'F1', 'Final'])
 
     def test_empty_message_graph(self) -> None:
-        m = Message('Test', [], {})
+        m = Message('P.M', [], {})
         expected = (
             """
-            digraph Test {
+            digraph "P.M" {
                 graph [ranksep="0.8 equally", splines=ortho];
                 edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
                 node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
@@ -43,13 +43,13 @@ class TestGraph(unittest.TestCase):
 
     def test_dot_graph(self) -> None:
         f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
-        m = Message('Test',
+        m = Message('P.M',
                     structure=[Link(INITIAL, Field('F1')),
                                Link(Field('F1'), FINAL)],
                     types={Field('F1'): f_type})
         expected = (
             """
-            digraph Test {
+            digraph "P.M" {
                 graph [ranksep="0.8 equally", splines=ortho];
                 edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
                 node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
@@ -68,13 +68,13 @@ class TestGraph(unittest.TestCase):
 
     def test_dot_graph_with_condition(self) -> None:
         f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
-        m = Message('Test',
+        m = Message('P.M',
                     structure=[Link(INITIAL, Field('F1')),
                                Link(Field('F1'), FINAL, Greater(Variable('F1'), Number(100)))],
                     types={Field('F1'): f_type})
         expected = (
             """
-            digraph Test {
+            digraph "P.M" {
                 graph [ranksep="0.8 equally", splines=ortho];
                 edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
                 node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
@@ -93,14 +93,14 @@ class TestGraph(unittest.TestCase):
 
     def test_dot_graph_with_double_edge(self) -> None:
         f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
-        m = Message('Test',
+        m = Message('P.M',
                     structure=[Link(INITIAL, Field('F1')),
                                Link(Field('F1'), FINAL, Greater(Variable('F1'), Number(100))),
                                Link(Field('F1'), FINAL, Less(Variable('F1'), Number(50)))],
                     types={Field('F1'): f_type})
         expected = (
             """
-            digraph Test {
+            digraph "P.M" {
                 graph [ranksep="0.8 equally", splines=ortho];
                 edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
                 node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,

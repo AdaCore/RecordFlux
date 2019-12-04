@@ -220,6 +220,8 @@ class Link(NamedTuple):
 class Message(Element):
     def __init__(self, full_name: str, structure: Sequence[Link],
                  types: Mapping[Field, Type]) -> None:
+        if full_name.count('.') != 1:
+            raise ModelError(f'unexpected format of message name "{full_name}"')
         self.full_name = full_name
         self.structure = structure
         self.__types = types
@@ -564,6 +566,8 @@ class DerivedMessage(Message):
     def __init__(self, full_name: str, full_base_name: str, structure: Sequence[Link],
                  types: Mapping[Field, Type]) -> None:
         super().__init__(full_name, structure, types)
+        if full_base_name.count('.') != 1:
+            raise ModelError(f'unexpected format of message name "{full_name}"')
         self.full_base_name = full_base_name
 
     @property

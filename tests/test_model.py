@@ -72,8 +72,8 @@ class TestModel(TestCase):
             Link(Field('X'), FINAL),
         ]
 
-        with self.assertRaisesRegex(ModelError, '^missing type for field "X" of "M"$'):
-            Message('M', structure, {})
+        with self.assertRaisesRegex(ModelError, '^missing type for field "X" of "P.M"$'):
+            Message('P.M', structure, {})
 
     def test_message_superfluous_type(self) -> None:
         t = ModularInteger('T', Number(2))
@@ -88,8 +88,8 @@ class TestModel(TestCase):
             Field('Y'): t
         }
 
-        with self.assertRaisesRegex(ModelError, '^superfluous field "Y" in field types of "M"$'):
-            Message('M', structure, types)
+        with self.assertRaisesRegex(ModelError, '^superfluous field "Y" in field types of "P.M"$'):
+            Message('P.M', structure, types)
 
     def test_message_ambiguous_first_field(self) -> None:
         t = ModularInteger('T', Number(2))
@@ -108,8 +108,8 @@ class TestModel(TestCase):
             Field('Z'): t
         }
 
-        with self.assertRaisesRegex(ModelError, '^ambiguous first field in "M"$'):
-            Message('M', structure, types)
+        with self.assertRaisesRegex(ModelError, '^ambiguous first field in "P.M"$'):
+            Message('P.M', structure, types)
 
     def test_message_cycle(self) -> None:
         t = ModularInteger('T', Number(2))
@@ -128,8 +128,8 @@ class TestModel(TestCase):
             Field('Z'): t
         }
 
-        with self.assertRaisesRegex(ModelError, '^structure of "M" contains cycle$'):
-            Message('M', structure, types)
+        with self.assertRaisesRegex(ModelError, '^structure of "P.M" contains cycle$'):
+            Message('P.M', structure, types)
 
     def test_message_fields(self) -> None:
         self.assertTupleEqual(
@@ -331,7 +331,7 @@ class TestModel(TestCase):
         }
         with self.assertRaisesRegex(ModelError, '^undefined variable "Val3" referenced in '
                                     + 'condition 0 from field "F1" to "F2"'):
-            Message('X', structure, types)
+            Message('P.M', structure, types)
 
     def test_subsequent_variable(self) -> None:
         foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
@@ -347,4 +347,4 @@ class TestModel(TestCase):
         }
         with self.assertRaisesRegex(ModelError, '^subsequent field "F2" referenced in '
                                     + 'condition 0 from field "F1" to "F2"'):
-            Message('X', structure, types)
+            Message('P.M', structure, types)
