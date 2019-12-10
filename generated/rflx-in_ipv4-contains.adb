@@ -3,8 +3,7 @@ package body RFLX.In_IPv4.Contains with
 is
 
    procedure Switch (IPv4_Packet_Context : in out IPv4.Packet.Context; UDP_Datagram_Context : out UDP.Datagram.Context) is
-      First : RFLX.Types.Bit_Index;
-      Last : RFLX.Types.Bit_Index;
+      First, Last : RFLX.Types.Bit_Index;
       Buffer : RFLX.Types.Bytes_Ptr;
    begin
       IPv4.Packet.Field_Range (IPv4_Packet_Context, IPv4.Packet.F_Payload, First, Last);

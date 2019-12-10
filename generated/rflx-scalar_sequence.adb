@@ -3,11 +3,11 @@ package body RFLX.Scalar_Sequence with
 is
 
    function Create return Context is
-     (Types.Index'First, Types.Index'First, Types.Bit_Index'First, Types.Bit_Index'First, 0, null, Types.Bit_Index'First, S_Initial, Element_Base_Type'First);
+     (Types.Index'First, Types.Index'First, Types.Bit_Index'First, Types.Bit_Index'First, null, Types.Bit_Index'First, S_Initial, Element_Base_Type'First);
 
    procedure Read_Next_Element (Ctx : in out Context) with
      Pre => Has_Buffer (Ctx),
-     Post => Has_Buffer (Ctx) and Ctx.Buffer_First = Ctx.Buffer_First'Old and Ctx.Buffer_Last = Ctx.Buffer_Last'Old and Ctx.Buffer_Address = Ctx.Buffer_Address'Old
+     Post => Has_Buffer (Ctx) and Ctx.Buffer_First = Ctx.Buffer_First'Old and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
    is
       Last_Bit : Types.Bit_Index;
       First    : Types.Index;
@@ -20,7 +20,7 @@ is
          Last := Types.Byte_Index (Last_Bit);
          Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
          if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-            Ctx.Next_Element := Extract_Element_Base_Type (Ctx.Buffer.all (First .. Last), Offset);
+            Ctx.Next_Element := Extract (Ctx.Buffer.all (First .. Last), Offset);
          end if;
       else
          Ctx.State := S_Invalid;
@@ -28,9 +28,8 @@ is
    end Read_Next_Element;
 
    procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index) is
-      Buffer_Address : constant Types.Integer_Address := Types.Bytes_Address (Buffer);
    begin
-      Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer_Address => Buffer_Address, Buffer => Buffer, Index => First, State => S_Processing, Next_Element => Element_Base_Type'First);
+      Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer => Buffer, Index => First, State => S_Processing, Next_Element => Element_Base_Type'First);
       Buffer := null;
       Read_Next_Element (Ctx);
    end Initialize;
@@ -56,10 +55,10 @@ is
    end Next;
 
    function Valid_Element (Ctx : Context) return Boolean is
-     (Ctx.State = S_Processing and then Valid_Element_Type (Ctx.Next_Element));
+     (Ctx.State = S_Processing and then Valid (Ctx.Next_Element));
 
    function Get_Element (Ctx : Context) return Element_Type is
-     (Convert_To_Element_Type (Ctx.Next_Element));
+     (Convert (Ctx.Next_Element));
 
    function Valid (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid);

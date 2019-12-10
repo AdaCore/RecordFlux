@@ -239,7 +239,6 @@ package body RFLX.IPv4.Tests is
             pragma Loop_Invariant (IPv4.Options.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
             pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-            pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
             IPv4.Options.Switch (Sequence_Context, Element_Context);
             IPv4.Option.Verify_Message (Element_Context);
