@@ -321,7 +321,7 @@ class AssExpr(Expr):
 class LogExpr(AssExpr):
     def __str__(self) -> str:
         if not self.terms:
-            return str(self.neutral_element())
+            return str(TRUE)
         return indent_next(f'\n{self.symbol}'.join(map(self.parenthesized, self.terms)), 2)
 
     @abstractmethod
@@ -710,7 +710,7 @@ class Name(Expr):
     def __hash__(self) -> int:
         return hash(str(self.name) + self.__class__.__name__)
 
-    def __neg__(self) -> 'Name':
+    def __neg__(self) -> Expr:
         negated_self = copy(self)
         negated_self.negative = not self.negative
         return negated_self
@@ -780,6 +780,10 @@ class First(Attribute):
 
 
 class Last(Attribute):
+    pass
+
+
+class Range(Attribute):
     pass
 
 
@@ -985,10 +989,33 @@ class NotEqual(Relation):
         return result
 
 
-class Call(Expr):
+class In(Relation):
+    def __neg__(self) -> Expr:
+        return NotIn(self.left, self.right)
+
+    @property
+    def symbol(self) -> str:
+        return ' in '
+
+    def z3expr(self) -> z3.BoolRef:
+        raise NotImplementedError
+
+
+class NotIn(Relation):
+    def __neg__(self) -> Expr:
+        return In(self.left, self.right)
+
+    @property
+    def symbol(self) -> str:
+        return ' not in '
+
+    def z3expr(self) -> z3.BoolRef:
+        raise NotImplementedError
+
+
+class Call(Name):
     def __init__(self, name: str, args: Sequence[Expr] = None) -> None:
-        verify_identifier(name)
-        self.name = name
+        super().__init__(name)
         self.args = args or []
 
     def __str__(self) -> str:
@@ -997,13 +1024,6 @@ class Call(Expr):
             args = f' ({args})'
         call = f'{self.name}{args}'
         return call
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.literal
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         return self
@@ -1046,11 +1066,11 @@ class If(Expr):
         result = ''
         for c, e in self.condition_expressions:
             if not result:
-                result = f'(if {c} then {e}'
+                result = f'(if {indent_next(str(c), 3)} then\n {indent(str(e), 3)}'
             else:
-                result += f' elsif {c} then {e}'
+                result += f'\n elsif {indent_next(str(c), 6)} then\n {indent(str(e), 3)}'
         if self.else_expression:
-            result += f' else {self.else_expression}'
+            result += f'\n else\n {indent(str(self.else_expression), 3)}'
         result += ')'
         return result
 
@@ -1062,8 +1082,15 @@ class If(Expr):
         return Precedence.literal
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
-        return If([(c.simplified(facts), e.simplified(facts))
-                   for c, e in self.condition_expressions],
+        simplified_ce = [
+            (c.simplified(facts), e.simplified(facts))
+            for c, e in self.condition_expressions
+        ]
+
+        if len(simplified_ce) == 1 and simplified_ce[0][0] == TRUE:
+            return simplified_ce[0][1]
+
+        return If(simplified_ce,
                   self.else_expression)
 
     def variables(self, proof: bool = False) -> List['Variable']:
@@ -1203,7 +1230,7 @@ class ForAllIn(QuantifiedExpression):
         return 'in'
 
 
-class Range(Expr):
+class ValueRange(Expr):
     def __init__(self, lower: Expr, upper: Expr):
         self.lower = lower
         self.upper = upper

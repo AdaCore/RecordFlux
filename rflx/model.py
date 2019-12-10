@@ -244,9 +244,8 @@ class Message(Element):
             self.__field_condition = {}
 
     @property
-    def generic_name(self) -> str:
-        package, name = self.full_name.rsplit('.', 1)
-        return f'{package}.Generic_{name}'
+    def name(self) -> str:
+        return self.full_name.rsplit('.', 1)[1]
 
     @property
     def package(self) -> str:
@@ -562,19 +561,18 @@ class Message(Element):
 
 
 class DerivedMessage(Message):
-    def __init__(self, full_name: str, base_name: str, structure: Sequence[Link],
+    def __init__(self, full_name: str, full_base_name: str, structure: Sequence[Link],
                  types: Mapping[Field, Type]) -> None:
         super().__init__(full_name, structure, types)
-        self.base_name = base_name
+        self.full_base_name = full_base_name
 
     @property
-    def generic_base_name(self) -> str:
-        package, name = self.base_name.rsplit('.', 1)
-        return f'{package}.Generic_{name}'
+    def base_name(self) -> str:
+        return self.full_base_name.rsplit('.', 1)[1]
 
     @property
     def base_package(self) -> str:
-        return self.base_name.rsplit('.', 1)[0]
+        return self.full_base_name.rsplit('.', 1)[0]
 
 
 class Refinement(Type):

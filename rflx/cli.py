@@ -83,7 +83,7 @@ def generate(args: argparse.Namespace) -> None:
     generator = Generator(prefix)
 
     print('Generating... ', end='', flush=True)
-    generator.generate_dissector(messages, refinements)
+    generator.generate(messages, refinements)
     written_files = generator.write_units(directory)
     written_files += generator.write_library_files(directory)
     print('OK')
