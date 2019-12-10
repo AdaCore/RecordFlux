@@ -21,10 +21,10 @@ test: test_python test_spark prove_spark
 
 test_python:
 	coverage run --branch --source=rflx -m unittest -b
-	mypy bin/*.py rflx/*.py tests/*.py
-	$(PYLINT) bin/*.py rflx/*.py tests/*.py stubs/*.pyi
-	flake8 bin/*.py rflx/*.py tests/*.py stubs/*.pyi
-	isort -c -w 100 bin/*.py rflx/*.py tests/*.py stubs/*.pyi
+	mypy bin/ rflx/ tests/ stubs/
+	$(PYLINT) bin/ rflx/ tests/ stubs/*.pyi
+	flake8 bin/ rflx/ tests/ stubs/*.pyi
+	isort -rc -c -w 100 bin/ rflx/ tests/ stubs/
 
 test_spark: $(test-files)
 	gprbuild -P$(project)

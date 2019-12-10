@@ -1,38 +1,40 @@
 # pylint: disable=too-many-lines
 import itertools
 from pathlib import Path
-from typing import Dict, List, Mapping, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, Sequence, Set, Tuple, cast
 
 import pkg_resources
 
-from rflx.ada import (ArrayType, Assignment, CallStatement, Component, ContextItem, Declaration,
-                      DefaultInitialCondition, Discriminant, DynamicPredicate, EnumerationType,
-                      ExpressionFunctionDeclaration, FormalDeclaration, FormalPackageDeclaration,
-                      FormalSubprogramDeclaration, FunctionSpecification,
-                      GenericFunctionInstantiation, GenericPackageInstantiation, IfStatement,
-                      InOutParameter, InstantiationUnit, ModularType, NullComponent,
-                      ObjectDeclaration, OutParameter, PackageBody, PackageDeclaration, PackageUnit,
-                      Parameter, Postcondition, Pragma, PragmaStatement, Precondition, PrivateType,
-                      ProcedureSpecification, RangeSubtype, RangeType, RecordType, ReturnStatement,
+from rflx.ada import (Annotate, ArrayType, Assignment, CallStatement, CaseStatement, Component,
+                      ContextItem, Declaration, DefaultInitialCondition, Discriminant,
+                      DynamicPredicate, EnumerationType, ExpressionFunctionDeclaration,
+                      FormalDeclaration, FormalPackageDeclaration, FunctionSpecification,
+                      GenericPackageInstantiation, Ghost, IfStatement, InOutParameter,
+                      InstantiationUnit, ModularType, NullComponent, ObjectDeclaration,
+                      OutParameter, PackageBody, PackageDeclaration, PackageUnit, Parameter,
+                      Postcondition, Pragma, PragmaStatement, Precondition, PrivateType,
+                      ProcedureSpecification, RangeSubtype, RangeType, RecordType, Statement,
                       Subprogram, SubprogramBody, SubprogramDeclaration,
                       SubprogramRenamingDeclaration, SubprogramSpecification, SubprogramUnitPart,
                       Subtype, TypeDeclaration, Unit, UnitPart, UsePackageClause, UseTypeClause,
                       Variant, VariantPart, WithClause)
 from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, Aggregate, And, Call, Case, Constrained,
-                             Div, Equal, Expr, First, ForAllIn, Greater, GreaterEqual, If, Indexed,
-                             Last, Length, Less, LessEqual, Mod, Name, NamedAggregate, Not,
-                             NotEqual, Number, Old, Or, Pow, Range, Result, Selected, Size, Slice,
-                             Sub, Variable)
+                             Div, Equal, Expr, First, Greater, GreaterEqual, If, In, Indexed, Last,
+                             Length, LessEqual, Name, NamedAggregate, Not, NotEqual, Number, Old,
+                             Or, Pow, Range, Selected, Size, Variable)
 from rflx.model import (FINAL, INITIAL, Array, Composite, DerivedMessage, Enumeration, Field,
                         Message, ModularInteger, Payload, RangeInteger, Reference, Refinement,
                         Scalar, Type)
+
+from .common import (NULL, VALID_CONTEXT, GeneratorCommon, base_type_name,
+                     length_dependent_condition, sequence_name, switch_update_conditions)
+from .parser import ParserGenerator
+from .types import Types
 
 TEMPLATE_DIR = ('rflx', 'templates/')
 LIBRARY_FILES = ('lemmas.ads', 'lemmas.adb', 'types.ads', 'types.adb',
                  'message_sequence.ads', 'message_sequence.adb',
                  'scalar_sequence.ads', 'scalar_sequence.adb')
-NULL = Name('null')
-VALID_CONTEXT = Call('Valid_Context', [Name('Ctx')])  # WORKAROUND: Componolit/Workarounds#1
 
 
 class Generator:
@@ -40,8 +42,11 @@ class Generator:
         self.prefix = prefix
         self.units: Dict[str, Unit] = {}
         self.messages: Dict[str, Message] = {}
+        self.types = Types(prefix)
+        self.common = GeneratorCommon(prefix)
+        self.parser = ParserGenerator(prefix)
 
-    def generate_dissector(self, messages: List[Message], refinements: List[Refinement]) -> None:
+    def generate(self, messages: List[Message], refinements: List[Refinement]) -> None:
         self.__process_messages(messages)
         self.__process_refinements(refinements)
 
@@ -170,18 +175,18 @@ class Generator:
             PackageDeclaration(name),
             PackageBody(name))
 
-    def __create_generic_message_unit(self, message: Message) -> None:
+    def __create_generic_message_unit(self, message: Message) -> None:  # pylint: disable=too-many-statements
         context: List[ContextItem] = [
-            WithClause(self.types),
-            UseTypeClause(f'{self.types}.Integer_Address')
+            WithClause(self.types.types),
+            UseTypeClause(f'{self.types.types}.Integer_Address')
         ]
-        generic_name = f'{self.prefix}{message.generic_name}'
+        unit_name = full_generic_name(self.prefix, message.package, message.name)
         parameters: List[FormalDeclaration] = []
         unit = PackageUnit(
             context,
-            PackageDeclaration(generic_name, formal_parameters=parameters),
-            PackageBody(generic_name))
-        self.units[generic_name] = unit
+            PackageDeclaration(unit_name, formal_parameters=parameters),
+            PackageBody(unit_name))
+        self.units[unit_name] = unit
 
         for field_type in message.types.values():
             if isinstance(field_type, Array):
@@ -194,59 +199,74 @@ class Generator:
                 parameters.append(
                     FormalPackageDeclaration(f'{field_type.name}_Sequence', name))
 
-        unit += self.__create_pragmas()
-        unit += self.__create_field_type(message)
-        unit += self.__create_state_type()
-
         scalar_fields = {f: t for f, t in message.types.items() if isinstance(t, Scalar)}
-        composite_fields = [f for f in message.fields if f not in scalar_fields]
+        composite_fields = [f for f, t in message.types.items() if isinstance(t, Composite)]
+        sequence_fields = [f for f in message.fields if isinstance(message.types[f], Array)]
 
         context_invariant = [
             Equal(e, Old(e)) for e in (
                 Name('Ctx.Buffer_First'),
                 Name('Ctx.Buffer_Last'),
-                Name('Ctx.Buffer_Address'),
                 Name('Ctx.First'),
                 Name('Ctx.Last')
             )
         ]
 
-        unit += self.__create_result_type(scalar_fields, composite_fields)
+        unit += self.__create_pragmas(message)
+        unit += self.__create_field_type(message)
+        unit += self.__create_state_type()
         unit += self.__create_cursor_type(message)
-        unit += self.__create_valid_context_function(message)
+        unit += self.__create_cursor_validation_functions()
+        unit += self.__create_valid_context_function(message, composite_fields)
         unit += self.__create_context_type()
-        unit += self.__create_create_function()
-        unit += self.__create_initialize_procedure()
-        unit += self.__create_restricted_initialize_procedure()
-        unit += self.__create_take_buffer_procedure(message, context_invariant)
+        unit += self.__create_field_dependent_type(scalar_fields, composite_fields)
+        unit += self.__create_create_function(message)
+        unit += self.__create_initialize_procedure(message)
+        unit += self.__create_restricted_initialize_procedure(message)
+        unit += self.__create_take_buffer_procedure(context_invariant)
         unit += self.__create_has_buffer_function()
+        unit += self.__create_message_last_function(message)
         unit += self.__create_field_range_procedure()
-        unit += self.__create_index_function()
-        unit += self.__create_internal_valid_functions(message)
-        unit += self.__create_internal_field_functions(message, composite_fields)
-        unit += self.__create_internal_accessor_functions(message)
-        unit += self.__create_verify_procedure(message, context_invariant)
-        unit += self.__create_verify_message_procedure(message, context_invariant)
-        unit += self.__create_present_function()
-        unit += self.__create_structural_valid_function()
-        unit += self.__create_valid_function()
-        unit += self.__create_incomplete_function()
-        unit += self.__create_structural_valid_message_function(message)
-        unit += self.__create_valid_message_function(message)
-        unit += self.__create_incomplete_message_function(message)
-        unit += self.__create_scalar_accessor_functions(scalar_fields)
-        unit += self.__create_composite_accessor_procedures(composite_fields)
+        unit += self.__create_path_condition_function(message)
+        unit += self.__create_field_condition_function(message)
+        unit += self.__create_field_length_function(message)
+        unit += self.__create_field_first_function(message)
+        unit += self.__create_field_last_function()
+        unit += self.__create_predecessor_function()
+        unit += self.__create_successor_function(message)
+        unit += self.__create_valid_predecessor_function(message, composite_fields)
+        unit += self.__create_invalid_successor_function(message)
+        unit += self.__create_available_space_function()
+        unit += self.__create_reset_dependent_fields_procedure(message, context_invariant)
 
-        sequence_fields = [f for f in message.fields if isinstance(message.types[f], Array)]
+        unit += self.parser.create_internal_functions(message, composite_fields)
+        unit += self.parser.create_verify_procedure(message, context_invariant)
+        unit += self.parser.create_verify_message_procedure(message, context_invariant)
+        unit += self.parser.create_present_function()
+        unit += self.parser.create_structural_valid_function()
+        unit += self.parser.create_valid_function()
+        unit += self.parser.create_incomplete_function()
+        unit += self.parser.create_structural_valid_message_function(message)
+        unit += self.parser.create_valid_message_function(message)
+        unit += self.parser.create_incomplete_message_function(message)
+        unit += self.parser.create_scalar_accessor_functions(scalar_fields)
+        unit += self.parser.create_composite_accessor_procedures(composite_fields)
 
         unit += self.__create_switch_procedures(message, sequence_fields)
         unit += self.__create_update_procedures(message, sequence_fields)
         unit += self.__create_public_valid_context_function()
+        unit += self.__create_cursors_function()
 
     @staticmethod
-    def __create_pragmas() -> UnitPart:
+    def __create_pragmas(message: Message) -> UnitPart:
         return UnitPart(
-            [Pragma('Unevaluated_Use_Of_Old', ['Allow'])]
+            [
+                Pragma('Unevaluated_Use_Of_Old', ['Allow']),
+                Pragma('Annotate', ['GNATprove', 'Terminating', generic_name(message.name)])
+            ],
+            [
+                Pragma('Unevaluated_Use_Of_Old', ['Allow'])
+            ]
         )
 
     @staticmethod
@@ -269,7 +289,7 @@ class Generator:
                 EnumerationType(
                     'Cursor_State',
                     dict.fromkeys(('S_Valid', 'S_Structural_Valid', 'S_Invalid',
-                                   'S_Preliminary', 'S_Incomplete')))
+                                   'S_Incomplete')))
             ]
         )
 
@@ -277,6 +297,9 @@ class Generator:
         discriminants = [Discriminant(['State'], 'Cursor_State', Name('S_Invalid'))]
 
         return UnitPart(
+            [
+                PrivateType('Field_Cursors')
+            ],
             private=[
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
@@ -292,171 +315,60 @@ class Generator:
                             (Name(FINAL.affixed_name), FALSE)])),
                 RecordType(
                     'Field_Cursor',
-                    [],
+                    [
+                        Component('Predecessor', 'Virtual_Field', Name(FINAL.affixed_name))
+                    ],
                     discriminants,
                     VariantPart(
                         'State',
-                        [Variant(
-                            [Name('S_Valid'),
-                             Name('S_Structural_Valid'),
-                             Name('S_Preliminary')],
-                            [Component('First', self.types_bit_index),
-                             Component('Last', self.types_bit_length),
-                             Component('Value', 'Field_Dependent_Value')]),
-                         Variant(
-                            [Name('S_Invalid'),
-                             Name('S_Incomplete')],
-                            [NullComponent()])]),
+                        [
+                            Variant(
+                                [
+                                    Name('S_Valid'),
+                                    Name('S_Structural_Valid')
+                                ],
+                                [
+                                    Component('First',
+                                              self.types.bit_index,
+                                              First(self.types.bit_index)),
+                                    Component('Last',
+                                              self.types.bit_length,
+                                              First(self.types.bit_length)),
+                                    Component('Value',
+                                              'Field_Dependent_Value',
+                                              NamedAggregate(('Fld', Name(FINAL.affixed_name))))
+                                ]
+                            ),
+                            Variant(
+                                [
+                                    Name('S_Invalid'),
+                                    Name('S_Incomplete')
+                                ],
+                                [
+                                    NullComponent()
+                                ]
+                            )
+                        ]
+                    ),
                     [DynamicPredicate(
                         If([(Or(Equal(Name('State'), Name('S_Valid')),
                                 Equal(Name('State'), Name('S_Structural_Valid'))),
                              Call('Valid_Value', [Name('Value')]))]))]),
                 ArrayType(
                     'Field_Cursors',
-                    'Field',
+                    'Virtual_Field',
                     'Field_Cursor')
             ]
         )
 
-    def __context_type_predicate(self, message: Message, prefix: bool = False) -> Expr:
-        def prefixed(name: str) -> Name:
-            return Selected(Name('Ctx'), name) if prefix else Name(name)
-
-        def appended(fields: Tuple[Field, ...], field: Field) -> Tuple[Field, ...]:
-            return fields + (tuple([field]) if field not in (INITIAL, FINAL) else tuple())
-
-        def field_state_invariants(field: Field) -> Sequence[Expr]:
-            return [
-                Or(
-                    *[Equal(
-                        Selected(
-                            Indexed(
-                                prefixed('Cursors'),
-                                Name(p.affixed_name)),
-                            'State'),
-                        Name(s))
-                      for s in ('S_Valid', 'S_Structural_Valid')])
-                for p in appended(message.definite_predecessors(field), field)]
-
-        def field_condition_invariants(field: Field) -> Sequence[Expr]:
-            result = []
-            for f in (message.definite_predecessors(field)
-                      + (tuple([field]) if field not in (INITIAL, FINAL) else tuple())):
-                conditions = [l.condition for l in message.outgoing(f) if l.condition != TRUE]
-                if conditions:
-                    result.append(
-                        Or(*conditions).simplified(self.__substitution(message, prefix)))
-            return result
-
-        def field_length_invariants(field: Field) -> Sequence[Expr]:
-            return [
-                Equal(
-                    Add(
-                        Selected(
-                            Indexed(
-                                prefixed('Cursors'),
-                                Name(f.affixed_name)),
-                            'Last'),
-                        -Selected(
-                            Indexed(
-                                prefixed('Cursors'),
-                                Name(f.affixed_name)),
-                            'First'),
-                        Number(1)),
-                    Size(base_type_name(t)))
-                for f, t in message.types.items()
-                if f in (message.definite_predecessors(field)
-                         + (tuple([field]) if field not in (INITIAL, FINAL) else tuple()))
-                and isinstance(t, Scalar)]
-
-        return And(
-            If([
-                (NotEqual(
-                    Name(prefixed('Buffer')),
-                    NULL),
-                 And(
-                     Equal(
-                         First(prefixed('Buffer')),
-                         Name(prefixed('Buffer_First'))),
-                     Equal(
-                         Last(prefixed('Buffer')),
-                         Name(prefixed('Buffer_Last'))),
-                     Equal(
-                         Call(f'{self.types}.Bytes_Address', [Name(prefixed('Buffer'))]),
-                         Name(prefixed('Buffer_Address')))))]),
-            GreaterEqual(
-                Call(self.types_byte_index, [Name(prefixed('First'))]),
-                Name(prefixed('Buffer_First'))),
-            LessEqual(
-                Call(self.types_byte_index, [Name(prefixed('Last'))]),
-                Name(prefixed('Buffer_Last'))),
-            LessEqual(
-                Name(prefixed('First')),
-                Name(prefixed('Last'))),
-            LessEqual(
-                Name(prefixed('Last')),
-                Div(Last(self.types_bit_index), Number(2))),
-            GreaterEqual(
-                Name(prefixed('Index')),
-                Name(prefixed('First'))),
-            LessEqual(
-                Sub(Name(prefixed('Index')), Name(prefixed('Last'))),
-                Number(1)),
-            ForAllIn('F',
-                     Range(First('Field'), Last('Field')),
-                     If([(
-                         Or(
-                             *[Equal(
-                                 Selected(
-                                     Indexed(prefixed('Cursors'), Name('F')),
-                                     'State'),
-                                 Name(s))
-                               for s in ('S_Valid', 'S_Structural_Valid')]),
-                         And(
-                             GreaterEqual(
-                                 Selected(
-                                     Indexed(prefixed('Cursors'), Name('F')),
-                                     'First'),
-                                 Name(prefixed('First'))),
-                             LessEqual(
-                                 Selected(
-                                     Indexed(prefixed('Cursors'), Name('F')),
-                                     'Last'),
-                                 Name(prefixed('Last'))),
-                             LessEqual(
-                                 Selected(
-                                     Indexed(prefixed('Cursors'), Name('F')),
-                                     'First'),
-                                 Add(
-                                     Selected(
-                                         Indexed(prefixed('Cursors'), Name('F')),
-                                         'Last'),
-                                     Number(1))),
-                             Equal(
-                                 Selected(
-                                     Selected(
-                                         Indexed(prefixed('Cursors'), Name('F')),
-                                         'Value'),
-                                     'Fld'),
-                                 Name('F'))))])),
-            Case(Name(prefixed('Fld')),
-                 [(Name(f.affixed_name),
-                   And(*field_state_invariants(f),
-                       *field_condition_invariants(f),
-                       *field_length_invariants(f)))
-                  for f in message.all_fields]))
-
     def __create_context_type(self) -> UnitPart:
         discriminants = [
             Discriminant(['Buffer_First', 'Buffer_Last'],
-                         self.types_index,
-                         First(self.types_index)),
+                         self.types.index,
+                         First(self.types.index)),
             Discriminant(['First', 'Last'],
-                         self.types_bit_index,
-                         First(self.types_bit_index)),
-            Discriminant(['Buffer_Address'],
-                         f'{self.types}.Integer_Address',
-                         Number(0))
+                         self.types.bit_index,
+                         First(self.types.bit_index))
         ]
 
         return UnitPart(
@@ -466,13 +378,13 @@ class Generator:
             [],
             [RecordType(
                 'Context',
-                [Component('Buffer', self.types_bytes_ptr, NULL),
-                 Component('Index', self.types_bit_index, First(Name(self.types_bit_index))),
-                 Component('Fld', 'Virtual_Field', Name(INITIAL.affixed_name)),
+                [Component('Buffer', self.types.bytes_ptr, NULL),
                  Component('Cursors', 'Field_Cursors',
                            NamedAggregate(('others',
                                            NamedAggregate(('State',
-                                                           Name('S_Invalid'))))))],
+                                                           Name('S_Invalid')),
+                                                          ('Predecessor',
+                                                           Name(FINAL.affixed_name))))))],
                 discriminants,
                 None,
                 [DynamicPredicate(
@@ -481,16 +393,13 @@ class Generator:
                           Name('Buffer_Last'),
                           Name('First'),
                           Name('Last'),
-                          Name('Buffer_Address'),
                           Name('Buffer'),
-                          Name('Index'),
-                          Name('Fld'),
                           Name('Cursors')]))])]
         )
 
     @staticmethod
-    def __create_result_type(scalar_fields: Mapping[Field, Scalar],
-                             composite_fields: Sequence[Field]) -> UnitPart:
+    def __create_field_dependent_type(scalar_fields: Mapping[Field, Scalar],
+                                      composite_fields: Sequence[Field]) -> UnitPart:
         result_variants = ([Variant([Name(f.affixed_name)
                                      for f in [INITIAL, *composite_fields, FINAL]],
                                     [NullComponent()])]
@@ -500,7 +409,7 @@ class Generator:
                               for f, t in scalar_fields.items()])
 
         return UnitPart(
-            private=[
+            [
                 RecordType(
                     'Field_Dependent_Value',
                     [],
@@ -509,7 +418,7 @@ class Generator:
             ]
         )
 
-    def __create_create_function(self) -> UnitPart:
+    def __create_create_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification('Create', 'Context')
 
         return UnitPart(
@@ -518,23 +427,41 @@ class Generator:
             [ExpressionFunctionDeclaration(
                 specification,
                 Aggregate(
-                    First(self.types_index),
-                    First(self.types_index),
-                    First(self.types_bit_index),
-                    First(self.types_bit_index),
-                    Number(0),
+                    First(self.types.index),
+                    First(self.types.index),
+                    First(self.types.bit_index),
+                    First(self.types.bit_index),
                     NULL,
-                    First(self.types_bit_index),
-                    Name(INITIAL.affixed_name),
-                    NamedAggregate(('others',
-                                    NamedAggregate(('State',
-                                                    Name('S_Invalid')))))))])
+                    NamedAggregate(
+                        (
+                            message.fields[0].affixed_name,
+                            NamedAggregate(
+                                ('State',
+                                 Name('S_Invalid')),
+                                ('Predecessor',
+                                 Name(INITIAL.affixed_name))
+                            )
+                        ),
+                        (
+                            'others',
+                            NamedAggregate(
+                                ('State',
+                                 Name('S_Invalid')),
+                                ('Predecessor',
+                                 Name(FINAL.affixed_name))
+                            )
+                        )
+                    )
+                )
+            )
+            ]
+        )
 
-    def __create_initialize_procedure(self) -> UnitPart:
+    def __create_initialize_procedure(self, message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             'Initialize',
             [OutParameter(['Ctx'], 'Context'),
-             InOutParameter(['Buffer'], self.types_bytes_ptr)])
+             InOutParameter(['Buffer'], self.types.bytes_ptr)])
 
         return UnitPart(
             [SubprogramDeclaration(
@@ -544,15 +471,28 @@ class Generator:
                         NotEqual(Name('Buffer'), NULL),
                         # WORKAROUND: Componolit/Workarounds#10
                         Greater(Length('Buffer'), Number(0)),
-                        LessEqual(Last('Buffer'), Div(Last(self.types_index), Number(2))))),
+                        LessEqual(Last('Buffer'), Div(Last(self.types.index), Number(2))))),
                  Postcondition(
                      And(VALID_CONTEXT,
                          Call('Has_Buffer', [Name('Ctx')]),
                          # WORKAROUND: Componolit/Workarounds#6
                          Equal(Selected('Ctx', 'Buffer_First'),
-                               Old(Call(f'{self.types}.Bytes_First', [Name('Buffer')]))),
+                               Old(Call(f'{self.types.types}.Bytes_First', [Name('Buffer')]))),
                          Equal(Selected('Ctx', 'Buffer_Last'),
-                               Old(Call(f'{self.types}.Bytes_Last', [Name('Buffer')]))),
+                               Old(Call(f'{self.types.types}.Bytes_Last', [Name('Buffer')]))),
+                         Equal(Selected('Ctx', 'First'),
+                               Call(f'{self.types.types}.First_Bit_Index',
+                                    [Selected('Ctx', 'Buffer_First')])),
+                         Equal(Call('Available_Space',
+                                    [Name('Ctx'), Name(message.fields[0].affixed_name)]),
+                               Add(Call(f'{self.types.types}.Last_Bit_Index',
+                                        [Selected('Ctx', 'Buffer_Last')]),
+                                   -Selected('Ctx', 'First'),
+                                   Number(1))),
+                         Call('Valid_Predecessor',
+                              [Name('Ctx'), Name(message.fields[0].affixed_name)]),
+                         Call('Path_Condition',
+                              [Name('Ctx'), Name(message.fields[0].affixed_name)]),
                          Equal(Name('Buffer'), NULL)))])],
             [SubprogramBody(
                 specification,
@@ -560,15 +500,15 @@ class Generator:
                 [CallStatement('Initialize',
                                [Name('Ctx'),
                                 Name('Buffer'),
-                                Call(self.types_first_bit_index, [First('Buffer')]),
-                                Call(self.types_last_bit_index, [Last('Buffer')])])])])
+                                Call(self.types.first_bit_index, [First('Buffer')]),
+                                Call(self.types.last_bit_index, [Last('Buffer')])])])])
 
-    def __create_restricted_initialize_procedure(self) -> UnitPart:
+    def __create_restricted_initialize_procedure(self, message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             'Initialize',
             [OutParameter(['Ctx'], 'Context'),
-             InOutParameter(['Buffer'], self.types_bytes_ptr),
-             Parameter(['First', 'Last'], self.types_bit_index)])
+             InOutParameter(['Buffer'], self.types.bytes_ptr),
+             Parameter(['First', 'Last'], self.types.bit_index)])
 
         return UnitPart(
             [SubprogramDeclaration(
@@ -578,59 +518,81 @@ class Generator:
                         NotEqual(Name('Buffer'), NULL),
                         # WORKAROUND: Componolit/Workarounds#10
                         Greater(Length('Buffer'), Number(0)),
-                        GreaterEqual(Call(self.types_byte_index, [Name('First')]), First('Buffer')),
-                        LessEqual(Call(self.types_byte_index, [Name('Last')]), Last('Buffer')),
+                        GreaterEqual(Call(self.types.byte_index, [Name('First')]), First('Buffer')),
+                        LessEqual(Call(self.types.byte_index, [Name('Last')]), Last('Buffer')),
                         LessEqual(Name('First'), Name('Last')),
-                        LessEqual(Name('Last'), Div(Last(self.types_bit_index), Number(2))))),
+                        LessEqual(Name('Last'), Div(Last(self.types.bit_index), Number(2))))),
                  Postcondition(
                      And(VALID_CONTEXT,
                          Equal(Name('Buffer'), NULL),
                          Call('Has_Buffer', [Name('Ctx')]),
                          # WORKAROUND: Componolit/Workarounds#6
                          Equal(Selected('Ctx', 'Buffer_First'),
-                               Old(Call(f'{self.types}.Bytes_First', [Name('Buffer')]))),
+                               Old(Call(f'{self.types.types}.Bytes_First', [Name('Buffer')]))),
                          Equal(Selected('Ctx', 'Buffer_Last'),
-                               Old(Call(f'{self.types}.Bytes_Last', [Name('Buffer')]))),
-                         Equal(Name('Ctx.Buffer_Address'),
-                               Old(Call(f'{self.types}.Bytes_Address', [Name('Buffer')]))),
+                               Old(Call(f'{self.types.types}.Bytes_Last', [Name('Buffer')]))),
                          Equal(Name('Ctx.First'), Name('First')),
-                         Equal(Name('Ctx.Last'), Name('Last'))))])],
+                         Equal(Name('Ctx.Last'), Name('Last')),
+                         Equal(Call('Available_Space',
+                                    [Name('Ctx'), Name(message.fields[0].affixed_name)]),
+                               Add(Call(f'{self.types.types}.Last_Bit_Index',
+                                        [Selected('Ctx', 'Buffer_Last')]),
+                                   -Selected('Ctx', 'First'),
+                                   Number(1))),
+                         Call('Valid_Predecessor',
+                              [Name('Ctx'), Name(message.fields[0].affixed_name)]),
+                         Call('Path_Condition',
+                              [Name('Ctx'), Name(message.fields[0].affixed_name)])))])],
             [SubprogramBody(
                 specification,
-                [ObjectDeclaration('Buffer_First', self.types_index, First('Buffer'), True),
-                 ObjectDeclaration('Buffer_Last', self.types_index, Last('Buffer'), True),
-                 ObjectDeclaration(
-                    'Buffer_Address',
-                    f'{self.types}.Integer_Address',
-                    Call(f'{self.types}.Bytes_Address',
-                         [Name('Buffer')]),
-                    True)],
-                [Assignment(
-                    'Ctx',
-                    Aggregate(
-                        Name('Buffer_First'),
-                        Name('Buffer_Last'),
-                        Name('First'),
-                        Name('Last'),
-                        Name('Buffer_Address'),
-                        Name('Buffer'),
-                        Name('First'),
-                        Name(INITIAL.affixed_name),
-                        NamedAggregate(
-                            ('others',
-                             NamedAggregate(
-                                 ('State',
-                                  Name('S_Invalid'))))))),
-                 Assignment(
-                    'Buffer',
-                    NULL)])])
+                [
+                    ObjectDeclaration(['Buffer_First'], self.types.index, First('Buffer'), True),
+                    ObjectDeclaration(['Buffer_Last'], self.types.index, Last('Buffer'), True)
+                ],
+                [
+                    Assignment(
+                        'Ctx',
+                        Aggregate(
+                            Name('Buffer_First'),
+                            Name('Buffer_Last'),
+                            Name('First'),
+                            Name('Last'),
+                            Name('Buffer'),
+                            NamedAggregate(
+                                (
+                                    message.fields[0].affixed_name,
+                                    NamedAggregate(
+                                        ('State',
+                                         Name('S_Invalid')),
+                                        ('Predecessor',
+                                         Name(INITIAL.affixed_name))
+                                    )
+                                ),
+                                (
+                                    'others',
+                                    NamedAggregate(
+                                        ('State',
+                                         Name('S_Invalid')),
+                                        ('Predecessor',
+                                         Name(FINAL.affixed_name))
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    Assignment(
+                        'Buffer',
+                        NULL
+                    )
+                ]
+            )]
+        )
 
-    def __create_take_buffer_procedure(self, message: Message,
-                                       context_invariant: Sequence[Expr]) -> UnitPart:
+    def __create_take_buffer_procedure(self, context_invariant: Sequence[Expr]) -> UnitPart:
         specification = ProcedureSpecification(
             'Take_Buffer',
             [InOutParameter(['Ctx'], 'Context'),
-             OutParameter(['Buffer'], self.types_bytes_ptr)])
+             OutParameter(['Buffer'], self.types.bytes_ptr)])
 
         return UnitPart(
             [SubprogramDeclaration(
@@ -647,12 +609,10 @@ class Generator:
                               First('Buffer')),
                         Equal(Name('Ctx.Buffer_Last'),
                               Last('Buffer')),
-                        Equal(Name('Ctx.Buffer_Address'),
-                              Call(f'{self.types}.Bytes_Address', [Name('Buffer')])),
                         *context_invariant,
-                        *[Equal(Call('Present', [Name('Ctx'), Name(f.affixed_name)]),
-                                Old(Call('Present', [Name('Ctx'), Name(f.affixed_name)])))
-                          for f in message.fields]))])],
+                        *[Equal(e, Old(e)) for e in [
+                            Call('Cursors', [Name('Ctx')])
+                        ]]))])],
             [SubprogramBody(
                 specification,
                 [],
@@ -668,8 +628,8 @@ class Generator:
             'Field_Range',
             [Parameter(['Ctx'], 'Context'),
              Parameter(['Fld'], 'Field'),
-             OutParameter(['First'], self.types_bit_index),
-             OutParameter(['Last'], self.types_bit_index)])
+             OutParameter(['First'], self.types.bit_index),
+             OutParameter(['Last'], self.types.bit_index)])
 
         return UnitPart(
             [SubprogramDeclaration(
@@ -706,111 +666,49 @@ class Generator:
                             Name('Fld')),
                         'Last'))])])
 
-    def __create_index_function(self) -> UnitPart:
-        specification = FunctionSpecification(
-            'Index',
-            self.types_bit_index,
-            [Parameter(['Ctx'], 'Context')])
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(
-                    VALID_CONTEXT),
-                 Postcondition(
-                    And(
-                        GreaterEqual(
-                            Result('Index'),
-                            Name('Ctx.First')),
-                        LessEqual(
-                            Sub(Result('Index'), Name('Ctx.Last')),
-                            Number(1))))])],
-            [ExpressionFunctionDeclaration(
-                specification,
-                Selected('Ctx', 'Index'))])
-
-    @staticmethod
-    def __create_internal_valid_functions(message: Message) -> UnitPart:
-        return UnitPart(
-            [],
-            [ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Preliminary_Valid',
-                    'Boolean',
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Field')]),
-                And(
-                    Or(
-                        *[Equal(
-                            Selected(
-                                Indexed('Ctx.Cursors', Name('Fld')),
-                                'State'),
-                            Name(s))
-                          for s in ('S_Valid', 'S_Structural_Valid', 'S_Preliminary')]),
-                    Equal(
-                        Selected(
-                            Selected(
-                                Indexed(
-                                    Selected(
-                                        'Ctx',
-                                        'Cursors'),
-                                    Name('Fld')),
-                                'Value'),
-                            'Fld'),
-                        Name('Fld')))),
-             ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Preliminary_Valid_Predecessors',
-                    'Boolean',
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Virtual_Field')]),
-                Case(
-                    Name('Fld'),
-                    [(Name(f.affixed_name),
-                      And(*[Call('Preliminary_Valid', [Name('Ctx'), Name(p.affixed_name)])
-                            for p in message.definite_predecessors(f)]))
-                     for f in message.all_fields])),
-             ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Valid_Predecessors',
-                    'Boolean',
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Field')]),
-                Case(
-                    Name('Fld'),
-                    [(Name(f.affixed_name),
-                      And(*[Call('Present', [Name('Ctx'), Name(p.affixed_name)])
-                            for p in message.definite_predecessors(f)]))
-                     for f in message.fields]),
-                [Postcondition(
-                    If([(Result('Valid_Predecessors'),
-                         Call('Preliminary_Valid_Predecessors',
-                              [Name('Ctx'), Name('Fld')]))]))]),
-             ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Valid_Target',
-                    'Boolean',
-                    [Parameter(['Source_Field', 'Target_Field'], 'Virtual_Field')]),
-                Case(
-                    Name('Source_Field'),
-                    [(Name(f.affixed_name),
-                      Or(*([Equal(Name('Target_Field'), Name(s.affixed_name))
-                           for s in message.direct_successors(f)] or (FALSE,))))
-                     for f in message.all_fields]))
-             ])
-
-    def __create_internal_field_functions(self, message: Message,
-                                          composite_fields: Sequence[Field]) -> UnitPart:
+    def __create_path_condition_function(self, message: Message) -> UnitPart:
         def condition(field: Field, message: Message) -> Expr:
             cases: List[Tuple[Expr, Expr]] = [
                 (target, Or(*[c for _, c in conditions]))
                 for target, conditions in itertools.groupby(
-                    [(Name(l.target.affixed_name), l.condition) for l in message.outgoing(field)],
+                    [(Name(l.target.affixed_name), l.condition) for l in message.outgoing(field)
+                     if l.target != FINAL],
                     lambda x: x[0])
             ]
             cases.append((Name('others'), FALSE))
-            return Case(Name('Target_Field'), cases).simplified(self.__substitution(message))
+            return Case(Name('Fld'), cases).simplified(self.common.substitution(message))
 
+        specification = FunctionSpecification(
+            'Path_Condition',
+            'Boolean',
+            [Parameter(['Ctx'], 'Context'),
+             Parameter(['Fld'], 'Field')])
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                VALID_CONTEXT,
+                                Call('Valid_Predecessor', [Name('Ctx'), Name('Fld')])
+                            )
+                        )
+                    ]
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(Selected(Indexed(Selected('Ctx', 'Cursors'), Name('Fld')), 'Predecessor'),
+                         [(Name(f.affixed_name), condition(f, message))
+                          for f in message.all_fields])
+                )
+            ]
+        )
+
+    def __create_field_length_function(self, message: Message) -> UnitPart:
         def length(field: Field, message: Message) -> Expr:
             target_links = [(target, list(links))
                             for target, links in itertools.groupby(message.outgoing(field),
@@ -827,526 +725,410 @@ class Generator:
                         length = links[0].length
                     elif len(links) > 1:
                         length = If([(l.condition, l.length) for l in links],
-                                    Name(self.types_unreachable_bit_length)
-                                    ).simplified(self.__substitution(message))
+                                    Name(self.types.unreachable_bit_length)
+                                    ).simplified(self.common.substitution(message))
                 cases.append((Name(target.affixed_name), length))
 
             if not cases:
                 return Number(0)
 
-            cases.append((Name('others'), Name(self.types_unreachable_bit_length)))
-            return Case(Name('Fld'), cases).simplified(self.__substitution(message))
+            cases.append((Name('others'), Name(self.types.unreachable_bit_length)))
+            return Case(Name('Fld'), cases).simplified(self.common.substitution(message))
 
+        specification = FunctionSpecification(
+            'Field_Length',
+            self.types.bit_length,
+            [Parameter(['Ctx'], 'Context'),
+             Parameter(['Fld'], 'Field')])
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                VALID_CONTEXT,
+                                Call('Valid_Predecessor', [Name('Ctx'), Name('Fld')]),
+                                Call('Path_Condition', [Name('Ctx'), Name('Fld')])
+                            )
+                        )
+                    ]
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(Selected(Indexed(Selected('Ctx', 'Cursors'), Name('Fld')), 'Predecessor'),
+                         [(Name(f.affixed_name), length(f, message))
+                          for f in message.all_fields])
+                )
+            ]
+        )
+
+    def __create_field_first_function(self, message: Message) -> UnitPart:
         def first(field: Field, message: Message) -> Expr:
-            target_links = [(target, [l for l in links if l.first != UNDEFINED])
-                            for target, links in itertools.groupby(message.outgoing(field),
-                                                                   lambda x: x[1])]
-            cases: List[Tuple[Expr, Expr]] = []
-            for target, links in target_links:
-                if target in message.types and links:
-                    first = (links[0].first if len(links) == 1
-                             else If([(l.condition, l.first) for l in links],
-                                     Name(self.types_unreachable_bit_length)
-                                     ).simplified(self.__substitution(message)))
-                    cases.append((Name(target.affixed_name), first))
+            if field == message.fields[0]:
+                return Selected('Ctx', 'First')
 
-            if not cases:
-                return Name('Ctx.Index')
+            contiguous_first = Add(
+                Selected(
+                    Indexed(
+                        Selected('Ctx', 'Cursors'),
+                        Selected(Indexed(Selected('Ctx', 'Cursors'), Name('Fld')), 'Predecessor')
+                    ),
+                    'Last'
+                ),
+                Number(1)
+            )
 
-            cases.append((Name('others'), Name('Ctx.Index')))
-            return Case(Name('Fld'), cases).simplified(self.__substitution(message))
+            return If(
+                [
+                    (
+                        And(
+                            Equal(
+                                Selected(Indexed(Selected('Ctx', 'Cursors'), Name('Fld')),
+                                         'Predecessor'),
+                                Name(l.source.affixed_name)),
+                            l.condition
+                        ),
+                        l.first.simplified({UNDEFINED: contiguous_first})
+                    )
+                    for l in message.incoming(field)
+                ],
+                Name(self.types.unreachable_bit_length)
+            ).simplified(self.common.substitution(message))
 
-        return UnitPart(
-            [],
-            [ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Composite_Field',
-                    'Boolean',
-                    [Parameter(['Fld'], 'Field')]),
-                Case(Name('Fld'),
-                     [(Name(f.affixed_name), TRUE if f in composite_fields else FALSE)
-                      for f in message.fields])),
-             ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Field_Condition',
-                    'Boolean',
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Source_Field', 'Target_Field'], 'Virtual_Field')]),
-                Case(Name('Source_Field'),
-                     [(Name(f.affixed_name), condition(f, message))
-                      for f in message.all_fields]),
-                [Precondition(
-                    And(
-                        Call('Valid_Target',
-                             [Name('Source_Field'),
-                              Name('Target_Field')]),
-                        Call('Preliminary_Valid_Predecessors',
-                             [Name('Ctx'),
-                              Name('Target_Field')])))]),
-             ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Field_Length',
-                    self.types_bit_length,
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Field')]),
-                Case(Name('Ctx.Fld'),
-                     [(Name(f.affixed_name), length(f, message))
-                      for f in message.all_fields]),
-                [Precondition(
-                    And(
-                        Call('Valid_Target',
-                             [Name('Ctx.Fld'),
-                              Name('Fld')]),
-                        Call('Valid_Predecessors',
-                             [Name('Ctx'),
-                              Name('Fld')]),
-                        Call('Field_Condition',
-                             [Name('Ctx'),
-                              Name('Ctx.Fld'),
-                              Name('Fld')])))]),
-             ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Field_First',
-                    self.types_bit_index,
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Field')]),
-                Case(Name('Ctx.Fld'),
-                     [(Name(f.affixed_name), first(f, message))
-                      for f in message.all_fields]),
-                [Precondition(
-                    And(
-                        Call('Valid_Target',
-                             [Name('Ctx.Fld'),
-                              Name('Fld')]),
-                        Call('Valid_Predecessors',
-                             [Name('Ctx'),
-                              Name('Fld')]),
-                        Call('Field_Condition',
-                             [Name('Ctx'),
-                              Name('Ctx.Fld'),
-                              Name('Fld')])))]),
-             ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Field_Postcondition',
-                    'Boolean',
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Field')]),
-                Case(Name('Fld'),
-                     [(Name(f.affixed_name),
-                       Or(*([Call('Field_Condition',
-                                  [Name('Ctx'),
-                                   Name('Fld'),
-                                   Name(s.affixed_name)])
-                             for s in message.direct_successors(f)])
-                          or (FALSE,)))
-                      for f in message.fields]),
-                [Precondition(
-                    And(
-                        Call('Valid_Predecessors',
-                             [Name('Ctx'),
-                              Name('Fld')]),
-                        Call('Preliminary_Valid',
-                             [Name('Ctx'),
-                              Name('Fld')])))])]
-        )
-
-    def __create_internal_accessor_functions(self, message: Message) -> UnitPart:
-        def result(field: Field, message: Message) -> NamedAggregate:
-            aggregate: List[Tuple[str, Expr]] = [('Fld', Name(field.affixed_name))]
-            if field in message.fields and isinstance(message.types[field], Scalar):
-                aggregate.append(
-                    (f'{field.name}_Value',
-                     Call('Extract',
-                          [Slice('Ctx.Buffer.all',
-                                 Name('Buffer_First'),
-                                 Name('Buffer_Last')),
-                           Name('Offset')])))
-            return NamedAggregate(*aggregate)
+        specification = FunctionSpecification(
+            'Field_First',
+            self.types.bit_index,
+            [Parameter(['Ctx'], 'Context'),
+             Parameter(['Fld'], 'Field')])
 
         return UnitPart(
-            [],
-            [ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Valid_Context',
-                    'Boolean',
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Field')]),
-                And(Call('Valid_Target', [Name('Ctx.Fld'), Name('Fld')]),
-                    Call('Valid_Predecessors', [Name('Ctx'), Name('Fld')]),
-                    NotEqual(Name('Ctx.Buffer'), NULL))),
-             ExpressionFunctionDeclaration(
-                FunctionSpecification(
-                    'Sufficient_Buffer_Length',
-                    'Boolean',
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Field')]),
-                And(NotEqual(Name('Ctx.Buffer'), NULL),
-                    LessEqual(
-                        Name('Ctx.First'),
-                        Div(Last(self.types_bit_index), Number(2))),
-                    LessEqual(
-                        Call('Field_First', [Name('Ctx'), Name('Fld')]),
-                        Div(Last(self.types_bit_index), Number(2))),
-                    GreaterEqual(
-                        Call('Field_Length', [Name('Ctx'), Name('Fld')]),
-                        Number(0)),
-                    LessEqual(
-                        Call('Field_Length', [Name('Ctx'), Name('Fld')]),
-                        Div(Last(self.types_bit_length), Number(2))),
-                    LessEqual(
-                        Add(Call('Field_First', [Name('Ctx'), Name('Fld')]),
-                            Call('Field_Length', [Name('Ctx'), Name('Fld')])),
-                        Div(Last(self.types_bit_length), Number(2))),
-                    LessEqual(
-                        Name('Ctx.First'),
-                        Call('Field_First', [Name('Ctx'), Name('Fld')])),
-                    GreaterEqual(
-                        Name('Ctx.Last'),
-                        Sub(Add(Call('Field_First', [Name('Ctx'), Name('Fld')]),
-                                Call('Field_Length', [Name('Ctx'), Name('Fld')])),
-                            Number(1)))),
-                [Precondition(
-                    And(
-                        Call('Valid_Context',
-                             [Name('Ctx'), Name('Fld')]),
-                        Call('Field_Condition',
-                             [Name('Ctx'), Name('Ctx.Fld'), Name('Fld')])))]),
-             SubprogramBody(
-                FunctionSpecification(
-                    'Get_Field_Value',
-                    'Field_Dependent_Value',
-                    [Parameter(['Ctx'], 'Context'),
-                     Parameter(['Fld'], 'Field')]),
-                [ObjectDeclaration(
-                    'First',
-                    self.types_bit_index,
-                    Call('Field_First', [Name('Ctx'), Name('Fld')]),
-                    True),
-                 ObjectDeclaration(
-                    'Length',
-                    self.types_bit_length,
-                    Call('Field_Length', [Name('Ctx'), Name('Fld')]),
-                    True),
-                 ExpressionFunctionDeclaration(
-                    FunctionSpecification(
-                        'Buffer_First',
-                        self.types_index),
-                    Call(self.types_byte_index,
-                         [Name('First')])),
-                 ExpressionFunctionDeclaration(
-                    FunctionSpecification(
-                        'Buffer_Last',
-                        self.types_index),
-                    Call(self.types_byte_index,
-                         [Add(Name('First'), Name('Length'), Number(-1))]),
-                    [Precondition(GreaterEqual(Name('Length'), Number(1)))]),
-                 ExpressionFunctionDeclaration(
-                    FunctionSpecification(
-                        'Offset',
-                        self.types_offset),
-                     Call(self.types_offset,
-                          [Mod(Sub(Number(8),
-                                   Mod(Add(Name('First'), Name('Length'), Number(-1)), Number(8))),
-                               Number(8))]))],
-                [ReturnStatement(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                VALID_CONTEXT,
+                                Call('Valid_Predecessor', [Name('Ctx'), Name('Fld')]),
+                                Call('Path_Condition', [Name('Ctx'), Name('Fld')])
+                            )
+                        )
+                    ]
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
                     Case(Name('Fld'),
-                         [(Name(f.affixed_name), result(f, message)) for f in message.fields])
-                )],
-                [Precondition(
-                    And(Call('Valid_Context',
-                             [Name('Ctx'), Name('Fld')]),
-                        Call('Field_Condition',
-                             [Name('Ctx'), Name('Ctx.Fld'), Name('Fld')]),
-                        Call('Sufficient_Buffer_Length',
-                             [Name('Ctx'), Name('Fld')]))),
-                 Postcondition(
-                    Equal(
-                        Selected(
-                            Result('Get_Field_Value'),
-                            'Fld'),
-                        Name('Fld')))])]
+                         [(Name(f.affixed_name), first(f, message))
+                          for f in message.fields])
+                )
+            ]
         )
 
-    def __create_verify_procedure(self, message: Message,
-                                  context_invariant: Sequence[Expr]) -> UnitPart:
+    def __create_field_last_function(self) -> UnitPart:
+        specification = FunctionSpecification(
+            'Field_Last',
+            self.types.bit_index,
+            [Parameter(['Ctx'], 'Context'),
+             Parameter(['Fld'], 'Field')])
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                Call('Valid_Predecessor', [Name('Ctx'), Name('Fld')]),
+                                Call('Path_Condition', [Name('Ctx'), Name('Fld')])
+                            )
+                        )
+                    ]
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Add(
+                        Call('Field_First', [Name('Ctx'), Name('Fld')]),
+                        Call('Field_Length', [Name('Ctx'), Name('Fld')]),
+                        -Number(1)
+                    )
+                )
+            ]
+        )
+
+    def __create_field_condition_function(self, message: Message) -> UnitPart:
+        def condition(field: Field, message: Message) -> Expr:
+            return Or(
+                *[l.condition for l in message.outgoing(field)]
+            ).simplified(
+                {
+                    Variable(field.name):
+                        Call(self.types.bit_length,
+                             [Selected('Value', f'{field.name}_Value')]),
+                    Length(field.name):
+                        Name('Length')
+                }
+            ).simplified(
+                self.common.substitution(message)
+            )
+
+        parameters = [
+            Parameter(['Ctx'], 'Context'),
+            Parameter(['Value'], 'Field_Dependent_Value')
+        ]
+
+        if length_dependent_condition(message):
+            parameters.append(
+                Parameter(['Length'], self.types.bit_length, Number(0)))
+
+        specification = FunctionSpecification(
+            'Field_Condition',
+            'Boolean',
+            parameters)
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                VALID_CONTEXT,
+                                In(Selected('Value', 'Fld'), Range('Field')),
+                                Call('Valid_Predecessor',
+                                     [Name('Ctx'), Selected('Value', 'Fld')])
+                            )
+                        )
+                    ]
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(Selected('Value', 'Fld'),
+                         [(Name(f.affixed_name), condition(f, message))
+                          for f in message.all_fields])
+                )
+            ]
+        )
+
+    @staticmethod
+    def __create_predecessor_function() -> UnitPart:
+        specification = FunctionSpecification(
+            'Predecessor',
+            'Virtual_Field',
+            [Parameter(['Ctx'], 'Context'),
+             Parameter(['Fld'], 'Virtual_Field')])
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [Precondition(VALID_CONTEXT)]
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Name('Fld'),
+                        [
+                            (
+                                Name(INITIAL.affixed_name),
+                                Name(INITIAL.affixed_name)
+                            ),
+                            (
+                                Name('others'),
+                                Selected(
+                                    Indexed(
+                                        Selected('Ctx', 'Cursors'),
+                                        Name('Fld')),
+                                    'Predecessor')
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+
+    def __create_successor_function(self, message: Message) -> UnitPart:
+        specification = FunctionSpecification(
+            'Successor',
+            'Virtual_Field',
+            [Parameter(['Ctx'], 'Context'),
+             Parameter(['Fld'], 'Field')])
+
+        return UnitPart(
+            [],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Name('Fld'),
+                        [
+                            (
+                                Name(f.affixed_name),
+                                If(
+                                    [(l.condition, Name(l.target.affixed_name))
+                                     for l in message.outgoing(f)],
+                                    Name(INITIAL.affixed_name)
+                                ).simplified(self.common.substitution(message))
+                            )
+                            for f in message.fields
+                        ]
+                    ),
+                    [Precondition(
+                        And(
+                            Call('Structural_Valid',
+                                 [Name('Ctx'), Name('Fld')]),
+                            Call('Valid_Predecessor',
+                                 [Name('Ctx'), Name('Fld')])
+                        )
+                    )]
+                )
+            ]
+        )
+
+    @staticmethod
+    def __create_invalid_successor_function(message: Message) -> UnitPart:
+        if len(message.fields) == 1:
+            return UnitPart()
+
+        specification = FunctionSpecification(
+            'Invalid_Successor',
+            'Boolean',
+            [Parameter(['Ctx'], 'Context'),
+             Parameter(['Fld'], 'Field')])
+
+        return UnitPart(
+            [],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(Name('Fld'),
+                         [
+                             (Name(f.affixed_name),
+                              And(
+                                  *[Call('Invalid', [Indexed(Selected('Ctx', 'Cursors'),
+                                                             Name(s.affixed_name))])
+                                    for s in message.direct_successors(f) if s != FINAL]))
+                             for f in message.fields])
+                )
+            ]
+        )
+
+    def __create_reset_dependent_fields_procedure(self, message: Message,
+                                                  context_invariant: Sequence[Expr]) -> UnitPart:
         specification = ProcedureSpecification(
-            'Verify',
+            'Reset_Dependent_Fields',
             [InOutParameter(['Ctx'], 'Context'),
              Parameter(['Fld'], 'Field')])
 
-        valid_invariant = [
-            If([(NotEqual(Name('Fld'), Name(f.affixed_name)),
-                 If([(Old(Call('Valid', [Name('Ctx'), Name(f.affixed_name)])),
-                      Call('Valid', [Name('Ctx'), Name(f.affixed_name)]))]))])
-            for f in message.fields]
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT),
-                 Postcondition(
-                    And(VALID_CONTEXT,
-                        *valid_invariant,
-                        Equal(Call('Has_Buffer', [Name('Ctx')]),
-                              Old(Call('Has_Buffer', [Name('Ctx')]))),
-                        *context_invariant))])],
-            [SubprogramBody(
-                specification,
-                [ObjectDeclaration('First', self.types_bit_index),
-                 ObjectDeclaration('Last', self.types_bit_length),
-                 ObjectDeclaration('Value', 'Field_Dependent_Value')],
-                [IfStatement(
-                    [(Call('Valid_Context',
-                           [Name('Ctx'), Name('Fld')]),
-                      [IfStatement(
-                          [(Call('Field_Condition',
-                                 [Name('Ctx'), Name('Ctx.Fld'), Name('Fld')]),
-                            [IfStatement(
-                                [(Call('Sufficient_Buffer_Length',
-                                       [Name('Ctx'), Name('Fld')]),
-                                  [Assignment(
-                                      'First',
-                                      Call('Field_First',
-                                           [Name('Ctx'), Name('Fld')])),
-                                   Assignment(
-                                      'Last',
-                                      Sub(Add(Name('First'),
-                                              Call('Field_Length',
-                                                   [Name('Ctx'), Name('Fld')])),
-                                          Number(1))),
-                                   Assignment(
-                                      'Value',
-                                      Call('Get_Field_Value',
-                                           [Name('Ctx'), Name('Fld')])),
-                                   Assignment(
-                                      Indexed(
-                                          'Ctx.Cursors',
-                                          Name('Fld')),
-                                      NamedAggregate(
-                                          ('State', Name('S_Preliminary')),
-                                          ('First', Name('First')),
-                                          ('Last', Name('Last')),
-                                          ('Value', Name('Value')))),
-                                   IfStatement(
-                                       [(And(Call('Valid_Value',
-                                                  [Name('Value')]),
-                                             Call('Field_Postcondition',
-                                                  [Name('Ctx'), Name('Fld')])),
-                                         [IfStatement(
-                                             [(Call('Composite_Field',
-                                                    [Name('Fld')]),
-                                               [Assignment(
-                                                   Indexed(
-                                                       'Ctx.Cursors',
-                                                       Name('Fld')),
-                                                   NamedAggregate(
-                                                       ('State', Name('S_Structural_Valid')),
-                                                       ('First', Name('First')),
-                                                       ('Last', Name('Last')),
-                                                       ('Value', Name('Value'))))])],
-                                             [Assignment(
-                                                 Indexed(
-                                                     'Ctx.Cursors',
-                                                     Name('Fld')),
-                                                 NamedAggregate(
-                                                     ('State', Name('S_Valid')),
-                                                     ('First', Name('First')),
-                                                     ('Last', Name('Last')),
-                                                     ('Value', Name('Value'))))]),
-                                          Assignment(
-                                              'Ctx.Index',
-                                              Add(Name('Last'), Number(1))),
-                                          Assignment(
-                                              'Ctx.Fld',
-                                              Name('Fld'))])],
-                                       [Assignment(
-                                           Indexed(
-                                               'Ctx.Cursors',
-                                               Name('Fld')),
-                                           NamedAggregate(
-                                               ('State', Name('S_Invalid'))))])])],
-                                [Assignment(
-                                    Indexed(
-                                        'Ctx.Cursors',
-                                        Name('Fld')),
-                                    NamedAggregate(
-                                        ('State', Name('S_Incomplete'))))])])],
-                          [Assignment(
-                              Indexed(
-                                  'Ctx.Cursors',
-                                  Name('Fld')),
-                              NamedAggregate(
-                                  ('State', Name('S_Invalid'))))])])])])]
-        )
-
-    @staticmethod
-    def __create_verify_message_procedure(message: Message,
-                                          context_invariant: Sequence[Expr]) -> UnitPart:
-        specification = ProcedureSpecification(
-            'Verify_Message',
-            [InOutParameter(['Ctx'], 'Context')])
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT),
-                 Postcondition(
-                    And(VALID_CONTEXT,
-                        Equal(Call('Has_Buffer', [Name('Ctx')]),
-                              Old(Call('Has_Buffer', [Name('Ctx')]))),
-                        *context_invariant))])],
-            [SubprogramBody(
-                specification,
-                [],
-                [CallStatement('Verify', [Name('Ctx'), Name(f.affixed_name)])
-                 for f in message.fields])]
-        )
-
-    @staticmethod
-    def __create_present_function() -> UnitPart:
-        specification = FunctionSpecification(
-            'Present',
-            'Boolean',
-            [Parameter(['Ctx'], 'Context'),
-             Parameter(['Fld'], 'Field')])
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT)])],
-            [ExpressionFunctionDeclaration(
-                specification,
+        field_location_invariant = PragmaStatement(
+            'Assert',
+            [str(
                 And(
-                    Or(
-                        *[Equal(
-                            Selected(
-                                Indexed('Ctx.Cursors', Name('Fld')),
-                                'State'),
-                            Name(s))
-                          for s in ('S_Valid', 'S_Structural_Valid')]),
-                    Equal(
-                        Selected(
-                            Selected(
-                                Indexed(
-                                    Selected(
-                                        'Ctx',
-                                        'Cursors'),
-                                    Name('Fld')),
-                                'Value'),
-                            'Fld'),
-                        Name('Fld')),
-                    Less(
-                        Selected(
-                            Indexed('Ctx.Cursors', Name('Fld')),
-                            'First'),
-                        Add(
-                            Selected(
-                                Indexed('Ctx.Cursors', Name('Fld')),
-                                'Last'),
-                            Number(1)))))]
+                    Equal(Call('Field_First', [Name('Ctx'), Name('Fld')]), Name('First')),
+                    Equal(Call('Field_Length', [Name('Ctx'), Name('Fld')]), Name('Length')),
+                )
+            )]
         )
 
-    @staticmethod
-    def __create_structural_valid_function() -> UnitPart:
-        specification = FunctionSpecification(
-            'Structural_Valid',
-            'Boolean',
-            [Parameter(['Ctx'], 'Context'),
-             Parameter(['Fld'], 'Field')])
-
         return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT)])],
-            [ExpressionFunctionDeclaration(
-                specification,
-                And(
-                    Or(
-                        *[Equal(
-                            Selected(
-                                Indexed('Ctx.Cursors', Name('Fld')),
-                                'State'),
-                            Name(s))
-                          for s in ('S_Valid', 'S_Structural_Valid')])))]
-        )
-
-    @staticmethod
-    def __create_valid_function() -> UnitPart:
-        specification = FunctionSpecification(
-            'Valid',
-            'Boolean',
-            [Parameter(['Ctx'], 'Context'),
-             Parameter(['Fld'], 'Field')])
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT),
-                 Postcondition(
-                    If([(Result('Valid'),
-                         And(
-                             Call('Present', [Name('Ctx'), Name('Fld')]),
-                             Call('Structural_Valid', [Name('Ctx'), Name('Fld')])))]))])],
-            [ExpressionFunctionDeclaration(
-                specification,
-                And(
-                    Equal(
-                        Selected(
-                            Indexed('Ctx.Cursors', Name('Fld')),
-                            'State'),
-                        Name('S_Valid')),
-                    Equal(
-                        Selected(
-                            Selected(
-                                Indexed(
-                                    Selected(
-                                        'Ctx',
-                                        'Cursors'),
-                                    Name('Fld')),
-                                'Value'),
-                            'Fld'),
-                        Name('Fld')),
-                    Less(
-                        Selected(
-                            Indexed('Ctx.Cursors', Name('Fld')),
-                            'First'),
-                        Add(
-                            Selected(
-                                Indexed('Ctx.Cursors', Name('Fld')),
-                                'Last'),
-                            Number(1)))))]
-        )
-
-    def __create_structural_valid_message_function(self, message: Message) -> UnitPart:
-        specification = FunctionSpecification(
-            'Structural_Valid_Message',
-            'Boolean',
-            [Parameter(['Ctx'], 'Context')])
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT)])],
-            [ExpressionFunctionDeclaration(
-                specification,
-                valid_message_condition(message, structural=True).simplified(
-                    self.__substitution(message)))]
-        )
-
-    def __create_valid_message_function(self, message: Message) -> UnitPart:
-        specification = FunctionSpecification(
-            'Valid_Message',
-            'Boolean',
-            [Parameter(['Ctx'], 'Context')])
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT)])],
-            [ExpressionFunctionDeclaration(
-                specification,
-                valid_message_condition(message).simplified(
-                    self.__substitution(message)))]
+            [],
+            [
+                SubprogramBody(
+                    specification,
+                    [
+                        ObjectDeclaration(
+                            ['First'],
+                            self.types.bit_length,
+                            Call('Field_First', [Name('Ctx'), Name('Fld')]),
+                            True,
+                            [Ghost()]),
+                        ObjectDeclaration(
+                            ['Length'],
+                            self.types.bit_length,
+                            Call('Field_Length', [Name('Ctx'), Name('Fld')]),
+                            True,
+                            [Ghost()]),
+                    ],
+                    [
+                        field_location_invariant,
+                        CaseStatement(
+                            Name('Fld'),
+                            [(
+                                Name(f.affixed_name),
+                                cast(List[Statement], [])
+                                + [
+                                    Assignment(
+                                        Indexed(Selected('Ctx', 'Cursors'), Name(s.affixed_name)),
+                                        Aggregate(Name('S_Invalid'), Name(FINAL.affixed_name))
+                                    )
+                                    for s in reversed(message.successors(f))
+                                ] + [
+                                    Assignment(
+                                        Indexed(Selected('Ctx', 'Cursors'), Name(f.affixed_name)),
+                                        Aggregate(Name('S_Invalid'),
+                                                  Selected(Indexed(Selected('Ctx', 'Cursors'),
+                                                                   Name(f.affixed_name)),
+                                                           'Predecessor'))
+                                    )
+                                ] + [
+                                    field_location_invariant,
+                                ]
+                            )
+                                for f in message.fields
+                            ]
+                        )
+                    ],
+                    [
+                        Precondition(
+                            And(
+                                Call('Valid_Predecessor', [Name('Ctx'), Name('Fld')]),
+                                Call('Path_Condition', [Name('Ctx'), Name('Fld')])
+                            ),
+                        ),
+                        Postcondition(
+                            And(
+                                Call('Valid_Predecessor', [Name('Ctx'), Name('Fld')]),
+                                Call('Path_Condition', [Name('Ctx'), Name('Fld')]),
+                                Call('Invalid', [Indexed(Selected('Ctx', 'Cursors'), Name('Fld'))]),
+                                Call('Invalid_Successor', [Name('Ctx'), Name('Fld')])
+                                if len(message.fields) > 1
+                                else TRUE,
+                                *context_invariant,
+                                *[
+                                    Equal(e, Old(e)) for e in [
+                                        Selected(Indexed(Selected('Ctx', 'Cursors'),
+                                                         Name('Fld')),
+                                                 'Predecessor'),
+                                        Call('Has_Buffer', [Name('Ctx')]),
+                                        Call('Field_First', [Name('Ctx'), Name('Fld')]),
+                                        Call('Field_Length', [Name('Ctx'), Name('Fld')]),
+                                    ]
+                                ],
+                                *[If([(
+                                    Call('Structural_Valid',
+                                         [Indexed(Selected('Ctx', 'Cursors'),
+                                                  Name(f.affixed_name))]),
+                                    Equal(Indexed(Selected('Ctx', 'Cursors'),
+                                                  Name(f.affixed_name)),
+                                          Old(Indexed(Selected('Ctx', 'Cursors'),
+                                                      Name(f.affixed_name)))))])
+                                    for f in message.fields],
+                            ).simplified()
+                        ),
+                    ],
+                )
+            ]
         )
 
     @staticmethod
@@ -1366,121 +1148,120 @@ class Generator:
         )
 
     @staticmethod
-    def __create_incomplete_function() -> UnitPart:
+    def __create_valid_predecessor_function(
+            message: Message,
+            composite_fields: Sequence[Field]
+    ) -> UnitPart:
+
         specification = FunctionSpecification(
-            'Incomplete',
+            'Valid_Predecessor',
             'Boolean',
             [Parameter(['Ctx'], 'Context'),
-             Parameter(['Fld'], 'Field')])
+             Parameter(['Fld'], 'Virtual_Field')])
 
         return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT)])],
-            [ExpressionFunctionDeclaration(
-                specification,
-                Equal(
-                    Selected(
-                        Indexed(
-                            'Ctx.Cursors',
-                            Name('Fld')),
-                        'State'),
-                    Name('S_Incomplete')))]
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [Precondition(VALID_CONTEXT)]
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Name('Fld'),
+                        [
+                            (
+                                Name(f.affixed_name),
+                                Or(*[
+                                    And(
+                                        Call(
+                                            'Structural_Valid'
+                                            if p in composite_fields
+                                            else 'Valid',
+                                            [Indexed(Selected('Ctx', 'Cursors'),
+                                                     Name(p.affixed_name))]
+                                        ) if p != INITIAL else TRUE,
+                                        Equal(Selected(Indexed(Selected('Ctx', 'Cursors'),
+                                                               Name('Fld')),
+                                                       'Predecessor'),
+                                              Name(p.affixed_name))
+                                    ).simplified()
+                                    for p in message.direct_predecessors(f)
+                                ])
+                            )
+                            for f in message.all_fields
+                        ]
+                    )
+                )
+            ]
         )
 
-    @staticmethod
-    def __create_incomplete_message_function(message: Message) -> UnitPart:
+    def __create_message_last_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
-            'Incomplete_Message',
-            'Boolean',
+            'Message_Last',
+            self.types.bit_index,
             [Parameter(['Ctx'], 'Context')])
 
         return UnitPart(
             [SubprogramDeclaration(
                 specification,
-                [Precondition(VALID_CONTEXT)])],
+                [Precondition(
+                    And(
+                        VALID_CONTEXT,
+                        Call('Structural_Valid_Message', [Name('Ctx')])))])],
             [ExpressionFunctionDeclaration(
                 specification,
-                Or(*[Call('Incomplete', [Name('Ctx'), Name(f.affixed_name)])
-                     for f in message.fields]))]
+                If([
+                    (
+                        And(
+                            Call('Structural_Valid', [Indexed(Selected('Ctx', 'Cursors'),
+                                                              Name(l.source.affixed_name))]),
+                            l.condition).simplified(self.common.substitution(message)),
+                        Selected(Indexed(Selected('Ctx', 'Cursors'),
+                                         Name(l.source.affixed_name)),
+                                 'Last')
+                    )
+                    for l in message.incoming(FINAL)],
+                   Name(self.types.unreachable_bit_length)))],
         )
 
-    @staticmethod
-    def __create_scalar_accessor_functions(scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
-        def specification(field: Field, field_type: Type) -> FunctionSpecification:
-            return FunctionSpecification(
-                f'Get_{field.name}',
-                field_type.name,
-                [Parameter(['Ctx'], 'Context')])
-
-        def result(field: Field, field_type: Type) -> Expr:
-            value = Selected(
-                Indexed(
-                    'Ctx.Cursors',
-                    Name(field.affixed_name)),
-                f'Value.{field.name}_Value')
-            if isinstance(field_type, Enumeration):
-                return Call('Convert', [value])
-            return value
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification(f, t),
-                [Precondition(
-                    And(VALID_CONTEXT,
-                        Call('Valid', [Name('Ctx'), Name(f.affixed_name)])))])
-             for f, t in scalar_fields.items()],
-            [ExpressionFunctionDeclaration(
-                specification(f, t),
-                result(f, t))
-             for f, t in scalar_fields.items()]
+    def __create_available_space_function(self) -> UnitPart:
+        specification = FunctionSpecification(
+            'Available_Space',
+            self.types.bit_length,
+            [
+                Parameter(['Ctx'], 'Context'),
+                Parameter(['Fld'], 'Field'),
+            ]
         )
 
-    def __create_composite_accessor_procedures(self, composite_fields: Sequence[Field]) -> UnitPart:
-        def specification(field: Field) -> ProcedureSpecification:
-            return ProcedureSpecification(
-                f'Get_{field.name}',
-                [Parameter(['Ctx'], 'Context')])
-
         return UnitPart(
-            [SubprogramDeclaration(
-                specification(f),
-                [Precondition(
-                    And(VALID_CONTEXT,
-                        Call('Has_Buffer', [Name('Ctx')]),
-                        Call('Present', [Name('Ctx'), Name(f.affixed_name)])))],
-                [FormalSubprogramDeclaration(
-                    ProcedureSpecification(
-                        f'Process_{f.name}',
-                        [Parameter([f.name], self.types_bytes)]))])
-             for f in composite_fields],
-            [SubprogramBody(
-                specification(f),
-                [ObjectDeclaration(
-                    'First',
-                    self.types_index,
-                    Call(
-                        self.types_byte_index,
-                        [Selected(
-                            Indexed(
-                                'Ctx.Cursors',
-                                Name(f.affixed_name)),
-                            'First')]),
-                    True),
-                 ObjectDeclaration(
-                    'Last',
-                    self.types_index,
-                    Call(
-                        self.types_byte_index,
-                        [Selected(
-                            Indexed(
-                                'Ctx.Cursors',
-                                Name(f.affixed_name)),
-                            'Last')]),
-                    True)],
-                [CallStatement(f'Process_{f.name}',
-                               [Slice('Ctx.Buffer.all', Name('First'), Name('Last'))])])
-             for f in composite_fields]
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                VALID_CONTEXT,
+                                Call('Valid_Predecessor', [Name('Ctx'), Name('Fld')]),
+                                Call('Path_Condition', [Name('Ctx'), Name('Fld')])
+                            )
+                        )
+                    ]
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Add(
+                        Call(self.types.last_bit_index, [Selected('Ctx', 'Buffer_Last')]),
+                        -Call('Field_First', [Name('Ctx'), Name('Fld')]),
+                        Number(1)
+                    )
+                )
+            ]
         )
 
     def __create_switch_procedures(self, message: Message,
@@ -1502,13 +1283,21 @@ class Generator:
                         Call('Has_Buffer', [Name('Ctx')]),
                         Call('Present', [Name('Ctx'), Name(f.affixed_name)]))),
                  Postcondition(
-                    And(VALID_CONTEXT, *switch_update_conditions(message, f)))])
+                    And(VALID_CONTEXT,
+                        *switch_update_conditions(message, f),
+                        *[
+                            Equal(e, Old(e)) for e in [
+                                Selected('Ctx', 'Buffer_First'),
+                                Selected('Ctx', 'Buffer_Last'),
+                                Call('Cursors', [Name('Ctx')]),
+                            ]
+                        ]))])
              for f in sequence_fields],
             [SubprogramBody(
                 specification(f),
                 [ObjectDeclaration(
-                    'Buffer',
-                    self.types_bytes_ptr)],
+                    ['Buffer'],
+                    self.types.bytes_ptr)],
                 [CallStatement(
                     'Take_Buffer',
                     [Name('Ctx'),
@@ -1572,13 +1361,13 @@ class Generator:
             [SubprogramBody(
                 specification(f),
                 [ObjectDeclaration(
-                    'Valid_Sequence',
+                    ['Valid_Sequence'],
                     'Boolean',
                     Call(f'{sequence_name(message, f)}.Valid', [Name('Sequence_Context')]),
                     True),
                  ObjectDeclaration(
-                    'Buffer',
-                    self.types_bytes_ptr)],
+                    ['Buffer'],
+                    self.types.bytes_ptr)],
                 [CallStatement(
                     f'{sequence_name(message, f)}.Take_Buffer',
                     take_buffer_arguments(f)),
@@ -1598,18 +1387,74 @@ class Generator:
                                       'Ctx.Cursors',
                                       Name(f.affixed_name)),
                                   a))
-                                for a in ('First', 'Last', 'Value')]))])])])
+                                for a in ('First', 'Last', 'Value', 'Predecessor')]))])])])
              for f in sequence_fields]
         )
 
-    def __create_valid_context_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_cursor_validation_functions() -> UnitPart:
         parameters = [
-            Parameter(['Buffer_First', 'Buffer_Last'], self.types_index),
-            Parameter(['First', 'Last'], self.types_bit_index),
-            Parameter(['Buffer_Address'], f'{self.types}.Integer_Address'),
-            Parameter(['Buffer'], self.types_bytes_ptr),
-            Parameter(['Index'], self.types_bit_index),
-            Parameter(['Fld'], 'Virtual_Field'),
+            Parameter(['Cursor'], 'Field_Cursor')
+        ]
+
+        return UnitPart(
+            [],
+            [],
+            [
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        'Structural_Valid',
+                        'Boolean',
+                        parameters
+                    ),
+                    Or(
+                        Equal(
+                            Selected('Cursor', 'State'),
+                            Name('S_Valid')
+                        ),
+                        Equal(
+                            Selected('Cursor', 'State'),
+                            Name('S_Structural_Valid')
+                        )
+                    )
+                ),
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        'Valid',
+                        'Boolean',
+                        parameters
+                    ),
+                    Equal(
+                        Selected('Cursor', 'State'),
+                        Name('S_Valid')
+                    ),
+                ),
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        'Invalid',
+                        'Boolean',
+                        parameters
+                    ),
+                    Or(
+                        Equal(
+                            Selected('Cursor', 'State'),
+                            Name('S_Invalid')
+                        ),
+                        Equal(
+                            Selected('Cursor', 'State'),
+                            Name('S_Incomplete')
+                        )
+                    )
+                )
+            ]
+        )
+
+    def __create_valid_context_function(self, message: Message,
+                                        composite_fields: Sequence[Field]) -> UnitPart:
+        parameters = [
+            Parameter(['Buffer_First', 'Buffer_Last'], self.types.index),
+            Parameter(['First', 'Last'], self.types.bit_index),
+            Parameter(['Buffer'], self.types.bytes_ptr),
             Parameter(['Cursors'], 'Field_Cursors')
         ]
 
@@ -1623,7 +1468,7 @@ class Generator:
             [],
             [ExpressionFunctionDeclaration(
                 specification,
-                self.__context_type_predicate(message))]
+                self.common.context_predicate(message, composite_fields))]
         )
 
     @staticmethod
@@ -1644,27 +1489,50 @@ class Generator:
                       Name('Ctx.Buffer_Last'),
                       Name('Ctx.First'),
                       Name('Ctx.Last'),
-                      Name('Ctx.Buffer_Address'),
                       Name('Ctx.Buffer'),
-                      Name('Ctx.Index'),
-                      Name('Ctx.Fld'),
                       Name('Ctx.Cursors')]))]
+        )
+
+    @staticmethod
+    def __create_cursors_function() -> UnitPart:
+        specification = FunctionSpecification(
+            'Cursors',
+            'Field_Cursors',
+            [Parameter(['Ctx'], 'Context')])
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Annotate('GNATprove', 'Inline_For_Proof'),
+                        Ghost(),
+                    ]
+                )
+            ],
+            [],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Selected('Ctx', 'Cursors')
+                )
+            ]
         )
 
     def __create_message_unit(self, message: Message) -> None:
         if isinstance(message, DerivedMessage):
-            generic_name = f'{self.prefix}{message.generic_base_name}'
+            name = full_generic_name(self.prefix, message.base_package, message.base_name)
         else:
-            generic_name = f'{self.prefix}{message.generic_name}'
+            name = full_generic_name(self.prefix, message.package, message.name)
 
         arrays = [message.types[f].name for f in message.fields
                   if isinstance(message.types[f], Array)]
 
-        context: List[ContextItem] = [Pragma('SPARK_Mode'), WithClause(generic_name)]
+        context: List[ContextItem] = [Pragma('SPARK_Mode'), WithClause(name)]
         context.extend(
             WithClause(f'{self.prefix}{message.package}.{array}') for array in arrays)
         instantiation = GenericPackageInstantiation(f'{self.prefix}{message.full_name}',
-                                                    generic_name,
+                                                    name,
                                                     arrays)
         self.units[message.full_name] = InstantiationUnit(context, instantiation)
 
@@ -1721,7 +1589,8 @@ class Generator:
             if isinstance(field_type, Enumeration):
                 type_name = field_type.enum_name if field_type.always_valid else field_type.name
                 unit += UnitPart(
-                    [ObjectDeclaration(literal, type_name, Name(f'{base_package}.{literal}'), True)
+                    [ObjectDeclaration(
+                        [literal], type_name, Name(f'{base_package}.{literal}'), True)
                      for literal in field_type.literals])
 
         elif isinstance(field_type, Array):
@@ -1752,7 +1621,7 @@ class Generator:
                  f'{element_type.name}.Initialize',
                  f'{element_type.name}.Take_Buffer',
                  f'{element_type.name}.Has_Buffer',
-                 f'{element_type.name}.Index',
+                 f'{element_type.name}.Message_Last',
                  f'{element_type.name}.Structural_Valid_Message',
                  f'{element_type.name}.Valid_Context'])
         else:
@@ -1771,79 +1640,14 @@ class Generator:
 
         self.units[array_package.name] = InstantiationUnit(array_context, array_package)
 
-    def __substitution(self, message: Message, prefix: bool = True) -> Mapping[Name, Expr]:
-        def prefixed(name: str) -> Expr:
-            return Selected(Name('Ctx'), name) if prefix else Name(name)
-
-        first = prefixed('First')
-        last = prefixed('Last')
-        cursors = prefixed('Cursors')
-
-        return {
-            **{First('Message'):
-               first},
-            **{Last('Message'):
-               last},
-            **{First(f.name):
-               Selected(
-                   Indexed(
-                       cursors,
-                       Name(f.affixed_name)),
-                   'First')
-               for f in message.fields},
-            **{Last(f.name):
-               Selected(
-                   Indexed(
-                       cursors,
-                       Name(f.affixed_name)),
-                   'Last')
-               for f in message.fields},
-            **{Length(f.name):
-               Add(
-                   Sub(
-                       Selected(
-                           Indexed(
-                               cursors,
-                               Name(f.affixed_name)),
-                           'Last'),
-                       Selected(
-                           Indexed(
-                               cursors,
-                               Name(f.affixed_name)),
-                           'First')),
-                   Number(1))
-               for f in message.fields},
-            **{Variable(f.name):
-               Call(
-                   self.types_bit_length,
-                   [Selected(
-                       Indexed(
-                           cursors,
-                           Name(f.affixed_name)),
-                       f'Value.{f.name}_Value')])
-               for f, t in message.types.items() if not isinstance(t, Enumeration)},
-            **{Variable(f.name):
-               Selected(
-                   Indexed(
-                       cursors,
-                       Name(f.affixed_name)),
-                   f'Value.{f.name}_Value')
-               for f, t in message.types.items() if isinstance(t, Enumeration)},
-            **{Variable(l):
-               Call('Convert', [Name(l)])
-               for l in itertools.chain.from_iterable(
-                   t.literals.keys() for t in message.types.values()
-                   if isinstance(t, Enumeration))}
-        }
-
     def __common_context(self) -> List[ContextItem]:
-        return [WithClause(self.types),
-                UseTypeClause(self.types_bytes,
-                              self.types_bytes_ptr,
-                              self.types_index,
-                              self.types_length,
-                              self.types_bit_index,
-                              self.types_bit_length)]
+        return [WithClause(self.types.types),
+                UseTypeClause(self.types.bytes,
+                              self.types.bytes_ptr,
+                              self.types.index,
+                              self.types.length,
+                              self.types.bit_index,
+                              self.types.bit_length)]
 
     def __range_functions(self, integer: RangeInteger) -> SubprogramUnitPart:
         specification: List[Subprogram] = []
@@ -1853,7 +1657,7 @@ class Generator:
                 continue
 
             specification.append(
-                self.__extract_function(range_type.name))
+                self.parser.extract_function(range_type.name))
 
         specification.append(
             type_validation_function(
@@ -1868,7 +1672,7 @@ class Generator:
 
         for modular_type in modular_types(integer):
             specification.append(
-                self.__extract_function(modular_type.name))
+                self.parser.extract_function(modular_type.name))
 
         specification.append(Pragma('Warnings', ['Off', '"unused variable ""Value"""']))
         specification.append(
@@ -1884,7 +1688,7 @@ class Generator:
         specification: List[Declaration] = []
 
         specification.append(
-            self.__extract_function(enum.base_name))
+            self.parser.extract_function(enum.base_name))
 
         enum_value = Name('Value')
 
@@ -1954,19 +1758,6 @@ class Generator:
 
         return UnitPart(specification)
 
-    def __extract_function(self, type_name: str) -> Subprogram:
-        return GenericFunctionInstantiation(
-            'Extract',
-            FunctionSpecification(f'{self.types}.Extract',
-                                  type_name,
-                                  [Parameter(['Buffer'], self.types_bytes),
-                                   Parameter(['Offset'], self.types_offset)]),
-            [self.types_index,
-             self.types_byte,
-             self.types_bytes,
-             self.types_offset,
-             type_name])
-
     @staticmethod
     def __create_contains_function(refinement: Refinement,
                                    condition_fields: Mapping[Field, Type],
@@ -2023,14 +1814,11 @@ class Generator:
             [SubprogramBody(
                 specification,
                 [ObjectDeclaration(
-                    'First',
-                    self.types_bit_index),
+                    ['First', 'Last'],
+                    self.types.bit_index),
                  ObjectDeclaration(
-                    'Last',
-                    self.types_bit_index),
-                 ObjectDeclaration(
-                    'Buffer',
-                    self.types_bytes_ptr)],
+                    ['Buffer'],
+                    self.types.bytes_ptr)],
                 [CallStatement(
                     f'{refinement.pdu}.Field_Range',
                     [Name(pdu_context),
@@ -2050,58 +1838,6 @@ class Generator:
                      Name('Last')]),
                  PragmaStatement('Warnings', ['On', '"unused assignment to ""Buffer"""'])])]
         )
-
-    @property
-    def types(self) -> str:
-        return f'{self.prefix}Types'
-
-    @property
-    def types_byte(self) -> str:
-        return f'{self.types}.Byte'
-
-    @property
-    def types_bytes(self) -> str:
-        return f'{self.types}.Bytes'
-
-    @property
-    def types_bytes_ptr(self) -> str:
-        return f'{self.types}.Bytes_Ptr'
-
-    @property
-    def types_index(self) -> str:
-        return f'{self.types}.Index'
-
-    @property
-    def types_length(self) -> str:
-        return f'{self.types}.Length'
-
-    @property
-    def types_bit_index(self) -> str:
-        return f'{self.types}.Bit_Index'
-
-    @property
-    def types_bit_length(self) -> str:
-        return f'{self.types}.Bit_Length'
-
-    @property
-    def types_byte_index(self) -> str:
-        return f'{self.types}.Byte_Index'
-
-    @property
-    def types_first_bit_index(self) -> str:
-        return f'{self.types}.First_Bit_Index'
-
-    @property
-    def types_last_bit_index(self) -> str:
-        return f'{self.types}.Last_Bit_Index'
-
-    @property
-    def types_offset(self) -> str:
-        return f'{self.types}.Offset'
-
-    @property
-    def types_unreachable_bit_length(self) -> str:
-        return f'{self.types}.Unreachable_Bit_Length'
 
 
 class InternalError(Exception):
@@ -2188,6 +1924,14 @@ def type_dependent_unreachable_function(scalar_type: Scalar) -> List[Declaration
     return unreachable_function(scalar_type.name, base_name)
 
 
+def generic_name(message: str) -> str:
+    return f'Generic_{message}'
+
+
+def full_generic_name(prefix: str, package: str, message: str) -> str:
+    return f'{prefix}{package}.{generic_name(message)}'
+
+
 def contains_function_name(refinement: Refinement) -> str:
     sdu_name = (refinement.sdu.rsplit('.', 1)[1]
                 if refinement.sdu.startswith(refinement.package)
@@ -2202,56 +1946,10 @@ def unreachable_function_name(type_name: str) -> str:
     return f'Unreachable_{type_name}'.replace('.', '_')
 
 
-def sequence_name(message: Message, field: Field) -> str:
-    return f'{message.types[field].name}_Sequence'
-
-
-def base_type_name(scalar_type: Scalar) -> str:
-    if isinstance(scalar_type, (RangeInteger, Enumeration)):
-        return scalar_type.base_name
-    if isinstance(scalar_type, ModularInteger):
-        return scalar_type.name
-    assert False, 'unexpected scalar type "{type(scalar_type)}"'
-    return None
-
-
 def is_seen_type(type_name: str, seen_types: Set[str]) -> bool:
     seen = type_name in seen_types
     seen_types.add(type_name)
     return seen
-
-
-def switch_update_conditions(message: Message, field: Field) -> List[Expr]:
-    return [
-        Not(Call('Has_Buffer', [Name('Ctx')])),
-        Call('Present', [Name('Ctx'), Name(field.affixed_name)]),
-        Call(f'{sequence_name(message, field)}.Has_Buffer',
-             [Name('Sequence_Context')]),
-        Equal(Name('Ctx.Buffer_First'),
-              Name('Sequence_Context.Buffer_First')),
-        Equal(Name('Ctx.Buffer_Last'),
-              Name('Sequence_Context.Buffer_Last')),
-        Equal(Selected(Name('Ctx'), 'Buffer_Address'),
-              Selected(Name('Sequence_Context'), 'Buffer_Address'))
-    ]
-
-
-def valid_message_condition(message: Message, field: Field = INITIAL,
-                            structural: bool = False) -> Expr:
-    if not message.outgoing(field):
-        return TRUE
-    return Or(
-        *[l.condition
-          if l.target == FINAL else
-          And(
-              Call(
-                  'Structural_Valid'
-                  if structural and isinstance(message.types[l.target], Composite) else
-                  'Valid',
-                  [Name('Ctx'), Name(l.target.affixed_name)]),
-              l.condition,
-              valid_message_condition(message, l.target, structural))
-          for l in message.outgoing(field)])
 
 
 def refinement_conditions(refinement: Refinement,

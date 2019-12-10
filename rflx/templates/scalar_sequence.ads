@@ -1,16 +1,18 @@
-with {prefix}Types; use type {prefix}Types.Bytes_Ptr, {prefix}Types.Length, {prefix}Types.Bit_Length, {prefix}Types.Integer_Address;
+with {prefix}Types; use type {prefix}Types.Bytes_Ptr, {prefix}Types.Length, {prefix}Types.Bit_Length;
 
 generic
    type Element_Type is private;
    type Element_Base_Type is (<>);
-   with function Extract_Element_Base_Type (Buffer : Types.Bytes; Offset : Types.Offset) return Element_Base_Type;
-   with function Valid_Element_Type (Element : Element_Base_Type) return Boolean;
-   with function Convert_To_Element_Type (Element : Element_Base_Type) return Element_Type;
+   with function Extract (Buffer : Types.Bytes; Offset : Types.Offset) return Element_Base_Type;
+   with function Valid (Element : Element_Base_Type) return Boolean;
+   with function Convert (Element : Element_Base_Type) return Element_Type;
 package {prefix}Scalar_Sequence with
   SPARK_Mode
 is
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First; Buffer_Address : Types.Integer_Address := 0) is private with
+   pragma Annotate (GNATprove, Terminating, Scalar_Sequence);
+
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
      Default_Initial_Condition => False;
 
    function Create return Context;
@@ -29,8 +31,7 @@ is
        (Buffer = null
         and Has_Buffer (Ctx)
         and Ctx.Buffer_First = Buffer_First
-        and Ctx.Buffer_Last = Buffer_Last
-        and Ctx.Buffer_Address = Types.Bytes_Address (Buffer)'Old);
+        and Ctx.Buffer_Last = Buffer_Last);
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index) with
      Pre =>
@@ -41,9 +42,7 @@ is
        (not Has_Buffer (Ctx)
         and Buffer /= null
         and Buffer'First = Buffer_First
-        and Buffer'Last = Buffer_Last
-        and Ctx.Buffer_Address = Types.Bytes_Address (Buffer)
-        and Ctx.Buffer_Address = Ctx.Buffer_Address'Old);
+        and Buffer'Last = Buffer_Last);
 
    procedure Next (Ctx : in out Context) with
      Pre =>
@@ -52,8 +51,7 @@ is
      Post =>
        (Has_Buffer (Ctx)
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
-        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-        and Ctx.Buffer_Address = Ctx.Buffer_Address'Old);
+        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old);
 
    function Valid_Element (Ctx : Context) return Boolean with
      Contract_Cases =>
@@ -76,7 +74,7 @@ private
 
    use Types;
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First; Buffer_Address : Types.Integer_Address := 0) is
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
       record
          Buffer       : Types.Bytes_Ptr := null;
          Index        : Types.Bit_Index := Types.Bit_Index'First;
@@ -86,8 +84,7 @@ private
      Dynamic_Predicate =>
        ((if Buffer /= null then
           (Buffer'First = Buffer_First
-           and Buffer'Last = Buffer_Last
-           and Types.Bytes_Address (Buffer) = Buffer_Address))
+           and Buffer'Last = Buffer_Last))
         and Types.Byte_Index (First) >= Buffer_First
         and Types.Byte_Index (Last) <= Buffer_Last
         and First <= Last

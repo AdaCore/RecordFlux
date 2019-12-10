@@ -1,8 +1,9 @@
+import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
-from rflx.common import indent, unique, verify_identifier
+from rflx.common import indent, indent_next, unique, verify_identifier
 from rflx.expression import Case, Expr, Number
 
 
@@ -104,6 +105,20 @@ class Postcondition(Aspect):
         return str(self.expr)
 
 
+class ContractCases(Aspect):
+    def __init__(self, *cases: Tuple[Expr, Expr]) -> None:
+        self.cases = cases
+
+    @property
+    def mark(self) -> str:
+        return 'Contract_Cases'
+
+    @property
+    def definition(self) -> str:
+        cases = indent_next(',\n'.join(f'{p} =>\n{indent(str(q), 3)}' for p, q in self.cases), 1)
+        return f'({cases})'
+
+
 class DynamicPredicate(Aspect):
     def __init__(self, expr: Expr) -> None:
         self.expr = expr
@@ -161,6 +176,20 @@ class Import(Aspect):
     @property
     def definition(self) -> str:
         return ''
+
+
+class Annotate(Aspect):
+    def __init__(self, *args: str) -> None:
+        self.args = args
+
+    @property
+    def mark(self) -> str:
+        return 'Annotate'
+
+    @property
+    def definition(self) -> str:
+        args = ', '.join(self.args)
+        return f'({args})'
 
 
 class FormalDeclaration(Ada):
@@ -230,17 +259,22 @@ class GenericPackageInstantiation(Declaration):
 
 
 class ObjectDeclaration(Declaration):
-    def __init__(self, name: str, type_name: str, expression: Expr = None,
-                 constant: bool = False) -> None:
-        super().__init__(name)
+    # pylint: disable=too-many-arguments
+    def __init__(self, identifiers: Sequence[str], type_name: str, expression: Expr = None,
+                 constant: bool = False, aspects: Sequence[Aspect] = None) -> None:
+        super().__init__('')
+        self.identifiers = identifiers
         self.type_name = type_name
         self.expression = expression
         self.constant = constant
+        self.aspects = aspects or []
 
     def __str__(self) -> str:
+        identifiers = ', '.join(self.identifiers)
         constant = 'constant ' if self.constant else ''
         expression = f' := {self.expression}' if self.expression else ''
-        return f'{self.name} : {constant}{self.type_name}{expression};'
+        return (f'{identifiers} : {constant}{self.type_name}{expression}'
+                f'{aspect_specification(self.aspects)};')
 
 
 class Discriminant(Ada):
@@ -263,11 +297,11 @@ class TypeDeclaration(Declaration):
                  aspects: Sequence[Aspect] = None) -> None:
         super().__init__(name)
         self.discriminants = discriminants
-        self.aspects = aspects
+        self.aspects = aspects or []
 
     def __str__(self) -> str:
         return (f'type {self.name}{self.discriminant_part} is{self.type_definition}'
-                f'{self.aspect_specification};{self.extra_declaration}')
+                f'{aspect_specification(self.aspects)};{self.extra_declaration}')
 
     @property
     def discriminant_part(self) -> str:
@@ -276,10 +310,6 @@ class TypeDeclaration(Declaration):
     @abstractproperty
     def type_definition(self) -> str:
         raise NotImplementedError
-
-    @property
-    def aspect_specification(self) -> str:
-        return f'{with_clause(self.aspects)}' if self.aspects else ''
 
     @property
     def extra_declaration(self) -> str:
@@ -364,10 +394,6 @@ class DerivedType(TypeDeclaration):
 
 
 class PrivateType(TypeDeclaration):
-    def __init__(self, name: str, discriminants: Sequence[Discriminant],
-                 aspects: Sequence[Aspect] = None) -> None:
-        super().__init__(name, discriminants, aspects)
-
     @property
     def type_definition(self) -> str:
         return ' private'
@@ -527,6 +553,25 @@ class IfStatement(Statement):
         return result
 
 
+class CaseStatement(Statement):
+    def __init__(self, control_expression: Expr,
+                 case_statements: Sequence[Tuple[Expr, Sequence[Statement]]]) -> None:
+        self.control_expression = control_expression
+        self.case_statements = case_statements
+
+    def __str__(self) -> str:
+        grouped_cases = [(' | '.join(str(c) for c, _ in choices), statements)
+                         for statements, choices in itertools.groupby(self.case_statements,
+                                                                      lambda x: x[1])]
+        cases = ''.join(
+            ['\nwhen {} =>\n{}'.format(
+                choice,
+                indent('\n'.join(str(s) for s in statements), 3))
+             for choice, statements in grouped_cases])
+
+        return f'case {self.control_expression} is{indent(cases, 3)}\nend case;'
+
+
 class Parameter(Ada):
     def __init__(self, identifiers: Sequence[str], type_name: str, default: Expr = None) -> None:
         for name in identifiers:
@@ -607,7 +652,7 @@ class SubprogramDeclaration(Subprogram):
 
     def __str__(self) -> str:
         return (f'{generic_formal_part(self.formal_parameters)}'
-                f'{self.specification}{with_clause(self.aspects)};')
+                f'{self.specification}{aspect_specification(self.aspects)};')
 
 
 class SubprogramBody(Subprogram):
@@ -625,7 +670,7 @@ class SubprogramBody(Subprogram):
         return '\n'.join(indent(str(s), 3) for s in self.statements)
 
     def __str__(self) -> str:
-        aspects = f'{with_clause(self.aspects)}\n' if self.aspects else ' '
+        aspects = f'{aspect_specification(self.aspects)}\n' if self.aspects else ' '
         return (f'{self.specification}{aspects}is\n'
                 f'{self._declarations()}'
                 f'begin\n'
@@ -641,7 +686,7 @@ class ExpressionFunctionDeclaration(Subprogram):
         self.aspects = aspects or []
 
     def __str__(self) -> str:
-        aspects = f'\n{with_clause(self.aspects)}' if self.aspects else ''
+        aspects = f'\n{aspect_specification(self.aspects)}' if self.aspects else ''
         return (f'{self.specification} is\n'
                 f'  ({self.expression!s}){aspects};')
 
@@ -811,7 +856,7 @@ def declarative_items(declarations: List[Declaration], private: bool = False) ->
     return result
 
 
-def with_clause(aspects: Sequence[Aspect]) -> str:
+def aspect_specification(aspects: Sequence[Aspect]) -> str:
     if not aspects:
         return ''
     return ' with\n' + ',\n'.join(indent(str(aspect), 2) for aspect in aspects)

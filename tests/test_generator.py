@@ -3,7 +3,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List
 
-from rflx.generator import LIBRARY_FILES, Generator
+from rflx.generator import Generator
+from rflx.generator.core import LIBRARY_FILES
 from rflx.model import Message, Refinement
 from tests.models import (ARRAY_INNER_MESSAGE, ARRAY_MESSAGE, ARRAY_MESSAGES_MESSAGE,
                           DERIVATION_MESSAGE, ENUMERATION_MESSAGE, ETHERNET_FRAME, NULL_MESSAGE,
@@ -35,76 +36,74 @@ class TestGenerator(unittest.TestCase):
                 with open(f'{self.testdir}/{unit.name}.adb', 'r') as f:
                     self.assertEqual(unit.body, f.read(), unit.name)
 
-    def test_null_dissector_spec(self) -> None:
-        generator = generate_dissector([NULL_MESSAGE], [])
+    def test_null_spec(self) -> None:
+        generator = generate([NULL_MESSAGE], [])
         self.assert_specification(generator)
 
-    def test_null_dissector_body(self) -> None:
-        generator = generate_dissector([NULL_MESSAGE], [])
+    def test_null_body(self) -> None:
+        generator = generate([NULL_MESSAGE], [])
         self.assert_body(generator)
 
-    def test_tlv_dissector_spec(self) -> None:
-        generator = generate_dissector([TLV_MESSAGE], [])
+    def test_tlv_spec(self) -> None:
+        generator = generate([TLV_MESSAGE], [])
         self.assert_specification(generator)
 
-    def test_tlv_dissector_body(self) -> None:
-        generator = generate_dissector([TLV_MESSAGE], [])
+    def test_tlv_body(self) -> None:
+        generator = generate([TLV_MESSAGE], [])
         self.assert_body(generator)
 
     def test_tlv_refinement_to_null_spec(self) -> None:
-        generator = generate_dissector([TLV_MESSAGE, NULL_MESSAGE], [NULL_MESSAGE_IN_TLV_MESSAGE])
+        generator = generate([TLV_MESSAGE, NULL_MESSAGE], [NULL_MESSAGE_IN_TLV_MESSAGE])
         self.assert_specification(generator)
 
     def test_tlv_refinement_to_null_body(self) -> None:
-        generator = generate_dissector([TLV_MESSAGE, NULL_MESSAGE], [NULL_MESSAGE_IN_TLV_MESSAGE])
+        generator = generate([TLV_MESSAGE, NULL_MESSAGE], [NULL_MESSAGE_IN_TLV_MESSAGE])
         self.assert_body(generator)
 
-    def test_ethernet_dissector_spec(self) -> None:
-        generator = generate_dissector([ETHERNET_FRAME], [])
+    def test_ethernet_spec(self) -> None:
+        generator = generate([ETHERNET_FRAME], [])
         self.assert_specification(generator)
 
-    def test_ethernet_dissector_body(self) -> None:
-        generator = generate_dissector([ETHERNET_FRAME], [])
+    def test_ethernet_body(self) -> None:
+        generator = generate([ETHERNET_FRAME], [])
         self.assert_body(generator)
 
-    def test_enumeration_dissector_spec(self) -> None:
-        generator = generate_dissector([ENUMERATION_MESSAGE], [])
+    def test_enumeration_spec(self) -> None:
+        generator = generate([ENUMERATION_MESSAGE], [])
         self.assert_specification(generator)
 
-    def test_enumeration_dissector_body(self) -> None:
-        generator = generate_dissector([ENUMERATION_MESSAGE], [])
+    def test_enumeration_body(self) -> None:
+        generator = generate([ENUMERATION_MESSAGE], [])
         self.assert_body(generator)
 
-    def test_array_dissector_spec(self) -> None:
-        generator = generate_dissector([ARRAY_MESSAGE, ARRAY_INNER_MESSAGE, ARRAY_MESSAGES_MESSAGE],
-                                       [])
+    def test_array_spec(self) -> None:
+        generator = generate([ARRAY_MESSAGE, ARRAY_INNER_MESSAGE, ARRAY_MESSAGES_MESSAGE], [])
         self.assert_specification(generator)
 
-    def test_array_dissector_body(self) -> None:
-        generator = generate_dissector([ARRAY_MESSAGE, ARRAY_INNER_MESSAGE, ARRAY_MESSAGES_MESSAGE],
-                                       [])
+    def test_array_body(self) -> None:
+        generator = generate([ARRAY_MESSAGE, ARRAY_INNER_MESSAGE, ARRAY_MESSAGES_MESSAGE], [])
         self.assert_body(generator)
 
     # ISSUE: Componolit/RecordFlux#60
 
-    # def test_expression_dissector_spec(self) -> None:
-    #     generator = generate_dissector([EXPRESSION_MESSAGE], [])
+    # def test_expression_spec(self) -> None:
+    #     generator = generate([EXPRESSION_MESSAGE], [])
     #     self.assert_specification(generator)
 
-    # def test_expression_dissector_body(self) -> None:
-    #     generator = generate_dissector([EXPRESSION_MESSAGE], [])
+    # def test_expression_body(self) -> None:
+    #     generator = generate([EXPRESSION_MESSAGE], [])
     #     self.assert_body(generator)
 
-    def test_derivation_dissector_spec(self) -> None:
-        generator = generate_dissector([ARRAY_MESSAGE, DERIVATION_MESSAGE], [])
+    def test_derivation_spec(self) -> None:
+        generator = generate([ARRAY_MESSAGE, DERIVATION_MESSAGE], [])
         self.assert_specification(generator)
 
-    def test_derivation_dissector_body(self) -> None:
-        generator = generate_dissector([ARRAY_MESSAGE, DERIVATION_MESSAGE], [])
+    def test_derivation_body(self) -> None:
+        generator = generate([ARRAY_MESSAGE, DERIVATION_MESSAGE], [])
         self.assert_body(generator)
 
 
-def generate_dissector(pdus: List[Message], refinements: List[Refinement]) -> Generator:
+def generate(pdus: List[Message], refinements: List[Refinement]) -> Generator:
     generator = Generator('RFLX.')
-    generator.generate_dissector(pdus, refinements)
+    generator.generate(pdus, refinements)
     return generator

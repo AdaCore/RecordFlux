@@ -1,9 +1,9 @@
 import unittest
 
 from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, Aggregate, And, Case, Div, Equal, First,
-                             ForAllOf, Greater, GreaterEqual, If, Last, Length, Less, LessEqual,
-                             Mod, Mul, Name, NamedAggregate, Not, NotEqual, Number, Or, Pow, Range,
-                             Size, Slice, Sub, Variable)
+                             ForAllOf, Greater, GreaterEqual, If, In, Last, Length, Less, LessEqual,
+                             Mod, Mul, Name, NamedAggregate, Not, NotEqual, NotIn, Number, Or, Pow,
+                             Range, Size, Slice, Sub, ValueRange, Variable)
 
 EXPR = Equal(UNDEFINED, UNDEFINED)
 
@@ -97,6 +97,14 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             And(EXPR, TRUE).simplified(),
             EXPR)
 
+    def test_and_str(self) -> None:
+        self.assertEqual(
+            str(And(Variable('X'), Variable('Y'))),
+            'X\n   and then Y')
+        self.assertEqual(
+            str(And()),
+            'True')
+
     def test_or_neg(self) -> None:
         self.assertEqual(
             -Or(Variable('X'), Number(1)),
@@ -123,6 +131,14 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(
             Or(EXPR, TRUE).simplified(),
             TRUE)
+
+    def test_or_str(self) -> None:
+        self.assertEqual(
+            str(Or(Variable('X'), Variable('Y'))),
+            'X\n   or Y')
+        self.assertEqual(
+            str(Or()),
+            'True')
 
     def test_undefined_neg(self) -> None:
         self.assertEqual(
@@ -512,6 +528,16 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             -Last('X').simplified({Last('X'): Number(42)}),
             Number(-42))
 
+    def test_range_simplified(self) -> None:
+        self.assertEqual(
+            Range('X').simplified(),
+            Range('X'))
+
+    def test_range_str(self) -> None:
+        self.assertEqual(
+            str(Range('X')),
+            'X\'Range')
+
     def test_aggregate_simplified(self) -> None:
         self.assertEqual(
             Aggregate(Last('X')).simplified({Last('X'): Number(42)}),
@@ -594,6 +620,36 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             NotEqual(Variable('X'), Add(Number(21), Number(21))).simplified(),
             NotEqual(Variable('X'), Number(42)))
 
+    def test_in_neg(self) -> None:
+        self.assertEqual(
+            -In(Variable('X'), Number(1)),
+            NotIn(Variable('X'), Number(1)))
+
+    def test_in_simplified(self) -> None:
+        self.assertEqual(
+            In(Variable('X'), Add(Number(21), Number(21))).simplified(),
+            In(Variable('X'), Number(42)))
+
+    def test_in_str(self) -> None:
+        self.assertEqual(
+            str(In(Variable('X'), Variable('Y'))),
+            'X in Y')
+
+    def test_not_in_neg(self) -> None:
+        self.assertEqual(
+            -NotIn(Variable('X'), Number(1)),
+            In(Variable('X'), Number(1)))
+
+    def test_not_in_simplified(self) -> None:
+        self.assertEqual(
+            NotIn(Variable('X'), Add(Number(21), Number(21))).simplified(),
+            NotIn(Variable('X'), Number(42)))
+
+    def test_not_in_str(self) -> None:
+        self.assertEqual(
+            str(NotIn(Variable('X'), Variable('Y'))),
+            'X not in Y')
+
     def test_slice_simplified(self) -> None:
         self.assertEqual(
             Slice('Buffer',
@@ -638,10 +694,10 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                   (Add(Number(21), Number(21)), Variable('Z'))]).variables(),
             [Variable('X'), Variable('Y'), Variable('Z')])
 
-    def test_range_simplified(self) -> None:
+    def test_value_range_simplified(self) -> None:
         self.assertEqual(
-            Range(Number(1), Add(Number(21), Number(21))).simplified(),
-            Range(Number(1), Number(42)))
+            ValueRange(Number(1), Add(Number(21), Number(21))).simplified(),
+            ValueRange(Number(1), Number(42)))
 
     def test_quantified_expression_simplified(self) -> None:
         self.assertEqual(
