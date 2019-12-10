@@ -102,7 +102,6 @@ package body RFLX.Arrays.Tests is
                pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
                Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
@@ -206,7 +205,6 @@ package body RFLX.Arrays.Tests is
                pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
                Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
@@ -310,7 +308,6 @@ package body RFLX.Arrays.Tests is
                pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
                Assert (Arrays.Enumeration'Pos (Element)'Image, Natural'Image (I), "Invalid value of element " & I'Image);
@@ -422,7 +419,6 @@ package body RFLX.Arrays.Tests is
                pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
                if Element.Known then
@@ -481,7 +477,6 @@ package body RFLX.Arrays.Tests is
                   pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-                  pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                   Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
                   Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
@@ -516,7 +511,6 @@ package body RFLX.Arrays.Tests is
                   pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-                  pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                   Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
                   Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
@@ -551,7 +545,6 @@ package body RFLX.Arrays.Tests is
                   pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-                  pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                   Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
                   Assert (Arrays.Enumeration'Pos (Element)'Image, Natural'Image (I), "Invalid value of element " & I'Image);
@@ -586,7 +579,6 @@ package body RFLX.Arrays.Tests is
                   pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-                  pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                   Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
                   if Element.Known then
@@ -707,7 +699,6 @@ package body RFLX.Arrays.Tests is
                pragma Loop_Invariant (Arrays.Inner_Messages.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Context.Buffer_Address = Sequence_Context.Buffer_Address);
 
                Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
 
