@@ -47,8 +47,7 @@ class FSM:
         self.__fsms: Dict[str, StateMachine] = {}
         self.error = RecordFluxError()
 
-    def parse_string(self, name: str, string: str) -> None:
-        doc = yaml.load(string, yaml.FullLoader)
+    def __parse(self, name: str, doc: Dict) -> None:
         if "initial" not in doc:
             self.error.append(
                 f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
@@ -75,6 +74,13 @@ class FSM:
                 for s in doc["states"]
             ],
         )
+
+    def parse(self, name: str, filename: str) -> None:
+        with open(filename, "r") as data:
+            self.__parse(name, yaml.safe_load(data))
+
+    def parse_string(self, name: str, string: str) -> None:
+        self.__parse(name, yaml.safe_load(string))
 
     @property
     def fsms(self) -> Dict[str, StateMachine]:

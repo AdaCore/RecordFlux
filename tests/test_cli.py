@@ -127,6 +127,16 @@ def test_main_graph_non_existent_files(tmp_path: Path) -> None:
     )
 
 
+def test_main_fsm() -> None:
+    assert cli.main(["rflx", "fsm", "specs/simple.yaml"]) == 0
+
+
+def test_main_fsm_non_existent_file() -> None:
+    assert 'session: error: file not found: "non-existent file"' in str(
+        cli.main(["rflx", "fsm", "non-existent file"])
+    )
+
+
 def test_main_graph_non_existent_directory() -> None:
     assert 'graph: error: directory not found: "non-existent directory"' in str(
         cli.main(["rflx", "graph", "-d", "non-existent directory", "specs/tlv.rflx"])
