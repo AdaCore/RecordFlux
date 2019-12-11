@@ -9,6 +9,7 @@ from typing import Dict, List, Union
 from rflx import __version__
 from rflx.common import flat_name
 from rflx.error import RecordFluxError, Severity, Subsystem, fail
+from rflx.fsm import FSM
 from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Model
@@ -72,6 +73,10 @@ def main(argv: List[str]) -> Union[int, str]:
         help=("skip time-consuming verification of model"),
     )
     parser_graph.set_defaults(func=graph)
+
+    parser_fsm = subparsers.add_parser("fsm", help="load fsm")
+    parser_fsm.add_argument("files", metavar="FILE", type=str, nargs="+", help="fsm file")
+    parser_fsm.set_defaults(func=fsm)
 
     args = parser.parse_args(argv[1:])
 
@@ -167,3 +172,15 @@ def graph(args: argparse.Namespace) -> None:
     filename = Path(directory).joinpath("locations.json")
     with open(filename, "w") as f:
         json.dump(locations, f)
+
+
+def fsm(args: argparse.Namespace) -> None:
+    state_machine = FSM()
+
+    for f in args.files:
+        if not Path(f).is_file():
+            fail(f'file not found: "{f}"', Subsystem.SESSION)
+
+        print(f"Loading FSM {f}... ", end="")
+        state_machine.parse(f, f)
+        print("OK")

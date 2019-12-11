@@ -1,0 +1,7 @@
+initial: START
+final: END
+states:
+  - name: START
+    transitions:
+      - target: END
+  - name: END
