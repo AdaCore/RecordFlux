@@ -2,6 +2,7 @@ from typing import Dict, Iterable, Optional
 
 import yaml
 
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.model import Base
 
 
@@ -22,18 +23,45 @@ class State(Base):
 
 
 class StateMachine(Base):
-    def __init__(self, initial: StateName, final: StateName, states: Iterable[State]):
+    def __init__(
+        self,
+        initial: StateName,
+        final: StateName,
+        states: Iterable[State],
+        location: Location = None,
+    ):
         self.initial = initial
         self.final = final
         self.states = states
+        self.error = RecordFluxError()
+
+        if not states:
+            self.error.append(
+                "empty states", Subsystem.SESSION, Severity.ERROR, location,
+            )
+        self.error.propagate()
 
 
 class FSM:
     def __init__(self) -> None:
         self.__fsms: Dict[str, StateMachine] = {}
+        self.error = RecordFluxError()
 
     def parse_string(self, name: str, string: str) -> None:
         doc = yaml.load(string, yaml.FullLoader)
+        if "initial" not in doc:
+            self.error.append(
+                f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
+            )
+        if "final" not in doc:
+            self.error.append(
+                f'missing final state in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
+            )
+        if "states" not in doc:
+            self.error.append(
+                f'missing states section in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
+            )
+        self.error.propagate()
         self.__fsms[name] = StateMachine(
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
