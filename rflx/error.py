@@ -73,6 +73,7 @@ class Subsystem(Enum):
     MODEL = auto()
     CLI = auto()
     GRAPH = auto()
+    SESSION = auto()
 
     def __str__(self) -> str:
         return str.lower(self.name)
