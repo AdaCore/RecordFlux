@@ -340,8 +340,8 @@ class Message(Element):
                     if isinstance(t, Enumeration) for n in t.literals}
         variables = {v for f in self.fields if isinstance(f.name, str)
                      for v in [f.name, f"{f.name}'First", f"{f.name}'Length", f"{f.name}'Last"]}
-        variables.add("Message'Last")
-        seen = set({"Message'Last"})
+        seen = set({"Message'First", "Message'Last", "Message'Length"})
+        variables.update(*seen)
         for f in (INITIAL, *self.fields):
             for v in [f.name, f"{f.name}'Length", f"{f.name}'First", f"{f.name}'Last"]:
                 seen.add(v)
@@ -433,6 +433,9 @@ class Message(Element):
                      Equal(Last(name), self.__target_last(link)),
                      GreaterEqual(First('Message'), Number(0)),
                      GreaterEqual(Last('Message'), Last(name)),
+                     GreaterEqual(Last('Message'), First('Message')),
+                     Equal(Length('Message'),
+                           Add(Sub(Last('Message'), First('Message')), Number(1))),
                      link.condition])
 
     def __prove_field_positions(self) -> None:
