@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, List, Optional
 
 import yaml
 
@@ -81,6 +81,24 @@ class StateMachine(Base):
                         Severity.ERROR,
                         t.target.location,
                     )
+
+        seen: Dict[str, int] = {}
+        duplicates: List[str] = []
+        for n in [x.name for x in states]:
+            if n not in seen:
+                seen[n] = 1
+            else:
+                if seen[n] == 1:
+                    duplicates.append(n)
+                seen[n] += 1
+
+        if duplicates:
+            self.error.append(
+                f'duplicate states: {", ".join(sorted(duplicates))}',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
 
     def validate(self, name: str) -> None:
         self.__validate_initial_state(name)

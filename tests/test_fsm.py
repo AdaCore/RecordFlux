@@ -121,3 +121,39 @@ def test_invalid_target_state() -> None:
         '^session: error: transition from state "START" to non-existent'
         ' state "NONEXISTENT" in "fsm"',
     )
+
+
+def test_duplicate_state() -> None:
+    assert_parse_exception_string(
+        """
+            initial: START
+            final: END
+            states:
+              - name: START
+                transitions:
+                  - target: END
+              - name: START
+              - name: END
+        """,
+        "^session: error: duplicate states: START",
+    )
+
+
+def test_multiple_duplicate_states() -> None:
+    assert_parse_exception_string(
+        """
+            initial: START
+            final: END
+            states:
+              - name: START
+                transitions:
+                  - target: END
+              - name: START
+              - name: FOO
+              - name: BAR
+              - name: FOO
+              - name: BAR
+              - name: END
+        """,
+        "^session: error: duplicate states: BAR, FOO, START",
+    )
