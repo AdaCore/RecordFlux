@@ -75,3 +75,49 @@ def test_missing_states() -> None:
 def test_empty_states() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: empty states"):
         StateMachine(initial=StateName("START"), final=StateName("END"), states=[])
+
+
+def test_invalid_initial() -> None:
+    assert_parse_exception_string(
+        """
+            initial: NONEXISTENT
+            final: START
+            states:
+              - name: START
+                transitions:
+                  - target: END
+              - name: END
+        """,
+        '^session: error: initial state "NONEXISTENT" does not exist in "fsm"',
+    )
+
+
+def test_invalid_final() -> None:
+    assert_parse_exception_string(
+        """
+            initial: START
+            final: NONEXISTENT
+            states:
+              - name: START
+                transitions:
+                  - target: END
+              - name: END
+        """,
+        '^session: error: final state "NONEXISTENT" does not exist in "fsm"',
+    )
+
+
+def test_invalid_target_state() -> None:
+    assert_parse_exception_string(
+        """
+            initial: START
+            final: END
+            states:
+              - name: START
+                transitions:
+                  - target: NONEXISTENT
+              - name: END
+        """,
+        '^session: error: transition from state "START" to non-existent'
+        ' state "NONEXISTENT" in "fsm"',
+    )
