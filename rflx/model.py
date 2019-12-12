@@ -323,17 +323,18 @@ class Message(Element):
 
     @staticmethod
     def __check_vars(expression: Expr, state: Tuple[Set[str], Set[str], Set[str]], link: Link,
-                     index: int, name: str) -> None:
+                     index: int, location: Tuple[str, str]) -> None:
         variables, literals, seen = state
+        message, part = location
         for v in expression.variables(True):
             if v.name not in literals and v.name not in seen:
                 if v.name in variables:
-                    raise ModelError(f'subsequent field "{v}" referenced in {name} '
+                    raise ModelError(f'subsequent field "{v}" referenced in {part} '
                                      f'{index} from field "{link.source.name}" to '
-                                     f'"{link.target.name}"')
-                raise ModelError(f'undefined variable "{v}" referenced in {name} '
+                                     f'"{link.target.name}" in "{message}"')
+                raise ModelError(f'undefined variable "{v}" referenced in {part} '
                                  f'{index} from field "{link.source.name}" to '
-                                 f'"{link.target.name}"')
+                                 f'"{link.target.name}" in "{message}"')
 
     def __verify_conditions(self) -> None:
         literals = {n for t in self.types.values()
@@ -346,26 +347,27 @@ class Message(Element):
             for v in [f.name, f"{f.name}'Length", f"{f.name}'First", f"{f.name}'Last"]:
                 seen.add(v)
             for index, l in enumerate(self.outgoing(f)):
-                self.__check_vars(l.condition, (variables, literals, seen), l, index, 'condition')
+                self.__check_vars(l.condition, (variables, literals, seen), l, index,
+                                  (self.full_name, 'condition'))
                 self.__check_vars(l.length, (variables, literals, seen), l, index,
-                                  'Length expression')
+                                  (self.full_name, 'Length expression'))
                 self.__check_vars(l.first, (variables, literals, seen), l, index,
-                                  'First expression')
+                                  (self.full_name, 'First expression'))
 
                 if l.first != UNDEFINED and not isinstance(l.first, First):
                     raise ModelError(f'invalid First for field "{l.target.name}" in First'
                                      f' expression {index} from field "{f.name}" to'
-                                     f' "{l.target.name}"')
+                                     f' "{l.target.name}" in "{self.full_name}"')
 
                 if l.target != FINAL:
                     t = self.types[l.target]
                     unconstrained = isinstance(t, (Payload, Array))
                     if not unconstrained and l.length != UNDEFINED:
                         raise ModelError(f'fixed size field "{l.target.name}" with length'
-                                         f' expression')
+                                         f' expression in "{self.full_name}"')
                     if unconstrained and l.length == UNDEFINED:
                         raise ModelError(f'unconstrained field "{l.target.name}" without length'
-                                         f' expression')
+                                         f' expression in "{self.full_name}"')
 
     def __type_constraints(self, expr: Expr) -> Expr:
         literals = {l for v in self.types.values()
@@ -387,7 +389,7 @@ class Message(Element):
             if result != ProofResult.sat:
                 message = str(conflict).replace('\n', '')
                 raise ModelError(f'conflicting conditions for field "{f.name}"'
-                                 f' ({result}: {message})')
+                                 f' in "{self.full_name}" ({result}: {message})')
 
     def __prove_reachability(self) -> None:
         for f in (*self.__fields, FINAL):
@@ -396,7 +398,8 @@ class Message(Element):
             result = reachability.exists()
             if result != ProofResult.sat:
                 message = str(reachability).replace('\n', '')
-                raise ModelError(f'unreachable field "{f.name}" ({result}: {message})')
+                raise ModelError(f'unreachable field "{f.name}" in "{self.full_name}"'
+                                 f' ({result}: {message})')
 
     def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.__fields):
@@ -406,7 +409,8 @@ class Message(Element):
                 if result == ProofResult.sat:
                     message = str(contradiction).replace('\n', '')
                     raise ModelError(f'contradicting condition {index} from field "{f.name}" to'
-                                     f' "{c.target.name}" ({result}: {message})')
+                                     f' "{c.target.name}" in "{self.full_name}"'
+                                     f' ({result}: {message})')
 
     @staticmethod
     def __target_first(link: Link) -> Expr:
@@ -452,7 +456,7 @@ class Message(Element):
                     path_message = ' -> '.join([l.target.name for l in p])
                     message = str(positive.simplified()).replace('\n\t', '')
                     raise ModelError(f'negative length for field "{f.name}" on path {path_message}'
-                                     f' ({result}: {message})')
+                                     f' in "{self.full_name}" ({result}: {message})')
 
                 first = self.__target_first(l)
                 start = If([(And(self.__type_constraints(And(path_expressions, first)),
@@ -464,7 +468,7 @@ class Message(Element):
                     path_message = ' -> '.join([l.target.name for l in p])
                     message = str(start.simplified()).replace('\n\t', '')
                     raise ModelError(f'start of field "{f.name}" on path {path_message} before'
-                                     f' message start ({result}: {message})')
+                                     f' message start in "{self.full_name} ({result}: {message})')
 
     def __prove_coverage(self) -> None:
         """
@@ -498,7 +502,7 @@ class Message(Element):
                 path_message = ' -> '.join([l.target.name for l in path])
                 message = str(coverage).replace('\n\t', '')
                 raise ModelError(f'path {path_message} does not cover whole message'
-                                 f' ({result}: {message})')
+                                 f' in "{self.full_name}" ({result}: {message})')
 
     def __prove_overlays(self) -> None:
         for f in (INITIAL, *self.__fields):
@@ -512,7 +516,8 @@ class Message(Element):
                     if result != ProofResult.sat:
                         message = str(overlaid).replace('\n', '')
                         raise ModelError(f'field "{f.name}" not congruent with overlaid field '
-                                         f'"{l.first.name}" ({result}: {message})')
+                                         f'"{l.first.name}" in "{self.full_name}"'
+                                         f' ({result}: {message})')
 
     def __prove(self) -> None:
         self.__prove_field_positions()
