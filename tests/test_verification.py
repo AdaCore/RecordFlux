@@ -502,3 +502,35 @@ class TestVerification(TestCase):
             with self.assertRaisesRegex(ModelError, '^start of field "F2" on path F1 -> F2 before'
                                                     ' message start'):
                 Message('X', structure, types)
+
+    @staticmethod
+    def test_valid_use_message_length() -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+            package Foo is
+               type Finished is
+                  message
+                     null
+                        then Verify_Data
+                           with Length => Message'Length;
+                     Verify_Data : Payload;
+                  end message;
+            end Foo;
+            """)
+
+    @staticmethod
+    def test_valid_use_message_first_last() -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+            package Foo is
+               type Finished is
+                  message
+                     null
+                        then Verify_Data
+                           with Length => Message'Last - Message'First + 1;
+                     Verify_Data : Payload;
+                  end message;
+            end Foo;
+            """)
