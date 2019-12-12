@@ -69,7 +69,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^conflicting conditions for field "F1"')
+            r'^conflicting conditions for field "F1" in "Foo.Bar"')
 
     @staticmethod
     def test_exclusive_with_length_valid() -> None:
@@ -106,7 +106,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^conflicting conditions for field "F1"')
+            r'^conflicting conditions for field "F1" in "Foo.Bar"')
 
     def test_no_valid_path(self) -> None:
         self.assert_parse_exception_string(
@@ -129,7 +129,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "Final"')
+            r'^unreachable field "Final" in "Foo.Bar"')
 
     def test_invalid_path_1(self) -> None:
         self.assert_parse_exception_string(
@@ -142,7 +142,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "Final"')
+            r'^unreachable field "Final" in "Foo.Bar"')
 
     def test_invalid_path_2(self) -> None:
         self.assert_parse_exception_string(
@@ -156,7 +156,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2"')
+            r'^unreachable field "F2" in "Foo.Bar"')
 
     def test_contradiction(self) -> None:
         self.assert_parse_exception_string(
@@ -173,7 +173,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^contradicting condition 0 from field "F1" to "F2"')
+            r'^contradicting condition 0 from field "F1" to "F2" in "Foo.Bar"')
 
     def test_invalid_type_condition_range_low(self) -> None:
         self.assert_parse_exception_string(
@@ -187,7 +187,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2"')
+            r'^unreachable field "F2" in "Foo.Bar"')
 
     def test_invalid_type_condition_range_high(self) -> None:
         self.assert_parse_exception_string(
@@ -201,7 +201,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2"')
+            r'^unreachable field "F2" in "Foo.Bar"')
 
     def test_invalid_type_condition_modular_upper(self) -> None:
         self.assert_parse_exception_string(
@@ -215,7 +215,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2"')
+            r'^unreachable field "F2" in "Foo.Bar"')
 
     def test_invalid_type_condition_modular_lower(self) -> None:
         self.assert_parse_exception_string(
@@ -229,7 +229,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2"')
+            r'^unreachable field "F2" in "Foo.Bar"')
 
     # ISSUE: Componolit/RecordFlux#87
     def disabled_test_invalid_type_condition_enum(self) -> None:
@@ -279,7 +279,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^fixed size field "F2" with length expression')
+            r'^fixed size field "F2" with length expression in "Foo.Bar"')
 
     @staticmethod
     def test_valid_first() -> None:
@@ -308,7 +308,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"')
+            r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"'
+            r' in "Foo.Bar"')
 
     def test_invalid_first_is_last(self) -> None:
         self.assert_parse_exception_string(
@@ -322,7 +323,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"')
+            r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"'
+            r' in "Foo.Bar"')
 
     def test_invalid_first_forward_reference(self) -> None:
         self.assert_parse_exception_string(
@@ -338,7 +340,7 @@ class TestVerification(TestCase):
             end Foo;
             """,
             r'^subsequent field "F3' "'" 'First" referenced in First expression 0 from field "F1"'
-            r' to "F2"')
+            r' to "F2" in "Foo.Bar"')
 
     @staticmethod
     def test_valid_length_reference() -> None:
@@ -369,7 +371,7 @@ class TestVerification(TestCase):
             end Foo;
             """,
             r'^subsequent field "F2" referenced in Length expression 0 from field "Initial"'
-            r' to "F1"')
+            r' to "F1" in "Foo.Bar"')
 
     def test_invalid_negative_field_length(self) -> None:
         self.assert_parse_exception_string(
@@ -383,7 +385,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^negative length for field "F2" on path F1 -> F2')
+            r'^negative length for field "F2" on path F1 -> F2 in "Foo.Bar"')
 
     @staticmethod
     def test_valid_length_from_message_last() -> None:
@@ -414,7 +416,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unconstrained field "F2" without length expression')
+            r'^unconstrained field "F2" without length expression in "Foo.Bar"')
 
     def test_array_no_length(self) -> None:
         self.assert_parse_exception_string(
@@ -429,7 +431,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unconstrained field "F2" without length expression')
+            r'^unconstrained field "F2" without length expression in "Foo.Bar"')
 
     def test_incongruent_overlay(self) -> None:
         self.assert_parse_exception_string(
@@ -448,7 +450,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^field "F3" not congruent with overlaid field "F1"')
+            r'^field "F3" not congruent with overlaid field "F1" in "Foo.Bar"')
 
     def test_field_coverage_1(self) -> None:
         foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
