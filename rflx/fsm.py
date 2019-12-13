@@ -38,11 +38,13 @@ class State(Base):
 class StateMachine(Base):
     def __init__(
         self,
+        name: str,
         initial: StateName,
         final: StateName,
         states: Iterable[State],
         location: Location = None,
     ):
+        self.__name = name
         self.__initial = initial
         self.__final = final
         self.__states = states
@@ -53,20 +55,21 @@ class StateMachine(Base):
             self.error.append(
                 "empty states", Subsystem.SESSION, Severity.ERROR, location,
             )
+        self.__validate_initial_state()
         self.error.propagate()
 
-    def __validate_initial_state(self, name: str) -> None:
+    def __validate_initial_state(self) -> None:
         states = [s.name for s in self.__states]
         if self.__initial not in states:
             self.error.append(
-                f'initial state "{self.__initial.name}" does not exist in "{name}"',
+                f'initial state "{self.__initial.name}" does not exist in "{self.__name}"',
                 Subsystem.SESSION,
                 Severity.ERROR,
                 self.__initial.location,
             )
         if self.__final not in states:
             self.error.append(
-                f'final state "{self.__final.name}" does not exist in "{name}"',
+                f'final state "{self.__final.name}" does not exist in "{self.__name}"',
                 Subsystem.SESSION,
                 Severity.ERROR,
                 self.__final.location,
@@ -76,7 +79,7 @@ class StateMachine(Base):
                 if t.target not in states:
                     self.error.append(
                         f'transition from state "{s.name.name}" to non-existent state'
-                        f' "{t.target.name}" in "{name}"',
+                        f' "{t.target.name}" in "{self.__name}"',
                         Subsystem.SESSION,
                         Severity.ERROR,
                         t.target.location,
@@ -100,13 +103,10 @@ class StateMachine(Base):
                 self.location,
             )
 
-    def validate(self, name: str) -> None:
-        self.__validate_initial_state(name)
-
 
 class FSM:
     def __init__(self) -> None:
-        self.__fsms: Dict[str, StateMachine] = {}
+        self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
     def __parse(self, name: str, doc: Dict) -> None:
@@ -123,7 +123,9 @@ class FSM:
                 f'missing states section in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
             )
         self.error.propagate()
-        self.__fsms[name] = StateMachine(
+
+        fsm = StateMachine(
+            name=name,
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
             states=[
@@ -136,10 +138,8 @@ class FSM:
                 for s in doc["states"]
             ],
         )
-        for f, v in self.__fsms.items():
-            v.validate(f)
-            self.error.extend(v.error)
-        self.error.propagate()
+        self.error.extend(fsm.error)
+        self.__fsms.append(fsm)
 
     def parse(self, name: str, filename: str) -> None:
         with open(filename, "r") as data:
@@ -149,5 +149,5 @@ class FSM:
         self.__parse(name, yaml.safe_load(string))
 
     @property
-    def fsms(self) -> Dict[str, StateMachine]:
+    def fsms(self) -> List[StateMachine]:
         return self.__fsms
