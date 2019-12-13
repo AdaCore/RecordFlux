@@ -57,6 +57,7 @@ class StateMachine(Base):
             )
         self.__validate_state_existence()
         self.__validate_duplicate_states()
+        self.__validate_state_reachability()
         self.error.propagate()
 
     def __validate_state_existence(self) -> None:
@@ -101,6 +102,27 @@ class StateMachine(Base):
         if duplicates:
             self.error.append(
                 f'duplicate states: {", ".join(sorted(duplicates))}',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+
+    def __validate_state_reachability(self) -> None:
+        inputs: Dict[str, List[str]] = {}
+        for s in self.__states:
+            for t in s.transitions:
+                if t.target.name in inputs:
+                    inputs[t.target.name].append(s.name.name)
+                else:
+                    inputs[t.target.name] = [s.name.name]
+        unreachable = [
+            s.name.name
+            for s in self.__states
+            if s.name != self.__initial and s.name.name not in inputs
+        ]
+        if unreachable:
+            self.error.append(
+                f'unreachable states {", ".join(unreachable)}',
                 Subsystem.SESSION,
                 Severity.ERROR,
                 self.location,
