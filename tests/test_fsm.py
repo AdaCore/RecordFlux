@@ -81,82 +81,83 @@ def test_empty_states() -> None:
 
 
 def test_invalid_initial() -> None:
-    assert_parse_exception_string(
-        """
-            initial: NONEXISTENT
-            final: START
-            states:
-              - name: START
-                transitions:
-                  - target: END
-              - name: END
-        """,
-        '^session: error: initial state "NONEXISTENT" does not exist in "fsm"',
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match='^session: error: initial state "NONEXISTENT" does not exist in "fsm"',
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("NONEXISTENT"),
+            final=StateName("END"),
+            states=[
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("END")),
+            ],
+        )
 
 
 def test_invalid_final() -> None:
-    assert_parse_exception_string(
-        """
-            initial: START
-            final: NONEXISTENT
-            states:
-              - name: START
-                transitions:
-                  - target: END
-              - name: END
-        """,
-        '^session: error: final state "NONEXISTENT" does not exist in "fsm"',
-    )
+    with pytest.raises(
+        RecordFluxError, match='^session: error: final state "NONEXISTENT" does not exist in "fsm"'
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("NONEXISTENT"),
+            states=[
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("END")),
+            ],
+        )
 
 
 def test_invalid_target_state() -> None:
-    assert_parse_exception_string(
-        """
-            initial: START
-            final: END
-            states:
-              - name: START
-                transitions:
-                  - target: NONEXISTENT
-              - name: END
-        """,
-        '^session: error: transition from state "START" to non-existent'
+    with pytest.raises(
+        RecordFluxError,
+        match='^session: error: transition from state "START" to non-existent'
         ' state "NONEXISTENT" in "fsm"',
-    )
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("NONEXISTENT"))],
+                ),
+                State(name=StateName("END")),
+            ],
+        )
 
 
 def test_duplicate_state() -> None:
-    assert_parse_exception_string(
-        """
-            initial: START
-            final: END
-            states:
-              - name: START
-                transitions:
-                  - target: END
-              - name: START
-              - name: END
-        """,
-        "^session: error: duplicate states: START",
-    )
+    with pytest.raises(RecordFluxError, match="^session: error: duplicate states: START"):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("START")),
+                State(name=StateName("END")),
+            ],
+        )
 
 
 def test_multiple_duplicate_states() -> None:
-    assert_parse_exception_string(
-        """
-            initial: START
-            final: END
-            states:
-              - name: START
-                transitions:
-                  - target: END
-              - name: START
-              - name: FOO
-              - name: BAR
-              - name: FOO
-              - name: BAR
-              - name: END
-        """,
-        "^session: error: duplicate states: BAR, FOO, START",
-    )
+    with pytest.raises(RecordFluxError, match="^session: error: duplicate states: BAR, FOO, START"):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("START")),
+                State(name=StateName("FOO")),
+                State(name=StateName("BAR")),
+                State(name=StateName("FOO")),
+                State(name=StateName("BAR")),
+                State(name=StateName("END")),
+            ],
+        )

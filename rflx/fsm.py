@@ -140,6 +140,7 @@ class FSM:
         )
         self.error.extend(fsm.error)
         self.__fsms.append(fsm)
+        self.error.propagate()
 
     def parse(self, name: str, filename: str) -> None:
         with open(filename, "r") as data:
