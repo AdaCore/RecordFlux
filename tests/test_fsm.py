@@ -6,7 +6,9 @@ from rflx.fsm import FSM, State, StateMachine, StateName, Transition
 
 def assert_parse_exception_string(string: str, regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        FSM().parse_string("fsm", string)
+        fsm = FSM()
+        fsm.parse_string("fsm", string)
+        fsm.error.propagate()
 
 
 def test_simple_fsm() -> None:
@@ -24,6 +26,7 @@ def test_simple_fsm() -> None:
         """,
     )
     expected = StateMachine(
+        name="fsm",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -31,7 +34,7 @@ def test_simple_fsm() -> None:
             State(name=StateName("END")),
         ],
     )
-    assert f.fsms["fsm"] == expected
+    assert f.fsms[0] == expected
 
 
 def test_missing_initial() -> None:
@@ -74,7 +77,7 @@ def test_missing_states() -> None:
 
 def test_empty_states() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: empty states"):
-        StateMachine(initial=StateName("START"), final=StateName("END"), states=[])
+        StateMachine(name="fsm", initial=StateName("START"), final=StateName("END"), states=[])
 
 
 def test_invalid_initial() -> None:
