@@ -128,6 +128,17 @@ class StateMachine(Base):
                 self.location,
             )
 
+        detached = [
+            s.name.name for s in self.__states if s.name != self.__final and not s.transitions
+        ]
+        if detached:
+            self.error.append(
+                f'detached states {", ".join(detached)}',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+
 
 class FSM:
     def __init__(self) -> None:

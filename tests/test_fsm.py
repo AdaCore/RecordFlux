@@ -201,3 +201,47 @@ def test_multiple_unreachable_states() -> None:
                 State(name=StateName("END")),
             ],
         )
+
+
+def test_detached_state() -> None:
+    with pytest.raises(RecordFluxError, match="^session: error: detached states DETACHED"):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[
+                        Transition(target=StateName("END")),
+                        Transition(target=StateName("DETACHED")),
+                    ],
+                ),
+                State(name=StateName("DETACHED")),
+                State(name=StateName("END")),
+            ],
+        )
+
+
+def test_multiple_detached_states() -> None:
+    with pytest.raises(
+        RecordFluxError, match="^session: error: detached states DETACHED1, DETACHED2"
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[
+                        Transition(target=StateName("END")),
+                        Transition(target=StateName("DETACHED1")),
+                        Transition(target=StateName("DETACHED2")),
+                    ],
+                ),
+                State(name=StateName("DETACHED1")),
+                State(name=StateName("DETACHED2")),
+                State(name=StateName("END")),
+            ],
+        )
