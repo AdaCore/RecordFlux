@@ -1,9 +1,12 @@
 from typing import Dict, Iterable, List, Optional
 
 import yaml
+from pyparsing import Keyword, Token
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.expression import FALSE, TRUE, Equal, Expr, Variable
 from rflx.model import Base
+from rflx.parser.grammar import boolean_literal, unqualified_identifier
 
 
 class StateName(Base):
@@ -17,8 +20,13 @@ class StateName(Base):
 
 
 class Transition(Base):
-    def __init__(self, target: StateName):
-        self.target = target
+    def __init__(self, target: StateName, condition: Expr = TRUE):
+        self.__target = target
+        self.__condition = condition
+
+    @property
+    def target(self) -> StateName:
+        return self.__target
 
 
 class State(Base):
@@ -145,6 +153,13 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
+    @classmethod
+    def logical_equation(cls) -> Token:
+        result = unqualified_identifier() + Keyword("=") + boolean_literal()
+        return result.setParseAction(
+            lambda t: Equal(Variable(t[0]), TRUE if t[2] == "True" else FALSE)
+        )
+
     def __parse(self, name: str, doc: Dict) -> None:
         if "initial" not in doc:
             self.error.append(
@@ -158,21 +173,30 @@ class FSM:
             self.error.append(
                 f'missing states section in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
             )
+
+        self.error.propagate()
+
+        states: List[State] = []
+        for s in doc["states"]:
+            transitions: List[Transition] = []
+            if "transitions" in s:
+                for t in s["transitions"]:
+                    if "condition" in t:
+                        condition = FSM.logical_equation().parseString(t["condition"])[0]
+                    else:
+                        condition = TRUE
+                    transitions.append(
+                        Transition(target=StateName(t["target"]), condition=condition)
+                    )
+            states.append(State(name=StateName(s["name"]), transitions=transitions))
+
         self.error.propagate()
 
         fsm = StateMachine(
             name=name,
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
-            states=[
-                State(
-                    StateName(s["name"]),
-                    [Transition(StateName(t["target"])) for t in s["transitions"]]
-                    if "transitions" in s
-                    else None,
-                )
-                for s in doc["states"]
-            ],
+            states=states,
         )
         self.error.extend(fsm.error)
         self.__fsms.append(fsm)

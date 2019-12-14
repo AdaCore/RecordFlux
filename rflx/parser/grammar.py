@@ -236,6 +236,14 @@ def integer_type_definition() -> Token:
     return range_type_definition | modular_type_definition
 
 
+def boolean_literal() -> Token:
+    literal = Keyword("True") | Keyword("False")
+    literal.setParseAction(lambda t: t[0] == "True")
+    literal.setName("BooleanLiteral")
+
+    return literal
+
+
 def enumeration_type_definition() -> Token:
     enumeration_literal = unqualified_identifier()
     positional_enumeration = enumeration_literal + ZeroOrMore(comma() - enumeration_literal)
@@ -246,9 +254,7 @@ def enumeration_type_definition() -> Token:
     element_value_association.setParseAction(lambda t: (t[0], t[2]))
     named_enumeration = element_value_association + ZeroOrMore(comma() - element_value_association)
 
-    boolean_literal = Keyword("True") | Keyword("False")
-    boolean_literal.setParseAction(lambda t: t[0] == "True")
-    boolean_aspect_definition = Optional(Keyword("=>") - boolean_literal)
+    boolean_aspect_definition = Optional(Keyword("=>") - boolean_literal())
     boolean_aspect_definition.setParseAction(lambda t: (t if t else ["=>", True]))
     always_valid_aspect = Literal("Always_Valid") - boolean_aspect_definition
     always_valid_aspect.setParseAction(parse_aspect)
