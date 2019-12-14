@@ -180,9 +180,21 @@ class FSM:
         for s in doc["states"]:
             transitions: List[Transition] = []
             if "transitions" in s:
-                for t in s["transitions"]:
+                for index, t in enumerate(s["transitions"]):
                     if "condition" in t:
-                        condition = FSM.logical_equation().parseString(t["condition"])[0]
+                        try:
+                            condition = FSM.logical_equation().parseString(t["condition"])[0]
+                        except RecordFluxError as e:
+                            self.error.extend(e)
+                            sname = s["name"]
+                            tname = t["target"]
+                            self.error.append(
+                                f'invalid condition {index} from state "{sname}" to "{tname}"',
+                                Subsystem.SESSION,
+                                Severity.ERROR,
+                                None,
+                            )
+                            continue
                     else:
                         condition = TRUE
                     transitions.append(

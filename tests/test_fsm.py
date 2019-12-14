@@ -288,3 +288,32 @@ def test_fsm_with_conditions() -> None:
         ],
     )
     assert f.fsms[0] == expected
+
+
+def test_fsm_with_invalid_condition() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            '<stdin>:1:1: parser: error: reserved word "and" used as identifier\n'
+            'session: error: invalid condition 0 from state "START" to "INTERMEDIATE"'
+            "$"
+        ),
+    ):
+        FSM().parse_string(
+            "fsm",
+            """
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    transitions:
+                      - target: INTERMEDIATE
+                        condition: and Invalid
+                      - target: END
+                  - name: INTERMEDIATE
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
