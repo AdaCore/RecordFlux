@@ -5,8 +5,9 @@ from pyparsing import Keyword, Token
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import FALSE, TRUE, Equal, Expr, Variable
+from rflx.identifier import ID
 from rflx.model import Base
-from rflx.parser.grammar import boolean_literal, unqualified_identifier
+from rflx.parser.grammar import boolean_literal, qualified_identifier, unqualified_identifier
 
 
 class StateName(Base):
@@ -154,11 +155,17 @@ class FSM:
         self.error = RecordFluxError()
 
     @classmethod
-    def logical_equation(cls) -> Token:
-        result = unqualified_identifier() + Keyword("=") + boolean_literal()
-        return result.setParseAction(
-            lambda t: Equal(Variable(t[0]), TRUE if t[2] == "True" else FALSE)
+    def rhs(cls) -> Expr:
+        boolean = boolean_literal().setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
+        identifier = qualified_identifier().setParseAction(
+            lambda t: Variable(ID("".join(map(str, t.asList()))))
         )
+        return boolean | identifier
+
+    @classmethod
+    def logical_equation(cls) -> Token:
+        result = unqualified_identifier() + Keyword("=") + cls.rhs()
+        return result.setParseAction(lambda t: Equal(Variable(t[0]), t[2]))
 
     def __parse(self, name: str, doc: Dict) -> None:
         if "initial" not in doc:
