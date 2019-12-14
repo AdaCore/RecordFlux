@@ -1,6 +1,7 @@
 import pytest
 
 from rflx.error import RecordFluxError
+from rflx.expression import FALSE, Equal, Variable
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
 
 
@@ -245,3 +246,45 @@ def test_multiple_detached_states() -> None:
                 State(name=StateName("END")),
             ],
         )
+
+
+def test_fsm_with_conditions() -> None:
+    f = FSM()
+    f.parse_string(
+        "fsm",
+        """
+            initial: START
+            final: END
+            states:
+              - name: START
+                transitions:
+                  - target: INTERMEDIATE
+                    condition: Error = False
+                  - target: END
+              - name: INTERMEDIATE
+                transitions:
+                  - target: END
+              - name: END
+        """,
+    )
+    expected = StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[
+                    Transition(
+                        target=StateName("INTERMEDIATE"), condition=Equal(Variable("Error"), FALSE),
+                    ),
+                    Transition(target=StateName("END")),
+                ],
+            ),
+            State(
+                name=StateName("INTERMEDIATE"), transitions=[Transition(target=StateName("END"))],
+            ),
+            State(name=StateName("END")),
+        ],
+    )
+    assert f.fsms[0] == expected
