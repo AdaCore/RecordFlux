@@ -300,8 +300,7 @@ def test_fsm_with_invalid_condition() -> None:
             "$"
         ),
     ):
-        fsm = FSM()
-        fsm.parse_string(
+        FSM().parse_string(
             "fsm",
             """
                 initial: START
@@ -318,29 +317,6 @@ def test_fsm_with_invalid_condition() -> None:
                   - name: END
             """,
         )
-        expected = StateMachine(
-            name="fsm",
-            initial=StateName("START"),
-            final=StateName("END"),
-            states=[
-                State(
-                    name=StateName("START"),
-                    transitions=[
-                        Transition(
-                            target=StateName("INTERMEDIATE"),
-                            condition=Equal(Variable("Error"), FALSE),
-                        ),
-                        Transition(target=StateName("END")),
-                    ],
-                ),
-                State(
-                    name=StateName("INTERMEDIATE"),
-                    transitions=[Transition(target=StateName("END"))],
-                ),
-                State(name=StateName("END")),
-            ],
-        )
-        assert fsm == expected
 
 
 def test_fsm_condition_equal() -> None:
