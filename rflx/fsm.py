@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 import yaml
 
@@ -152,27 +152,52 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
-    def __parse(self, name: str, doc: Dict) -> None:
+    # pylint: disable=too-many-locals
+    def __parse(self, name: str, doc: Dict[str, Any]) -> None:
         if "initial" not in doc:
             self.error.append(
-                f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
+                f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR
             )
         if "final" not in doc:
-            self.error.append(
-                f'missing final state in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
-            )
+            self.error.append(f'missing final state in "{name}"', Subsystem.SESSION, Severity.ERROR)
         if "states" not in doc:
             self.error.append(
-                f'missing states section in "{name}"', Subsystem.SESSION, Severity.ERROR, None,
+                f'missing states section in "{name}"', Subsystem.SESSION, Severity.ERROR
             )
 
         self.error.propagate()
 
+        rest = set(doc.keys()) - set(
+            ["channels", "variables", "functions", "initial", "final", "states"]
+        )
+        if rest:
+            self.error.append(
+                f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.SESSION, Severity.ERROR
+            )
+
         states: List[State] = []
         for s in doc["states"]:
+            state = s["name"]
+            rest = s.keys() - ["name", "actions", "transitions", "variables", "doc"]
+            if rest:
+                elements = ", ".join(sorted(rest))
+                self.error.append(
+                    f'unexpected elements in state "{state}": {elements}',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                )
             transitions: List[Transition] = []
             if "transitions" in s:
                 for index, t in enumerate(s["transitions"]):
+                    rest = t.keys() - ["condition", "target", "doc"]
+                    if rest:
+                        elements = ", ".join(sorted(rest))
+                        self.error.append(
+                            f"unexpected elements in transition {index}"
+                            f' in state "{state}": {elements}',
+                            Subsystem.SESSION,
+                            Severity.ERROR,
+                        )
                     if "condition" in t:
                         try:
                             condition = FSMParser.condition().parseString(t["condition"])[0]
