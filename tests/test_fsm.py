@@ -360,3 +360,20 @@ def test_fsm_condition_equal() -> None:
         ],
     )
     assert f.fsms[0] == expected
+
+
+def test_unexpected_elements() -> None:
+    assert_parse_exception_string(
+        """
+            initial: START
+            final: END
+            invalid1: FOO
+            invalid2: BAR
+            states:
+              - name: START
+                transitions:
+                  - target: END
+              - name: END
+        """,
+        r"^session: error: unexpected elements: invalid1, invalid2",
+    )
