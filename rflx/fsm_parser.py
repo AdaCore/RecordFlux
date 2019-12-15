@@ -1,8 +1,9 @@
 from typing import List
 
-from pyparsing import Keyword, Token, infixNotation, opAssoc
+from pyparsing import Keyword, Literal, Token, infixNotation, opAssoc
 
 from rflx.expression import FALSE, TRUE, Equal, Expr, NotEqual, Variable
+from rflx.fsm_expression import Valid
 from rflx.identifier import ID
 from rflx.parser.grammar import boolean_literal, qualified_identifier
 
@@ -11,13 +12,12 @@ class FSMParser:
     @classmethod
     def __parse_equation(cls, tokens: List[List[Expr]]) -> Expr:
         t = tokens[0]
-        op = t[1]
+        return Equal(t[0], t[2])
 
-        if op == "=":
-            return Equal(t[0], t[2])
-        if op == "/=":
-            return NotEqual(t[0], t[2])
-        raise NotImplementedError(f"operator {op} not implemented")
+    @classmethod
+    def __parse_inequation(cls, tokens: List[List[Expr]]) -> Expr:
+        t = tokens[0]
+        return NotEqual(t[0], t[2])
 
     @classmethod
     def expression(cls) -> Token:
@@ -27,14 +27,20 @@ class FSMParser:
         identifier = qualified_identifier()
         identifier.setParseAction(lambda t: Variable(ID("".join(map(str, t.asList())))))
 
-        simple_expression = literal | identifier
+        valid = identifier() + Literal("'") - Keyword("Valid")
+        valid.setParseAction(lambda t: Valid(t[0]))
+
+        simple_expression = literal | valid | identifier
 
         equation = infixNotation(
-            simple_expression, [(Keyword("="), 2, opAssoc.LEFT), (Keyword("/="), 2, opAssoc.LEFT)]
+            simple_expression,
+            [
+                (Keyword("="), 2, opAssoc.LEFT, cls.__parse_equation),
+                (Keyword("/="), 2, opAssoc.LEFT, cls.__parse_inequation),
+            ],
         )
-        equation.setParseAction(cls.__parse_equation)
 
-        return equation
+        return equation | simple_expression
 
     @classmethod
     def condition(cls) -> Token:
