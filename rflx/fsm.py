@@ -1,13 +1,11 @@
 from typing import Dict, Iterable, List, Optional
 
 import yaml
-from pyparsing import Keyword, Token
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
-from rflx.expression import FALSE, TRUE, Equal, Expr, Variable
-from rflx.identifier import ID
+from rflx.expression import TRUE, Expr
+from rflx.fsm_parser import FSMParser
 from rflx.model import Base
-from rflx.parser.grammar import boolean_literal, qualified_identifier, unqualified_identifier
 
 
 class StateName(Base):
@@ -154,19 +152,6 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
-    @classmethod
-    def rhs(cls) -> Expr:
-        boolean = boolean_literal().setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
-        identifier = qualified_identifier().setParseAction(
-            lambda t: Variable(ID("".join(map(str, t.asList()))))
-        )
-        return boolean | identifier
-
-    @classmethod
-    def logical_equation(cls) -> Token:
-        result = unqualified_identifier() + Keyword("=") + cls.rhs()
-        return result.setParseAction(lambda t: Equal(Variable(t[0]), t[2]))
-
     def __parse(self, name: str, doc: Dict) -> None:
         if "initial" not in doc:
             self.error.append(
@@ -190,7 +175,7 @@ class FSM:
                 for index, t in enumerate(s["transitions"]):
                     if "condition" in t:
                         try:
-                            condition = FSM.logical_equation().parseString(t["condition"])[0]
+                            condition = FSMParser.condition().parseString(t["condition"])[0]
                         except RecordFluxError as e:
                             self.error.extend(e)
                             sname = s["name"]
