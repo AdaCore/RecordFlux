@@ -1,6 +1,6 @@
 from typing import List
 
-from pyparsing import Keyword, Literal, Token, infixNotation, opAssoc
+from pyparsing import Keyword, Literal, StringEnd, Token, infixNotation, opAssoc
 
 from rflx.expression import FALSE, TRUE, Equal, Expr, NotEqual, Variable
 from rflx.fsm_expression import Valid
@@ -44,4 +44,4 @@ class FSMParser:
 
     @classmethod
     def condition(cls) -> Token:
-        return cls.expression()
+        return cls.expression() + StringEnd()
