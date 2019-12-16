@@ -168,7 +168,7 @@ class FSM:
         self.error.propagate()
 
         rest = set(doc.keys()) - set(
-            ["channels", "variables", "functions", "initial", "final", "states"]
+            ["channels", "variables", "functions", "initial", "final", "states", "renames", "types"]
         )
         if rest:
             self.error.append(
