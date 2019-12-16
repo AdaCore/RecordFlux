@@ -1,5 +1,5 @@
 from rflx.expression import And, Equal, NotEqual, Or, Variable
-from rflx.fsm_expression import Valid
+from rflx.fsm_expression import Contains, NotContains, Valid
 from rflx.fsm_parser import FSMParser
 
 
@@ -35,3 +35,13 @@ def test_disjunction() -> None:
     assert result == Or(
         Equal(Variable("Foo"), Variable("Bar")), NotEqual(Variable("Bar"), Variable("Baz"))
     )
+
+
+def test_in_operator() -> None:
+    result = FSMParser.condition().parseString("Foo in Bar")[0]
+    assert result == Contains(Variable("Foo"), Variable("Bar"))
+
+
+def test_not_in_operator() -> None:
+    result = FSMParser.condition().parseString("Foo not in Bar")[0]
+    assert result == NotContains(Variable("Foo"), Variable("Bar"))
