@@ -22,7 +22,8 @@ class Precedence(Enum):
     unary_adding_operator = 4
     multiplying_operator = 5
     highest_precedence_operator = 6
-    literal = 7
+    set_operator = 7
+    literal = 8
 
 
 class ProofResult(Enum):

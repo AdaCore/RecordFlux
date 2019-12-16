@@ -3,7 +3,7 @@ from typing import List
 from pyparsing import Forward, Keyword, Literal, StringEnd, Token, infixNotation, opAssoc
 
 from rflx.expression import FALSE, TRUE, And, Equal, Expr, NotEqual, Or, Variable
-from rflx.fsm_expression import Valid
+from rflx.fsm_expression import Contains, NotContains, Valid
 from rflx.identifier import ID
 from rflx.parser.grammar import boolean_literal, qualified_identifier
 
@@ -30,6 +30,16 @@ class FSMParser:
         return Or(t[0], t[2])
 
     @classmethod
+    def __parse_in(cls, tokens: List[List[Expr]]) -> Expr:
+        t = tokens[0]
+        return Contains(t[0], t[2])
+
+    @classmethod
+    def __parse_notin(cls, tokens: List[List[Expr]]) -> Expr:
+        t = tokens[0]
+        return NotContains(t[0], t[2])
+
+    @classmethod
     def expression(cls) -> Token:
         literal = boolean_literal()
         literal.setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
@@ -46,6 +56,8 @@ class FSMParser:
         expr <<= infixNotation(
             simple_expr,
             [
+                (Keyword("not in"), 2, opAssoc.LEFT, cls.__parse_notin),
+                (Keyword("in"), 2, opAssoc.LEFT, cls.__parse_in),
                 (Keyword("="), 2, opAssoc.LEFT, cls.__parse_equation),
                 (Keyword("/="), 2, opAssoc.LEFT, cls.__parse_inequation),
                 (Keyword("and"), 2, opAssoc.LEFT, cls.__parse_conjunction),
