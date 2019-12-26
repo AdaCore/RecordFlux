@@ -1,4 +1,4 @@
-from rflx.expression import FALSE, TRUE, And, Equal, NotEqual, Or, Variable
+from rflx.expression import FALSE, TRUE, And, Equal, NotEqual, Number, Or, Variable
 from rflx.fsm_expression import Contains, NotContains, Valid
 from rflx.fsm_parser import FSMParser
 
@@ -58,3 +58,32 @@ def test_parenthesized_expression() -> None:
 def test_parenthesized_expression2() -> None:
     result = FSMParser.condition().parseString("Foo'Valid and (Bar'Valid or Baz'Valid)")[0]
     assert result == And(Valid(Variable("Foo")), Or(Valid(Variable("Bar")), Valid(Variable("Baz"))))
+
+
+def test_numeric_constant_expression() -> None:
+    result = FSMParser.condition().parseString("Keystore_Message.Length = 0")[0]
+    assert result == Equal(Variable("Keystore_Message.Length"), Number(0))
+
+
+def test_complex_expression() -> None:
+    expression = (
+        "Keystore_Message'Valid = False "
+        "or Keystore_Message.Tag /= KEYSTORE_RESPONSE "
+        "or Keystore_Message.Request /= KEYSTORE_REQUEST_PSK_IDENTITIES "
+        "or (Keystore_Message.Length = 0 "
+        "    and TLS_Handshake.PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes)"
+    )
+    result = FSMParser.condition().parseString(expression)[0]
+    expected = Or(
+        Equal(Valid(Variable("Keystore_Message")), FALSE),
+        NotEqual(Variable("Keystore_Message.Tag"), Variable("KEYSTORE_RESPONSE")),
+        NotEqual(Variable("Keystore_Message.Request"), Variable("KEYSTORE_REQUEST_PSK_IDENTITIES")),
+        And(
+            Equal(Variable("Keystore_Message.Length"), Number(0)),
+            NotContains(
+                Variable("TLS_Handshake.PSK_DHE_KE"),
+                Variable("Configuration.PSK_Key_Exchange_Modes"),
+            ),
+        ),
+    )
+    assert result == expected
