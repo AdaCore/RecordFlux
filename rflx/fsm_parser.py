@@ -1,6 +1,6 @@
 from typing import List
 
-from pyparsing import Forward, Keyword, Literal, StringEnd, Token, infixNotation, opAssoc
+from pyparsing import Keyword, Literal, StringEnd, Token, infixNotation, opAssoc
 
 from rflx.expression import FALSE, TRUE, And, Equal, Expr, NotEqual, Or, Variable
 from rflx.fsm_expression import Contains, NotContains, Valid
@@ -50,22 +50,24 @@ class FSMParser:
         valid = identifier() + Literal("'") - Keyword("Valid")
         valid.setParseAction(lambda t: Valid(t[0]))
 
-        expr = Forward()
-        simple_expr = literal | valid | identifier | expr
-
-        expr <<= infixNotation(
-            simple_expr,
+        equation = infixNotation(
+            literal | valid | identifier,
             [
-                (Keyword("not in"), 2, opAssoc.LEFT, cls.__parse_notin),
-                (Keyword("in"), 2, opAssoc.LEFT, cls.__parse_in),
                 (Keyword("="), 2, opAssoc.LEFT, cls.__parse_equation),
                 (Keyword("/="), 2, opAssoc.LEFT, cls.__parse_inequation),
+                (Keyword("in"), 2, opAssoc.LEFT, cls.__parse_in),
+                (Keyword("not in"), 2, opAssoc.LEFT, cls.__parse_notin),
+            ],
+        )
+
+        result = infixNotation(
+            equation,
+            [
                 (Keyword("and"), 2, opAssoc.LEFT, cls.__parse_conjunction),
                 (Keyword("or"), 2, opAssoc.LEFT, cls.__parse_disjunction),
             ],
         )
-
-        return expr
+        return result
 
     @classmethod
     def condition(cls) -> Token:
