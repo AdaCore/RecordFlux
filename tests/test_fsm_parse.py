@@ -1,5 +1,5 @@
 from rflx.expression import FALSE, TRUE, And, Equal, NotEqual, Number, Or, Variable
-from rflx.fsm_expression import Contains, NotContains, Valid
+from rflx.fsm_expression import Contains, ForAll, ForSome, NotContains, Valid
 from rflx.fsm_parser import FSMParser
 
 
@@ -87,3 +87,13 @@ def test_complex_expression() -> None:
         ),
     )
     assert result == expected
+
+
+def test_existential_quantification() -> None:
+    result = FSMParser.condition().parseString("for some X in Y => X = 3")[0]
+    assert result == ForSome(Variable("X"), Variable("Y"), Equal(Variable("X"), Number(3)))
+
+
+def test_universal_quantification() -> None:
+    result = FSMParser.condition().parseString("for all X in Y => X = Bar")[0]
+    assert result == ForAll(Variable("X"), Variable("Y"), Equal(Variable("X"), Variable("Bar")))

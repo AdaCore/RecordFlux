@@ -1,9 +1,9 @@
 from typing import List
 
-from pyparsing import Keyword, Literal, StringEnd, Token, infixNotation, opAssoc
+from pyparsing import Forward, Keyword, Literal, StringEnd, Token, infixNotation, oneOf, opAssoc
 
 from rflx.expression import FALSE, TRUE, And, Equal, Expr, NotEqual, Or, Variable
-from rflx.fsm_expression import Contains, NotContains, Valid
+from rflx.fsm_expression import Contains, ForAll, ForSome, NotContains, Valid
 from rflx.identifier import ID
 from rflx.parser.grammar import boolean_literal, numeric_literal, qualified_identifier
 
@@ -20,12 +20,12 @@ class FSMParser:
         return NotEqual(t[0], t[2])
 
     @classmethod
-    def __parse_conjunction(cls, tokens: List[List[Expr]]) -> Expr:
+    def __parse_conj(cls, tokens: List[List[Expr]]) -> Expr:
         t = tokens[0]
         return And(*t)
 
     @classmethod
-    def __parse_disjunction(cls, tokens: List[List[Expr]]) -> Expr:
+    def __parse_disj(cls, tokens: List[List[Expr]]) -> Expr:
         t = tokens[0]
         return Or(*t)
 
@@ -40,6 +40,14 @@ class FSMParser:
         return NotContains(t[0], t[2])
 
     @classmethod
+    def __parse_quantifier(cls, tokens: List[Expr]) -> Expr:
+        if not isinstance(tokens[1], Variable):
+            raise TypeError("quantifier not of type Variable")
+        if tokens[0] == "all":
+            return ForAll(tokens[1], tokens[2], tokens[3])
+        return ForSome(tokens[1], tokens[2], tokens[3])
+
+    @classmethod
     def expression(cls) -> Token:
         literal = boolean_literal()
         literal.setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
@@ -50,8 +58,23 @@ class FSMParser:
         valid = identifier() + Literal("'") - Keyword("Valid")
         valid.setParseAction(lambda t: Valid(t[0]))
 
-        equation = infixNotation(
-            numeric_literal() | literal | valid | identifier,
+        expression = Forward()
+
+        quantifier = (
+            Keyword("for").suppress()
+            - oneOf(["all", "some"])
+            + identifier
+            - Keyword("in").suppress()
+            + identifier
+            - Keyword("=>").suppress()
+            + expression
+        )
+        quantifier.setParseAction(cls.__parse_quantifier)
+
+        atom = numeric_literal() | literal | quantifier | valid | identifier
+
+        expression <<= infixNotation(
+            atom,
             [
                 (Keyword("="), 2, opAssoc.LEFT, cls.__parse_equation),
                 (Keyword("/="), 2, opAssoc.LEFT, cls.__parse_inequation),
@@ -61,10 +84,10 @@ class FSMParser:
         )
 
         result = infixNotation(
-            equation,
+            expression,
             [
-                (Keyword("and").suppress(), 2, opAssoc.LEFT, cls.__parse_conjunction),
-                (Keyword("or").suppress(), 2, opAssoc.LEFT, cls.__parse_disjunction),
+                (Keyword("and").suppress(), 2, opAssoc.LEFT, cls.__parse_conj),
+                (Keyword("or").suppress(), 2, opAssoc.LEFT, cls.__parse_disj),
             ],
         )
         return result
