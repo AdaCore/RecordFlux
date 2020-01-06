@@ -36,54 +36,57 @@ class TestCLI(TestCase):
 
     def test_main_generate(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(cli.main(['rflx', 'generate', 'specs/tlv.rflx', tmpdir]),
+            self.assertEqual(cli.main(['rflx', 'generate', '-d', tmpdir, 'specs/tlv.rflx']),
                              0)
 
     def test_main_generate_prefix(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(cli.main(['rflx', 'generate', '-p', '', 'specs/tlv.rflx', tmpdir]),
+            self.assertEqual(cli.main(['rflx', 'generate', '-d', tmpdir, '-p', '',
+                                       'specs/tlv.rflx']),
                              0)
 
     def test_main_generate_no_output_files(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(cli.main(['rflx', 'generate', 'tests/package.rflx', tmpdir]),
+            self.assertEqual(cli.main(['rflx', 'generate', '-d', tmpdir, 'tests/package.rflx']),
                              0)
 
     def test_main_generate_non_existent_directory(self) -> None:
-        self.assertRegex(str(cli.main(['rflx', 'generate', 'specs/tlv.rflx',
-                                       'non-existent directory'])),
+        self.assertRegex(str(cli.main(['rflx', 'generate', '-d', 'non-existent directory',
+                                       'specs/tlv.rflx'])),
                          r'error: directory not found: "non-existent directory"$')
 
     def test_main_generate_missing_template_direcotry(self) -> None:
         with TemporaryDirectory() as tmpdir:
             with mock.patch('pkg_resources.resource_filename', lambda *x: 'non-existent directory'):
-                self.assertRegex(str(cli.main(['rflx', 'generate', 'specs/tlv.rflx', tmpdir])),
+                self.assertRegex(str(cli.main(['rflx', 'generate', '-d', tmpdir,
+                                               'specs/tlv.rflx'])),
                                  r'internal error: library directory not found$')
 
     def test_main_generate_missing_template_files(self) -> None:
         with TemporaryDirectory() as tmpdir:
             with mock.patch('pkg_resources.resource_filename', lambda *x: tmpdir):
-                self.assertRegex(str(cli.main(['rflx', 'generate', 'specs/tlv.rflx', tmpdir])),
+                self.assertRegex(str(cli.main(['rflx', 'generate', '-d', tmpdir,
+                                               'specs/tlv.rflx'])),
                                  r'internal error: library file not found')
 
     def test_main_graph(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(cli.main(['rflx', 'graph', 'specs/tlv.rflx', tmpdir]),
+            self.assertEqual(cli.main(['rflx', 'graph', '-d', tmpdir, 'specs/tlv.rflx']),
                              0)
 
     def test_main_graph_non_existent_file(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertRegex(str(cli.main(['rflx', 'graph', 'non-existent file', tmpdir])),
+            self.assertRegex(str(cli.main(['rflx', 'graph', '-d', tmpdir, 'non-existent file'])),
                              r'error: file not found: "non-existent file"$')
 
     def test_main_graph_non_existent_directory(self) -> None:
-        self.assertRegex(str(cli.main(['rflx', 'graph', 'specs/tlv.rflx',
-                                       'non-existent directory'])),
+        self.assertRegex(str(cli.main(['rflx', 'graph', '-d', 'non-existent directory',
+                                       'specs/tlv.rflx'])),
                          r'error: directory not found: "non-existent directory"$')
 
     def test_main_graph_no_output_files(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(cli.main(['rflx', 'graph', 'tests/package.rflx', tmpdir]),
+            self.assertEqual(cli.main(['rflx', 'graph', '-d', tmpdir, 'tests/package.rflx']),
                              0)
 
 
