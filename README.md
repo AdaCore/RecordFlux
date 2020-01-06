@@ -85,7 +85,7 @@ Parsing specs/tlv.rflx... OK
 The sub-command `generate` is used to generate the code based on the specification. The target directory and the specification files have to be given.
 
 ```
-$ rflx generate specs/tlv.rflx generated
+$ rflx generate -d generated specs/tlv.rflx
 Parsing specs/tlv.rflx... OK
 Generating... OK
 Created generated/rflx-tlv.ads
