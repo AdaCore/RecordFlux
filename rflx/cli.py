@@ -27,10 +27,10 @@ def main(argv: List[str]) -> Union[int, str]:
     parser_generate.add_argument('-p', '--prefix', type=str, default='RFLX',
                                  help=('add prefix to generated packages '
                                        f'(default: {DEFAULT_PREFIX})'))
+    parser_generate.add_argument('-d', '--directory', help='output directory',
+                                 default='.', type=str)
     parser_generate.add_argument('files', metavar='FILE', type=str, nargs='*',
                                  help='specification file')
-    parser_generate.add_argument('directory', metavar='DIRECTORY', type=str,
-                                 help='output directory')
     parser_generate.set_defaults(func=generate)
 
     parser_graph = subparsers.add_parser('graph', help='generate graphs')
@@ -39,8 +39,8 @@ def main(argv: List[str]) -> Union[int, str]:
                               help=(f'output format (default: svg)'))
     parser_graph.add_argument('files', metavar='FILE', type=str, nargs='+',
                               help='specification file')
-    parser_graph.add_argument('directory', metavar='DIRECTORY', type=str,
-                              help='output directory')
+    parser_graph.add_argument('-d', '--directory', help='output directory',
+                              default='.', type=str)
     parser_graph.set_defaults(func=graph)
 
     args = parser.parse_args(argv[1:])
