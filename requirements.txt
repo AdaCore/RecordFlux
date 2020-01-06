@@ -3,6 +3,6 @@ flake8
 isort
 mypy
 pylint
-pyparsing
+pyparsing >=2.4.0
 z3-solver
 pydotplus

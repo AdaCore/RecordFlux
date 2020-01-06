@@ -37,7 +37,7 @@ setup(
     package_data={'rflx': ['templates/*']},
     python_requires='>=3.6',
     install_requires=[
-        'pyparsing',
+        'pyparsing >=2.4.0',
         'z3-solver',
         'pydotplus',
     ],
