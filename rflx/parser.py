@@ -93,8 +93,7 @@ SEMICOLON = Suppress(Literal(';')).setName('";"')
 
 class Parser:
     # pylint: disable=too-many-public-methods
-    def __init__(self, basedir: str = '.') -> None:
-        self.__basedir = basedir
+    def __init__(self) -> None:
         self.__specifications: Dict[str, Specification] = {}
         self.__messages: Dict[str, Message] = {}
         self.__refinements: List[Refinement] = []
@@ -102,8 +101,7 @@ class Parser:
         self.__grammar.setParseAction(self.__evaluate_specification)
         self.__grammar.ignore(Regex(r'--.*'))
 
-    def parse(self, infile: str) -> None:
-        filepath = self.__basedir + "/" + infile
+    def parse(self, filepath: str) -> None:
         with open(filepath, 'r') as filehandle:
             try:
                 self.__grammar.parseFile(filehandle)
