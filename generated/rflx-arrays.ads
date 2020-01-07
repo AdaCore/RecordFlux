@@ -19,6 +19,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
+
    pragma Warnings (Off, "unused variable ""Value""");
 
    function Valid (Value : Length) return Boolean is
@@ -45,6 +47,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Modular_Integer);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Modular_Integer);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
@@ -77,9 +81,11 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Range_Integer_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Range_Integer_Base);
+
    function Valid (Value : Range_Integer_Base) return Boolean is
      (Value >= 1
-      and then Value <= 100);
+      and Value <= 100);
 
    function Convert (Value : Range_Integer_Base) return Range_Integer is
      (Value)
@@ -106,12 +112,23 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration_Base);
+
    function Valid (Value : Enumeration_Base) return Boolean is
      ((case Value is
          when 0 | 1 | 2 =>
             True,
          when others =>
             False));
+
+   function Convert (Enum : Enumeration) return Enumeration_Base is
+     ((case Enum is
+         when ZERO =>
+            0,
+         when ONE =>
+            1,
+         when TWO =>
+            2));
 
    function Convert (Value : Enumeration_Base) return Enumeration is
      ((case Value is
@@ -126,15 +143,6 @@ is
     with
      Pre =>
        Valid (Value);
-
-   function Convert (Enum : Enumeration) return Enumeration_Base is
-     ((case Enum is
-         when ZERO =>
-            0,
-         when ONE =>
-            1,
-         when TWO =>
-            2));
 
    type AV_Enumeration_Base is mod 2**8;
 
@@ -165,12 +173,26 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, AV_Enumeration_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, AV_Enumeration_Base);
+
    pragma Warnings (Off, "unused variable ""Value""");
 
    function Valid (Value : AV_Enumeration_Base) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Value""");
+
+   function Convert (Enum : AV_Enumeration_Enum) return AV_Enumeration_Base is
+     ((case Enum is
+         when AV_ZERO =>
+            0,
+         when AV_ONE =>
+            1,
+         when AV_TWO =>
+            2));
+
+   function Convert (Enum : AV_Enumeration_Enum) return AV_Enumeration is
+     ((True, Enum));
 
    function Convert (Value : AV_Enumeration_Base) return AV_Enumeration is
      ((case Value is
@@ -186,13 +208,10 @@ is
      Pre =>
        Valid (Value);
 
-   function Convert (Enum : AV_Enumeration_Enum) return AV_Enumeration_Base is
-     ((case Enum is
-         when AV_ZERO =>
-            0,
-         when AV_ONE =>
-            1,
-         when AV_TWO =>
-            2));
+   function Convert (Value : AV_Enumeration) return AV_Enumeration_Base is
+     ((if Value.Known then
+       Convert (Value.Enum)
+    else
+       Value.Raw));
 
 end RFLX.Arrays;

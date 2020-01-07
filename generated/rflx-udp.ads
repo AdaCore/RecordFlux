@@ -19,6 +19,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Port);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Port);
+
    pragma Warnings (Off, "unused variable ""Value""");
 
    function Valid (Value : Port) return Boolean is
@@ -50,6 +52,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length_Base);
+
    function Valid (Value : Length_Base) return Boolean is
      (Value >= 8);
 
@@ -72,6 +76,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Checksum);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Checksum);
 
    pragma Warnings (Off, "unused variable ""Value""");
 

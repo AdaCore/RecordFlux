@@ -10,6 +10,8 @@ is
 
    function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Length renames Arrays.Extract;
 
+   procedure Insert (Value : Length; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
+
    function Valid (Value : Length) return Boolean renames Arrays.Valid;
 
    function Convert (Value : Length) return Length renames Arrays.Convert;
@@ -17,6 +19,8 @@ is
    subtype Modular_Integer is Arrays.Modular_Integer;
 
    function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Modular_Integer renames Arrays.Extract;
+
+   procedure Insert (Value : Modular_Integer; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
 
    function Valid (Value : Modular_Integer) return Boolean renames Arrays.Valid;
 
@@ -28,6 +32,8 @@ is
 
    function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Range_Integer_Base renames Arrays.Extract;
 
+   procedure Insert (Value : Range_Integer_Base; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
+
    function Valid (Value : Range_Integer_Base) return Boolean renames Arrays.Valid;
 
    function Convert (Value : Range_Integer_Base) return Range_Integer renames Arrays.Convert;
@@ -38,11 +44,13 @@ is
 
    function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Enumeration_Base renames Arrays.Extract;
 
+   procedure Insert (Value : Enumeration_Base; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
+
    function Valid (Value : Enumeration_Base) return Boolean renames Arrays.Valid;
 
-   function Convert (Value : Enumeration_Base) return Enumeration renames Arrays.Convert;
-
    function Convert (Enum : Enumeration) return Enumeration_Base renames Arrays.Convert;
+
+   function Convert (Value : Enumeration_Base) return Enumeration renames Arrays.Convert;
 
    ZERO : constant Enumeration := Arrays.ZERO;
 
@@ -58,11 +66,17 @@ is
 
    function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return AV_Enumeration_Base renames Arrays.Extract;
 
+   procedure Insert (Value : AV_Enumeration_Base; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
+
    function Valid (Value : AV_Enumeration_Base) return Boolean renames Arrays.Valid;
+
+   function Convert (Enum : AV_Enumeration_Enum) return AV_Enumeration_Base renames Arrays.Convert;
+
+   function Convert (Enum : AV_Enumeration_Enum) return AV_Enumeration renames Arrays.Convert;
 
    function Convert (Value : AV_Enumeration_Base) return AV_Enumeration renames Arrays.Convert;
 
-   function Convert (Enum : AV_Enumeration_Enum) return AV_Enumeration_Base renames Arrays.Convert;
+   function Convert (Value : AV_Enumeration) return AV_Enumeration_Base renames Arrays.Convert;
 
    AV_ZERO : constant AV_Enumeration_Enum := Arrays.AV_ZERO;
 
