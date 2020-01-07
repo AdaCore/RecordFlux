@@ -14,7 +14,7 @@ package body RFLX.Enumeration.Tests is
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
 
-   procedure Test_Enumeration_Known (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Enumeration_Known (T : in out Aunit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -37,9 +37,9 @@ package body RFLX.Enumeration.Tests is
          Assert (False, "Invalid Priority");
       end if;
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid Message");
-   end Test_Enumeration_Known;
+   end Test_Parsing_Enumeration_Known;
 
-   procedure Test_Enumeration_Unknown (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Enumeration_Unknown (T : in out Aunit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -62,13 +62,35 @@ package body RFLX.Enumeration.Tests is
          Assert (False, "Invalid Priority");
       end if;
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid Message");
-   end Test_Enumeration_Unknown;
+   end Test_Parsing_Enumeration_Unknown;
+
+   procedure Test_Generating_Enumeration (T : in out Aunit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Expected : Types.Bytes_Ptr := new Types.Bytes'(Types.Index'First => 32);
+      Buffer   : Types.Bytes_Ptr := new Types.Bytes'(0, 0);
+      Context  : Enumeration.Message.Context := Enumeration.Message.Create;
+   begin
+      Enumeration.Message.Initialize (Context, Buffer);
+
+      Enumeration.Message.Set_Priority (Context, Enumeration.LOW);
+
+      Assert (Enumeration.Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (Enumeration.Message.Valid_Message (Context), "Invalid message");
+
+      Enumeration.Message.Take_Buffer (Context, Buffer);
+
+      Assert (Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+   end Test_Generating_Enumeration;
 
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
-      Register_Routine (T, Test_Enumeration_Known'Access, "Enumeration Known");
-      Register_Routine (T, Test_Enumeration_Unknown'Access, "Enumeration Unknown");
+      Register_Routine (T, Test_Parsing_Enumeration_Known'Access, "Parsing Enumeration Known");
+      Register_Routine (T, Test_Parsing_Enumeration_Unknown'Access, "Parsing Enumeration Unknown");
+      Register_Routine (T, Test_Generating_Enumeration'Access, "Generating Enumeration");
    end Register_Tests;
 
 end RFLX.Enumeration.Tests;

@@ -6,6 +6,7 @@ generic
    with procedure Element_Take_Buffer (Ctx : in out Element_Context; Buffer : out Types.Bytes_Ptr);
    with function Element_Has_Buffer (Ctx : Element_Context) return Boolean;
    with function Element_Last (Ctx : Element_Context) return Types.Bit_Index;
+   with function Element_Initialized (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Message (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Context (Ctx : Element_Context) return Boolean;
 package RFLX.Message_Sequence with
@@ -33,7 +34,10 @@ is
        (Buffer = null
         and Has_Buffer (Ctx)
         and Ctx.Buffer_First = Buffer_First
-        and Ctx.Buffer_Last = Buffer_Last);
+        and Ctx.Buffer_Last = Buffer_Last
+        and Ctx.First = First
+        and Ctx.Last = Last
+        and Index (Ctx) = First);
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index) with
      Pre =>
@@ -48,7 +52,10 @@ is
         and Buffer'First = Buffer_First
         and Buffer'Last = Buffer_Last
         and Buffer'First <= Types.Byte_Index (First)
-        and Buffer'Last >= Types.Byte_Index (Last));
+        and Buffer'Last >= Types.Byte_Index (Last)
+        and Ctx.First = Ctx.First'Old
+        and Ctx.Last = Ctx.Last'Old
+        and Index (Ctx) = Index (Ctx)'Old);
 
    function Valid_Element (Ctx : Context) return Boolean with
      Contract_Cases =>
@@ -69,8 +76,14 @@ is
         and Ctx.Buffer_Last = Element_Ctx.Buffer_Last
         and Ctx.First <= Element_Ctx.First
         and Ctx.Last >= Element_Ctx.Last
+        and Element_Ctx.First = Index (Ctx)
+        and Element_Ctx.Last = Ctx.Last
+        and Element_Initialized (Element_Ctx)
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
-        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old);
+        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+        and Ctx.First = Ctx.First'Old
+        and Ctx.Last = Ctx.Last'Old
+        and Index (Ctx) = Index (Ctx)'Old);
 
    procedure Update (Ctx : in out Context; Element_Ctx : in out Element_Context) with
      Pre =>
@@ -87,11 +100,24 @@ is
         and Element_Valid_Context (Element_Ctx)
         and not Element_Has_Buffer (Element_Ctx)
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
-        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old);
+        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+        and Ctx.First = Ctx.First'Old
+        and Ctx.Last = Ctx.Last'Old),
+     Contract_Cases =>
+       (Element_Valid_Message (Element_Ctx) =>
+          (Index (Ctx) = Element_Last (Element_Ctx) + 1
+           and Element_Last (Element_Ctx) = Element_Last (Element_Ctx)'Old),
+        others =>
+          True);
 
    function Valid (Ctx : Context) return Boolean;
 
    function Has_Buffer (Ctx : Context) return Boolean;
+
+   function Index (Ctx : Context) return Types.Bit_Index with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
 
 private
 
@@ -115,5 +141,8 @@ private
         and Last <= (Types.Bit_Index'Last / 2)
         and Index >= First
         and Index - Last <= 1);
+
+   function Index (Ctx : Context) return Types.Bit_Index is
+      (Ctx.Index);
 
 end RFLX.Message_Sequence;

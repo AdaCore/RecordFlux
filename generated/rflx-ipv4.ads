@@ -24,12 +24,21 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Flag_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Flag_Base);
+
    function Valid (Value : Flag_Base) return Boolean is
      ((case Value is
          when 0 | 1 =>
             True,
          when others =>
             False));
+
+   function Convert (Enum : Flag) return Flag_Base is
+     ((case Enum is
+         when Flag_False =>
+            0,
+         when Flag_True =>
+            1));
 
    function Convert (Value : Flag_Base) return Flag is
      ((case Value is
@@ -42,13 +51,6 @@ is
     with
      Pre =>
        Valid (Value);
-
-   function Convert (Enum : Flag) return Flag_Base is
-     ((case Enum is
-         when Flag_False =>
-            0,
-         when Flag_True =>
-            1));
 
    type Option_Class_Base is mod 2**2;
 
@@ -69,12 +71,21 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Class_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Class_Base);
+
    function Valid (Value : Option_Class_Base) return Boolean is
      ((case Value is
          when 0 | 2 =>
             True,
          when others =>
             False));
+
+   function Convert (Enum : Option_Class) return Option_Class_Base is
+     ((case Enum is
+         when Control =>
+            0,
+         when Debugging_And_Measurement =>
+            2));
 
    function Convert (Value : Option_Class_Base) return Option_Class is
      ((case Value is
@@ -87,13 +98,6 @@ is
     with
      Pre =>
        Valid (Value);
-
-   function Convert (Enum : Option_Class) return Option_Class_Base is
-     ((case Enum is
-         when Control =>
-            0,
-         when Debugging_And_Measurement =>
-            2));
 
    type Option_Number is mod 2**5;
 
@@ -108,6 +112,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Number);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Number);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
@@ -140,6 +146,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Length_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Length_Base);
+
    function Valid (Value : Option_Length_Base) return Boolean is
      (Value >= 2);
 
@@ -167,9 +175,11 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Version_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Version_Base);
+
    function Valid (Value : Version_Base) return Boolean is
      (Value >= 4
-      and then Value <= 4);
+      and Value <= 4);
 
    function Convert (Value : Version_Base) return Version is
      (Value)
@@ -195,6 +205,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IHL_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IHL_Base);
+
    function Valid (Value : IHL_Base) return Boolean is
      (Value >= 5);
 
@@ -217,6 +229,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, DCSP);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, DCSP);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
@@ -244,6 +258,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, ECN);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, ECN);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
@@ -276,6 +292,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Total_Length_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Total_Length_Base);
+
    function Valid (Value : Total_Length_Base) return Boolean is
      (Value >= 20);
 
@@ -298,6 +316,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Identification);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Identification);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
@@ -326,6 +346,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Fragment_Offset);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Fragment_Offset);
+
    pragma Warnings (Off, "unused variable ""Value""");
 
    function Valid (Value : Fragment_Offset) return Boolean is
@@ -352,6 +374,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TTL);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TTL);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
@@ -395,12 +419,22 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Protocol_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Protocol_Base);
+
    pragma Warnings (Off, "unused variable ""Value""");
 
    function Valid (Value : Protocol_Base) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Value""");
+
+   function Convert (Enum : Protocol_Enum) return Protocol_Base is
+     ((case Enum is
+         when PROTOCOL_UDP =>
+            17));
+
+   function Convert (Enum : Protocol_Enum) return Protocol is
+     ((True, Enum));
 
    function Convert (Value : Protocol_Base) return Protocol is
      ((case Value is
@@ -412,10 +446,11 @@ is
      Pre =>
        Valid (Value);
 
-   function Convert (Enum : Protocol_Enum) return Protocol_Base is
-     ((case Enum is
-         when PROTOCOL_UDP =>
-            17));
+   function Convert (Value : Protocol) return Protocol_Base is
+     ((if Value.Known then
+       Convert (Value.Enum)
+    else
+       Value.Raw));
 
    type Header_Checksum is mod 2**16;
 
@@ -430,6 +465,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Header_Checksum);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Header_Checksum);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
@@ -457,6 +494,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
 
    pragma Warnings (Off, "unused variable ""Value""");
 

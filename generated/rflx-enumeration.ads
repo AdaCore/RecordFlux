@@ -34,12 +34,26 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Priority_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Priority_Base);
+
    pragma Warnings (Off, "unused variable ""Value""");
 
    function Valid (Value : Priority_Base) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Value""");
+
+   function Convert (Enum : Priority_Enum) return Priority_Base is
+     ((case Enum is
+         when LOW =>
+            1,
+         when MEDIUM =>
+            4,
+         when HIGH =>
+            7));
+
+   function Convert (Enum : Priority_Enum) return Priority is
+     ((True, Enum));
 
    function Convert (Value : Priority_Base) return Priority is
      ((case Value is
@@ -55,13 +69,10 @@ is
      Pre =>
        Valid (Value);
 
-   function Convert (Enum : Priority_Enum) return Priority_Base is
-     ((case Enum is
-         when LOW =>
-            1,
-         when MEDIUM =>
-            4,
-         when HIGH =>
-            7));
+   function Convert (Value : Priority) return Priority_Base is
+     ((if Value.Known then
+       Convert (Value.Enum)
+    else
+       Value.Raw));
 
 end RFLX.Enumeration;

@@ -33,10 +33,17 @@ package body RFLX.IPv4.Tests is
 
    procedure Get_Option_Data_Length is new IPv4.Option.Get_Option_Data (Store_Option_Data_Length);
 
+   Data : Types.Bytes (Types.Index'First .. Types.Index'First + 23) := (others => 0);
+
+   procedure Write_Data (Buffer : out Types.Bytes) is
+   begin
+      Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
+   end Write_Data;
+
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
 
-   procedure Test_IPv4 (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_IPv4 (T : in out Aunit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -164,9 +171,9 @@ package body RFLX.IPv4.Tests is
 
       Valid := IPv4.Packet.Structural_Valid_Message (Context);
       Assert (Valid, "Invalid packet");
-   end Test_IPv4;
+   end Test_Parsing_IPv4;
 
-   procedure Test_IPv4_Option (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_IPv4_Option (T : in out Aunit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -214,9 +221,9 @@ package body RFLX.IPv4.Tests is
 
       Valid := IPv4.Option.Structural_Valid_Message (Context);
       Assert (Valid, "Invalid option");
-   end Test_IPv4_Option;
+   end Test_Parsing_IPv4_Option;
 
-   procedure Test_IPv4_With_Options (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_IPv4_With_Options (T : in out Aunit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -233,7 +240,7 @@ package body RFLX.IPv4.Tests is
       Valid := IPv4.Packet.Present (Context, IPv4.Packet.F_Options);
       Assert (Valid, "Invalid options");
       if Valid then
-         IPv4.Packet.Switch (Context, Sequence_Context);
+         IPv4.Packet.Switch_To_Options (Context, Sequence_Context);
 
          while I <= 10 and then IPv4.Options.Valid_Element (Sequence_Context) loop
             pragma Loop_Invariant (IPv4.Options.Has_Buffer (Sequence_Context));
@@ -253,14 +260,79 @@ package body RFLX.IPv4.Tests is
 
       Valid := IPv4.Packet.Valid_Message (Context);
       Assert (Valid, "Invalid packet");
-   end Test_IPv4_With_Options;
+   end Test_Parsing_IPv4_With_Options;
+
+   procedure Test_Generating_IPv4 (T : in out Aunit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      procedure Set_Payload is new IPv4.Packet.Set_Payload (Write_Data);
+      Expected        : Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
+      Buffer          : Types.Bytes_Ptr := new Types.Bytes'(Types.Index'First .. Types.Index'First + 2000 => 0);
+      Context         : IPv4.Packet.Context := IPv4.Packet.Create;
+   begin
+      IPv4.Packet.Initialize (Context, Buffer);
+      IPv4.Packet.Set_Version (Context, 4);
+      IPv4.Packet.Set_IHL (Context, 5);
+      IPv4.Packet.Set_DSCP (Context, 0);
+      IPv4.Packet.Set_ECN (Context, 0);
+      IPv4.Packet.Set_Total_Length (Context, 44);
+      IPv4.Packet.Set_Identification (Context, 1);
+      IPv4.Packet.Set_Flag_R (Context, IPv4.Flag_False);
+      IPv4.Packet.Set_Flag_DF (Context, IPv4.Flag_False);
+      IPv4.Packet.Set_Flag_MF (Context, IPv4.Flag_False);
+      IPv4.Packet.Set_Fragment_Offset (Context, 0);
+      IPv4.Packet.Set_TTL (Context, 64);
+      IPv4.Packet.Set_Protocol (Context, IPv4.PROTOCOL_UDP);
+      IPv4.Packet.Set_Header_Checksum (Context, 16#7CBE#);
+      IPv4.Packet.Set_Source (Context, 16#7f000001#);
+      IPv4.Packet.Set_Destination (Context, 16#7f000001#);
+      Data := (0, 53, 0, 53, 0, 24, 1, 82, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Set_Payload (Context);
+
+      Assert (IPv4.Packet.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (not IPv4.Packet.Valid_Message (Context), "Valid message");
+
+      IPv4.Packet.Take_Buffer (Context, Buffer);
+
+      Assert (Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+   end Test_Generating_IPv4;
+
+   procedure Test_Generating_IPv4_Option (T : in out Aunit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      procedure Set_Option_Data is new IPv4.Option.Set_Option_Data (Write_Data);
+      Expected      : Types.Bytes_Ptr := new Types.Bytes'(68, 3, 42);
+      Buffer        : Types.Bytes_Ptr := new Types.Bytes'(0, 0, 0);
+      Context       : IPv4.Option.Context := IPv4.Option.Create;
+   begin
+      IPv4.Option.Initialize (Context, Buffer);
+      IPv4.Option.Set_Copied (Context, IPv4.Flag_False);
+      IPv4.Option.Set_Option_Class (Context, IPv4.Debugging_And_Measurement);
+      IPv4.Option.Set_Option_Number (Context, 4);
+      IPv4.Option.Set_Option_Length (Context, 3);
+      Data := (42, others => 0);
+      Set_Option_Data (Context);
+
+      Assert (IPv4.Option.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (not IPv4.Option.Valid_Message (Context), "Valid message");
+
+      IPv4.Option.Take_Buffer (Context, Buffer);
+
+      Assert (Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+   end Test_Generating_IPv4_Option;
 
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
-      Register_Routine (T, Test_IPv4'Access, "IPv4");
-      Register_Routine (T, Test_IPv4_Option'Access, "IPv4 Option");
-      --  Register_Routine (T, Test_IPv4_With_Options'Access, "IPv4 with Options (Loop)");  --  ISSUE: Componolit/RecordFlux#61
+      Register_Routine (T, Test_Parsing_IPv4'Access, "Parsing IPv4");
+      Register_Routine (T, Test_Parsing_IPv4_Option'Access, "Parsing IPv4 Option");
+      --  Register_Routine (T, Test_Parsing_IPv4_With_Options'Access, "IPv4 with Options (Loop)");  --  ISSUE: Componolit/RecordFlux#61
+      Register_Routine (T, Test_Generating_IPv4'Access, "Generating IPv4");
+      Register_Routine (T, Test_Generating_IPv4_Option'Access, "Generating IPv4 Option");
    end Register_Tests;
 
 end RFLX.IPv4.Tests;

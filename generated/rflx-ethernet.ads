@@ -19,6 +19,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
+
    pragma Warnings (Off, "unused variable ""Value""");
 
    function Valid (Value : Address) return Boolean is
@@ -50,6 +52,8 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Type_Length_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Type_Length_Base);
+
    function Valid (Value : Type_Length_Base) return Boolean is
      (Value >= 46);
 
@@ -77,9 +81,11 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TPID_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TPID_Base);
+
    function Valid (Value : TPID_Base) return Boolean is
      (Value >= 16#8100#
-      and then Value <= 16#8100#);
+      and Value <= 16#8100#);
 
    function Convert (Value : TPID_Base) return TPID is
      (Value)
@@ -100,6 +106,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TCI);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TCI);
 
    pragma Warnings (Off, "unused variable ""Value""");
 

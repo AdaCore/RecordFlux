@@ -24,12 +24,21 @@ is
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Tag_Base);
 
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Tag_Base);
+
    function Valid (Value : Tag_Base) return Boolean is
      ((case Value is
          when 1 | 3 =>
             True,
          when others =>
             False));
+
+   function Convert (Enum : Tag) return Tag_Base is
+     ((case Enum is
+         when Msg_Data =>
+            1,
+         when Msg_Error =>
+            3));
 
    function Convert (Value : Tag_Base) return Tag is
      ((case Value is
@@ -42,13 +51,6 @@ is
     with
      Pre =>
        Valid (Value);
-
-   function Convert (Enum : Tag) return Tag_Base is
-     ((case Enum is
-         when Msg_Data =>
-            1,
-         when Msg_Error =>
-            3));
 
    type Length is mod 2**14;
 
@@ -63,6 +65,8 @@ is
    pragma Warnings (On, "precondition is statically false");
 
    function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
+
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
 
    pragma Warnings (Off, "unused variable ""Value""");
 
