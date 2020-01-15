@@ -667,6 +667,9 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             If([(Variable('X'), Number(21)),
                 (Variable('Y'), Number(42)),
                 (Number(42), Variable('Z'))]))
+        self.assertEqual(
+            If([(TRUE, Variable('X'))]).simplified(),
+            Variable('X'))
 
     def test_if_variables(self) -> None:
         self.assertEqual(
