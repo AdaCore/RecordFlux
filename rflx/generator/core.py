@@ -1616,17 +1616,16 @@ class Generator:
 
     def __create_valid_context_function(self, message: Message,
                                         composite_fields: Sequence[Field]) -> UnitPart:
-        parameters = [
-            Parameter(['Buffer_First', 'Buffer_Last'], self.types.index),
-            Parameter(['First', 'Last'], self.types.bit_index),
-            Parameter(['Buffer'], self.types.bytes_ptr),
-            Parameter(['Cursors'], 'Field_Cursors')
-        ]
-
         specification = FunctionSpecification(
             'Valid_Context',
             'Boolean',
-            parameters)
+            [
+                Parameter(['Buffer_First', 'Buffer_Last'], self.types.index),
+                Parameter(['First', 'Last'], self.types.bit_index),
+                AccessParameter(['Buffer'], self.types.bytes, constant=True),
+                Parameter(['Cursors'], 'Field_Cursors')
+            ]
+        )
 
         return UnitPart(
             [],

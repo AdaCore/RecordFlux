@@ -611,6 +611,17 @@ class InOutParameter(Parameter):
         return 'in out '
 
 
+class AccessParameter(Parameter):
+    def __init__(self, identifiers: Sequence[str], type_name: str, default: Expr = None,
+                 constant: bool = False) -> None:
+        super().__init__(identifiers, type_name, default)
+        self.constant = constant
+
+    @property
+    def mode(self) -> str:
+        return 'access constant ' if self.constant else 'access '
+
+
 class SubprogramSpecification(Ada):
     def __init__(self, name: str, parameters: Sequence[Parameter] = None) -> None:
         verify_identifier(name)

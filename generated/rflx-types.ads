@@ -30,12 +30,12 @@ is
    function Bytes_Address (Buffer : Bytes_Ptr) return Integer_Address with
      Global => null;
 
-   function Bytes_First (Buffer : Bytes_Ptr) return Index is
+   function Bytes_First (Buffer : access constant Bytes) return Index is
      (Buffer'First)
      with
        Pre => Buffer /= null and then Buffer'Length > 0;
 
-   function Bytes_Last (Buffer : Bytes_Ptr) return Index is
+   function Bytes_Last (Buffer : access constant Bytes) return Index is
      (Buffer'Last)
      with
        Pre => Buffer /= null and then Buffer'Length > 0;
