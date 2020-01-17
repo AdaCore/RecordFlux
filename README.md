@@ -5,7 +5,7 @@
 [![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://python.org/)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 
-RecordFlux is a toolset for the formal specification of messages and the generation of verifiable binary parsers.
+RecordFlux is a toolset for the formal specification of messages and the generation of verifiable binary parsers and message generators.
 
 ## Message Specification Language
 
@@ -25,9 +25,9 @@ Message specifications are automatically verified using the [Z3 theorem prover](
 
 ## Code Generation
 
-The code generator generates parsers based on message specifications. The generated parser allows to validate and dissect messages and thereby respects all specified restrictions between message fields and related messages. Adding the generation of messages is planned. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a message is validated before accessed).
+The code generator generates message parsers and generators based on message specifications. The generated parser allows to validate and dissect messages and thereby respects all specified restrictions between message fields and related messages. The generated message generator enables the creation of messages according to the message specification. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a message is validated before accessed).
 
-The code generator creates a number of packages for a specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message a child package is generated which contains validation and access functions for every field of the message.
+The code generator creates a number of packages for a specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message a child package is generated which contains validation, accessor and setter functions for every field of the message.
 
 A user of the generated code has to validate a message field or the whole message before accessing the data of a particular message field. The SPARK verification tools in combination with the generated contracts make it possible to ensure this property, and so prevent incorrect usage.
 
@@ -93,6 +93,8 @@ Created generated/rflx-tlv-generic_message.ads
 Created generated/rflx-tlv-generic_message.adb
 Created generated/rflx-tlv-message.ads
 Created generated/rflx.ads
+Created generated/rflx-lemmas.ads
+Created generated/rflx-lemmas.adb
 Created generated/rflx-types.ads
 Created generated/rflx-types.adb
 Created generated/rflx-message_sequence.ads
@@ -147,6 +149,16 @@ All types and subprograms related to `Message` can be found in the package `RFLX
     - Get value of `Length` field
 - `generic with procedure Process_Value (Value : RFLX.Types.Bytes); procedure Get_Value (Ctx : Context)`
     - Access content of `Value` field
+- `function Valid_Next (Ctx : Context; Fld : Field) return Boolean`
+    - Check if field is potential next field
+- `procedure Set_Tag (Ctx : in out Context; Value : Tag)`
+    - Set value of `Tag` field
+- `procedure Set_Length (Ctx : in out Context; Value : Length)`
+    - Set value of `Length` field
+- `generic with procedure Process_Payload (Payload : out RFLX.Types.Bytes); procedure Set_Value (Ctx : in out Context)`
+    - Set content of `Value` field
+- `procedure Initialize_Value (Ctx : in out Context)`
+    - Initialize `Value` field (precondition to switch context for generating contained message)
 
 A simple program to parse a `TLV.Message` could be as follows:
 
@@ -182,22 +194,59 @@ end Main;
 
 In case that a valid message is contained in `Buffer` the value of `Tag` is read. If the value of `Tag` is `Msg_Data` and the `Value` field is present, the content of `Value` can be accessed.
 
+A `TLV.Message` can be generated as follows:
+
+```
+with Ada.Text_IO;
+with RFLX.Types; use type RFLX.Types.Length, RFLX.Types.Bytes;
+with RFLX.TLV.Message;
+
+procedure Main is
+   Buffer  : RFLX.Types.Bytes_Ptr := new RFLX.Types.Bytes'(0, 0, 0, 0, 0, 0);
+   Context : RFLX.TLV.Message.Context := RFLX.TLV.Message.Create;
+   Data : RFLX.Types.Bytes (RFLX.Types.Index'First .. RFLX.Types.Index'First + 2**14);
+
+   procedure Write_Data (Buffer : out RFLX.Types.Bytes) is
+   begin
+      Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
+   end Write_Data;
+
+   procedure Set_Value is new RFLX.TLV.Message.Set_Value (Write_Data);
+begin
+   --  Generating message
+   RFLX.TLV.Message.Initialize (Context, Buffer);
+   RFLX.TLV.Message.Set_Tag (Context, RFLX.TLV.Msg_Data);
+   RFLX.TLV.Message.Set_Length (Context, 4);
+   Data := (1, 2, 3, 4, others => 0);
+   Set_Value (Context);
+
+   --  Checking generated message
+   RFLX.TLV.Message.Take_Buffer (Context, Buffer);
+   if Buffer.all = (64, 4, 1, 2, 3, 4) then
+      Ada.Text_IO.Put_Line ("Expected");
+   else
+      Ada.Text_IO.Put_Line ("Unexpected");
+   end if;
+end Main;
+```
+
 ## Dependencies
 
 - [Python >=3.6](https://www.python.org)
 - [PyParsing](https://github.com/pyparsing/pyparsing/)
 - [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
-- [GNAT Community 2019](https://www.adacore.com/download)
 - [Z3](https://github.com/Z3Prover/z3)
+- [GNAT Community 2019](https://www.adacore.com/download)
+- [SPARK Pro 20.0](https://www.adacore.com/sparkpro) (only required for fully automatic verification of generated code)
 
 ## Known Issues
 
 ### GNAT Community 2019
 
-- GNAT shows an incorrect warning for `Initialize (Context, Buffer)`. It can be suppressed by adding `pragma Warnings (Off, "unused assignment to ""Buffer""")`.
-- GNATprove is not able to prove the generated code, if only CVC4 and Z3 are used. Adding `--no-axiom-guard` circumvents this problem.
+- GNAT shows an incorrect warning for `Initialize (Context, Buffer)`. It can be suppressed by adding `pragma Assert (Buffer = null)` after calling `Initialize`.
+- GNATprove is unable to prove some parts of the generated code.
 
-These issues should be fixed in the next GNAT Community release.
+These issues should be fixed in the GNAT Community 2020 release.
 
 ## Licence
 
