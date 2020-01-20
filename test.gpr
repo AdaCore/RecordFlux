@@ -19,7 +19,7 @@ project Test is
    package Prove is
       for Proof_Switches ("Ada") use (
          "-j0",
-         "--prover=z3,cvc4",
+         "--prover=z3,cvc4,altergo",
          "--steps=100000",
          "--memlimit=1000",
          "--checks-as-errors",

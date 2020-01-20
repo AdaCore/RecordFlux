@@ -50,7 +50,8 @@ jobs:
       matrix:
         target: [
           "prove_spark",
-          "prove_spark GNATPROVE_ARGS='--prover=cvc4 --steps=100000 -u rflx-tlv -u rflx-in_tlv'"
+          "prove_spark GNATPROVE_ARGS='--prover=cvc4,z3 --steps=100000'",
+          "prove_spark GNATPROVE_ARGS='--prover=cvc4 --steps=100000 -u rflx-tlv -u rflx-in_tlv'",
           ]
     steps:
     - uses: actions/checkout@v1
