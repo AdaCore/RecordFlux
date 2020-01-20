@@ -1,6 +1,6 @@
 name: CI
 
-on: [push, pull_request]
+on: push
 
 jobs:
   Python:
@@ -26,7 +26,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1.0.2
       with:
-        token: ${{secrets.CODECOV_TOKEN}}
+        token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
 
   SPARK:
@@ -37,11 +37,32 @@ jobs:
           "test_spark",
           "test_spark NOPREFIX=1",
           "test_spark_optimized",
-          "prove_spark_ci",
-          "prove_spark_ci GNATPROVE_ARGS='--prover=cvc4 --steps=100000 -u rflx-tlv -u rflx-in_tlv'"
           ]
     steps:
     - uses: actions/checkout@v1
-    - name: Run
+    - name: Test
       run: |
         docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2019.spark /bin/sh -c "make ${{ matrix.target }}"
+
+  Verification:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [
+          "prove_spark",
+          "prove_spark GNATPROVE_ARGS='--prover=cvc4 --steps=100000 -u rflx-tlv -u rflx-in_tlv'"
+          ]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install SPARK
+      run: |
+        wget -q --show-progress ${{ secrets.SPARK_URL }} -O spark.tgz.gpg
+        gpg --batch --yes --passphrase ${{ secrets.SPARK_SECRET }} --output spark.tgz -d spark.tgz.gpg
+        tar xzf spark.tgz
+    - name: Test
+      run: |
+        export PATH=spark/bin:$PATH
+        make ${{ matrix.target }}
+    - name: Clean up
+      run: |
+        rm -rf spark{,.tgz{,.gpg}}

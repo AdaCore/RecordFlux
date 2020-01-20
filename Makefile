@@ -15,7 +15,7 @@ test-bin := $(noprefix-dir)/$(build-dir)/test
 test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
-.PHONY: test test_python test_spark prove_spark prove_spark_ci clean
+.PHONY: test test_python test_spark prove_spark clean
 
 test: test_python test_spark prove_spark
 
@@ -36,9 +36,6 @@ test_spark_optimized: $(test-files)
 
 prove_spark: $(test-files)
 	gnatprove -P$(project) $(GNATPROVE_ARGS)
-
-prove_spark_ci: $(test-files)
-	gnatprove -P$(project) -Xaunit=no --report=statistics $(GNATPROVE_ARGS)
 
 clean:
 	gprclean -Ptest
