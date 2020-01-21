@@ -278,7 +278,7 @@ is
          when F_Destination =>
             (case Fld is
                   when F_Payload =>
-                     (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - 160),
+                     (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + (((-Ctx.Cursors (F_Destination).Last) + Ctx.Cursors (F_Version).First - 1))),
                   when F_Options =>
                      (RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * 32 - 160),
                   when others =>
@@ -1243,7 +1243,7 @@ is
                                                                                            and then Ctx.Cursors (F_Destination).First = (Ctx.Cursors (F_Source).Last + 1)
                                                                                            and then (if Structural_Valid (Ctx.Cursors (F_Payload))
                                                                                                 and then RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) = 5 then
-                                                                                              (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - 160)
+                                                                                              (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - Ctx.Cursors (F_Destination).Last + Ctx.Cursors (F_Version).First - 1)
                                                                                                 and then Ctx.Cursors (F_Payload).Predecessor = F_Destination
                                                                                                 and then Ctx.Cursors (F_Payload).First = (Ctx.Cursors (F_Destination).Last + 1))
                                                                                            and then (if Structural_Valid (Ctx.Cursors (F_Options))
@@ -1786,7 +1786,7 @@ is
                                                                                   and then Ctx.Cursors (F_Destination).First = (Ctx.Cursors (F_Source).Last + 1)
                                                                                   and then (if Structural_Valid (Ctx.Cursors (F_Payload))
                                                                                        and then RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) = 5 then
-                                                                                     (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - 160)
+                                                                                     (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - Ctx.Cursors (F_Destination).Last + Ctx.Cursors (F_Version).First - 1)
                                                                                        and then Ctx.Cursors (F_Payload).Predecessor = F_Destination
                                                                                        and then Ctx.Cursors (F_Payload).First = (Ctx.Cursors (F_Destination).Last + 1))
                                                                                   and then (if Structural_Valid (Ctx.Cursors (F_Options))
@@ -1874,7 +1874,7 @@ is
                                                                                      and then Ctx.Cursors (F_Destination).First = (Ctx.Cursors (F_Source).Last + 1)
                                                                                      and then (if Structural_Valid (Ctx.Cursors (F_Payload))
                                                                                           and then RFLX.Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) = 5 then
-                                                                                        (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - 160)
+                                                                                        (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (RFLX.Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - Ctx.Cursors (F_Destination).Last + Ctx.Cursors (F_Version).First - 1)
                                                                                           and then Ctx.Cursors (F_Payload).Predecessor = F_Destination
                                                                                           and then Ctx.Cursors (F_Payload).First = (Ctx.Cursors (F_Destination).Last + 1))
                                                                                      and then (if Structural_Valid (Ctx.Cursors (F_Options))
