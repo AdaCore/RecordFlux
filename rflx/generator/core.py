@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 import itertools
+from datetime import date
 from pathlib import Path
 from typing import Dict, List, Mapping, Sequence, Set, Tuple, cast
 
@@ -39,14 +40,20 @@ LIBRARY_FILES = ('lemmas.ads', 'lemmas.adb', 'types.ads', 'types.adb',
 
 
 class Generator:
-    def __init__(self, prefix: str = '') -> None:
+    # pylint: disable=too-many-instance-attributes
+    def __init__(self, prefix: str = '', reproducible: bool = False) -> None:
         self.prefix = prefix
+        self.reproducible = reproducible
         self.units: Dict[str, Unit] = {}
         self.messages: Dict[str, Message] = {}
         self.types = Types(prefix)
         self.common = GeneratorCommon(prefix)
         self.parser = ParserGenerator(prefix)
         self.generator = GeneratorGenerator(prefix)
+
+        self.template_dir = Path(pkg_resources.resource_filename(*TEMPLATE_DIR))
+        if not self.template_dir.is_dir():
+            raise InternalError('template directory not found')
 
     def generate(self, messages: List[Message], refinements: List[Refinement]) -> None:
         self.__process_messages(messages)
@@ -55,29 +62,25 @@ class Generator:
     def write_library_files(self, directory: Path) -> List[Path]:
         written_files = []
 
-        template_dir = Path(pkg_resources.resource_filename(*TEMPLATE_DIR))
-        if not template_dir.is_dir():
-            raise InternalError('library directory not found')
-
         if self.prefix:
             prefix = self.prefix[:-1]
             filename = prefix.lower() + '.ads'
             file_path = Path(directory).joinpath(filename)
 
             with open(file_path, 'w') as library_file:
-                library_file.write(f'package {prefix} is\n\nend {prefix};')
+                library_file.write(self.license_header() + f'package {prefix} is\n\nend {prefix};')
                 written_files.append(file_path)
 
         for template_filename in LIBRARY_FILES:
-            if not template_dir.joinpath(template_filename).is_file():
-                raise InternalError(f'library file not found: "{template_filename}"')
+            self.check_template_file(template_filename)
 
             filename = self.prefix.replace('.', '-').lower() + template_filename
             file_path = Path(directory).joinpath(filename)
 
-            with open(template_dir.joinpath(template_filename)) as template_file:
+            with open(self.template_dir.joinpath(template_filename)) as template_file:
                 with open(file_path, 'w') as library_file:
-                    library_file.write(template_file.read().format(prefix=self.prefix))
+                    library_file.write(
+                        self.license_header() + template_file.read().format(prefix=self.prefix))
                     written_files.append(file_path)
 
         return written_files
@@ -89,13 +92,13 @@ class Generator:
             filename = directory.joinpath(unit.name + '.ads')
             written_files.append(filename)
             with open(filename, 'w') as f:
-                f.write(unit.specification)
+                f.write(self.license_header() + unit.specification)
 
             if unit.body:
                 filename = directory.joinpath(unit.name + '.adb')
                 written_files.append(filename)
                 with open(filename, 'w') as f:
-                    f.write(unit.body)
+                    f.write(self.license_header() + unit.body)
 
         return written_files
 
@@ -2119,6 +2122,24 @@ class Generator:
                 )
             ],
         )
+
+    def check_template_file(self, filename: str) -> None:
+        if not self.template_dir.joinpath(filename).is_file():
+            raise InternalError(f'template file not found: "{filename}"')
+
+    def license_header(self) -> str:
+        if self.reproducible:
+            return ''
+
+        filename = 'license_header'
+        self.check_template_file(filename)
+        with open(self.template_dir.joinpath(filename)) as license_file:
+            today = date.today()
+            return license_file.read().format(
+                version=pkg_resources.require('RecordFlux')[0].version,
+                date=today,
+                year=today.year,
+            )
 
 
 class InternalError(Exception):
