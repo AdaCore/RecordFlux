@@ -60,7 +60,7 @@ package IPv4 is
          Source : Address;
          Destination : Address
             then Payload
-               with Length => Total_Length * 8 - (5 * 32)
+               with Length => Total_Length * 8 - (Destination'Last - Version'First + 1)
                if IHL = 5,
             then Options
                with Length => IHL * 32 - (5 * 32)

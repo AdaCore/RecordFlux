@@ -1421,7 +1421,7 @@ private
                                                                                  and then Cursors (F_Destination).First = (Cursors (F_Source).Last + 1)
                                                                                  and then (if Structural_Valid (Cursors (F_Payload))
                                                                                       and then RFLX.Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) = 5 then
-                                                                                    (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = (RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - 160)
+                                                                                    (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = (RFLX.Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - Cursors (F_Destination).Last + Cursors (F_Version).First - 1)
                                                                                       and then Cursors (F_Payload).Predecessor = F_Destination
                                                                                       and then Cursors (F_Payload).First = (Cursors (F_Destination).Last + 1))
                                                                                  and then (if Structural_Valid (Cursors (F_Options))
