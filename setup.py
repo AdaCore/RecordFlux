@@ -1,5 +1,9 @@
+import re
 from setuptools import setup, find_packages
 
+
+with open('rflx/__init__.py') as f:
+    version = re.search(r"__version__ = '(.*?)'", f.read()).group(1)
 
 with open('README.md') as f:
     readme = f.read()
@@ -9,7 +13,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='RecordFlux',
-    version='0.1',
+    version=version,
     description='A toolset for the dissection, generation and verification of '
                 'communication protocols.',
     long_description=readme,
