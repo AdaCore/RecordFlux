@@ -722,3 +722,22 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             'tls_alert.rflx', 'tls_handshake.rflx', 'tls_heartbeat.rflx', 'tls_record.rflx'
         ]:
             parser.parse(f'{self.specdir}/{f}')
+
+    @staticmethod
+    def test_message_with_two_length_fields() -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+               package Test is
+                  type Length is mod 2**8;
+                  type Packet is
+                     message
+                        Length_1 : Length;
+                        Length_2 : Length
+                           then Payload
+                              with Length => Length_1 + Length_2;
+                        Payload : Payload;
+                     end message;
+               end Test;
+            """
+        )
