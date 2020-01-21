@@ -54,6 +54,7 @@ is
 
       function LIS return Natural is (Long_Integer'Size) with Post => LIS'Result = Long_Integer'Size;
       pragma Assert (2**(LIS - 2) - 1 = 2**(Long_Integer'Size - 2) - 1);
+      --  WORKAROUND: Componolit/Workarounds#15
       pragma Annotate (GNATprove, False_Positive, "assertion",
                        "solvers cannot show correspondence between integers and exponentiation abstraction");
       pragma Annotate (GNATprove, False_Positive, "overflow",
@@ -135,6 +136,7 @@ is
 
       function LIS return Natural is (Long_Integer'Size) with Post => LIS'Result = Long_Integer'Size;
       pragma Assert (2**(LIS - 2) - 1 = 2**(Long_Integer'Size - 2) - 1);
+      --  WORKAROUND: Componolit/Workarounds#15
       pragma Annotate (GNATprove, False_Positive, "assertion",
                        "solvers cannot show correspondence between integers and exponentiation abstraction");
       pragma Annotate (GNATprove, False_Positive, "overflow",
@@ -146,6 +148,7 @@ is
 
       pragma Assert (ES < Long_Integer'Size - 2);
       pragma Assert (2**ES = 2**Element_Type'Size);
+      --  WORKAROUND: Componolit/Workarounds#15
       pragma Annotate (GNATprove, False_Positive, "assertion",
                        "solvers cannot show correspondence between integers and exponentiation abstraction");
       pragma Annotate (GNATprove, False_Positive, "overflow",
@@ -163,6 +166,7 @@ is
             Lemmas.Mult_Ge_0 (Element_Value, Pow2_LSE_Offset);
             Lemmas.Mult_Limit (Element_Value, LSE_Bits, Pow2_LSE_Offset, LSE_Offset);
             pragma Assert (Element_Value * Pow2_LSE_Offset <= 2**(LSE_Bits + LSE_Offset));
+            --  WORKAROUND: Componolit/Workarounds#15
             pragma Annotate (GNATprove, False_Positive, "assertion",
                              "direct re-expression of lemma postcondition");
             pragma Annotate (GNATprove, False_Positive, "overflow check",
@@ -183,6 +187,7 @@ is
             Lemmas.Mult_Ge_0 (LSE_Value, Pow2_LSE_Offset);
             Lemmas.Mult_Limit (LSE_Value, LSE_Bits, Pow2_LSE_Offset, LSE_Offset);
             pragma Assert (LSE_Value * Pow2_LSE_Offset <= 2**(LSE_Bits + LSE_Offset));
+            --  WORKAROUND: Componolit/Workarounds#15
             pragma Annotate (GNATprove, False_Positive, "assertion",
                              "direct re-expression of lemma postcondition");
             pragma Annotate (GNATprove, False_Positive, "overflow check",
