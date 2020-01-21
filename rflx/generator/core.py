@@ -6,6 +6,7 @@ from typing import Dict, List, Mapping, Sequence, Set, Tuple, cast
 
 import pkg_resources
 
+from rflx import __version__
 from rflx.ada import (AccessParameter, Annotate, ArrayType, Assignment, CallStatement,
                       CaseStatement, Component, ContextItem, ContractCases, Declaration,
                       DefaultInitialCondition, Discriminant, DynamicPredicate, EnumerationType,
@@ -2136,7 +2137,7 @@ class Generator:
         with open(self.template_dir.joinpath(filename)) as license_file:
             today = date.today()
             return license_file.read().format(
-                version=pkg_resources.require('RecordFlux')[0].version,
+                version=__version__,
                 date=today,
                 year=today.year,
             )

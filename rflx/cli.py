@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from typing import List, Tuple, Union
 
+from rflx import __version__
 from rflx.generator import Generator, InternalError
 from rflx.graph import Graph
 from rflx.model import ModelError
@@ -16,6 +17,8 @@ class Error(Exception):
 
 def main(argv: List[str]) -> Union[int, str]:
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='store_true')
+
     subparsers = parser.add_subparsers(dest='subcommand')
 
     parser_check = subparsers.add_parser('check', help='check specification')
@@ -44,6 +47,10 @@ def main(argv: List[str]) -> Union[int, str]:
     parser_graph.set_defaults(func=graph)
 
     args = parser.parse_args(argv[1:])
+
+    if args.version:
+        print(__version__)
+        return 0
 
     if not args.subcommand:
         parser.print_usage()
