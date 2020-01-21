@@ -14,24 +14,33 @@ class TestModel(TestCase):
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
 
+    def test_type_name(self) -> None:
+        t = ModularInteger('Package.Type_Name', Number(256))
+        self.assertEqual(t.name, 'Type_Name')
+        self.assertEqual(t.package, 'Package')
+        with self.assertRaises(ModelError):
+            ModularInteger('X', Number(256))
+        with self.assertRaises(ModelError):
+            ModularInteger('X.Y.Z', Number(256))
+
     def test_modular_size(self) -> None:
-        self.assertEqual(ModularInteger('UINT64', Pow(Number(2), Number(64))).size,
+        self.assertEqual(ModularInteger('P.T', Pow(Number(2), Number(64))).size,
                          Number(64))
 
     def test_modular_invalid_modulus_power_of_two(self) -> None:
         with self.assertRaises(ModelError):
-            ModularInteger('X', Number(255))
+            ModularInteger('P.T', Number(255))
 
     def test_modular_invalid_modulus_variable(self) -> None:
         with self.assertRaises(ModelError):
-            ModularInteger('X', Pow(Number(2), Variable('X')))
+            ModularInteger('P.T', Pow(Number(2), Variable('X')))
 
     def test_modular_invalid_modulus_limit(self) -> None:
         with self.assertRaises(ModelError):
-            ModularInteger('X', Pow(Number(2), Number(128)))
+            ModularInteger('P.T', Pow(Number(2), Number(128)))
 
     def test_range_size(self) -> None:
-        self.assertEqual(RangeInteger('UINT32',
+        self.assertEqual(RangeInteger('P.T',
                                       Number(0),
                                       Sub(Pow(Number(2), Number(32)), Number(1)),
                                       Number(32)
@@ -40,31 +49,31 @@ class TestModel(TestCase):
 
     def test_range_invalid_first_variable(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', Add(Number(1), Variable('X')), Number(15), Number(4))
+            RangeInteger('P.T', Add(Number(1), Variable('X')), Number(15), Number(4))
 
     def test_range_invalid_last_variable(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', Number(1), Add(Number(1), Variable('X')), Number(4))
+            RangeInteger('P.T', Number(1), Add(Number(1), Variable('X')), Number(4))
 
     def test_range_invalid_first_negative(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', Number(-1), Number(0), Number(1))
+            RangeInteger('P.T', Number(-1), Number(0), Number(1))
 
     def test_range_invalid_range(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', Number(1), Number(0), Number(1))
+            RangeInteger('P.T', Number(1), Number(0), Number(1))
 
     def test_range_invalid_size_variable(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', Number(0), Number(256), Add(Number(8), Variable('X')))
+            RangeInteger('P.T', Number(0), Number(256), Add(Number(8), Variable('X')))
 
     def test_range_invalid_size_too_small(self) -> None:
         with self.assertRaises(ModelError):
-            RangeInteger('X', Number(0), Number(256), Number(8))
+            RangeInteger('P.T', Number(0), Number(256), Number(8))
 
     def test_array_invalid_call(self) -> None:
         with self.assertRaises(ModelError):
-            Array('X', ModularInteger('B', Number(256))).size  # pylint: disable=expression-not-assigned
+            Array('P.T', ModularInteger('B', Number(256))).size  # pylint: disable=expression-not-assigned
 
     def test_message_missing_type(self) -> None:
         structure = [
@@ -76,7 +85,7 @@ class TestModel(TestCase):
             Message('P.M', structure, {})
 
     def test_message_superfluous_type(self) -> None:
-        t = ModularInteger('T', Number(2))
+        t = ModularInteger('P.T', Number(2))
 
         structure = [
             Link(INITIAL, Field('X')),
@@ -92,7 +101,7 @@ class TestModel(TestCase):
             Message('P.M', structure, types)
 
     def test_message_ambiguous_first_field(self) -> None:
-        t = ModularInteger('T', Number(2))
+        t = ModularInteger('P.T', Number(2))
 
         structure = [
             Link(INITIAL, Field('X')),
@@ -112,7 +121,7 @@ class TestModel(TestCase):
             Message('P.M', structure, types)
 
     def test_message_cycle(self) -> None:
-        t = ModularInteger('T', Number(2))
+        t = ModularInteger('P.T', Number(2))
 
         structure = [
             Link(INITIAL, Field('X')),
@@ -317,8 +326,8 @@ class TestModel(TestCase):
             ())
 
     def test_nonexistent_variable(self) -> None:
-        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
-        enum_type = Enumeration('Bar', {'Val1': Number(0), 'Val2': Number(1)}, Number(8), True)
+        mod_type = ModularInteger('P.MT', Pow(Number(2), Number(32)))
+        enum_type = Enumeration('P.ET', {'Val1': Number(0), 'Val2': Number(1)}, Number(8), True)
         structure = [
             Link(INITIAL, Field('F1')),
             Link(Field('F1'), Field('F2'),
@@ -327,14 +336,14 @@ class TestModel(TestCase):
 
         types = {
             Field('F1'): enum_type,
-            Field('F2'): foo_type
+            Field('F2'): mod_type
         }
         with self.assertRaisesRegex(ModelError, '^undefined variable "Val3" referenced in '
                                     + 'condition 0 from field "F1" to "F2"'):
             Message('P.M', structure, types)
 
     def test_subsequent_variable(self) -> None:
-        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        t = ModularInteger('P.T', Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field('F1')),
             Link(Field('F1'), Field('F2'),
@@ -342,8 +351,8 @@ class TestModel(TestCase):
             Link(Field('F2'), FINAL)]
 
         types = {
-            Field('F1'): foo_type,
-            Field('F2'): foo_type
+            Field('F1'): t,
+            Field('F2'): t
         }
         with self.assertRaisesRegex(ModelError, '^subsequent field "F2" referenced in '
                                     + 'condition 0 from field "F1" to "F2"'):

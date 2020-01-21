@@ -9,11 +9,11 @@ def create_null_message() -> Message:
 
 
 def create_tlv_message() -> Message:
-    tag_type = Enumeration('Tag',
+    tag_type = Enumeration('TLV.Tag',
                            {'Msg_Data': Number(1), 'Msg_Error': Number(3)},
                            Number(2),
                            False)
-    length_type = ModularInteger('Length', Pow(Number(2), Number(14)))
+    length_type = ModularInteger('TLV.Length', Pow(Number(2), Number(14)))
 
     structure = [
         Link(INITIAL, Field('Tag')),
@@ -40,16 +40,16 @@ def create_null_message_in_tlv_message() -> Refinement:
 
 
 def create_ethernet_frame() -> Message:
-    address_type = ModularInteger('Address', Pow(Number(2), Number(48)))
-    type_length_type = RangeInteger('Type_Length',
+    address_type = ModularInteger('Ethernet.Address', Pow(Number(2), Number(48)))
+    type_length_type = RangeInteger('Ethernet.Type_Length',
                                     Number(46),
                                     Sub(Pow(Number(2), Number(16)), Number(1)),
                                     Number(16))
-    tpid_type = RangeInteger('TPID',
+    tpid_type = RangeInteger('Ethernet.TPID',
                              Number(0x8100, 16),
                              Number(0x8100, 16),
                              Number(16))
-    tci_type = ModularInteger('TCI',
+    tci_type = ModularInteger('Ethernet.TCI',
                               Pow(Number(2), Number(16)))
 
     structure = [
@@ -89,7 +89,7 @@ def create_ethernet_frame() -> Message:
 
 
 def create_enumeration_message() -> Message:
-    priority_type = Enumeration('Priority',
+    priority_type = Enumeration('Enumeration.Priority',
                                 {'LOW': Number(1), 'MEDIUM': Number(4), 'HIGH': Number(7)},
                                 Number(3),
                                 True)
@@ -107,25 +107,25 @@ def create_enumeration_message() -> Message:
 
 
 def create_array_message() -> Message:
-    length_type = ModularInteger('Length', Pow(Number(2), Number(8)))
+    length_type = ModularInteger('Arrays.Length', Pow(Number(2), Number(8)))
 
-    modular_type = ModularInteger('Modular_Integer', Pow(Number(2), Number(16)))
-    modular_vector_type = Array('Modular_Vector', modular_type)
+    modular_type = ModularInteger('Arrays.Modular_Integer', Pow(Number(2), Number(16)))
+    modular_vector_type = Array('Arrays.Modular_Vector', modular_type)
 
-    range_type = RangeInteger('Range_Integer', Number(1), Number(100), Number(8))
-    range_vector_type = Array('Range_Vector', range_type)
+    range_type = RangeInteger('Arrays.Range_Integer', Number(1), Number(100), Number(8))
+    range_vector_type = Array('Arrays.Range_Vector', range_type)
 
-    enum_type = Enumeration('Enumeration',
+    enum_type = Enumeration('Arrays.Enumeration',
                             {'ZERO': Number(0), 'ONE': Number(1), 'TWO': Number(2)},
                             Number(8),
                             False)
-    enum_vector_type = Array('Enumeration_Vector', enum_type)
+    enum_vector_type = Array('Arrays.Enumeration_Vector', enum_type)
 
-    av_enum_type = Enumeration('AV_Enumeration',
+    av_enum_type = Enumeration('Arrays.AV_Enumeration',
                                {'AV_ZERO': Number(0), 'AV_ONE': Number(1), 'AV_TWO': Number(2)},
                                Number(8),
                                True)
-    av_enum_vector_type = Array('AV_Enumeration_Vector', av_enum_type)
+    av_enum_vector_type = Array('Arrays.AV_Enumeration_Vector', av_enum_type)
 
     structure = [
         Link(INITIAL, Field('Length')),
@@ -152,7 +152,7 @@ def create_array_message() -> Message:
 
 
 def create_array_inner_message() -> Message:
-    length_type = ModularInteger('Length', Pow(Number(2), Number(8)))
+    length_type = ModularInteger('Arrays.Length', Pow(Number(2), Number(8)))
 
     structure = [
         Link(INITIAL, Field('Length')),
@@ -178,8 +178,8 @@ def create_array_messages_message() -> Message:
     ]
 
     types = {
-        Field('Length'): ModularInteger('Length', Pow(Number(2), Number(8))),
-        Field('Messages'): Array('Inner_Messages', Reference('Inner_Message'))
+        Field('Length'): ModularInteger('Arrays.Length', Pow(Number(2), Number(8))),
+        Field('Messages'): Array('Arrays.Inner_Messages', Reference('Arrays.Inner_Message'))
     }
 
     return Message('Arrays.Messages_Message', structure, types)

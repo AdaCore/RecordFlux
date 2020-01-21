@@ -28,7 +28,7 @@ class GeneratorGenerator:
             ProcedureSpecification(
                 f"{self.types.types}.Insert",
                 [
-                    Parameter(["Value"], type_name),
+                    Parameter(["Val"], type_name),
                     InOutParameter(["Buffer"], self.types.bytes),
                     Parameter(["Offset"], self.types.offset),
                 ],
@@ -47,44 +47,44 @@ class GeneratorGenerator:
                         "Set_Field_Value",
                         [
                             InOutParameter(["Ctx"], "Context"),
-                            Parameter(["Value"], "Field_Dependent_Value"),
-                            OutParameter(["First", "Last"], self.types.bit_index),
+                            Parameter(["Val"], "Field_Dependent_Value"),
+                            OutParameter(["Fst", "Lst"], self.types.bit_index),
                         ],
                     ),
                     [
                         ObjectDeclaration(
-                            ["F"],
+                            ["First"],
                             self.types.bit_index,
-                            Call("Field_First", [Name("Ctx"), Selected("Value", "Fld")]),
+                            Call("Field_First", [Name("Ctx"), Selected("Val", "Fld")]),
                             True,
                         ),
                         ObjectDeclaration(
-                            ["L"],
+                            ["Last"],
                             self.types.bit_index,
-                            Call("Field_Last", [Name("Ctx"), Selected("Value", "Fld")]),
+                            Call("Field_Last", [Name("Ctx"), Selected("Val", "Fld")]),
                             True,
                         ),
                         ExpressionFunctionDeclaration(
                             FunctionSpecification("Buffer_First", self.types.index),
-                            Call(self.types.byte_index, [Name("F")]),
+                            Call(self.types.byte_index, [Name("First")]),
                         ),
                         ExpressionFunctionDeclaration(
                             FunctionSpecification("Buffer_Last", self.types.index),
-                            Call(self.types.byte_index, [Name("L")]),
+                            Call(self.types.byte_index, [Name("Last")]),
                         ),
                         ExpressionFunctionDeclaration(
                             FunctionSpecification("Offset", self.types.offset),
                             Call(
                                 self.types.offset,
-                                [Mod(Sub(Number(8), Mod(Name("L"), Number(8))), Number(8))],
+                                [Mod(Sub(Number(8), Mod(Name("Last"), Number(8))), Number(8))],
                             ),
                         ),
                     ],
                     [
-                        Assignment("First", Name("F")),
-                        Assignment("Last", Name("L")),
+                        Assignment("Fst", Name("First")),
+                        Assignment("Lst", Name("Last")),
                         CaseStatement(
-                            Selected("Value", "Fld"),
+                            Selected("Val", "Fld"),
                             [
                                 (
                                     Name(f.affixed_name),
@@ -92,7 +92,7 @@ class GeneratorGenerator:
                                         CallStatement(
                                             "Insert",
                                             [
-                                                Selected("Value", f"{f.name}_Value"),
+                                                Selected("Val", f"{f.name}_Value"),
                                                 Slice(
                                                     Selected(Selected("Ctx", "Buffer"), "all"),
                                                     Name("Buffer_First"),
@@ -114,13 +114,11 @@ class GeneratorGenerator:
                             AndThen(
                                 Not(Constrained("Ctx")),
                                 Call("Has_Buffer", [Name("Ctx")]),
-                                In(Selected("Value", "Fld"), Range("Field")),
-                                Call("Valid_Next", [Name("Ctx"), Selected("Value", "Fld")]),
+                                In(Selected("Val", "Fld"), Range("Field")),
+                                Call("Valid_Next", [Name("Ctx"), Selected("Val", "Fld")]),
                                 GreaterEqual(
-                                    Call(
-                                        "Available_Space", [Name("Ctx"), Selected("Value", "Fld")],
-                                    ),
-                                    Call("Field_Length", [Name("Ctx"), Selected("Value", "Fld")]),
+                                    Call("Available_Space", [Name("Ctx"), Selected("Val", "Fld")],),
+                                    Call("Field_Length", [Name("Ctx"), Selected("Val", "Fld")]),
                                 ),
                                 ForAllIn(
                                     "F",
@@ -145,7 +143,7 @@ class GeneratorGenerator:
                                                     ),
                                                     Call(
                                                         "Field_Last",
-                                                        [Name("Ctx"), Selected("Value", "Fld")],
+                                                        [Name("Ctx"), Selected("Val", "Fld")],
                                                     ),
                                                 ),
                                             )
@@ -158,17 +156,17 @@ class GeneratorGenerator:
                             And(
                                 Call("Has_Buffer", [Name("Ctx")]),
                                 Equal(
-                                    Name("First"),
-                                    Call("Field_First", [Name("Ctx"), Selected("Value", "Fld")]),
+                                    Name("Fst"),
+                                    Call("Field_First", [Name("Ctx"), Selected("Val", "Fld")]),
                                 ),
                                 Equal(
-                                    Name("Last"),
-                                    Call("Field_Last", [Name("Ctx"), Selected("Value", "Fld")]),
+                                    Name("Lst"),
+                                    Call("Field_Last", [Name("Ctx"), Selected("Val", "Fld")]),
                                 ),
-                                GreaterEqual(Name("First"), Selected("Ctx", "First")),
-                                LessEqual(Name("First"), Add(Name("Last"), Number(1))),
+                                GreaterEqual(Name("Fst"), Selected("Ctx", "First")),
+                                LessEqual(Name("Fst"), Add(Name("Lst"), Number(1))),
                                 LessEqual(
-                                    Call(self.types.byte_index, [Name("Last")]),
+                                    Call(self.types.byte_index, [Name("Lst")]),
                                     Selected("Ctx", "Buffer_Last"),
                                 ),
                                 ForAllIn(
@@ -192,7 +190,7 @@ class GeneratorGenerator:
                                                         ),
                                                         "Last",
                                                     ),
-                                                    Name("Last"),
+                                                    Name("Lst"),
                                                 ),
                                             )
                                         ]
@@ -225,7 +223,8 @@ class GeneratorGenerator:
             )
             return ProcedureSpecification(
                 f"Set_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Value"], type_name)],
+                [InOutParameter(["Ctx"], "Context"),
+                 Parameter(["Val"], f'{message.package}.{type_name}')],
             )
 
         return UnitPart(
@@ -242,13 +241,13 @@ class GeneratorGenerator:
                                         Name("Ctx"),
                                         Aggregate(
                                             Name(f.affixed_name),
-                                            Name("Value")
+                                            Name("Val")
                                             if not isinstance(t, Enumeration)
-                                            else Call("Convert", [Name("Value")]),
+                                            else Call("Convert", [Name("Val")]),
                                         ),
                                     ],
                                 ),
-                                Call("Valid", [Name("Value")])
+                                Call("Valid", [Name("Val")])
                                 if not isinstance(t, Enumeration)
                                 else TRUE,
                                 GreaterEqual(
@@ -264,9 +263,9 @@ class GeneratorGenerator:
                                 Call("Valid", [Name("Ctx"), Name(f.affixed_name)]),
                                 Equal(
                                     Call(f"Get_{f.name}", [Name("Ctx")]),
-                                    Aggregate(TRUE, Name("Value"))
+                                    Aggregate(TRUE, Name("Val"))
                                     if isinstance(t, Enumeration) and t.always_valid
-                                    else Name("Value"),
+                                    else Name("Val"),
                                 ),
                                 *self.setter_postconditions(message, f, t),
                                 *[
@@ -291,9 +290,9 @@ class GeneratorGenerator:
                             "Field_Dependent_Value",
                             Aggregate(
                                 Name(f.affixed_name),
-                                Name("Value")
+                                Name("Val")
                                 if not isinstance(t, Enumeration)
-                                else Call("Convert", [Name("Value")]),
+                                else Call("Convert", [Name("Val")]),
                             ),
                             True,
                         ),

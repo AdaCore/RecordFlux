@@ -28,7 +28,7 @@ is
             when F_Initial | F_Final =>
                null;
             when F_Priority =>
-               Priority_Value : Priority_Base;
+               Priority_Value : Enumeration.Priority_Base;
          end case;
       end record;
 
@@ -101,11 +101,11 @@ is
        Valid_Context (Ctx)
           and Valid_Predecessor (Ctx, Fld);
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value) return Boolean with
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
      Pre =>
        Valid_Context (Ctx)
-          and Value.Fld in Field'Range
-          and Valid_Predecessor (Ctx, Value.Fld);
+          and Val.Fld in Field'Range
+          and Valid_Predecessor (Ctx, Val.Fld);
 
    function Field_Length (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length with
      Pre =>
@@ -196,26 +196,26 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Priority (Ctx : Context) return Priority with
+   function Get_Priority (Ctx : Context) return Enumeration.Priority with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Priority);
 
-   procedure Set_Priority (Ctx : in out Context; Value : Priority_Enum) with
+   procedure Set_Priority (Ctx : in out Context; Val : Enumeration.Priority_Enum) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Priority)
           and then Field_Last (Ctx, F_Priority) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Priority, Convert (Value)))
+          and then Field_Condition (Ctx, (F_Priority, Convert (Val)))
           and then True
           and then Available_Space (Ctx, F_Priority) >= Field_Length (Ctx, F_Priority),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Priority)
-          and Get_Priority (Ctx) = (True, Value)
+          and Get_Priority (Ctx) = (True, Val)
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
@@ -241,10 +241,10 @@ private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
 
-   function Valid_Value (Value : Field_Dependent_Value) return Boolean is
-     ((case Value.Fld is
+   function Valid_Value (Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
          when F_Priority =>
-            Valid (Value.Priority_Value),
+            Valid (Val.Priority_Value),
          when F_Initial | F_Final =>
             False));
 
@@ -263,7 +263,7 @@ private
      Dynamic_Predicate =>
        (if State = S_Valid
              or State = S_Structural_Valid then
-           Valid_Value (Value));
+           Valid_Value (Field_Cursor.Value));
 
    function Structural_Valid (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid

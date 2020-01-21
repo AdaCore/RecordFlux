@@ -1,3 +1,4 @@
+import traceback
 from typing import Callable, Dict, Iterable, List, MutableMapping, Tuple
 
 from pyparsing import (CaselessKeyword, Group, Keyword, Literal, Optional, ParseException,
@@ -319,18 +320,23 @@ class Parser:
                 ).setParseAction(lambda t: Specification(t[0], t[1]) if len(t) == 2 else None)
 
     def __evaluate_specification(self, tokens: List[Specification]) -> None:
-        if len(tokens) == 1:
-            specification = tokens[0]
-            identifier = specification.package.identifier
-            if identifier in self.__specifications:
-                raise ParserError(f'duplicate package "{identifier}"')
-            self.__specifications[identifier] = specification
-            messages = convert_to_messages(specification)
-            if messages:
-                self.__messages.update(messages)
-            refinements = convert_to_refinements(specification, self.__messages)
-            if refinements:
-                self.__refinements.extend(refinements)
+        try:
+            if len(tokens) == 1:
+                specification = tokens[0]
+                identifier = specification.package.identifier
+                if identifier in self.__specifications:
+                    raise ParserError(f'duplicate package "{identifier}"')
+                self.__specifications[identifier] = specification
+                messages = convert_to_messages(specification)
+                if messages:
+                    self.__messages.update(messages)
+                refinements = convert_to_refinements(specification, self.__messages)
+                if refinements:
+                    self.__refinements.extend(refinements)
+        except (ParserError, ModelError) as e:
+            raise e
+        except Exception:
+            raise ParserError(traceback.format_exc())
 
 
 def convert_to_messages(spec: Specification) -> Dict[str, Message]:
@@ -341,11 +347,13 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
         if t.name in types:
             raise ParserError(f'duplicate type "{t.name}"')
 
-        full_name = f'{spec.package.identifier}.{t.name}'
+        t.full_name = f'{spec.package.identifier}.{t.name}'
 
         if isinstance(t, (ModularInteger, RangeInteger, Enumeration)):
             pass
         elif isinstance(t, Array):
+            t.element_type.full_name = t.element_type.full_name.replace(
+                '__PACKAGE__', spec.package.identifier)
             if t.element_type.name not in types:
                 raise ParserError(f'undefined type "{t.element_type.name}" in "{t.name}"')
             if not isinstance(types[t.element_type.name], MessageSpec):
@@ -354,18 +362,18 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
                     raise ParserError(f'unsupported size ({element_type_size}) of element type '
                                       f'"{t.element_type.name}" in "{t.name}" '
                                       '(no multiple of 8)')
-                t = Array(t.name, types[t.element_type.name])
+                t = Array(t.full_name, types[t.element_type.name])
         elif isinstance(t, MessageSpec):
-            messages[full_name] = create_message(full_name, types, t.components, t.name)
+            messages[t.full_name] = create_message(t.full_name, types, t.components, t.name)
         elif isinstance(t, DerivationSpec):
             base = t.base
             if base not in types and base not in messages:
                 raise ParserError(f'undefined type "{t.base}" in "{t.name}"')
             base = qualified_type_name(t.base, spec.package.identifier, messages,
                                        f'unsupported type "{t.base}" in "{t.name}"')
-            messages[full_name] = DerivedMessage(full_name, base, messages[base].structure,
-                                                 messages[base].types)
-            t = MessageSpec(t.name, [])
+            messages[t.full_name] = DerivedMessage(t.full_name, base, messages[base].structure,
+                                                   messages[base].types)
+            t = MessageSpec(t.full_name, [])
         elif isinstance(t, Refinement):
             continue
         else:
@@ -562,7 +570,7 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> str:
                       'raise', 'range', 'record', 'rem', 'renames', 'requeue', 'return', 'reverse',
                       'select', 'separate', 'some', 'subtype', 'synchronized', 'tagged', 'task',
                       'terminate', 'then', 'type', 'until', 'use', 'when', 'while', 'with', 'xor',
-                      'buffer']
+                      'initial', 'final']
     if tokens[0].lower() in reserved_words:
         raise ParseFatalException(
             string, location, f'reserved word "{tokens[0]}" used as identifier')
@@ -593,27 +601,32 @@ def parse_aspects(string: str, location: int, tokens: ParseResults) -> Dict[str,
 @fatalexceptions
 def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
     try:
+        name = tokens[1]
+        full_name = f'__PACKAGE__.{name}'
         if tokens[3] == 'mod':
-            return ModularInteger(tokens[1], *tokens[4:6])
+            return ModularInteger(full_name, *tokens[4:6])
         if tokens[3] == 'range':
             tokens[6] = tokens[6]['size']
-            return RangeInteger(tokens[1], *tokens[4:7])
+            return RangeInteger(full_name, *tokens[4:7])
         if tokens[3] == 'message':
-            return MessageSpec(tokens[1], tokens[4])
+            return MessageSpec(full_name, tokens[4])
         if tokens[3] == 'null message':
-            return MessageSpec(tokens[1], [])
+            return MessageSpec(full_name, [])
         if tokens[3] == '(':
             elements = dict(tokens[4:-2])
             aspects = tokens[-1]
             if len(elements) < len(tokens[4:-2]):
-                raise ModelError(f'"{tokens[1]}" contains duplicate elements')
+                raise ModelError(f'"{name}" contains duplicate elements')
             if 'always_valid' not in aspects:
                 aspects['always_valid'] = False
-            return Enumeration(tokens[1], elements, aspects['size'], aspects['always_valid'])
+            return Enumeration(full_name, elements, aspects['size'], aspects['always_valid'])
         if tokens[3] == 'new':
-            return DerivationSpec(tokens[1], tokens[4])
+            return DerivationSpec(full_name, tokens[4])
         if tokens[3] == 'array of':
-            return Array(tokens[1], Reference(tokens[4]))
+            return Array(
+                full_name,
+                Reference(tokens[4] if '.' in tokens[4] else f'__PACKAGE__.{tokens[4]}')
+            )
     except ModelError as e:
         raise ParseFatalException(string, location, e)
     raise ParseFatalException(string, location, 'unexpected type')

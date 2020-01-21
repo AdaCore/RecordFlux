@@ -209,7 +209,7 @@ class Generator:
                 context.append(
                     WithClause(f'{self.prefix}{name}'))
                 parameters.append(
-                    FormalPackageDeclaration(f'{field_type.name}_Sequence', name))
+                    FormalPackageDeclaration(f'{field_type.name}_Sequence', f'{self.prefix}{name}'))
 
         scalar_fields = {f: t for f, t in message.types.items() if isinstance(t, Scalar)}
         composite_fields = [f for f, t in message.types.items() if isinstance(t, Composite)]
@@ -326,10 +326,10 @@ class Generator:
                     FunctionSpecification(
                         'Valid_Value',
                         'Boolean',
-                        [Parameter(['Value'], 'Field_Dependent_Value')]),
-                    Case(Selected('Value', 'Fld'),
+                        [Parameter(['Val'], 'Field_Dependent_Value')]),
+                    Case(Selected('Val', 'Fld'),
                          [(Name(f.affixed_name),
-                           Call('Valid', [Name(f'Value.{f.name}_Value')]) if isinstance(t, Scalar)
+                           Call('Valid', [Name(f'Val.{f.name}_Value')]) if isinstance(t, Scalar)
                            else TRUE)
                           for f, t in message.types.items()]
                          + [(Name(INITIAL.affixed_name), FALSE),
@@ -374,7 +374,7 @@ class Generator:
                     [DynamicPredicate(
                         If([(Or(Equal(Name('State'), Name('S_Valid')),
                                 Equal(Name('State'), Name('S_Structural_Valid'))),
-                             Call('Valid_Value', [Name('Value')]))]))]),
+                             Call('Valid_Value', [Selected('Field_Cursor', 'Value')]))]))]),
             ]
         )
 
@@ -862,7 +862,7 @@ class Generator:
                 {
                     Variable(field.name):
                         Call(self.types.bit_length,
-                             [Selected('Value', f'{field.name}_Value')]),
+                             [Selected('Val', f'{field.name}_Value')]),
                     Length(field.name):
                         Name('Length')
                 }
@@ -872,7 +872,7 @@ class Generator:
 
         parameters = [
             Parameter(['Ctx'], 'Context'),
-            Parameter(['Value'], 'Field_Dependent_Value')
+            Parameter(['Val'], 'Field_Dependent_Value')
         ]
 
         if length_dependent_condition(message):
@@ -892,9 +892,9 @@ class Generator:
                         Precondition(
                             And(
                                 VALID_CONTEXT,
-                                In(Selected('Value', 'Fld'), Range('Field')),
+                                In(Selected('Val', 'Fld'), Range('Field')),
                                 Call('Valid_Predecessor',
-                                     [Name('Ctx'), Selected('Value', 'Fld')])
+                                     [Name('Ctx'), Selected('Val', 'Fld')])
                             )
                         )
                     ]
@@ -903,7 +903,7 @@ class Generator:
             [
                 ExpressionFunctionDeclaration(
                     specification,
-                    Case(Selected('Value', 'Fld'),
+                    Case(Selected('Val', 'Fld'),
                          [(Name(f.affixed_name), condition(f, message))
                           for f in message.all_fields])
                 )
@@ -1272,7 +1272,7 @@ class Generator:
             return ProcedureSpecification(
                 f'Switch_To_{field.name}',
                 [InOutParameter(['Ctx'], 'Context'),
-                 OutParameter(['Sequence_Context'],
+                 OutParameter(['Seq_Ctx'],
                               f'{sequence_name(message, field)}.Context')])
 
         return UnitPart(
@@ -1282,7 +1282,7 @@ class Generator:
                     AndThen(
                         VALID_CONTEXT,
                         Not(Constrained('Ctx')),
-                        Not(Constrained('Sequence_Context')),
+                        Not(Constrained('Seq_Ctx')),
                         Call('Has_Buffer', [Name('Ctx')]),
                         Call('Valid_Next', [Name('Ctx'), Name(f.affixed_name)]),
                         Greater(
@@ -1316,8 +1316,8 @@ class Generator:
                         *switch_update_conditions(message, f),
                         Equal(
                             Call(f'{sequence_name(message, f)}.Index',
-                                 [Name('Sequence_Context')]),
-                            Selected('Sequence_Context', 'First')
+                                 [Name('Seq_Ctx')]),
+                            Selected('Seq_Ctx', 'First')
                         ),
                         Call('Present', [Name('Ctx'), Name(f.affixed_name)]),
                         *[
@@ -1446,7 +1446,7 @@ class Generator:
                     CallStatement(
                         f'{sequence_name(message, f)}.Initialize',
                         [
-                            Name('Sequence_Context'),
+                            Name('Seq_Ctx'),
                             Name('Buffer'),
                             Name('Ctx.Buffer_First'),
                             Name('Ctx.Buffer_Last'),
@@ -1465,11 +1465,11 @@ class Generator:
             return ProcedureSpecification(
                 f'Update_{field.name}',
                 [InOutParameter(['Ctx'], 'Context'),
-                 InOutParameter(['Sequence_Context'],
+                 InOutParameter(['Seq_Ctx'],
                                 f'{sequence_name(message, field)}.Context')])
 
         def take_buffer_arguments(field: Field) -> Sequence[Expr]:
-            arguments = [Name('Sequence_Context'),
+            arguments = [Name('Seq_Ctx'),
                          Name('Buffer'),
                          Name('Ctx.Buffer_First'),
                          Name('Ctx.Buffer_Last')]
@@ -1496,20 +1496,20 @@ class Generator:
                         Call('Present', [Name('Ctx'), Name(f.affixed_name)]),
                         Call('Has_Buffer', [Name('Ctx')]),
                         Not(Call(f'{sequence_name(message, f)}.Has_Buffer',
-                                 [Name('Sequence_Context')])),
+                                 [Name('Seq_Ctx')])),
                         Equal(
-                            Selected('Sequence_Context', 'First'),
+                            Selected('Seq_Ctx', 'First'),
                             Call('Field_First', [Name('Ctx'), Name(f.affixed_name)]),
                         ),
                         Equal(
-                            Selected('Sequence_Context', 'Last'),
+                            Selected('Seq_Ctx', 'Last'),
                             Call('Field_Last', [Name('Ctx'), Name(f.affixed_name)]),
                         ),
                         *[
                             Equal(e, Old(e)) for e in cast(List[Expr], [])
                             + [
-                                Selected('Sequence_Context', 'First'),
-                                Selected('Sequence_Context', 'Last'),
+                                Selected('Seq_Ctx', 'First'),
+                                Selected('Seq_Ctx', 'Last'),
                                 Selected('Ctx', 'Buffer_First'),
                                 Selected('Ctx', 'Buffer_Last'),
                                 Call('Field_First', [Name('Ctx'), Name(f.affixed_name)]),
@@ -1528,7 +1528,7 @@ class Generator:
                 [ObjectDeclaration(
                     ['Valid_Sequence'],
                     'Boolean',
-                    Call(f'{sequence_name(message, f)}.Valid', [Name('Sequence_Context')]),
+                    Call(f'{sequence_name(message, f)}.Valid', [Name('Seq_Ctx')]),
                     True),
                  ObjectDeclaration(
                     ['Buffer'],
@@ -1810,10 +1810,9 @@ class Generator:
         if isinstance(element_type, Reference):
             array_context = [Pragma('SPARK_Mode'),
                              WithClause(f'{self.prefix}Message_Sequence'),
-                             WithClause(f'{self.prefix}{package_name}.'
-                                        f'{element_type.name}')]
+                             WithClause(f'{self.prefix}{element_type.full_name}')]
             array_package = GenericPackageInstantiation(
-                f'{self.prefix}{package_name}.{array_type.name}',
+                f'{self.prefix}{array_type.full_name}',
                 'Message_Sequence',
                 [f'{element_type.name}.Context',
                  f'{element_type.name}.Initialize',
@@ -1829,7 +1828,7 @@ class Generator:
                              WithClause(f'{self.prefix}{package_name}')]
             array_package = GenericPackageInstantiation(
                 f'{self.prefix}{package_name}.{array_type.name}',
-                f'Scalar_Sequence',
+                f'{self.prefix}Scalar_Sequence',
                 [element_type.name,
                  element_type.base_name if not isinstance(element_type, ModularInteger)
                  else element_type.name,
@@ -1865,8 +1864,8 @@ class Generator:
         specification.append(
             type_validation_function(
                 integer,
-                integer.constraints('Value').simplified()))
-        specification.append(integer_conversion_function(integer.name, integer.base_name))
+                integer.constraints('Val').simplified()))
+        specification.append(integer_conversion_function(integer.full_name, integer.full_base_name))
 
         return SubprogramUnitPart(specification)
 
@@ -1879,13 +1878,13 @@ class Generator:
             specification.append(
                 self.generator.insert_function(modular_type.name))
 
-        specification.append(Pragma('Warnings', ['Off', '"unused variable ""Value"""']))
+        specification.append(Pragma('Warnings', ['Off', '"unused variable ""Val"""']))
         specification.append(
             type_validation_function(
                 integer,
-                integer.constraints('Value').simplified()))
-        specification.append(Pragma('Warnings', ['On', '"unused variable ""Value"""']))
-        specification.append(integer_conversion_function(integer.name, integer.name))
+                integer.constraints('Val').simplified()))
+        specification.append(Pragma('Warnings', ['On', '"unused variable ""Val"""']))
+        specification.append(integer_conversion_function(integer.full_name, integer.full_name))
 
         return UnitPart(specification)
 
@@ -1893,15 +1892,15 @@ class Generator:
         specification: List[Declaration] = []
 
         specification.append(
-            self.parser.extract_function(enum.base_name))
+            self.parser.extract_function(enum.full_base_name))
         specification.append(
-            self.generator.insert_function(enum.base_name))
+            self.generator.insert_function(enum.full_base_name))
 
-        enum_value = Name('Value')
+        enum_value = Name('Val')
 
         validation_expression: Expr
         if enum.always_valid:
-            validation_expression = enum.constraints('Value').simplified()
+            validation_expression = enum.constraints('Val').simplified()
         else:
             validation_cases: List[Tuple[Expr, Expr]] = []
             validation_cases.extend(
@@ -1913,27 +1912,27 @@ class Generator:
 
         if enum.always_valid:
             specification.append(
-                Pragma('Warnings', ['Off', '"unused variable ""Value"""']))
+                Pragma('Warnings', ['Off', '"unused variable ""Val"""']))
         specification.append(
             type_validation_function(enum, validation_expression))
         if enum.always_valid:
             specification.append(
-                Pragma('Warnings', ['On', '"unused variable ""Value"""']))
+                Pragma('Warnings', ['On', '"unused variable ""Val"""']))
 
         specification.append(ExpressionFunctionDeclaration(
             FunctionSpecification(
                 'Convert',
-                enum.base_name,
-                [Parameter(['Enum'], enum.enum_name if enum.always_valid else enum.name)]),
+                enum.full_base_name,
+                [Parameter(['Enum'], enum.enum_name if enum.always_valid else enum.full_name)]),
             Case(
                 Name('Enum'),
                 [(Name(key), value) for key, value in enum.literals.items()])))
 
         conversion_function = FunctionSpecification(
             'Convert',
-            enum.name,
-            [Parameter(['Value'], enum.base_name)])
-        precondition = Precondition(Call('Valid', [Name('Value')]))
+            enum.full_name,
+            [Parameter(['Val'], enum.full_base_name)])
+        precondition = Precondition(Call('Valid', [Name('Val')]))
         conversion_cases: List[Tuple[Expr, Expr]] = []
 
         if enum.always_valid:
@@ -1941,7 +1940,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         'Convert',
-                        enum.name,
+                        enum.full_name,
                         [Parameter(['Enum'], enum.enum_name)]),
                     Aggregate(TRUE, Name('Enum'))))
 
@@ -1950,29 +1949,29 @@ class Generator:
                 for key, value in enum.literals.items())
             conversion_cases.append(
                 (Name('others'),
-                 Aggregate(Name('False'), Name('Value'))))
+                 Aggregate(Name('False'), Name('Val'))))
 
             specification.append(
                 ExpressionFunctionDeclaration(
                     conversion_function,
-                    Case(Name('Value'), conversion_cases),
+                    Case(Name('Val'), conversion_cases),
                     [precondition]))
 
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         'Convert',
-                        enum.base_name,
-                        [Parameter(['Value'], enum.name)]),
-                    If([(Selected('Value', 'Known'), Call('Convert', [Selected('Value', 'Enum')]))],
-                       Selected('Value', 'Raw'))))
+                        enum.full_base_name,
+                        [Parameter(['Val'], enum.full_name)]),
+                    If([(Selected('Val', 'Known'), Call('Convert', [Selected('Val', 'Enum')]))],
+                       Selected('Val', 'Raw'))))
 
         else:
             conversion_cases.extend(
                 (value, Name(key)) for key, value in enum.literals.items())
             conversion_cases.append(
                 (Name('others'),
-                 Call(unreachable_function_name(enum.name))))
+                 Call(unreachable_function_name(enum.full_name))))
 
             specification.append(
                 ExpressionFunctionDeclaration(
@@ -2166,16 +2165,16 @@ def integer_conversion_function(type_name: str, type_base_name: str) -> Subprogr
     return ExpressionFunctionDeclaration(
         FunctionSpecification('Convert',
                               type_name,
-                              [Parameter(['Value'], type_base_name)]),
-        Name('Value'),
-        [Precondition(Call(f'Valid', [Name('Value')]))])
+                              [Parameter(['Val'], type_base_name)]),
+        Name('Val'),
+        [Precondition(Call(f'Valid', [Name('Val')]))])
 
 
 def type_validation_function(scalar_type: Scalar, validation_expression: Expr) -> Subprogram:
     return ExpressionFunctionDeclaration(
         FunctionSpecification(f'Valid',
                               'Boolean',
-                              [Parameter(['Value'], base_type_name(scalar_type))]),
+                              [Parameter(['Val'], base_type_name(scalar_type))]),
         validation_expression)
 
 
@@ -2202,8 +2201,8 @@ def unreachable_function(type_name: str, base_name: str = None) -> List[Declarat
 def type_dependent_unreachable_function(scalar_type: Scalar) -> List[Declaration]:
     base_name = None
     if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
-        base_name = scalar_type.base_name
-    return unreachable_function(scalar_type.name, base_name)
+        base_name = scalar_type.full_base_name
+    return unreachable_function(scalar_type.full_name, base_name)
 
 
 def generic_name(message: str) -> str:
@@ -2238,18 +2237,18 @@ def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
     return [
         Not(Call('Has_Buffer', [Name('Ctx')])),
         Call(f'{sequence_name(message, field)}.Has_Buffer',
-             [Name('Sequence_Context')]),
+             [Name('Seq_Ctx')]),
         Equal(Selected('Ctx', 'Buffer_First'),
-              Selected('Sequence_Context', 'Buffer_First')),
+              Selected('Seq_Ctx', 'Buffer_First')),
         Equal(Selected('Ctx', 'Buffer_Last'),
-              Selected('Sequence_Context', 'Buffer_Last')),
+              Selected('Seq_Ctx', 'Buffer_Last')),
         Equal(
-            Selected('Sequence_Context', 'First'),
+            Selected('Seq_Ctx', 'First'),
             Call('Field_First',
                  [Name('Ctx'), Name(field.affixed_name)]),
         ),
         Equal(
-            Selected('Sequence_Context', 'Last'),
+            Selected('Seq_Ctx', 'Last'),
             Call('Field_Last',
                  [Name('Ctx'), Name(field.affixed_name)]),
         ),

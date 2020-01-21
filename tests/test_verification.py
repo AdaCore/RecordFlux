@@ -453,7 +453,7 @@ class TestVerification(TestCase):
             r'^field "F3" not congruent with overlaid field "F1" in "Foo.Bar"')
 
     def test_field_coverage_1(self) -> None:
-        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        foo_type = ModularInteger('P.Foo', Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field('F1')),
             Link(Field('F1'), Field('F2'), first=Add(First('Message'), Number(64))),
@@ -468,7 +468,7 @@ class TestVerification(TestCase):
                 Message('P.M', structure, types)
 
     def test_field_coverage_2(self) -> None:
-        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        foo_type = ModularInteger('P.Foo', Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field('F1')),
             Link(Field('F1'), Field('F2')),
@@ -490,7 +490,7 @@ class TestVerification(TestCase):
                 Message('P.M', structure, types)
 
     def test_field_after_message_start(self) -> None:
-        foo_type = ModularInteger('Foo', Pow(Number(2), Number(32)))
+        foo_type = ModularInteger('P.Foo', Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field('F1')),
             Link(Field('F1'), Field('F2'), first=Sub(First('Message'), Number(1000))),
