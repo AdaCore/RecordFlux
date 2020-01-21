@@ -14,50 +14,50 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Tag return Tag is
-     (Tag'First)
+   function Unreachable_TLV_Tag return TLV.Tag is
+     (TLV.Tag'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Tag_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TLV.Tag_Base);
 
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Tag_Base);
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TLV.Tag_Base);
 
-   function Valid (Value : Tag_Base) return Boolean is
-     ((case Value is
+   function Valid (Val : TLV.Tag_Base) return Boolean is
+     ((case Val is
          when 1 | 3 =>
             True,
          when others =>
             False));
 
-   function Convert (Enum : Tag) return Tag_Base is
+   function Convert (Enum : TLV.Tag) return TLV.Tag_Base is
      ((case Enum is
          when Msg_Data =>
             1,
          when Msg_Error =>
             3));
 
-   function Convert (Value : Tag_Base) return Tag is
-     ((case Value is
+   function Convert (Val : TLV.Tag_Base) return TLV.Tag is
+     ((case Val is
          when 1 =>
             Msg_Data,
          when 3 =>
             Msg_Error,
          when others =>
-            Unreachable_Tag))
+            Unreachable_TLV_Tag))
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Length is mod 2**14;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Length return Length is
-     (Length'First)
+   function Unreachable_TLV_Length return TLV.Length is
+     (TLV.Length'First)
     with
      Pre =>
        False;
@@ -68,17 +68,17 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Length) return Boolean is
+   function Valid (Val : TLV.Length) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Length) return Length is
-     (Value)
+   function Convert (Val : TLV.Length) return TLV.Length is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
 end RFLX.TLV;

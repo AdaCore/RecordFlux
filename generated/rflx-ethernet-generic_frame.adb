@@ -96,18 +96,18 @@ is
          when F_Payload | F_Final =>
             False));
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value; Length : RFLX.Types.Bit_Length := 0) return Boolean is
-     ((case Value.Fld is
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value; Length : RFLX.Types.Bit_Length := 0) return Boolean is
+     ((case Val.Fld is
          when F_Initial | F_Destination | F_Source =>
             True,
          when F_Type_Length_TPID =>
-            RFLX.Types.Bit_Length (Value.Type_Length_TPID_Value) = 16#8100#
-               or RFLX.Types.Bit_Length (Value.Type_Length_TPID_Value) /= 16#8100#,
+            RFLX.Types.Bit_Length (Val.Type_Length_TPID_Value) = 16#8100#
+               or RFLX.Types.Bit_Length (Val.Type_Length_TPID_Value) /= 16#8100#,
          when F_TPID | F_TCI =>
             True,
          when F_Type_Length =>
-            RFLX.Types.Bit_Length (Value.Type_Length_Value) <= 1500
-               or RFLX.Types.Bit_Length (Value.Type_Length_Value) >= 1536,
+            RFLX.Types.Bit_Length (Val.Type_Length_Value) <= 1500
+               or RFLX.Types.Bit_Length (Val.Type_Length_Value) >= 1536,
          when F_Payload =>
             Length / 8 >= 46
                and Length / 8 <= 1500,
@@ -119,39 +119,39 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Destination =>
-                     Address'Size,
+                     Ethernet.Address'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Destination =>
             (case Fld is
                   when F_Source =>
-                     Address'Size,
+                     Ethernet.Address'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Source =>
             (case Fld is
                   when F_Type_Length_TPID =>
-                     Type_Length_Base'Size,
+                     Ethernet.Type_Length_Base'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Type_Length_TPID =>
             (case Fld is
                   when F_TPID =>
-                     TPID_Base'Size,
+                     Ethernet.TPID_Base'Size,
                   when F_Type_Length =>
-                     Type_Length_Base'Size,
+                     Ethernet.Type_Length_Base'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_TPID =>
             (case Fld is
                   when F_TCI =>
-                     TCI'Size,
+                     Ethernet.TCI'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_TCI =>
             (case Fld is
                   when F_Type_Length =>
-                     Type_Length_Base'Size,
+                     Ethernet.Type_Length_Base'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Type_Length =>
@@ -682,22 +682,22 @@ is
       or Incomplete (Ctx, F_Type_Length)
       or Incomplete (Ctx, F_Payload));
 
-   function Get_Destination (Ctx : Context) return Address is
+   function Get_Destination (Ctx : Context) return Ethernet.Address is
      (Ctx.Cursors (F_Destination).Value.Destination_Value);
 
-   function Get_Source (Ctx : Context) return Address is
+   function Get_Source (Ctx : Context) return Ethernet.Address is
      (Ctx.Cursors (F_Source).Value.Source_Value);
 
-   function Get_Type_Length_TPID (Ctx : Context) return Type_Length is
+   function Get_Type_Length_TPID (Ctx : Context) return Ethernet.Type_Length is
      (Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value);
 
-   function Get_TPID (Ctx : Context) return TPID is
+   function Get_TPID (Ctx : Context) return Ethernet.TPID is
      (Ctx.Cursors (F_TPID).Value.TPID_Value);
 
-   function Get_TCI (Ctx : Context) return TCI is
+   function Get_TCI (Ctx : Context) return Ethernet.TCI is
      (Ctx.Cursors (F_TCI).Value.TCI_Value);
 
-   function Get_Type_Length (Ctx : Context) return Type_Length is
+   function Get_Type_Length (Ctx : Context) return Ethernet.Type_Length is
      (Ctx.Cursors (F_Type_Length).Value.Type_Length_Value);
 
    procedure Get_Payload (Ctx : Context) is
@@ -707,64 +707,64 @@ is
       Process_Payload (Ctx.Buffer.all (First .. Last));
    end Get_Payload;
 
-   procedure Set_Field_Value (Ctx : in out Context; Value : Field_Dependent_Value; First, Last : out RFLX.Types.Bit_Index) with
+   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX.Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
           and then Has_Buffer (Ctx)
-          and then Value.Fld in Field'Range
-          and then Valid_Next (Ctx, Value.Fld)
-          and then Available_Space (Ctx, Value.Fld) >= Field_Length (Ctx, Value.Fld)
+          and then Val.Fld in Field'Range
+          and then Valid_Next (Ctx, Val.Fld)
+          and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
           and then (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
-             Ctx.Cursors (F).Last <= Field_Last (Ctx, Value.Fld))),
+             Ctx.Cursors (F).Last <= Field_Last (Ctx, Val.Fld))),
      Post =>
        Has_Buffer (Ctx)
-          and First = Field_First (Ctx, Value.Fld)
-          and Last = Field_Last (Ctx, Value.Fld)
-          and First >= Ctx.First
-          and First <= (Last + 1)
-          and RFLX.Types.Byte_Index (Last) <= Ctx.Buffer_Last
+          and Fst = Field_First (Ctx, Val.Fld)
+          and Lst = Field_Last (Ctx, Val.Fld)
+          and Fst >= Ctx.First
+          and Fst <= (Lst + 1)
+          and RFLX.Types.Byte_Index (Lst) <= Ctx.Buffer_Last
           and (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
-             Ctx.Cursors (F).Last <= Last))
+             Ctx.Cursors (F).Last <= Lst))
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Cursors = Ctx.Cursors'Old
    is
-      F : constant RFLX.Types.Bit_Index := Field_First (Ctx, Value.Fld);
-      L : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Value.Fld);
+      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, Val.Fld);
+      Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Val.Fld);
       function Buffer_First return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (F));
+        (RFLX.Types.Byte_Index (First));
       function Buffer_Last return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (L));
+        (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
-        (RFLX.Types.Offset ((8 - L mod 8) mod 8));
+        (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
    begin
-      First := F;
-      Last := L;
-      case Value.Fld is
+      Fst := First;
+      Lst := Last;
+      case Val.Fld is
          when F_Initial =>
             null;
          when F_Destination =>
-            Insert (Value.Destination_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Destination_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Source =>
-            Insert (Value.Source_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Source_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Type_Length_TPID =>
-            Insert (Value.Type_Length_TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Type_Length_TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_TPID =>
-            Insert (Value.TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_TCI =>
-            Insert (Value.TCI_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.TCI_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Type_Length =>
-            Insert (Value.Type_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Type_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Payload | F_Final =>
             null;
       end case;
    end Set_Field_Value;
 
-   procedure Set_Destination (Ctx : in out Context; Value : Address) is
-      Field_Value : constant Field_Dependent_Value := (F_Destination, Value);
+   procedure Set_Destination (Ctx : in out Context; Val : Ethernet.Address) is
+      Field_Value : constant Field_Dependent_Value := (F_Destination, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Destination);
@@ -774,8 +774,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Destination)) := (State => S_Invalid, Predecessor => F_Destination);
    end Set_Destination;
 
-   procedure Set_Source (Ctx : in out Context; Value : Address) is
-      Field_Value : constant Field_Dependent_Value := (F_Source, Value);
+   procedure Set_Source (Ctx : in out Context; Val : Ethernet.Address) is
+      Field_Value : constant Field_Dependent_Value := (F_Source, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Source);
@@ -785,8 +785,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Source)) := (State => S_Invalid, Predecessor => F_Source);
    end Set_Source;
 
-   procedure Set_Type_Length_TPID (Ctx : in out Context; Value : Type_Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Type_Length_TPID, Value);
+   procedure Set_Type_Length_TPID (Ctx : in out Context; Val : Ethernet.Type_Length) is
+      Field_Value : constant Field_Dependent_Value := (F_Type_Length_TPID, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Type_Length_TPID);
@@ -796,8 +796,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Type_Length_TPID)) := (State => S_Invalid, Predecessor => F_Type_Length_TPID);
    end Set_Type_Length_TPID;
 
-   procedure Set_TPID (Ctx : in out Context; Value : TPID) is
-      Field_Value : constant Field_Dependent_Value := (F_TPID, Value);
+   procedure Set_TPID (Ctx : in out Context; Val : Ethernet.TPID) is
+      Field_Value : constant Field_Dependent_Value := (F_TPID, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_TPID);
@@ -807,8 +807,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_TPID)) := (State => S_Invalid, Predecessor => F_TPID);
    end Set_TPID;
 
-   procedure Set_TCI (Ctx : in out Context; Value : TCI) is
-      Field_Value : constant Field_Dependent_Value := (F_TCI, Value);
+   procedure Set_TCI (Ctx : in out Context; Val : Ethernet.TCI) is
+      Field_Value : constant Field_Dependent_Value := (F_TCI, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_TCI);
@@ -818,8 +818,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_TCI)) := (State => S_Invalid, Predecessor => F_TCI);
    end Set_TCI;
 
-   procedure Set_Type_Length (Ctx : in out Context; Value : Type_Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Type_Length, Value);
+   procedure Set_Type_Length (Ctx : in out Context; Val : Ethernet.Type_Length) is
+      Field_Value : constant Field_Dependent_Value := (F_Type_Length, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Type_Length);

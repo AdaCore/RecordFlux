@@ -24,26 +24,26 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Priority return Priority is
-     ((False, Priority_Base'First))
+   function Unreachable_Enumeration_Priority return Enumeration.Priority is
+     ((False, Enumeration.Priority_Base'First))
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Priority_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration.Priority_Base);
 
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Priority_Base);
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration.Priority_Base);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Priority_Base) return Boolean is
+   function Valid (Val : Enumeration.Priority_Base) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : Priority_Enum) return Priority_Base is
+   function Convert (Enum : Priority_Enum) return Enumeration.Priority_Base is
      ((case Enum is
          when LOW =>
             1,
@@ -52,11 +52,11 @@ is
          when HIGH =>
             7));
 
-   function Convert (Enum : Priority_Enum) return Priority is
+   function Convert (Enum : Priority_Enum) return Enumeration.Priority is
      ((True, Enum));
 
-   function Convert (Value : Priority_Base) return Priority is
-     ((case Value is
+   function Convert (Val : Enumeration.Priority_Base) return Enumeration.Priority is
+     ((case Val is
          when 1 =>
             (True, LOW),
          when 4 =>
@@ -64,15 +64,15 @@ is
          when 7 =>
             (True, HIGH),
          when others =>
-            (False, Value)))
+            (False, Val)))
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
-   function Convert (Value : Priority) return Priority_Base is
-     ((if Value.Known then
-       Convert (Value.Enum)
+   function Convert (Val : Enumeration.Priority) return Enumeration.Priority_Base is
+     ((if Val.Known then
+       Convert (Val.Enum)
     else
-       Value.Raw));
+       Val.Raw));
 
 end RFLX.Enumeration;

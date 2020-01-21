@@ -77,8 +77,8 @@ is
          when F_Payload | F_Final =>
             False));
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value) return Boolean is
-     ((case Value.Fld is
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
          when F_Initial | F_Source_Port | F_Destination_Port | F_Length | F_Checksum | F_Payload =>
             True,
          when F_Final =>
@@ -89,25 +89,25 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Source_Port =>
-                     Port'Size,
+                     UDP.Port'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Source_Port =>
             (case Fld is
                   when F_Destination_Port =>
-                     Port'Size,
+                     UDP.Port'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Destination_Port =>
             (case Fld is
                   when F_Length =>
-                     Length_Base'Size,
+                     UDP.Length_Base'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Length =>
             (case Fld is
                   when F_Checksum =>
-                     Checksum'Size,
+                     UDP.Checksum'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Checksum =>
@@ -457,16 +457,16 @@ is
       or Incomplete (Ctx, F_Checksum)
       or Incomplete (Ctx, F_Payload));
 
-   function Get_Source_Port (Ctx : Context) return Port is
+   function Get_Source_Port (Ctx : Context) return UDP.Port is
      (Ctx.Cursors (F_Source_Port).Value.Source_Port_Value);
 
-   function Get_Destination_Port (Ctx : Context) return Port is
+   function Get_Destination_Port (Ctx : Context) return UDP.Port is
      (Ctx.Cursors (F_Destination_Port).Value.Destination_Port_Value);
 
-   function Get_Length (Ctx : Context) return Length is
+   function Get_Length (Ctx : Context) return UDP.Length is
      (Ctx.Cursors (F_Length).Value.Length_Value);
 
-   function Get_Checksum (Ctx : Context) return Checksum is
+   function Get_Checksum (Ctx : Context) return UDP.Checksum is
      (Ctx.Cursors (F_Checksum).Value.Checksum_Value);
 
    procedure Get_Payload (Ctx : Context) is
@@ -476,60 +476,60 @@ is
       Process_Payload (Ctx.Buffer.all (First .. Last));
    end Get_Payload;
 
-   procedure Set_Field_Value (Ctx : in out Context; Value : Field_Dependent_Value; First, Last : out RFLX.Types.Bit_Index) with
+   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX.Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
           and then Has_Buffer (Ctx)
-          and then Value.Fld in Field'Range
-          and then Valid_Next (Ctx, Value.Fld)
-          and then Available_Space (Ctx, Value.Fld) >= Field_Length (Ctx, Value.Fld)
+          and then Val.Fld in Field'Range
+          and then Valid_Next (Ctx, Val.Fld)
+          and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
           and then (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
-             Ctx.Cursors (F).Last <= Field_Last (Ctx, Value.Fld))),
+             Ctx.Cursors (F).Last <= Field_Last (Ctx, Val.Fld))),
      Post =>
        Has_Buffer (Ctx)
-          and First = Field_First (Ctx, Value.Fld)
-          and Last = Field_Last (Ctx, Value.Fld)
-          and First >= Ctx.First
-          and First <= (Last + 1)
-          and RFLX.Types.Byte_Index (Last) <= Ctx.Buffer_Last
+          and Fst = Field_First (Ctx, Val.Fld)
+          and Lst = Field_Last (Ctx, Val.Fld)
+          and Fst >= Ctx.First
+          and Fst <= (Lst + 1)
+          and RFLX.Types.Byte_Index (Lst) <= Ctx.Buffer_Last
           and (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
-             Ctx.Cursors (F).Last <= Last))
+             Ctx.Cursors (F).Last <= Lst))
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Cursors = Ctx.Cursors'Old
    is
-      F : constant RFLX.Types.Bit_Index := Field_First (Ctx, Value.Fld);
-      L : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Value.Fld);
+      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, Val.Fld);
+      Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Val.Fld);
       function Buffer_First return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (F));
+        (RFLX.Types.Byte_Index (First));
       function Buffer_Last return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (L));
+        (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
-        (RFLX.Types.Offset ((8 - L mod 8) mod 8));
+        (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
    begin
-      First := F;
-      Last := L;
-      case Value.Fld is
+      Fst := First;
+      Lst := Last;
+      case Val.Fld is
          when F_Initial =>
             null;
          when F_Source_Port =>
-            Insert (Value.Source_Port_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Source_Port_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Destination_Port =>
-            Insert (Value.Destination_Port_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Destination_Port_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Length =>
-            Insert (Value.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Checksum =>
-            Insert (Value.Checksum_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Checksum_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Payload | F_Final =>
             null;
       end case;
    end Set_Field_Value;
 
-   procedure Set_Source_Port (Ctx : in out Context; Value : Port) is
-      Field_Value : constant Field_Dependent_Value := (F_Source_Port, Value);
+   procedure Set_Source_Port (Ctx : in out Context; Val : UDP.Port) is
+      Field_Value : constant Field_Dependent_Value := (F_Source_Port, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Source_Port);
@@ -539,8 +539,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Source_Port)) := (State => S_Invalid, Predecessor => F_Source_Port);
    end Set_Source_Port;
 
-   procedure Set_Destination_Port (Ctx : in out Context; Value : Port) is
-      Field_Value : constant Field_Dependent_Value := (F_Destination_Port, Value);
+   procedure Set_Destination_Port (Ctx : in out Context; Val : UDP.Port) is
+      Field_Value : constant Field_Dependent_Value := (F_Destination_Port, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Destination_Port);
@@ -550,8 +550,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Destination_Port)) := (State => S_Invalid, Predecessor => F_Destination_Port);
    end Set_Destination_Port;
 
-   procedure Set_Length (Ctx : in out Context; Value : Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Length, Value);
+   procedure Set_Length (Ctx : in out Context; Val : UDP.Length) is
+      Field_Value : constant Field_Dependent_Value := (F_Length, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Length);
@@ -561,8 +561,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Length)) := (State => S_Invalid, Predecessor => F_Length);
    end Set_Length;
 
-   procedure Set_Checksum (Ctx : in out Context; Value : Checksum) is
-      Field_Value : constant Field_Dependent_Value := (F_Checksum, Value);
+   procedure Set_Checksum (Ctx : in out Context; Val : UDP.Checksum) is
+      Field_Value : constant Field_Dependent_Value := (F_Checksum, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Checksum);

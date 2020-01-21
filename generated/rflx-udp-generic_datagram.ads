@@ -28,13 +28,13 @@ is
             when F_Initial | F_Payload | F_Final =>
                null;
             when F_Source_Port =>
-               Source_Port_Value : Port;
+               Source_Port_Value : UDP.Port;
             when F_Destination_Port =>
-               Destination_Port_Value : Port;
+               Destination_Port_Value : UDP.Port;
             when F_Length =>
-               Length_Value : Length_Base;
+               Length_Value : UDP.Length_Base;
             when F_Checksum =>
-               Checksum_Value : Checksum;
+               Checksum_Value : UDP.Checksum;
          end case;
       end record;
 
@@ -107,11 +107,11 @@ is
        Valid_Context (Ctx)
           and Valid_Predecessor (Ctx, Fld);
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value) return Boolean with
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
      Pre =>
        Valid_Context (Ctx)
-          and Value.Fld in Field'Range
-          and Valid_Predecessor (Ctx, Value.Fld);
+          and Val.Fld in Field'Range
+          and Valid_Predecessor (Ctx, Val.Fld);
 
    function Field_Length (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length with
      Pre =>
@@ -202,22 +202,22 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Source_Port (Ctx : Context) return Port with
+   function Get_Source_Port (Ctx : Context) return UDP.Port with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Source_Port);
 
-   function Get_Destination_Port (Ctx : Context) return Port with
+   function Get_Destination_Port (Ctx : Context) return UDP.Port with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Destination_Port);
 
-   function Get_Length (Ctx : Context) return Length with
+   function Get_Length (Ctx : Context) return UDP.Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Length);
 
-   function Get_Checksum (Ctx : Context) return Checksum with
+   function Get_Checksum (Ctx : Context) return UDP.Checksum with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Checksum);
@@ -230,21 +230,21 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Payload);
 
-   procedure Set_Source_Port (Ctx : in out Context; Value : Port) with
+   procedure Set_Source_Port (Ctx : in out Context; Val : UDP.Port) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Source_Port)
           and then Field_Last (Ctx, F_Source_Port) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Source_Port, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Source_Port, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Source_Port) >= Field_Length (Ctx, F_Source_Port),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Source_Port)
-          and Get_Source_Port (Ctx) = Value
+          and Get_Source_Port (Ctx) = Val
           and Invalid (Ctx, F_Destination_Port)
           and Invalid (Ctx, F_Length)
           and Invalid (Ctx, F_Checksum)
@@ -257,21 +257,21 @@ is
           and Predecessor (Ctx, F_Source_Port) = Predecessor (Ctx, F_Source_Port)'Old
           and Valid_Next (Ctx, F_Source_Port) = Valid_Next (Ctx, F_Source_Port)'Old;
 
-   procedure Set_Destination_Port (Ctx : in out Context; Value : Port) with
+   procedure Set_Destination_Port (Ctx : in out Context; Val : UDP.Port) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Destination_Port)
           and then Field_Last (Ctx, F_Destination_Port) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Destination_Port, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Destination_Port, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Destination_Port) >= Field_Length (Ctx, F_Destination_Port),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Destination_Port)
-          and Get_Destination_Port (Ctx) = Value
+          and Get_Destination_Port (Ctx) = Val
           and Invalid (Ctx, F_Length)
           and Invalid (Ctx, F_Checksum)
           and Invalid (Ctx, F_Payload)
@@ -285,21 +285,21 @@ is
           and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
           and Cursor (Ctx, F_Source_Port) = Cursor (Ctx, F_Source_Port)'Old;
 
-   procedure Set_Length (Ctx : in out Context; Value : Length) with
+   procedure Set_Length (Ctx : in out Context; Val : UDP.Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Length)
           and then Field_Last (Ctx, F_Length) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Length, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Length, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Length) >= Field_Length (Ctx, F_Length),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Length)
-          and Get_Length (Ctx) = Value
+          and Get_Length (Ctx) = Val
           and Invalid (Ctx, F_Checksum)
           and Invalid (Ctx, F_Payload)
           and (Predecessor (Ctx, F_Checksum) = F_Length
@@ -314,21 +314,21 @@ is
           and Cursor (Ctx, F_Source_Port) = Cursor (Ctx, F_Source_Port)'Old
           and Cursor (Ctx, F_Destination_Port) = Cursor (Ctx, F_Destination_Port)'Old;
 
-   procedure Set_Checksum (Ctx : in out Context; Value : Checksum) with
+   procedure Set_Checksum (Ctx : in out Context; Val : UDP.Checksum) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Checksum)
           and then Field_Last (Ctx, F_Checksum) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Checksum, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Checksum, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Checksum) >= Field_Length (Ctx, F_Checksum),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Checksum)
-          and Get_Checksum (Ctx) = Value
+          and Get_Checksum (Ctx) = Val
           and Invalid (Ctx, F_Payload)
           and (Predecessor (Ctx, F_Payload) = F_Checksum
             and Valid_Next (Ctx, F_Payload))
@@ -411,16 +411,16 @@ private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
 
-   function Valid_Value (Value : Field_Dependent_Value) return Boolean is
-     ((case Value.Fld is
+   function Valid_Value (Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
          when F_Source_Port =>
-            Valid (Value.Source_Port_Value),
+            Valid (Val.Source_Port_Value),
          when F_Destination_Port =>
-            Valid (Value.Destination_Port_Value),
+            Valid (Val.Destination_Port_Value),
          when F_Length =>
-            Valid (Value.Length_Value),
+            Valid (Val.Length_Value),
          when F_Checksum =>
-            Valid (Value.Checksum_Value),
+            Valid (Val.Checksum_Value),
          when F_Payload =>
             True,
          when F_Initial | F_Final =>
@@ -441,7 +441,7 @@ private
      Dynamic_Predicate =>
        (if State = S_Valid
              or State = S_Structural_Valid then
-           Valid_Value (Value));
+           Valid_Value (Field_Cursor.Value));
 
    function Structural_Valid (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid

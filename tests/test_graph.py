@@ -11,7 +11,7 @@ class TestGraph(unittest.TestCase):
         self.maxDiff = None  # pylint: disable=invalid-name
 
     def test_graph_object(self) -> None:
-        f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
+        f_type = ModularInteger('P.T', Pow(Number(2), Number(32)))
         m = Message('P.M',
                     structure=[Link(INITIAL, Field('F1')),
                                Link(Field('F1'), FINAL)],
@@ -42,7 +42,7 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(out.getvalue().split(), bytes(expected, 'utf-8').split())
 
     def test_dot_graph(self) -> None:
-        f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
+        f_type = ModularInteger('P.T', Pow(Number(2), Number(32)))
         m = Message('P.M',
                     structure=[Link(INITIAL, Field('F1')),
                                Link(Field('F1'), FINAL)],
@@ -67,7 +67,7 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(out.getvalue().split(), bytes(expected, 'utf-8').split())
 
     def test_dot_graph_with_condition(self) -> None:
-        f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
+        f_type = ModularInteger('P.T', Pow(Number(2), Number(32)))
         m = Message('P.M',
                     structure=[Link(INITIAL, Field('F1')),
                                Link(Field('F1'), FINAL, Greater(Variable('F1'), Number(100)))],
@@ -92,7 +92,7 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(out.getvalue().split(), bytes(expected, 'utf-8').split())
 
     def test_dot_graph_with_double_edge(self) -> None:
-        f_type = ModularInteger('F_Type', Pow(Number(2), Number(32)))
+        f_type = ModularInteger('P.T', Pow(Number(2), Number(32)))
         m = Message('P.M',
                     structure=[Link(INITIAL, Field('F1')),
                                Link(Field('F1'), FINAL, Greater(Variable('F1'), Number(100))),

@@ -28,13 +28,13 @@ is
             when F_Initial | F_Option_Data | F_Final =>
                null;
             when F_Copied =>
-               Copied_Value : Flag_Base;
+               Copied_Value : IPv4.Flag_Base;
             when F_Option_Class =>
-               Option_Class_Value : Option_Class_Base;
+               Option_Class_Value : IPv4.Option_Class_Base;
             when F_Option_Number =>
-               Option_Number_Value : Option_Number;
+               Option_Number_Value : IPv4.Option_Number;
             when F_Option_Length =>
-               Option_Length_Value : Option_Length_Base;
+               Option_Length_Value : IPv4.Option_Length_Base;
          end case;
       end record;
 
@@ -107,11 +107,11 @@ is
        Valid_Context (Ctx)
           and Valid_Predecessor (Ctx, Fld);
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value) return Boolean with
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
      Pre =>
        Valid_Context (Ctx)
-          and Value.Fld in Field'Range
-          and Valid_Predecessor (Ctx, Value.Fld);
+          and Val.Fld in Field'Range
+          and Valid_Predecessor (Ctx, Val.Fld);
 
    function Field_Length (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length with
      Pre =>
@@ -202,22 +202,22 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Copied (Ctx : Context) return Flag with
+   function Get_Copied (Ctx : Context) return IPv4.Flag with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Copied);
 
-   function Get_Option_Class (Ctx : Context) return Option_Class with
+   function Get_Option_Class (Ctx : Context) return IPv4.Option_Class with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Option_Class);
 
-   function Get_Option_Number (Ctx : Context) return Option_Number with
+   function Get_Option_Number (Ctx : Context) return IPv4.Option_Number with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Option_Number);
 
-   function Get_Option_Length (Ctx : Context) return Option_Length with
+   function Get_Option_Length (Ctx : Context) return IPv4.Option_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Option_Length);
@@ -230,21 +230,21 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Option_Data);
 
-   procedure Set_Copied (Ctx : in out Context; Value : Flag) with
+   procedure Set_Copied (Ctx : in out Context; Val : IPv4.Flag) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Copied)
           and then Field_Last (Ctx, F_Copied) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Copied, Convert (Value)))
+          and then Field_Condition (Ctx, (F_Copied, Convert (Val)))
           and then True
           and then Available_Space (Ctx, F_Copied) >= Field_Length (Ctx, F_Copied),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Copied)
-          and Get_Copied (Ctx) = Value
+          and Get_Copied (Ctx) = Val
           and Invalid (Ctx, F_Option_Class)
           and Invalid (Ctx, F_Option_Number)
           and Invalid (Ctx, F_Option_Length)
@@ -257,21 +257,21 @@ is
           and Predecessor (Ctx, F_Copied) = Predecessor (Ctx, F_Copied)'Old
           and Valid_Next (Ctx, F_Copied) = Valid_Next (Ctx, F_Copied)'Old;
 
-   procedure Set_Option_Class (Ctx : in out Context; Value : Option_Class) with
+   procedure Set_Option_Class (Ctx : in out Context; Val : IPv4.Option_Class) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Option_Class)
           and then Field_Last (Ctx, F_Option_Class) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Option_Class, Convert (Value)))
+          and then Field_Condition (Ctx, (F_Option_Class, Convert (Val)))
           and then True
           and then Available_Space (Ctx, F_Option_Class) >= Field_Length (Ctx, F_Option_Class),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Option_Class)
-          and Get_Option_Class (Ctx) = Value
+          and Get_Option_Class (Ctx) = Val
           and Invalid (Ctx, F_Option_Number)
           and Invalid (Ctx, F_Option_Length)
           and Invalid (Ctx, F_Option_Data)
@@ -285,21 +285,21 @@ is
           and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
           and Cursor (Ctx, F_Copied) = Cursor (Ctx, F_Copied)'Old;
 
-   procedure Set_Option_Number (Ctx : in out Context; Value : Option_Number) with
+   procedure Set_Option_Number (Ctx : in out Context; Val : IPv4.Option_Number) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Option_Number)
           and then Field_Last (Ctx, F_Option_Number) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Option_Number, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Option_Number, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Option_Number) >= Field_Length (Ctx, F_Option_Number),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Option_Number)
-          and Get_Option_Number (Ctx) = Value
+          and Get_Option_Number (Ctx) = Val
           and Invalid (Ctx, F_Option_Length)
           and Invalid (Ctx, F_Option_Data)
           and (if RFLX.Types.Bit_Length (Get_Option_Number (Ctx)) > 1 then
@@ -315,21 +315,21 @@ is
           and Cursor (Ctx, F_Copied) = Cursor (Ctx, F_Copied)'Old
           and Cursor (Ctx, F_Option_Class) = Cursor (Ctx, F_Option_Class)'Old;
 
-   procedure Set_Option_Length (Ctx : in out Context; Value : Option_Length) with
+   procedure Set_Option_Length (Ctx : in out Context; Val : IPv4.Option_Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Option_Length)
           and then Field_Last (Ctx, F_Option_Length) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Option_Length, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Option_Length, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Option_Length) >= Field_Length (Ctx, F_Option_Length),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Option_Length)
-          and Get_Option_Length (Ctx) = Value
+          and Get_Option_Length (Ctx) = Val
           and Invalid (Ctx, F_Option_Data)
           and (if (RFLX.Types.Bit_Length (Convert (Get_Option_Class (Ctx))) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
                  and RFLX.Types.Bit_Length (Get_Option_Number (Ctx)) = 4)
@@ -424,16 +424,16 @@ private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
 
-   function Valid_Value (Value : Field_Dependent_Value) return Boolean is
-     ((case Value.Fld is
+   function Valid_Value (Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
          when F_Copied =>
-            Valid (Value.Copied_Value),
+            Valid (Val.Copied_Value),
          when F_Option_Class =>
-            Valid (Value.Option_Class_Value),
+            Valid (Val.Option_Class_Value),
          when F_Option_Number =>
-            Valid (Value.Option_Number_Value),
+            Valid (Val.Option_Number_Value),
          when F_Option_Length =>
-            Valid (Value.Option_Length_Value),
+            Valid (Val.Option_Length_Value),
          when F_Option_Data =>
             True,
          when F_Initial | F_Final =>
@@ -454,7 +454,7 @@ private
      Dynamic_Predicate =>
        (if State = S_Valid
              or State = S_Structural_Valid then
-           Valid_Value (Value));
+           Valid_Value (Field_Cursor.Value));
 
    function Structural_Valid (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid

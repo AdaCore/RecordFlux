@@ -28,9 +28,9 @@ is
             when F_Initial | F_Value | F_Final =>
                null;
             when F_Tag =>
-               Tag_Value : Tag_Base;
+               Tag_Value : TLV.Tag_Base;
             when F_Length =>
-               Length_Value : Length;
+               Length_Value : TLV.Length;
          end case;
       end record;
 
@@ -103,11 +103,11 @@ is
        Valid_Context (Ctx)
           and Valid_Predecessor (Ctx, Fld);
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value) return Boolean with
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
      Pre =>
        Valid_Context (Ctx)
-          and Value.Fld in Field'Range
-          and Valid_Predecessor (Ctx, Value.Fld);
+          and Val.Fld in Field'Range
+          and Valid_Predecessor (Ctx, Val.Fld);
 
    function Field_Length (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length with
      Pre =>
@@ -198,12 +198,12 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Tag (Ctx : Context) return Tag with
+   function Get_Tag (Ctx : Context) return TLV.Tag with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Tag);
 
-   function Get_Length (Ctx : Context) return Length with
+   function Get_Length (Ctx : Context) return TLV.Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Length);
@@ -216,21 +216,21 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Value);
 
-   procedure Set_Tag (Ctx : in out Context; Value : Tag) with
+   procedure Set_Tag (Ctx : in out Context; Val : TLV.Tag) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Tag)
           and then Field_Last (Ctx, F_Tag) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Tag, Convert (Value)))
+          and then Field_Condition (Ctx, (F_Tag, Convert (Val)))
           and then True
           and then Available_Space (Ctx, F_Tag) >= Field_Length (Ctx, F_Tag),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Tag)
-          and Get_Tag (Ctx) = Value
+          and Get_Tag (Ctx) = Val
           and Invalid (Ctx, F_Length)
           and Invalid (Ctx, F_Value)
           and (if RFLX.Types.Bit_Length (Convert (Get_Tag (Ctx))) = RFLX.Types.Bit_Length (Convert (Msg_Data)) then
@@ -242,21 +242,21 @@ is
           and Predecessor (Ctx, F_Tag) = Predecessor (Ctx, F_Tag)'Old
           and Valid_Next (Ctx, F_Tag) = Valid_Next (Ctx, F_Tag)'Old;
 
-   procedure Set_Length (Ctx : in out Context; Value : Length) with
+   procedure Set_Length (Ctx : in out Context; Val : TLV.Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Length)
           and then Field_Last (Ctx, F_Length) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Length, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Length, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Length) >= Field_Length (Ctx, F_Length),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Length)
-          and Get_Length (Ctx) = Value
+          and Get_Length (Ctx) = Val
           and Invalid (Ctx, F_Value)
           and (Predecessor (Ctx, F_Value) = F_Length
             and Valid_Next (Ctx, F_Value))
@@ -331,12 +331,12 @@ private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
 
-   function Valid_Value (Value : Field_Dependent_Value) return Boolean is
-     ((case Value.Fld is
+   function Valid_Value (Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
          when F_Tag =>
-            Valid (Value.Tag_Value),
+            Valid (Val.Tag_Value),
          when F_Length =>
-            Valid (Value.Length_Value),
+            Valid (Val.Length_Value),
          when F_Value =>
             True,
          when F_Initial | F_Final =>
@@ -357,7 +357,7 @@ private
      Dynamic_Predicate =>
        (if State = S_Valid
              or State = S_Structural_Valid then
-           Valid_Value (Value));
+           Valid_Value (Field_Cursor.Value));
 
    function Structural_Valid (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid

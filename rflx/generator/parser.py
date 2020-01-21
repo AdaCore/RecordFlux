@@ -508,7 +508,7 @@ class ParserGenerator:
         def specification(field: Field, field_type: Type) -> FunctionSpecification:
             return FunctionSpecification(
                 f'Get_{field.name}',
-                field_type.name,
+                field_type.full_name,
                 [Parameter(['Ctx'], 'Context')])
 
         def result(field: Field, field_type: Type) -> Expr:

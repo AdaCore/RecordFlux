@@ -14,43 +14,43 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Flag return Flag is
-     (Flag'First)
+   function Unreachable_IPv4_Flag return IPv4.Flag is
+     (IPv4.Flag'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Flag_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Flag_Base);
 
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Flag_Base);
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Flag_Base);
 
-   function Valid (Value : Flag_Base) return Boolean is
-     ((case Value is
+   function Valid (Val : IPv4.Flag_Base) return Boolean is
+     ((case Val is
          when 0 | 1 =>
             True,
          when others =>
             False));
 
-   function Convert (Enum : Flag) return Flag_Base is
+   function Convert (Enum : IPv4.Flag) return IPv4.Flag_Base is
      ((case Enum is
          when Flag_False =>
             0,
          when Flag_True =>
             1));
 
-   function Convert (Value : Flag_Base) return Flag is
-     ((case Value is
+   function Convert (Val : IPv4.Flag_Base) return IPv4.Flag is
+     ((case Val is
          when 0 =>
             Flag_False,
          when 1 =>
             Flag_True,
          when others =>
-            Unreachable_Flag))
+            Unreachable_IPv4_Flag))
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Option_Class_Base is mod 2**2;
 
@@ -61,50 +61,50 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Option_Class return Option_Class is
-     (Option_Class'First)
+   function Unreachable_IPv4_Option_Class return IPv4.Option_Class is
+     (IPv4.Option_Class'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Class_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Class_Base);
 
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Class_Base);
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Class_Base);
 
-   function Valid (Value : Option_Class_Base) return Boolean is
-     ((case Value is
+   function Valid (Val : IPv4.Option_Class_Base) return Boolean is
+     ((case Val is
          when 0 | 2 =>
             True,
          when others =>
             False));
 
-   function Convert (Enum : Option_Class) return Option_Class_Base is
+   function Convert (Enum : IPv4.Option_Class) return IPv4.Option_Class_Base is
      ((case Enum is
          when Control =>
             0,
          when Debugging_And_Measurement =>
             2));
 
-   function Convert (Value : Option_Class_Base) return Option_Class is
-     ((case Value is
+   function Convert (Val : IPv4.Option_Class_Base) return IPv4.Option_Class is
+     ((case Val is
          when 0 =>
             Control,
          when 2 =>
             Debugging_And_Measurement,
          when others =>
-            Unreachable_Option_Class))
+            Unreachable_IPv4_Option_Class))
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Option_Number is mod 2**5;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Option_Number return Option_Number is
-     (Option_Number'First)
+   function Unreachable_IPv4_Option_Number return IPv4.Option_Number is
+     (IPv4.Option_Number'First)
     with
      Pre =>
        False;
@@ -115,18 +115,18 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Number);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Option_Number) return Boolean is
+   function Valid (Val : IPv4.Option_Number) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Option_Number) return Option_Number is
-     (Value)
+   function Convert (Val : IPv4.Option_Number) return IPv4.Option_Number is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Option_Length_Base is range 0 .. 2**8 - 1 with
      Size =>
@@ -136,8 +136,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Option_Length return Option_Length is
-     (Option_Length'First)
+   function Unreachable_IPv4_Option_Length return IPv4.Option_Length is
+     (IPv4.Option_Length'First)
     with
      Pre =>
        False;
@@ -148,14 +148,14 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Length_Base);
 
-   function Valid (Value : Option_Length_Base) return Boolean is
-     (Value >= 2);
+   function Valid (Val : IPv4.Option_Length_Base) return Boolean is
+     (Val >= 2);
 
-   function Convert (Value : Option_Length_Base) return Option_Length is
-     (Value)
+   function Convert (Val : IPv4.Option_Length_Base) return IPv4.Option_Length is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Version_Base is range 0 .. 2**4 - 1 with
      Size =>
@@ -165,8 +165,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Version return Version is
-     (Version'First)
+   function Unreachable_IPv4_Version return IPv4.Version is
+     (IPv4.Version'First)
     with
      Pre =>
        False;
@@ -177,15 +177,15 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Version_Base);
 
-   function Valid (Value : Version_Base) return Boolean is
-     (Value >= 4
-      and Value <= 4);
+   function Valid (Val : IPv4.Version_Base) return Boolean is
+     (Val >= 4
+      and Val <= 4);
 
-   function Convert (Value : Version_Base) return Version is
-     (Value)
+   function Convert (Val : IPv4.Version_Base) return IPv4.Version is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type IHL_Base is range 0 .. 2**4 - 1 with
      Size =>
@@ -195,8 +195,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IHL return IHL is
-     (IHL'First)
+   function Unreachable_IPv4_IHL return IPv4.IHL is
+     (IPv4.IHL'First)
     with
      Pre =>
        False;
@@ -207,21 +207,21 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IHL_Base);
 
-   function Valid (Value : IHL_Base) return Boolean is
-     (Value >= 5);
+   function Valid (Val : IPv4.IHL_Base) return Boolean is
+     (Val >= 5);
 
-   function Convert (Value : IHL_Base) return IHL is
-     (Value)
+   function Convert (Val : IPv4.IHL_Base) return IPv4.IHL is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type DCSP is mod 2**6;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_DCSP return DCSP is
-     (DCSP'First)
+   function Unreachable_IPv4_DCSP return IPv4.DCSP is
+     (IPv4.DCSP'First)
     with
      Pre =>
        False;
@@ -232,25 +232,25 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, DCSP);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : DCSP) return Boolean is
+   function Valid (Val : IPv4.DCSP) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : DCSP) return DCSP is
-     (Value)
+   function Convert (Val : IPv4.DCSP) return IPv4.DCSP is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type ECN is mod 2**2;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_ECN return ECN is
-     (ECN'First)
+   function Unreachable_IPv4_ECN return IPv4.ECN is
+     (IPv4.ECN'First)
     with
      Pre =>
        False;
@@ -261,18 +261,18 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, ECN);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : ECN) return Boolean is
+   function Valid (Val : IPv4.ECN) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : ECN) return ECN is
-     (Value)
+   function Convert (Val : IPv4.ECN) return IPv4.ECN is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Total_Length_Base is range 0 .. 2**16 - 1 with
      Size =>
@@ -282,8 +282,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Total_Length return Total_Length is
-     (Total_Length'First)
+   function Unreachable_IPv4_Total_Length return IPv4.Total_Length is
+     (IPv4.Total_Length'First)
     with
      Pre =>
        False;
@@ -294,21 +294,21 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Total_Length_Base);
 
-   function Valid (Value : Total_Length_Base) return Boolean is
-     (Value >= 20);
+   function Valid (Val : IPv4.Total_Length_Base) return Boolean is
+     (Val >= 20);
 
-   function Convert (Value : Total_Length_Base) return Total_Length is
-     (Value)
+   function Convert (Val : IPv4.Total_Length_Base) return IPv4.Total_Length is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Identification is mod 2**16;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Identification return Identification is
-     (Identification'First)
+   function Unreachable_IPv4_Identification return IPv4.Identification is
+     (IPv4.Identification'First)
     with
      Pre =>
        False;
@@ -319,25 +319,25 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Identification);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Identification) return Boolean is
+   function Valid (Val : IPv4.Identification) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Identification) return Identification is
-     (Value)
+   function Convert (Val : IPv4.Identification) return IPv4.Identification is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Fragment_Offset is mod 2**13;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Fragment_Offset return Fragment_Offset is
-     (Fragment_Offset'First)
+   function Unreachable_IPv4_Fragment_Offset return IPv4.Fragment_Offset is
+     (IPv4.Fragment_Offset'First)
     with
      Pre =>
        False;
@@ -348,25 +348,25 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Fragment_Offset);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Fragment_Offset) return Boolean is
+   function Valid (Val : IPv4.Fragment_Offset) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Fragment_Offset) return Fragment_Offset is
-     (Value)
+   function Convert (Val : IPv4.Fragment_Offset) return IPv4.Fragment_Offset is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type TTL is mod 2**8;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_TTL return TTL is
-     (TTL'First)
+   function Unreachable_IPv4_TTL return IPv4.TTL is
+     (IPv4.TTL'First)
     with
      Pre =>
        False;
@@ -377,18 +377,18 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TTL);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : TTL) return Boolean is
+   function Valid (Val : IPv4.TTL) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : TTL) return TTL is
-     (Value)
+   function Convert (Val : IPv4.TTL) return IPv4.TTL is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Protocol_Base is mod 2**8;
 
@@ -409,55 +409,55 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Protocol return Protocol is
-     ((False, Protocol_Base'First))
+   function Unreachable_IPv4_Protocol return IPv4.Protocol is
+     ((False, IPv4.Protocol_Base'First))
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Protocol_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Protocol_Base);
 
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Protocol_Base);
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Protocol_Base);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Protocol_Base) return Boolean is
+   function Valid (Val : IPv4.Protocol_Base) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : Protocol_Enum) return Protocol_Base is
+   function Convert (Enum : Protocol_Enum) return IPv4.Protocol_Base is
      ((case Enum is
          when PROTOCOL_UDP =>
             17));
 
-   function Convert (Enum : Protocol_Enum) return Protocol is
+   function Convert (Enum : Protocol_Enum) return IPv4.Protocol is
      ((True, Enum));
 
-   function Convert (Value : Protocol_Base) return Protocol is
-     ((case Value is
+   function Convert (Val : IPv4.Protocol_Base) return IPv4.Protocol is
+     ((case Val is
          when 17 =>
             (True, PROTOCOL_UDP),
          when others =>
-            (False, Value)))
+            (False, Val)))
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
-   function Convert (Value : Protocol) return Protocol_Base is
-     ((if Value.Known then
-       Convert (Value.Enum)
+   function Convert (Val : IPv4.Protocol) return IPv4.Protocol_Base is
+     ((if Val.Known then
+       Convert (Val.Enum)
     else
-       Value.Raw));
+       Val.Raw));
 
    type Header_Checksum is mod 2**16;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Header_Checksum return Header_Checksum is
-     (Header_Checksum'First)
+   function Unreachable_IPv4_Header_Checksum return IPv4.Header_Checksum is
+     (IPv4.Header_Checksum'First)
     with
      Pre =>
        False;
@@ -468,25 +468,25 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Header_Checksum);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Header_Checksum) return Boolean is
+   function Valid (Val : IPv4.Header_Checksum) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Header_Checksum) return Header_Checksum is
-     (Value)
+   function Convert (Val : IPv4.Header_Checksum) return IPv4.Header_Checksum is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Address is mod 2**32;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Address return Address is
-     (Address'First)
+   function Unreachable_IPv4_Address return IPv4.Address is
+     (IPv4.Address'First)
     with
      Pre =>
        False;
@@ -497,17 +497,17 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Address) return Boolean is
+   function Valid (Val : IPv4.Address) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Address) return Address is
-     (Value)
+   function Convert (Val : IPv4.Address) return IPv4.Address is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
 end RFLX.IPv4;

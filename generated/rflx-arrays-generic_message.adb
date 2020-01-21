@@ -77,8 +77,8 @@ is
          when F_AV_Enumeration_Vector | F_Final =>
             False));
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value) return Boolean is
-     ((case Value.Fld is
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
          when F_Initial | F_Length | F_Modular_Vector | F_Range_Vector | F_Enumeration_Vector | F_AV_Enumeration_Vector =>
             True,
          when F_Final =>
@@ -89,7 +89,7 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Length =>
-                     Length'Size,
+                     Arrays.Length'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Length =>
@@ -457,7 +457,7 @@ is
       or Incomplete (Ctx, F_Enumeration_Vector)
       or Incomplete (Ctx, F_AV_Enumeration_Vector));
 
-   function Get_Length (Ctx : Context) return Length is
+   function Get_Length (Ctx : Context) return Arrays.Length is
      (Ctx.Cursors (F_Length).Value.Length_Value);
 
    procedure Get_Modular_Vector (Ctx : Context) is
@@ -488,54 +488,54 @@ is
       Process_AV_Enumeration_Vector (Ctx.Buffer.all (First .. Last));
    end Get_AV_Enumeration_Vector;
 
-   procedure Set_Field_Value (Ctx : in out Context; Value : Field_Dependent_Value; First, Last : out RFLX.Types.Bit_Index) with
+   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX.Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
           and then Has_Buffer (Ctx)
-          and then Value.Fld in Field'Range
-          and then Valid_Next (Ctx, Value.Fld)
-          and then Available_Space (Ctx, Value.Fld) >= Field_Length (Ctx, Value.Fld)
+          and then Val.Fld in Field'Range
+          and then Valid_Next (Ctx, Val.Fld)
+          and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
           and then (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
-             Ctx.Cursors (F).Last <= Field_Last (Ctx, Value.Fld))),
+             Ctx.Cursors (F).Last <= Field_Last (Ctx, Val.Fld))),
      Post =>
        Has_Buffer (Ctx)
-          and First = Field_First (Ctx, Value.Fld)
-          and Last = Field_Last (Ctx, Value.Fld)
-          and First >= Ctx.First
-          and First <= (Last + 1)
-          and RFLX.Types.Byte_Index (Last) <= Ctx.Buffer_Last
+          and Fst = Field_First (Ctx, Val.Fld)
+          and Lst = Field_Last (Ctx, Val.Fld)
+          and Fst >= Ctx.First
+          and Fst <= (Lst + 1)
+          and RFLX.Types.Byte_Index (Lst) <= Ctx.Buffer_Last
           and (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
-             Ctx.Cursors (F).Last <= Last))
+             Ctx.Cursors (F).Last <= Lst))
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Cursors = Ctx.Cursors'Old
    is
-      F : constant RFLX.Types.Bit_Index := Field_First (Ctx, Value.Fld);
-      L : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Value.Fld);
+      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, Val.Fld);
+      Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Val.Fld);
       function Buffer_First return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (F));
+        (RFLX.Types.Byte_Index (First));
       function Buffer_Last return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (L));
+        (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
-        (RFLX.Types.Offset ((8 - L mod 8) mod 8));
+        (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
    begin
-      First := F;
-      Last := L;
-      case Value.Fld is
+      Fst := First;
+      Lst := Last;
+      case Val.Fld is
          when F_Initial =>
             null;
          when F_Length =>
-            Insert (Value.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Modular_Vector | F_Range_Vector | F_Enumeration_Vector | F_AV_Enumeration_Vector | F_Final =>
             null;
       end case;
    end Set_Field_Value;
 
-   procedure Set_Length (Ctx : in out Context; Value : Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Length, Value);
+   procedure Set_Length (Ctx : in out Context; Val : Arrays.Length) is
+      Field_Value : constant Field_Dependent_Value := (F_Length, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Length);
@@ -545,7 +545,7 @@ is
       Ctx.Cursors (Successor (Ctx, F_Length)) := (State => S_Invalid, Predecessor => F_Length);
    end Set_Length;
 
-   procedure Switch_To_Modular_Vector (Ctx : in out Context; Sequence_Context : out Modular_Vector_Sequence.Context) is
+   procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) is
       First : constant RFLX.Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
       Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);
       Buffer : RFLX.Types.Bytes_Ptr;
@@ -578,11 +578,11 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Modular_Vector_Sequence.Initialize (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
+      Modular_Vector_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Modular_Vector;
 
-   procedure Switch_To_Range_Vector (Ctx : in out Context; Sequence_Context : out Range_Vector_Sequence.Context) is
+   procedure Switch_To_Range_Vector (Ctx : in out Context; Seq_Ctx : out Range_Vector_Sequence.Context) is
       First : constant RFLX.Types.Bit_Index := Field_First (Ctx, F_Range_Vector);
       Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, F_Range_Vector);
       Buffer : RFLX.Types.Bytes_Ptr;
@@ -615,11 +615,11 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Range_Vector_Sequence.Initialize (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
+      Range_Vector_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Range_Vector;
 
-   procedure Switch_To_Enumeration_Vector (Ctx : in out Context; Sequence_Context : out Enumeration_Vector_Sequence.Context) is
+   procedure Switch_To_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : out Enumeration_Vector_Sequence.Context) is
       First : constant RFLX.Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector);
       Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, F_Enumeration_Vector);
       Buffer : RFLX.Types.Bytes_Ptr;
@@ -652,11 +652,11 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Enumeration_Vector_Sequence.Initialize (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
+      Enumeration_Vector_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Enumeration_Vector;
 
-   procedure Switch_To_AV_Enumeration_Vector (Ctx : in out Context; Sequence_Context : out AV_Enumeration_Vector_Sequence.Context) is
+   procedure Switch_To_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : out AV_Enumeration_Vector_Sequence.Context) is
       First : constant RFLX.Types.Bit_Index := Field_First (Ctx, F_AV_Enumeration_Vector);
       Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, F_AV_Enumeration_Vector);
       Buffer : RFLX.Types.Bytes_Ptr;
@@ -689,48 +689,48 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      AV_Enumeration_Vector_Sequence.Initialize (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
+      AV_Enumeration_Vector_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_AV_Enumeration_Vector;
 
-   procedure Update_Modular_Vector (Ctx : in out Context; Sequence_Context : in out Modular_Vector_Sequence.Context) is
-      Valid_Sequence : constant Boolean := Modular_Vector_Sequence.Valid (Sequence_Context);
+   procedure Update_Modular_Vector (Ctx : in out Context; Seq_Ctx : in out Modular_Vector_Sequence.Context) is
+      Valid_Sequence : constant Boolean := Modular_Vector_Sequence.Valid (Seq_Ctx);
       Buffer : RFLX.Types.Bytes_Ptr;
    begin
-      Modular_Vector_Sequence.Take_Buffer (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
+      Modular_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Modular_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Modular_Vector).First, Last => Ctx.Cursors (F_Modular_Vector).Last, Value => Ctx.Cursors (F_Modular_Vector).Value, Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
       end if;
    end Update_Modular_Vector;
 
-   procedure Update_Range_Vector (Ctx : in out Context; Sequence_Context : in out Range_Vector_Sequence.Context) is
-      Valid_Sequence : constant Boolean := Range_Vector_Sequence.Valid (Sequence_Context);
+   procedure Update_Range_Vector (Ctx : in out Context; Seq_Ctx : in out Range_Vector_Sequence.Context) is
+      Valid_Sequence : constant Boolean := Range_Vector_Sequence.Valid (Seq_Ctx);
       Buffer : RFLX.Types.Bytes_Ptr;
    begin
-      Range_Vector_Sequence.Take_Buffer (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
+      Range_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Range_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Range_Vector).First, Last => Ctx.Cursors (F_Range_Vector).Last, Value => Ctx.Cursors (F_Range_Vector).Value, Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
       end if;
    end Update_Range_Vector;
 
-   procedure Update_Enumeration_Vector (Ctx : in out Context; Sequence_Context : in out Enumeration_Vector_Sequence.Context) is
-      Valid_Sequence : constant Boolean := Enumeration_Vector_Sequence.Valid (Sequence_Context);
+   procedure Update_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out Enumeration_Vector_Sequence.Context) is
+      Valid_Sequence : constant Boolean := Enumeration_Vector_Sequence.Valid (Seq_Ctx);
       Buffer : RFLX.Types.Bytes_Ptr;
    begin
-      Enumeration_Vector_Sequence.Take_Buffer (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
+      Enumeration_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Enumeration_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Enumeration_Vector).First, Last => Ctx.Cursors (F_Enumeration_Vector).Last, Value => Ctx.Cursors (F_Enumeration_Vector).Value, Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
       end if;
    end Update_Enumeration_Vector;
 
-   procedure Update_AV_Enumeration_Vector (Ctx : in out Context; Sequence_Context : in out AV_Enumeration_Vector_Sequence.Context) is
-      Valid_Sequence : constant Boolean := AV_Enumeration_Vector_Sequence.Valid (Sequence_Context);
+   procedure Update_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out AV_Enumeration_Vector_Sequence.Context) is
+      Valid_Sequence : constant Boolean := AV_Enumeration_Vector_Sequence.Valid (Seq_Ctx);
       Buffer : RFLX.Types.Bytes_Ptr;
    begin
-      AV_Enumeration_Vector_Sequence.Take_Buffer (Sequence_Context, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
+      AV_Enumeration_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Valid, First => Ctx.Cursors (F_AV_Enumeration_Vector).First, Last => Ctx.Cursors (F_AV_Enumeration_Vector).Last, Value => Ctx.Cursors (F_AV_Enumeration_Vector).Value, Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);

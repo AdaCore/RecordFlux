@@ -139,7 +139,7 @@ class GeneratorCommon:
 
         field_type = message.types[target]
         condition = link.condition.simplified(self.substitution(message, prefix))
-        length = (Size(Selected(message.package, base_type_name(field_type)))
+        length = (Size(base_type_name(field_type))
                   if isinstance(field_type, Scalar)
                   else link.length.simplified(self.substitution(message, prefix)))
         first = (Name(prefixed('First')) if source == INITIAL
@@ -313,9 +313,9 @@ class GeneratorCommon:
 
 def base_type_name(scalar_type: Scalar) -> str:
     if isinstance(scalar_type, (RangeInteger, Enumeration)):
-        return scalar_type.base_name
+        return scalar_type.full_base_name
     if isinstance(scalar_type, ModularInteger):
-        return scalar_type.name
+        return scalar_type.full_name
     assert False, 'unexpected scalar type "{type(scalar_type)}"'
     return None
 

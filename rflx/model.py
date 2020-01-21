@@ -20,8 +20,10 @@ class Element(ABC):
 
 
 class Type(Element):
-    def __init__(self, name: str) -> None:
-        self.name = name
+    def __init__(self, full_name: str) -> None:
+        if full_name.count('.') != 1:
+            raise ModelError(f'unexpected format of type name "{full_name}"')
+        self.full_name = full_name
 
     @abstractproperty
     def size(self) -> Expr:
@@ -32,8 +34,20 @@ class Type(Element):
         raise NotImplementedError
 
     @property
+    def name(self) -> str:
+        return self.full_name.rsplit('.', 1)[1]
+
+    @property
+    def package(self) -> str:
+        return self.full_name.rsplit('.', 1)[0]
+
+    @property
     def base_name(self) -> str:
         return f'{self.name}_Base'
+
+    @property
+    def full_base_name(self) -> str:
+        return f'{self.full_name}_Base'
 
 
 class Scalar(Type):
@@ -43,16 +57,16 @@ class Scalar(Type):
 
 
 class ModularInteger(Scalar):
-    def __init__(self, name: str, modulus: Expr) -> None:
+    def __init__(self, full_name: str, modulus: Expr) -> None:
+        super().__init__(full_name)
         modulus_num = modulus.simplified()
         if not isinstance(modulus_num, Number):
-            raise ModelError(f'modulus of "{name}" contains variable')
+            raise ModelError(f'modulus of "{self.name}" contains variable')
         modulus_int = int(modulus_num)
         if modulus_int > 2**64:
-            raise ModelError(f'modulus of "{name}" exceeds limit (2**64)')
+            raise ModelError(f'modulus of "{self.name}" exceeds limit (2**64)')
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
-            raise ModelError(f'modulus of "{name}" not power of two')
-        super().__init__(name)
+            raise ModelError(f'modulus of "{self.name}" not power of two')
         self.__modulus = modulus
         self.__size = Number(int(log(modulus_int) / log(2)))
 
@@ -72,23 +86,23 @@ class ModularInteger(Scalar):
 
 
 class RangeInteger(Scalar):
-    def __init__(self, name: str, first: Expr, last: Expr, size: Expr) -> None:
+    def __init__(self, full_name: str, first: Expr, last: Expr, size: Expr) -> None:
+        super().__init__(full_name)
         first_num = first.simplified()
         if not isinstance(first_num, Number):
-            raise ModelError(f'first of "{name}" contains variable')
+            raise ModelError(f'first of "{self.name}" contains variable')
         last_num = last.simplified()
         if not isinstance(last_num, Number):
-            raise ModelError(f'last of "{name}" contains variable')
+            raise ModelError(f'last of "{self.name}" contains variable')
         if first_num < Number(0):
-            raise ModelError(f'first of "{name}" negative')
+            raise ModelError(f'first of "{self.name}" negative')
         if first_num > last_num:
-            raise ModelError(f'range of "{name}" negative')
+            raise ModelError(f'range of "{self.name}" negative')
         size_num = size.simplified()
         if not isinstance(size_num, Number):
-            raise ModelError(f'size of "{name}" contains variable')
+            raise ModelError(f'size of "{self.name}" contains variable')
         if log(int(last_num) + 1) / log(2) > int(size_num):
-            raise ModelError(f'size for "{name}" too small')
-        super().__init__(name)
+            raise ModelError(f'size for "{self.name}" too small')
         self.__first = first
         self.__last = last
         self.__size = size
@@ -127,13 +141,13 @@ class RangeInteger(Scalar):
 
 
 class Enumeration(Scalar):
-    def __init__(self, name: str, literals: Dict[str, Number], size: Number,
+    def __init__(self, full_name: str, literals: Dict[str, Number], size: Number,
                  always_valid: bool) -> None:
+        super().__init__(full_name)
         if log(max(map(int, literals.values())) + 1) / log(2) > int(size):
-            raise ModelError(f'size for "{name}" too small')
+            raise ModelError(f'size for "{self.name}" too small')
         if len(set(literals.values())) < len(literals.values()):
-            raise ModelError(f'"{name}" contains elements with same value')
-        super().__init__(name)
+            raise ModelError(f'"{self.name}" contains elements with same value')
         self.literals = literals
         self.__size = size
         self.always_valid = always_valid
@@ -164,8 +178,8 @@ class Composite(Type):
 
 
 class Array(Composite):
-    def __init__(self, name: str, element_type: Type) -> None:
-        super().__init__(name)
+    def __init__(self, full_name: str, element_type: Type) -> None:
+        super().__init__(full_name)
         self.element_type = element_type
 
     @property
@@ -178,7 +192,7 @@ class Array(Composite):
 
 class Payload(Composite):
     def __init__(self) -> None:
-        super().__init__('Payload')
+        super().__init__('__PACKAGE__.Payload')
 
     @property
     def size(self) -> Expr:
@@ -583,8 +597,7 @@ class Refinement(Type):
     # pylint: disable=too-many-arguments
     def __init__(self, package: str, pdu: str, field: Field, sdu: str,
                  condition: Expr = TRUE) -> None:
-        super().__init__('')
-        self.package = package
+        super().__init__(f'{package}.')
         self.pdu = pdu
         self.field = field
         self.sdu = sdu

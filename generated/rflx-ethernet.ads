@@ -9,8 +9,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Address return Address is
-     (Address'First)
+   function Unreachable_Ethernet_Address return Ethernet.Address is
+     (Ethernet.Address'First)
     with
      Pre =>
        False;
@@ -21,18 +21,18 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Address) return Boolean is
+   function Valid (Val : Ethernet.Address) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Address) return Address is
-     (Value)
+   function Convert (Val : Ethernet.Address) return Ethernet.Address is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Type_Length_Base is range 0 .. 2**16 - 1 with
      Size =>
@@ -42,8 +42,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Type_Length return Type_Length is
-     (Type_Length'First)
+   function Unreachable_Ethernet_Type_Length return Ethernet.Type_Length is
+     (Ethernet.Type_Length'First)
     with
      Pre =>
        False;
@@ -54,14 +54,14 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Type_Length_Base);
 
-   function Valid (Value : Type_Length_Base) return Boolean is
-     (Value >= 46);
+   function Valid (Val : Ethernet.Type_Length_Base) return Boolean is
+     (Val >= 46);
 
-   function Convert (Value : Type_Length_Base) return Type_Length is
-     (Value)
+   function Convert (Val : Ethernet.Type_Length_Base) return Ethernet.Type_Length is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type TPID_Base is range 0 .. 2**16 - 1 with
      Size =>
@@ -71,8 +71,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_TPID return TPID is
-     (TPID'First)
+   function Unreachable_Ethernet_TPID return Ethernet.TPID is
+     (Ethernet.TPID'First)
     with
      Pre =>
        False;
@@ -83,22 +83,22 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TPID_Base);
 
-   function Valid (Value : TPID_Base) return Boolean is
-     (Value >= 16#8100#
-      and Value <= 16#8100#);
+   function Valid (Val : Ethernet.TPID_Base) return Boolean is
+     (Val >= 16#8100#
+      and Val <= 16#8100#);
 
-   function Convert (Value : TPID_Base) return TPID is
-     (Value)
+   function Convert (Val : Ethernet.TPID_Base) return Ethernet.TPID is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type TCI is mod 2**16;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_TCI return TCI is
-     (TCI'First)
+   function Unreachable_Ethernet_TCI return Ethernet.TCI is
+     (Ethernet.TCI'First)
     with
      Pre =>
        False;
@@ -109,17 +109,17 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TCI);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : TCI) return Boolean is
+   function Valid (Val : Ethernet.TCI) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : TCI) return TCI is
-     (Value)
+   function Convert (Val : Ethernet.TCI) return Ethernet.TCI is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
 end RFLX.Ethernet;

@@ -9,8 +9,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Length return Length is
-     (Length'First)
+   function Unreachable_Arrays_Length return Arrays.Length is
+     (Arrays.Length'First)
     with
      Pre =>
        False;
@@ -21,25 +21,25 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Length) return Boolean is
+   function Valid (Val : Arrays.Length) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Length) return Length is
-     (Value)
+   function Convert (Val : Arrays.Length) return Arrays.Length is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Modular_Integer is mod 2**16;
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Modular_Integer return Modular_Integer is
-     (Modular_Integer'First)
+   function Unreachable_Arrays_Modular_Integer return Arrays.Modular_Integer is
+     (Arrays.Modular_Integer'First)
     with
      Pre =>
        False;
@@ -50,18 +50,18 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Modular_Integer);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : Modular_Integer) return Boolean is
+   function Valid (Val : Arrays.Modular_Integer) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Value : Modular_Integer) return Modular_Integer is
-     (Value)
+   function Convert (Val : Arrays.Modular_Integer) return Arrays.Modular_Integer is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Range_Integer_Base is range 0 .. 2**8 - 1 with
      Size =>
@@ -71,8 +71,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Range_Integer return Range_Integer is
-     (Range_Integer'First)
+   function Unreachable_Arrays_Range_Integer return Arrays.Range_Integer is
+     (Arrays.Range_Integer'First)
     with
      Pre =>
        False;
@@ -83,15 +83,15 @@ is
 
    procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Range_Integer_Base);
 
-   function Valid (Value : Range_Integer_Base) return Boolean is
-     (Value >= 1
-      and Value <= 100);
+   function Valid (Val : Arrays.Range_Integer_Base) return Boolean is
+     (Val >= 1
+      and Val <= 100);
 
-   function Convert (Value : Range_Integer_Base) return Range_Integer is
-     (Value)
+   function Convert (Val : Arrays.Range_Integer_Base) return Arrays.Range_Integer is
+     (Val)
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type Enumeration_Base is mod 2**8;
 
@@ -102,26 +102,26 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Enumeration return Enumeration is
-     (Enumeration'First)
+   function Unreachable_Arrays_Enumeration return Arrays.Enumeration is
+     (Arrays.Enumeration'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Arrays.Enumeration_Base);
 
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration_Base);
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Arrays.Enumeration_Base);
 
-   function Valid (Value : Enumeration_Base) return Boolean is
-     ((case Value is
+   function Valid (Val : Arrays.Enumeration_Base) return Boolean is
+     ((case Val is
          when 0 | 1 | 2 =>
             True,
          when others =>
             False));
 
-   function Convert (Enum : Enumeration) return Enumeration_Base is
+   function Convert (Enum : Arrays.Enumeration) return Arrays.Enumeration_Base is
      ((case Enum is
          when ZERO =>
             0,
@@ -130,8 +130,8 @@ is
          when TWO =>
             2));
 
-   function Convert (Value : Enumeration_Base) return Enumeration is
-     ((case Value is
+   function Convert (Val : Arrays.Enumeration_Base) return Arrays.Enumeration is
+     ((case Val is
          when 0 =>
             ZERO,
          when 1 =>
@@ -139,10 +139,10 @@ is
          when 2 =>
             TWO,
          when others =>
-            Unreachable_Enumeration))
+            Unreachable_Arrays_Enumeration))
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
    type AV_Enumeration_Base is mod 2**8;
 
@@ -163,26 +163,26 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_AV_Enumeration return AV_Enumeration is
-     ((False, AV_Enumeration_Base'First))
+   function Unreachable_Arrays_AV_Enumeration return Arrays.AV_Enumeration is
+     ((False, Arrays.AV_Enumeration_Base'First))
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, AV_Enumeration_Base);
+   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Arrays.AV_Enumeration_Base);
 
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, AV_Enumeration_Base);
+   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Arrays.AV_Enumeration_Base);
 
-   pragma Warnings (Off, "unused variable ""Value""");
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Value : AV_Enumeration_Base) return Boolean is
+   function Valid (Val : Arrays.AV_Enumeration_Base) return Boolean is
      (True);
 
-   pragma Warnings (On, "unused variable ""Value""");
+   pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : AV_Enumeration_Enum) return AV_Enumeration_Base is
+   function Convert (Enum : AV_Enumeration_Enum) return Arrays.AV_Enumeration_Base is
      ((case Enum is
          when AV_ZERO =>
             0,
@@ -191,11 +191,11 @@ is
          when AV_TWO =>
             2));
 
-   function Convert (Enum : AV_Enumeration_Enum) return AV_Enumeration is
+   function Convert (Enum : AV_Enumeration_Enum) return Arrays.AV_Enumeration is
      ((True, Enum));
 
-   function Convert (Value : AV_Enumeration_Base) return AV_Enumeration is
-     ((case Value is
+   function Convert (Val : Arrays.AV_Enumeration_Base) return Arrays.AV_Enumeration is
+     ((case Val is
          when 0 =>
             (True, AV_ZERO),
          when 1 =>
@@ -203,15 +203,15 @@ is
          when 2 =>
             (True, AV_TWO),
          when others =>
-            (False, Value)))
+            (False, Val)))
     with
      Pre =>
-       Valid (Value);
+       Valid (Val);
 
-   function Convert (Value : AV_Enumeration) return AV_Enumeration_Base is
-     ((if Value.Known then
-       Convert (Value.Enum)
+   function Convert (Val : Arrays.AV_Enumeration) return Arrays.AV_Enumeration_Base is
+     ((if Val.Known then
+       Convert (Val.Enum)
     else
-       Value.Raw));
+       Val.Raw));
 
 end RFLX.Arrays;

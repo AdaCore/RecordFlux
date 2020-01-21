@@ -92,14 +92,14 @@ is
          when F_Option_Data | F_Final =>
             False));
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value) return Boolean is
-     ((case Value.Fld is
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
          when F_Initial | F_Copied | F_Option_Class =>
             True,
          when F_Option_Number =>
             (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                 and RFLX.Types.Bit_Length (Value.Option_Number_Value) = 1)
-               or RFLX.Types.Bit_Length (Value.Option_Number_Value) > 1,
+                 and RFLX.Types.Bit_Length (Val.Option_Number_Value) = 1)
+               or RFLX.Types.Bit_Length (Val.Option_Number_Value) > 1,
          when F_Option_Length =>
             (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
                  and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
@@ -107,10 +107,10 @@ is
                  and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                    or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                    or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-               or (RFLX.Types.Bit_Length (Value.Option_Length_Value) = 11
+               or (RFLX.Types.Bit_Length (Val.Option_Length_Value) = 11
                  and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
                  and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-               or (RFLX.Types.Bit_Length (Value.Option_Length_Value) = 4
+               or (RFLX.Types.Bit_Length (Val.Option_Length_Value) = 4
                  and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
                  and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8),
          when F_Option_Data =>
@@ -123,25 +123,25 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Copied =>
-                     Flag_Base'Size,
+                     IPv4.Flag_Base'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Copied =>
             (case Fld is
                   when F_Option_Class =>
-                     Option_Class_Base'Size,
+                     IPv4.Option_Class_Base'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Option_Class =>
             (case Fld is
                   when F_Option_Number =>
-                     Option_Number'Size,
+                     IPv4.Option_Number'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Option_Number =>
             (case Fld is
                   when F_Option_Length =>
-                     Option_Length_Base'Size,
+                     IPv4.Option_Length_Base'Size,
                   when others =>
                      RFLX.Types.Unreachable_Bit_Length),
          when F_Option_Length =>
@@ -569,16 +569,16 @@ is
       or Incomplete (Ctx, F_Option_Length)
       or Incomplete (Ctx, F_Option_Data));
 
-   function Get_Copied (Ctx : Context) return Flag is
+   function Get_Copied (Ctx : Context) return IPv4.Flag is
      (Convert (Ctx.Cursors (F_Copied).Value.Copied_Value));
 
-   function Get_Option_Class (Ctx : Context) return Option_Class is
+   function Get_Option_Class (Ctx : Context) return IPv4.Option_Class is
      (Convert (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value));
 
-   function Get_Option_Number (Ctx : Context) return Option_Number is
+   function Get_Option_Number (Ctx : Context) return IPv4.Option_Number is
      (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value);
 
-   function Get_Option_Length (Ctx : Context) return Option_Length is
+   function Get_Option_Length (Ctx : Context) return IPv4.Option_Length is
      (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value);
 
    procedure Get_Option_Data (Ctx : Context) is
@@ -588,60 +588,60 @@ is
       Process_Option_Data (Ctx.Buffer.all (First .. Last));
    end Get_Option_Data;
 
-   procedure Set_Field_Value (Ctx : in out Context; Value : Field_Dependent_Value; First, Last : out RFLX.Types.Bit_Index) with
+   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX.Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
           and then Has_Buffer (Ctx)
-          and then Value.Fld in Field'Range
-          and then Valid_Next (Ctx, Value.Fld)
-          and then Available_Space (Ctx, Value.Fld) >= Field_Length (Ctx, Value.Fld)
+          and then Val.Fld in Field'Range
+          and then Valid_Next (Ctx, Val.Fld)
+          and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
           and then (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
-             Ctx.Cursors (F).Last <= Field_Last (Ctx, Value.Fld))),
+             Ctx.Cursors (F).Last <= Field_Last (Ctx, Val.Fld))),
      Post =>
        Has_Buffer (Ctx)
-          and First = Field_First (Ctx, Value.Fld)
-          and Last = Field_Last (Ctx, Value.Fld)
-          and First >= Ctx.First
-          and First <= (Last + 1)
-          and RFLX.Types.Byte_Index (Last) <= Ctx.Buffer_Last
+          and Fst = Field_First (Ctx, Val.Fld)
+          and Lst = Field_Last (Ctx, Val.Fld)
+          and Fst >= Ctx.First
+          and Fst <= (Lst + 1)
+          and RFLX.Types.Byte_Index (Lst) <= Ctx.Buffer_Last
           and (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
-             Ctx.Cursors (F).Last <= Last))
+             Ctx.Cursors (F).Last <= Lst))
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Cursors = Ctx.Cursors'Old
    is
-      F : constant RFLX.Types.Bit_Index := Field_First (Ctx, Value.Fld);
-      L : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Value.Fld);
+      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, Val.Fld);
+      Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Val.Fld);
       function Buffer_First return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (F));
+        (RFLX.Types.Byte_Index (First));
       function Buffer_Last return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (L));
+        (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
-        (RFLX.Types.Offset ((8 - L mod 8) mod 8));
+        (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
    begin
-      First := F;
-      Last := L;
-      case Value.Fld is
+      Fst := First;
+      Lst := Last;
+      case Val.Fld is
          when F_Initial =>
             null;
          when F_Copied =>
-            Insert (Value.Copied_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Copied_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Option_Class =>
-            Insert (Value.Option_Class_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Option_Class_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Option_Number =>
-            Insert (Value.Option_Number_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Option_Number_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Option_Length =>
-            Insert (Value.Option_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Option_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Option_Data | F_Final =>
             null;
       end case;
    end Set_Field_Value;
 
-   procedure Set_Copied (Ctx : in out Context; Value : Flag) is
-      Field_Value : constant Field_Dependent_Value := (F_Copied, Convert (Value));
+   procedure Set_Copied (Ctx : in out Context; Val : IPv4.Flag) is
+      Field_Value : constant Field_Dependent_Value := (F_Copied, Convert (Val));
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Copied);
@@ -651,8 +651,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Copied)) := (State => S_Invalid, Predecessor => F_Copied);
    end Set_Copied;
 
-   procedure Set_Option_Class (Ctx : in out Context; Value : Option_Class) is
-      Field_Value : constant Field_Dependent_Value := (F_Option_Class, Convert (Value));
+   procedure Set_Option_Class (Ctx : in out Context; Val : IPv4.Option_Class) is
+      Field_Value : constant Field_Dependent_Value := (F_Option_Class, Convert (Val));
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Class);
@@ -662,8 +662,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Option_Class)) := (State => S_Invalid, Predecessor => F_Option_Class);
    end Set_Option_Class;
 
-   procedure Set_Option_Number (Ctx : in out Context; Value : Option_Number) is
-      Field_Value : constant Field_Dependent_Value := (F_Option_Number, Value);
+   procedure Set_Option_Number (Ctx : in out Context; Val : IPv4.Option_Number) is
+      Field_Value : constant Field_Dependent_Value := (F_Option_Number, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Number);
@@ -673,8 +673,8 @@ is
       Ctx.Cursors (Successor (Ctx, F_Option_Number)) := (State => S_Invalid, Predecessor => F_Option_Number);
    end Set_Option_Number;
 
-   procedure Set_Option_Length (Ctx : in out Context; Value : Option_Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Option_Length, Value);
+   procedure Set_Option_Length (Ctx : in out Context; Val : IPv4.Option_Length) is
+      Field_Value : constant Field_Dependent_Value := (F_Option_Length, Val);
       First, Last : RFLX.Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Length);

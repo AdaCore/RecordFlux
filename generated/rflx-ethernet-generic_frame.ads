@@ -28,17 +28,17 @@ is
             when F_Initial | F_Payload | F_Final =>
                null;
             when F_Destination =>
-               Destination_Value : Address;
+               Destination_Value : Ethernet.Address;
             when F_Source =>
-               Source_Value : Address;
+               Source_Value : Ethernet.Address;
             when F_Type_Length_TPID =>
-               Type_Length_TPID_Value : Type_Length_Base;
+               Type_Length_TPID_Value : Ethernet.Type_Length_Base;
             when F_TPID =>
-               TPID_Value : TPID_Base;
+               TPID_Value : Ethernet.TPID_Base;
             when F_TCI =>
-               TCI_Value : TCI;
+               TCI_Value : Ethernet.TCI;
             when F_Type_Length =>
-               Type_Length_Value : Type_Length_Base;
+               Type_Length_Value : Ethernet.Type_Length_Base;
          end case;
       end record;
 
@@ -111,11 +111,11 @@ is
        Valid_Context (Ctx)
           and Valid_Predecessor (Ctx, Fld);
 
-   function Field_Condition (Ctx : Context; Value : Field_Dependent_Value; Length : RFLX.Types.Bit_Length := 0) return Boolean with
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value; Length : RFLX.Types.Bit_Length := 0) return Boolean with
      Pre =>
        Valid_Context (Ctx)
-          and Value.Fld in Field'Range
-          and Valid_Predecessor (Ctx, Value.Fld);
+          and Val.Fld in Field'Range
+          and Valid_Predecessor (Ctx, Val.Fld);
 
    function Field_Length (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length with
      Pre =>
@@ -206,32 +206,32 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Destination (Ctx : Context) return Address with
+   function Get_Destination (Ctx : Context) return Ethernet.Address with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Destination);
 
-   function Get_Source (Ctx : Context) return Address with
+   function Get_Source (Ctx : Context) return Ethernet.Address with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Source);
 
-   function Get_Type_Length_TPID (Ctx : Context) return Type_Length with
+   function Get_Type_Length_TPID (Ctx : Context) return Ethernet.Type_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Type_Length_TPID);
 
-   function Get_TPID (Ctx : Context) return TPID with
+   function Get_TPID (Ctx : Context) return Ethernet.TPID with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_TPID);
 
-   function Get_TCI (Ctx : Context) return TCI with
+   function Get_TCI (Ctx : Context) return Ethernet.TCI with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_TCI);
 
-   function Get_Type_Length (Ctx : Context) return Type_Length with
+   function Get_Type_Length (Ctx : Context) return Ethernet.Type_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Type_Length);
@@ -244,21 +244,21 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Payload);
 
-   procedure Set_Destination (Ctx : in out Context; Value : Address) with
+   procedure Set_Destination (Ctx : in out Context; Val : Ethernet.Address) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Destination)
           and then Field_Last (Ctx, F_Destination) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Destination, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Destination, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Destination) >= Field_Length (Ctx, F_Destination),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Destination)
-          and Get_Destination (Ctx) = Value
+          and Get_Destination (Ctx) = Val
           and Invalid (Ctx, F_Source)
           and Invalid (Ctx, F_Type_Length_TPID)
           and Invalid (Ctx, F_TPID)
@@ -273,21 +273,21 @@ is
           and Predecessor (Ctx, F_Destination) = Predecessor (Ctx, F_Destination)'Old
           and Valid_Next (Ctx, F_Destination) = Valid_Next (Ctx, F_Destination)'Old;
 
-   procedure Set_Source (Ctx : in out Context; Value : Address) with
+   procedure Set_Source (Ctx : in out Context; Val : Ethernet.Address) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Source)
           and then Field_Last (Ctx, F_Source) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Source, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Source, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Source) >= Field_Length (Ctx, F_Source),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Source)
-          and Get_Source (Ctx) = Value
+          and Get_Source (Ctx) = Val
           and Invalid (Ctx, F_Type_Length_TPID)
           and Invalid (Ctx, F_TPID)
           and Invalid (Ctx, F_TCI)
@@ -303,21 +303,21 @@ is
           and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
           and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old;
 
-   procedure Set_Type_Length_TPID (Ctx : in out Context; Value : Type_Length) with
+   procedure Set_Type_Length_TPID (Ctx : in out Context; Val : Ethernet.Type_Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Type_Length_TPID)
           and then Field_Last (Ctx, F_Type_Length_TPID) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Type_Length_TPID, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Type_Length_TPID, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Type_Length_TPID) >= Field_Length (Ctx, F_Type_Length_TPID),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Type_Length_TPID)
-          and Get_Type_Length_TPID (Ctx) = Value
+          and Get_Type_Length_TPID (Ctx) = Val
           and Invalid (Ctx, F_TPID)
           and Invalid (Ctx, F_TCI)
           and Invalid (Ctx, F_Type_Length)
@@ -338,21 +338,21 @@ is
           and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old
           and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old;
 
-   procedure Set_TPID (Ctx : in out Context; Value : TPID) with
+   procedure Set_TPID (Ctx : in out Context; Val : Ethernet.TPID) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_TPID)
           and then Field_Last (Ctx, F_TPID) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_TPID, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_TPID, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_TPID) >= Field_Length (Ctx, F_TPID),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_TPID)
-          and Get_TPID (Ctx) = Value
+          and Get_TPID (Ctx) = Val
           and Invalid (Ctx, F_TCI)
           and Invalid (Ctx, F_Type_Length)
           and Invalid (Ctx, F_Payload)
@@ -370,21 +370,21 @@ is
           and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old
           and Cursor (Ctx, F_Type_Length_TPID) = Cursor (Ctx, F_Type_Length_TPID)'Old;
 
-   procedure Set_TCI (Ctx : in out Context; Value : TCI) with
+   procedure Set_TCI (Ctx : in out Context; Val : Ethernet.TCI) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_TCI)
           and then Field_Last (Ctx, F_TCI) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_TCI, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_TCI, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_TCI) >= Field_Length (Ctx, F_TCI),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_TCI)
-          and Get_TCI (Ctx) = Value
+          and Get_TCI (Ctx) = Val
           and Invalid (Ctx, F_Type_Length)
           and Invalid (Ctx, F_Payload)
           and (Predecessor (Ctx, F_Type_Length) = F_TCI
@@ -403,21 +403,21 @@ is
           and Cursor (Ctx, F_Type_Length_TPID) = Cursor (Ctx, F_Type_Length_TPID)'Old
           and Cursor (Ctx, F_TPID) = Cursor (Ctx, F_TPID)'Old;
 
-   procedure Set_Type_Length (Ctx : in out Context; Value : Type_Length) with
+   procedure Set_Type_Length (Ctx : in out Context; Val : Ethernet.Type_Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Type_Length)
           and then Field_Last (Ctx, F_Type_Length) <= RFLX.Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Type_Length, Value))
-          and then Valid (Value)
+          and then Field_Condition (Ctx, (F_Type_Length, Val))
+          and then Valid (Val)
           and then Available_Space (Ctx, F_Type_Length) >= Field_Length (Ctx, F_Type_Length),
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Valid (Ctx, F_Type_Length)
-          and Get_Type_Length (Ctx) = Value
+          and Get_Type_Length (Ctx) = Val
           and Invalid (Ctx, F_Payload)
           and (if RFLX.Types.Bit_Length (Get_Type_Length (Ctx)) <= 1500 then
              Predecessor (Ctx, F_Payload) = F_Type_Length
@@ -560,20 +560,20 @@ private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
 
-   function Valid_Value (Value : Field_Dependent_Value) return Boolean is
-     ((case Value.Fld is
+   function Valid_Value (Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
          when F_Destination =>
-            Valid (Value.Destination_Value),
+            Valid (Val.Destination_Value),
          when F_Source =>
-            Valid (Value.Source_Value),
+            Valid (Val.Source_Value),
          when F_Type_Length_TPID =>
-            Valid (Value.Type_Length_TPID_Value),
+            Valid (Val.Type_Length_TPID_Value),
          when F_TPID =>
-            Valid (Value.TPID_Value),
+            Valid (Val.TPID_Value),
          when F_TCI =>
-            Valid (Value.TCI_Value),
+            Valid (Val.TCI_Value),
          when F_Type_Length =>
-            Valid (Value.Type_Length_Value),
+            Valid (Val.Type_Length_Value),
          when F_Payload =>
             True,
          when F_Initial | F_Final =>
@@ -594,7 +594,7 @@ private
      Dynamic_Predicate =>
        (if State = S_Valid
              or State = S_Structural_Valid then
-           Valid_Value (Value));
+           Valid_Value (Field_Cursor.Value));
 
    function Structural_Valid (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid
