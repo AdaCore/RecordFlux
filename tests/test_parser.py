@@ -715,3 +715,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_ethernet_message(self) -> None:
         self.assert_messages_files([f'{self.specdir}/ethernet.rflx'], [ETHERNET_FRAME])
+
+    def test_tls(self) -> None:
+        parser = Parser()
+        for f in [
+            'tls_alert.rflx', 'tls_handshake.rflx', 'tls_heartbeat.rflx', 'tls_record.rflx'
+        ]:
+            parser.parse(f'{self.specdir}/{f}')
