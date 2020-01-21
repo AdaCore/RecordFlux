@@ -17,7 +17,7 @@ class TestGenerator(unittest.TestCase):
         self.maxDiff = None  # pylint: disable=invalid-name
 
     def test_library_files(self) -> None:
-        generator = Generator('RFLX.')
+        generator = Generator('RFLX.', reproducible=True)
         with TemporaryDirectory() as tmpdir:
             generator.write_library_files(Path(tmpdir))
             for filename in [f'rflx-{f}' for f in LIBRARY_FILES] + ['rflx.ads']:
@@ -104,6 +104,6 @@ class TestGenerator(unittest.TestCase):
 
 
 def generate(pdus: List[Message], refinements: List[Refinement]) -> Generator:
-    generator = Generator('RFLX.')
+    generator = Generator('RFLX.', reproducible=True)
     generator.generate(pdus, refinements)
     return generator

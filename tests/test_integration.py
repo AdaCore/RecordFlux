@@ -16,7 +16,7 @@ class TestIntegration(unittest.TestCase):
         for basename in basenames:
             parser.parse(f'{self.specdir}/{basename}.rflx')
 
-        generator = Generator('RFLX.')
+        generator = Generator('RFLX.', reproducible=True)
         generator.generate(parser.messages, parser.refinements)
 
         for unit in generator.units.values():
