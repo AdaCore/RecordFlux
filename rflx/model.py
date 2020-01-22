@@ -3,9 +3,29 @@ from abc import ABC, abstractmethod, abstractproperty
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
-from rflx.expression import (FALSE, TRUE, UNDEFINED, Add, And, Equal, Expr, First, GreaterEqual, If,
-                             Last, Length, Less, LessEqual, Not, Number, Or, Pow, ProofResult, Sub,
-                             Variable)
+from rflx.expression import (
+    FALSE,
+    TRUE,
+    UNDEFINED,
+    Add,
+    And,
+    Equal,
+    Expr,
+    First,
+    GreaterEqual,
+    If,
+    Last,
+    Length,
+    Less,
+    LessEqual,
+    Not,
+    Number,
+    Or,
+    Pow,
+    ProofResult,
+    Sub,
+    Variable,
+)
 
 
 class Element(ABC):
@@ -15,13 +35,13 @@ class Element(ABC):
         return NotImplemented
 
     def __repr__(self) -> str:
-        args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
+        args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
 
 
 class Type(Element):
     def __init__(self, full_name: str) -> None:
-        if full_name.count('.') != 1:
+        if full_name.count(".") != 1:
             raise ModelError(f'unexpected format of type name "{full_name}"')
         self.full_name = full_name
 
@@ -35,19 +55,19 @@ class Type(Element):
 
     @property
     def name(self) -> str:
-        return self.full_name.rsplit('.', 1)[1]
+        return self.full_name.rsplit(".", 1)[1]
 
     @property
     def package(self) -> str:
-        return self.full_name.rsplit('.', 1)[0]
+        return self.full_name.rsplit(".", 1)[0]
 
     @property
     def base_name(self) -> str:
-        return f'{self.name}_Base'
+        return f"{self.name}_Base"
 
     @property
     def full_base_name(self) -> str:
-        return f'{self.full_name}_Base'
+        return f"{self.full_name}_Base"
 
 
 class Scalar(Type):
@@ -63,7 +83,7 @@ class ModularInteger(Scalar):
         if not isinstance(modulus_num, Number):
             raise ModelError(f'modulus of "{self.name}" contains variable')
         modulus_int = int(modulus_num)
-        if modulus_int > 2**64:
+        if modulus_int > 2 ** 64:
             raise ModelError(f'modulus of "{self.name}" exceeds limit (2**64)')
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
             raise ModelError(f'modulus of "{self.name}" not power of two')
@@ -80,8 +100,9 @@ class ModularInteger(Scalar):
 
     def constraints(self, name: str, proof: bool = False) -> Expr:
         if proof:
-            return And(Less(Variable(name), self.__modulus),
-                       GreaterEqual(Variable(name), Number(0)))
+            return And(
+                Less(Variable(name), self.__modulus), GreaterEqual(Variable(name), Number(0))
+            )
         return TRUE
 
 
@@ -121,8 +142,9 @@ class RangeInteger(Scalar):
 
     def constraints(self, name: str, proof: bool = False) -> Expr:
         if proof:
-            return And(GreaterEqual(Variable(name), self.first),
-                       LessEqual(Variable(name), self.last))
+            return And(
+                GreaterEqual(Variable(name), self.first), LessEqual(Variable(name), self.last)
+            )
 
         c: Expr = TRUE
         if self.first.simplified() != self.base_first.simplified():
@@ -141,8 +163,9 @@ class RangeInteger(Scalar):
 
 
 class Enumeration(Scalar):
-    def __init__(self, full_name: str, literals: Dict[str, Number], size: Number,
-                 always_valid: bool) -> None:
+    def __init__(
+        self, full_name: str, literals: Dict[str, Number], size: Number, always_valid: bool
+    ) -> None:
         super().__init__(full_name)
         if log(max(map(int, literals.values())) + 1) / log(2) > int(size):
             raise ModelError(f'size for "{self.name}" too small')
@@ -156,7 +179,8 @@ class Enumeration(Scalar):
         if proof:
             return And(
                 And(*[Equal(Variable(l), v) for l, v in self.literals.items()]),
-                Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()]))
+                Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()]),
+            )
         return TRUE
 
     @property
@@ -165,7 +189,7 @@ class Enumeration(Scalar):
 
     @property
     def enum_name(self) -> str:
-        return f'{self.name}_Enum'
+        return f"{self.name}_Enum"
 
 
 class Composite(Type):
@@ -192,7 +216,7 @@ class Array(Composite):
 
 class Payload(Composite):
     def __init__(self) -> None:
-        super().__init__('__PACKAGE__.Payload')
+        super().__init__("__PACKAGE__.Payload")
 
     @property
     def size(self) -> Expr:
@@ -216,11 +240,11 @@ class Field(NamedTuple):
 
     @property
     def affixed_name(self) -> str:
-        return f'F_{self.name}'
+        return f"F_{self.name}"
 
 
-INITIAL = Field('Initial')
-FINAL = Field('Final')
+INITIAL = Field("Initial")
+FINAL = Field("Final")
 
 
 class Link(NamedTuple):
@@ -232,9 +256,10 @@ class Link(NamedTuple):
 
 
 class Message(Element):
-    def __init__(self, full_name: str, structure: Sequence[Link],
-                 types: Mapping[Field, Type]) -> None:
-        if full_name.count('.') != 1:
+    def __init__(
+        self, full_name: str, structure: Sequence[Link], types: Mapping[Field, Type]
+    ) -> None:
+        if full_name.count(".") != 1:
             raise ModelError(f'unexpected format of message name "{full_name}"')
         self.full_name = full_name
         self.structure = structure
@@ -243,14 +268,14 @@ class Message(Element):
         if structure or types:
             self.__verify()
             self.__fields = self.__compute_topological_sorting()
-            self.__types = {f: self.__types[f]
-                            for f in self.__fields}
-            self.__paths = {f: self.__compute_paths(f)
-                            for f in self.all_fields}
-            self.__definite_predecessors = {f: self.__compute_definite_predecessors(f)
-                                            for f in self.all_fields}
-            self.__field_condition = {f: self.__compute_field_condition(f).simplified()
-                                      for f in self.all_fields}
+            self.__types = {f: self.__types[f] for f in self.__fields}
+            self.__paths = {f: self.__compute_paths(f) for f in self.all_fields}
+            self.__definite_predecessors = {
+                f: self.__compute_definite_predecessors(f) for f in self.all_fields
+            }
+            self.__field_condition = {
+                f: self.__compute_field_condition(f).simplified() for f in self.all_fields
+            }
             self.__verify_conditions()
             self.__prove()
         else:
@@ -261,11 +286,11 @@ class Message(Element):
 
     @property
     def name(self) -> str:
-        return self.full_name.rsplit('.', 1)[1]
+        return self.full_name.rsplit(".", 1)[1]
 
     @property
     def package(self) -> str:
-        return self.full_name.rsplit('.', 1)[0]
+        return self.full_name.rsplit(".", 1)[0]
 
     @property
     def fields(self) -> Tuple[Field, ...]:
@@ -297,14 +322,14 @@ class Message(Element):
             return ()
         if field == FINAL:
             return self.fields
-        return self.fields[:self.fields.index(field)]
+        return self.fields[: self.fields.index(field)]
 
     def successors(self, field: Field) -> Tuple[Field, ...]:
         if field == INITIAL:
             return self.fields
         if field == FINAL:
             return ()
-        return self.fields[self.fields.index(field) + 1:]
+        return self.fields[self.fields.index(field) + 1 :]
 
     def direct_predecessors(self, field: Field) -> Sequence[Field]:
         return list(dict.fromkeys([l.source for l in self.incoming(field)]))
@@ -323,7 +348,7 @@ class Message(Element):
         if field == FINAL:
             return Number(0)
         if field not in self.fields:
-            raise ValueError(f'field {field} not found')
+            raise ValueError(f"field {field} not found")
         return self.types[field].size
 
     def __verify(self) -> None:
@@ -337,84 +362,136 @@ class Message(Element):
             raise ModelError(f'ambiguous first field in "{self.full_name}"')
 
     @staticmethod
-    def __check_vars(expression: Expr, state: Tuple[Set[str], Set[str], Set[str]], link: Link,
-                     index: int, location: Tuple[str, str]) -> None:
+    def __check_vars(
+        expression: Expr,
+        state: Tuple[Set[str], Set[str], Set[str]],
+        link: Link,
+        index: int,
+        location: Tuple[str, str],
+    ) -> None:
         variables, literals, seen = state
         message, part = location
         for v in expression.variables(True):
             if v.name not in literals and v.name not in seen:
                 if v.name in variables:
-                    raise ModelError(f'subsequent field "{v}" referenced in {part} '
-                                     f'{index} from field "{link.source.name}" to '
-                                     f'"{link.target.name}" in "{message}"')
-                raise ModelError(f'undefined variable "{v}" referenced in {part} '
-                                 f'{index} from field "{link.source.name}" to '
-                                 f'"{link.target.name}" in "{message}"')
+                    raise ModelError(
+                        f'subsequent field "{v}" referenced in {part} '
+                        f'{index} from field "{link.source.name}" to '
+                        f'"{link.target.name}" in "{message}"'
+                    )
+                raise ModelError(
+                    f'undefined variable "{v}" referenced in {part} '
+                    f'{index} from field "{link.source.name}" to '
+                    f'"{link.target.name}" in "{message}"'
+                )
 
     def __verify_conditions(self) -> None:
-        literals = {n for t in self.types.values()
-                    if isinstance(t, Enumeration) for n in t.literals}
-        variables = {v for f in self.fields if isinstance(f.name, str)
-                     for v in [f.name, f"{f.name}'First", f"{f.name}'Length", f"{f.name}'Last"]}
+        literals = {
+            n for t in self.types.values() if isinstance(t, Enumeration) for n in t.literals
+        }
+        variables = {
+            v
+            for f in self.fields
+            if isinstance(f.name, str)
+            for v in [f.name, f"{f.name}'First", f"{f.name}'Length", f"{f.name}'Last"]
+        }
         seen = set({"Message'First", "Message'Last", "Message'Length"})
         variables.update(*seen)
         for f in (INITIAL, *self.fields):
             for v in [f.name, f"{f.name}'Length", f"{f.name}'First", f"{f.name}'Last"]:
                 seen.add(v)
             for index, l in enumerate(self.outgoing(f)):
-                self.__check_vars(l.condition, (variables, literals, seen), l, index,
-                                  (self.full_name, 'condition'))
-                self.__check_vars(l.length, (variables, literals, seen), l, index,
-                                  (self.full_name, 'Length expression'))
-                self.__check_vars(l.first, (variables, literals, seen), l, index,
-                                  (self.full_name, 'First expression'))
+                self.__check_vars(
+                    l.condition,
+                    (variables, literals, seen),
+                    l,
+                    index,
+                    (self.full_name, "condition"),
+                )
+                self.__check_vars(
+                    l.length,
+                    (variables, literals, seen),
+                    l,
+                    index,
+                    (self.full_name, "Length expression"),
+                )
+                self.__check_vars(
+                    l.first,
+                    (variables, literals, seen),
+                    l,
+                    index,
+                    (self.full_name, "First expression"),
+                )
 
                 if l.first != UNDEFINED and not isinstance(l.first, First):
-                    raise ModelError(f'invalid First for field "{l.target.name}" in First'
-                                     f' expression {index} from field "{f.name}" to'
-                                     f' "{l.target.name}" in "{self.full_name}"')
+                    raise ModelError(
+                        f'invalid First for field "{l.target.name}" in First'
+                        f' expression {index} from field "{f.name}" to'
+                        f' "{l.target.name}" in "{self.full_name}"'
+                    )
 
                 if l.target != FINAL:
                     t = self.types[l.target]
                     unconstrained = isinstance(t, (Payload, Array))
                     if not unconstrained and l.length != UNDEFINED:
-                        raise ModelError(f'fixed size field "{l.target.name}" with length'
-                                         f' expression in "{self.full_name}"')
+                        raise ModelError(
+                            f'fixed size field "{l.target.name}" with length'
+                            f' expression in "{self.full_name}"'
+                        )
                     if unconstrained and l.length == UNDEFINED:
-                        raise ModelError(f'unconstrained field "{l.target.name}" without length'
-                                         f' expression in "{self.full_name}"')
+                        raise ModelError(
+                            f'unconstrained field "{l.target.name}" without length'
+                            f' expression in "{self.full_name}"'
+                        )
 
     def __type_constraints(self, expr: Expr) -> Expr:
-        literals = {l for v in self.types.values()
-                    if isinstance(v, Enumeration) for l in v.literals}
-        return And(*[self.types[Field(v.name)].constraints(name=v.name, proof=True)
-                     for v in expr.variables()
-                     if isinstance(v.name, str) and v.name not in literals])
+        literals = {
+            l for v in self.types.values() if isinstance(v, Enumeration) for l in v.literals
+        }
+        return And(
+            *[
+                self.types[Field(v.name)].constraints(name=v.name, proof=True)
+                for v in expr.variables()
+                if isinstance(v.name, str) and v.name not in literals
+            ]
+        )
 
     def __with_constraints(self, expr: Expr) -> Expr:
         return And(self.__type_constraints(expr), expr)
 
     def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.__fields):
-            conflict = LessEqual(Add(*[If([(self.__with_constraints(c.condition), Number(1))],
-                                          Number(0))
-                                       for c in self.outgoing(f)]),
-                                 Number(1))
+            conflict = LessEqual(
+                Add(
+                    *[
+                        If([(self.__with_constraints(c.condition), Number(1))], Number(0))
+                        for c in self.outgoing(f)
+                    ]
+                ),
+                Number(1),
+            )
             result = conflict.forall()
             if result != ProofResult.sat:
-                message = str(conflict).replace('\n', '')
-                raise ModelError(f'conflicting conditions for field "{f.name}"'
-                                 f' in "{self.full_name}" ({result}: {message})')
+                message = str(conflict).replace("\n", "")
+                raise ModelError(
+                    f'conflicting conditions for field "{f.name}"'
+                    f' in "{self.full_name}" ({result}: {message})'
+                )
 
     def __prove_reachability(self) -> None:
         for f in (*self.__fields, FINAL):
-            reachability = Or(*[And(*[self.__with_constraints(l.condition) for l in path])
-                                for path in self.__paths[f]])
+            reachability = Or(
+                *[
+                    And(*[self.__with_constraints(l.condition) for l in path])
+                    for path in self.__paths[f]
+                ]
+            )
             result = reachability.exists()
             if result != ProofResult.sat:
-                message = str(reachability).replace('\n', '')
-                raise ModelError(f'unreachable field "{f.name}" in "{self.full_name}"'
-                                 f' ({result}: {message})')
+                message = str(reachability).replace("\n", "")
+                raise ModelError(
+                    f'unreachable field "{f.name}" in "{self.full_name}"' f" ({result}: {message})"
+                )
 
     def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.__fields):
@@ -422,15 +499,17 @@ class Message(Element):
                 contradiction = Equal(self.__with_constraints(c.condition), FALSE)
                 result = contradiction.forall()
                 if result == ProofResult.sat:
-                    message = str(contradiction).replace('\n', '')
-                    raise ModelError(f'contradicting condition {index} from field "{f.name}" to'
-                                     f' "{c.target.name}" in "{self.full_name}"'
-                                     f' ({result}: {message})')
+                    message = str(contradiction).replace("\n", "")
+                    raise ModelError(
+                        f'contradicting condition {index} from field "{f.name}" to'
+                        f' "{c.target.name}" in "{self.full_name}"'
+                        f" ({result}: {message})"
+                    )
 
     @staticmethod
     def __target_first(link: Link) -> Expr:
         if link.source == INITIAL:
-            return First('Message')
+            return First("Message")
         if link.first != UNDEFINED:
             return link.first
         return Add(Last(link.source.name), Number(1))
@@ -441,49 +520,70 @@ class Message(Element):
         return self.field_size(link.target)
 
     def __target_last(self, link: Link) -> Expr:
-        return Sub(Add(self.__target_first(link),
-                       self.__target_length(link)),
-                   Number(1))
+        return Sub(Add(self.__target_first(link), self.__target_length(link)), Number(1))
 
     def __link_expression(self, link: Link) -> Expr:
         name = link.target.name
-        return And(*[Equal(First(name), self.__target_first(link)),
-                     Equal(Length(name), self.__target_length(link)),
-                     Equal(Last(name), self.__target_last(link)),
-                     GreaterEqual(First('Message'), Number(0)),
-                     GreaterEqual(Last('Message'), Last(name)),
-                     GreaterEqual(Last('Message'), First('Message')),
-                     Equal(Length('Message'),
-                           Add(Sub(Last('Message'), First('Message')), Number(1))),
-                     link.condition])
+        return And(
+            *[
+                Equal(First(name), self.__target_first(link)),
+                Equal(Length(name), self.__target_length(link)),
+                Equal(Last(name), self.__target_last(link)),
+                GreaterEqual(First("Message"), Number(0)),
+                GreaterEqual(Last("Message"), Last(name)),
+                GreaterEqual(Last("Message"), First("Message")),
+                Equal(Length("Message"), Add(Sub(Last("Message"), First("Message")), Number(1))),
+                link.condition,
+            ]
+        )
 
     def __prove_field_positions(self) -> None:
         for f in self.__fields:
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 path_expressions = And(*[self.__link_expression(l) for l in p])
                 length = self.__target_length(l)
-                positive = If([(And(self.__type_constraints(And(path_expressions, length)),
-                                    path_expressions),
-                                GreaterEqual(length, Number(0)))],
-                              TRUE)
+                positive = If(
+                    [
+                        (
+                            And(
+                                self.__type_constraints(And(path_expressions, length)),
+                                path_expressions,
+                            ),
+                            GreaterEqual(length, Number(0)),
+                        )
+                    ],
+                    TRUE,
+                )
                 result = positive.forall()
                 if result != ProofResult.sat:
-                    path_message = ' -> '.join([l.target.name for l in p])
-                    message = str(positive.simplified()).replace('\n\t', '')
-                    raise ModelError(f'negative length for field "{f.name}" on path {path_message}'
-                                     f' in "{self.full_name}" ({result}: {message})')
+                    path_message = " -> ".join([l.target.name for l in p])
+                    message = str(positive.simplified()).replace("\n\t", "")
+                    raise ModelError(
+                        f'negative length for field "{f.name}" on path {path_message}'
+                        f' in "{self.full_name}" ({result}: {message})'
+                    )
 
                 first = self.__target_first(l)
-                start = If([(And(self.__type_constraints(And(path_expressions, first)),
-                                 path_expressions),
-                             GreaterEqual(first, First('Message')))],
-                           TRUE)
+                start = If(
+                    [
+                        (
+                            And(
+                                self.__type_constraints(And(path_expressions, first)),
+                                path_expressions,
+                            ),
+                            GreaterEqual(first, First("Message")),
+                        )
+                    ],
+                    TRUE,
+                )
                 result = start.forall()
                 if result != ProofResult.sat:
-                    path_message = ' -> '.join([l.target.name for l in p])
-                    message = str(start.simplified()).replace('\n\t', '')
-                    raise ModelError(f'start of field "{f.name}" on path {path_message} before'
-                                     f' message start in "{self.full_name} ({result}: {message})')
+                    path_message = " -> ".join([l.target.name for l in p])
+                    message = str(start.simplified()).replace("\n\t", "")
+                    raise ModelError(
+                        f'start of field "{f.name}" on path {path_message} before'
+                        f' message start in "{self.full_name} ({result}: {message})'
+                    )
 
     def __prove_coverage(self) -> None:
         """
@@ -499,40 +599,56 @@ class Message(Element):
         """
         for path in [p[:-1] for p in self.__paths[FINAL] if p]:
             # Calculate (1)
-            message_range = And(GreaterEqual(Variable('f'), First('Message')),
-                                LessEqual(Variable('f'), Last('Message')))
+            message_range = And(
+                GreaterEqual(Variable("f"), First("Message")),
+                LessEqual(Variable("f"), Last("Message")),
+            )
             # Calculate (2) for all fields
-            fields = And(*[Not(And(GreaterEqual(Variable('f'), self.__target_first(l)),
-                                   LessEqual(Variable('f'), self.__target_last(l)))) for l in path])
+            fields = And(
+                *[
+                    Not(
+                        And(
+                            GreaterEqual(Variable("f"), self.__target_first(l)),
+                            LessEqual(Variable("f"), self.__target_last(l)),
+                        )
+                    )
+                    for l in path
+                ]
+            )
             # Define that the end of the last field of a path is the end of the message
-            last_field = Equal(self.__target_last(path[-1]), Last('Message'))
+            last_field = Equal(self.__target_last(path[-1]), Last("Message"))
             # Constraints for links and types
-            path_expressions = self.__with_constraints(And(*[self.__link_expression(l)
-                                                             for l in path]))
+            path_expressions = self.__with_constraints(
+                And(*[self.__link_expression(l) for l in path])
+            )
 
             # Coverage expression must be False, i.e. no bits left
             coverage = Not(And(*[fields, last_field, path_expressions, message_range]))
             result = coverage.forall()
             if result != ProofResult.sat:
-                path_message = ' -> '.join([l.target.name for l in path])
-                message = str(coverage).replace('\n\t', '')
-                raise ModelError(f'path {path_message} does not cover whole message'
-                                 f' in "{self.full_name}" ({result}: {message})')
+                path_message = " -> ".join([l.target.name for l in path])
+                message = str(coverage).replace("\n\t", "")
+                raise ModelError(
+                    f"path {path_message} does not cover whole message"
+                    f' in "{self.full_name}" ({result}: {message})'
+                )
 
     def __prove_overlays(self) -> None:
         for f in (INITIAL, *self.__fields):
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 if l.first != UNDEFINED and isinstance(l.first, First):
                     path_expressions = And(*[self.__link_expression(l) for l in p])
-                    overlaid = If([(path_expressions,
-                                    Equal(self.__target_last(l), Last(l.first.name)))],
-                                  TRUE)
+                    overlaid = If(
+                        [(path_expressions, Equal(self.__target_last(l), Last(l.first.name)))], TRUE
+                    )
                     result = overlaid.forall()
                     if result != ProofResult.sat:
-                        message = str(overlaid).replace('\n', '')
-                        raise ModelError(f'field "{f.name}" not congruent with overlaid field '
-                                         f'"{l.first.name}" in "{self.full_name}"'
-                                         f' ({result}: {message})')
+                        message = str(overlaid).replace("\n", "")
+                        raise ModelError(
+                            f'field "{f.name}" not congruent with overlaid field '
+                            f'"{l.first.name}" in "{self.full_name}"'
+                            f" ({result}: {message})"
+                        )
 
     def __prove(self) -> None:
         self.__prove_field_positions()
@@ -561,43 +677,58 @@ class Message(Element):
     def __compute_paths(self, final: Field) -> Set[Tuple[Link, ...]]:
         if final == INITIAL:
             return {()}
-        return set(itertools.chain.from_iterable(
-            ((p + (l,) for p in self.__compute_paths(l.source)) for l in self.incoming(final))))
+        return set(
+            itertools.chain.from_iterable(
+                ((p + (l,) for p in self.__compute_paths(l.source)) for l in self.incoming(final))
+            )
+        )
 
     def __compute_definite_predecessors(self, final: Field) -> Tuple[Field, ...]:
-        return tuple(f for f in self.__fields
-                     if all(any(f == pf.source for pf in p)
-                            for p in self.__paths[final]))
+        return tuple(
+            f
+            for f in self.__fields
+            if all(any(f == pf.source for pf in p) for p in self.__paths[final])
+        )
 
     def __compute_field_condition(self, final: Field) -> Expr:
         if final == INITIAL:
             return TRUE
-        return Or(*[And(self.__compute_field_condition(l.source), l.condition)
-                    for l in self.incoming(final)])
+        return Or(
+            *[
+                And(self.__compute_field_condition(l.source), l.condition)
+                for l in self.incoming(final)
+            ]
+        )
 
 
 class DerivedMessage(Message):
-    def __init__(self, full_name: str, full_base_name: str, structure: Sequence[Link],
-                 types: Mapping[Field, Type]) -> None:
+    def __init__(
+        self,
+        full_name: str,
+        full_base_name: str,
+        structure: Sequence[Link],
+        types: Mapping[Field, Type],
+    ) -> None:
         super().__init__(full_name, structure, types)
-        if full_base_name.count('.') != 1:
+        if full_base_name.count(".") != 1:
             raise ModelError(f'unexpected format of message name "{full_name}"')
         self.full_base_name = full_base_name
 
     @property
     def base_name(self) -> str:
-        return self.full_base_name.rsplit('.', 1)[1]
+        return self.full_base_name.rsplit(".", 1)[1]
 
     @property
     def base_package(self) -> str:
-        return self.full_base_name.rsplit('.', 1)[0]
+        return self.full_base_name.rsplit(".", 1)[0]
 
 
 class Refinement(Type):
     # pylint: disable=too-many-arguments
-    def __init__(self, package: str, pdu: str, field: Field, sdu: str,
-                 condition: Expr = TRUE) -> None:
-        super().__init__(f'{package}.')
+    def __init__(
+        self, package: str, pdu: str, field: Field, sdu: str, condition: Expr = TRUE
+    ) -> None:
+        super().__init__(f"{package}.")
         self.pdu = pdu
         self.field = field
         self.sdu = sdu
@@ -605,10 +736,12 @@ class Refinement(Type):
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return (self.package == other.package
-                    and self.pdu == other.pdu
-                    and self.field == other.field
-                    and self.sdu == other.sdu)
+            return (
+                self.package == other.package
+                and self.pdu == other.pdu
+                and self.field == other.field
+                and self.sdu == other.sdu
+            )
         return NotImplemented
 
     def constraints(self, name: str, proof: bool = False) -> Expr:

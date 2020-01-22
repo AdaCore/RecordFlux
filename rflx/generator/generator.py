@@ -1,15 +1,58 @@
 from typing import Mapping, Sequence
 
-from rflx.ada import (Assignment, CallStatement, CaseStatement, ExpressionFunctionDeclaration,
-                      FormalSubprogramDeclaration, FunctionSpecification,
-                      GenericProcedureInstantiation, InOutParameter, NullStatement,
-                      ObjectDeclaration, OutParameter, Parameter, Postcondition, PragmaStatement,
-                      Precondition, ProcedureSpecification, Subprogram, SubprogramBody,
-                      SubprogramDeclaration, UnitPart)
-from rflx.expression import (TRUE, Add, Aggregate, And, AndThen, Call, Constrained, Div, Equal,
-                             Expr, ForAllIn, GreaterEqual, If, In, Indexed, Last, LessEqual, Mod,
-                             Name, NamedAggregate, Not, Number, Old, Or, Range, Selected, Slice,
-                             Sub, Variable)
+from rflx.ada import (
+    Assignment,
+    CallStatement,
+    CaseStatement,
+    ExpressionFunctionDeclaration,
+    FormalSubprogramDeclaration,
+    FunctionSpecification,
+    GenericProcedureInstantiation,
+    InOutParameter,
+    NullStatement,
+    ObjectDeclaration,
+    OutParameter,
+    Parameter,
+    Postcondition,
+    PragmaStatement,
+    Precondition,
+    ProcedureSpecification,
+    Subprogram,
+    SubprogramBody,
+    SubprogramDeclaration,
+    UnitPart,
+)
+from rflx.expression import (
+    TRUE,
+    Add,
+    Aggregate,
+    And,
+    AndThen,
+    Call,
+    Constrained,
+    Div,
+    Equal,
+    Expr,
+    ForAllIn,
+    GreaterEqual,
+    If,
+    In,
+    Indexed,
+    Last,
+    LessEqual,
+    Mod,
+    Name,
+    NamedAggregate,
+    Not,
+    Number,
+    Old,
+    Or,
+    Range,
+    Selected,
+    Slice,
+    Sub,
+    Variable,
+)
 from rflx.model import FINAL, Enumeration, Field, Message, Payload, Scalar, Type
 
 from .common import VALID_CONTEXT, GeneratorCommon, length_dependent_condition
@@ -223,8 +266,10 @@ class GeneratorGenerator:
             )
             return ProcedureSpecification(
                 f"Set_{field.name}",
-                [InOutParameter(["Ctx"], "Context"),
-                 Parameter(["Val"], f'{message.package}.{type_name}')],
+                [
+                    InOutParameter(["Ctx"], "Context"),
+                    Parameter(["Val"], f"{message.package}.{type_name}"),
+                ],
             )
 
         return UnitPart(

@@ -28,15 +28,14 @@ class ProofResult(Enum):
 
 
 class Expr(ABC):
-
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
     def __repr__(self) -> str:
-        args = '\n\t' + ',\n\t'.join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f'{self.__class__.__name__}({args})'.replace('\t', '\t    ')
+        args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
 
     def __hash__(self) -> int:
         return hash(repr(self))
@@ -61,30 +60,31 @@ class Expr(ABC):
             return self == other
         return NotImplemented
 
-    def __contains__(self, item: 'Expr') -> bool:
+    def __contains__(self, item: "Expr") -> bool:
         return item == self
 
     @abstractmethod
-    def __neg__(self) -> 'Expr':
+    def __neg__(self) -> "Expr":
         raise NotImplementedError
 
     @abstractproperty
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def variables(self, proof: bool = False) -> List['Variable']:  # pylint: disable=unused-argument,no-self-use
+    # pylint: disable=unused-argument,no-self-use
+    def variables(self, proof: bool = False) -> List["Variable"]:
         return []
 
-    def converted(self, replace_function: Callable[['Expr'], 'Expr']) -> 'Expr':
+    def converted(self, replace_function: Callable[["Expr"], "Expr"]) -> "Expr":
         return replace_function(self)
 
     @abstractmethod
-    def simplified(self, facts: Mapping['Name', 'Expr'] = None) -> 'Expr':
+    def simplified(self, facts: Mapping["Name", "Expr"] = None) -> "Expr":
         raise NotImplementedError
 
-    def parenthesized(self, expr: 'Expr') -> str:
+    def parenthesized(self, expr: "Expr") -> str:
         if expr.precedence.value <= self.precedence.value:
-            return f'({expr})'
+            return f"({expr})"
         return str(expr)
 
     @abstractmethod
@@ -112,20 +112,20 @@ class Expr(ABC):
 
 class BooleanLiteral(Expr):
     @abstractmethod
-    def __neg__(self) -> 'Expr':
+    def __neg__(self) -> "Expr":
         raise NotImplementedError
 
     @property
     def precedence(self) -> Precedence:
         return Precedence.literal
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         return self
 
 
 class BooleanTrue(BooleanLiteral):
     def __str__(self) -> str:
-        return 'True'
+        return "True"
 
     def __neg__(self) -> Expr:
         return FALSE
@@ -139,7 +139,7 @@ TRUE = BooleanTrue()
 
 class BooleanFalse(BooleanLiteral):
     def __str__(self) -> str:
-        return 'False'
+        return "False"
 
     def __neg__(self) -> Expr:
         return TRUE
@@ -156,19 +156,19 @@ class Not(Expr):
         self.expr = expr
 
     def __str__(self) -> str:
-        return f'not {self.parenthesized(self.expr)}'
+        return f"not {self.parenthesized(self.expr)}"
 
     def __neg__(self) -> Expr:
         return self.expr
 
-    def variables(self, proof: bool = False) -> List['Variable']:
+    def variables(self, proof: bool = False) -> List["Variable"]:
         return self.expr.variables(proof)
 
     @property
     def precedence(self) -> Precedence:
         return Precedence.highest_precedence_operator
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         return self
 
     def z3expr(self) -> z3.BoolRef:
@@ -184,7 +184,7 @@ class BinExpr(Expr):
         self.right = right
 
     def __str__(self) -> str:
-        return f'{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}'
+        return f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}"
 
     def __neg__(self) -> Expr:
         return self.__class__(-self.left, self.right)
@@ -196,7 +196,7 @@ class BinExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def variables(self, proof: bool = False) -> List['Variable']:
+    def variables(self, proof: bool = False) -> List["Variable"]:
         return list(unique(self.left.variables(proof) + self.right.variables(proof)))
 
     def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
@@ -204,7 +204,7 @@ class BinExpr(Expr):
         right = self.right.converted(replace_function)
         return replace_function(self.__class__(left, right))
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         return self.__class__(left, right)
@@ -266,7 +266,7 @@ class AssExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def variables(self, proof: bool = False) -> List['Variable']:
+    def variables(self, proof: bool = False) -> List["Variable"]:
         return list(unique([v for t in self.terms for v in t.variables(proof)]))
 
     def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
@@ -275,7 +275,7 @@ class AssExpr(Expr):
             terms.append(term.converted(replace_function))
         return replace_function(self.__class__(*terms))
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         terms: List[Expr] = []
         all_terms = list(self.terms)
         total = self.neutral_element()
@@ -322,7 +322,7 @@ class LogExpr(AssExpr):
     def __str__(self) -> str:
         if not self.terms:
             return str(TRUE)
-        return indent_next(f'\n{self.symbol}'.join(map(self.parenthesized, self.terms)), 2)
+        return indent_next(f"\n{self.symbol}".join(map(self.parenthesized, self.terms)), 2)
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -356,7 +356,7 @@ class And(LogExpr):
 
     @property
     def symbol(self) -> str:
-        return ' and '
+        return " and "
 
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
@@ -369,7 +369,7 @@ class And(LogExpr):
 class AndThen(And):
     @property
     def symbol(self) -> str:
-        return ' and then '
+        return " and then "
 
 
 class Or(LogExpr):
@@ -380,7 +380,7 @@ class Or(LogExpr):
     def precedence(self) -> Precedence:
         return Precedence.logical_operator
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         simplified_expr = super().simplified(facts)
         if isinstance(simplified_expr, Or):
             if TRUE in simplified_expr.terms:
@@ -395,7 +395,7 @@ class Or(LogExpr):
 
     @property
     def symbol(self) -> str:
-        return ' or '
+        return " or "
 
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
@@ -413,20 +413,20 @@ class Number(Expr):
     def __str__(self) -> str:
         value = self.value if self.value >= 0 else -self.value
         if self.base == 0:
-            data = '{}'.format(value)
+            data = "{}".format(value)
         elif self.base == 2:
-            data = '2#{:b}#'.format(value)
+            data = "2#{:b}#".format(value)
         elif self.base == 8:
-            data = '8#{:o}#'.format(value)
+            data = "8#{:o}#".format(value)
         elif self.base == 10:
-            data = '10#{}#'.format(value)
+            data = "10#{}#".format(value)
         elif self.base == 16:
-            data = '16#{:X}#'.format(value)
+            data = "16#{:X}#".format(value)
         else:
-            raise NotImplementedError(f'unsupported base {self.base}')
+            raise NotImplementedError(f"unsupported base {self.base}")
 
         if self.value < 0:
-            return f'(-{data})'
+            return f"(-{data})"
         return data
 
     def __hash__(self) -> int:
@@ -435,20 +435,20 @@ class Number(Expr):
     def __int__(self) -> int:
         return self.value
 
-    def __neg__(self) -> 'Number':
+    def __neg__(self) -> "Number":
         return Number(-self.value)
 
-    def __add__(self, other: object) -> 'Number':
+    def __add__(self, other: object) -> "Number":
         if isinstance(other, Number):
             return Number(self.value + other.value)
         return NotImplemented
 
-    def __sub__(self, other: object) -> 'Number':
+    def __sub__(self, other: object) -> "Number":
         if isinstance(other, Number):
             return Number(self.value - other.value)
         return NotImplemented
 
-    def __mul__(self, other: object) -> 'Number':
+    def __mul__(self, other: object) -> "Number":
         if isinstance(other, Number):
             return Number(self.value * other.value)
         return NotImplemented
@@ -460,12 +460,12 @@ class Number(Expr):
             return Div(Number(self.value), Number(other.value))
         return NotImplemented
 
-    def __pow__(self, other: object) -> 'Number':
+    def __pow__(self, other: object) -> "Number":
         if isinstance(other, Number):
             return Number(self.value ** other.value)
         return NotImplemented
 
-    def __mod__(self, other: object) -> 'Number':
+    def __mod__(self, other: object) -> "Number":
         if isinstance(other, Number):
             return Number(self.value % other.value)
         return NotImplemented
@@ -502,7 +502,7 @@ class Number(Expr):
     def precedence(self) -> Precedence:
         return Precedence.literal
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         return self
 
     def z3expr(self) -> z3.ArithRef:
@@ -516,10 +516,10 @@ class Add(AssExpr):
         result = str(self.terms[0])
         for t in self.terms[1:]:
             if (isinstance(t, Number) and t.value < 0) or (isinstance(t, Name) and t.negative):
-                result += f' - {self.parenthesized(-t)}'
+                result += f" - {self.parenthesized(-t)}"
             else:
-                result += f'{self.symbol}{self.parenthesized(t)}'
-        return f'({result})'
+                result += f"{self.symbol}{self.parenthesized(t)}"
+        return f"({result})"
 
     def __neg__(self) -> Expr:
         return Add(*[-term for term in self.terms])
@@ -531,7 +531,7 @@ class Add(AssExpr):
     def operation(self, left: int, right: int) -> int:
         return left + right
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         expr = super().simplified(facts)
         if not isinstance(expr, Add):
             return expr
@@ -554,7 +554,7 @@ class Add(AssExpr):
 
     @property
     def symbol(self) -> str:
-        return ' + '
+        return " + "
 
     def z3expr(self) -> z3.ArithRef:
         z3expr = sum(t.z3expr() for t in self.terms)
@@ -579,7 +579,7 @@ class Mul(AssExpr):
 
     @property
     def symbol(self) -> str:
-        return ' * '
+        return " * "
 
     def z3expr(self) -> z3.ArithRef:
         z3expr = self.terms[0].z3expr()
@@ -598,7 +598,7 @@ class Sub(BinExpr):
     def precedence(self) -> Precedence:
         return Precedence.binary_adding_operator
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if isinstance(left, Number) and isinstance(right, Number):
@@ -611,7 +611,7 @@ class Sub(BinExpr):
 
     @property
     def symbol(self) -> str:
-        return ' - '
+        return " - "
 
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
@@ -628,7 +628,7 @@ class Div(BinExpr):
     def precedence(self) -> Precedence:
         return Precedence.multiplying_operator
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if isinstance(left, Number) and isinstance(right, Number):
@@ -637,7 +637,7 @@ class Div(BinExpr):
 
     @property
     def symbol(self) -> str:
-        return ' / '
+        return " / "
 
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
@@ -654,16 +654,16 @@ class Pow(BinExpr):
     def precedence(self) -> Precedence:
         return Precedence.highest_precedence_operator
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if isinstance(left, Number) and isinstance(right, Number):
-            return left**right
+            return left ** right
         return Pow(left, right)
 
     @property
     def symbol(self) -> str:
-        return '**'
+        return "**"
 
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
@@ -680,7 +680,7 @@ class Mod(BinExpr):
     def precedence(self) -> Precedence:
         return Precedence.multiplying_operator
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
         if isinstance(left, Number) and isinstance(right, Number):
@@ -689,7 +689,7 @@ class Mod(BinExpr):
 
     @property
     def symbol(self) -> str:
-        return ' mod '
+        return " mod "
 
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
@@ -710,7 +710,7 @@ class Name(Expr):
 
     def __str__(self) -> str:
         if self.negative:
-            return f'(-{self.representation})'
+            return f"(-{self.representation})"
         return self.representation
 
     def __hash__(self) -> int:
@@ -725,13 +725,14 @@ class Name(Expr):
     def precedence(self) -> Precedence:
         return Precedence.literal
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         if facts:
             positive_self = copy(self)
             positive_self.negative = False
             if positive_self in facts:
-                assert positive_self not in facts[positive_self], \
-                    f'self-reference to "{positive_self}"'
+                assert (
+                    positive_self not in facts[positive_self]
+                ), f'self-reference to "{positive_self}"'
                 return -facts[positive_self] if self.negative else facts[positive_self]
         return self
 
@@ -744,7 +745,7 @@ class Name(Expr):
 
 
 class Variable(Name):
-    def variables(self, proof: bool = False) -> List['Variable']:
+    def variables(self, proof: bool = False) -> List["Variable"]:
         return [self]
 
     def z3expr(self) -> z3.ArithRef:
@@ -758,14 +759,14 @@ class Variable(Name):
 class Attribute(Name):
     @property
     def representation(self) -> str:
-        return f'{self.name}\'{self.__class__.__name__}'
+        return f"{self.name}'{self.__class__.__name__}"
 
     def z3expr(self) -> z3.ExprRef:
         if not isinstance(self.name, str):
             raise TypeError
         return z3.Int(f"{self.name}'{self.__class__.__name__}")
 
-    def variables(self, proof: bool = False) -> List['Variable']:
+    def variables(self, proof: bool = False) -> List["Variable"]:
         if proof:
             if not isinstance(self.name, str):
                 raise TypeError
@@ -812,7 +813,7 @@ class Indexed(Name):
 
     @property
     def representation(self) -> str:
-        return f'{self.name} (' + ', '.join(map(str, self.elements)) + ')'
+        return f"{self.name} (" + ", ".join(map(str, self.elements)) + ")"
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -826,14 +827,14 @@ class Selected(Name):
 
     @property
     def representation(self) -> str:
-        return f'{self.name}.{self.selector_name}'
+        return f"{self.name}.{self.selector_name}"
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
 class UndefinedExpr(Name):
-    def __init__(self, name: str = 'UNDEFINED') -> None:
+    def __init__(self, name: str = "UNDEFINED") -> None:
         super().__init__(name)
 
     def z3expr(self) -> z3.ExprRef:
@@ -848,7 +849,7 @@ class Aggregate(Expr):
         self.elements = list(elements)
 
     def __str__(self) -> str:
-        return '(' + ', '.join(map(str, self.elements)) + ')'
+        return "(" + ", ".join(map(str, self.elements)) + ")"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -857,7 +858,7 @@ class Aggregate(Expr):
     def precedence(self) -> Precedence:
         return Precedence.literal
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         return self.__class__(*[e.simplified(facts) for e in self.elements])
 
     def z3expr(self) -> z3.ExprRef:
@@ -871,7 +872,7 @@ class NamedAggregate(Expr):
             verify_identifier(name)
 
     def __str__(self) -> str:
-        return '(' + ', '.join(f'{name} => {element}' for name, element in self.elements) + ')'
+        return "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -880,7 +881,7 @@ class NamedAggregate(Expr):
     def precedence(self) -> Precedence:
         return Precedence.literal
 
-    def simplified(self, facts: Mapping['Name', Expr] = None) -> Expr:
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         return self.__class__(*[(n, e.simplified(facts)) for n, e in self.elements])
 
     def z3expr(self) -> z3.ExprRef:
@@ -903,7 +904,7 @@ class Less(Relation):
 
     @property
     def symbol(self) -> str:
-        return ' < '
+        return " < "
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -919,7 +920,7 @@ class LessEqual(Relation):
 
     @property
     def symbol(self) -> str:
-        return ' <= '
+        return " <= "
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -935,7 +936,7 @@ class Equal(Relation):
 
     @property
     def symbol(self) -> str:
-        return ' = '
+        return " = "
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -952,7 +953,7 @@ class GreaterEqual(Relation):
 
     @property
     def symbol(self) -> str:
-        return ' >= '
+        return " >= "
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -968,7 +969,7 @@ class Greater(Relation):
 
     @property
     def symbol(self) -> str:
-        return ' > '
+        return " > "
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -984,7 +985,7 @@ class NotEqual(Relation):
 
     @property
     def symbol(self) -> str:
-        return ' /= '
+        return " /= "
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -1001,7 +1002,7 @@ class In(Relation):
 
     @property
     def symbol(self) -> str:
-        return ' in '
+        return " in "
 
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
@@ -1013,7 +1014,7 @@ class NotIn(Relation):
 
     @property
     def symbol(self) -> str:
-        return ' not in '
+        return " not in "
 
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
@@ -1025,10 +1026,10 @@ class Call(Name):
         self.args = args or []
 
     def __str__(self) -> str:
-        args = ', '.join(map(str, self.args))
+        args = ", ".join(map(str, self.args))
         if args:
-            args = f' ({args})'
-        call = f'{self.name}{args}'
+            args = f" ({args})"
+        call = f"{self.name}{args}"
         return call
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
@@ -1045,7 +1046,7 @@ class Slice(Name):
         self.last = last
 
     def __str__(self) -> str:
-        return f'{self.name} ({self.first} .. {self.last})'
+        return f"{self.name} ({self.first} .. {self.last})"
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         return Slice(self.name, self.first.simplified(facts), self.last.simplified(facts))
@@ -1055,21 +1056,22 @@ class Slice(Name):
 
 
 class If(Expr):
-    def __init__(self, condition_expressions: Sequence[Tuple[Expr, Expr]],
-                 else_expression: Expr = None) -> None:
+    def __init__(
+        self, condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None
+    ) -> None:
         self.condition_expressions = condition_expressions
         self.else_expression = else_expression
 
     def __str__(self) -> str:
-        result = ''
+        result = ""
         for c, e in self.condition_expressions:
             if not result:
-                result = f'(if {indent_next(str(c), 3)} then\n {indent(str(e), 3)}'
+                result = f"(if {indent_next(str(c), 3)} then\n {indent(str(e), 3)}"
             else:
-                result += f'\n elsif {indent_next(str(c), 6)} then\n {indent(str(e), 3)}'
+                result += f"\n elsif {indent_next(str(c), 6)} then\n {indent(str(e), 3)}"
         if self.else_expression:
-            result += f'\n else\n {indent(str(self.else_expression), 3)}'
-        result += ')'
+            result += f"\n else\n {indent(str(self.else_expression), 3)}"
+        result += ")"
         return result
 
     def __neg__(self) -> Expr:
@@ -1081,17 +1083,15 @@ class If(Expr):
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         simplified_ce = [
-            (c.simplified(facts), e.simplified(facts))
-            for c, e in self.condition_expressions
+            (c.simplified(facts), e.simplified(facts)) for c, e in self.condition_expressions
         ]
 
         if len(simplified_ce) == 1 and simplified_ce[0][0] == TRUE:
             return simplified_ce[0][1]
 
-        return If(simplified_ce,
-                  self.else_expression)
+        return If(simplified_ce, self.else_expression)
 
-    def variables(self, proof: bool = False) -> List['Variable']:
+    def variables(self, proof: bool = False) -> List["Variable"]:
         variables = []
         for ce in self.condition_expressions:
             variables.extend(ce[0].variables(proof))
@@ -1104,8 +1104,7 @@ class If(Expr):
         return If.ifexpr(self.condition_expressions, self.else_expression)
 
     @staticmethod
-    def ifexpr(conditions: Sequence[Tuple[Expr, Expr]],
-               elseexpr: Optional[Expr]) -> z3.ExprRef:
+    def ifexpr(conditions: Sequence[Tuple[Expr, Expr]], elseexpr: Optional[Expr]) -> z3.ExprRef:
         if conditions:
             c = conditions[0][0].z3expr()
             e = conditions[0][1].z3expr()
@@ -1119,18 +1118,24 @@ class If(Expr):
 
 
 class Case(Expr):
-    def __init__(self, control_expression: Expr,
-                 case_statements: Sequence[Tuple[Expr, Expr]]) -> None:
+    def __init__(
+        self, control_expression: Expr, case_statements: Sequence[Tuple[Expr, Expr]]
+    ) -> None:
         self.control_expression = control_expression
         self.case_statements = case_statements
 
     def __str__(self) -> str:
-        grouped_cases = [(' | '.join(str(c) for c, _ in choices), expr)
-                         for expr, choices in itertools.groupby(self.case_statements,
-                                                                lambda x: x[1])]
-        cases = indent(','.join([f'\nwhen {choice} =>\n{indent(str(expr), 3)}'
-                                 for choice, expr in grouped_cases]), 6)
-        return f'(case {self.control_expression} is{cases})'
+        grouped_cases = [
+            (" | ".join(str(c) for c, _ in choices), expr)
+            for expr, choices in itertools.groupby(self.case_statements, lambda x: x[1])
+        ]
+        cases = indent(
+            ",".join(
+                [f"\nwhen {choice} =>\n{indent(str(expr), 3)}" for choice, expr in grouped_cases]
+            ),
+            6,
+        )
+        return f"(case {self.control_expression} is{cases})"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1140,12 +1145,14 @@ class Case(Expr):
         return Precedence.literal
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
-        if len(self.case_statements) == 1 and self.case_statements[0][0] == Name('others'):
+        if len(self.case_statements) == 1 and self.case_statements[0][0] == Name("others"):
             return self.case_statements[0][1]
-        return Case(self.control_expression.simplified(facts),
-                    [(c.simplified(facts), e.simplified(facts)) for c, e in self.case_statements])
+        return Case(
+            self.control_expression.simplified(facts),
+            [(c.simplified(facts), e.simplified(facts)) for c, e in self.case_statements],
+        )
 
-    def variables(self, proof: bool = False) -> List['Variable']:
+    def variables(self, proof: bool = False) -> List["Variable"]:
         variables = self.control_expression.variables(proof)
         for cs in self.case_statements:
             variables.extend(cs[0].variables(proof))
@@ -1156,13 +1163,16 @@ class Case(Expr):
         return Case.caseexpr(self.control_expression, self.case_statements)
 
     @staticmethod
-    def caseexpr(control: Expr,
-                 statements: Sequence[Tuple[Expr, Expr]]) -> Union[z3.ExprRef, z3.BoolRef]:
+    def caseexpr(
+        control: Expr, statements: Sequence[Tuple[Expr, Expr]]
+    ) -> Union[z3.ExprRef, z3.BoolRef]:
         if statements:
             condition, expression = statements[0]
-            return z3.If(control.z3expr() == condition.z3expr(),
-                         expression.z3expr(),
-                         Case.caseexpr(control, statements[1:]))
+            return z3.If(
+                control.z3expr() == condition.z3expr(),
+                expression.z3expr(),
+                Case.caseexpr(control, statements[1:]),
+            )
         return z3.BoolVal(False)
 
 
@@ -1173,8 +1183,10 @@ class QuantifiedExpression(Expr):
         self.predicate = predicate
 
     def __str__(self) -> str:
-        return (f'(for {self.quantifier} {self.parameter_name} {self.keyword} {self.iterable} =>\n'
-                f'   {self.predicate})')
+        return (
+            f"(for {self.quantifier} {self.parameter_name} {self.keyword} {self.iterable} =>\n"
+            f"   {self.predicate})"
+        )
 
     @property
     def precedence(self) -> Precedence:
@@ -1182,9 +1194,7 @@ class QuantifiedExpression(Expr):
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         return self.__class__(
-            self.parameter_name,
-            self.iterable.simplified(facts),
-            self.predicate.simplified(facts)
+            self.parameter_name, self.iterable.simplified(facts), self.predicate.simplified(facts)
         )
 
     @abstractproperty
@@ -1195,7 +1205,7 @@ class QuantifiedExpression(Expr):
     def keyword(self) -> str:
         raise NotImplementedError
 
-    def variables(self, proof: bool = False) -> List['Variable']:
+    def variables(self, proof: bool = False) -> List["Variable"]:
         return list(unique(self.iterable.variables(proof) + self.predicate.variables(proof)))
 
     def z3expr(self) -> z3.ExprRef:
@@ -1208,11 +1218,11 @@ class ForAllOf(QuantifiedExpression):
 
     @property
     def quantifier(self) -> str:
-        return 'all'
+        return "all"
 
     @property
     def keyword(self) -> str:
-        return 'of'
+        return "of"
 
 
 class ForAllIn(QuantifiedExpression):
@@ -1221,11 +1231,11 @@ class ForAllIn(QuantifiedExpression):
 
     @property
     def quantifier(self) -> str:
-        return 'all'
+        return "all"
 
     @property
     def keyword(self) -> str:
-        return 'in'
+        return "in"
 
 
 class ValueRange(Expr):
@@ -1234,7 +1244,7 @@ class ValueRange(Expr):
         self.upper = upper
 
     def __str__(self) -> str:
-        return f'{self.lower} .. {self.upper}'
+        return f"{self.lower} .. {self.upper}"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
