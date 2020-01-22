@@ -6,9 +6,17 @@ from typing import List
 from rflx.generator import Generator
 from rflx.generator.core import LIBRARY_FILES
 from rflx.model import Message, Refinement
-from tests.models import (ARRAY_INNER_MESSAGE, ARRAY_MESSAGE, ARRAY_MESSAGES_MESSAGE,
-                          DERIVATION_MESSAGE, ENUMERATION_MESSAGE, ETHERNET_FRAME, NULL_MESSAGE,
-                          NULL_MESSAGE_IN_TLV_MESSAGE, TLV_MESSAGE)
+from tests.models import (
+    ARRAY_INNER_MESSAGE,
+    ARRAY_MESSAGE,
+    ARRAY_MESSAGES_MESSAGE,
+    DERIVATION_MESSAGE,
+    ENUMERATION_MESSAGE,
+    ETHERNET_FRAME,
+    NULL_MESSAGE,
+    NULL_MESSAGE_IN_TLV_MESSAGE,
+    TLV_MESSAGE,
+)
 
 
 class TestGenerator(unittest.TestCase):
@@ -17,23 +25,23 @@ class TestGenerator(unittest.TestCase):
         self.maxDiff = None  # pylint: disable=invalid-name
 
     def test_library_files(self) -> None:
-        generator = Generator('RFLX.', reproducible=True)
+        generator = Generator("RFLX.", reproducible=True)
         with TemporaryDirectory() as tmpdir:
             generator.write_library_files(Path(tmpdir))
-            for filename in [f'rflx-{f}' for f in LIBRARY_FILES] + ['rflx.ads']:
-                with open(tmpdir + '/' + filename) as library_file:
-                    with open(self.testdir + '/' + filename) as expected_file:
+            for filename in [f"rflx-{f}" for f in LIBRARY_FILES] + ["rflx.ads"]:
+                with open(tmpdir + "/" + filename) as library_file:
+                    with open(self.testdir + "/" + filename) as expected_file:
                         self.assertEqual(library_file.read(), expected_file.read(), filename)
 
     def assert_specification(self, generator: Generator) -> None:
         for unit in generator.units.values():
-            with open(f'{self.testdir}/{unit.name}.ads', 'r') as f:
+            with open(f"{self.testdir}/{unit.name}.ads", "r") as f:
                 self.assertEqual(unit.specification, f.read(), unit.name)
 
     def assert_body(self, generator: Generator) -> None:
         for unit in generator.units.values():
             if unit.body:
-                with open(f'{self.testdir}/{unit.name}.adb', 'r') as f:
+                with open(f"{self.testdir}/{unit.name}.adb", "r") as f:
                     self.assertEqual(unit.body, f.read(), unit.name)
 
     def test_null_spec(self) -> None:
@@ -104,6 +112,6 @@ class TestGenerator(unittest.TestCase):
 
 
 def generate(pdus: List[Message], refinements: List[Refinement]) -> Generator:
-    generator = Generator('RFLX.', reproducible=True)
+    generator = Generator("RFLX.", reproducible=True)
     generator.generate(pdus, refinements)
     return generator

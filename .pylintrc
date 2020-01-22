@@ -48,3 +48,6 @@ min-public-methods=0
 
 # Minimum lines number of a similarity.
 min-similarity-lines=8
+
+# Ignore imports when computing similarities.
+ignore-imports=yes

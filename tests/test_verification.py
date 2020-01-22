@@ -31,7 +31,8 @@ class TestVerification(TestCase):
                         F2 : Element;
                     end message;
             end Foo;
-            """)
+            """
+        )
 
     @staticmethod
     def test_exclusive_enum_valid() -> None:
@@ -51,7 +52,8 @@ class TestVerification(TestCase):
                         F2 : Element;
                     end message;
             end Foo;
-            """)
+            """
+        )
 
     def test_exclusive_conflict(self) -> None:
         self.assert_parse_exception_string(
@@ -69,7 +71,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^conflicting conditions for field "F1" in "Foo.Bar"')
+            r'^conflicting conditions for field "F1" in "Foo.Bar"',
+        )
 
     @staticmethod
     def test_exclusive_with_length_valid() -> None:
@@ -88,7 +91,8 @@ class TestVerification(TestCase):
                         F2 : Element;
                     end message;
             end Foo;
-            """)
+            """
+        )
 
     def test_exclusive_with_length_invalid(self) -> None:
         self.assert_parse_exception_string(
@@ -106,7 +110,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^conflicting conditions for field "F1" in "Foo.Bar"')
+            r'^conflicting conditions for field "F1" in "Foo.Bar"',
+        )
 
     def test_no_valid_path(self) -> None:
         self.assert_parse_exception_string(
@@ -129,7 +134,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "Final" in "Foo.Bar"')
+            r'^unreachable field "Final" in "Foo.Bar"',
+        )
 
     def test_invalid_path_1(self) -> None:
         self.assert_parse_exception_string(
@@ -142,7 +148,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "Final" in "Foo.Bar"')
+            r'^unreachable field "Final" in "Foo.Bar"',
+        )
 
     def test_invalid_path_2(self) -> None:
         self.assert_parse_exception_string(
@@ -156,7 +163,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"')
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
 
     def test_contradiction(self) -> None:
         self.assert_parse_exception_string(
@@ -173,7 +181,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^contradicting condition 0 from field "F1" to "F2" in "Foo.Bar"')
+            r'^contradicting condition 0 from field "F1" to "F2" in "Foo.Bar"',
+        )
 
     def test_invalid_type_condition_range_low(self) -> None:
         self.assert_parse_exception_string(
@@ -187,7 +196,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"')
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
 
     def test_invalid_type_condition_range_high(self) -> None:
         self.assert_parse_exception_string(
@@ -201,7 +211,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"')
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
 
     def test_invalid_type_condition_modular_upper(self) -> None:
         self.assert_parse_exception_string(
@@ -215,7 +226,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"')
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
 
     def test_invalid_type_condition_modular_lower(self) -> None:
         self.assert_parse_exception_string(
@@ -229,7 +241,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"')
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
 
     # ISSUE: Componolit/RecordFlux#87
     def disabled_test_invalid_type_condition_enum(self) -> None:
@@ -245,7 +258,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^invalid type of "E4" in condition 0 from field "F1" to "F2"')
+            r'^invalid type of "E4" in condition 0 from field "F1" to "F2"',
+        )
 
     @staticmethod
     def test_tlv_valid_enum() -> None:
@@ -265,7 +279,8 @@ class TestVerification(TestCase):
                         V : Payload;
                     end message;
             end Foo;
-            """)
+            """
+        )
 
     def test_invalid_fixed_size_field_with_length(self) -> None:
         self.assert_parse_exception_string(
@@ -279,7 +294,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^fixed size field "F2" with length expression in "Foo.Bar"')
+            r'^fixed size field "F2" with length expression in "Foo.Bar"',
+        )
 
     @staticmethod
     def test_valid_first() -> None:
@@ -294,7 +310,8 @@ class TestVerification(TestCase):
                         F2 : Element;
                     end message;
             end Foo;
-            """)
+            """
+        )
 
     def test_invalid_first(self) -> None:
         self.assert_parse_exception_string(
@@ -309,7 +326,8 @@ class TestVerification(TestCase):
             end Foo;
             """,
             r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"'
-            r' in "Foo.Bar"')
+            r' in "Foo.Bar"',
+        )
 
     def test_invalid_first_is_last(self) -> None:
         self.assert_parse_exception_string(
@@ -324,7 +342,8 @@ class TestVerification(TestCase):
             end Foo;
             """,
             r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"'
-            r' in "Foo.Bar"')
+            r' in "Foo.Bar"',
+        )
 
     def test_invalid_first_forward_reference(self) -> None:
         self.assert_parse_exception_string(
@@ -339,8 +358,11 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^subsequent field "F3' "'" 'First" referenced in First expression 0 from field "F1"'
-            r' to "F2" in "Foo.Bar"')
+            r'^subsequent field "F3'
+            "'"
+            'First" referenced in First expression 0 from field "F1"'
+            r' to "F2" in "Foo.Bar"',
+        )
 
     @staticmethod
     def test_valid_length_reference() -> None:
@@ -355,7 +377,8 @@ class TestVerification(TestCase):
                         F2 : Payload;
                     end message;
             end Foo;
-            """)
+            """
+        )
 
     def test_invalid_length_forward_reference(self) -> None:
         self.assert_parse_exception_string(
@@ -371,7 +394,8 @@ class TestVerification(TestCase):
             end Foo;
             """,
             r'^subsequent field "F2" referenced in Length expression 0 from field "Initial"'
-            r' to "F1" in "Foo.Bar"')
+            r' to "F1" in "Foo.Bar"',
+        )
 
     def test_invalid_negative_field_length(self) -> None:
         self.assert_parse_exception_string(
@@ -385,7 +409,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^negative length for field "F2" on path F1 -> F2 in "Foo.Bar"')
+            r'^negative length for field "F2" on path F1 -> F2 in "Foo.Bar"',
+        )
 
     @staticmethod
     def test_valid_length_from_message_last() -> None:
@@ -402,7 +427,8 @@ class TestVerification(TestCase):
                                 with Length => Message'Last - F1'Last;
                     end message;
             end Foo;
-            """)
+            """
+        )
 
     def test_payload_no_length(self) -> None:
         self.assert_parse_exception_string(
@@ -416,7 +442,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unconstrained field "F2" without length expression in "Foo.Bar"')
+            r'^unconstrained field "F2" without length expression in "Foo.Bar"',
+        )
 
     def test_array_no_length(self) -> None:
         self.assert_parse_exception_string(
@@ -431,7 +458,8 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unconstrained field "F2" without length expression in "Foo.Bar"')
+            r'^unconstrained field "F2" without length expression in "Foo.Bar"',
+        )
 
     def test_incongruent_overlay(self) -> None:
         self.assert_parse_exception_string(
@@ -450,60 +478,64 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^field "F3" not congruent with overlaid field "F1" in "Foo.Bar"')
+            r'^field "F3" not congruent with overlaid field "F1" in "Foo.Bar"',
+        )
 
     def test_field_coverage_1(self) -> None:
-        foo_type = ModularInteger('P.Foo', Pow(Number(2), Number(32)))
+        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
-            Link(INITIAL, Field('F1')),
-            Link(Field('F1'), Field('F2'), first=Add(First('Message'), Number(64))),
-            Link(Field('F2'), FINAL)]
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2"), first=Add(First("Message"), Number(64))),
+            Link(Field("F2"), FINAL),
+        ]
 
-        types = {
-            Field('F1'): foo_type,
-            Field('F2'): foo_type
-        }
-        with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
-            with self.assertRaisesRegex(ModelError, '^path F1 -> F2 does not cover whole message'):
-                Message('P.M', structure, types)
+        types = {Field("F1"): foo_type, Field("F2"): foo_type}
+        with mock.patch("rflx.model.Message._Message__verify_conditions", lambda x: None):
+            with self.assertRaisesRegex(ModelError, "^path F1 -> F2 does not cover whole message"):
+                Message("P.M", structure, types)
 
     def test_field_coverage_2(self) -> None:
-        foo_type = ModularInteger('P.Foo', Pow(Number(2), Number(32)))
+        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
-            Link(INITIAL, Field('F1')),
-            Link(Field('F1'), Field('F2')),
-            Link(Field('F2'), Field('F4'), Greater(Variable('F1'), Number(100))),
-            Link(Field('F2'), Field('F3'), LessEqual(Variable('F1'), Number(100)),
-                 first=Add(Last('F2'), Number(64))),
-            Link(Field('F3'), Field('F4')),
-            Link(Field('F4'), FINAL)]
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2")),
+            Link(Field("F2"), Field("F4"), Greater(Variable("F1"), Number(100))),
+            Link(
+                Field("F2"),
+                Field("F3"),
+                LessEqual(Variable("F1"), Number(100)),
+                first=Add(Last("F2"), Number(64)),
+            ),
+            Link(Field("F3"), Field("F4")),
+            Link(Field("F4"), FINAL),
+        ]
 
         types = {
-            Field('F1'): foo_type,
-            Field('F2'): foo_type,
-            Field('F3'): foo_type,
-            Field('F4'): foo_type
+            Field("F1"): foo_type,
+            Field("F2"): foo_type,
+            Field("F3"): foo_type,
+            Field("F4"): foo_type,
         }
-        with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
-            with self.assertRaisesRegex(ModelError,
-                                        '^path F1 -> F2 -> F3 -> F4 does not cover whole message'):
-                Message('P.M', structure, types)
+        with mock.patch("rflx.model.Message._Message__verify_conditions", lambda x: None):
+            with self.assertRaisesRegex(
+                ModelError, "^path F1 -> F2 -> F3 -> F4 does not cover whole message"
+            ):
+                Message("P.M", structure, types)
 
     def test_field_after_message_start(self) -> None:
-        foo_type = ModularInteger('P.Foo', Pow(Number(2), Number(32)))
+        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
-            Link(INITIAL, Field('F1')),
-            Link(Field('F1'), Field('F2'), first=Sub(First('Message'), Number(1000))),
-            Link(Field('F2'), FINAL)]
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2"), first=Sub(First("Message"), Number(1000))),
+            Link(Field("F2"), FINAL),
+        ]
 
-        types = {
-            Field('F1'): foo_type,
-            Field('F2'): foo_type
-        }
-        with mock.patch('rflx.model.Message._Message__verify_conditions', lambda x: None):
-            with self.assertRaisesRegex(ModelError, '^start of field "F2" on path F1 -> F2 before'
-                                                    ' message start'):
-                Message('P.M', structure, types)
+        types = {Field("F1"): foo_type, Field("F2"): foo_type}
+        with mock.patch("rflx.model.Message._Message__verify_conditions", lambda x: None):
+            with self.assertRaisesRegex(
+                ModelError, '^start of field "F2" on path F1 -> F2 before' " message start"
+            ):
+                Message("P.M", structure, types)
 
     @staticmethod
     def test_valid_use_message_length() -> None:
@@ -519,7 +551,8 @@ class TestVerification(TestCase):
                      Verify_Data : Payload;
                   end message;
             end Foo;
-            """)
+            """
+        )
 
     @staticmethod
     def test_valid_use_message_first_last() -> None:
@@ -535,4 +568,5 @@ class TestVerification(TestCase):
                      Verify_Data : Payload;
                   end message;
             end Foo;
-            """)
+            """
+        )
