@@ -1,10 +1,21 @@
 import itertools
 from typing import Mapping, Sequence
 
+from rflx.ada import (
+    Assignment,
+    CallStatement,
+    Declaration,
+    ExpressionFunctionDeclaration,
+    FunctionSpecification,
+    ObjectDeclaration,
+    PragmaStatement,
+    Statement,
+)
 from rflx.expression import (
     TRUE,
     UNDEFINED,
     Add,
+    Aggregate,
     And,
     AndThen,
     Call,
@@ -19,7 +30,9 @@ from rflx.expression import (
     Last,
     Length,
     LessEqual,
+    Mod,
     Name,
+    NamedAggregate,
     NotEqual,
     Number,
     Or,
@@ -381,6 +394,93 @@ class GeneratorCommon:
             )
             for l in message.outgoing(field)
             if l.target != FINAL
+        ]
+
+    @staticmethod
+    def sufficient_space_for_field_condition(field_name: Name) -> Expr:
+        return GreaterEqual(
+            Call("Available_Space", [Name("Ctx"), field_name]),
+            Call("Field_Length", [Name("Ctx"), field_name]),
+        )
+
+    def initialize_field_statements(self, message: Message, field: Field) -> Sequence[Statement]:
+        return [
+            CallStatement("Reset_Dependent_Fields", [Name("Ctx"), Name(field.affixed_name)],),
+            Assignment(
+                "Ctx",
+                Aggregate(
+                    Selected("Ctx", "Buffer_First"),
+                    Selected("Ctx", "Buffer_Last"),
+                    Selected("Ctx", "First"),
+                    Name("Last"),
+                    Selected("Ctx", "Buffer"),
+                    Selected("Ctx", "Cursors"),
+                ),
+            ),
+            # WORKAROUND:
+            # Limitation of GNAT Community 2019 / SPARK Pro 20.0
+            # Provability of predicate is increased by adding part of
+            # predicate as assert
+            PragmaStatement(
+                "Assert", [str(self.message_structure_invariant(message, prefix=True))],
+            ),
+            Assignment(
+                Indexed(Selected("Ctx", "Cursors"), Name(field.affixed_name)),
+                NamedAggregate(
+                    ("State", Name("S_Structural_Valid")),
+                    ("First", Name("First")),
+                    ("Last", Name("Last")),
+                    ("Value", NamedAggregate(("Fld", Name(field.affixed_name))),),
+                    (
+                        "Predecessor",
+                        Selected(
+                            Indexed(Selected("Ctx", "Cursors"), Name(field.affixed_name),),
+                            "Predecessor",
+                        ),
+                    ),
+                ),
+            ),
+            Assignment(
+                Indexed(
+                    Selected("Ctx", "Cursors"),
+                    Call("Successor", [Name("Ctx"), Name(field.affixed_name)]),
+                ),
+                NamedAggregate(
+                    ("State", Name("S_Invalid")), ("Predecessor", Name(field.affixed_name)),
+                ),
+            ),
+        ]
+
+    def field_bit_location_declarations(self, field_name: Name) -> Sequence[Declaration]:
+        return [
+            ObjectDeclaration(
+                ["First"],
+                self.types.bit_index,
+                Call("Field_First", [Name("Ctx"), field_name]),
+                True,
+            ),
+            ObjectDeclaration(
+                ["Last"], self.types.bit_index, Call("Field_Last", [Name("Ctx"), field_name]), True,
+            ),
+        ]
+
+    def field_byte_location_declarations(self) -> Sequence[Declaration]:
+        return [
+            ExpressionFunctionDeclaration(
+                FunctionSpecification("Buffer_First", self.types.index),
+                Call(self.types.byte_index, [Name("First")]),
+            ),
+            ExpressionFunctionDeclaration(
+                FunctionSpecification("Buffer_Last", self.types.index),
+                Call(self.types.byte_index, [Name("Last")]),
+            ),
+            ExpressionFunctionDeclaration(
+                FunctionSpecification("Offset", self.types.offset),
+                Call(
+                    self.types.offset,
+                    [Mod(Sub(Number(8), Mod(Name("Last"), Number(8))), Number(8))],
+                ),
+            ),
         ]
 
 

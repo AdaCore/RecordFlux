@@ -14,7 +14,6 @@ from rflx.ada import (
     OutParameter,
     Parameter,
     Postcondition,
-    PragmaStatement,
     Precondition,
     ProcedureSpecification,
     Subprogram,
@@ -40,7 +39,6 @@ from rflx.expression import (
     Indexed,
     Last,
     LessEqual,
-    Mod,
     Name,
     NamedAggregate,
     Not,
@@ -50,7 +48,6 @@ from rflx.expression import (
     Range,
     Selected,
     Slice,
-    Sub,
     Variable,
 )
 from rflx.model import FINAL, Enumeration, Field, Message, Payload, Scalar, Type
@@ -95,33 +92,8 @@ class GeneratorGenerator:
                         ],
                     ),
                     [
-                        ObjectDeclaration(
-                            ["First"],
-                            self.types.bit_index,
-                            Call("Field_First", [Name("Ctx"), Selected("Val", "Fld")]),
-                            True,
-                        ),
-                        ObjectDeclaration(
-                            ["Last"],
-                            self.types.bit_index,
-                            Call("Field_Last", [Name("Ctx"), Selected("Val", "Fld")]),
-                            True,
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_First", self.types.index),
-                            Call(self.types.byte_index, [Name("First")]),
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_Last", self.types.index),
-                            Call(self.types.byte_index, [Name("Last")]),
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Offset", self.types.offset),
-                            Call(
-                                self.types.offset,
-                                [Mod(Sub(Number(8), Mod(Name("Last"), Number(8))), Number(8))],
-                            ),
-                        ),
+                        *self.common.field_bit_location_declarations(Selected("Val", "Fld")),
+                        *self.common.field_byte_location_declarations(),
                     ],
                     [
                         Assignment("Fst", Name("First")),
@@ -159,9 +131,8 @@ class GeneratorGenerator:
                                 Call("Has_Buffer", [Name("Ctx")]),
                                 In(Selected("Val", "Fld"), Range("Field")),
                                 Call("Valid_Next", [Name("Ctx"), Selected("Val", "Fld")]),
-                                GreaterEqual(
-                                    Call("Available_Space", [Name("Ctx"), Selected("Val", "Fld")],),
-                                    Call("Field_Length", [Name("Ctx"), Selected("Val", "Fld")]),
+                                self.common.sufficient_space_for_field_condition(
+                                    Selected("Val", "Fld")
                                 ),
                                 ForAllIn(
                                     "F",
@@ -295,9 +266,8 @@ class GeneratorGenerator:
                                 Call("Valid", [Name("Val")])
                                 if not isinstance(t, Enumeration)
                                 else TRUE,
-                                GreaterEqual(
-                                    Call("Available_Space", [Name("Ctx"), Name(f.affixed_name)]),
-                                    Call("Field_Length", [Name("Ctx"), Name(f.affixed_name)]),
+                                self.common.sufficient_space_for_field_condition(
+                                    Name(f.affixed_name)
                                 ),
                             )
                         ),
@@ -458,18 +428,7 @@ class GeneratorGenerator:
                 SubprogramBody(
                     specification(f),
                     [
-                        ObjectDeclaration(
-                            ["First"],
-                            self.types.bit_index,
-                            Call("Field_First", [Name("Ctx"), Name(f.affixed_name)]),
-                            True,
-                        ),
-                        ObjectDeclaration(
-                            ["Last"],
-                            self.types.bit_index,
-                            Call("Field_Last", [Name("Ctx"), Name(f.affixed_name)]),
-                            True,
-                        ),
+                        *self.common.field_bit_location_declarations(Name(f.affixed_name)),
                         ExpressionFunctionDeclaration(
                             FunctionSpecification("Buffer_First", self.types.index),
                             Call(self.types.byte_index, [Name("First")]),
@@ -598,69 +557,8 @@ class GeneratorGenerator:
             [
                 SubprogramBody(
                     specification(f),
-                    [
-                        ObjectDeclaration(
-                            ["First"],
-                            self.types.bit_index,
-                            Call("Field_First", [Name("Ctx"), Name(f.affixed_name)]),
-                            True,
-                        ),
-                        ObjectDeclaration(
-                            ["Last"],
-                            self.types.bit_index,
-                            Call("Field_Last", [Name("Ctx"), Name(f.affixed_name)]),
-                            True,
-                        ),
-                    ],
-                    [
-                        CallStatement(
-                            "Reset_Dependent_Fields", [Name("Ctx"), Name(f.affixed_name)]
-                        ),
-                        Assignment(
-                            "Ctx",
-                            Aggregate(
-                                Selected("Ctx", "Buffer_First"),
-                                Selected("Ctx", "Buffer_Last"),
-                                Selected("Ctx", "First"),
-                                Name("Last"),
-                                Selected("Ctx", "Buffer"),
-                                Selected("Ctx", "Cursors"),
-                            ),
-                        ),
-                        # WORKAROUND:
-                        # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-                        # Provability of predicate is increased by adding part of
-                        # predicate as assert
-                        PragmaStatement(
-                            "Assert",
-                            [str(self.common.message_structure_invariant(message, prefix=True))],
-                        ),
-                        Assignment(
-                            Indexed(Selected("Ctx", "Cursors"), Name(f.affixed_name)),
-                            NamedAggregate(
-                                ("State", Name("S_Structural_Valid")),
-                                ("First", Name("First")),
-                                ("Last", Name("Last")),
-                                ("Value", NamedAggregate(("Fld", Name(f.affixed_name)))),
-                                (
-                                    "Predecessor",
-                                    Selected(
-                                        Indexed(Selected("Ctx", "Cursors"), Name(f.affixed_name)),
-                                        "Predecessor",
-                                    ),
-                                ),
-                            ),
-                        ),
-                        Assignment(
-                            Indexed(
-                                Selected("Ctx", "Cursors"),
-                                Call("Successor", [Name("Ctx"), Name(f.affixed_name)]),
-                            ),
-                            NamedAggregate(
-                                ("State", Name("S_Invalid")), ("Predecessor", Name(f.affixed_name)),
-                            ),
-                        ),
-                    ],
+                    self.common.field_bit_location_declarations(Name(f.affixed_name)),
+                    self.common.initialize_field_statements(message, f),
                 )
                 for f, t in message.types.items()
                 if isinstance(t, Payload) and unbounded_setter_required(message, f)
@@ -682,55 +580,7 @@ class GeneratorGenerator:
                             True,
                         ),
                     ],
-                    [
-                        CallStatement(
-                            "Reset_Dependent_Fields", [Name("Ctx"), Name(f.affixed_name)],
-                        ),
-                        Assignment(
-                            "Ctx",
-                            Aggregate(
-                                Selected("Ctx", "Buffer_First"),
-                                Selected("Ctx", "Buffer_Last"),
-                                Selected("Ctx", "First"),
-                                Name("Last"),
-                                Selected("Ctx", "Buffer"),
-                                Selected("Ctx", "Cursors"),
-                            ),
-                        ),
-                        # WORKAROUND:
-                        # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-                        # Provability of predicate is increased by adding part of
-                        # predicate as assert
-                        PragmaStatement(
-                            "Assert",
-                            [str(self.common.message_structure_invariant(message, prefix=True))],
-                        ),
-                        Assignment(
-                            Indexed(Selected("Ctx", "Cursors"), Name(f.affixed_name)),
-                            NamedAggregate(
-                                ("State", Name("S_Structural_Valid")),
-                                ("First", Name("First")),
-                                ("Last", Name("Last")),
-                                ("Value", NamedAggregate(("Fld", Name(f.affixed_name)))),
-                                (
-                                    "Predecessor",
-                                    Selected(
-                                        Indexed(Selected("Ctx", "Cursors"), Name(f.affixed_name)),
-                                        "Predecessor",
-                                    ),
-                                ),
-                            ),
-                        ),
-                        Assignment(
-                            Indexed(
-                                Selected("Ctx", "Cursors"),
-                                Call("Successor", [Name("Ctx"), Name(f.affixed_name)]),
-                            ),
-                            NamedAggregate(
-                                ("State", Name("S_Invalid")), ("Predecessor", Name(f.affixed_name)),
-                            ),
-                        ),
-                    ],
+                    self.common.initialize_field_statements(message, f),
                 )
                 for f, t in message.types.items()
                 if isinstance(t, Payload) and bounded_setter_required(message, f)
@@ -786,8 +636,9 @@ class GeneratorGenerator:
             Call("Structural_Valid", [Name("Ctx"), Name(field.affixed_name)]),
         ]
 
-    @staticmethod
-    def unbounded_composite_setter_preconditions(message: Message, field: Field) -> Sequence[Expr]:
+    def unbounded_composite_setter_preconditions(
+        self, message: Message, field: Field
+    ) -> Sequence[Expr]:
         return [
             Call(
                 "Field_Condition",
@@ -798,10 +649,7 @@ class GeneratorGenerator:
                     else []
                 ),
             ),
-            GreaterEqual(
-                Call("Available_Space", [Name("Ctx"), Name(field.affixed_name)]),
-                Call("Field_Length", [Name("Ctx"), Name(field.affixed_name)],),
-            ),
+            self.common.sufficient_space_for_field_condition(Name(field.affixed_name)),
         ]
 
     def bounded_composite_setter_preconditions(

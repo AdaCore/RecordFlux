@@ -38,7 +38,6 @@ from rflx.expression import (
     Last,
     Less,
     LessEqual,
-    Mod,
     Name,
     NamedAggregate,
     NotEqual,
@@ -48,7 +47,6 @@ from rflx.expression import (
     Result,
     Selected,
     Slice,
-    Sub,
 )
 from rflx.model import FINAL, INITIAL, Composite, Enumeration, Field, Message, Scalar, Type
 
@@ -156,33 +154,8 @@ class ParserGenerator:
                         [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
                     ),
                     [
-                        ObjectDeclaration(
-                            ["First"],
-                            self.types.bit_index,
-                            Call("Field_First", [Name("Ctx"), Name("Fld")]),
-                            True,
-                        ),
-                        ObjectDeclaration(
-                            ["Last"],
-                            self.types.bit_index,
-                            Call("Field_Last", [Name("Ctx"), Name("Fld")]),
-                            True,
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_First", self.types.index),
-                            Call(self.types.byte_index, [Name("First")]),
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_Last", self.types.index),
-                            Call(self.types.byte_index, [Name("Last")]),
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Offset", self.types.offset),
-                            Call(
-                                self.types.offset,
-                                [Mod(Sub(Number(8), Mod(Name("Last"), Number(8))), Number(8))],
-                            ),
-                        ),
+                        *self.common.field_bit_location_declarations(Name("Fld")),
+                        *self.common.field_byte_location_declarations(),
                     ],
                     [
                         ReturnStatement(
@@ -218,141 +191,193 @@ class ParserGenerator:
             "Verify", [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
         )
 
-        # fmt: off
-
-        return UnitPart(
-            [SubprogramDeclaration(
-                specification,
-                [Precondition(VALID_CONTEXT),
-                 Postcondition(
-                    And(VALID_CONTEXT,
-                        Equal(Call('Has_Buffer', [Name('Ctx')]),
-                              Old(Call('Has_Buffer', [Name('Ctx')]))),
-                        *context_invariant))])],
-            [SubprogramBody(
-                specification,
-                [ObjectDeclaration(['Value'], 'Field_Dependent_Value')],
-                [IfStatement(
-                    [(AndThen(
-                        Call('Has_Buffer',
-                             [Name('Ctx')]),
-                        Call('Invalid',
-                             [Indexed(Selected('Ctx', 'Cursors'), Name('Fld'))]),
-                        Call('Valid_Predecessor',
-                             [Name('Ctx'), Name('Fld')]),
-                        Call('Path_Condition',
-                             [Name('Ctx'), Name('Fld')])),
-                        [IfStatement(
-                            [(Call('Sufficient_Buffer_Length',
-                                   [Name('Ctx'), Name('Fld')]),
-                              [Assignment(
-                                  'Value',
-                                  Call('Get_Field_Value',
-                                       [Name('Ctx'), Name('Fld')])),
-                               IfStatement(
-                                   [(And(Call('Valid_Value',
-                                              [Name('Value')]),
-                                         Call('Field_Condition',
-                                              [Name('Ctx'), Name('Value')]
-                                              + ([Call('Field_Length',
-                                                       [Name('Ctx'), Name('Fld')])]
-                                                 if length_dependent_condition(message)
-                                                 else []))),
-                                     [IfStatement(
-                                         [(Call('Composite_Field',
-                                                [Name('Fld')]),
-                                           [Assignment(
-                                               Indexed(
-                                                   'Ctx.Cursors',
-                                                   Name('Fld')),
-                                               NamedAggregate(
-                                                   ('State',
-                                                    Name('S_Structural_Valid')),
-                                                   ('First',
-                                                    Call(
-                                                        'Field_First',
-                                                        [Name('Ctx'), Name('Fld')])),
-                                                   ('Last',
-                                                    Call(
-                                                        'Field_Last',
-                                                        [Name('Ctx'), Name('Fld')])),
-                                                   ('Value',
-                                                    Name('Value')),
-                                                   ('Predecessor',
-                                                    Selected(
-                                                        Indexed(
-                                                            Selected('Ctx', 'Cursors'),
-                                                            Name('Fld')),
-                                                        'Predecessor'))))])],
-                                         [Assignment(
-                                             Indexed(
-                                                 'Ctx.Cursors',
-                                                 Name('Fld')),
-                                             NamedAggregate(
-                                                 ('State',
-                                                  Name('S_Valid')),
-                                                 ('First',
-                                                  Call(
-                                                      'Field_First',
-                                                      [Name('Ctx'), Name('Fld')])),
-                                                 ('Last',
-                                                  Call(
-                                                      'Field_Last',
-                                                      [Name('Ctx'), Name('Fld')])),
-                                                 ('Value',
-                                                  Name('Value')),
-                                                 ('Predecessor',
-                                                  Selected(
-                                                      Indexed(
-                                                          Selected('Ctx', 'Cursors'),
-                                                          Name('Fld')),
-                                                      'Predecessor'))))]),
-                                      # WORKAROUND:
-                                      # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-                                      # Provability of predicate is increased by adding part of
-                                      # predicate as assert
-                                      PragmaStatement(
-                                          "Assert",
-                                          [
-                                              str(
-                                                  self.common.message_structure_invariant(
-                                                      message, prefix=True
-                                                  )
-                                              )
-                                          ]),
-                                      # WORKAROUND:
-                                      # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-                                      # Provability of predicate is increased by splitting
-                                      # assignment in multiple statements
-                                      IfStatement(
-                                          [(Equal(Name('Fld'), Name(f.affixed_name)),
-                                            [Assignment(
-                                                Indexed(
-                                                    'Ctx.Cursors',
-                                                    Call('Successor',
-                                                         [Name('Ctx'), Name('Fld')])),
-                                                NamedAggregate(
-                                                    ('State', Name('S_Invalid')),
-                                                    ('Predecessor', Name('Fld'))))])
-                                           for f in message.fields])])],
-                                   [Assignment(
-                                       Indexed(
-                                           'Ctx.Cursors',
-                                           Name('Fld')),
-                                       NamedAggregate(
-                                           ('State', Name('S_Invalid')),
-                                           ('Predecessor', Name(FINAL.affixed_name))))])])],
-                            [Assignment(
-                                Indexed(
-                                    'Ctx.Cursors',
-                                    Name('Fld')),
-                                NamedAggregate(
-                                    ('State', Name('S_Incomplete')),
-                                    ('Predecessor', Name(FINAL.affixed_name))))])])],
-                )])]
+        valid_field_condition = And(
+            Call("Valid_Value", [Name("Value")],),
+            Call(
+                "Field_Condition",
+                [Name("Ctx"), Name("Value")]
+                + (
+                    [Call("Field_Length", [Name("Ctx"), Name("Fld")])]
+                    if length_dependent_condition(message)
+                    else []
+                ),
+            ),
         )
 
-        # fmt: on
+        set_cursors_statements = [
+            IfStatement(
+                [
+                    (
+                        Call("Composite_Field", [Name("Fld")]),
+                        [
+                            Assignment(
+                                Indexed("Ctx.Cursors", Name("Fld")),
+                                NamedAggregate(
+                                    ("State", Name("S_Structural_Valid")),
+                                    ("First", Call("Field_First", [Name("Ctx"), Name("Fld")])),
+                                    ("Last", Call("Field_Last", [Name("Ctx"), Name("Fld")])),
+                                    ("Value", Name("Value")),
+                                    (
+                                        "Predecessor",
+                                        Selected(
+                                            Indexed(Selected("Ctx", "Cursors"), Name("Fld")),
+                                            "Predecessor",
+                                        ),
+                                    ),
+                                ),
+                            )
+                        ],
+                    )
+                ],
+                [
+                    Assignment(
+                        Indexed("Ctx.Cursors", Name("Fld")),
+                        NamedAggregate(
+                            ("State", Name("S_Valid")),
+                            ("First", Call("Field_First", [Name("Ctx"), Name("Fld")])),
+                            ("Last", Call("Field_Last", [Name("Ctx"), Name("Fld")])),
+                            ("Value", Name("Value")),
+                            (
+                                "Predecessor",
+                                Selected(
+                                    Indexed(Selected("Ctx", "Cursors"), Name("Fld")), "Predecessor"
+                                ),
+                            ),
+                        ),
+                    )
+                ],
+            ),
+            # WORKAROUND:
+            # Limitation of GNAT Community 2019 / SPARK Pro 20.0
+            # Provability of predicate is increased by adding part of
+            # predicate as assert
+            PragmaStatement(
+                "Assert", [str(self.common.message_structure_invariant(message, prefix=True))]
+            ),
+            # WORKAROUND:
+            # Limitation of GNAT Community 2019 / SPARK Pro 20.0
+            # Provability of predicate is increased by splitting
+            # assignment in multiple statements
+            IfStatement(
+                [
+                    (
+                        Equal(Name("Fld"), Name(f.affixed_name)),
+                        [
+                            Assignment(
+                                Indexed(
+                                    "Ctx.Cursors", Call("Successor", [Name("Ctx"), Name("Fld")])
+                                ),
+                                NamedAggregate(
+                                    ("State", Name("S_Invalid")), ("Predecessor", Name("Fld"))
+                                ),
+                            )
+                        ],
+                    )
+                    for f in message.fields
+                ]
+            ),
+        ]
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(VALID_CONTEXT),
+                        Postcondition(
+                            And(
+                                VALID_CONTEXT,
+                                Equal(
+                                    Call("Has_Buffer", [Name("Ctx")]),
+                                    Old(Call("Has_Buffer", [Name("Ctx")])),
+                                ),
+                                *context_invariant,
+                            )
+                        ),
+                    ],
+                )
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [ObjectDeclaration(["Value"], "Field_Dependent_Value")],
+                    [
+                        IfStatement(
+                            [
+                                (
+                                    AndThen(
+                                        Call("Has_Buffer", [Name("Ctx")]),
+                                        Call(
+                                            "Invalid",
+                                            [Indexed(Selected("Ctx", "Cursors"), Name("Fld"))],
+                                        ),
+                                        Call("Valid_Predecessor", [Name("Ctx"), Name("Fld")]),
+                                        Call("Path_Condition", [Name("Ctx"), Name("Fld")]),
+                                    ),
+                                    [
+                                        IfStatement(
+                                            [
+                                                (
+                                                    Call(
+                                                        "Sufficient_Buffer_Length",
+                                                        [Name("Ctx"), Name("Fld")],
+                                                    ),
+                                                    [
+                                                        Assignment(
+                                                            "Value",
+                                                            Call(
+                                                                "Get_Field_Value",
+                                                                [Name("Ctx"), Name("Fld")],
+                                                            ),
+                                                        ),
+                                                        IfStatement(
+                                                            [
+                                                                (
+                                                                    valid_field_condition,
+                                                                    set_cursors_statements,
+                                                                )
+                                                            ],
+                                                            [
+                                                                Assignment(
+                                                                    Indexed(
+                                                                        "Ctx.Cursors", Name("Fld")
+                                                                    ),
+                                                                    NamedAggregate(
+                                                                        (
+                                                                            "State",
+                                                                            Name("S_Invalid"),
+                                                                        ),
+                                                                        (
+                                                                            "Predecessor",
+                                                                            Name(
+                                                                                FINAL.affixed_name
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                )
+                                                            ],
+                                                        ),
+                                                    ],
+                                                )
+                                            ],
+                                            [
+                                                Assignment(
+                                                    Indexed("Ctx.Cursors", Name("Fld")),
+                                                    NamedAggregate(
+                                                        ("State", Name("S_Incomplete")),
+                                                        ("Predecessor", Name(FINAL.affixed_name)),
+                                                    ),
+                                                )
+                                            ],
+                                        )
+                                    ],
+                                )
+                            ],
+                        )
+                    ],
+                )
+            ],
+        )
 
     @staticmethod
     def create_verify_message_procedure(

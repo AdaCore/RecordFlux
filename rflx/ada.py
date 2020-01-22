@@ -721,9 +721,9 @@ class SubprogramBody(Subprogram):
     def __init__(
         self,
         specification: SubprogramSpecification,
-        declarations: List[Declaration],
-        statements: List[Statement],
-        aspects: List[Aspect] = None,
+        declarations: Sequence[Declaration],
+        statements: Sequence[Statement],
+        aspects: Sequence[Aspect] = None,
     ) -> None:
         super().__init__(specification)
         self.declarations = declarations or []

@@ -9,10 +9,8 @@ from rflx.expression import (
     Equal,
     First,
     GreaterEqual,
-    Last,
     Length,
     LessEqual,
-    Mul,
     NotEqual,
     Number,
     Or,
@@ -101,9 +99,7 @@ class TestModel(TestCase):
     def test_array_invalid_call(self) -> None:
         with self.assertRaises(ModelError):
             # pylint: disable=expression-not-assigned
-            Array(
-                "P.T", ModularInteger("B", Number(256))
-            ).size
+            Array("P.T", ModularInteger("B", Number(256))).size
 
     def test_message_missing_type(self) -> None:
         structure = [
@@ -249,21 +245,7 @@ class TestModel(TestCase):
     def test_message_outgoing(self) -> None:
         self.assertEqual(ETHERNET_FRAME.outgoing(INITIAL), [Link(INITIAL, Field("Destination"))])
         self.assertEqual(
-            ETHERNET_FRAME.outgoing(Field("Type_Length")),
-            [
-                Link(
-                    Field("Type_Length"),
-                    Field("Payload"),
-                    LessEqual(Variable("Type_Length"), Number(1500)),
-                    Mul(Variable("Type_Length"), Number(8)),
-                ),
-                Link(
-                    Field("Type_Length"),
-                    Field("Payload"),
-                    GreaterEqual(Variable("Type_Length"), Number(1536)),
-                    Sub(Last("Message"), Last("Type_Length")),
-                ),
-            ],
+            ETHERNET_FRAME.outgoing(Field("Type_Length")), ETHERNET_FRAME.structure[7:9]
         )
         self.assertEqual(ETHERNET_FRAME.outgoing(FINAL), [])
 

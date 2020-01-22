@@ -228,9 +228,7 @@ class Generator:
             context = []
             pdu_package = self.prefix + refinement.pdu.rsplit(".", 1)[0]
             if pdu_package != refinement.package:
-                context.extend(
-                    [WithClause(pdu_package), UsePackageClause(pdu_package)]
-                )
+                context.extend([WithClause(pdu_package), UsePackageClause(pdu_package)])
             context.extend(
                 [
                     WithClause(f"{self.prefix}{refinement.pdu}"),
@@ -296,9 +294,7 @@ class Generator:
         )
 
     # pylint: disable=too-many-statements
-    def __create_generic_message_unit(
-        self, message: Message
-    ) -> None:
+    def __create_generic_message_unit(self, message: Message) -> None:
         context: List[ContextItem] = [
             WithClause(self.types.types),
             UseTypeClause(f"{self.types.types}.Integer_Address"),
@@ -1525,9 +1521,8 @@ class Generator:
                                         else []
                                     ),
                                 ),
-                                GreaterEqual(
-                                    Call("Available_Space", [Name("Ctx"), Name(f.affixed_name)]),
-                                    Call("Field_Length", [Name("Ctx"), Name(f.affixed_name)]),
+                                self.common.sufficient_space_for_field_condition(
+                                    Name(f.affixed_name)
                                 ),
                             )
                         ),
@@ -1590,18 +1585,7 @@ class Generator:
                 SubprogramBody(
                     specification(f),
                     [
-                        ObjectDeclaration(
-                            ["First"],
-                            self.types.bit_index,
-                            Call("Field_First", [Name("Ctx"), Name(f.affixed_name)]),
-                            True,
-                        ),
-                        ObjectDeclaration(
-                            ["Last"],
-                            self.types.bit_index,
-                            Call("Field_Last", [Name("Ctx"), Name(f.affixed_name)]),
-                            True,
-                        ),
+                        *self.common.field_bit_location_declarations(Name(f.affixed_name)),
                         ObjectDeclaration(["Buffer"], self.types.bytes_ptr),
                     ],
                     [
@@ -1609,73 +1593,7 @@ class Generator:
                             [
                                 (
                                     Call("Invalid", [Name("Ctx"), Name(f.affixed_name)]),
-                                    [
-                                        CallStatement(
-                                            "Reset_Dependent_Fields",
-                                            [Name("Ctx"), Name(f.affixed_name)],
-                                        ),
-                                        Assignment(
-                                            "Ctx",
-                                            Aggregate(
-                                                Selected("Ctx", "Buffer_First"),
-                                                Selected("Ctx", "Buffer_Last"),
-                                                Selected("Ctx", "First"),
-                                                Name("Last"),
-                                                Selected("Ctx", "Buffer"),
-                                                Selected("Ctx", "Cursors"),
-                                            ),
-                                        ),
-                                        # WORKAROUND:
-                                        # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-                                        # Provability of predicate is increased by adding part of
-                                        # predicate as assert
-                                        PragmaStatement(
-                                            "Assert",
-                                            [
-                                                str(
-                                                    self.common.message_structure_invariant(
-                                                        message, prefix=True
-                                                    )
-                                                )
-                                            ],
-                                        ),
-                                        Assignment(
-                                            Indexed(
-                                                Selected("Ctx", "Cursors"), Name(f.affixed_name)
-                                            ),
-                                            NamedAggregate(
-                                                ("State", Name("S_Structural_Valid")),
-                                                ("First", Name("First")),
-                                                ("Last", Name("Last")),
-                                                (
-                                                    "Value",
-                                                    NamedAggregate(("Fld", Name(f.affixed_name))),
-                                                ),
-                                                (
-                                                    "Predecessor",
-                                                    Selected(
-                                                        Indexed(
-                                                            Selected("Ctx", "Cursors"),
-                                                            Name(f.affixed_name),
-                                                        ),
-                                                        "Predecessor",
-                                                    ),
-                                                ),
-                                            ),
-                                        ),
-                                        Assignment(
-                                            Indexed(
-                                                Selected("Ctx", "Cursors"),
-                                                Call(
-                                                    "Successor", [Name("Ctx"), Name(f.affixed_name)]
-                                                ),
-                                            ),
-                                            NamedAggregate(
-                                                ("State", Name("S_Invalid")),
-                                                ("Predecessor", Name(f.affixed_name)),
-                                            ),
-                                        ),
-                                    ],
+                                    self.common.initialize_field_statements(message, f),
                                 )
                             ]
                         ),
