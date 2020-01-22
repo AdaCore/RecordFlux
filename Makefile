@@ -1,6 +1,7 @@
 VERBOSE ?= @
-PYLINT = $(notdir $(firstword $(shell which pylint pylint3 2> /dev/null)))
 export MYPYPATH = $(PWD)/stubs
+
+python-packages := bin rflx tests stubs
 
 build-dir := build
 noprefix-dir := build/noprefix
@@ -15,17 +16,23 @@ test-bin := $(noprefix-dir)/$(build-dir)/test
 test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
-.PHONY: test test_python test_spark prove_spark clean
+.PHONY: check format test test_python test_spark prove_spark clean
 
-test: test_python test_spark prove_spark
+check:
+	black --check $(python-packages)
+	isort -rc -c $(python-packages)
+	flake8 $(python-packages)
+	pylint $(python-packages)
+	mypy $(python-packages)
+
+format:
+	black $(python-packages)
+	isort -rc $(python-packages)
+
+test: check test_python test_spark prove_spark
 
 test_python:
 	coverage run --branch --source=rflx -m unittest -b
-	mypy bin/ rflx/ tests/ stubs/
-	$(PYLINT) bin/ rflx/ tests/
-	flake8 bin/ rflx/ tests/
-	isort -rc -c bin/ rflx/ tests/ stubs/
-	black --check bin/ rflx/ tests/ stubs/
 
 test_spark: $(test-files)
 	gprbuild -P$(project)
