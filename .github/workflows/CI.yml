@@ -3,17 +3,48 @@ name: CI
 on: push
 
 jobs:
-  Python:
+  Checks:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7]
+        target: [black, isort, flake8, pylint, mypy]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Check
+      run: |
+        make check_${{ matrix.target }}
+
+  Tests_Python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: Install dependencies
       run: |
         sudo apt install graphviz
@@ -29,29 +60,29 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
 
-  SPARK:
+  Tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         target: [
-          "test_spark",
-          "test_spark NOPREFIX=1",
-          "test_spark_optimized",
+          "spark",
+          "spark NOPREFIX=1",
+          "spark_optimized",
           ]
     steps:
     - uses: actions/checkout@v1
     - name: Test
       run: |
-        docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2019.spark /bin/sh -c "make ${{ matrix.target }}"
+        docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2019.spark /bin/sh -c "make test_${{ matrix.target }}"
 
   Verification:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         target: [
-          "prove_spark",
-          "prove_spark GNATPROVE_ARGS='--prover=cvc4,z3 --steps=100000'",
-          "prove_spark GNATPROVE_ARGS='--prover=cvc4 --steps=100000 -u rflx-tlv -u rflx-in_tlv'",
+          "spark",
+          "spark GNATPROVE_ARGS='--prover=cvc4,z3 --steps=100000'",
+          "spark GNATPROVE_ARGS='--prover=cvc4 --steps=100000 -u rflx-tlv -u rflx-in_tlv'",
           ]
     steps:
     - uses: actions/checkout@v1
@@ -63,7 +94,7 @@ jobs:
     - name: Test
       run: |
         export PATH=spark/bin:$PATH
-        make ${{ matrix.target }}
+        make prove_${{ matrix.target }}
     - name: Clean up
       run: |
         rm -rf spark{,.tgz{,.gpg}}

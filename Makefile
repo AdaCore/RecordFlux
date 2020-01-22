@@ -16,13 +16,24 @@ test-bin := $(noprefix-dir)/$(build-dir)/test
 test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
-.PHONY: check format test test_python test_spark prove_spark clean
+.PHONY: check check_black check_isort check_flake8 check_pylint check_mypy format \
+	test test_python test_spark prove_spark clean
 
-check:
+check: check_black check_isort check_flake8 check_pylint check_mypy
+
+check_black:
 	black --check $(python-packages)
+
+check_isort:
 	isort -rc -c $(python-packages)
+
+check_flake8:
 	flake8 $(python-packages)
+
+check_pylint:
 	pylint $(python-packages)
+
+check_mypy:
 	mypy $(python-packages)
 
 format:
