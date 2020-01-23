@@ -22,7 +22,7 @@ endif
 check: check_black check_isort check_flake8 check_pylint check_mypy
 
 check_black:
-	black --check $(python-packages)
+	black -l 100 --check $(python-packages)
 
 check_isort:
 	isort -rc -c $(python-packages)
@@ -37,7 +37,7 @@ check_mypy:
 	mypy $(python-packages)
 
 format:
-	black $(python-packages)
+	black -l 100 $(python-packages)
 	isort -rc $(python-packages)
 
 test: check test_python test_spark prove_spark
