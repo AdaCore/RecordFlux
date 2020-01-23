@@ -14,8 +14,8 @@ with open('requirements.txt') as f:
 setup(
     name='RecordFlux',
     version=version,
-    description='A toolset for the dissection, generation and verification of '
-                'communication protocols.',
+    description='A toolset for the formal specification of messages and the generation of '
+                'verifiable binary parsers and message generators.',
     long_description=readme,
     long_description_content_type='text/markdown',
     author='Tobias Reiher',
@@ -23,14 +23,16 @@ setup(
     url='https://github.com/Componolit/RecordFlux',
     license='AGPL-3.0',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'License :: OSI Approved :: GNU Affero General Public License v3',
-        'Operating System :: OS Independent',
+        'Operating System :: POSIX :: Linux',
         'Programming Language :: Ada',
         'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Communications',
         'Topic :: Security',
         'Topic :: Software Development :: Build Tools',
