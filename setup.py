@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 
 with open('rflx/__init__.py') as f:
-    version = re.search(r"__version__ = '(.*?)'", f.read()).group(1)
+    version = re.search(r'__version__ = "(.*?)"', f.read()).group(1)
 
 with open('README.md') as f:
     readme = f.read()
