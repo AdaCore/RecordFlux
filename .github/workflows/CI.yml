@@ -58,7 +58,8 @@ jobs:
         python -m pip install --upgrade pip
     - name: Install
       run: |
-        pip install --user --no-deps -e .
+        python setup.py sdist
+        pip install RecordFlux --user --no-deps --no-index --find-links dist/*
 
   Tests_Python:
     runs-on: ubuntu-latest
