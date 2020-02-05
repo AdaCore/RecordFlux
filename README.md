@@ -236,7 +236,7 @@ end Main;
 - [PyParsing](https://github.com/pyparsing/pyparsing/)
 - [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
 - [Z3](https://github.com/Z3Prover/z3)
-- [GNAT Community 2019](https://www.adacore.com/download)
+- [GNAT Community 2019](https://www.adacore.com/download) / [GNAT FSF 8.3](http://www.getadanow.com/)
 - [SPARK Pro 20.0](https://www.adacore.com/sparkpro) (only required for fully automatic verification of generated code)
 
 ## Known Issues
@@ -247,6 +247,10 @@ end Main;
 - GNATprove is unable to prove some parts of the generated code.
 
 These issues should be fixed in the GNAT Community 2020 release.
+
+### GNAT FSF 8.3
+
+- Calling `Valid_Element` in a condition of a while loop leads to a bug box. To circumvent this issue a loop with an exit condition can be used instead. Using the negated condition of the while loop as an exit condition leads to an equivalent loop. For the verification of the loop the original condition must be added as a loop invariant.
 
 ## Licence
 
