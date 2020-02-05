@@ -109,7 +109,11 @@ package body RFLX.Arrays.Tests is
          if Arrays.Message.Present (Context, Arrays.Message.F_Modular_Vector) then
             Arrays.Message.Switch_To_Modular_Vector (Context, Sequence_Context);
 
-            while I <= 10 and then Arrays.Modular_Vector.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Arrays.Modular_Vector.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Arrays.Modular_Vector.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -214,7 +218,11 @@ package body RFLX.Arrays.Tests is
          if Arrays.Message.Present (Context, Arrays.Message.F_Range_Vector) then
             Arrays.Message.Switch_To_Range_Vector (Context, Sequence_Context);
 
-            while I <= 10 and then Arrays.Range_Vector.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Arrays.Range_Vector.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Arrays.Range_Vector.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -319,7 +327,11 @@ package body RFLX.Arrays.Tests is
          if Arrays.Message.Present (Context, Arrays.Message.F_Enumeration_Vector) then
             Arrays.Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
 
-            while I <= 10 and then Arrays.Enumeration_Vector.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Arrays.Enumeration_Vector.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Arrays.Enumeration_Vector.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -432,7 +444,11 @@ package body RFLX.Arrays.Tests is
          if Arrays.Message.Present (Context, Arrays.Message.F_AV_Enumeration_Vector) then
             Arrays.Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
 
-            while I <= 10 and then Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -492,7 +508,11 @@ package body RFLX.Arrays.Tests is
             if Arrays.Message.Present (Context, Arrays.Message.F_Modular_Vector) then
                Arrays.Message.Switch_To_Modular_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Arrays.Modular_Vector.Valid_Element (Sequence_Context) loop
+               loop
+                  --  WORKAROUND: Componolit/Workarounds#16
+                  exit when I > 10 or not Arrays.Modular_Vector.Valid_Element (Sequence_Context);
+                  pragma Loop_Invariant (I <= 10 and then Arrays.Modular_Vector.Valid_Element (Sequence_Context));
+
                   pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -528,7 +548,11 @@ package body RFLX.Arrays.Tests is
             if Arrays.Message.Present (Context, Arrays.Message.F_Range_Vector) then
                Arrays.Message.Switch_To_Range_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Arrays.Range_Vector.Valid_Element (Sequence_Context) loop
+               loop
+                  --  WORKAROUND: Componolit/Workarounds#16
+                  exit when I > 10 or not Arrays.Range_Vector.Valid_Element (Sequence_Context);
+                  pragma Loop_Invariant (I <= 10 and then Arrays.Range_Vector.Valid_Element (Sequence_Context));
+
                   pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -564,7 +588,11 @@ package body RFLX.Arrays.Tests is
             if Arrays.Message.Present (Context, Arrays.Message.F_Enumeration_Vector) then
                Arrays.Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Arrays.Enumeration_Vector.Valid_Element (Sequence_Context) loop
+               loop
+                  --  WORKAROUND: Componolit/Workarounds#16
+                  exit when I > 10 or not Arrays.Enumeration_Vector.Valid_Element (Sequence_Context);
+                  pragma Loop_Invariant (I <= 10 and then Arrays.Enumeration_Vector.Valid_Element (Sequence_Context));
+
                   pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -600,7 +628,11 @@ package body RFLX.Arrays.Tests is
             if Arrays.Message.Present (Context, Arrays.Message.F_AV_Enumeration_Vector) then
                Arrays.Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context) loop
+               loop
+                  --  WORKAROUND: Componolit/Workarounds#16
+                  exit when I > 10 or not Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context);
+                  pragma Loop_Invariant (I <= 10 and then Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context));
+
                   pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -722,7 +754,11 @@ package body RFLX.Arrays.Tests is
          if Arrays.Messages_Message.Present (Context, Arrays.Messages_Message.F_Messages) then
             Arrays.Messages_Message.Switch_To_Messages (Context, Sequence_Context);
 
-            while I <= 10 and then Arrays.Inner_Messages.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Arrays.Inner_Messages.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Arrays.Inner_Messages.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Arrays.Inner_Messages.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);

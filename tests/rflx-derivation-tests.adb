@@ -99,7 +99,11 @@ package body RFLX.Derivation.Tests is
          if Derivation.Message.Present (Context, Derivation.Message.F_Modular_Vector) then
             Derivation.Message.Switch_To_Modular_Vector (Context, Sequence_Context);
 
-            while I <= 10 and then Derivation.Modular_Vector.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Derivation.Modular_Vector.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Derivation.Modular_Vector.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Derivation.Modular_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -204,7 +208,11 @@ package body RFLX.Derivation.Tests is
          if Derivation.Message.Present (Context, Derivation.Message.F_Range_Vector) then
             Derivation.Message.Switch_To_Range_Vector (Context, Sequence_Context);
 
-            while I <= 10 and then Derivation.Range_Vector.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Derivation.Range_Vector.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Derivation.Range_Vector.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Derivation.Range_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -309,7 +317,11 @@ package body RFLX.Derivation.Tests is
          if Derivation.Message.Present (Context, Derivation.Message.F_Enumeration_Vector) then
             Derivation.Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
 
-            while I <= 10 and then Derivation.Enumeration_Vector.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Derivation.Enumeration_Vector.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Derivation.Enumeration_Vector.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Derivation.Enumeration_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -422,7 +434,11 @@ package body RFLX.Derivation.Tests is
          if Derivation.Message.Present (Context, Derivation.Message.F_AV_Enumeration_Vector) then
             Derivation.Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
 
-            while I <= 10 and then Derivation.AV_Enumeration_Vector.Valid_Element (Sequence_Context) loop
+            loop
+               --  WORKAROUND: Componolit/Workarounds#16
+               exit when I > 10 or not Derivation.AV_Enumeration_Vector.Valid_Element (Sequence_Context);
+               pragma Loop_Invariant (I <= 10 and then Derivation.AV_Enumeration_Vector.Valid_Element (Sequence_Context));
+
                pragma Loop_Invariant (Derivation.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
                pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -482,7 +498,11 @@ package body RFLX.Derivation.Tests is
             if Derivation.Message.Present (Context, Derivation.Message.F_Modular_Vector) then
                Derivation.Message.Switch_To_Modular_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Derivation.Modular_Vector.Valid_Element (Sequence_Context) loop
+               loop
+                  --  WORKAROUND: Componolit/Workarounds#16
+                  exit when I > 10 or not Derivation.Modular_Vector.Valid_Element (Sequence_Context);
+                  pragma Loop_Invariant (I <= 10 and then Derivation.Modular_Vector.Valid_Element (Sequence_Context));
+
                   pragma Loop_Invariant (Derivation.Modular_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -518,7 +538,11 @@ package body RFLX.Derivation.Tests is
             if Derivation.Message.Present (Context, Derivation.Message.F_Range_Vector) then
                Derivation.Message.Switch_To_Range_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Derivation.Range_Vector.Valid_Element (Sequence_Context) loop
+               loop
+                  --  WORKAROUND: Componolit/Workarounds#16
+                  exit when I > 10 or not Derivation.Range_Vector.Valid_Element (Sequence_Context);
+                  pragma Loop_Invariant (I <= 10 and then Derivation.Range_Vector.Valid_Element (Sequence_Context));
+
                   pragma Loop_Invariant (Derivation.Range_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -554,7 +578,11 @@ package body RFLX.Derivation.Tests is
             if Derivation.Message.Present (Context, Derivation.Message.F_Enumeration_Vector) then
                Derivation.Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Derivation.Enumeration_Vector.Valid_Element (Sequence_Context) loop
+               loop
+                  --  WORKAROUND: Componolit/Workarounds#16
+                  exit when I > 10 or not Derivation.Enumeration_Vector.Valid_Element (Sequence_Context);
+                  pragma Loop_Invariant (I <= 10 and then Derivation.Enumeration_Vector.Valid_Element (Sequence_Context));
+
                   pragma Loop_Invariant (Derivation.Enumeration_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
@@ -590,7 +618,11 @@ package body RFLX.Derivation.Tests is
             if Derivation.Message.Present (Context, Derivation.Message.F_AV_Enumeration_Vector) then
                Derivation.Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Derivation.AV_Enumeration_Vector.Valid_Element (Sequence_Context) loop
+               loop
+                  --  WORKAROUND: Componolit/Workarounds#16
+                  exit when I > 10 or not Derivation.AV_Enumeration_Vector.Valid_Element (Sequence_Context);
+                  pragma Loop_Invariant (I <= 10 and then Derivation.AV_Enumeration_Vector.Valid_Element (Sequence_Context));
+
                   pragma Loop_Invariant (Derivation.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
                   pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
                   pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
