@@ -106,7 +106,8 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
 
-  Tests:
+  tests_gnat_community:
+    name: Tests GNAT Community
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -119,7 +120,16 @@ jobs:
     - uses: actions/checkout@v1
     - name: Test
       run: |
-        docker run -v $PWD:/app -w /app jklmnn/gnat:gpl.2019.spark /bin/sh -c "make test_${{ matrix.target }}"
+        docker run -v $PWD:/app -w /app componolit/ci:gnat-community-2019 /bin/sh -c "make test_${{ matrix.target }}"
+
+  tests_gnat_fsf:
+    name: Tests GNAT FSF
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Test
+      run: |
+        docker run -v $PWD:/app -w /app componolit/ci:gnat-fsf-8.3 /bin/sh -c "make test_spark"
 
   Verification:
     runs-on: ubuntu-latest
