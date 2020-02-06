@@ -65,7 +65,8 @@ jobs:
         python setup.py sdist
         pip install RecordFlux --user --no-deps --no-index --find-links dist/*
 
-  Tests_Python:
+  tests_python:
+    name: Tests Python
     runs-on: ubuntu-latest
     strategy:
       matrix:
