@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6]
-        target: [black, isort, flake8, pylint, mypy]
+        target: [black, isort, flake8, pylint, mypy, readme]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
@@ -37,9 +37,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install --user -r requirements.txt
+        mkdir $HOME/bin
+        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2019 gprbuild $@' > $HOME/bin/gprbuild
+        chmod +x $HOME/bin/gprbuild
     - name: Check
       run: |
-        export PATH=~/.local/bin:$PATH
+        export PATH=~/.local/bin:$HOME/bin:$PATH
+        export PYTHONPATH=$PWD
         make check_${{ matrix.target }}
 
   Installation:

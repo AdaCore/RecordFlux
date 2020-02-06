@@ -1,7 +1,7 @@
 VERBOSE ?= @
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := bin rflx tests stubs
+python-packages := bin rflx tests tools stubs
 
 build-dir := build
 noprefix-dir := build/noprefix
@@ -19,7 +19,7 @@ endif
 .PHONY: check check_black check_isort check_flake8 check_pylint check_mypy format \
 	test test_python test_spark prove_spark clean
 
-check: check_black check_isort check_flake8 check_pylint check_mypy
+check: check_black check_isort check_flake8 check_pylint check_mypy check_readme
 
 check_black:
 	black -l 100 --check $(python-packages)
@@ -35,6 +35,9 @@ check_pylint:
 
 check_mypy:
 	mypy $(python-packages)
+
+check_readme:
+	tools/check_readme.py
 
 format:
 	black -l 100 $(python-packages)
