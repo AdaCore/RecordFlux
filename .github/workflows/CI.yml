@@ -131,6 +131,19 @@ jobs:
       run: |
         docker run -v $PWD:/app -w /app componolit/ci:gnat-fsf-8.3 /bin/sh -c "make test_spark"
 
+  runtime_compatibility:
+    name: Runtime compatibility
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build runtime
+      run: |
+        git clone -b v1.1.0 --depth 1 https://github.com/Componolit/ada-runtime
+        docker run -v $PWD:/app -w /app componolit/ci:gnat-community-2019 /bin/sh -c "make -C ada-runtime"
+    - name: Build
+      run: |
+        docker run -v $PWD:/app -w /app componolit/ci:gnat-community-2019 /bin/sh -c "gprbuild -Ptest --RTS=ada-runtime/obj -Xaunit=no -Xoptimization=yes"
+
   Verification:
     runs-on: ubuntu-latest
     strategy:
