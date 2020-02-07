@@ -2,6 +2,7 @@ import z3
 
 from rflx.error import Location
 from rflx.expression import Attribute, Expr, Not, Precedence, Relation, Variable
+from rflx.identifier import ID, StrID
 
 
 class Valid(Attribute):
@@ -125,10 +126,10 @@ class Convert(Expr):
 
 
 class Field(Expr):
-    def __init__(self, expression: Expr, field: str, location: Location = None) -> None:
+    def __init__(self, expression: Expr, field: StrID, location: Location = None) -> None:
         super().__init__(location)
         self.__expression = expression
-        self.__field = field
+        self.__field = ID(field)
 
     def __repr__(self) -> str:
         return f"{self.__expression}.{self.__field}"

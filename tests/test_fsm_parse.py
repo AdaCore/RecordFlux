@@ -1,5 +1,5 @@
 from rflx.expression import FALSE, TRUE, And, Equal, NotEqual, Number, Or, Variable
-from rflx.fsm_expression import Contains, Convert, ForAll, ForSome, NotContains, Valid
+from rflx.fsm_expression import Contains, Convert, Field, ForAll, ForSome, NotContains, Valid
 from rflx.fsm_parser import FSMParser
 
 
@@ -102,7 +102,6 @@ def test_universal_quantification() -> None:
 def test_type_conversion_simple() -> None:
     expr = "Foo (Bar) = 5"
     result = FSMParser.condition().parseString(expr)[0]
-    print(f"result: {result}")
     expected = Equal(Convert(Variable("Bar"), Variable("Foo")), Number(5))
     assert result == expected
 
@@ -117,10 +116,12 @@ def test_type_conversion() -> None:
 
 
 def test_use_type_conversion() -> None:
-    expr = "GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data)"
+    expr = "GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data).Versions"
     result = FSMParser.condition().parseString(expr)[0]
     expected = NotContains(
         Variable("GreenTLS.TLS_1_3"),
-        Convert(Variable("E.Data"), Variable("TLS_Handshake.Supported_Versions")),
+        Field(
+            Convert(Variable("E.Data"), Variable("TLS_Handshake.Supported_Versions")), "Versions",
+        ),
     )
     assert result == expected
