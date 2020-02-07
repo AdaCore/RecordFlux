@@ -1,3 +1,4 @@
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase, mock
 
@@ -15,6 +16,9 @@ class TestCLI(TestCase):
     def test_main_help(self) -> None:
         with self.assertRaises(SystemExit):
             cli.main(["rflx", "-h"])
+
+    def test_main_version(self) -> None:
+        self.assertEqual(cli.main(["rflx", "--version"]), 0)
 
     def test_main_check(self) -> None:
         self.assertEqual(cli.main(["rflx", "check", "specs/tlv.rflx"]), 0)
@@ -35,12 +39,27 @@ class TestCLI(TestCase):
     def test_main_generate(self) -> None:
         with TemporaryDirectory() as tmpdir:
             self.assertEqual(cli.main(["rflx", "generate", "-d", tmpdir, "specs/tlv.rflx"]), 0)
+            top_level_package = Path(tmpdir) / (cli.DEFAULT_PREFIX.lower() + ".ads")
+            self.assertTrue(top_level_package.exists())
 
     def test_main_generate_prefix(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(
-                cli.main(["rflx", "generate", "-d", tmpdir, "-p", "", "specs/tlv.rflx"]), 0
-            )
+            for prefix in ["", "A", "A.B", "A.B.C"]:
+                self.assertEqual(
+                    cli.main(["rflx", "generate", "-d", tmpdir, "-p", prefix, "specs/tlv.rflx"]), 0
+                )
+                top_level_package = Path(tmpdir) / (prefix.replace(".", "-").lower() + ".ads")
+                self.assertFalse(top_level_package.exists())
+
+    def test_main_generate_invalid_prefix(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            for prefix in [".", "A.B.", ".A.B", "A..B"]:
+                self.assertIn(
+                    rf'invalid prefix: "{prefix}"',
+                    str(
+                        cli.main(["rflx", "generate", "-d", tmpdir, "-p", prefix, "specs/tlv.rflx"])
+                    ),
+                )
 
     def test_main_generate_no_output_files(self) -> None:
         with TemporaryDirectory() as tmpdir:

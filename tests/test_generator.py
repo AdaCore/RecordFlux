@@ -21,17 +21,34 @@ from tests.models import (
 
 class TestGenerator(unittest.TestCase):
     def setUp(self) -> None:
-        self.testdir = "generated"
+        self.testdir = Path("generated")
         self.maxDiff = None  # pylint: disable=invalid-name
 
     def test_library_files(self) -> None:
-        generator = Generator("RFLX.", reproducible=True)
-        with TemporaryDirectory() as tmpdir:
-            generator.write_library_files(Path(tmpdir))
-            for filename in [f"rflx-{f}" for f in LIBRARY_FILES] + ["rflx.ads"]:
-                with open(tmpdir + "/" + filename) as library_file:
-                    with open(self.testdir + "/" + filename) as expected_file:
+        generator = Generator("RFLX", reproducible=True)
+        with TemporaryDirectory() as directory:
+            tmpdir = Path(directory)
+            generator.write_library_files(tmpdir)
+            for filename in [f"rflx-{f}" for f in LIBRARY_FILES]:
+                with open(tmpdir / filename) as library_file:
+                    with open(self.testdir / filename) as expected_file:
                         self.assertEqual(library_file.read(), expected_file.read(), filename)
+
+    def test_top_level_package(self) -> None:
+        generator = Generator("RFLX", reproducible=True)
+        with TemporaryDirectory() as directory:
+            tmpdir = Path(directory)
+            files = generator.write_top_level_package(tmpdir)
+            for filename in files:
+                with open(tmpdir / filename) as library_file:
+                    with open(self.testdir / filename) as expected_file:
+                        self.assertEqual(library_file.read(), expected_file.read(), filename)
+
+    def test_top_level_package_no_prefix(self) -> None:
+        generator = Generator("", reproducible=True)
+        with TemporaryDirectory() as directory:
+            tmpdir = Path(directory)
+            self.assertEqual(generator.write_top_level_package(tmpdir), [])
 
     def assert_specification(self, generator: Generator) -> None:
         for unit in generator.units.values():
@@ -112,6 +129,6 @@ class TestGenerator(unittest.TestCase):
 
 
 def generate(pdus: List[Message], refinements: List[Refinement]) -> Generator:
-    generator = Generator("RFLX.", reproducible=True)
+    generator = Generator("RFLX", reproducible=True)
     generator.generate(pdus, refinements)
     return generator
