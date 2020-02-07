@@ -147,14 +147,14 @@ LIBRARY_FILES = (
 class Generator:
     # pylint: disable=too-many-instance-attributes
     def __init__(self, prefix: str = "", reproducible: bool = False) -> None:
-        self.prefix = prefix
+        self.prefix = f"{prefix}." if prefix else ""
         self.reproducible = reproducible
         self.units: Dict[str, Unit] = {}
         self.messages: Dict[str, Message] = {}
-        self.types = Types(prefix)
-        self.common = GeneratorCommon(prefix)
-        self.parser = ParserGenerator(prefix)
-        self.generator = GeneratorGenerator(prefix)
+        self.types = Types(self.prefix)
+        self.common = GeneratorCommon(self.prefix)
+        self.parser = ParserGenerator(self.prefix)
+        self.generator = GeneratorGenerator(self.prefix)
 
         self.template_dir = Path(pkg_resources.resource_filename(*TEMPLATE_DIR))
         if not self.template_dir.is_dir():
@@ -166,15 +166,6 @@ class Generator:
 
     def write_library_files(self, directory: Path) -> List[Path]:
         written_files = []
-
-        if self.prefix:
-            prefix = self.prefix[:-1]
-            filename = prefix.lower() + ".ads"
-            file_path = Path(directory).joinpath(filename)
-
-            with open(file_path, "w") as library_file:
-                library_file.write(self.license_header() + f"package {prefix} is\n\nend {prefix};")
-                written_files.append(file_path)
 
         for template_filename in LIBRARY_FILES:
             self.check_template_file(template_filename)
@@ -188,6 +179,20 @@ class Generator:
                         self.license_header() + template_file.read().format(prefix=self.prefix)
                     )
                     written_files.append(file_path)
+
+        return written_files
+
+    def write_top_level_package(self, directory: Path) -> List[Path]:
+        written_files = []
+
+        if self.prefix:
+            prefix = self.prefix[:-1]
+            filename = prefix.lower() + ".ads"
+            file_path = Path(directory).joinpath(filename)
+
+            with open(file_path, "w") as library_file:
+                library_file.write(self.license_header() + f"package {prefix} is\n\nend {prefix};")
+                written_files.append(file_path)
 
         return written_files
 
