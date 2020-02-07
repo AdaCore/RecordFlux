@@ -87,6 +87,9 @@ def check(args: argparse.Namespace) -> None:
 
 
 def generate(args: argparse.Namespace) -> None:
+    if args.prefix and "" in args.prefix.split("."):
+        raise Error(f'invalid prefix: "{args.prefix}"')
+
     directory = Path(args.directory)
     if not directory.is_dir():
         raise Error(f'directory not found: "{directory}"')
@@ -95,16 +98,14 @@ def generate(args: argparse.Namespace) -> None:
     if not messages and not refinements:
         return
 
-    prefix = args.prefix
-    if prefix and prefix[-1] != ".":
-        prefix = f"{prefix}."
-
-    generator = Generator(prefix)
+    generator = Generator(args.prefix)
 
     print("Generating... ", end="", flush=True)
     generator.generate(messages, refinements)
     written_files = generator.write_units(directory)
     written_files += generator.write_library_files(directory)
+    if args.prefix == DEFAULT_PREFIX:
+        written_files += generator.write_top_level_package(directory)
     print("OK")
 
     for f in written_files:
