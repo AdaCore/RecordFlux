@@ -9,6 +9,10 @@ class Valid(Attribute):
     pass
 
 
+class Present(Attribute):
+    pass
+
+
 class Quantifier(Expr):
     def __init__(
         self, quantifier: Variable, iteratable: Expr, predicate: Expr, location: Location = None

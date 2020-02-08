@@ -152,8 +152,7 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
-    # pylint: disable=too-many-locals
-    def __parse(self, name: str, doc: Dict[str, Any]) -> None:
+    def __parse(self, name: str, doc: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         if "initial" not in doc:
             self.error.append(
                 f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR
