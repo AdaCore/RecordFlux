@@ -13,7 +13,16 @@ from pyparsing import (
 )
 
 from rflx.expression import FALSE, TRUE, And, Equal, Expr, NotEqual, Or, Variable
-from rflx.fsm_expression import Contains, Convert, Field, ForAll, ForSome, NotContains, Valid
+from rflx.fsm_expression import (
+    Contains,
+    Convert,
+    Field,
+    ForAll,
+    ForSome,
+    NotContains,
+    Present,
+    Valid,
+)
 from rflx.identifier import ID
 from rflx.parser.grammar import (
     boolean_literal,
@@ -76,8 +85,8 @@ class FSMParser:
         identifier = qualified_identifier()
         identifier.setParseAction(lambda t: Variable(ID("".join(map(str, t.asList())))))
 
-        valid = identifier() + Literal("'") - Keyword("Valid")
-        valid.setParseAction(lambda t: Valid(t[0]))
+        attribute = identifier() + Literal("'") - (Keyword("Valid") | Keyword("Present"))
+        attribute.setParseAction(lambda t: Valid(t[0]) if t[2] == "Valid" else Present(t[0]))
 
         expression = Forward()
 
@@ -99,7 +108,9 @@ class FSMParser:
         field = conversion + Literal(".").suppress() - unqualified_identifier()
         field.setParseAction(lambda t: Field(t[0], t[1]))
 
-        atom = numeric_literal() | literal | quantifier | field | conversion | valid | identifier
+        atom = (
+            numeric_literal() | literal | quantifier | field | conversion | attribute | identifier
+        )
 
         expression <<= infixNotation(
             atom,

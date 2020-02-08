@@ -1,5 +1,14 @@
 from rflx.expression import FALSE, TRUE, And, Equal, NotEqual, Number, Or, Variable
-from rflx.fsm_expression import Contains, Convert, Field, ForAll, ForSome, NotContains, Valid
+from rflx.fsm_expression import (
+    Contains,
+    Convert,
+    Field,
+    ForAll,
+    ForSome,
+    NotContains,
+    Present,
+    Valid,
+)
 from rflx.fsm_parser import FSMParser
 
 
@@ -149,3 +158,13 @@ def test_use_type_conversion() -> None:
         ),
     )
     assert result == expected
+
+
+def test_present() -> None:
+    result = FSMParser.condition().parseString("Something'Present")[0]
+    assert result == Present(Variable("Something"))
+
+
+def test_conjunction_present() -> None:
+    result = FSMParser.condition().parseString("Foo'Present and Bar'Present")[0]
+    assert result == And(Present(Variable("Foo")), Present(Variable("Bar")))
