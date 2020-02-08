@@ -108,17 +108,13 @@ class FSMParser:
                 (Keyword("/="), 2, opAssoc.LEFT, cls.__parse_inequation),
                 (Keyword("in"), 2, opAssoc.LEFT, cls.__parse_in),
                 (Keyword("not in"), 2, opAssoc.LEFT, cls.__parse_notin),
-            ],
-        )
-
-        result = infixNotation(
-            expression,
-            [
                 (Keyword("and").suppress(), 2, opAssoc.LEFT, cls.__parse_conj),
                 (Keyword("or").suppress(), 2, opAssoc.LEFT, cls.__parse_disj),
             ],
         )
-        return result
+
+        expression.enablePackrat()
+        return expression
 
     @classmethod
     def condition(cls) -> Token:

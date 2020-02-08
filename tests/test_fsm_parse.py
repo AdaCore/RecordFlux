@@ -94,6 +94,30 @@ def test_existential_quantification() -> None:
     assert result == ForSome(Variable("X"), Variable("Y"), Equal(Variable("X"), Number(3)))
 
 
+def test_complex_existential_quantification() -> None:
+    expr = (
+        "for some E in Server_Hello_Message.Extensions => "
+        "(E.Tag = TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS and "
+        "(GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data).Versions))"
+    )
+    result = FSMParser.condition().parseString(expr)[0]
+    expected = ForSome(
+        Variable("E"),
+        Variable("Server_Hello_Message.Extensions"),
+        And(
+            Equal(Variable("E.Tag"), Variable("TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS")),
+            NotContains(
+                Variable("GreenTLS.TLS_1_3"),
+                Field(
+                    Convert(Variable("E.Data"), Variable("TLS_Handshake.Supported_Versions")),
+                    "Versions",
+                ),
+            ),
+        ),
+    )
+    assert result == expected
+
+
 def test_universal_quantification() -> None:
     result = FSMParser.condition().parseString("for all X in Y => X = Bar")[0]
     assert result == ForAll(Variable("X"), Variable("Y"), Equal(Variable("X"), Variable("Bar")))
