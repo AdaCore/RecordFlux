@@ -214,9 +214,9 @@ class Array(Composite):
         raise NotImplementedError
 
 
-class Payload(Composite):
+class Opaque(Composite):
     def __init__(self) -> None:
-        super().__init__("__PACKAGE__.Payload")
+        super().__init__("__PACKAGE__.Opaque")
 
     @property
     def size(self) -> Expr:
@@ -432,7 +432,7 @@ class Message(Element):
 
                 if l.target != FINAL:
                     t = self.types[l.target]
-                    unconstrained = isinstance(t, (Payload, Array))
+                    unconstrained = isinstance(t, (Opaque, Array))
                     if not unconstrained and l.length != UNDEFINED:
                         raise ModelError(
                             f'fixed size field "{l.target.name}" with length'

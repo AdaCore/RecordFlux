@@ -463,7 +463,7 @@ is
         (RFLX.Types.Byte_Index (Last));
    begin
       Initialize_Value (Ctx);
-      Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      Process_Value (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Value;
 
    procedure Initialize_Value (Ctx : in out Context) is

@@ -783,7 +783,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                          null
                             then Baz
                                with Length => 42;
-                         Baz : Payload;
+                         Baz : Opaque;
                       end message;
                    for Foo use (Baz => Foo);
                    type Bar is new Foo;
@@ -862,7 +862,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                 ),
                                 Component(
                                     "Payload",
-                                    "Payload",
+                                    "Opaque",
                                     [
                                         Then(
                                             "null",
@@ -909,7 +909,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                         Length_2 : Length
                            then Payload
                               with Length => Length_1 + Length_2;
-                        Payload : Payload;
+                        Payload : Opaque;
                      end message;
                end Test;
             """

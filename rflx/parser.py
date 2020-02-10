@@ -62,7 +62,7 @@ from rflx.model import (
     Message,
     ModelError,
     ModularInteger,
-    Payload,
+    Opaque,
     RangeInteger,
     Reference,
     Refinement,
@@ -457,7 +457,7 @@ class Parser:
 
 
 def convert_to_messages(spec: Specification) -> Dict[str, Message]:
-    types: Dict[str, Type] = {Payload().name: Payload()}
+    types: Dict[str, Type] = {Opaque().name: Opaque()}
     messages: Dict[str, Message] = {}
 
     for t in spec.package.types:

@@ -23,7 +23,7 @@ package TLS_Handshake is
          Length : Length
             then Payload
                with Length => Length * 8;
-         Payload : Payload;
+         Payload : Opaque;
       end message;
 
    -- Extensions
@@ -61,7 +61,7 @@ package TLS_Handshake is
          Data_Length : Data_Length
             then Data
                with Length => Data_Length;
-         Data : Payload;
+         Data : Opaque;
       end message;
 
    type Extensions is array of Extension;
@@ -120,11 +120,11 @@ package TLS_Handshake is
             then Random
                with Length => 32 * 8
                if Legacy_Version = TLS_1_2;
-         Random : Payload;
+         Random : Opaque;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length
             then Legacy_Session_ID
                with Length => Legacy_Session_ID_Length * 8;
-         Legacy_Session_ID : Payload;
+         Legacy_Session_ID : Opaque;
          Cipher_Suites_Length : Cipher_Suites_Length
             then Cipher_Suites
                with Length => Cipher_Suites_Length * 8;
@@ -132,7 +132,7 @@ package TLS_Handshake is
          Legacy_Compression_Methods_Length : Legacy_Compression_Methods_Length
             then Legacy_Compression_Methods
                with Length => Legacy_Compression_Methods_Length * 8;
-         Legacy_Compression_Methods : Payload
+         Legacy_Compression_Methods : Opaque
             then null
                if Message'Last / 8 = Legacy_Compression_Methods'Last / 8,
             then Extensions_Length
@@ -155,11 +155,11 @@ package TLS_Handshake is
             then Random
                with Length => 32 * 8
                if Legacy_Version = TLS_1_2;
-         Random : Payload;
+         Random : Opaque;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length
             then Legacy_Session_ID
                with Length => Legacy_Session_ID_Length * 8;
-         Legacy_Session_ID : Payload;
+         Legacy_Session_ID : Opaque;
          Cipher_Suite : Cipher_Suite;
          Legacy_Compression_Method : Legacy_Compression_Method;
          Extensions_Length : Server_Hello_Extensions_Length
@@ -204,7 +204,7 @@ package TLS_Handshake is
          Certificate_Request_Context_Length : Certificate_Request_Context_Length
             then Certificate_Request_Context
                with Length => Certificate_Request_Context_Length * 8;
-         Certificate_Request_Context : Payload;
+         Certificate_Request_Context : Opaque;
          Extensions_Length : Certificate_Request_Extensions_Length
             then Extensions
                with Length => Extensions_Length * 8;
@@ -226,7 +226,7 @@ package TLS_Handshake is
          Cert_Data_Length : Cert_Data_Length
             then Cert_Data
                with Length => Cert_Data_Length * 8;
-         Cert_Data : Payload
+         Cert_Data : Opaque
             then Extensions_Length;
          Extensions_Length : Certificate_Extensions_Length
             then Extensions
@@ -242,7 +242,7 @@ package TLS_Handshake is
          Certificate_Request_Context_Length : Certificate_Request_Context_Length
             then Certificate_Request_Context
                with Length => Certificate_Request_Context_Length * 8;
-         Certificate_Request_Context : Payload;
+         Certificate_Request_Context : Opaque;
          Certificate_List_Length : Certificate_List_Length
             then Certificate_List
                with Length => Certificate_List_Length * 8;
@@ -285,7 +285,7 @@ package TLS_Handshake is
          Signature_Length : Signature_Length
             then Signature
                with Length => Signature_Length * 8;
-         Signature : Payload;
+         Signature : Opaque;
       end message;
 
    for Handshake use (Payload => Certificate_Verify)
@@ -296,7 +296,7 @@ package TLS_Handshake is
          null
             then Verify_Data
                with Length => Message'Length;
-         Verify_Data : Payload;
+         Verify_Data : Opaque;
       end message;
 
    for Handshake use (Payload => Finished)
@@ -324,11 +324,11 @@ package TLS_Handshake is
          Ticket_Nonce_Length : Ticket_Nonce_Length
             then Ticket_Nonce
                with Length => Ticket_Nonce_Length * 8;
-         Ticket_Nonce : Payload;
+         Ticket_Nonce : Opaque;
          Ticket_Length : Ticket_Length
             then Ticket
                with Length => Ticket_Length * 8;
-         Ticket : Payload;
+         Ticket : Opaque;
          Extensions_Length : New_Session_Ticket_Extensions_Length
             then Extensions
                with Length => Extensions_Length * 8;
@@ -359,7 +359,7 @@ package TLS_Handshake is
          Length : Name_Length
             then Name
                with Length => Length;
-         Name : Payload;
+         Name : Opaque;
       end message;
 
    type Server_Name_List_Length is range 1 .. 2**16 - 1 with Size => 16;
@@ -431,7 +431,7 @@ package TLS_Handshake is
          Length : Cookie_Length
             then Cookie
                with Length => Length;
-         Cookie : Payload;
+         Cookie : Opaque;
       end message;
 
    for CH_Extension use (Data => Cookie)
@@ -489,7 +489,7 @@ package TLS_Handshake is
          Length : Distinguished_Name_Length
             then Name
                with Length => Length;
-         Name : Payload;
+         Name : Opaque;
       end message;
 
    type Distinguished_Names is array of Distinguished_Name;
@@ -518,11 +518,11 @@ package TLS_Handshake is
          OID_Length : OID_Length
             then OID
                with Length => OID_Length;
-         OID : Payload;
+         OID : Opaque;
          Values_Length : Values_Length
             then Values
                with Length => Values_Length;
-         Values : Payload;
+         Values : Opaque;
       end message;
 
    type Filters is array of Filter;
@@ -589,7 +589,7 @@ package TLS_Handshake is
          Length : Key_Exchange_Length
             then Key_Exchange
                with Length => Length;
-         Key_Exchange : Payload;
+         Key_Exchange : Opaque;
       end message;
 
    type Key_Share_Entries is array of Key_Share_Entry;
@@ -668,7 +668,7 @@ package TLS_Handshake is
          Length : Identity_Length
             then Identity
                with Length => Length;
-         Identity : Payload;
+         Identity : Opaque;
          Obfuscated_Ticket_Age : Obfuscated_Ticket_Age;
       end message;
 
@@ -681,7 +681,7 @@ package TLS_Handshake is
          Length : PSK_Binder_Entry_Length
             then PSK_Binder_Entry
                with Length => Length;
-         PSK_Binder_Entry : Payload;
+         PSK_Binder_Entry : Opaque;
       end message;
 
    type PSK_Binder_Entries is array of PSK_Binder_Entry;
@@ -722,7 +722,7 @@ package TLS_Handshake is
          Length : Protocol_Name_Length
             then Name
                with Length => Length;
-         Name : Payload;
+         Name : Opaque;
       end message;
 
    type Protocol_Names is array of Protocol_Name;

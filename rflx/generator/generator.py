@@ -50,7 +50,7 @@ from rflx.expression import (
     Slice,
     Variable,
 )
-from rflx.model import FINAL, Enumeration, Field, Message, Payload, Scalar, Type
+from rflx.model import FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
 from .common import VALID_CONTEXT, GeneratorCommon, length_dependent_condition
 from .types import Types
@@ -373,13 +373,14 @@ class GeneratorGenerator:
                 [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], self.types.bit_length)],
             )
 
-        formal_parameters = [
-            FormalSubprogramDeclaration(
-                ProcedureSpecification(
-                    "Process_Payload", [OutParameter(["Payload"], self.types.bytes)],
+        def formal_parameters(field: Field) -> Sequence[FormalSubprogramDeclaration]:
+            return [
+                FormalSubprogramDeclaration(
+                    ProcedureSpecification(
+                        f"Process_{field.name}", [OutParameter([field.name], self.types.bytes)],
+                    )
                 )
-            )
-        ]
+            ]
 
         return UnitPart(
             [
@@ -398,10 +399,10 @@ class GeneratorGenerator:
                             )
                         ),
                     ],
-                    formal_parameters,
+                    formal_parameters(f),
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Payload) and unbounded_setter_required(message, f)
+                if isinstance(t, Opaque) and unbounded_setter_required(message, f)
             ]
             + [
                 SubprogramDeclaration(
@@ -419,10 +420,10 @@ class GeneratorGenerator:
                             )
                         ),
                     ],
-                    formal_parameters,
+                    formal_parameters(f),
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Payload) and bounded_setter_required(message, f)
+                if isinstance(t, Opaque) and bounded_setter_required(message, f)
             ],
             [
                 SubprogramBody(
@@ -441,7 +442,7 @@ class GeneratorGenerator:
                     [
                         CallStatement(f"Initialize_{f.name}", [Name("Ctx")]),
                         CallStatement(
-                            "Process_Payload",
+                            f"Process_{f.name}",
                             [
                                 Slice(
                                     Selected(Selected("Ctx", "Buffer"), "all"),
@@ -453,7 +454,7 @@ class GeneratorGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Payload) and unbounded_setter_required(message, f)
+                if isinstance(t, Opaque) and unbounded_setter_required(message, f)
             ]
             + [
                 SubprogramBody(
@@ -485,7 +486,7 @@ class GeneratorGenerator:
                             f"Initialize_Bounded_{f.name}", [Name("Ctx"), Name("Length")]
                         ),
                         CallStatement(
-                            "Process_Payload",
+                            f"Process_{f.name}",
                             [
                                 Slice(
                                     Selected(Selected("Ctx", "Buffer"), "all"),
@@ -497,7 +498,7 @@ class GeneratorGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Payload) and bounded_setter_required(message, f)
+                if isinstance(t, Opaque) and bounded_setter_required(message, f)
             ],
         )
 
@@ -532,7 +533,7 @@ class GeneratorGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Payload) and unbounded_setter_required(message, f)
+                if isinstance(t, Opaque) and unbounded_setter_required(message, f)
             ]
             + [
                 SubprogramDeclaration(
@@ -552,7 +553,7 @@ class GeneratorGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Payload) and bounded_setter_required(message, f)
+                if isinstance(t, Opaque) and bounded_setter_required(message, f)
             ],
             [
                 SubprogramBody(
@@ -561,7 +562,7 @@ class GeneratorGenerator:
                     self.common.initialize_field_statements(message, f),
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Payload) and unbounded_setter_required(message, f)
+                if isinstance(t, Opaque) and unbounded_setter_required(message, f)
             ]
             + [
                 SubprogramBody(
@@ -583,7 +584,7 @@ class GeneratorGenerator:
                     self.common.initialize_field_statements(message, f),
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Payload) and bounded_setter_required(message, f)
+                if isinstance(t, Opaque) and bounded_setter_required(message, f)
             ],
         )
 
