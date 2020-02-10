@@ -4,6 +4,8 @@ from pyparsing import (
     Forward,
     Keyword,
     Literal,
+    ParseFatalException,
+    ParseResults,
     StringEnd,
     Suppress,
     Token,
@@ -12,8 +14,9 @@ from pyparsing import (
     opAssoc,
 )
 
-from rflx.expression import FALSE, TRUE, And, Equal, Expr, NotEqual, Or, Variable
+from rflx.expression import FALSE, TRUE, And, Equal, Expr, Length, Less, NotEqual, Or, Variable
 from rflx.fsm_expression import (
+    Attribute,
     Contains,
     Convert,
     Field,
@@ -32,7 +35,22 @@ from rflx.parser.grammar import (
 )
 
 
+def parse_attribute(string: str, location: int, tokens: ParseResults) -> Attribute:
+    if tokens[2] == "Valid":
+        return Valid(tokens[0])
+    if tokens[2] == "Present":
+        return Present(tokens[0])
+    if tokens[2] == "Length":
+        return Length(tokens[0])
+    raise ParseFatalException(string, location, "unexpected attribute")
+
+
 class FSMParser:
+    @classmethod
+    def __parse_less(cls, tokens: List[List[Expr]]) -> Expr:
+        t = tokens[0]
+        return Less(t[0], t[2])
+
     @classmethod
     def __parse_equation(cls, tokens: List[List[Expr]]) -> Expr:
         t = tokens[0]
@@ -85,8 +103,17 @@ class FSMParser:
         identifier = qualified_identifier()
         identifier.setParseAction(lambda t: Variable(ID("".join(map(str, t.asList())))))
 
-        attribute = identifier() + Literal("'") - (Keyword("Valid") | Keyword("Present"))
-        attribute.setParseAction(lambda t: Valid(t[0]) if t[2] == "Valid" else Present(t[0]))
+        attribute_designator = Keyword("Valid") | Keyword("Present") | Keyword("Length")
+
+        lpar, rpar = map(Suppress, "()")
+        conversion = identifier + lpar + identifier + rpar
+        conversion.setParseAction(cls.__parse_conversion)
+
+        field = conversion + Literal(".").suppress() - unqualified_identifier()
+        field.setParseAction(lambda t: Field(t[0], t[1]))
+
+        attribute = (field | conversion | identifier) + Literal("'") - attribute_designator
+        attribute.setParseAction(parse_attribute)
 
         expression = Forward()
 
@@ -101,20 +128,14 @@ class FSMParser:
         )
         quantifier.setParseAction(cls.__parse_quantifier)
 
-        lpar, rpar = map(Suppress, "()")
-        conversion = identifier + lpar + identifier + rpar
-        conversion.setParseAction(cls.__parse_conversion)
-
-        field = conversion + Literal(".").suppress() - unqualified_identifier()
-        field.setParseAction(lambda t: Field(t[0], t[1]))
-
         atom = (
-            numeric_literal() | literal | quantifier | field | conversion | attribute | identifier
+            numeric_literal() | literal | quantifier | attribute | field | conversion | identifier
         )
 
         expression <<= infixNotation(
             atom,
             [
+                (Keyword("<"), 2, opAssoc.LEFT, cls.__parse_less),
                 (Keyword("="), 2, opAssoc.LEFT, cls.__parse_equation),
                 (Keyword("/="), 2, opAssoc.LEFT, cls.__parse_inequation),
                 (Keyword("in"), 2, opAssoc.LEFT, cls.__parse_in),
