@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6]
-        target: [black, isort, flake8, pylint, mypy, readme]
+        target: [black, isort, flake8, pylint, mypy, doc]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python

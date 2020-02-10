@@ -19,7 +19,7 @@ endif
 .PHONY: check check_black check_isort check_flake8 check_pylint check_mypy format \
 	test test_python test_spark prove_spark clean
 
-check: check_black check_isort check_flake8 check_pylint check_mypy check_readme
+check: check_black check_isort check_flake8 check_pylint check_mypy check_doc
 
 check_black:
 	black -l 100 --check $(python-packages)
@@ -36,8 +36,8 @@ check_pylint:
 check_mypy:
 	mypy $(python-packages)
 
-check_readme:
-	tools/check_readme.py
+check_doc:
+	tools/check_doc.py
 
 format:
 	black -l 100 $(python-packages)
