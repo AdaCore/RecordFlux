@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import enum
 import os
@@ -22,26 +22,27 @@ def check_code_blocks() -> bool:
     code_blocks = []
     inside = False
 
-    with open("README.md") as f:
-        for l in f:
-            if not inside and l.startswith("```"):
-                inside = True
-                block = ""
-                if "RFLX" in l:
-                    block_type = CodeBlockType.RFLX
-                elif "Ada" in l:
-                    block_type = CodeBlockType.ADA
-                else:
-                    block_type = CodeBlockType.UNKNOWN
-                continue
+    for p in [pathlib.Path("README.md")] + list(pathlib.Path("doc").rglob("*.md")):
+        with open(p) as f:
+            for l in f:
+                if not inside and l.startswith("```"):
+                    inside = True
+                    block = ""
+                    if l.endswith("Ada RFLX\n"):
+                        block_type = CodeBlockType.RFLX
+                    elif l.endswith("Ada\n"):
+                        block_type = CodeBlockType.ADA
+                    else:
+                        block_type = CodeBlockType.UNKNOWN
+                    continue
 
-            if inside and l.startswith("```"):
-                inside = False
-                code_blocks.append((block_type, block))
-                continue
+                if inside and l.startswith("```"):
+                    inside = False
+                    code_blocks.append((block_type, block))
+                    continue
 
-            if inside:
-                block += l
+                if inside:
+                    block += l
 
     pathlib.Path("build").mkdir(exist_ok=True)
     os.chdir("build")

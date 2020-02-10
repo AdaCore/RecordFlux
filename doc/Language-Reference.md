@@ -36,7 +36,7 @@ The set of values of a range type consists of all numbers from the lower bound t
 
 #### Example
 
-```Ada
+```Ada RFLX partial
 type U16 is range 0 .. 2**16 - 1 with Size => 16;
 type U48 is mod 2**48;
 ```
@@ -67,7 +67,7 @@ The set of values of an enumeration type consists of the list of declared enumer
 
 #### Example
 
-```Ada
+```Ada RFLX partial
 type Packet is (Msg_Error, Msg_Data) with Size => 1;
 type Day is (Mon => 1, Tue => 2, Wed => 3, Thu => 4, Fri => 5, Sat => 6, Sun => 7) with Size => 3;
 ```
@@ -112,7 +112,7 @@ A message type specifies the message format of a protocol. Each component corres
 
 #### Example
 
-```Ada
+```Ada RFLX partial
 type Frame is
    message
       Destination : U48;
@@ -156,7 +156,7 @@ A type refinement describes under which condition a specific protocol message ca
 
 #### Example
 
-```Ada
+```Ada RFLX partial
 type IPv4_In_Ethernet is new Ethernet.Frame (Payload => IPv4.Packet)
    if EtherType = 16#0800#;
 ```
@@ -177,7 +177,7 @@ A derived message type derives its specification from a base type. All type refi
 
 #### Example
 
-```Ada
+```Ada RFLX partial
 type Specific_Extension is new Extension;
 ```
 
@@ -197,7 +197,7 @@ An array consists of a number of elements with similar type. Scalar types as wel
 
 #### Example
 
-```Ada
+```Ada RFLX partial
 type Options is array of Option;
 ```
 
@@ -217,7 +217,7 @@ A package is a collection of types. By convention one protocol is specified in o
 
 #### Example
 
-```Ada
+```Ada RFLX
 package Ethernet is
 
    type U16 is range 0 .. 2**16 - 1 with Size => 16;
@@ -258,7 +258,7 @@ For each package referenced in a file, a corresponding with clause has to be add
 
 #### Example
 
-```Ada
+```Ada RFLX partial
 with Ethernet;
 with IPv4;
 ```
@@ -275,7 +275,7 @@ A RecordFlux specification file is recognized by the file extension `.rflx`. Eac
 
 File: `in_ethernet.rflx`
 
-```Ada
+```Ada RFLX partial
 with Ethernet;
 with IPv4;
 
