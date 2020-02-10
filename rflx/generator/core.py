@@ -111,7 +111,7 @@ from rflx.model import (
     Field,
     Message,
     ModularInteger,
-    Payload,
+    Opaque,
     RangeInteger,
     Reference,
     Refinement,
@@ -1909,7 +1909,7 @@ class Generator:
             if not isinstance(field_type.element_type, Reference):
                 self.__create_type(field_type.element_type, message_package)
             self.__create_array_unit(field_type, message_package)
-        elif isinstance(field_type, Payload):
+        elif isinstance(field_type, Opaque):
             pass
         else:
             raise NotImplementedError(f'unsupported type "{type(field_type).__name__}"')
@@ -1965,7 +1965,7 @@ class Generator:
                 self.__create_subtype(field_type.element_type, message_package, base_package)
             self.__create_array_unit(field_type, message_package)
 
-        elif isinstance(field_type, Payload):
+        elif isinstance(field_type, Opaque):
             pass
 
         else:

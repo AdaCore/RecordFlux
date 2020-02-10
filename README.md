@@ -67,7 +67,7 @@ package TLV is
          Length : Length
             then Value
                with Length => Length * 8;
-         Value  : Payload;
+         Value  : Opaque;
        end message;
 
 end TLV;
@@ -155,7 +155,7 @@ All types and subprograms related to `Message` can be found in the package `RFLX
     - Set value of `Tag` field
 - `procedure Set_Length (Ctx : in out Context; Value : Length)`
     - Set value of `Length` field
-- `generic with procedure Process_Payload (Payload : out RFLX.Types.Bytes); procedure Set_Value (Ctx : in out Context)`
+- `generic with procedure Process_Value (Value : out RFLX.Types.Bytes); procedure Set_Value (Ctx : in out Context)`
     - Set content of `Value` field
 - `procedure Initialize_Value (Ctx : in out Context)`
     - Initialize `Value` field (precondition to switch context for generating contained message)

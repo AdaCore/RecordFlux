@@ -33,7 +33,7 @@ package IPv4 is
                   or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
                   or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
                   or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
-         Option_Data : Payload;
+         Option_Data : Opaque;
       end message;
 
    type Options is array of Option;
@@ -68,7 +68,7 @@ package IPv4 is
          Options : Options
             then Payload
                with Length => Total_Length * 8 - (IHL * 32);
-         Payload : Payload;
+         Payload : Opaque;
       end message;
 
 end IPv4;

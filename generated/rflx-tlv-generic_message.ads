@@ -269,7 +269,7 @@ is
           and Cursor (Ctx, F_Tag) = Cursor (Ctx, F_Tag)'Old;
 
    generic
-      with procedure Process_Payload (Payload : out RFLX.Types.Bytes);
+      with procedure Process_Value (Value : out RFLX.Types.Bytes);
    procedure Set_Value (Ctx : in out Context) with
      Pre =>
        Valid_Context (Ctx)
