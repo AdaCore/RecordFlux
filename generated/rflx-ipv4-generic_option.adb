@@ -693,7 +693,7 @@ is
         (RFLX.Types.Byte_Index (Last));
    begin
       Initialize_Option_Data (Ctx);
-      Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      Process_Option_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Option_Data;
 
    procedure Initialize_Option_Data (Ctx : in out Context) is

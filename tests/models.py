@@ -25,7 +25,7 @@ from rflx.model import (
     Link,
     Message,
     ModularInteger,
-    Payload,
+    Opaque,
     RangeInteger,
     Reference,
     Refinement,
@@ -50,7 +50,7 @@ def create_tlv_message() -> Message:
         Link(Field("Value"), FINAL),
     ]
 
-    types = {Field("Tag"): tag_type, Field("Length"): length_type, Field("Value"): Payload()}
+    types = {Field("Tag"): tag_type, Field("Length"): length_type, Field("Value"): Opaque()}
 
     return Message("TLV.Message", structure, types)
 
@@ -114,7 +114,7 @@ def create_ethernet_frame() -> Message:
         Field("TPID"): tpid_type,
         Field("TCI"): tci_type,
         Field("Type_Length"): type_length_type,
-        Field("Payload"): Payload(),
+        Field("Payload"): Opaque(),
     }
 
     return Message("Ethernet.Frame", structure, types)
@@ -189,7 +189,7 @@ def create_array_inner_message() -> Message:
         Link(Field("Payload"), FINAL),
     ]
 
-    types = {Field("Length"): length_type, Field("Payload"): Payload()}
+    types = {Field("Length"): length_type, Field("Payload"): Opaque()}
 
     return Message("Arrays.Inner_Message", structure, types)
 
@@ -215,7 +215,7 @@ def create_expression_message() -> Message:
         Link(Field("Payload"), FINAL, Equal(Variable("Payload"), Aggregate(Number(1), Number(2)))),
     ]
 
-    types = {Field("Payload"): Payload()}
+    types = {Field("Payload"): Opaque()}
 
     return Message("Expression.Message", structure, types)
 

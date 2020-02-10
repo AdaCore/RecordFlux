@@ -358,7 +358,7 @@ is
           and Cursor (Ctx, F_Option_Number) = Cursor (Ctx, F_Option_Number)'Old;
 
    generic
-      with procedure Process_Payload (Payload : out RFLX.Types.Bytes);
+      with procedure Process_Option_Data (Option_Data : out RFLX.Types.Bytes);
    procedure Set_Option_Data (Ctx : in out Context) with
      Pre =>
        Valid_Context (Ctx)

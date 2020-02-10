@@ -15,9 +15,9 @@ package TLS_Record is
             then Encrypted_Record
                with Length => Length * 8
                if Tag = APPLICATION_DATA and Legacy_Record_Version = TLS_1_2;
-         Fragment : Payload
+         Fragment : Opaque
             then null;
-         Encrypted_Record : Payload;
+         Encrypted_Record : Opaque;
       end message;
 
 end TLS_Record;

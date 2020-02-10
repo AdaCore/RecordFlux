@@ -12,7 +12,7 @@ package UDP is
          Checksum : Checksum
             then Payload
                with Length => (Length - 8) * 8;
-         Payload : Payload;
+         Payload : Opaque;
       end message;
 
 end UDP;

@@ -13,7 +13,7 @@ package TLV is
          Length : Length
             then Value
                with Length => Length * 8;
-         Value  : Payload;
+         Value  : Opaque;
        end message;
 
 end TLV;

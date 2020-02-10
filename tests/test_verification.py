@@ -276,7 +276,7 @@ class TestVerification(TestCase):
                             then V
                                 with Length => L
                                 if T /= T2 and L <= 2**13;
-                        V : Payload;
+                        V : Opaque;
                     end message;
             end Foo;
             """
@@ -374,7 +374,7 @@ class TestVerification(TestCase):
                 type Bar is
                     message
                         F1 : Element then F2 with Length => F1;
-                        F2 : Payload;
+                        F2 : Opaque;
                     end message;
             end Foo;
             """
@@ -388,7 +388,7 @@ class TestVerification(TestCase):
                 type Bar is
                     message
                         null then F1 with Length => F2;
-                        F1 : Payload;
+                        F1 : Opaque;
                         F2 : Element;
                     end message;
             end Foo;
@@ -405,7 +405,7 @@ class TestVerification(TestCase):
                 type Bar is
                     message
                         F1 : Element then F2 with Length => F1 - 300;
-                        F2 : Payload;
+                        F2 : Opaque;
                     end message;
             end Foo;
             """,
@@ -438,7 +438,7 @@ class TestVerification(TestCase):
                 type Bar is
                     message
                         F1 : Element;
-                        F2 : Payload;
+                        F2 : Opaque;
                     end message;
             end Foo;
             """,
@@ -548,7 +548,7 @@ class TestVerification(TestCase):
                      null
                         then Verify_Data
                            with Length => Message'Length;
-                     Verify_Data : Payload;
+                     Verify_Data : Opaque;
                   end message;
             end Foo;
             """
@@ -565,7 +565,7 @@ class TestVerification(TestCase):
                      null
                         then Verify_Data
                            with Length => Message'Last - Message'First + 1;
-                     Verify_Data : Payload;
+                     Verify_Data : Opaque;
                   end message;
             end Foo;
             """
