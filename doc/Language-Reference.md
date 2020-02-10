@@ -119,10 +119,10 @@ type Frame is
       Source : U48;
       EtherType : U16
          then Payload
-            with Length = EtherType * 8
+            with Length => EtherType * 8
             if EtherType <= 1500,
          then Payload
-            with Length = Message'Last - EtherType'Last
+            with Length => Message'Last - EtherType'Last
             if EtherType >= 1536;
       Payload : Opaque
          then null
@@ -229,10 +229,10 @@ package Ethernet is
          Source : U48;
          EtherType : U16
             then Payload
-               with Length = EtherType * 8
+               with Length => EtherType * 8
                if EtherType <= 1500,
             then Payload
-               with Length = Message'Last - EtherType'Last
+               with Length => Message'Last - EtherType'Last
                if EtherType >= 1536;
          Payload : Opaque
             then null
