@@ -21,6 +21,7 @@ from rflx.ada import (
     SubprogramDeclaration,
     UnitPart,
 )
+from rflx.common import unique
 from rflx.expression import (
     TRUE,
     Add,
@@ -50,7 +51,7 @@ from rflx.expression import (
     Slice,
     Variable,
 )
-from rflx.model import FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
+from rflx.model import FINAL, Array, Enumeration, Field, Message, Opaque, Scalar, Type
 
 from .common import VALID_CONTEXT, GeneratorCommon, length_dependent_condition
 from .types import Types
@@ -94,6 +95,13 @@ class GeneratorGenerator:
                     [
                         *self.common.field_bit_location_declarations(Selected("Val", "Fld")),
                         *self.common.field_byte_location_declarations(),
+                        *unique(
+                            self.insert_function(
+                                t.full_base_name if isinstance(t, Enumeration) else t.full_name
+                            )
+                            for t in message.types.values()
+                            if not isinstance(t, (Array, Opaque))
+                        ),
                     ],
                     [
                         Assignment("Fst", Name("First")),

@@ -17,10 +17,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    function Valid (Val : Ethernet.Address) return Boolean is
@@ -50,10 +46,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Type_Length_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Type_Length_Base);
-
    function Valid (Val : Ethernet.Type_Length_Base) return Boolean is
      (Val >= 46);
 
@@ -79,10 +71,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TPID_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TPID_Base);
-
    function Valid (Val : Ethernet.TPID_Base) return Boolean is
      (Val >= 16#8100#
       and Val <= 16#8100#);
@@ -104,10 +92,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TCI);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TCI);
 
    pragma Warnings (Off, "unused variable ""Val""");
 

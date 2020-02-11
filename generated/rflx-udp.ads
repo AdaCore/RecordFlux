@@ -17,10 +17,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Port);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Port);
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    function Valid (Val : UDP.Port) return Boolean is
@@ -50,10 +46,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length_Base);
-
    function Valid (Val : UDP.Length_Base) return Boolean is
      (Val >= 8);
 
@@ -74,10 +66,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Checksum);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Checksum);
 
    pragma Warnings (Off, "unused variable ""Val""");
 

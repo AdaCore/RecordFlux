@@ -32,10 +32,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration.Priority_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration.Priority_Base);
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    function Valid (Val : Enumeration.Priority_Base) return Boolean is

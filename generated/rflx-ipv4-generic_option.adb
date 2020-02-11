@@ -407,6 +407,10 @@ is
         (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
         (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Flag_Base);
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Class_Base);
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Number);
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Length);
    begin
       return ((case Fld is
             when F_Copied =>
@@ -621,6 +625,10 @@ is
         (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
         (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Flag_Base);
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Class_Base);
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Number);
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Length);
    begin
       Fst := First;
       Lst := Last;
