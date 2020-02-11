@@ -3,8 +3,6 @@ with {prefix}Types; use type {prefix}Types.Bytes_Ptr, {prefix}Types.Length, {pre
 generic
    type Element_Type is private;
    type Element_Base_Type is (<>);
-   with function Extract (Buffer : Types.Bytes; Offset : Types.Offset) return Element_Base_Type;
-   with procedure Insert (Value : Element_Base_Type; Buffer : in out Types.Bytes; Offset : Types.Offset);
    with function Valid (Element : Element_Base_Type) return Boolean;
    with function Convert (Element : Element_Base_Type) return Element_Type;
    with function Convert (Element : Element_Type) return Element_Base_Type;

@@ -481,6 +481,10 @@ is
         (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
         (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Ethernet.Address);
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Ethernet.Type_Length);
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Ethernet.TPID);
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Ethernet.TCI);
    begin
       return ((case Fld is
             when F_Destination =>
@@ -740,6 +744,10 @@ is
         (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
         (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Ethernet.Address);
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Ethernet.Type_Length);
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Ethernet.TPID);
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Ethernet.TCI);
    begin
       Fst := First;
       Lst := Last;

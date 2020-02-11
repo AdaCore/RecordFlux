@@ -22,10 +22,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TLV.Tag_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TLV.Tag_Base);
-
    function Valid (Val : TLV.Tag_Base) return Boolean is
      ((case Val is
          when 1 | 3 =>
@@ -63,10 +59,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
 
    pragma Warnings (Off, "unused variable ""Val""");
 

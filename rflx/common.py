@@ -1,4 +1,4 @@
-from typing import Iterator, List, Set, TypeVar
+from typing import Iterable, Iterator, Set, TypeVar
 
 
 def indent(string: str, indentation: int) -> str:
@@ -16,7 +16,7 @@ def verify_identifier(name: str) -> None:
 T = TypeVar("T")  # pylint: disable=invalid-name
 
 
-def unique(iterable: List[T]) -> Iterator[T]:
+def unique(iterable: Iterable[T]) -> Iterator[T]:
     seen: Set[T] = set()
     for e in iterable:
         if e not in seen:

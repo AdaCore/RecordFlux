@@ -2015,8 +2015,6 @@ class Generator:
                     element_type.base_name
                     if not isinstance(element_type, ModularInteger)
                     else element_type.name,
-                    "Extract",
-                    "Insert",
                     "Valid",
                     "Convert",
                     "Convert",
@@ -2038,15 +2036,13 @@ class Generator:
             ),
         ]
 
-    def __range_functions(self, integer: RangeInteger) -> SubprogramUnitPart:
+    @staticmethod
+    def __range_functions(integer: RangeInteger) -> SubprogramUnitPart:
         specification: List[Subprogram] = []
 
         for range_type in range_types(integer):
             if isinstance(range_type, RangeSubtype):
                 continue
-
-            specification.append(self.parser.extract_function(range_type.name))
-            specification.append(self.generator.insert_function(range_type.name))
 
         specification.append(
             type_validation_function(integer, integer.constraints("Val").simplified())
@@ -2055,12 +2051,9 @@ class Generator:
 
         return SubprogramUnitPart(specification)
 
-    def __modular_functions(self, integer: ModularInteger) -> UnitPart:
+    @staticmethod
+    def __modular_functions(integer: ModularInteger) -> UnitPart:
         specification: List[Declaration] = []
-
-        for modular_type in modular_types(integer):
-            specification.append(self.parser.extract_function(modular_type.name))
-            specification.append(self.generator.insert_function(modular_type.name))
 
         specification.append(Pragma("Warnings", ["Off", '"unused variable ""Val"""']))
         specification.append(
@@ -2071,11 +2064,9 @@ class Generator:
 
         return UnitPart(specification)
 
-    def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
+    @staticmethod
+    def __enumeration_functions(enum: Enumeration) -> UnitPart:
         specification: List[Declaration] = []
-
-        specification.append(self.parser.extract_function(enum.full_base_name))
-        specification.append(self.generator.insert_function(enum.full_base_name))
 
         enum_value = Name("Val")
 
