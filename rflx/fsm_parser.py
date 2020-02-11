@@ -23,6 +23,7 @@ from rflx.fsm_expression import (
     Field,
     ForAll,
     ForSome,
+    Head,
     NotContains,
     Present,
     Valid,
@@ -43,6 +44,8 @@ def parse_attribute(string: str, location: int, tokens: ParseResults) -> Attribu
         return Present(tokens[0])
     if tokens[2] == "Length":
         return Length(tokens[0])
+    if tokens[2] == "Head":
+        return Head(tokens[0])
     raise ParseFatalException(string, location, "unexpected attribute")
 
 
@@ -110,7 +113,9 @@ class FSMParser:
         identifier = qualified_identifier()
         identifier.setParseAction(lambda t: Variable(ID("".join(map(str, t.asList())))))
 
-        attribute_designator = Keyword("Valid") | Keyword("Present") | Keyword("Length")
+        attribute_designator = (
+            Keyword("Valid") | Keyword("Present") | Keyword("Length") | Keyword("Head")
+        )
 
         lpar, rpar = map(Suppress, "()")
         conversion = identifier + lpar + identifier + rpar
@@ -118,9 +123,6 @@ class FSMParser:
 
         field = conversion + Literal(".").suppress() - unqualified_identifier()
         field.setParseAction(lambda t: Field(t[0], t[1]))
-
-        attribute = (field | conversion | identifier) + Literal("'") - attribute_designator
-        attribute.setParseAction(parse_attribute)
 
         expression = Forward()
 
@@ -149,12 +151,17 @@ class FSMParser:
         )
         comprehension.setParseAction(cls.__parse_comprehension)
 
+        attribute = (
+            (field | conversion | identifier | comprehension) + Literal("'") - attribute_designator
+        )
+        attribute.setParseAction(parse_attribute)
+
         atom = (
             numeric_literal()
             | literal
-            | comprehension
             | quantifier
             | attribute
+            | comprehension
             | field
             | conversion
             | identifier

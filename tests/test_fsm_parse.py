@@ -6,6 +6,7 @@ from rflx.fsm_expression import (
     Field,
     ForAll,
     ForSome,
+    Head,
     NotContains,
     Present,
     Valid,
@@ -190,4 +191,21 @@ def test_list_comprehension() -> None:
         Variable("List"),
         Variable("E.Bar"),
         Equal(Variable("E.Tag"), Variable("Foo")),
+    )
+
+
+def test_head_attribute() -> None:
+    result = FSMParser.condition().parseString("Foo'Head")[0]
+    assert result == Head(Variable("Foo"))
+
+
+def test_head_attribute_comprehension() -> None:
+    result = FSMParser.condition().parseString("[for E in List => E.Bar when E.Tag = Foo]'Head")[0]
+    assert result == Head(
+        Comprehension(
+            Variable("E"),
+            Variable("List"),
+            Variable("E.Bar"),
+            Equal(Variable("E.Tag"), Variable("Foo")),
+        )
     )
