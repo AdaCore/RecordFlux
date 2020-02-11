@@ -1,4 +1,16 @@
-from rflx.expression import FALSE, TRUE, And, Equal, Length, Less, NotEqual, Number, Or, Variable
+from rflx.expression import (
+    FALSE,
+    TRUE,
+    And,
+    Equal,
+    Greater,
+    Length,
+    Less,
+    NotEqual,
+    Number,
+    Or,
+    Variable,
+)
 from rflx.fsm_expression import (
     Comprehension,
     Contains,
@@ -209,6 +221,11 @@ def test_head_attribute_comprehension() -> None:
             Equal(Variable("E.Tag"), Variable("Foo")),
         )
     )
+
+
+def test_gt() -> None:
+    result = FSMParser.condition().parseString("Server_Name_Extension.Data_Length > 0")[0]
+    assert result == Greater(Variable("Server_Name_Extension.Data_Length"), Number(0))
 
 
 def test_list_head_field_simple() -> None:

@@ -14,7 +14,19 @@ from pyparsing import (
     opAssoc,
 )
 
-from rflx.expression import FALSE, TRUE, And, Equal, Expr, Length, Less, NotEqual, Or, Variable
+from rflx.expression import (
+    FALSE,
+    TRUE,
+    And,
+    Equal,
+    Expr,
+    Greater,
+    Length,
+    Less,
+    NotEqual,
+    Or,
+    Variable,
+)
 from rflx.fsm_expression import (
     Attribute,
     Comprehension,
@@ -54,6 +66,11 @@ class FSMParser:
     def __parse_less(cls, tokens: List[List[Expr]]) -> Expr:
         t = tokens[0]
         return Less(t[0], t[2])
+
+    @classmethod
+    def __parse_greater(cls, tokens: List[List[Expr]]) -> Expr:
+        t = tokens[0]
+        return Greater(t[0], t[2])
 
     @classmethod
     def __parse_equation(cls, tokens: List[List[Expr]]) -> Expr:
@@ -177,6 +194,7 @@ class FSMParser:
             atom,
             [
                 (Keyword("<"), 2, opAssoc.LEFT, cls.__parse_less),
+                (Keyword(">"), 2, opAssoc.LEFT, cls.__parse_greater),
                 (Keyword("="), 2, opAssoc.LEFT, cls.__parse_equation),
                 (Keyword("/="), 2, opAssoc.LEFT, cls.__parse_inequation),
                 (Keyword("in"), 2, opAssoc.LEFT, cls.__parse_in),
