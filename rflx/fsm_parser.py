@@ -117,21 +117,21 @@ class FSMParser:
             Keyword("Valid") | Keyword("Present") | Keyword("Length") | Keyword("Head")
         )
 
+        expression = Forward()
+
         lpar, rpar = map(Suppress, "()")
-        conversion = identifier + lpar + identifier + rpar
+        conversion = identifier + lpar + expression + rpar
         conversion.setParseAction(cls.__parse_conversion)
 
         field = conversion + Literal(".").suppress() - unqualified_identifier()
         field.setParseAction(lambda t: Field(t[0], t[1]))
-
-        expression = Forward()
 
         quantifier = (
             Keyword("for").suppress()
             - oneOf(["all", "some"])
             + identifier
             - Keyword("in").suppress()
-            + identifier
+            + expression
             - Keyword("=>").suppress()
             + expression
         )
