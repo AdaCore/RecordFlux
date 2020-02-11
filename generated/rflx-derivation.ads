@@ -8,19 +8,11 @@ is
 
    subtype Length is Arrays.Length;
 
-   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Length renames Arrays.Extract;
-
-   procedure Insert (Val : Length; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
-
    function Valid (Val : Arrays.Length) return Boolean renames Arrays.Valid;
 
    function Convert (Val : Arrays.Length) return Arrays.Length renames Arrays.Convert;
 
    subtype Modular_Integer is Arrays.Modular_Integer;
-
-   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Modular_Integer renames Arrays.Extract;
-
-   procedure Insert (Val : Modular_Integer; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
 
    function Valid (Val : Arrays.Modular_Integer) return Boolean renames Arrays.Valid;
 
@@ -30,10 +22,6 @@ is
 
    subtype Range_Integer is Arrays.Range_Integer;
 
-   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Range_Integer_Base renames Arrays.Extract;
-
-   procedure Insert (Val : Range_Integer_Base; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
-
    function Valid (Val : Arrays.Range_Integer_Base) return Boolean renames Arrays.Valid;
 
    function Convert (Val : Arrays.Range_Integer_Base) return Arrays.Range_Integer renames Arrays.Convert;
@@ -41,10 +29,6 @@ is
    subtype Enumeration_Base is Arrays.Enumeration_Base;
 
    subtype Enumeration is Arrays.Enumeration;
-
-   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Arrays.Enumeration_Base renames Arrays.Extract;
-
-   procedure Insert (Val : Arrays.Enumeration_Base; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
 
    function Valid (Val : Arrays.Enumeration_Base) return Boolean renames Arrays.Valid;
 
@@ -63,10 +47,6 @@ is
    subtype AV_Enumeration_Enum is Arrays.AV_Enumeration_Enum;
 
    subtype AV_Enumeration is Arrays.AV_Enumeration;
-
-   function Extract (Buffer : RFLX.Types.Bytes; Offset : RFLX.Types.Offset) return Arrays.AV_Enumeration_Base renames Arrays.Extract;
-
-   procedure Insert (Val : Arrays.AV_Enumeration_Base; Buffer : in out RFLX.Types.Bytes; Offset : RFLX.Types.Offset) renames Arrays.Insert;
 
    function Valid (Val : Arrays.AV_Enumeration_Base) return Boolean renames Arrays.Valid;
 

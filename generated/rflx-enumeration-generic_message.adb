@@ -176,6 +176,7 @@ is
         (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
         (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
+      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration.Priority_Base);
    begin
       return ((case Fld is
             when F_Priority =>
@@ -283,6 +284,7 @@ is
         (RFLX.Types.Byte_Index (Last));
       function Offset return RFLX.Types.Offset is
         (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Enumeration.Priority_Base);
    begin
       Fst := First;
       Lst := Last;

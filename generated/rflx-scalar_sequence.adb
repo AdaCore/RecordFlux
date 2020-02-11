@@ -13,6 +13,7 @@ is
       First    : Types.Index;
       Last     : Types.Index;
       Offset   : Types.Offset;
+      function Extract is new Types.Extract (Types.Index, Types.Byte, Types.Bytes, Types.Offset, Element_Base_Type);
    begin
       if Ctx.Last - Ctx.Index + 1 >= Element_Base_Type'Size then
          Last_Bit := Ctx.Index + Element_Base_Type'Size - 1;
@@ -65,6 +66,7 @@ is
       First    : Types.Index;
       Last     : Types.Index;
       Offset   : Types.Offset;
+      procedure Insert is new Types.Insert (Types.Index, Types.Byte, Types.Bytes, Types.Offset, Element_Base_Type);
    begin
       Last_Bit := Ctx.Index + Element_Base_Type'Size - 1;
       First := Types.Byte_Index (Ctx.Index);

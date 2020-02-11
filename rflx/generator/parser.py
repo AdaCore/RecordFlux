@@ -22,6 +22,7 @@ from rflx.ada import (
     SubprogramDeclaration,
     UnitPart,
 )
+from rflx.common import unique
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -48,7 +49,18 @@ from rflx.expression import (
     Selected,
     Slice,
 )
-from rflx.model import FINAL, INITIAL, Composite, Enumeration, Field, Message, Scalar, Type
+from rflx.model import (
+    FINAL,
+    INITIAL,
+    Array,
+    Composite,
+    Enumeration,
+    Field,
+    Message,
+    Opaque,
+    Scalar,
+    Type,
+)
 
 from .common import NULL, VALID_CONTEXT, GeneratorCommon, length_dependent_condition
 from .types import Types
@@ -156,6 +168,13 @@ class ParserGenerator:
                     [
                         *self.common.field_bit_location_declarations(Name("Fld")),
                         *self.common.field_byte_location_declarations(),
+                        *unique(
+                            self.extract_function(
+                                t.full_base_name if isinstance(t, Enumeration) else t.full_name
+                            )
+                            for t in message.types.values()
+                            if not isinstance(t, (Array, Opaque))
+                        ),
                     ],
                     [
                         ReturnStatement(

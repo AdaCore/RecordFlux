@@ -22,10 +22,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Flag_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Flag_Base);
-
    function Valid (Val : IPv4.Flag_Base) return Boolean is
      ((case Val is
          when 0 | 1 =>
@@ -69,10 +65,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Class_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Class_Base);
-
    function Valid (Val : IPv4.Option_Class_Base) return Boolean is
      ((case Val is
          when 0 | 2 =>
@@ -111,10 +103,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Number);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Number);
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    function Valid (Val : IPv4.Option_Number) return Boolean is
@@ -144,10 +132,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Length_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Option_Length_Base);
-
    function Valid (Val : IPv4.Option_Length_Base) return Boolean is
      (Val >= 2);
 
@@ -172,10 +156,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Version_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Version_Base);
 
    function Valid (Val : IPv4.Version_Base) return Boolean is
      (Val >= 4
@@ -203,10 +183,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IHL_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IHL_Base);
-
    function Valid (Val : IPv4.IHL_Base) return Boolean is
      (Val >= 5);
 
@@ -227,10 +203,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, DCSP);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, DCSP);
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -256,10 +228,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, ECN);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, ECN);
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -290,10 +258,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Total_Length_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Total_Length_Base);
-
    function Valid (Val : IPv4.Total_Length_Base) return Boolean is
      (Val >= 20);
 
@@ -314,10 +278,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Identification);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Identification);
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -344,10 +304,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Fragment_Offset);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Fragment_Offset);
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    function Valid (Val : IPv4.Fragment_Offset) return Boolean is
@@ -372,10 +328,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TTL);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, TTL);
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -416,10 +368,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Protocol_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Protocol_Base);
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -464,10 +412,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Header_Checksum);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Header_Checksum);
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    function Valid (Val : IPv4.Header_Checksum) return Boolean is
@@ -492,10 +436,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Address);
 
    pragma Warnings (Off, "unused variable ""Val""");
 

@@ -17,10 +17,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Length);
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    function Valid (Val : Arrays.Length) return Boolean is
@@ -45,10 +41,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Modular_Integer);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Modular_Integer);
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -79,10 +71,6 @@ is
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Range_Integer_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Range_Integer_Base);
-
    function Valid (Val : Arrays.Range_Integer_Base) return Boolean is
      (Val >= 1
       and Val <= 100);
@@ -109,10 +97,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Arrays.Enumeration_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Arrays.Enumeration_Base);
 
    function Valid (Val : Arrays.Enumeration_Base) return Boolean is
      ((case Val is
@@ -170,10 +154,6 @@ is
        False;
 
    pragma Warnings (On, "precondition is statically false");
-
-   function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Arrays.AV_Enumeration_Base);
-
-   procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, Arrays.AV_Enumeration_Base);
 
    pragma Warnings (Off, "unused variable ""Val""");
 
