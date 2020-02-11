@@ -6,6 +6,7 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, Expr
 from rflx.fsm_parser import FSMParser
 from rflx.model import Base
+from rflx.statement import Statement
 
 
 class StateName(Base):
@@ -29,9 +30,15 @@ class Transition(Base):
 
 
 class State(Base):
-    def __init__(self, name: StateName, transitions: Optional[Iterable[Transition]] = None):
+    def __init__(
+        self,
+        name: StateName,
+        transitions: Optional[Iterable[Transition]] = None,
+        actions: Optional[Iterable[Statement]] = None,
+    ):
         self.__name = name
         self.__transitions = transitions or []
+        self.__actions = actions or []
 
     @property
     def name(self) -> StateName:
@@ -152,6 +159,38 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
+    def __parse_transitions(self, state: Dict) -> List[Transition]:
+        transitions: List[Transition] = []
+        sname = state["name"]
+        if "transitions" in state:
+            for index, t in enumerate(state["transitions"]):
+                rest = t.keys() - ["condition", "target", "doc"]
+                if rest:
+                    elements = ", ".join(sorted(rest))
+                    self.error.append(
+                        f"unexpected elements in transition {index}"
+                        f' in state "{state}": {elements}',
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                    )
+                if "condition" in t:
+                    try:
+                        condition = FSMParser.condition().parseString(t["condition"])[0]
+                    except RecordFluxError as e:
+                        self.error.extend(e)
+                        tname = t["target"]
+                        self.error.append(
+                            f'invalid condition {index} from state "{sname}" to "{tname}"',
+                            Subsystem.SESSION,
+                            Severity.ERROR,
+                            None,
+                        )
+                        continue
+                else:
+                    condition = TRUE
+                transitions.append(Transition(target=StateName(t["target"]), condition=condition))
+        return transitions
+
     def __parse(self, name: str, doc: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         if "initial" not in doc:
             self.error.append(
@@ -186,37 +225,22 @@ class FSM:
                     Severity.ERROR,
                 )
             transitions: List[Transition] = []
-            if "transitions" in s:
-                for index, t in enumerate(s["transitions"]):
-                    rest = t.keys() - ["condition", "target", "doc"]
-                    if rest:
-                        elements = ", ".join(sorted(rest))
+            transitions = self.__parse_transitions(s)
+            actions: List[Statement] = []
+            if "actions" in s and s["actions"]:
+                for index, a in enumerate(s["actions"]):
+                    try:
+                        actions.append(FSMParser.action().parseString(a)[0])
+                    except Exception as e:  # pylint: disable=broad-except
+                        sname = s["name"]
                         self.error.append(
-                            f"unexpected elements in transition {index}"
-                            f' in state "{state}": {elements}',
+                            f"error parsing action {index} of state {sname} ({e})",
                             Subsystem.SESSION,
                             Severity.ERROR,
                         )
-                    if "condition" in t:
-                        try:
-                            condition = FSMParser.condition().parseString(t["condition"])[0]
-                        except RecordFluxError as e:
-                            self.error.extend(e)
-                            sname = s["name"]
-                            tname = t["target"]
-                            self.error.append(
-                                f'invalid condition {index} from state "{sname}" to "{tname}"',
-                                Subsystem.SESSION,
-                                Severity.ERROR,
-                                None,
-                            )
-                            continue
-                    else:
-                        condition = TRUE
-                    transitions.append(
-                        Transition(target=StateName(t["target"]), condition=condition)
-                    )
-            states.append(State(name=StateName(s["name"]), transitions=transitions))
+            states.append(
+                State(name=StateName(s["name"]), transitions=transitions, actions=actions)
+            )
 
         self.error.propagate()
 
