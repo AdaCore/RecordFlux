@@ -209,3 +209,25 @@ def test_head_attribute_comprehension() -> None:
             Equal(Variable("E.Tag"), Variable("Foo")),
         )
     )
+
+
+def test_list_head_field_simple() -> None:
+    result = FSMParser.condition().parseString("Foo'Head.Data")[0]
+    assert result == Field(Head(Variable("Foo")), "Data")
+
+
+def test_list_head_field() -> None:
+    result = FSMParser.condition().parseString(
+        "[for E in List => E.Bar when E.Tag = Foo]'Head.Data"
+    )[0]
+    assert result == Field(
+        Head(
+            Comprehension(
+                Variable("E"),
+                Variable("List"),
+                Variable("E.Bar"),
+                Equal(Variable("E.Tag"), Variable("Foo")),
+            )
+        ),
+        "Data",
+    )

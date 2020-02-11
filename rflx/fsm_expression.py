@@ -173,7 +173,8 @@ class Comprehension(Expr):
 
     def __repr__(self) -> str:
         return (
-            f"[for {self.__iterator} in {self.__array} => {self.__selector} when {self.__condition}"
+            f"[for {self.__iterator} in {self.__array} => "
+            f"{self.__selector} when {self.__condition}]"
         )
 
     def __neg__(self) -> Expr:
