@@ -1,5 +1,6 @@
 from rflx.expression import FALSE, TRUE, And, Equal, Length, Less, NotEqual, Number, Or, Variable
 from rflx.fsm_expression import (
+    Comprehension,
     Contains,
     Convert,
     Field,
@@ -179,4 +180,14 @@ def test_field_length_lt() -> None:
     result = FSMParser.condition().parseString("Bar (Foo).Fld'Length < 100")[0]
     assert result == Less(
         Length(Field(Convert(Variable("Foo"), Variable("Bar")), "Fld")), Number(100)
+    )
+
+
+def test_list_comprehension() -> None:
+    result = FSMParser.condition().parseString("[for E in List => E.Bar when E.Tag = Foo]")[0]
+    assert result == Comprehension(
+        Variable("E"),
+        Variable("List"),
+        Variable("E.Bar"),
+        Equal(Variable("E.Tag"), Variable("Foo")),
     )
