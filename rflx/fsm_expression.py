@@ -150,3 +150,37 @@ class Field(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+
+class Comprehension(Expr):
+    def __init__(
+        self,
+        iterator: Variable,
+        array: Expr,
+        selector: Expr,
+        condition: Expr,
+        location: Location = None,
+    ) -> None:
+        super().__init__(location)
+        self.__iterator = iterator
+        self.__array = array
+        self.__selector = selector
+        self.__condition = condition
+
+    def __repr__(self) -> str:
+        return (
+            f"[for {self.__iterator} in {self.__array} => {self.__selector} when {self.__condition}"
+        )
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def simplified(self) -> Expr:
+        raise NotImplementedError
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.undefined
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError

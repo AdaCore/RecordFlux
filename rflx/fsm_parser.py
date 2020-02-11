@@ -17,6 +17,7 @@ from pyparsing import (
 from rflx.expression import FALSE, TRUE, And, Equal, Expr, Length, Less, NotEqual, Or, Variable
 from rflx.fsm_expression import (
     Attribute,
+    Comprehension,
     Contains,
     Convert,
     Field,
@@ -90,6 +91,12 @@ class FSMParser:
         return ForSome(tokens[1], tokens[2], tokens[3])
 
     @classmethod
+    def __parse_comprehension(cls, tokens: List[Expr]) -> Expr:
+        if not isinstance(tokens[0], Variable):
+            raise TypeError("quantifier not of type Variable")
+        return Comprehension(tokens[0], tokens[1], tokens[2], tokens[3])
+
+    @classmethod
     def __parse_conversion(cls, tokens: List[Expr]) -> Expr:
         if not isinstance(tokens[0], Variable):
             raise TypeError("target not of type Variable")
@@ -128,8 +135,29 @@ class FSMParser:
         )
         quantifier.setParseAction(cls.__parse_quantifier)
 
+        comprehension = (
+            Literal("[").suppress()
+            - Keyword("for").suppress()
+            + identifier
+            - Keyword("in").suppress()
+            + expression
+            - Keyword("=>").suppress()
+            + expression
+            - Keyword("when").suppress()
+            + expression
+            - Literal("]").suppress()
+        )
+        comprehension.setParseAction(cls.__parse_comprehension)
+
         atom = (
-            numeric_literal() | literal | quantifier | attribute | field | conversion | identifier
+            numeric_literal()
+            | literal
+            | comprehension
+            | quantifier
+            | attribute
+            | field
+            | conversion
+            | identifier
         )
 
         expression <<= infixNotation(
