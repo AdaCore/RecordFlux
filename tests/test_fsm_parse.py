@@ -231,3 +231,39 @@ def test_list_head_field() -> None:
         ),
         "Data",
     )
+
+
+def test_complex() -> None:
+    result = FSMParser.condition().parseString(
+        "(for some S in TLS_Handshake.Key_Share_CH ([for E in Client_Hello_Message.Extensions "
+        "=> E when E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE]'Head.Data).Shares => S.Group = "
+        "Selected_Group) = False"
+    )[0]
+    expected = Equal(
+        ForSome(
+            Variable("S"),
+            Field(
+                Convert(
+                    Field(
+                        Head(
+                            Comprehension(
+                                Variable("E"),
+                                Variable("Client_Hello_Message.Extensions"),
+                                Variable("E"),
+                                Equal(
+                                    Variable("E.Tag"),
+                                    Variable("TLS_Handshake.EXTENSION_KEY_SHARE"),
+                                ),
+                            )
+                        ),
+                        "Data",
+                    ),
+                    Variable("TLS_Handshake.Key_Share_CH"),
+                ),
+                "Shares",
+            ),
+            Equal(Variable("S.Group"), Variable("Selected_Group")),
+        ),
+        FALSE,
+    )
+    assert result == expected
