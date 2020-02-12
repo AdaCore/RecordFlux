@@ -5,6 +5,7 @@ with RFLX.IPv4.Tests;
 with RFLX.In_Ethernet.Tests;
 with RFLX.In_IPv4.Tests;
 with RFLX.TLV.Tests;
+with RFLX.In_TLV.Tests;
 with RFLX.Enumeration.Tests;
 with RFLX.Arrays.Tests;
 with RFLX.Derivation.Tests;
@@ -22,6 +23,7 @@ package body Test_Suite is
       Result.Add_Test (new RFLX.In_Ethernet.Tests.Test);
       Result.Add_Test (new RFLX.In_IPv4.Tests.Test);
       Result.Add_Test (new RFLX.TLV.Tests.Test);
+      Result.Add_Test (new RFLX.In_TLV.Tests.Test);
       Result.Add_Test (new RFLX.Enumeration.Tests.Test);
       Result.Add_Test (new RFLX.Arrays.Tests.Test);
       Result.Add_Test (new RFLX.Derivation.Tests.Test);
