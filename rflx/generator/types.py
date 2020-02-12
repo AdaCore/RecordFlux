@@ -3,8 +3,16 @@ class Types:
         self.prefix = prefix
 
     @property
-    def types(self) -> str:
+    def prefixed_generic_types(self) -> str:
+        return f"{self.prefix}Generic_Types"
+
+    @property
+    def prefixed_types(self) -> str:
         return f"{self.prefix}Types"
+
+    @property
+    def types(self) -> str:
+        return f"Types"
 
     @property
     def byte(self) -> str:

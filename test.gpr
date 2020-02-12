@@ -39,7 +39,8 @@ project Test is
       for Proof_Switches ("rflx-udp.ads") use ("--steps=380");
       case AUnit is
          when "yes" =>
-            for Proof_Switches ("rflx-types-tests.adb") use ("--steps=380");
+            for Proof_Switches ("rflx-builtin_types-tests.adb") use ("--steps=380");
+            for Proof_Switches ("rflx-custom_types_tests.adb") use ("--steps=380");
       end case;
    end Prove;
 
@@ -54,15 +55,8 @@ project Test is
 
    package Compiler is
       --  WORKAROUND: Componolit/Workarounds#9
-      for Switches ("rflx-arrays.ads") use ("-gnato13");
-      for Switches ("rflx-derivation.ads") use ("-gnato13");
-      for Switches ("rflx-enumeration.ads") use ("-gnato13");
-      for Switches ("rflx-ethernet.ads") use ("-gnato13");
-      for Switches ("rflx-ipv4.ads") use ("-gnato13");
       for Switches ("rflx-lemmas.adb") use ("-gnato13");
       for Switches ("rflx-lemmas.ads") use ("-gnato13");
-      for Switches ("rflx-tlv.ads") use ("-gnato13");
-      for Switches ("rflx-udp.ads") use ("-gnato13");
    end Compiler;
 
    package Binder is

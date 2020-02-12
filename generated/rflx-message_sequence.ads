@@ -1,6 +1,7 @@
-with RFLX.Types; use type RFLX.Types.Bytes_Ptr, RFLX.Types.Length, RFLX.Types.Bit_Length;
+with RFLX.Generic_Types;
 
 generic
+   with package Types is new RFLX.Generic_Types (<>);
    type Element_Context (Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index) is private;
    with procedure Element_Initialize (Ctx : out Element_Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index);
    with procedure Element_Take_Buffer (Ctx : in out Element_Context; Buffer : out Types.Bytes_Ptr);
@@ -14,6 +15,8 @@ package RFLX.Message_Sequence with
 is
 
    pragma Annotate (GNATprove, Terminating, Message_Sequence);
+
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
      Default_Initial_Condition => False;

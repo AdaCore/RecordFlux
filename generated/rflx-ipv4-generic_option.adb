@@ -3,16 +3,16 @@ package body RFLX.IPv4.Generic_Option with
 is
 
    function Create return Context is
-     ((RFLX.Types.Index'First, RFLX.Types.Index'First, RFLX.Types.Bit_Index'First, RFLX.Types.Bit_Index'First, null, (F_Copied => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final))));
+     ((Types.Index'First, Types.Index'First, Types.Bit_Index'First, Types.Bit_Index'First, null, (F_Copied => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final))));
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr) is
+   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) is
    begin
-      Initialize (Ctx, Buffer, RFLX.Types.First_Bit_Index (Buffer'First), RFLX.Types.Last_Bit_Index (Buffer'Last));
+      Initialize (Ctx, Buffer, Types.First_Bit_Index (Buffer'First), Types.Last_Bit_Index (Buffer'Last));
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index) is
-      Buffer_First : constant RFLX.Types.Index := Buffer'First;
-      Buffer_Last : constant RFLX.Types.Index := Buffer'Last;
+   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index) is
+      Buffer_First : constant Types.Index := Buffer'First;
+      Buffer_Last : constant Types.Index := Buffer'Last;
    begin
       Ctx := (Buffer_First, Buffer_Last, First, Last, Buffer, (F_Copied => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
@@ -20,14 +20,14 @@ is
 
    function Initialized (Ctx : Context) return Boolean is
      (Valid_Next (Ctx, F_Copied)
-      and then Available_Space (Ctx, F_Copied) = (RFLX.Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1)
+      and then Available_Space (Ctx, F_Copied) = (Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1)
       and then Invalid (Ctx, F_Copied)
       and then Invalid (Ctx, F_Option_Class)
       and then Invalid (Ctx, F_Option_Number)
       and then Invalid (Ctx, F_Option_Length)
       and then Invalid (Ctx, F_Option_Data));
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX.Types.Bytes_Ptr) is
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
       Ctx.Buffer := null;
@@ -36,15 +36,15 @@ is
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
 
-   function Message_Last (Ctx : Context) return RFLX.Types.Bit_Index is
+   function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if Structural_Valid (Ctx.Cursors (F_Option_Number))
-         and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-         and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1 then
+         and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+         and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1 then
        Ctx.Cursors (F_Option_Number).Last
     elsif Structural_Valid (Ctx.Cursors (F_Option_Data)) then
        Ctx.Cursors (F_Option_Data).Last
     else
-       RFLX.Types.Unreachable_Bit_Length));
+       Types.Unreachable_Bit_Length));
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
@@ -69,24 +69,24 @@ is
          when F_Option_Number =>
             (case Fld is
                   when F_Option_Length =>
-                     RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1,
+                     Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1,
                   when others =>
                      False),
          when F_Option_Length =>
             (case Fld is
                   when F_Option_Data =>
-                     (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
-                          and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                        or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                          and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                            or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                            or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-                        or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                          and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                          and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-                        or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                          and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                          and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8),
+                     (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                          and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
+                        or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                          and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
+                            or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
+                            or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
+                        or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
+                          and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                          and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
+                        or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
+                          and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                          and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8),
                   when others =>
                      False),
          when F_Option_Data | F_Final =>
@@ -97,63 +97,63 @@ is
          when F_Initial | F_Copied | F_Option_Class =>
             True,
          when F_Option_Number =>
-            (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                 and RFLX.Types.Bit_Length (Val.Option_Number_Value) = 1)
-               or RFLX.Types.Bit_Length (Val.Option_Number_Value) > 1,
+            (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                 and Types.Bit_Length (Val.Option_Number_Value) = 1)
+               or Types.Bit_Length (Val.Option_Number_Value) > 1,
          when F_Option_Length =>
-            (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
-                 and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-               or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                 and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                   or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                   or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-               or (RFLX.Types.Bit_Length (Val.Option_Length_Value) = 11
-                 and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                 and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-               or (RFLX.Types.Bit_Length (Val.Option_Length_Value) = 4
-                 and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                 and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8),
+            (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                 and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
+               or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                 and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
+                   or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
+                   or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
+               or (Types.Bit_Length (Val.Option_Length_Value) = 11
+                 and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                 and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
+               or (Types.Bit_Length (Val.Option_Length_Value) = 4
+                 and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                 and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8),
          when F_Option_Data =>
             True,
          when F_Final =>
             False));
 
-   function Field_Length (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length is
+   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length is
      ((case Ctx.Cursors (Fld).Predecessor is
          when F_Initial =>
             (case Fld is
                   when F_Copied =>
                      IPv4.Flag_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length),
+                     Types.Unreachable_Bit_Length),
          when F_Copied =>
             (case Fld is
                   when F_Option_Class =>
                      IPv4.Option_Class_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length),
+                     Types.Unreachable_Bit_Length),
          when F_Option_Class =>
             (case Fld is
                   when F_Option_Number =>
                      IPv4.Option_Number'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length),
+                     Types.Unreachable_Bit_Length),
          when F_Option_Number =>
             (case Fld is
                   when F_Option_Length =>
                      IPv4.Option_Length_Base'Size,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length),
+                     Types.Unreachable_Bit_Length),
          when F_Option_Length =>
             (case Fld is
                   when F_Option_Data =>
-                     ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8,
+                     ((Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8,
                   when others =>
-                     RFLX.Types.Unreachable_Bit_Length),
+                     Types.Unreachable_Bit_Length),
          when F_Option_Data | F_Final =>
             0));
 
-   function Field_First (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Index is
+   function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index is
      ((case Fld is
          when F_Copied =>
             Ctx.First,
@@ -161,37 +161,37 @@ is
             (if Ctx.Cursors (Fld).Predecessor = F_Copied then
                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
              else
-                RFLX.Types.Unreachable_Bit_Length),
+                Types.Unreachable_Bit_Length),
          when F_Option_Number =>
             (if Ctx.Cursors (Fld).Predecessor = F_Option_Class then
                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
              else
-                RFLX.Types.Unreachable_Bit_Length),
+                Types.Unreachable_Bit_Length),
          when F_Option_Length =>
             (if Ctx.Cursors (Fld).Predecessor = F_Option_Number
-                  and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
+                  and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
              else
-                RFLX.Types.Unreachable_Bit_Length),
+                Types.Unreachable_Bit_Length),
          when F_Option_Data =>
             (if Ctx.Cursors (Fld).Predecessor = F_Option_Length
-                  and ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
-                      and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                    or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                      and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                        or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                        or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-                    or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                      and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                      and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-                    or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                      and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                      and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
+                  and ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                      and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
+                    or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                      and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
+                        or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
+                        or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
+                    or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
+                      and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                      and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
+                    or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
+                      and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                      and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
              else
-                RFLX.Types.Unreachable_Bit_Length)));
+                Types.Unreachable_Bit_Length)));
 
-   function Field_Last (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Index is
+   function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
      ((Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1));
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
@@ -208,26 +208,26 @@ is
          when F_Option_Class =>
             F_Option_Number,
          when F_Option_Number =>
-            (if RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                  and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1 then
+            (if Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                  and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1 then
                 F_Final
-             elsif RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
+             elsif Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
                 F_Option_Length
              else
                 F_Initial),
          when F_Option_Length =>
-            (if (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
-                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                  or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                    and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                      or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                      or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-                  or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-                  or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8) then
+            (if (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                    and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
+                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                    and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
+                      or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
+                      or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
+                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
+                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                    and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
+                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
+                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                    and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8) then
                 F_Option_Data
              else
                 F_Initial),
@@ -279,8 +279,8 @@ is
      (Valid_Predecessor (Ctx, Fld)
       and then Path_Condition (Ctx, Fld));
 
-   function Available_Space (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length is
-     ((RFLX.Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1));
+   function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     ((Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1));
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
@@ -329,9 +329,9 @@ is
                      and Ctx.Cursors (F_Option_Length) = Ctx.Cursors (F_Option_Length)'Old
                      and Invalid (Ctx, F_Option_Data))
    is
-      First : constant RFLX.Types.Bit_Length := Field_First (Ctx, Fld) with
+      First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
-      Length : constant RFLX.Types.Bit_Length := Field_Length (Ctx, Fld) with
+      Length : constant Types.Bit_Length := Field_Length (Ctx, Fld) with
         Ghost;
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
@@ -372,11 +372,11 @@ is
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
-      and Ctx.First <= RFLX.Types.Bit_Index'Last / 2
-      and Field_First (Ctx, Fld) <= RFLX.Types.Bit_Index'Last / 2
+      and Ctx.First <= Types.Bit_Index'Last / 2
+      and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
       and Field_Length (Ctx, Fld) >= 0
-      and Field_Length (Ctx, Fld) <= RFLX.Types.Bit_Length'Last / 2
-      and (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld)) <= RFLX.Types.Bit_Length'Last / 2
+      and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld)) <= Types.Bit_Length'Last / 2
       and Ctx.First <= Field_First (Ctx, Fld)
       and Ctx.Last >= Field_Last (Ctx, Fld))
     with
@@ -399,18 +399,18 @@ is
      Post =>
        Get_Field_Value'Result.Fld = Fld
    is
-      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, Fld);
-      Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Fld);
-      function Buffer_First return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (First));
-      function Buffer_Last return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (Last));
-      function Offset return RFLX.Types.Offset is
-        (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Flag_Base);
-      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Class_Base);
-      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Number);
-      function Extract is new RFLX.Types.Extract (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Length);
+      First : constant Types.Bit_Index := Field_First (Ctx, Fld);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, Fld);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+      function Offset return Types.Offset is
+        (Types.Offset ((8 - Last mod 8) mod 8));
+      function Extract is new Types.Extract (IPv4.Flag_Base);
+      function Extract is new Types.Extract (IPv4.Option_Class_Base);
+      function Extract is new Types.Extract (IPv4.Option_Number);
+      function Extract is new Types.Extract (IPv4.Option_Length_Base);
    begin
       return ((case Fld is
             when F_Copied =>
@@ -454,24 +454,24 @@ is
                                and then Ctx.Cursors (F_Option_Number).Predecessor = F_Option_Class
                                and then Ctx.Cursors (F_Option_Number).First = (Ctx.Cursors (F_Option_Class).Last + 1)
                                and then (if Structural_Valid (Ctx.Cursors (F_Option_Length))
-                                    and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
+                                    and then Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
                                   (Ctx.Cursors (F_Option_Length).Last - Ctx.Cursors (F_Option_Length).First + 1) = IPv4.Option_Length_Base'Size
                                     and then Ctx.Cursors (F_Option_Length).Predecessor = F_Option_Number
                                     and then Ctx.Cursors (F_Option_Length).First = (Ctx.Cursors (F_Option_Number).Last + 1)
                                     and then (if Structural_Valid (Ctx.Cursors (F_Option_Data))
-                                         and then ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
-                                             and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                                           or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                                             and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                                               or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                                               or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-                                           or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                                             and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                                             and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-                                           or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                                             and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                                             and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
-                                       (Ctx.Cursors (F_Option_Data).Last - Ctx.Cursors (F_Option_Data).First + 1) = ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8
+                                         and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
+                                           or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                             and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
+                                               or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
+                                               or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
+                                           or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
+                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
+                                           or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
+                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
+                                       (Ctx.Cursors (F_Option_Data).Last - Ctx.Cursors (F_Option_Data).First + 1) = ((Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8
                                          and then Ctx.Cursors (F_Option_Data).Predecessor = F_Option_Length
                                          and then Ctx.Cursors (F_Option_Data).First = (Ctx.Cursors (F_Option_Length).Last + 1)))))));
                if Fld = F_Copied then
@@ -526,45 +526,45 @@ is
      (Valid (Ctx, F_Copied)
       and then Valid (Ctx, F_Option_Class)
       and then Valid (Ctx, F_Option_Number)
-      and then ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-          and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1)
+      and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+          and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1)
         or (Valid (Ctx, F_Option_Length)
-          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1
+          and then Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1
           and then Structural_Valid (Ctx, F_Option_Data)
-          and then ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-            or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-              and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-            or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-            or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)))));
+          and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
+            or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
+                or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
+                or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
+            or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
+            or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Copied)
       and then Valid (Ctx, F_Option_Class)
       and then Valid (Ctx, F_Option_Number)
-      and then ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-          and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1)
+      and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+          and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1)
         or (Valid (Ctx, F_Option_Length)
-          and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1
+          and then Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1
           and then Valid (Ctx, F_Option_Data)
-          and then ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-            or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-              and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-            or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-            or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-              and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)))));
+          and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
+            or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
+                or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
+                or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
+            or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
+            or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Copied)
@@ -586,13 +586,13 @@ is
      (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value);
 
    procedure Get_Option_Data (Ctx : Context) is
-      First : constant RFLX.Types.Index := RFLX.Types.Byte_Index (Ctx.Cursors (F_Option_Data).First);
-      Last : constant RFLX.Types.Index := RFLX.Types.Byte_Index (Ctx.Cursors (F_Option_Data).Last);
+      First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Option_Data).First);
+      Last : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Option_Data).Last);
    begin
       Process_Option_Data (Ctx.Buffer.all (First .. Last));
    end Get_Option_Data;
 
-   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX.Types.Bit_Index) with
+   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
           and then Has_Buffer (Ctx)
@@ -608,7 +608,7 @@ is
           and Lst = Field_Last (Ctx, Val.Fld)
           and Fst >= Ctx.First
           and Fst <= (Lst + 1)
-          and RFLX.Types.Byte_Index (Lst) <= Ctx.Buffer_Last
+          and Types.Byte_Index (Lst) <= Ctx.Buffer_Last
           and (for all F in Field'Range =>
             (if Structural_Valid (Ctx.Cursors (F)) then
              Ctx.Cursors (F).Last <= Lst))
@@ -617,18 +617,18 @@ is
           and Ctx.First = Ctx.First'Old
           and Ctx.Cursors = Ctx.Cursors'Old
    is
-      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, Val.Fld);
-      Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, Val.Fld);
-      function Buffer_First return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (First));
-      function Buffer_Last return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (Last));
-      function Offset return RFLX.Types.Offset is
-        (RFLX.Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Flag_Base);
-      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Class_Base);
-      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Number);
-      procedure Insert is new RFLX.Types.Insert (RFLX.Types.Index, RFLX.Types.Byte, RFLX.Types.Bytes, RFLX.Types.Offset, IPv4.Option_Length);
+      First : constant Types.Bit_Index := Field_First (Ctx, Val.Fld);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, Val.Fld);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+      function Offset return Types.Offset is
+        (Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new Types.Insert (IPv4.Flag_Base);
+      procedure Insert is new Types.Insert (IPv4.Option_Class_Base);
+      procedure Insert is new Types.Insert (IPv4.Option_Number);
+      procedure Insert is new Types.Insert (IPv4.Option_Length_Base);
    begin
       Fst := First;
       Lst := Last;
@@ -650,7 +650,7 @@ is
 
    procedure Set_Copied (Ctx : in out Context; Val : IPv4.Flag) is
       Field_Value : constant Field_Dependent_Value := (F_Copied, Convert (Val));
-      First, Last : RFLX.Types.Bit_Index;
+      First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Copied);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -661,7 +661,7 @@ is
 
    procedure Set_Option_Class (Ctx : in out Context; Val : IPv4.Option_Class) is
       Field_Value : constant Field_Dependent_Value := (F_Option_Class, Convert (Val));
-      First, Last : RFLX.Types.Bit_Index;
+      First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Class);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -672,7 +672,7 @@ is
 
    procedure Set_Option_Number (Ctx : in out Context; Val : IPv4.Option_Number) is
       Field_Value : constant Field_Dependent_Value := (F_Option_Number, Val);
-      First, Last : RFLX.Types.Bit_Index;
+      First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Number);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -683,7 +683,7 @@ is
 
    procedure Set_Option_Length (Ctx : in out Context; Val : IPv4.Option_Length) is
       Field_Value : constant Field_Dependent_Value := (F_Option_Length, Val);
-      First, Last : RFLX.Types.Bit_Index;
+      First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Length);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -693,20 +693,20 @@ is
    end Set_Option_Length;
 
    procedure Set_Option_Data (Ctx : in out Context) is
-      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, F_Option_Data);
-      Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
-      function Buffer_First return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (First));
-      function Buffer_Last return RFLX.Types.Index is
-        (RFLX.Types.Byte_Index (Last));
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
    begin
       Initialize_Option_Data (Ctx);
       Process_Option_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Option_Data;
 
    procedure Initialize_Option_Data (Ctx : in out Context) is
-      First : constant RFLX.Types.Bit_Index := Field_First (Ctx, F_Option_Data);
-      Last : constant RFLX.Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Data);
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
@@ -723,24 +723,24 @@ is
                       and then Ctx.Cursors (F_Option_Number).Predecessor = F_Option_Class
                       and then Ctx.Cursors (F_Option_Number).First = (Ctx.Cursors (F_Option_Class).Last + 1)
                       and then (if Structural_Valid (Ctx.Cursors (F_Option_Length))
-                           and then RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
+                           and then Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
                          (Ctx.Cursors (F_Option_Length).Last - Ctx.Cursors (F_Option_Length).First + 1) = IPv4.Option_Length_Base'Size
                            and then Ctx.Cursors (F_Option_Length).Predecessor = F_Option_Number
                            and then Ctx.Cursors (F_Option_Length).First = (Ctx.Cursors (F_Option_Number).Last + 1)
                            and then (if Structural_Valid (Ctx.Cursors (F_Option_Data))
-                                and then ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Debugging_And_Measurement))
-                                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                                  or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                                    and (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                                      or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                                      or RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-                                  or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-                                  or (RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX.Types.Bit_Length (Convert (Control))
-                                    and RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
-                              (Ctx.Cursors (F_Option_Data).Last - Ctx.Cursors (F_Option_Data).First + 1) = ((RFLX.Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8
+                                and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
+                                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                    and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
+                                      or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
+                                      or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
+                                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
+                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
+                                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
+                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
+                              (Ctx.Cursors (F_Option_Data).Last - Ctx.Cursors (F_Option_Data).First + 1) = ((Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8
                                 and then Ctx.Cursors (F_Option_Data).Predecessor = F_Option_Length
                                 and then Ctx.Cursors (F_Option_Data).First = (Ctx.Cursors (F_Option_Length).Last + 1)))))));
       Ctx.Cursors (F_Option_Data) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Option_Data), Predecessor => Ctx.Cursors (F_Option_Data).Predecessor);

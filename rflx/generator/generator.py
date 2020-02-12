@@ -51,7 +51,17 @@ from rflx.expression import (
     Slice,
     Variable,
 )
-from rflx.model import FINAL, Array, Enumeration, Field, Message, Opaque, Scalar, Type
+from rflx.model import (
+    FINAL,
+    Array,
+    Enumeration,
+    Field,
+    Message,
+    ModularInteger,
+    Opaque,
+    Scalar,
+    Type,
+)
 
 from .common import VALID_CONTEXT, GeneratorCommon, length_dependent_condition
 from .types import Types
@@ -74,7 +84,7 @@ class GeneratorGenerator:
                     Parameter(["Offset"], self.types.offset),
                 ],
             ),
-            [self.types.index, self.types.byte, self.types.bytes, self.types.offset, type_name],
+            [type_name],
         )
 
     def create_internal_functions(
@@ -97,7 +107,7 @@ class GeneratorGenerator:
                         *self.common.field_byte_location_declarations(),
                         *unique(
                             self.insert_function(
-                                t.full_base_name if isinstance(t, Enumeration) else t.full_name
+                                t.full_name if isinstance(t, ModularInteger) else t.full_base_name
                             )
                             for t in message.types.values()
                             if not isinstance(t, (Array, Opaque))

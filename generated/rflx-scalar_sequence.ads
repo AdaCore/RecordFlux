@@ -1,16 +1,19 @@
-with RFLX.Types; use type RFLX.Types.Bytes_Ptr, RFLX.Types.Length, RFLX.Types.Bit_Length;
+with RFLX.Generic_Types;
 
 generic
+   with package Types is new RFLX.Generic_Types (<>);
    type Element_Type is private;
    type Element_Base_Type is (<>);
    with function Valid (Element : Element_Base_Type) return Boolean;
-   with function Convert (Element : Element_Base_Type) return Element_Type;
-   with function Convert (Element : Element_Type) return Element_Base_Type;
+   with function Convert_To_Element_Type (Element : Element_Base_Type) return Element_Type;
+   with function Convert_To_Element_Base_Type (Element : Element_Type) return Element_Base_Type;
 package RFLX.Scalar_Sequence with
   SPARK_Mode
 is
 
    pragma Annotate (GNATprove, Terminating, Scalar_Sequence);
+
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
      Default_Initial_Condition => False;
@@ -75,7 +78,7 @@ is
    procedure Append_Element (Ctx : in out Context; Value : Element_Type) with
      Pre =>
        (Has_Buffer (Ctx)
-        and then Valid (Convert (Value))
+        and then Valid (Convert_To_Element_Base_Type (Value))
         and then Available_Space (Ctx) >= Element_Base_Type'Size),
      Post =>
        (Has_Buffer (Ctx)

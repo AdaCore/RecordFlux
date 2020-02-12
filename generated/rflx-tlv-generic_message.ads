@@ -1,12 +1,14 @@
-with RFLX.Types;
-use type RFLX.Types.Integer_Address;
+with RFLX.Generic_Types;
 
 generic
+   with package Types is new RFLX.Generic_Types (<>);
 package RFLX.TLV.Generic_Message with
   SPARK_Mode
 is
 
    pragma Annotate (GNATprove, Terminating, Generic_Message);
+
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
 
    type Virtual_Field is (F_Initial, F_Tag, F_Length, F_Value, F_Final);
 
@@ -18,7 +20,7 @@ is
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
-   type Context (Buffer_First, Buffer_Last : RFLX.Types.Index := RFLX.Types.Index'First; First, Last : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First) is private with
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
      Default_Initial_Condition =>
        False;
 
@@ -36,36 +38,36 @@ is
 
    function Create return Context;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr) with
+   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) with
      Pre =>
        not Ctx'Constrained
           and then Buffer /= null
           and then Buffer'Length > 0
-          and then Buffer'Last <= RFLX.Types.Index'Last / 2,
+          and then Buffer'Last <= Types.Index'Last / 2,
      Post =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx)
           and Buffer = null
-          and Ctx.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
-          and Ctx.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
-          and Ctx.First = RFLX.Types.First_Bit_Index (Ctx.Buffer_First)
+          and Ctx.Buffer_First = Types.Bytes_First (Buffer)'Old
+          and Ctx.Buffer_Last = Types.Bytes_Last (Buffer)'Old
+          and Ctx.First = Types.First_Bit_Index (Ctx.Buffer_First)
           and Initialized (Ctx);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index) with
+   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
           and then Buffer /= null
           and then Buffer'Length > 0
-          and then RFLX.Types.Byte_Index (First) >= Buffer'First
-          and then RFLX.Types.Byte_Index (Last) <= Buffer'Last
+          and then Types.Byte_Index (First) >= Buffer'First
+          and then Types.Byte_Index (Last) <= Buffer'Last
           and then First <= Last
-          and then Last <= RFLX.Types.Bit_Index'Last / 2,
+          and then Last <= Types.Bit_Index'Last / 2,
      Post =>
        Valid_Context (Ctx)
           and Buffer = null
           and Has_Buffer (Ctx)
-          and Ctx.Buffer_First = RFLX.Types.Bytes_First (Buffer)'Old
-          and Ctx.Buffer_Last = RFLX.Types.Bytes_Last (Buffer)'Old
+          and Ctx.Buffer_First = Types.Bytes_First (Buffer)'Old
+          and Ctx.Buffer_Last = Types.Bytes_Last (Buffer)'Old
           and Ctx.First = First
           and Ctx.Last = Last
           and Initialized (Ctx);
@@ -73,7 +75,7 @@ is
    function Initialized (Ctx : Context) return Boolean with
      Ghost;
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX.Types.Bytes_Ptr) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) with
      Pre =>
        Valid_Context (Ctx)
           and Has_Buffer (Ctx),
@@ -93,7 +95,7 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Message_Last (Ctx : Context) return RFLX.Types.Bit_Index with
+   function Message_Last (Ctx : Context) return Types.Bit_Index with
      Pre =>
        Valid_Context (Ctx)
           and Structural_Valid_Message (Ctx);
@@ -109,17 +111,17 @@ is
           and Val.Fld in Field'Range
           and Valid_Predecessor (Ctx, Val.Fld);
 
-   function Field_Length (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length with
+   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid_Next (Ctx, Fld);
 
-   function Field_First (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Index with
+   function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index with
      Pre =>
        Valid_Context (Ctx)
           and Valid_Next (Ctx, Fld);
 
-   function Field_Last (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Index with
+   function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index with
      Pre =>
        Valid_Next (Ctx, Fld);
 
@@ -135,7 +137,7 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Available_Space (Ctx : Context; Fld : Field) return RFLX.Types.Bit_Length with
+   function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid_Next (Ctx, Fld);
@@ -209,7 +211,7 @@ is
           and Valid (Ctx, F_Length);
 
    generic
-      with procedure Process_Value (Value : RFLX.Types.Bytes);
+      with procedure Process_Value (Value : Types.Bytes);
    procedure Get_Value (Ctx : Context) with
      Pre =>
        Valid_Context (Ctx)
@@ -222,7 +224,7 @@ is
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Tag)
-          and then Field_Last (Ctx, F_Tag) <= RFLX.Types.Bit_Index'Last / 2
+          and then Field_Last (Ctx, F_Tag) <= Types.Bit_Index'Last / 2
           and then Field_Condition (Ctx, (F_Tag, Convert (Val)))
           and then True
           and then Available_Space (Ctx, F_Tag) >= Field_Length (Ctx, F_Tag),
@@ -233,7 +235,7 @@ is
           and Get_Tag (Ctx) = Val
           and Invalid (Ctx, F_Length)
           and Invalid (Ctx, F_Value)
-          and (if RFLX.Types.Bit_Length (Convert (Get_Tag (Ctx))) = RFLX.Types.Bit_Length (Convert (Msg_Data)) then
+          and (if Types.Bit_Length (Convert (Get_Tag (Ctx))) = Types.Bit_Length (Convert (Msg_Data)) then
              Predecessor (Ctx, F_Length) = F_Tag
                and Valid_Next (Ctx, F_Length))
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -248,7 +250,7 @@ is
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Length)
-          and then Field_Last (Ctx, F_Length) <= RFLX.Types.Bit_Index'Last / 2
+          and then Field_Last (Ctx, F_Length) <= Types.Bit_Index'Last / 2
           and then Field_Condition (Ctx, (F_Length, Val))
           and then Valid (Val)
           and then Available_Space (Ctx, F_Length) >= Field_Length (Ctx, F_Length),
@@ -269,14 +271,14 @@ is
           and Cursor (Ctx, F_Tag) = Cursor (Ctx, F_Tag)'Old;
 
    generic
-      with procedure Process_Value (Value : out RFLX.Types.Bytes);
+      with procedure Process_Value (Value : out Types.Bytes);
    procedure Set_Value (Ctx : in out Context) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Value)
-          and then Field_Last (Ctx, F_Value) <= RFLX.Types.Bit_Index'Last / 2
+          and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
           and then Field_Condition (Ctx, (Fld => F_Value))
           and then Available_Space (Ctx, F_Value) >= Field_Length (Ctx, F_Value),
      Post =>
@@ -297,7 +299,7 @@ is
           and then not Ctx'Constrained
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Value)
-          and then Field_Last (Ctx, F_Value) <= RFLX.Types.Bit_Index'Last / 2
+          and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
           and then Field_Condition (Ctx, (Fld => F_Value))
           and then Available_Space (Ctx, F_Value) >= Field_Length (Ctx, F_Value),
      Post =>
@@ -347,8 +349,8 @@ private
          Predecessor : Virtual_Field := F_Final;
          case State is
             when S_Valid | S_Structural_Valid =>
-               First : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First;
-               Last : RFLX.Types.Bit_Length := RFLX.Types.Bit_Length'First;
+               First : Types.Bit_Index := Types.Bit_Index'First;
+               Last : Types.Bit_Length := Types.Bit_Length'First;
                Value : Field_Dependent_Value := (Fld => F_Final);
             when S_Invalid | S_Incomplete =>
                null;
@@ -370,14 +372,16 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
-   function Valid_Context (Buffer_First, Buffer_Last : RFLX.Types.Index; First, Last : RFLX.Types.Bit_Index; Buffer : access constant RFLX.Types.Bytes; Cursors : Field_Cursors) return Boolean is
+   pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
+
+   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index; Buffer : access constant Types.Bytes; Cursors : Field_Cursors) return Boolean is
      ((if Buffer /= null then
          Buffer'First = Buffer_First
            and Buffer'Last = Buffer_Last)
-      and then RFLX.Types.Byte_Index (First) >= Buffer_First
-      and then RFLX.Types.Byte_Index (Last) <= Buffer_Last
+      and then Types.Byte_Index (First) >= Buffer_First
+      and then Types.Byte_Index (Last) <= Buffer_Last
       and then First <= Last
-      and then Last <= RFLX.Types.Bit_Index'Last / 2
+      and then Last <= Types.Bit_Index'Last / 2
       and then (for all F in Field'First .. Field'Last =>
         (if Structural_Valid (Cursors (F)) then
          Cursors (F).First >= First
@@ -387,7 +391,7 @@ private
       and then ((if Structural_Valid (Cursors (F_Length)) then
            (Valid (Cursors (F_Tag))
                and then Cursors (F_Length).Predecessor = F_Tag
-               and then RFLX.Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = RFLX.Types.Bit_Length (Convert (Msg_Data))))
+               and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (Convert (Msg_Data))))
         and then (if Structural_Valid (Cursors (F_Value)) then
            (Valid (Cursors (F_Length))
                and then Cursors (F_Value).Predecessor = F_Length)))
@@ -400,18 +404,18 @@ private
            and then Cursors (F_Tag).Predecessor = F_Initial
            and then Cursors (F_Tag).First = First
            and then (if Structural_Valid (Cursors (F_Length))
-                and then RFLX.Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = RFLX.Types.Bit_Length (Convert (Msg_Data)) then
+                and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (Convert (Msg_Data)) then
               (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = TLV.Length'Size
                 and then Cursors (F_Length).Predecessor = F_Tag
                 and then Cursors (F_Length).First = (Cursors (F_Tag).Last + 1)
                 and then (if Structural_Valid (Cursors (F_Value)) then
-                   (Cursors (F_Value).Last - Cursors (F_Value).First + 1) = RFLX.Types.Bit_Length (Cursors (F_Length).Value.Length_Value) * 8
+                   (Cursors (F_Value).Last - Cursors (F_Value).First + 1) = Types.Bit_Length (Cursors (F_Length).Value.Length_Value) * 8
                      and then Cursors (F_Value).Predecessor = F_Length
                      and then Cursors (F_Value).First = (Cursors (F_Length).Last + 1)))));
 
-   type Context (Buffer_First, Buffer_Last : RFLX.Types.Index := RFLX.Types.Index'First; First, Last : RFLX.Types.Bit_Index := RFLX.Types.Bit_Index'First) is
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
       record
-         Buffer : RFLX.Types.Bytes_Ptr := null;
+         Buffer : Types.Bytes_Ptr := null;
          Cursors : Field_Cursors := (others => (State => S_Invalid, Predecessor => F_Final));
       end record with
      Dynamic_Predicate =>
