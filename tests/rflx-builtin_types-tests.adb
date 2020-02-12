@@ -1,11 +1,13 @@
 with SPARK.Assertions; use SPARK.Assertions;
 
-package body RFLX.Types.Tests is
+with RFLX.Types; use RFLX.Types;
+
+package body RFLX.Builtin_Types.Tests is
 
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
-      return AUnit.Format ("Types");
+      return AUnit.Format ("Builtin_Types");
    end Name;
 
    procedure Test_Index_Calculations (T : in out Aunit.Test_Cases.Test_Case'Class) with
@@ -48,11 +50,11 @@ package body RFLX.Types.Tests is
       Buffer : Bytes := (255, 255, 0);
 
       type U13 is mod 2**13;
-      function Extract_U13 is new Extract (Index, Byte, Bytes, Offset, U13);
+      function Extract_U13 is new Extract (U13);
       R13 : U13;
 
       type U8 is mod 2**8;
-      function Extract_U8 is new Extract (Index, Byte, Bytes, Offset, U8);
+      function Extract_U8 is new Extract (U8);
       R8 : U8;
    begin
       R13 := Extract_U13 (Buffer (Buffer'First + 1 .. Buffer'Last), 0);
@@ -97,11 +99,11 @@ package body RFLX.Types.Tests is
       Buffer : Bytes := (255, 0);
 
       type U13 is range 0 .. 8191 with Size => 13;
-      function Extract_U13 is new Extract (Index, Byte, Bytes, Offset, U13);
+      function Extract_U13 is new Extract (U13);
       R13 : U13;
 
       type U8 is range 0 .. 255 with Size => 8;
-      function Extract_U8 is new Extract (Index, Byte, Bytes, Offset, U8);
+      function Extract_U8 is new Extract (U8);
       R8 : U8;
    begin
       R13 := Extract_U13 (Buffer, 0);
@@ -135,10 +137,10 @@ package body RFLX.Types.Tests is
       pragma Unreferenced (T);
 
       type U2 is mod 2**2;
-      procedure Insert_U2 is new Insert (Index, Byte, Bytes, Offset, U2);
+      procedure Insert_U2 is new Insert (U2);
 
       type U13 is mod 2**13;
-      procedure Insert_U13 is new Insert (Index, Byte, Bytes, Offset, U13);
+      procedure Insert_U13 is new Insert (U13);
 
       Buffer : Bytes (Index'First .. Index'First + 2);
    begin
@@ -246,4 +248,4 @@ package body RFLX.Types.Tests is
       Register_Routine (T, Test_Insert_Modular_Integer'Access, "Insert modular integer");
    end Register_Tests;
 
-end RFLX.Types.Tests;
+end RFLX.Builtin_Types.Tests;

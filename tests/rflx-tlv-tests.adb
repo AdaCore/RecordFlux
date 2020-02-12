@@ -1,6 +1,9 @@
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
+with RFLX.Builtin_Types; use type RFLX.Builtin_Types.Length;
+with RFLX.Types;
+
 with RFLX.TLV.Message;
 
 package body RFLX.TLV.Tests is
@@ -11,18 +14,18 @@ package body RFLX.TLV.Tests is
       return AUnit.Format ("TLV");
    end Name;
 
-   Value_Length : Types.Length;
+   Value_Length : Builtin_Types.Length;
 
-   procedure Store_Value_Length (Buffer : Types.Bytes) is
+   procedure Store_Value_Length (Buffer : Builtin_Types.Bytes) is
    begin
       Value_Length := Buffer'Length;
    end Store_Value_Length;
 
    procedure Get_Value_Length is new TLV.Message.Get_Value (Store_Value_Length);
 
-   Data : Types.Bytes (Types.Index'First .. Types.Index'First + 3) := (others => 0);
+   Data : Builtin_Types.Bytes (Builtin_Types.Index'First .. Builtin_Types.Index'First + 3) := (others => 0);
 
-   procedure Write_Data (Buffer : out Types.Bytes) is
+   procedure Write_Data (Buffer : out Builtin_Types.Bytes) is
    begin
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
@@ -34,7 +37,7 @@ package body RFLX.TLV.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Types.Bytes_Ptr := new Types.Bytes'(64, 4, 0, 0, 0, 0);
+      Buffer  : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
       Context : TLV.Message.Context := TLV.Message.Create;
       Tag     : TLV.Tag;
       Length  : TLV.Length;
@@ -53,7 +56,7 @@ package body RFLX.TLV.Tests is
             Assert (TLV.Message.Present (Context, TLV.Message.F_Value), "Invalid Value");
             if TLV.Message.Present (Context, TLV.Message.F_Value) then
                Get_Value_Length (Context);
-               Assert (Value_Length'Image, Types.Length'Image (4), "Unexpected Value length");
+               Assert (Value_Length'Image, Builtin_Types.Length'Image (4), "Unexpected Value length");
             end if;
          end if;
       end if;
@@ -65,7 +68,7 @@ package body RFLX.TLV.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Types.Bytes_Ptr := new Types.Bytes'(64, 0);
+      Buffer  : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(64, 0);
       Context : TLV.Message.Context := TLV.Message.Create;
       Tag     : TLV.Tag;
       Length  : TLV.Length;
@@ -91,7 +94,7 @@ package body RFLX.TLV.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Types.Bytes_Ptr := new Types.Bytes'(1 => 192);
+      Buffer  : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(1 => 192);
       Context : TLV.Message.Context := TLV.Message.Create;
       Tag     : TLV.Tag;
    begin
@@ -110,7 +113,7 @@ package body RFLX.TLV.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Types.Bytes_Ptr := new Types.Bytes'(0, 0);
+      Buffer  : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(0, 0);
       Context : TLV.Message.Context := TLV.Message.Create;
    begin
       TLV.Message.Initialize (Context, Buffer);
@@ -124,8 +127,8 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Value is new TLV.Message.Set_Value (Write_Data);
-      Expected : Types.Bytes_Ptr := new Types.Bytes'(64, 4, 0, 0, 0, 0);
-      Buffer   : Types.Bytes_Ptr := new Types.Bytes'(0, 0, 0, 0, 0, 0);
+      Expected : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
+      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
    begin
       TLV.Message.Initialize (Context, Buffer);
@@ -139,7 +142,7 @@ package body RFLX.TLV.Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
 
-      Assert (Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
       Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_TLV_Data;
 
@@ -148,8 +151,8 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Value is new TLV.Message.Set_Value (Write_Data);
-      Expected : Types.Bytes_Ptr := new Types.Bytes'(64, 0);
-      Buffer   : Types.Bytes_Ptr := new Types.Bytes'(0, 0);
+      Expected : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(64, 0);
+      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(0, 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
    begin
       TLV.Message.Initialize (Context, Buffer);
@@ -163,7 +166,7 @@ package body RFLX.TLV.Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
 
-      Assert (Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
       Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_TLV_Data_Zero;
 
@@ -171,8 +174,8 @@ package body RFLX.TLV.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : Types.Bytes_Ptr := new Types.Bytes'(Types.Index'First => 192);
-      Buffer   : Types.Bytes_Ptr := new Types.Bytes'(Types.Index'First => 0);
+      Expected : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First => 192);
+      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First => 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
    begin
       TLV.Message.Initialize (Context, Buffer);
@@ -183,7 +186,7 @@ package body RFLX.TLV.Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
 
-      Assert (Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
       Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_TLV_Error;
 
