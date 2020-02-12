@@ -13,7 +13,7 @@ is
       First    : Types.Index;
       Last     : Types.Index;
       Offset   : Types.Offset;
-      function Extract is new Types.Extract (Types.Index, Types.Byte, Types.Bytes, Types.Offset, Element_Base_Type);
+      function Extract is new Types.Extract (Element_Base_Type);
    begin
       if Ctx.Last - Ctx.Index + 1 >= Element_Base_Type'Size then
          Last_Bit := Ctx.Index + Element_Base_Type'Size - 1;
@@ -59,21 +59,21 @@ is
      (Ctx.State = S_Processing and then Valid (Ctx.Next_Element));
 
    function Get_Element (Ctx : Context) return Element_Type is
-     (Convert (Ctx.Next_Element));
+     (Convert_To_Element_Type (Ctx.Next_Element));
 
    procedure Append_Element (Ctx : in out Context; Value : Element_Type) is
       Last_Bit : Types.Bit_Index;
       First    : Types.Index;
       Last     : Types.Index;
       Offset   : Types.Offset;
-      procedure Insert is new Types.Insert (Types.Index, Types.Byte, Types.Bytes, Types.Offset, Element_Base_Type);
+      procedure Insert is new Types.Insert (Element_Base_Type);
    begin
       Last_Bit := Ctx.Index + Element_Base_Type'Size - 1;
       First := Types.Byte_Index (Ctx.Index);
       Last := Types.Byte_Index (Last_Bit);
       Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
       if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-         Insert (Convert (Value), Ctx.Buffer.all (First .. Last), Offset);
+         Insert (Convert_To_Element_Base_Type (Value), Ctx.Buffer.all (First .. Last), Offset);
       end if;
       Ctx.Index := Ctx.Index + Element_Base_Type'Size;
       if Ctx.Index = Ctx.Last + 1 then

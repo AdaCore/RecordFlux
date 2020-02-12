@@ -207,12 +207,22 @@ class FormalSubprogramDeclaration(FormalDeclaration):
 
 
 class FormalPackageDeclaration(FormalDeclaration):
-    def __init__(self, name: str, generic_name: str) -> None:
+    def __init__(self, name: str, generic_name: str, associations: Sequence[str] = None) -> None:
         self.name = name
         self.generic_name = generic_name
+        self.associations = associations or []
 
     def __str__(self) -> str:
-        return f"with package {self.name} is new {self.generic_name} (<>);"
+        associations = ", ".join(a for a in self.associations) if self.associations else "<>"
+        return f"with package {self.name} is new {self.generic_name} ({associations});"
+
+
+class FormalTypeDeclaration(FormalDeclaration):
+    def __init__(self, type_declaration: "TypeDeclaration") -> None:
+        self.type_declaration = type_declaration
+
+    def __str__(self) -> str:
+        return str(self.type_declaration)
 
 
 class PackageDeclaration(Declaration):
@@ -427,6 +437,12 @@ class PrivateType(TypeDeclaration):
         return " private"
 
 
+class DiscreteType(TypeDeclaration):
+    @property
+    def type_definition(self) -> str:
+        return " (<>)"
+
+
 class ArrayType(TypeDeclaration):
     def __init__(self, name: str, index_type: str, component_name: str) -> None:
         super().__init__(name)
@@ -437,6 +453,22 @@ class ArrayType(TypeDeclaration):
     @property
     def type_definition(self) -> str:
         return f" array ({self.index_type}) of {self.component_name}"
+
+
+class UnconstrainedArrayType(ArrayType):
+    @property
+    def type_definition(self) -> str:
+        return f" array ({self.index_type} range <>) of {self.component_name}"
+
+
+class AccessType(TypeDeclaration):
+    def __init__(self, name: str, object_name: str) -> None:
+        super().__init__(name)
+        self.object_name = object_name
+
+    @property
+    def type_definition(self) -> str:
+        return f" access {self.object_name}"
 
 
 class Component(Ada):

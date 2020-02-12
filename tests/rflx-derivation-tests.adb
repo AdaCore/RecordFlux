@@ -1,7 +1,8 @@
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.Types; use type RFLX.Types.Integer_Address;
+with RFLX.Builtin_Types; use type RFLX.Builtin_Types.Length, RFLX.Builtin_Types.Bit_Length;
+with RFLX.Types;
 
 with RFLX.Derivation.Message;
 with RFLX.Derivation.Modular_Vector;
@@ -30,7 +31,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
+      Buffer           : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
       Context          : Derivation.Message.Context := Derivation.Message.Create;
       Length           : Derivation.Length;
       Sequence_Context : Derivation.Modular_Vector.Context := Derivation.Modular_Vector.Create;
@@ -82,7 +83,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
+      Buffer           : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
       Context          : Derivation.Message.Context := Derivation.Message.Create;
       Length           : Derivation.Length;
       Sequence_Context : Derivation.Modular_Vector.Context := Derivation.Modular_Vector.Create;
@@ -138,7 +139,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
+      Buffer           : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
       Context          : Derivation.Message.Context := Derivation.Message.Create;
       Length           : Derivation.Length;
       Sequence_Context : Derivation.Range_Vector.Context := Derivation.Range_Vector.Create;
@@ -191,7 +192,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
+      Buffer           : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
       Context          : Derivation.Message.Context := Derivation.Message.Create;
       Length           : Derivation.Length;
       Sequence_Context : Derivation.Range_Vector.Context := Derivation.Range_Vector.Create;
@@ -247,7 +248,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
+      Buffer           : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
       Context          : Derivation.Message.Context := Derivation.Message.Create;
       Length           : Derivation.Length;
       Sequence_Context : Derivation.Enumeration_Vector.Context := Derivation.Enumeration_Vector.Create;
@@ -300,7 +301,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
+      Buffer           : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
       Context          : Derivation.Message.Context := Derivation.Message.Create;
       Length           : Derivation.Length;
       Sequence_Context : Derivation.Enumeration_Vector.Context := Derivation.Enumeration_Vector.Create;
@@ -356,7 +357,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
+      Buffer           : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
       Context          : Derivation.Message.Context := Derivation.Message.Create;
       Length           : Derivation.Length;
       Sequence_Context : Derivation.Av_Enumeration_Vector.Context := Derivation.Av_Enumeration_Vector.Create;
@@ -417,7 +418,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
+      Buffer           : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
       Context          : Derivation.Message.Context := Derivation.Message.Create;
       Length           : Derivation.Length;
       Sequence_Context : Derivation.Av_Enumeration_Vector.Context := Derivation.Av_Enumeration_Vector.Create;
@@ -477,7 +478,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+      Buffer  : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
       Context : Derivation.Message.Context := Derivation.Message.Create;
       Length  : Derivation.Length;
    begin
@@ -662,8 +663,8 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected                      : Types.Bytes_Ptr := new Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
-      Buffer                        : Types.Bytes_Ptr := new Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Expected                      : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+      Buffer                        : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
       Context                       : Derivation.Message.Context := Derivation.Message.Create;
       Modular_Vector_Context        : Derivation.Modular_Vector.Context := Derivation.Modular_Vector.Create;
       Range_Vector_Context          : Derivation.Range_Vector.Context := Derivation.Range_Vector.Create;
@@ -710,7 +711,7 @@ package body RFLX.Derivation.Tests is
       Assert (Derivation.Message.Valid_Message (Context), "Invalid Message after complete generating");
 
       Derivation.Message.Take_Buffer (Context, Buffer);
-      Assert (Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
       Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Derivation_Message;
 

@@ -1,6 +1,9 @@
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
+with RFLX.Builtin_Types; use type RFLX.Builtin_Types.Length;
+with RFLX.Types;
+
 with RFLX.IPv4.Packet;
 with RFLX.Ethernet.Frame;
 with RFLX.In_Ethernet.Contains;
@@ -13,9 +16,9 @@ package body RFLX.In_Ethernet.Tests is
       return AUnit.Format ("In_Ethernet");
    end Name;
 
-   Data : Types.Bytes (Types.Index'First .. Types.Index'First + 25) := (others => 0);
+   Data : Builtin_Types.Bytes (Builtin_Types.Index'First .. Builtin_Types.Index'First + 25) := (others => 0);
 
-   procedure Write_Data (Buffer : out Types.Bytes) is
+   procedure Write_Data (Buffer : out Builtin_Types.Bytes) is
    begin
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
@@ -28,7 +31,7 @@ package body RFLX.In_Ethernet.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer                 : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Buffer                 : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
       Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
       IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
       Valid                  : Boolean;
@@ -54,8 +57,8 @@ package body RFLX.In_Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new IPv4.Packet.Set_Payload (Write_Data);
-      Expected               : Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Buffer                 : Types.Bytes_Ptr := new Types.Bytes'(Types.Index'First .. Types.Index'First + Expected'Size - 1 => 0);
+      Expected               : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Buffer                 : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First .. Builtin_Types.Index'First + Expected'Size - 1 => 0);
       Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
       IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
    begin
@@ -95,7 +98,7 @@ package body RFLX.In_Ethernet.Tests is
 
          IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
 
-         Assert (Types.Length'Image (Types.Byte_Index (IPv4_Packet_Context.Last) - Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+         Assert (Builtin_Types.Length'Image (Types.Byte_Index (IPv4_Packet_Context.Last) - Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
          Assert (Buffer.all (Types.Byte_Index (Ethernet_Frame_Context.First) .. Types.Byte_Index (Ethernet_Frame_Context.Last)), Expected.all, "Invalid binary representation");
       end if;
    end Test_Generating_IPv4_In_Ethernet;
