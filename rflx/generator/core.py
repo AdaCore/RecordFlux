@@ -525,12 +525,12 @@ class Generator:
                             Call(
                                 "Valid_Context",
                                 [
-                                    Name("Buffer_First"),
-                                    Name("Buffer_Last"),
-                                    Name("First"),
-                                    Name("Last"),
-                                    Name("Buffer"),
-                                    Name("Cursors"),
+                                    Selected("Context", "Buffer_First"),
+                                    Selected("Context", "Buffer_Last"),
+                                    Selected("Context", "First"),
+                                    Selected("Context", "Last"),
+                                    Selected("Context", "Buffer"),
+                                    Selected("Context", "Cursors"),
                                 ],
                             )
                         )
