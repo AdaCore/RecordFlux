@@ -149,6 +149,9 @@ LIBRARY_FILES = (
 class Generator:
     # pylint: disable=too-many-instance-attributes
     def __init__(self, prefix: str = "", reproducible: bool = False) -> None:
+        if prefix and "" in prefix.split("."):
+            raise InternalError(f'invalid prefix: "{prefix}"')
+
         self.prefix = f"{prefix}." if prefix else ""
         self.reproducible = reproducible
         self.units: Dict[str, Unit] = {}
