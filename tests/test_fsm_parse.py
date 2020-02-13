@@ -14,10 +14,10 @@ from rflx.expression import (
 from rflx.fsm_expression import (
     Comprehension,
     Contains,
-    Convert,
     Field,
     ForAll,
     ForSome,
+    FunctionCall,
     Head,
     MessageAggregate,
     NotContains,
@@ -133,7 +133,10 @@ def test_complex_existential_quantification() -> None:
             Equal(Variable("E.Tag"), Variable("TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS")),
             NotContains(
                 Variable("GreenTLS.TLS_1_3"),
-                Field(Convert(Variable("E.Data"), "TLS_Handshake.Supported_Versions"), "Versions",),
+                Field(
+                    FunctionCall("TLS_Handshake.Supported_Versions", [Variable("E.Data")]),
+                    "Versions",
+                ),
             ),
         ),
     )
@@ -148,14 +151,16 @@ def test_universal_quantification() -> None:
 def test_type_conversion_simple() -> None:
     expr = "Foo (Bar) = 5"
     result = FSMParser.condition().parseString(expr)[0]
-    expected = Equal(Convert(Variable("Bar"), "Foo"), Number(5))
+    expected = Equal(FunctionCall("Foo", [Variable("Bar")]), Number(5))
     assert result == expected
 
 
 def test_type_conversion() -> None:
     expr = "TLS_Handshake.Supported_Versions (E.Data) = 5"
     result = FSMParser.condition().parseString(expr)[0]
-    expected = Equal(Convert(Variable("E.Data"), "TLS_Handshake.Supported_Versions"), Number(5))
+    expected = Equal(
+        FunctionCall("TLS_Handshake.Supported_Versions", [Variable("E.Data")]), Number(5)
+    )
     assert result == expected
 
 
@@ -164,7 +169,7 @@ def test_use_type_conversion() -> None:
     result = FSMParser.condition().parseString(expr)[0]
     expected = NotContains(
         Variable("GreenTLS.TLS_1_3"),
-        Field(Convert(Variable("E.Data"), "TLS_Handshake.Supported_Versions"), "Versions",),
+        Field(FunctionCall("TLS_Handshake.Supported_Versions", [Variable("E.Data")]), "Versions",),
     )
     assert result == expected
 
@@ -186,7 +191,7 @@ def test_length_lt() -> None:
 
 def test_field_length_lt() -> None:
     result = FSMParser.condition().parseString("Bar (Foo).Fld'Length < 100")[0]
-    assert result == Less(Length(Field(Convert(Variable("Foo"), "Bar"), "Fld")), Number(100))
+    assert result == Less(Length(Field(FunctionCall("Bar", [Variable("Foo")]), "Fld")), Number(100))
 
 
 def test_list_comprehension() -> None:
@@ -244,22 +249,24 @@ def test_complex() -> None:
         ForSome(
             "S",
             Field(
-                Convert(
-                    Field(
-                        Head(
-                            Comprehension(
-                                "E",
-                                Variable("Client_Hello_Message.Extensions"),
-                                Variable("E"),
-                                Equal(
-                                    Variable("E.Tag"),
-                                    Variable("TLS_Handshake.EXTENSION_KEY_SHARE"),
-                                ),
-                            )
-                        ),
-                        "Data",
-                    ),
+                FunctionCall(
                     "TLS_Handshake.Key_Share_CH",
+                    [
+                        Field(
+                            Head(
+                                Comprehension(
+                                    "E",
+                                    Variable("Client_Hello_Message.Extensions"),
+                                    Variable("E"),
+                                    Equal(
+                                        Variable("E.Tag"),
+                                        Variable("TLS_Handshake.EXTENSION_KEY_SHARE"),
+                                    ),
+                                )
+                            ),
+                            "Data",
+                        )
+                    ],
                 ),
                 "Shares",
             ),
@@ -283,5 +290,19 @@ def test_complex_aggregate() -> None:
     expected = MessageAggregate(
         ID("Complex.Message"),
         {ID("Data1"): Variable("Foo"), ID("Data2"): Variable("Bar"), ID("Data3"): Variable("Baz")},
+    )
+    assert result == expected
+
+
+def test_simple_function_call() -> None:
+    result = FSMParser.expression().parseString("Fun (Parameter)")[0]
+    expected = FunctionCall("Fun", [Variable("Parameter")])
+    assert result == expected
+
+
+def test_complex_function_call() -> None:
+    result = FSMParser.expression().parseString("Complex_Function (Param1, Param2, Param3)")[0]
+    expected = FunctionCall(
+        "Complex_Function", [Variable("Param1"), Variable("Param2"), Variable("Param3")],
     )
     assert result == expected
