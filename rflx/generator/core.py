@@ -8,7 +8,6 @@ import pkg_resources
 
 from rflx import __version__
 from rflx.ada import (
-    AccessParameter,
     Annotate,
     ArrayType,
     Assignment,
@@ -1788,7 +1787,8 @@ class Generator:
             [
                 Parameter(["Buffer_First", "Buffer_Last"], self.types.index),
                 Parameter(["First", "Last"], self.types.bit_index),
-                AccessParameter(["Buffer"], self.types.bytes, constant=True),
+                # WORKAROUND: Componolit/Workarounds#17
+                Parameter(["Buffer"], self.types.bytes_ptr),
                 Parameter(["Cursors"], "Field_Cursors"),
             ],
         )
