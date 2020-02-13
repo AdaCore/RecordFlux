@@ -1,8 +1,6 @@
 with RFLX.Lemmas;
 
-package body RFLX.Generic_Types with
-  SPARK_Mode
-is
+package body RFLX.Generic_Types is
 
    function Extract (Data : Bytes;
                      Ofst : Offset) return Value

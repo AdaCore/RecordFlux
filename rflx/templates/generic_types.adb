@@ -1,8 +1,6 @@
 with {prefix}Lemmas;
 
-package body {prefix}Generic_Types with
-  SPARK_Mode
-is
+package body {prefix}Generic_Types is
 
    function Extract (Data : Bytes;
                      Ofst : Offset) return Value
