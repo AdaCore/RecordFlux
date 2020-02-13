@@ -19,11 +19,13 @@ from rflx.fsm_expression import (
     ForAll,
     ForSome,
     Head,
+    MessageAggregate,
     NotContains,
     Present,
     Valid,
 )
 from rflx.fsm_parser import FSMParser
+from rflx.identifier import ID
 
 
 def test_simple_equation() -> None:
@@ -114,7 +116,7 @@ def test_complex_expression() -> None:
 
 def test_existential_quantification() -> None:
     result = FSMParser.condition().parseString("for some X in Y => X = 3")[0]
-    assert result == ForSome(Variable("X"), Variable("Y"), Equal(Variable("X"), Number(3)))
+    assert result == ForSome("X", Variable("Y"), Equal(Variable("X"), Number(3)))
 
 
 def test_complex_existential_quantification() -> None:
@@ -125,16 +127,13 @@ def test_complex_existential_quantification() -> None:
     )
     result = FSMParser.condition().parseString(expr)[0]
     expected = ForSome(
-        Variable("E"),
+        "E",
         Variable("Server_Hello_Message.Extensions"),
         And(
             Equal(Variable("E.Tag"), Variable("TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS")),
             NotContains(
                 Variable("GreenTLS.TLS_1_3"),
-                Field(
-                    Convert(Variable("E.Data"), Variable("TLS_Handshake.Supported_Versions")),
-                    "Versions",
-                ),
+                Field(Convert(Variable("E.Data"), "TLS_Handshake.Supported_Versions"), "Versions",),
             ),
         ),
     )
@@ -143,22 +142,20 @@ def test_complex_existential_quantification() -> None:
 
 def test_universal_quantification() -> None:
     result = FSMParser.condition().parseString("for all X in Y => X = Bar")[0]
-    assert result == ForAll(Variable("X"), Variable("Y"), Equal(Variable("X"), Variable("Bar")))
+    assert result == ForAll("X", Variable("Y"), Equal(Variable("X"), Variable("Bar")))
 
 
 def test_type_conversion_simple() -> None:
     expr = "Foo (Bar) = 5"
     result = FSMParser.condition().parseString(expr)[0]
-    expected = Equal(Convert(Variable("Bar"), Variable("Foo")), Number(5))
+    expected = Equal(Convert(Variable("Bar"), "Foo"), Number(5))
     assert result == expected
 
 
 def test_type_conversion() -> None:
     expr = "TLS_Handshake.Supported_Versions (E.Data) = 5"
     result = FSMParser.condition().parseString(expr)[0]
-    expected = Equal(
-        Convert(Variable("E.Data"), Variable("TLS_Handshake.Supported_Versions")), Number(5)
-    )
+    expected = Equal(Convert(Variable("E.Data"), "TLS_Handshake.Supported_Versions"), Number(5))
     assert result == expected
 
 
@@ -167,9 +164,7 @@ def test_use_type_conversion() -> None:
     result = FSMParser.condition().parseString(expr)[0]
     expected = NotContains(
         Variable("GreenTLS.TLS_1_3"),
-        Field(
-            Convert(Variable("E.Data"), Variable("TLS_Handshake.Supported_Versions")), "Versions",
-        ),
+        Field(Convert(Variable("E.Data"), "TLS_Handshake.Supported_Versions"), "Versions",),
     )
     assert result == expected
 
@@ -191,18 +186,13 @@ def test_length_lt() -> None:
 
 def test_field_length_lt() -> None:
     result = FSMParser.condition().parseString("Bar (Foo).Fld'Length < 100")[0]
-    assert result == Less(
-        Length(Field(Convert(Variable("Foo"), Variable("Bar")), "Fld")), Number(100)
-    )
+    assert result == Less(Length(Field(Convert(Variable("Foo"), "Bar"), "Fld")), Number(100))
 
 
 def test_list_comprehension() -> None:
     result = FSMParser.condition().parseString("[for E in List => E.Bar when E.Tag = Foo]")[0]
     assert result == Comprehension(
-        Variable("E"),
-        Variable("List"),
-        Variable("E.Bar"),
-        Equal(Variable("E.Tag"), Variable("Foo")),
+        "E", Variable("List"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
     )
 
 
@@ -215,10 +205,7 @@ def test_head_attribute_comprehension() -> None:
     result = FSMParser.condition().parseString("[for E in List => E.Bar when E.Tag = Foo]'Head")[0]
     assert result == Head(
         Comprehension(
-            Variable("E"),
-            Variable("List"),
-            Variable("E.Bar"),
-            Equal(Variable("E.Tag"), Variable("Foo")),
+            "E", Variable("List"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
         )
     )
 
@@ -240,10 +227,7 @@ def test_list_head_field() -> None:
     assert result == Field(
         Head(
             Comprehension(
-                Variable("E"),
-                Variable("List"),
-                Variable("E.Bar"),
-                Equal(Variable("E.Tag"), Variable("Foo")),
+                "E", Variable("List"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
             )
         ),
         "Data",
@@ -258,13 +242,13 @@ def test_complex() -> None:
     )[0]
     expected = Equal(
         ForSome(
-            Variable("S"),
+            "S",
             Field(
                 Convert(
                     Field(
                         Head(
                             Comprehension(
-                                Variable("E"),
+                                "E",
                                 Variable("Client_Hello_Message.Extensions"),
                                 Variable("E"),
                                 Equal(
@@ -275,12 +259,29 @@ def test_complex() -> None:
                         ),
                         "Data",
                     ),
-                    Variable("TLS_Handshake.Key_Share_CH"),
+                    "TLS_Handshake.Key_Share_CH",
                 ),
                 "Shares",
             ),
             Equal(Variable("S.Group"), Variable("Selected_Group")),
         ),
         FALSE,
+    )
+    assert result == expected
+
+
+def test_simple_aggregate() -> None:
+    result = FSMParser.expression().parseString("Message'(Data => Foo)")[0]
+    expected = MessageAggregate(ID("Message"), {ID("Data"): Variable("Foo")})
+    assert result == expected
+
+
+def test_complex_aggregate() -> None:
+    result = FSMParser.expression().parseString(
+        "Complex.Message'(Data1 => Foo, Data2 => Bar, Data3 => Baz)"
+    )[0]
+    expected = MessageAggregate(
+        ID("Complex.Message"),
+        {ID("Data1"): Variable("Foo"), ID("Data2"): Variable("Bar"), ID("Data3"): Variable("Baz")},
     )
     assert result == expected

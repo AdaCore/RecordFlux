@@ -9,6 +9,7 @@ from pyparsing import (
     StringEnd,
     Suppress,
     Token,
+    delimitedList,
     infixNotation,
     oneOf,
     opAssoc,
@@ -36,6 +37,7 @@ from rflx.fsm_expression import (
     ForAll,
     ForSome,
     Head,
+    MessageAggregate,
     NotContains,
     Present,
     Valid,
@@ -105,30 +107,28 @@ class FSMParser:
 
     @classmethod
     def __parse_quantifier(cls, tokens: List[Expr]) -> Expr:
-        if not isinstance(tokens[1], Variable):
-            raise TypeError("quantifier not of type Variable")
+        assert isinstance(tokens[1], ID)
         if tokens[0] == "all":
             return ForAll(tokens[1], tokens[2], tokens[3])
         return ForSome(tokens[1], tokens[2], tokens[3])
 
     @classmethod
     def __parse_comprehension(cls, tokens: List[Expr]) -> Expr:
-        if not isinstance(tokens[0], Variable):
-            raise TypeError("quantifier not of type Variable")
+        assert isinstance(tokens[0], ID)
         return Comprehension(tokens[0], tokens[1], tokens[2], tokens[3])
 
     @classmethod
     def __parse_conversion(cls, tokens: List[Expr]) -> Expr:
-        if not isinstance(tokens[0], Variable):
-            raise TypeError("target not of type Variable")
+        assert isinstance(tokens[0], ID)
         return Convert(tokens[1], tokens[0])
 
     @classmethod
     def __identifier(cls) -> Token:
         identifier = qualified_identifier()
-        identifier.setParseAction(lambda t: Variable(ID("".join(map(str, t.asList())))))
+        identifier.setParseAction(lambda t: ID("".join(map(str, t.asList()))))
         return identifier
 
+    # pylint: disable=too-many-locals
     @classmethod
     def expression(cls) -> Token:
         literal = boolean_literal()
@@ -150,7 +150,7 @@ class FSMParser:
         quantifier = (
             Keyword("for").suppress()
             - oneOf(["all", "some"])
-            + cls.__identifier()
+            + unqualified_identifier()
             - Keyword("in").suppress()
             + expression
             - Keyword("=>").suppress()
@@ -161,7 +161,7 @@ class FSMParser:
         comprehension = (
             Literal("[").suppress()
             - Keyword("for").suppress()
-            + cls.__identifier()
+            + unqualified_identifier()
             - Keyword("in").suppress()
             + expression
             - Keyword("=>").suppress()
@@ -179,19 +179,32 @@ class FSMParser:
         )
         attribute.setParseAction(parse_attribute)
 
+        components = delimitedList(
+            unqualified_identifier() + Keyword("=>").suppress() + expression, delim=","
+        )
+        components.setParseAction(lambda t: dict(zip(t[0::2], t[1::2])))
+
+        aggregate = (
+            cls.__identifier() + Literal("'").suppress() + lpar + components + rpar
+        ).setParseAction(lambda t: MessageAggregate(t[0], t[1]))
+
         attribute_field = attribute + Literal(".").suppress() + qualified_identifier()
         attribute_field.setParseAction(lambda t: Field(t[0], t[1]))
+
+        variable = cls.__identifier()
+        variable.setParseAction(lambda t: Variable(ID("".join(map(str, t.asList())))))
 
         atom = (
             numeric_literal()
             | literal
             | quantifier
+            | aggregate
             | attribute_field
             | attribute
             | field
             | comprehension
             | conversion
-            | cls.__identifier()
+            | variable
         )
 
         expression <<= infixNotation(
