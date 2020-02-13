@@ -387,7 +387,7 @@ private
          Cursors : Field_Cursors := (others => (State => S_Invalid, Predecessor => F_Final));
       end record with
      Dynamic_Predicate =>
-       Valid_Context (Buffer_First, Buffer_Last, First, Last, Buffer, Cursors);
+       Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Buffer, Context.Cursors);
 
    function Valid_Context (Ctx : Context) return Boolean is
      (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));

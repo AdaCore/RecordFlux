@@ -5,9 +5,7 @@ generic
    type Bytes_Ptr is access Bytes;
    type Length is range <>;
    type Bit_Length is range <>;
-package {prefix}Generic_Types with
-  SPARK_Mode
-is
+package {prefix}Generic_Types is
 
    pragma Compile_Time_Error (Index'First /= 1, "Index'First must be 1");
 
