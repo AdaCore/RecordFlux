@@ -191,7 +191,7 @@ class FSM:
                 transitions.append(Transition(target=StateName(t["target"]), condition=condition))
         return transitions
 
-    def __parse(self, name: str, doc: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
+    def __parse(self, name: str, doc: Dict[str, Any]) -> None:
         if "initial" not in doc:
             self.error.append(
                 f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR

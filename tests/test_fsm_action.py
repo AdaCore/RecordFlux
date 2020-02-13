@@ -5,4 +5,4 @@ from rflx.statement import Assignment
 
 def test_simple_assignment() -> None:
     result = FSMParser.action().parseString("Foo := Bar")[0]
-    assert result == Assignment(Variable("Foo"), Variable("Bar"))
+    assert result == Assignment("Foo", Variable("Bar"))
