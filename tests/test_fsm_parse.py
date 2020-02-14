@@ -278,13 +278,13 @@ def test_complex() -> None:
 
 
 def test_simple_aggregate() -> None:
-    result = FSMParser.expression().parseString("Message'(Data => Foo)")[0]
+    result = FSMParser.condition().parseString("Message'(Data => Foo)")[0]
     expected = MessageAggregate(ID("Message"), {ID("Data"): Variable("Foo")})
     assert result == expected
 
 
 def test_complex_aggregate() -> None:
-    result = FSMParser.expression().parseString(
+    result = FSMParser.condition().parseString(
         "Complex.Message'(Data1 => Foo, Data2 => Bar, Data3 => Baz)"
     )[0]
     expected = MessageAggregate(
@@ -295,13 +295,13 @@ def test_complex_aggregate() -> None:
 
 
 def test_simple_function_call() -> None:
-    result = FSMParser.expression().parseString("Fun (Parameter)")[0]
+    result = FSMParser.condition().parseString("Fun (Parameter)")[0]
     expected = FunctionCall("Fun", [Variable("Parameter")])
     assert result == expected
 
 
 def test_complex_function_call() -> None:
-    result = FSMParser.expression().parseString("Complex_Function (Param1, Param2, Param3)")[0]
+    result = FSMParser.condition().parseString("Complex_Function (Param1, Param2, Param3)")[0]
     expected = FunctionCall(
         "Complex_Function", [Variable("Param1"), Variable("Param2"), Variable("Param3")],
     )
