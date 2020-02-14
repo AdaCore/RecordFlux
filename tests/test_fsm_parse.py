@@ -12,6 +12,7 @@ from rflx.expression import (
     Variable,
 )
 from rflx.fsm_expression import (
+    Binding,
     Comprehension,
     Contains,
     Field,
@@ -155,6 +156,16 @@ def test_type_conversion_simple() -> None:
     assert result == expected
 
 
+def test_field_simple() -> None:
+    result = FSMParser.condition().parseString("Bar (Foo).Fld")[0]
+    assert result == Field(FunctionCall("Bar", [Variable("Foo")]), "Fld")
+
+
+def test_field_length() -> None:
+    result = FSMParser.condition().parseString("Bar (Foo).Fld'Length")[0]
+    assert result == Length(Field(FunctionCall("Bar", [Variable("Foo")]), "Fld"))
+
+
 def test_type_conversion() -> None:
     expr = "TLS_Handshake.Supported_Versions (E.Data) = 5"
     result = FSMParser.condition().parseString(expr)[0]
@@ -279,7 +290,7 @@ def test_complex() -> None:
 
 def test_simple_aggregate() -> None:
     result = FSMParser.condition().parseString("Message'(Data => Foo)")[0]
-    expected = MessageAggregate(ID("Message"), {ID("Data"): Variable("Foo")})
+    expected = MessageAggregate("Message", {ID("Data"): Variable("Foo")})
     assert result == expected
 
 
@@ -288,7 +299,7 @@ def test_complex_aggregate() -> None:
         "Complex.Message'(Data1 => Foo, Data2 => Bar, Data3 => Baz)"
     )[0]
     expected = MessageAggregate(
-        ID("Complex.Message"),
+        "Complex.Message",
         {ID("Data1"): Variable("Foo"), ID("Data2"): Variable("Bar"), ID("Data3"): Variable("Baz")},
     )
     assert result == expected
@@ -304,5 +315,44 @@ def test_complex_function_call() -> None:
     result = FSMParser.condition().parseString("Complex_Function (Param1, Param2, Param3)")[0]
     expected = FunctionCall(
         "Complex_Function", [Variable("Param1"), Variable("Param2"), Variable("Param3")],
+    )
+    assert result == expected
+
+
+def test_simple_binding() -> None:
+    result = FSMParser.condition().parseString("M1'(Data => B1) where B1 = M2'(Data => B2)")[0]
+    expected = Binding(
+        MessageAggregate("M1", {ID("Data"): Variable("B1")}),
+        {ID("B1"): MessageAggregate("M2", {ID("Data"): Variable("B2")})},
+    )
+    assert result == expected
+
+
+def test_multi_binding() -> None:
+    result = FSMParser.condition().parseString(
+        "M1'(Data1 => B1, Data2 => B2) where B1 = M2'(Data => B2), B2 = M2'(Data => B3)"
+    )[0]
+    expected = Binding(
+        MessageAggregate("M1", {ID("Data1"): Variable("B1"), ID("Data2"): Variable("B2")}),
+        {
+            ID("B1"): MessageAggregate("M2", {ID("Data"): Variable("B2")}),
+            ID("B2"): MessageAggregate("M2", {ID("Data"): Variable("B3")}),
+        },
+    )
+    assert result == expected
+
+
+def test_nested_binding() -> None:
+    result = FSMParser.condition().parseString(
+        "M1'(Data => B1) where B1 = M2'(Data => B2) where B2 = M3'(Data => B3)"
+    )[0]
+    expected = Binding(
+        MessageAggregate("M1", {ID("Data"): Variable("B1")}),
+        {
+            ID("B1"): Binding(
+                MessageAggregate("M2", {ID("Data"): Variable("B2")}),
+                {ID("B2"): MessageAggregate("M3", {ID("Data"): Variable("B3")})},
+            )
+        },
     )
     assert result == expected
