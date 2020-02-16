@@ -52,46 +52,6 @@ from rflx.statement import Assignment
 
 class FSMParser:
     @classmethod
-    def __parse_less(cls, tokens: List[List[Expr]]) -> Expr:
-        t = tokens[0]
-        return Less(t[0], t[2])
-
-    @classmethod
-    def __parse_greater(cls, tokens: List[List[Expr]]) -> Expr:
-        t = tokens[0]
-        return Greater(t[0], t[2])
-
-    @classmethod
-    def __parse_equation(cls, tokens: List[List[Expr]]) -> Expr:
-        t = tokens[0]
-        return Equal(t[0], t[2])
-
-    @classmethod
-    def __parse_inequation(cls, tokens: List[List[Expr]]) -> Expr:
-        t = tokens[0]
-        return NotEqual(t[0], t[2])
-
-    @classmethod
-    def __parse_conj(cls, tokens: List[List[Expr]]) -> Expr:
-        t = tokens[0]
-        return And(*t)
-
-    @classmethod
-    def __parse_disj(cls, tokens: List[List[Expr]]) -> Expr:
-        t = tokens[0]
-        return Or(*t)
-
-    @classmethod
-    def __parse_in(cls, tokens: List[List[Expr]]) -> Expr:
-        t = tokens[0]
-        return Contains(t[0], t[2])
-
-    @classmethod
-    def __parse_notin(cls, tokens: List[List[Expr]]) -> Expr:
-        t = tokens[0]
-        return NotContains(t[0], t[2])
-
-    @classmethod
     def __parse_quantifier(cls, tokens: List[Expr]) -> Expr:
         assert isinstance(tokens[1], ID)
         if tokens[0] == "all":
@@ -211,14 +171,14 @@ class FSMParser:
             atom,
             [
                 (suffix, 1, opAssoc.LEFT, cls.__parse_suffix),
-                (Keyword("<"), 2, opAssoc.LEFT, cls.__parse_less),
-                (Keyword(">"), 2, opAssoc.LEFT, cls.__parse_greater),
-                (Keyword("="), 2, opAssoc.LEFT, cls.__parse_equation),
-                (Keyword("/="), 2, opAssoc.LEFT, cls.__parse_inequation),
-                (Keyword("not in"), 2, opAssoc.LEFT, cls.__parse_notin),
-                (Keyword("in"), 2, opAssoc.LEFT, cls.__parse_in),
-                (Keyword("and").suppress(), 2, opAssoc.LEFT, cls.__parse_conj),
-                (Keyword("or").suppress(), 2, opAssoc.LEFT, cls.__parse_disj),
+                (Keyword("<"), 2, opAssoc.LEFT, lambda t: Less(t[0][0], t[0][2])),
+                (Keyword(">"), 2, opAssoc.LEFT, lambda t: Greater(t[0][0], t[0][2])),
+                (Keyword("="), 2, opAssoc.LEFT, lambda t: Equal(t[0][0], t[0][2])),
+                (Keyword("/="), 2, opAssoc.LEFT, lambda t: NotEqual(t[0][0], t[0][2])),
+                (Keyword("not in"), 2, opAssoc.LEFT, lambda t: NotContains(t[0][0], t[0][2])),
+                (Keyword("in"), 2, opAssoc.LEFT, lambda t: Contains(t[0][0], t[0][2])),
+                (Keyword("and").suppress(), 2, opAssoc.LEFT, lambda t: And(*t[0])),
+                (Keyword("or").suppress(), 2, opAssoc.LEFT, lambda t: Or(*t[0])),
             ],
         )
 
