@@ -56,6 +56,20 @@ def test_conjunction() -> None:
     )
 
 
+def test_disjunction_multi() -> None:
+    result = FSMParser.condition().parseString("Foo = Bar or Bar /= Baz or Baz'Valid = False")[0]
+    assert result == Or(
+        Equal(Variable("Foo"), Variable("Bar")),
+        NotEqual(Variable("Bar"), Variable("Baz")),
+        Equal(Valid(Variable("Baz")), FALSE),
+    )
+
+
+def test_not_in_whitespace_operator() -> None:
+    result = FSMParser.condition().parseString("Foo not   in  Bar")[0]
+    assert result == NotContains(Variable("Foo"), Variable("Bar"))
+
+
 def test_disjunction() -> None:
     result = FSMParser.condition().parseString("Foo = Bar or Bar /= Baz")[0]
     assert result == Or(
