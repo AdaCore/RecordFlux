@@ -50,6 +50,10 @@ from rflx.parser.grammar import (
 from rflx.statement import Assignment
 
 
+class InternalError(Exception):
+    pass
+
+
 class FSMParser:
     @classmethod
     def __parse_quantifier(cls, tokens: List[Expr]) -> Expr:
@@ -73,6 +77,26 @@ class FSMParser:
         identifier = qualified_identifier()
         identifier.setParseAction(lambda t: ID("".join(map(str, t.asList()))))
         return identifier
+
+    @classmethod
+    def __parse_op_comp(cls, tokens: List[Expr]) -> Expr:
+        if tokens[1] == "<":
+            return Less(tokens[0], tokens[2])
+        if tokens[1] == ">":
+            return Greater(tokens[0], tokens[2])
+        if tokens[1] == "=":
+            return Equal(tokens[0], tokens[2])
+        if tokens[1] == "/=":
+            return NotEqual(tokens[0], tokens[2])
+        raise InternalError(f"Unsupported comparison operator {tokens[1]}")
+
+    @classmethod
+    def __parse_op_set(cls, tokens: List[Expr]) -> Expr:
+        if tokens[1] == "not in":
+            return NotContains(tokens[0], tokens[2])
+        if tokens[1] == "in":
+            return Contains(tokens[0], tokens[2])
+        raise InternalError(f"Unsupported set operator {tokens[1]}")
 
     @classmethod
     def __parse_suffix(cls, data: List[Any]) -> Expr:
@@ -167,16 +191,18 @@ class FSMParser:
 
         suffix = binding ^ attribute ^ field ^ aggregate
 
+        op_comp = Keyword("<") | Keyword(">") | Keyword("=") | Keyword("/=")
+
+        op_set = (Keyword("not") + Keyword("in")).setParseAction(lambda t: ["not in"]) | Keyword(
+            "in"
+        )
+
         expression <<= infixNotation(
             atom,
             [
                 (suffix, 1, opAssoc.LEFT, cls.__parse_suffix),
-                (Keyword("<"), 2, opAssoc.LEFT, lambda t: Less(t[0][0], t[0][2])),
-                (Keyword(">"), 2, opAssoc.LEFT, lambda t: Greater(t[0][0], t[0][2])),
-                (Keyword("="), 2, opAssoc.LEFT, lambda t: Equal(t[0][0], t[0][2])),
-                (Keyword("/="), 2, opAssoc.LEFT, lambda t: NotEqual(t[0][0], t[0][2])),
-                (Keyword("not in"), 2, opAssoc.LEFT, lambda t: NotContains(t[0][0], t[0][2])),
-                (Keyword("in"), 2, opAssoc.LEFT, lambda t: Contains(t[0][0], t[0][2])),
+                (op_comp, 2, opAssoc.LEFT, lambda t: cls.__parse_op_comp(t[0])),
+                (op_set, 2, opAssoc.LEFT, lambda t: cls.__parse_op_set(t[0])),
                 (Keyword("and").suppress(), 2, opAssoc.LEFT, lambda t: And(*t[0])),
                 (Keyword("or").suppress(), 2, opAssoc.LEFT, lambda t: Or(*t[0])),
             ],
