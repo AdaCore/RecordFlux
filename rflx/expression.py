@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 import itertools
+import operator
 from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
 from enum import Enum
@@ -893,6 +894,17 @@ class Relation(BinExpr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
+    def _simplified(
+        self,
+        relation_operator: Callable[[Number, Number], bool],
+        facts: Mapping["Name", Expr] = None,
+    ) -> Expr:
+        left = self.left.simplified(facts)
+        right = self.right.simplified(facts)
+        if isinstance(left, Number) and isinstance(right, Number):
+            return TRUE if relation_operator(left, right) else FALSE
+        return self.__class__(left, right)
+
     @property
     def precedence(self) -> Precedence:
         return Precedence.relational_operator
@@ -905,6 +917,9 @@ class Less(Relation):
     @property
     def symbol(self) -> str:
         return " < "
+
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
+        return self._simplified(operator.lt, facts)
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -922,6 +937,9 @@ class LessEqual(Relation):
     def symbol(self) -> str:
         return " <= "
 
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
+        return self._simplified(operator.le, facts)
+
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -937,6 +955,9 @@ class Equal(Relation):
     @property
     def symbol(self) -> str:
         return " = "
+
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
+        return self._simplified(operator.eq, facts)
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -955,6 +976,9 @@ class GreaterEqual(Relation):
     def symbol(self) -> str:
         return " >= "
 
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
+        return self._simplified(operator.ge, facts)
+
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -971,6 +995,9 @@ class Greater(Relation):
     def symbol(self) -> str:
         return " > "
 
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
+        return self._simplified(operator.gt, facts)
+
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -986,6 +1013,9 @@ class NotEqual(Relation):
     @property
     def symbol(self) -> str:
         return " /= "
+
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
+        return self._simplified(operator.ne, facts)
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
