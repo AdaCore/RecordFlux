@@ -174,7 +174,11 @@ package body {prefix}Generic_Types is
             Lemmas.Left_Shift_Limit (Element_Value, Value'Size, LSE_Offset);
             Lemmas.Right_Shift_Limit (Byte'Pos (Read (Most_Significant_Index)), ES - UR_Offset, UR_Offset);
             Lemmas.Left_Shift_Limit (UR_Value, ES - UR_Offset, UR_Offset);
-
+            pragma Assert (LR_Value in 0 .. 2**LSE_Offset - 1);
+            pragma Assert (Element_Value * Pow2_LSE_Offset in 0 .. 2**UR_Offset);
+            pragma Assert (UR_Value in 0 .. 2**(ES - UR_Offset) - 1);
+            pragma Assert (UR_Value * 2**UR_Offset in 0 .. 2**ES - 1);
+            pragma Assert (LR_Value + Element_Value * Pow2_LSE_Offset + UR_Value * 2**UR_Offset in 0 .. 2**ES - 1);
             Write (Least_Significant_Index, Byte'Val (LR_Value + Element_Value * Pow2_LSE_Offset + UR_Value * 2**UR_Offset));
          end;
 
@@ -214,8 +218,10 @@ package body {prefix}Generic_Types is
             Lemmas.Right_Shift_Limit (Byte'Pos (Read (Most_Significant_Index)), MSE_Offset, MSE_Bits);
             pragma Assert (2**MSE_Offset <= Natural'Last);
             Lemmas.Left_Shift_Limit (MSE_Current, MSE_Offset, MSE_Bits);
-            pragma Assert (MSE_Current * 2**MSE_Bits + MSE_Value <= Byte'Pos (Byte'Last));
-
+            pragma Assert (MSE_Current >= 0);
+            pragma Assert (2**MSE_Bits >= 0);
+            pragma Assert (MSE_Current * 2**MSE_Bits in 0 .. 2**ES - 2**MSE_Bits);
+            pragma Assert (MSE_Value in 0 .. 2**MSE_Bits - 1);
             Write (Most_Significant_Index, Byte'Val (MSE_Current * 2**MSE_Bits + MSE_Value));
          end;
       end if;
