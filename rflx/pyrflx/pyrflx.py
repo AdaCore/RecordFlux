@@ -1,15 +1,13 @@
-
 from pathlib import Path
 from typing import List
-from collections import namedtuple
 
-from rflx.parser import Parser, ParserError
+from rflx.parser import Parser
 
-from .package import Package
 from .message import Message
+from .package import Package
 
-class PyRFLX(object):
 
+class PyRFLX:
     def __init__(self, files: List[str]) -> None:
         parser = Parser()
 
@@ -22,5 +20,5 @@ class PyRFLX(object):
         packages = set(m.package for m in messages)
         for p in packages:
             setattr(self, p, Package(p))
-            for m in filter(lambda x: x.package == p, messages):
+            for m in [x for x in messages if x.package == p]:
                 getattr(self, p)[m.name] = Message(m)
