@@ -37,11 +37,11 @@ from rflx.fsm_expression import (
     Field,
     ForAll,
     ForSome,
-    FunctionCall,
     Head,
     MessageAggregate,
     NotContains,
     Present,
+    SubprogramCall,
     Valid,
 )
 from rflx.identifier import ID
@@ -74,7 +74,7 @@ class FSMParser:
     @classmethod
     def __parse_function_call(cls, tokens: List[Expr]) -> Expr:
         assert isinstance(tokens[0], ID)
-        return FunctionCall(tokens[0], tokens[1:])
+        return SubprogramCall(tokens[0], tokens[1:])
 
     @classmethod
     def __identifier(cls) -> Token:
