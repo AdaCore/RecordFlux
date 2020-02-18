@@ -164,6 +164,20 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_number_pow(self) -> None:
         self.assertEqual(Number(2) ** Number(4), Number(16))
 
+    def test_number_eq(self) -> None:
+        self.assertTrue(Number(1) == Number(1))
+        self.assertTrue(Number(1, 10) == Number(1, 16))
+        self.assertTrue(Number(42, 16) == Number(42, 10))
+        self.assertFalse(Number(1) == Number(2))
+        self.assertFalse(Number(1, 16) == Number(2, 16))
+
+    def test_number_ne(self) -> None:
+        self.assertFalse(Number(1) != Number(1))
+        self.assertFalse(Number(1, 10) != Number(1, 16))
+        self.assertFalse(Number(42, 16) != Number(42, 10))
+        self.assertTrue(Number(1) != Number(2))
+        self.assertTrue(Number(1, 16) != Number(2, 16))
+
     def test_number_lt(self) -> None:
         self.assertEqual(Number(1) < Number(2), True)
         self.assertEqual(Number(2) < Number(2), False)
