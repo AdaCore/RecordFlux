@@ -210,6 +210,12 @@ def test_present() -> None:
     assert result == Present(Variable("Something"))
 
 
+def test_list_comprehension_without_condition() -> None:
+    result = FSMParser.condition().parseString("[for K in PSKs => K.Identity]")[0]
+    expected = Comprehension("K", Variable("PSKs"), Variable("K.Identity"), TRUE)
+    assert result == expected
+
+
 def test_conjunction_present() -> None:
     result = FSMParser.condition().parseString("Foo'Present and Bar'Present")[0]
     assert result == And(Present(Variable("Foo")), Present(Variable("Bar")))
