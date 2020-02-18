@@ -72,7 +72,7 @@ class FSMParser:
         return Comprehension(tokens[0], tokens[1], tokens[2], tokens[3])
 
     @classmethod
-    def __parse_function_call(cls, tokens: List[Expr]) -> Expr:
+    def __parse_call(cls, tokens: List[Expr]) -> Expr:
         assert isinstance(tokens[0], ID)
         return SubprogramCall(tokens[0], tokens[1:])
 
@@ -159,7 +159,7 @@ class FSMParser:
 
         lpar, rpar = map(Suppress, "()")
         function_call = cls.__identifier() + lpar + parameters + rpar
-        function_call.setParseAction(cls.__parse_function_call)
+        function_call.setParseAction(cls.__parse_call)
 
         quantifier = (
             Keyword("for").suppress()
@@ -251,6 +251,14 @@ class FSMParser:
 
     @classmethod
     def action(cls) -> Token:
-        action = cls.__identifier() + Keyword(":=").suppress() + cls.expression() + StringEnd()
-        action.setParseAction(lambda t: Assignment(t[0], t[1]))
-        return action
+
+        parameters = delimitedList(cls.expression(), delim=",")
+
+        lpar, rpar = map(Suppress, "()")
+        call = cls.__identifier() + lpar + parameters + rpar
+        call.setParseAction(cls.__parse_call)
+
+        assignment = cls.__identifier() + Keyword(":=").suppress() + cls.expression() + StringEnd()
+        assignment.setParseAction(lambda t: Assignment(t[0], t[1]))
+
+        return assignment | call
