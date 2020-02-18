@@ -1,9 +1,7 @@
-
-import rflx.model as Model
 from .message import Message
 
-class Package:
 
+class Package:
     def __init__(self, name: str) -> None:
         self.__name = name
 
@@ -16,4 +14,3 @@ class Package:
 
     def __setitem__(self, key: str, value: Message) -> None:
         setattr(self, key, value)
-
