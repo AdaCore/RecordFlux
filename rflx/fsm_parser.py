@@ -252,13 +252,23 @@ class FSMParser:
     @classmethod
     def action(cls) -> Token:
 
-        parameters = delimitedList(cls.expression(), delim=",")
-
         lpar, rpar = map(Suppress, "()")
-        call = cls.__identifier() + lpar + parameters + rpar
+
+        parameters = lpar + delimitedList(cls.expression(), delim=",") + rpar
+
+        call = cls.__identifier() + parameters
         call.setParseAction(cls.__parse_call)
 
         assignment = cls.__identifier() + Keyword(":=").suppress() + cls.expression() + StringEnd()
         assignment.setParseAction(lambda t: Assignment(t[0], t[1]))
 
-        return assignment | call
+        attribute_designator = Keyword("Append") | Keyword("Extend")
+
+        list_operation = (
+            cls.__identifier() + Literal("'").suppress() + attribute_designator + parameters
+        )
+        list_operation.setParseAction(
+            lambda t: Assignment(t[0], SubprogramCall(t[1], [Variable(t[0]), t[2]]))
+        )
+
+        return assignment | list_operation | call

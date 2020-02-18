@@ -13,3 +13,11 @@ def test_simple_subprogram_call() -> None:
     result = FSMParser.action().parseString("Sub (Arg)")[0]
     expected = SubprogramCall("Sub", [Variable("Arg")])
     assert result == expected
+
+
+def test_list_append() -> None:
+    result = FSMParser.action().parseString("Extensions_List'Append (Foo)")[0]
+    expected = Assignment(
+        "Extensions_List", SubprogramCall("Append", [Variable("Extensions_List"), Variable("Foo")]),
+    )
+    assert result == expected
