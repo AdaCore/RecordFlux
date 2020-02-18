@@ -119,7 +119,7 @@ class SubprogramCall(Expr):
         self.__arguments = arguments
 
     def __str__(self) -> str:
-        arguments = ", ".join(["{a}" for a in self.__arguments])
+        arguments = ", ".join([f"{a}" for a in self.__arguments])
         return f"{self.__name} ({arguments})"
 
     def __neg__(self) -> Expr:
