@@ -25,6 +25,7 @@ from rflx.fsm_expression import (
     Head,
     MessageAggregate,
     NotContains,
+    Opaque,
     Present,
     SubprogramCall,
     Valid,
@@ -48,9 +49,9 @@ def test_valid() -> None:
     assert result == Valid(Variable("Something"))
 
 
-def test_conjunction_valid() -> None:
-    result = FSMParser.condition().parseString("Foo'Valid and Bar'Valid")[0]
-    assert result == And(Valid(Variable("Foo")), Valid(Variable("Bar")))
+def test_opaque() -> None:
+    result = FSMParser.condition().parseString("Something'Opaque")[0]
+    assert result == Opaque(Variable("Something"))
 
 
 def test_conjunction() -> None:
@@ -58,6 +59,11 @@ def test_conjunction() -> None:
     assert result == And(
         Equal(Variable("Foo"), Variable("Bar")), NotEqual(Variable("Bar"), Variable("Baz"))
     )
+
+
+def test_conjunction_valid() -> None:
+    result = FSMParser.condition().parseString("Foo'Valid and Bar'Valid")[0]
+    assert result == And(Valid(Variable("Foo")), Valid(Variable("Bar")))
 
 
 def test_disjunction_multi() -> None:

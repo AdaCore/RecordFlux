@@ -19,6 +19,10 @@ class Head(Attribute):
     pass
 
 
+class Opaque(Attribute):
+    pass
+
+
 class Quantifier(Expr):
     def __init__(
         self, quantifier: StrID, iteratable: Expr, predicate: Expr, location: Location = None
