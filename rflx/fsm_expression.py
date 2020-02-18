@@ -29,7 +29,7 @@ class Quantifier(Expr):
         self.__predicate = predicate
         self.symbol: str = ""
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f"for {self.symbol} {self.__quantifier} in {self.__iterable} => {self.__predicate}"
 
     def __neg__(self) -> Expr:
@@ -118,7 +118,7 @@ class SubprogramCall(Expr):
         self.__name = ID(name)
         self.__arguments = arguments
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         arguments = ", ".join(["{a}" for a in self.__arguments])
         return f"{self.__name} ({arguments})"
 
@@ -142,7 +142,7 @@ class Field(Expr):
         self.__expression = expression
         self.__field = ID(field)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f"{self.__expression}.{self.__field}"
 
     def __neg__(self) -> Expr:
@@ -174,7 +174,7 @@ class Comprehension(Expr):
         self.__selector = selector
         self.__condition = condition
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return (
             f"[for {self.__iterator} in {self.__array} => "
             f"{self.__selector} when {self.__condition}]"
@@ -200,11 +200,9 @@ class MessageAggregate(Expr):
         self.__name = ID(name)
         self.__data = {ID(k): v for k, v in data.items()}
 
-    def __repr__(self) -> str:
-        data = ", ".join(
-            [f"{type(k)}:{k} => {type(self.__data[k])}:{self.__data[k]}" for k in self.__data]
-        )
-        return f"{type(self.__name)}:{self.__name}'({data})"
+    def __str__(self) -> str:
+        data = ", ".join([f"{k} => {self.__data[k]}" for k in self.__data])
+        return f"{self.__name}'({data})"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -226,7 +224,7 @@ class Binding(Expr):
         self.__expr = expr
         self.__data = {ID(k): v for k, v in data.items()}
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         data = ", ".join(["{k} = {v}".format(k=k, v=self.__data[k]) for k in self.__data])
         return f"{self.__expr} where {data}"
 
