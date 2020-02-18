@@ -471,6 +471,13 @@ class Number(Expr):
             return Number(self.value % other.value)
         return NotImplemented
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Number):
+            return self.value == other.value
+        if isinstance(other, Expr):
+            return False
+        return NotImplemented
+
     def __lt__(self, other: object) -> bool:
         if isinstance(other, Number):
             return self.value < other.value
