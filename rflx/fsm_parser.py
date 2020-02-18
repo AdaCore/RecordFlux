@@ -16,14 +16,18 @@ from pyparsing import (
 from rflx.expression import (
     FALSE,
     TRUE,
+    Add,
     And,
+    Div,
     Equal,
     Expr,
     Greater,
     Length,
     Less,
+    Mul,
     NotEqual,
     Or,
+    Sub,
     Variable,
 )
 from rflx.fsm_expression import (
@@ -97,6 +101,30 @@ class FSMParser:
         if tokens[1] == "in":
             return Contains(tokens[0], tokens[2])
         raise InternalError(f"Unsupported set operator {tokens[1]}")
+
+    @classmethod
+    def __parse_op_add_sub(cls, tokens: List[Expr]) -> Expr:
+        result = tokens[0]
+        for op, right in zip(tokens[1::2], tokens[2::2]):
+            if op == "+":
+                result = Add(result, right)
+            elif op == "-":
+                result = Sub(result, right)
+            else:
+                raise InternalError(f"Unsupported add/sub operator {op}")
+        return result
+
+    @classmethod
+    def __parse_op_mul_div(cls, tokens: List[Expr]) -> Expr:
+        result = tokens[0]
+        for op, right in zip(tokens[1::2], tokens[2::2]):
+            if op == "*":
+                result = Mul(result, right)
+            elif op == "/":
+                result = Div(result, right)
+            else:
+                raise InternalError(f"Unsupported mul/div operator {op}")
+        return result
 
     @classmethod
     def __parse_suffix(cls, data: List[Any]) -> Expr:
@@ -193,6 +221,10 @@ class FSMParser:
 
         op_comp = Keyword("<") | Keyword(">") | Keyword("=") | Keyword("/=")
 
+        op_add_sub = Keyword("+") | Keyword("-")
+
+        op_mul_div = Keyword("*") | Keyword("/")
+
         op_set = (Keyword("not") + Keyword("in")).setParseAction(lambda t: ["not in"]) | Keyword(
             "in"
         )
@@ -201,8 +233,10 @@ class FSMParser:
             atom,
             [
                 (suffix, 1, opAssoc.LEFT, cls.__parse_suffix),
-                (op_comp, 2, opAssoc.LEFT, lambda t: cls.__parse_op_comp(t[0])),
                 (op_set, 2, opAssoc.LEFT, lambda t: cls.__parse_op_set(t[0])),
+                (op_mul_div, 2, opAssoc.LEFT, lambda t: cls.__parse_op_mul_div(t[0])),
+                (op_add_sub, 2, opAssoc.LEFT, lambda t: cls.__parse_op_add_sub(t[0])),
+                (op_comp, 2, opAssoc.LEFT, lambda t: cls.__parse_op_comp(t[0])),
                 (Keyword("and").suppress(), 2, opAssoc.LEFT, lambda t: And(*t[0])),
                 (Keyword("or").suppress(), 2, opAssoc.LEFT, lambda t: Or(*t[0])),
             ],

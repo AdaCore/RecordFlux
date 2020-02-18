@@ -1,14 +1,18 @@
 from rflx.expression import (
     FALSE,
     TRUE,
+    Add,
     And,
+    Div,
     Equal,
     Greater,
     Length,
     Less,
+    Mul,
     NotEqual,
     Number,
     Or,
+    Sub,
     Variable,
 )
 from rflx.fsm_expression import (
@@ -368,5 +372,41 @@ def test_nested_binding() -> None:
                 {ID("B2"): MessageAggregate("M3", {ID("Data"): Variable("B3")})},
             )
         },
+    )
+    assert result == expected
+
+
+def test_simple_add() -> None:
+    result = FSMParser.condition().parseString("Foo + Bar")[0]
+    expected = Add(Variable("Foo"), Variable("Bar"))
+    assert result == expected
+
+
+def test_simple_sub() -> None:
+    result = FSMParser.condition().parseString("Foo - Bar")[0]
+    expected = Sub(Variable("Foo"), Variable("Bar"))
+    assert result == expected
+
+
+def test_simple_mul() -> None:
+    result = FSMParser.condition().parseString("Foo * Bar")[0]
+    expected = Mul(Variable("Foo"), Variable("Bar"))
+    assert result == expected
+
+
+def test_simple_div() -> None:
+    result = FSMParser.condition().parseString("Foo / Bar")[0]
+    expected = Div(Variable("Foo"), Variable("Bar"))
+    assert result == expected
+
+
+def test_arith_expression() -> None:
+    result = FSMParser.condition().parseString("Foo + Bar - Foo2 / Bar * Baz + 3")[0]
+    expected = Add(
+        Sub(
+            Add(Variable("Foo"), Variable("Bar")),
+            Mul(Div(Variable("Foo2"), Variable("Bar")), Variable("Baz")),
+        ),
+        Number(3),
     )
     assert result == expected
