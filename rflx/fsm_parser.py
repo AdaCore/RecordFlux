@@ -56,7 +56,7 @@ from rflx.parser.grammar import (
     qualified_identifier,
     unqualified_identifier,
 )
-from rflx.statement import Assignment
+from rflx.statement import Assignment, Erase
 
 
 class InternalError(Exception):
@@ -158,8 +158,8 @@ class FSMParser:
     @classmethod
     def expression(cls) -> Token:  # pylint: disable=too-many-locals
 
-        literal = boolean_literal()
-        literal.setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
+        bool_literal = boolean_literal()
+        bool_literal.setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
 
         string_literal = (
             Literal('"').suppress()
@@ -215,7 +215,7 @@ class FSMParser:
 
         atom = (
             numeric_literal()
-            | literal
+            | bool_literal
             | string_literal
             | quantifier
             | comprehension
@@ -285,7 +285,10 @@ class FSMParser:
         call = cls.__identifier() + parameters
         call.setParseAction(cls.__parse_call)
 
-        assignment = cls.__identifier() + Keyword(":=").suppress() + cls.expression() + StringEnd()
+        erase = cls.__identifier() + Literal(":=").suppress() + Keyword("null")
+        erase.setParseAction(lambda t: Erase(t[0]))
+
+        assignment = cls.__identifier() + Literal(":=").suppress() + cls.expression()
         assignment.setParseAction(lambda t: Assignment(t[0], t[1]))
 
         attribute_designator = Keyword("Append") | Keyword("Extend")
@@ -297,4 +300,4 @@ class FSMParser:
             lambda t: Assignment(t[0], SubprogramCall(t[1], [Variable(t[0]), t[2]]))
         )
 
-        return assignment | list_operation | call
+        return erase | assignment | list_operation | call

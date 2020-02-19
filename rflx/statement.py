@@ -29,3 +29,12 @@ class Assignment(Statement):
 
     def __str__(self) -> str:
         return f"{self.__name} := {self.__expression}"
+
+
+class Erase(Statement):
+    def __init__(self, name: StrID, location: Location = None) -> None:
+        super().__init__(location)
+        self.__name = ID(name)
+
+    def __str__(self) -> str:
+        return f"{self.__name} := null"
