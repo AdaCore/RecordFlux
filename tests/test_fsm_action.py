@@ -1,5 +1,5 @@
 from rflx.expression import Variable
-from rflx.fsm_expression import SubprogramCall
+from rflx.fsm_expression import String, SubprogramCall
 from rflx.fsm_parser import FSMParser
 from rflx.statement import Assignment
 
@@ -20,4 +20,10 @@ def test_list_append() -> None:
     expected = Assignment(
         "Extensions_List", SubprogramCall("Append", [Variable("Extensions_List"), Variable("Foo")]),
     )
+    assert result == expected
+
+
+def test_subprogram_string_argument() -> None:
+    result = FSMParser.action().parseString('Sub (Arg1, "String arg", Arg2)')[0]
+    expected = SubprogramCall("Sub", [Variable("Arg1"), String("String arg"), Variable("Arg2")])
     assert result == expected
