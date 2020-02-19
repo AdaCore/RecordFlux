@@ -27,6 +27,7 @@ from rflx.fsm_expression import (
     NotContains,
     Opaque,
     Present,
+    String,
     SubprogramCall,
     Valid,
 )
@@ -425,4 +426,16 @@ def test_arith_expression() -> None:
         ),
         Number(3),
     )
+    assert result == expected
+
+
+def test_string() -> None:
+    result = FSMParser.condition().parseString('"SomeString"')[0]
+    expected = String("SomeString")
+    assert result == expected
+
+
+def test_string_with_whitespace() -> None:
+    result = FSMParser.condition().parseString('"Some String With Whitespace"')[0]
+    expected = String("Some String With Whitespace")
     assert result == expected

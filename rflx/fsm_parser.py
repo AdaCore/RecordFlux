@@ -8,10 +8,12 @@ from pyparsing import (
     StringEnd,
     Suppress,
     Token,
+    Word,
     delimitedList,
     infixNotation,
     oneOf,
     opAssoc,
+    printables,
 )
 
 from rflx.expression import (
@@ -43,6 +45,7 @@ from rflx.fsm_expression import (
     NotContains,
     Opaque,
     Present,
+    String,
     SubprogramCall,
     Valid,
 )
@@ -158,6 +161,13 @@ class FSMParser:
         literal = boolean_literal()
         literal.setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
 
+        string_literal = (
+            Literal('"').suppress()
+            + Word(printables + " ", excludeChars='"')
+            + Literal('"').suppress()
+        )
+        string_literal.setParseAction(lambda t: String(t[0]))
+
         expression = Forward()
 
         parameters = delimitedList(expression, delim=",")
@@ -203,7 +213,15 @@ class FSMParser:
         variable = cls.__identifier()
         variable.setParseAction(lambda t: Variable(ID("".join(map(str, t.asList())))))
 
-        atom = numeric_literal() | literal | quantifier | comprehension | function_call | variable
+        atom = (
+            numeric_literal()
+            | literal
+            | string_literal
+            | quantifier
+            | comprehension
+            | function_call
+            | variable
+        )
 
         attribute_designator = (
             Keyword("Valid")

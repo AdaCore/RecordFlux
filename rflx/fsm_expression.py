@@ -244,3 +244,25 @@ class Binding(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+
+class String(Expr):
+    def __init__(self, data: str, location: Location = None) -> None:
+        super().__init__(location)
+        self.__data = data
+
+    def __str__(self) -> str:
+        return f'"{self.__data}"'
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def simplified(self) -> Expr:
+        raise NotImplementedError
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.undefined
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
