@@ -1,7 +1,7 @@
 from rflx.expression import Variable
 from rflx.fsm_expression import String, SubprogramCall
 from rflx.fsm_parser import FSMParser
-from rflx.statement import Assignment, Erase
+from rflx.statement import Assignment, Erase, Reset
 
 
 def test_simple_assignment() -> None:
@@ -32,4 +32,10 @@ def test_subprogram_string_argument() -> None:
 def test_variable_erasure() -> None:
     result = FSMParser.action().parseString("Variable := null")[0]
     expected = Erase("Variable")
+    assert result == expected
+
+
+def test_list_reset() -> None:
+    result = FSMParser.action().parseString("SomeList'Reset")[0]
+    expected = Reset("SomeList")
     assert result == expected
