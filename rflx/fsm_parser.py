@@ -56,7 +56,7 @@ from rflx.parser.grammar import (
     qualified_identifier,
     unqualified_identifier,
 )
-from rflx.statement import Assignment, Erase
+from rflx.statement import Assignment, Erase, Reset
 
 
 class InternalError(Exception):
@@ -300,4 +300,7 @@ class FSMParser:
             lambda t: Assignment(t[0], SubprogramCall(t[1], [Variable(t[0]), t[2]]))
         )
 
-        return erase | assignment | list_operation | call
+        list_reset = cls.__identifier() + Literal("'").suppress() + Keyword("Reset")
+        list_reset.setParseAction(lambda t: Reset(t[0]))
+
+        return erase | assignment | list_reset | list_operation | call
