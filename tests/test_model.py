@@ -2,7 +2,6 @@ from unittest import TestCase
 
 from rflx.expression import (
     TRUE,
-    UNDEFINED,
     Add,
     And,
     Div,
@@ -32,7 +31,7 @@ from rflx.model import (
 )
 from tests.models import ETHERNET_FRAME
 
-SOME_LOG_EXPR = Equal(UNDEFINED, UNDEFINED)
+SOME_LOG_EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
 
 
 # pylint: disable=too-many-public-methods
