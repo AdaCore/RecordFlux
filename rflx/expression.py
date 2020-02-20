@@ -908,6 +908,8 @@ class Relation(BinExpr):
     ) -> Expr:
         left = self.left.simplified(facts)
         right = self.right.simplified(facts)
+        if relation_operator in [operator.eq, operator.le, operator.ge] and left == right:
+            return TRUE
         if isinstance(left, Number) and isinstance(right, Number):
             return TRUE if relation_operator(left, right) else FALSE
         return self.__class__(left, right)

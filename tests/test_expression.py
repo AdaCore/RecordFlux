@@ -38,7 +38,7 @@ from rflx.expression import (
     Variable,
 )
 
-EXPR = Equal(UNDEFINED, UNDEFINED)
+EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
 
 
 class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-methods
@@ -455,6 +455,11 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             ),
             FALSE,
         )
+        self.assertEqual(LessEqual(Variable("X"), Variable("X")).simplified(), TRUE)
+        self.assertEqual(
+            LessEqual(Variable("X"), Variable("Y")).simplified(),
+            LessEqual(Variable("X"), Variable("Y")),
+        )
 
     def test_equal_neg(self) -> None:
         self.assertEqual(-Equal(Variable("X"), Number(1)), NotEqual(Variable("X"), Number(1)))
@@ -475,6 +480,10 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 {Variable("X"): Number(41)}
             ),
             FALSE,
+        )
+        self.assertEqual(Equal(Variable("X"), Variable("X")).simplified(), TRUE)
+        self.assertEqual(
+            Equal(Variable("X"), Variable("Y")).simplified(), Equal(Variable("X"), Variable("Y"))
         )
 
     def test_greater_neg(self) -> None:
