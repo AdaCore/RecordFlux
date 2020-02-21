@@ -1,7 +1,16 @@
 import unittest
 
-from rflx.model import ModularInteger, RangeInteger, Enumeration, Opaque, Number
-from rflx.pyrflx import PyRFLX, Message, ModularValue, RangeValue, EnumValue, OpaqueValue, NotInitializedError
+from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger
+from rflx.pyrflx import (
+    EnumValue,
+    Field,
+    Message,
+    ModularValue,
+    NotInitializedError,
+    OpaqueValue,
+    PyRFLX,
+    RangeValue,
+)
 
 
 class TestPyRFLX(unittest.TestCase):
@@ -32,7 +41,7 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
         value = tlv.field_type("Value")
         assert isinstance(value, OpaqueValue)
-        value.assign(b'\x01')
+        value.assign(b"\x01")
         tlv.set("Value", value)
         self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
         tag_value.assign("Msg_Error")
@@ -91,6 +100,58 @@ class TestPyRFLX(unittest.TestCase):
         self.assertFalse(opaquevalue.initialized)
         with self.assertRaises(NotInitializedError):
             opaquevalue.value
-        opaquevalue.assign(b'\x01\x02')
+        opaquevalue.assign(b"\x01\x02")
         self.assertTrue(opaquevalue.initialized)
         self.assertEqual(opaquevalue.length, 16)
+
+    def test_field_append(self) -> None:
+        f = Field("f")
+        f1 = f
+        f2 = Field("f2")
+        f1.successor = f2
+        f.append(f2)
+        self.assertEqual(f, f1)
+        f3 = Field("f2")
+        f2.successor = f3
+        f.append(f3)
+        self.assertEqual(f, f1)
+        f2.successor = None
+        f.append(f2)
+        self.assertEqual(f, f1)
+
+    def test_field_keys(self) -> None:
+        f = Field("f1")
+        f.append(Field("f2"))
+        f.append(Field("f3"))
+        self.assertEqual(f.keys(), ["f1", "f2", "f3"])
+
+    def test_field_items(self) -> None:
+        f1 = Field("f1")
+        f2 = Field("f2")
+        f3 = Field("f3")
+        f1.append(f2)
+        f1.append(f3)
+        self.assertEqual(f1.items(), [f1, f2, f3])
+
+    def test_field_getitem(self) -> None:
+        f1 = Field("f1")
+        f2 = Field("f2")
+        f3 = Field("f3")
+        f1.append(f2)
+        f1.append(f3)
+        self.assertEqual(f1["f1"], f1)
+        self.assertEqual(f1["f2"], f2)
+        self.assertEqual(f1["f3"], f3)
+        self.assertEqual(f1["f2"], f2["f2"])
+        self.assertEqual(f1["f3"], f2["f3"])
+
+    def test_field_contains(self) -> None:
+        f1 = Field("f1")
+        f2 = Field("f2")
+        f3 = Field("f3")
+        f1.append(f2)
+        f1.append(f3)
+        self.assertTrue("f1" in f1)
+        self.assertTrue("f2" in f1)
+        self.assertTrue("f3" in f1)
+        self.assertTrue("f2" in f2)

@@ -1,8 +1,8 @@
-
+from abc import abstractmethod, abstractproperty
 from typing import Any
-from abc import abstractproperty, abstractmethod
-from rflx.expression import TRUE, Variable, Expr
-from rflx.model import Type, ModularInteger, Number, RangeInteger, Enumeration, Opaque, Scalar
+
+from rflx.expression import TRUE, Expr, Variable
+from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger, Scalar, Type
 
 
 class NotInitializedError(Exception):
@@ -10,7 +10,6 @@ class NotInitializedError(Exception):
 
 
 class TypeValue:
-
     def __init__(self, vtype: Type) -> None:
         self.__type = vtype
         self._initialized = False
@@ -53,7 +52,6 @@ class TypeValue:
 
 
 class ScalarValue(TypeValue):
-
     def __init__(self, vtype: Scalar) -> None:
         super(ScalarValue, self).__init__(vtype)
 
@@ -78,8 +76,10 @@ class ModularValue(ScalarValue):
         super(ModularValue, self).__init__(vtype)
 
     def assign(self, value: int, check: bool = True) -> None:
-        if self.type.constraints("value", check).simplified(
-                {Variable("value"): Number(value)}) != TRUE:
+        if (
+            self.type.constraints("value", check).simplified({Variable("value"): Number(value)})
+            != TRUE
+        ):
             raise ValueError("value not in type range: " + repr(value))
         self.__value = value
         self._initialized = True
@@ -103,8 +103,10 @@ class RangeValue(ScalarValue):
         super(RangeValue, self).__init__(vtype)
 
     def assign(self, value: int, check: bool = True) -> None:
-        if self.type.constraints("value", check).simplified(
-                {Variable("value"): Number(value)}) != TRUE:
+        if (
+            self.type.constraints("value", check).simplified({Variable("value"): Number(value)})
+            != TRUE
+        ):
             raise ValueError("value not in type range: " + repr(value))
         self.__value = value
         self._initialized = True
@@ -129,9 +131,15 @@ class EnumValue(ScalarValue):
 
     def assign(self, value: str, check: bool = True) -> None:
         assert isinstance(self.type, Enumeration)
-        if self.type.constraints("value", check).simplified(
-                {**{Variable(k): v for k, v in self.type.literals.items()},
-                 **{Variable("value"): self.type.literals[value]}}) != TRUE:
+        if (
+            self.type.constraints("value", check).simplified(
+                {
+                    **{Variable(k): v for k, v in self.type.literals.items()},
+                    **{Variable("value"): self.type.literals[value]},
+                }
+            )
+            != TRUE
+        ):
             raise ValueError("value not in type range: " + repr(value))
         self.__value = value
         self._initialized = True
