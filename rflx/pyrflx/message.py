@@ -1,21 +1,10 @@
-from typing import Dict, List, Mapping, Union
+from typing import List, Mapping, Union
 
 import rflx.model as model
 from rflx.common import unique
-from rflx.expression import (
-    TRUE,
-    UNDEFINED,
-    Add,
-    Attribute,
-    Expr,
-    First,
-    Length,
-    Name,
-    Number,
-    Variable,
-)
+from rflx.expression import TRUE, UNDEFINED, Add, Expr, First, Length, Name, Number, Variable
 
-from .typevalue import EnumValue, ModularValue, OpaqueValue, RangeValue, ScalarValue, TypeValue
+from .typevalue import OpaqueValue, ScalarValue, TypeValue
 
 
 class Field:
