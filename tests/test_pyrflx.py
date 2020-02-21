@@ -1,14 +1,14 @@
 import unittest
 
 from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger
-from rflx.pyrflx import (
+from rflx.pyrflx.message import Field, Message
+from rflx.pyrflx.package import Package
+from rflx.pyrflx.pyrflx import PyRFLX
+from rflx.pyrflx.typevalue import (
     EnumValue,
-    Field,
-    Message,
     ModularValue,
     NotInitializedError,
     OpaqueValue,
-    PyRFLX,
     RangeValue,
 )
 
@@ -18,15 +18,13 @@ class TestPyRFLX(unittest.TestCase):
         self.testdir = "specs"
 
     def test_attributes(self) -> None:
-        # pylint: disable=no-member
         pyrflx = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])
-        self.assertTrue(hasattr(pyrflx, "TLV"))
-        package_tlv = pyrflx.TLV
-        self.assertTrue(hasattr(package_tlv, "Message"))
+        self.assertIsInstance(pyrflx["TLV"], Package)
+        package_tlv = pyrflx["TLV"]
+        self.assertIsInstance(package_tlv["Message"], Message)
 
     def test_fields(self) -> None:
-        # pylint: disable=no-member
-        tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"]).TLV.Message
+        tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"]
         self.assertEqual(tlv.fields, ["Tag", "Length", "Value", "Checksum"])
         self.assertEqual(tlv.accessible_fields, ["Tag"])
         tag_value = tlv.field_type("Tag")
