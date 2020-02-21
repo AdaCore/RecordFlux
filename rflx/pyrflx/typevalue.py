@@ -29,7 +29,7 @@ class TypeValue:
 
     def _raise_initialized(self) -> None:
         if not self._initialized:
-            raise NotInitializedError
+            raise NotInitializedError("value not initialized")
 
     @abstractmethod
     def assign(self, value: Any, check: bool) -> None:
@@ -49,7 +49,7 @@ class TypeValue:
             return EnumValue(vtype)
         if isinstance(vtype, Opaque):
             return OpaqueValue(vtype)
-        raise ValueError
+        raise ValueError("cannot construct unknown type: " + repr(vtype))
 
 
 class ScalarValue(TypeValue):
@@ -60,6 +60,14 @@ class ScalarValue(TypeValue):
     @abstractproperty
     def expr(self) -> Expr:
         return NotImplemented
+
+    @property
+    def size(self) -> int:
+        assert isinstance(self.type, Scalar)
+        size_expr = self.type.size.simplified()
+        if isinstance(size_expr, Number):
+            return size_expr.value
+        raise TypeError("could not resolve size_expr: " + repr(size_expr))
 
 
 class ModularValue(ScalarValue):
@@ -72,7 +80,7 @@ class ModularValue(ScalarValue):
     def assign(self, value: int, check: bool = True) -> None:
         if self.type.constraints("value", check).simplified(
                 {Variable("value"): Number(value)}) != TRUE:
-            raise ValueError
+            raise ValueError("value not in type range: " + repr(value))
         self.__value = value
         self._initialized = True
 
@@ -97,7 +105,7 @@ class RangeValue(ScalarValue):
     def assign(self, value: int, check: bool = True) -> None:
         if self.type.constraints("value", check).simplified(
                 {Variable("value"): Number(value)}) != TRUE:
-            raise ValueError
+            raise ValueError("value not in type range: " + repr(value))
         self.__value = value
         self._initialized = True
 
@@ -124,7 +132,7 @@ class EnumValue(ScalarValue):
         if self.type.constraints("value", check).simplified(
                 {**{Variable(k): v for k, v in self.type.literals.items()},
                  **{Variable("value"): self.type.literals[value]}}) != TRUE:
-            raise ValueError
+            raise ValueError("value not in type range: " + repr(value))
         self.__value = value
         self._initialized = True
 
@@ -149,6 +157,11 @@ class OpaqueValue(TypeValue):
     def assign(self, value: bytes, check: bool = True) -> None:
         self.__value = value
         self._initialized = True
+
+    @property
+    def length(self) -> int:
+        self._raise_initialized()
+        return len(self.__value) * 8
 
     @property
     def value(self) -> bytes:
