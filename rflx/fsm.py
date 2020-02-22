@@ -163,77 +163,90 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
-    # pylint: disable=too-many-branches
+    def __parse_functions(self, doc: Dict[str, Any], result: Dict[StrID, Declaration]) -> None:
+        if "functions" not in doc:
+            return
+        for index, f in enumerate(doc["functions"]):
+            try:
+                name, declaration = FSMParser.declaration().parseString(f)[0]
+            except RecordFluxError as e:
+                self.error.extend(e)
+                self.error.append(
+                    f"error parsing global function declaration {index} ({e})",
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                )
+                continue
+            result[ID(name)] = declaration
+
+    def __parse_variables(self, doc: Dict[str, Any], result: Dict[StrID, Declaration]) -> None:
+        if "variables" not in doc:
+            return
+        for index, f in enumerate(doc["variables"]):
+            try:
+                name, declaration = FSMParser.declaration().parseString(f)[0]
+            except RecordFluxError as e:
+                self.error.extend(e)
+                self.error.append(
+                    f"error parsing global variable declaration {index} ({e})",
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                )
+                continue
+            result[ID(name)] = declaration
+
+    def __parse_types(self, doc: Dict[str, Any], result: Dict[StrID, Declaration]) -> None:
+        if "types" not in doc:
+            return
+        for index, f in enumerate(doc["types"]):
+            try:
+                name, declaration = FSMParser.declaration().parseString(f)[0]
+            except RecordFluxError as e:
+                self.error.extend(e)
+                self.error.append(
+                    f"error parsing private variable declaration {index} ({e})",
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                )
+                continue
+            result[ID(name)] = declaration
+
+    def __parse_channels(self, doc: Dict[str, Any], result: Dict[StrID, Declaration]) -> None:
+        if "channels" not in doc:
+            return
+        for index, f in enumerate(doc["channels"]):
+            if "name" not in f:
+                self.error.append(
+                    f"channel {index} has no name", Subsystem.SESSION, Severity.ERROR,
+                )
+                continue
+            if "mode" not in f:
+                self.error.append(
+                    f"channel {f['name']} has no mode", Subsystem.SESSION, Severity.ERROR,
+                )
+                continue
+            modes = {
+                "Read": {"read": True, "write": False},
+                "Write": {"read": False, "write": True},
+                "Read_Write": {"read": True, "write": True},
+            }
+            mode = f["mode"]
+            try:
+                result[ID(f["name"])] = Channel(modes[mode]["read"], modes[mode]["write"])
+            except KeyError:
+                self.error.append(
+                    f"channel {f['name']} has invalid mode {f['mode']}",
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                )
+                continue
+
     def __parse_declarations(self, doc: Dict[str, Any]) -> Dict[StrID, Declaration]:
         result: Dict[StrID, Declaration] = {}
-        if "functions" in doc:
-            for index, f in enumerate(doc["functions"]):
-                try:
-                    name, declaration = FSMParser.declaration().parseString(f)[0]
-                except RecordFluxError as e:
-                    self.error.extend(e)
-                    self.error.append(
-                        f"error parsing global function declaration {index} ({e})",
-                        Subsystem.SESSION,
-                        Severity.ERROR,
-                    )
-                    continue
-                result[ID(name)] = declaration
-        if "variables" in doc:
-            for index, f in enumerate(doc["variables"]):
-                try:
-                    name, declaration = FSMParser.declaration().parseString(f)[0]
-                except RecordFluxError as e:
-                    self.error.extend(e)
-                    self.error.append(
-                        f"error parsing global variable declaration {index} ({e})",
-                        Subsystem.SESSION,
-                        Severity.ERROR,
-                    )
-                    continue
-                result[ID(name)] = declaration
-        if "types" in doc:
-            for index, f in enumerate(doc["types"]):
-                try:
-                    name, declaration = FSMParser.declaration().parseString(f)[0]
-                except RecordFluxError as e:
-                    self.error.extend(e)
-                    self.error.append(
-                        f"error parsing private variable declaration {index} ({e})",
-                        Subsystem.SESSION,
-                        Severity.ERROR,
-                    )
-                    continue
-                result[ID(name)] = declaration
-        if "channels" in doc:
-            for index, f in enumerate(doc["channels"]):
-                if "name" not in f:
-                    self.error.append(
-                        f"channel {index} has no name", Subsystem.SESSION, Severity.ERROR,
-                    )
-                    continue
-                if "mode" not in f:
-                    self.error.append(
-                        f"channel {f['name']} has no mode", Subsystem.SESSION, Severity.ERROR,
-                    )
-                    continue
-                if f["mode"] == "Read":
-                    read = True
-                    write = False
-                elif f["mode"] == "Write":
-                    read = False
-                    write = True
-                elif f["mode"] == "Read_Write":
-                    read = True
-                    write = True
-                else:
-                    self.error.append(
-                        f"channel {f['name']} has invalid mode {f['mode']}",
-                        Subsystem.SESSION,
-                        Severity.ERROR,
-                    )
-                    continue
-                result[ID(f["name"])] = Channel(read=read, write=write)
+        self.__parse_functions(doc, result)
+        self.__parse_variables(doc, result)
+        self.__parse_types(doc, result)
+        self.__parse_channels(doc, result)
         return result
 
     def __parse_transitions(self, state: Dict) -> List[Transition]:
