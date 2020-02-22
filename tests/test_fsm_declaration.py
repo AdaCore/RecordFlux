@@ -1,8 +1,17 @@
 import pytest
 from pyparsing import ParseException
 
+from rflx.error import RecordFluxError
 from rflx.expression import FALSE, Variable
-from rflx.fsm_declaration import Argument, PrivateVariable, Renames, Subprogram, VariableDeclaration
+from rflx.fsm import FSM, State, StateMachine, StateName, Transition
+from rflx.fsm_declaration import (
+    Argument,
+    Channel,
+    PrivateVariable,
+    Renames,
+    Subprogram,
+    VariableDeclaration,
+)
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
 
@@ -77,3 +86,101 @@ def test_private_variable_declaration() -> None:
     result = FSMParser.declaration().parseString("Hash_Context is private")[0]
     expected = (ID("Hash_Context"), PrivateVariable())
     assert result == expected
+
+
+def test_channels() -> None:
+    f = FSM()
+    f.parse_string(
+        "fsm",
+        """
+            channels:
+                - name: Channel1_Read_Write
+                  mode: Read_Write
+                - name: Channel2_Read
+                  mode: Read
+                - name: Channel3_Write
+                  mode: Write
+            initial: START
+            final: END
+            states:
+              - name: START
+                transitions:
+                  - target: END
+              - name: END
+        """,
+    )
+    expected = StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "Channel1_Read_Write": Channel(read=True, write=True),
+            "Channel2_Read": Channel(read=True, write=False),
+            "Channel3_Write": Channel(read=False, write=True),
+        },
+    )
+    assert f.fsms[0] == expected
+
+
+def test_channel_with_invalid_mode() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match="^session: error: channel Channel1_Read_Write has invalid mode Invalid",
+    ):
+        FSM().parse_string(
+            "fsm",
+            """
+                channels:
+                    - name: Channel1_Read_Write
+                      mode: Invalid
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
+
+
+def test_channel_without_name() -> None:
+    with pytest.raises(RecordFluxError, match="^session: error: channel 0 has no name"):
+        FSM().parse_string(
+            "fsm",
+            """
+                channels:
+                    - mode: Read_Write
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
+
+
+def test_channel_without_mode() -> None:
+    with pytest.raises(
+        RecordFluxError, match="^session: error: channel Channel_Without_Mode has no mode"
+    ):
+        FSM().parse_string(
+            "fsm",
+            """
+                channels:
+                    - name: Channel_Without_Mode
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )

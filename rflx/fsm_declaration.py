@@ -42,3 +42,10 @@ class Renames(Declaration):
         super().__init__(location)
         self.__type = ID(typ)
         self.__expr = expr
+
+
+class Channel(Declaration):
+    def __init__(self, read: bool, write: bool, location: Location = None):
+        super().__init__(location)
+        self.__read = read
+        self.__write = write
