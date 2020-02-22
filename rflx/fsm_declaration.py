@@ -1,6 +1,7 @@
 from typing import List
 
 from rflx.error import Location, RecordFluxError
+from rflx.expression import Expr
 from rflx.identifier import ID, StrID
 from rflx.model import Base
 
@@ -16,6 +17,13 @@ class Argument(Declaration):
         super().__init__(location)
         self.__name = ID(name)
         self.__type = ID(typ)
+
+
+class VariableDeclaration(Declaration):
+    def __init__(self, typ: StrID, init: Expr = None, location: Location = None):
+        super().__init__(location)
+        self.__type = ID(typ)
+        self.__init = init
 
 
 class Subprogram(Declaration):

@@ -4,7 +4,7 @@ import yaml
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, Expr
-from rflx.fsm_declaration import Subprogram
+from rflx.fsm_declaration import Declaration
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID, StrID
 from rflx.model import Base
@@ -58,14 +58,14 @@ class StateMachine(Base):
         initial: StateName,
         final: StateName,
         states: Iterable[State],
-        functions: Dict[StrID, Subprogram],
+        declarations: Dict[StrID, Declaration],
         location: Location = None,
     ):  # pylint: disable=too-many-arguments
         self.__name = name
         self.__initial = initial
         self.__final = final
         self.__states = states
-        self.__functions = {ID(k): v for k, v in functions.items()}
+        self.__declarations = {ID(k): v for k, v in declarations.items()}
         self.location = location
         self.error = RecordFluxError()
 
@@ -163,24 +163,34 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
-    def __parse_functions(self, doc: Dict[str, Any]) -> Dict[StrID, Subprogram]:
-        if "functions" not in doc:
-            return {}
-
-        result: Dict[StrID, Subprogram] = {}
-        for index, f in enumerate(doc["functions"]):
-            try:
-                name, declaration = FSMParser.declaration().parseString(f)[0]
-            except RecordFluxError as e:
-                self.error.extend(e)
-                self.error.append(
-                    f"error parsing global function declaration {index} ({e})",
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                )
-                continue
-            result[ID(name)] = declaration
-        self.error.propagate()
+    def __parse_declarations(self, doc: Dict[str, Any]) -> Dict[StrID, Declaration]:
+        result: Dict[StrID, Declaration] = {}
+        if "functions" in doc:
+            for index, f in enumerate(doc["functions"]):
+                try:
+                    name, declaration = FSMParser.declaration().parseString(f)[0]
+                except RecordFluxError as e:
+                    self.error.extend(e)
+                    self.error.append(
+                        f"error parsing global function declaration {index} ({e})",
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                    )
+                    continue
+                result[ID(name)] = declaration
+        if "variables" in doc:
+            for index, f in enumerate(doc["variables"]):
+                try:
+                    name, declaration = FSMParser.declaration().parseString(f)[0]
+                except RecordFluxError as e:
+                    self.error.extend(e)
+                    self.error.append(
+                        f"error parsing global variable declaration {index} ({e})",
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                    )
+                    continue
+                result[ID(name)] = declaration
         return result
 
     def __parse_transitions(self, state: Dict) -> List[Transition]:
@@ -237,7 +247,7 @@ class FSM:
                 f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.SESSION, Severity.ERROR
             )
 
-        functions = self.__parse_functions(doc)
+        declarations = self.__parse_declarations(doc)
 
         states: List[State] = []
         for s in doc["states"]:
@@ -276,7 +286,7 @@ class FSM:
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
             states=states,
-            functions=functions,
+            declarations=declarations,
         )
         self.error.extend(fsm.error)
         self.__fsms.append(fsm)
