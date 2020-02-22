@@ -191,6 +191,19 @@ class FSM:
                     )
                     continue
                 result[ID(name)] = declaration
+        if "types" in doc:
+            for index, f in enumerate(doc["types"]):
+                try:
+                    name, declaration = FSMParser.declaration().parseString(f)[0]
+                except RecordFluxError as e:
+                    self.error.extend(e)
+                    self.error.append(
+                        f"error parsing private variable declaration {index} ({e})",
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                    )
+                    continue
+                result[ID(name)] = declaration
         return result
 
     def __parse_transitions(self, state: Dict) -> List[Transition]:
