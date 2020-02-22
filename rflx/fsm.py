@@ -4,7 +4,7 @@ import yaml
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, Expr
-from rflx.fsm_declaration import Declaration
+from rflx.fsm_declaration import Channel, Declaration
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID, StrID
 from rflx.model import Base
@@ -163,6 +163,7 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
+    # pylint: disable=too-many-branches
     def __parse_declarations(self, doc: Dict[str, Any]) -> Dict[StrID, Declaration]:
         result: Dict[StrID, Declaration] = {}
         if "functions" in doc:
@@ -204,6 +205,35 @@ class FSM:
                     )
                     continue
                 result[ID(name)] = declaration
+        if "channels" in doc:
+            for index, f in enumerate(doc["channels"]):
+                if "name" not in f:
+                    self.error.append(
+                        f"channel {index} has no name", Subsystem.SESSION, Severity.ERROR,
+                    )
+                    continue
+                if "mode" not in f:
+                    self.error.append(
+                        f"channel {f['name']} has no mode", Subsystem.SESSION, Severity.ERROR,
+                    )
+                    continue
+                if f["mode"] == "Read":
+                    read = True
+                    write = False
+                elif f["mode"] == "Write":
+                    read = False
+                    write = True
+                elif f["mode"] == "Read_Write":
+                    read = True
+                    write = True
+                else:
+                    self.error.append(
+                        f"channel {f['name']} has invalid mode {f['mode']}",
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                    )
+                    continue
+                result[ID(f["name"])] = Channel(read=read, write=write)
         return result
 
     def __parse_transitions(self, state: Dict) -> List[Transition]:
@@ -238,7 +268,7 @@ class FSM:
                 transitions.append(Transition(target=StateName(t["target"]), condition=condition))
         return transitions
 
-    def __parse(self, name: str, doc: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
+    def __parse(self, name: str, doc: Dict[str, Any]) -> None:
         if "initial" not in doc:
             self.error.append(
                 f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR
@@ -259,8 +289,6 @@ class FSM:
             self.error.append(
                 f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.SESSION, Severity.ERROR
             )
-
-        declarations = self.__parse_declarations(doc)
 
         states: List[State] = []
         for s in doc["states"]:
@@ -299,7 +327,7 @@ class FSM:
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
             states=states,
-            declarations=declarations,
+            declarations=self.__parse_declarations(doc),
         )
         self.error.extend(fsm.error)
         self.__fsms.append(fsm)
