@@ -33,7 +33,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
-from rflx.fsm_declaration import Argument, Subprogram
+from rflx.fsm_declaration import Argument, Subprogram, VariableDeclaration
 from rflx.fsm_expression import (
     Binding,
     Comprehension,
@@ -324,4 +324,16 @@ class FSMParser:
         )
         function_decl.setParseAction(lambda t: (t[0], Subprogram(t[1:-1], t[-1])))
 
-        return function_decl
+        initializer = Literal(":=").suppress() + cls.expression()
+
+        variable_decl = (
+            unqualified_identifier()
+            + Literal(":").suppress()
+            + cls.__identifier()
+            + Optional(initializer)
+        )
+        variable_decl.setParseAction(
+            lambda t: (t[0], VariableDeclaration(t[1], t[2] if t[2:] else None))
+        )
+
+        return variable_decl | function_decl
