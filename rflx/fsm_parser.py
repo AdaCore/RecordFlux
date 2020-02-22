@@ -33,7 +33,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
-from rflx.fsm_declaration import Argument, Subprogram, VariableDeclaration
+from rflx.fsm_declaration import Argument, Renames, Subprogram, VariableDeclaration
 from rflx.fsm_expression import (
     Binding,
     Comprehension,
@@ -326,14 +326,14 @@ class FSMParser:
 
         initializer = Literal(":=").suppress() + cls.expression()
 
-        variable_decl = (
-            unqualified_identifier()
-            + Literal(":").suppress()
-            + cls.__identifier()
-            + Optional(initializer)
-        )
+        variable_base_decl = unqualified_identifier() + Literal(":").suppress() + cls.__identifier()
+
+        variable_decl = variable_base_decl + Optional(initializer)
         variable_decl.setParseAction(
             lambda t: (t[0], VariableDeclaration(t[1], t[2] if t[2:] else None))
         )
 
-        return variable_decl | function_decl
+        renames = variable_base_decl + Keyword("renames").suppress() + cls.expression()
+        renames.setParseAction(lambda t: (t[0], Renames(t[1], t[2])))
+
+        return (renames | variable_decl | function_decl) + StringEnd()

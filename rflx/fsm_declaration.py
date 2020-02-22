@@ -31,3 +31,10 @@ class Subprogram(Declaration):
         super().__init__(location)
         self.__arguments = arguments
         self.__return_type = ID(return_type)
+
+
+class Renames(Declaration):
+    def __init__(self, typ: StrID, expr: Expr, location: Location = None):
+        super().__init__(location)
+        self.__type = ID(typ)
+        self.__expr = expr

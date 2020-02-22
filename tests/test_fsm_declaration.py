@@ -1,8 +1,8 @@
 import pytest
 from pyparsing import ParseException
 
-from rflx.expression import FALSE
-from rflx.fsm_declaration import Argument, Subprogram, VariableDeclaration
+from rflx.expression import FALSE, Variable
+from rflx.fsm_declaration import Argument, Renames, Subprogram, VariableDeclaration
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
 
@@ -58,5 +58,16 @@ def test_variable_declaration_with_initialization() -> None:
     expected = (
         ID("Certificate_Authorities_Received"),
         VariableDeclaration("Boolean", FALSE),
+    )
+    assert result == expected
+
+
+def test_renames() -> None:
+    result = FSMParser.declaration().parseString(
+        "Certificate_Message : TLS_Handshake.Certificate renames CCR_Handshake_Message.Payload"
+    )[0]
+    expected = (
+        ID("Certificate_Message"),
+        Renames("TLS_Handshake.Certificate", Variable("CCR_Handshake_Message.Payload")),
     )
     assert result == expected
