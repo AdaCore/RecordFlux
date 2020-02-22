@@ -209,7 +209,7 @@ class FSM:
                     )
                 if "condition" in t:
                     try:
-                        condition = FSMParser.condition().parseString(t["condition"])[0]
+                        condition = FSMParser.expression().parseString(t["condition"])[0]
                     except RecordFluxError as e:
                         self.error.extend(e)
                         tname = t["target"]

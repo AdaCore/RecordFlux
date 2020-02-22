@@ -157,7 +157,7 @@ class FSMParser:
         return result
 
     @classmethod
-    def expression(cls) -> Token:  # pylint: disable=too-many-locals
+    def __expression(cls) -> Token:  # pylint: disable=too-many-locals
 
         bool_literal = boolean_literal()
         bool_literal.setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
@@ -273,15 +273,15 @@ class FSMParser:
         return expression
 
     @classmethod
-    def condition(cls) -> Token:
-        return cls.expression() + StringEnd()
+    def expression(cls) -> Token:
+        return cls.__expression() + StringEnd()
 
     @classmethod
     def action(cls) -> Token:
 
         lpar, rpar = map(Suppress, "()")
 
-        parameters = lpar + delimitedList(cls.expression(), delim=",") + rpar
+        parameters = lpar + delimitedList(cls.__expression(), delim=",") + rpar
 
         call = cls.__identifier() + parameters
         call.setParseAction(cls.__parse_call)
@@ -304,7 +304,7 @@ class FSMParser:
         list_reset = cls.__identifier() + Literal("'").suppress() + Keyword("Reset")
         list_reset.setParseAction(lambda t: Reset(t[0]))
 
-        return erase | assignment | list_reset | list_operation | call
+        return (erase | assignment | list_reset | list_operation | call) + StringEnd()
 
     @classmethod
     def declaration(cls) -> Token:
