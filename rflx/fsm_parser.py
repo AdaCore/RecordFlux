@@ -201,6 +201,9 @@ class FSMParser:
         )
         comprehension.setParseAction(cls.__parse_comprehension)
 
+        null_message = Keyword("null") + Keyword("message")
+        null_message.setParseAction(lambda t: {})
+
         components = delimitedList(
             unqualified_identifier() + Keyword("=>").suppress() + expression, delim=","
         )
@@ -241,7 +244,7 @@ class FSMParser:
         binding = Keyword("where").suppress() + terms
         binding.setParseAction(lambda t: ("Binding", t[0]))
 
-        aggregate = Literal("'").suppress() + lpar + components + rpar
+        aggregate = Literal("'").suppress() + lpar + (null_message | components) + rpar
         aggregate.setParseAction(lambda t: ("Aggregate", t[0]))
 
         suffix = binding ^ attribute ^ field ^ aggregate

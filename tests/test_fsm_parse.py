@@ -339,6 +339,12 @@ def test_simple_aggregate() -> None:
     assert result == expected
 
 
+def test_null_aggregate() -> None:
+    result = FSMParser.expression().parseString("Message'(null message)")[0]
+    expected = MessageAggregate("Message", {})
+    assert result == expected
+
+
 def test_complex_aggregate() -> None:
     result = FSMParser.expression().parseString(
         "Complex.Message'(Data1 => Foo, Data2 => Bar, Data3 => Baz)"
