@@ -4,7 +4,9 @@ import yaml
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, Expr
+from rflx.fsm_declaration import Subprogram
 from rflx.fsm_parser import FSMParser
+from rflx.identifier import ID, StrID
 from rflx.model import Base
 from rflx.statement import Statement
 
@@ -56,12 +58,14 @@ class StateMachine(Base):
         initial: StateName,
         final: StateName,
         states: Iterable[State],
+        functions: Dict[StrID, Subprogram],
         location: Location = None,
-    ):
+    ):  # pylint: disable=too-many-arguments
         self.__name = name
         self.__initial = initial
         self.__final = final
         self.__states = states
+        self.__functions = {ID(k): v for k, v in functions.items()}
         self.location = location
         self.error = RecordFluxError()
 
@@ -159,6 +163,26 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
+    def __parse_functions(self, doc: Dict[str, Any]) -> Dict[StrID, Subprogram]:
+        if "functions" not in doc:
+            return {}
+
+        result: Dict[StrID, Subprogram] = {}
+        for index, f in enumerate(doc["functions"]):
+            try:
+                name, declaration = FSMParser.declaration().parseString(f)[0]
+            except RecordFluxError as e:
+                self.error.extend(e)
+                self.error.append(
+                    f"error parsing global function declaration {index} ({e})",
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                )
+                continue
+            result[ID(name)] = declaration
+        self.error.propagate()
+        return result
+
     def __parse_transitions(self, state: Dict) -> List[Transition]:
         transitions: List[Transition] = []
         sname = state["name"]
@@ -191,7 +215,7 @@ class FSM:
                 transitions.append(Transition(target=StateName(t["target"]), condition=condition))
         return transitions
 
-    def __parse(self, name: str, doc: Dict[str, Any]) -> None:
+    def __parse(self, name: str, doc: Dict[str, Any]) -> None:  # pylint: disable=too-many-locals
         if "initial" not in doc:
             self.error.append(
                 f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR
@@ -213,6 +237,8 @@ class FSM:
                 f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.SESSION, Severity.ERROR
             )
 
+        functions = self.__parse_functions(doc)
+
         states: List[State] = []
         for s in doc["states"]:
             state = s["name"]
@@ -231,7 +257,8 @@ class FSM:
                 for index, a in enumerate(s["actions"]):
                     try:
                         actions.append(FSMParser.action().parseString(a)[0])
-                    except Exception as e:  # pylint: disable=broad-except
+                    except RecordFluxError as e:
+                        self.error.extend(e)
                         sname = s["name"]
                         self.error.append(
                             f"error parsing action {index} of state {sname} ({e})",
@@ -249,6 +276,7 @@ class FSM:
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
             states=states,
+            functions=functions,
         )
         self.error.extend(fsm.error)
         self.__fsms.append(fsm)

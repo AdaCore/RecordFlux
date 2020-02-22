@@ -33,6 +33,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
+from rflx.fsm_declaration import Argument, Subprogram
 from rflx.fsm_expression import (
     Binding,
     Comprehension,
@@ -304,3 +305,23 @@ class FSMParser:
         list_reset.setParseAction(lambda t: Reset(t[0]))
 
         return erase | assignment | list_reset | list_operation | call
+
+    @classmethod
+    def declaration(cls) -> Token:
+
+        lpar, rpar = map(Suppress, "()")
+
+        parameter = unqualified_identifier() + Literal(":").suppress() + cls.__identifier()
+        parameter.setParseAction(lambda t: Argument(t[0], t[1]))
+
+        parameter_list = lpar + delimitedList(parameter, delim=";") + rpar
+
+        function_decl = (
+            unqualified_identifier()
+            + Optional(parameter_list)
+            + Keyword("return").suppress()
+            + cls.__identifier()
+        )
+        function_decl.setParseAction(lambda t: (t[0], Subprogram(t[1:-1], t[-1])))
+
+        return function_decl

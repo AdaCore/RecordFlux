@@ -3,6 +3,8 @@ import pytest
 from rflx.error import RecordFluxError
 from rflx.expression import FALSE, Equal, Variable
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
+from rflx.fsm_declaration import Argument, Subprogram
+from rflx.identifier import ID
 
 
 def assert_parse_exception_string(string: str, regex: str) -> None:
@@ -34,6 +36,7 @@ def test_simple_fsm() -> None:
             State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
             State(name=StateName("END")),
         ],
+        functions={},
     )
     assert f.fsms[0] == expected
 
@@ -78,7 +81,9 @@ def test_missing_states() -> None:
 
 def test_empty_states() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: empty states"):
-        StateMachine(name="fsm", initial=StateName("START"), final=StateName("END"), states=[])
+        StateMachine(
+            name="fsm", initial=StateName("START"), final=StateName("END"), states=[], functions={}
+        )
 
 
 def test_invalid_initial() -> None:
@@ -94,6 +99,7 @@ def test_invalid_initial() -> None:
                 State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -109,6 +115,7 @@ def test_invalid_final() -> None:
                 State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -129,6 +136,7 @@ def test_invalid_target_state() -> None:
                 ),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -143,6 +151,7 @@ def test_duplicate_state() -> None:
                 State(name=StateName("START")),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -161,6 +170,7 @@ def test_multiple_duplicate_states() -> None:
                 State(name=StateName("BAR")),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -178,6 +188,7 @@ def test_unreachable_state() -> None:
                 ),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -201,6 +212,7 @@ def test_multiple_unreachable_states() -> None:
                 ),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -221,6 +233,7 @@ def test_detached_state() -> None:
                 State(name=StateName("DETACHED")),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -245,6 +258,7 @@ def test_multiple_detached_states() -> None:
                 State(name=StateName("DETACHED2")),
                 State(name=StateName("END")),
             ],
+            functions={},
         )
 
 
@@ -286,6 +300,7 @@ def test_fsm_with_conditions() -> None:
             ),
             State(name=StateName("END")),
         ],
+        functions={},
     )
     assert f.fsms[0] == expected
 
@@ -358,6 +373,7 @@ def test_fsm_condition_equal() -> None:
             ),
             State(name=StateName("END")),
         ],
+        functions={},
     )
     assert f.fsms[0] == expected
 
@@ -377,3 +393,34 @@ def test_unexpected_elements() -> None:
         """,
         r"^session: error: unexpected elements: invalid1, invalid2",
     )
+
+
+def test_fsm_with_function_decl() -> None:
+    f = FSM()
+    f.parse_string(
+        "fsm",
+        """
+            initial: START
+            final: END
+            functions:
+                - \"Foo(Bar : T1; Baz : P1.T1) return P2.T3\"
+            states:
+              - name: START
+                transitions:
+                  - target: END
+              - name: END
+        """,
+    )
+    expected = StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+            State(name=StateName("END")),
+        ],
+        functions={
+            ID("Foo"): Subprogram([Argument("Bar", "T1"), Argument("Baz", "P1.T1")], "P2.T3")
+        },
+    )
+    assert f.fsms[0] == expected
