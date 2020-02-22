@@ -26,6 +26,10 @@ class VariableDeclaration(Declaration):
         self.__init = init
 
 
+class PrivateVariable(Declaration):
+    pass
+
+
 class Subprogram(Declaration):
     def __init__(self, arguments: List[Argument], return_type: StrID, location: Location = None):
         super().__init__(location)

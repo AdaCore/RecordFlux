@@ -2,7 +2,7 @@ import pytest
 from pyparsing import ParseException
 
 from rflx.expression import FALSE, Variable
-from rflx.fsm_declaration import Argument, Renames, Subprogram, VariableDeclaration
+from rflx.fsm_declaration import Argument, PrivateVariable, Renames, Subprogram, VariableDeclaration
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
 
@@ -70,4 +70,10 @@ def test_renames() -> None:
         ID("Certificate_Message"),
         Renames("TLS_Handshake.Certificate", Variable("CCR_Handshake_Message.Payload")),
     )
+    assert result == expected
+
+
+def test_private_variable_declaration() -> None:
+    result = FSMParser.declaration().parseString("Hash_Context is private")[0]
+    expected = (ID("Hash_Context"), PrivateVariable())
     assert result == expected
