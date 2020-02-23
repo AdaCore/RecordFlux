@@ -3,8 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import yaml
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
-from rflx.expression import TRUE, Expr
-from rflx.fsm_declaration import Channel, Declaration
+from rflx.expression import TRUE, Channel, Declaration, Expr
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID, StrID
 from rflx.model import Base
@@ -22,13 +21,17 @@ class StateName(Base):
 
 
 class Transition(Base):
-    def __init__(self, target: StateName, condition: Expr = TRUE):
+    def __init__(self, target: StateName, condition: Expr = TRUE, location: Location = None):
         self.__target = target
         self.__condition = condition
+        self.location = location
 
     @property
     def target(self) -> StateName:
         return self.__target
+
+    def validate(self, declarations: Dict[ID, Declaration]) -> None:
+        self.__condition.validate(declarations)
 
 
 class State(Base):
@@ -37,10 +40,12 @@ class State(Base):
         name: StateName,
         transitions: Optional[Iterable[Transition]] = None,
         actions: Optional[Iterable[Statement]] = None,
+        location: Location = None,
     ):
         self.__name = name
         self.__transitions = transitions or []
         self.__actions = actions or []
+        self.location = location
 
     @property
     def name(self) -> StateName:
@@ -76,7 +81,16 @@ class StateMachine(Base):
         self.__validate_state_existence()
         self.__validate_duplicate_states()
         self.__validate_state_reachability()
+        self.__validate_conditions()
         self.error.propagate()
+
+    def __validate_conditions(self) -> None:
+        for s in self.__states:
+            for t in s.transitions:
+                try:
+                    t.validate(self.__declarations)
+                except RecordFluxError as e:
+                    self.error.extend(e)
 
     def __validate_state_existence(self) -> None:
         state_names = [s.name for s in self.__states]

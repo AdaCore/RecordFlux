@@ -1,4 +1,8 @@
-from rflx.expression import Equal, Variable
+import pytest
+
+from rflx.error import RecordFluxError
+from rflx.expression import TRUE, Equal, Variable, VariableDeclaration
+from rflx.fsm import State, StateMachine, StateName, Transition
 from rflx.fsm_expression import (
     Binding,
     Comprehension,
@@ -153,3 +157,44 @@ def test_binding_conversion_name_unchanged() -> None:
     expected = Conversion("Type", Variable("A"))
     result = binding.simplified()
     assert result == expected
+
+
+def test_undeclared_variable() -> None:
+    with pytest.raises(
+        RecordFluxError, match="^model: error: undeclared variable Undefined",
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[
+                        Transition(
+                            target=StateName("END"), condition=Equal(Variable("Undefined"), TRUE),
+                        )
+                    ],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={},
+        )
+
+
+def test_declared_variable() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[
+                    Transition(target=StateName("END"), condition=Equal(Variable("Defined"), TRUE))
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={"Defined": VariableDeclaration("Some_Type")},
+    )

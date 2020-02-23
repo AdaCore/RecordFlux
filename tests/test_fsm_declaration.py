@@ -2,16 +2,17 @@ import pytest
 from pyparsing import ParseException
 
 from rflx.error import RecordFluxError
-from rflx.expression import FALSE, Variable
-from rflx.fsm import FSM, State, StateMachine, StateName, Transition
-from rflx.fsm_declaration import (
+from rflx.expression import (
+    FALSE,
     Argument,
     Channel,
     PrivateVariable,
     Renames,
     Subprogram,
+    Variable,
     VariableDeclaration,
 )
+from rflx.fsm import FSM, State, StateMachine, StateName, Transition
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
 
