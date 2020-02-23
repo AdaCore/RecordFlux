@@ -38,6 +38,7 @@ from rflx.fsm_expression import (
     Binding,
     Comprehension,
     Contains,
+    Conversion,
     Field,
     ForAll,
     ForSome,
@@ -174,8 +175,12 @@ class FSMParser:
         parameters = delimitedList(expression, delim=",")
 
         lpar, rpar = map(Suppress, "()")
-        function_call = cls.__identifier() + lpar + parameters + rpar
+
+        function_call = unqualified_identifier() + lpar + parameters + rpar
         function_call.setParseAction(cls.__parse_call)
+
+        conversion = cls.__identifier() + lpar + expression + rpar
+        conversion.setParseAction(lambda t: Conversion(t[0], t[1]))
 
         quantifier = (
             Keyword("for").suppress()
@@ -223,6 +228,7 @@ class FSMParser:
             | string_literal
             | quantifier
             | comprehension
+            | conversion
             | function_call
             | variable
         )

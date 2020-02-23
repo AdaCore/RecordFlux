@@ -19,6 +19,7 @@ from rflx.fsm_expression import (
     Binding,
     Comprehension,
     Contains,
+    Conversion,
     Field,
     ForAll,
     ForSome,
@@ -160,8 +161,7 @@ def test_complex_existential_quantification() -> None:
             NotContains(
                 Variable("GreenTLS.TLS_1_3"),
                 Field(
-                    SubprogramCall("TLS_Handshake.Supported_Versions", [Variable("E.Data")]),
-                    "Versions",
+                    Conversion("TLS_Handshake.Supported_Versions", Variable("E.Data")), "Versions",
                 ),
             ),
         ),
@@ -187,26 +187,24 @@ def test_universal_quantification() -> None:
 def test_type_conversion_simple() -> None:
     expr = "Foo (Bar) = 5"
     result = FSMParser.expression().parseString(expr)[0]
-    expected = Equal(SubprogramCall("Foo", [Variable("Bar")]), Number(5))
+    expected = Equal(Conversion("Foo", Variable("Bar")), Number(5))
     assert result == expected
 
 
 def test_field_simple() -> None:
     result = FSMParser.expression().parseString("Bar (Foo).Fld")[0]
-    assert result == Field(SubprogramCall("Bar", [Variable("Foo")]), "Fld")
+    assert result == Field(Conversion("Bar", Variable("Foo")), "Fld")
 
 
 def test_field_length() -> None:
     result = FSMParser.expression().parseString("Bar (Foo).Fld'Length")[0]
-    assert result == Length(Field(SubprogramCall("Bar", [Variable("Foo")]), "Fld"))
+    assert result == Length(Field(Conversion("Bar", Variable("Foo")), "Fld"))
 
 
 def test_type_conversion() -> None:
     expr = "TLS_Handshake.Supported_Versions (E.Data) = 5"
     result = FSMParser.expression().parseString(expr)[0]
-    expected = Equal(
-        SubprogramCall("TLS_Handshake.Supported_Versions", [Variable("E.Data")]), Number(5)
-    )
+    expected = Equal(Conversion("TLS_Handshake.Supported_Versions", Variable("E.Data")), Number(5))
     assert result == expected
 
 
@@ -215,9 +213,7 @@ def test_use_type_conversion() -> None:
     result = FSMParser.expression().parseString(expr)[0]
     expected = NotContains(
         Variable("GreenTLS.TLS_1_3"),
-        Field(
-            SubprogramCall("TLS_Handshake.Supported_Versions", [Variable("E.Data")]), "Versions",
-        ),
+        Field(Conversion("TLS_Handshake.Supported_Versions", Variable("E.Data")), "Versions",),
     )
     assert result == expected
 
@@ -245,9 +241,7 @@ def test_length_lt() -> None:
 
 def test_field_length_lt() -> None:
     result = FSMParser.expression().parseString("Bar (Foo).Fld'Length < 100")[0]
-    assert result == Less(
-        Length(Field(SubprogramCall("Bar", [Variable("Foo")]), "Fld")), Number(100)
-    )
+    assert result == Less(Length(Field(Conversion("Bar", Variable("Foo")), "Fld")), Number(100))
 
 
 def test_list_comprehension() -> None:
@@ -305,24 +299,22 @@ def test_complex() -> None:
         ForSome(
             "S",
             Field(
-                SubprogramCall(
+                Conversion(
                     "TLS_Handshake.Key_Share_CH",
-                    [
-                        Field(
-                            Head(
-                                Comprehension(
-                                    "E",
-                                    Variable("Client_Hello_Message.Extensions"),
-                                    Variable("E"),
-                                    Equal(
-                                        Variable("E.Tag"),
-                                        Variable("TLS_Handshake.EXTENSION_KEY_SHARE"),
-                                    ),
-                                )
-                            ),
-                            "Data",
-                        )
-                    ],
+                    Field(
+                        Head(
+                            Comprehension(
+                                "E",
+                                Variable("Client_Hello_Message.Extensions"),
+                                Variable("E"),
+                                Equal(
+                                    Variable("E.Tag"),
+                                    Variable("TLS_Handshake.EXTENSION_KEY_SHARE"),
+                                ),
+                            )
+                        ),
+                        "Data",
+                    ),
                 ),
                 "Shares",
             ),
@@ -358,7 +350,7 @@ def test_complex_aggregate() -> None:
 
 def test_simple_function_call() -> None:
     result = FSMParser.expression().parseString("Fun (Parameter)")[0]
-    expected = SubprogramCall("Fun", [Variable("Parameter")])
+    expected = Conversion("Fun", Variable("Parameter"))
     assert result == expected
 
 

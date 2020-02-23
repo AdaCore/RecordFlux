@@ -3,6 +3,7 @@ from rflx.fsm_expression import (
     Binding,
     Comprehension,
     Contains,
+    Conversion,
     Field,
     ForAll,
     ForSome,
@@ -136,5 +137,19 @@ def test_binding_multiple_bindings() -> None:
 def test_binding_multiple_variables() -> None:
     binding = Binding(SubprogramCall("Sub", [Variable("A"), Variable("A")]), {"A": Variable("Baz")})
     expected = SubprogramCall("Sub", [Variable("Baz"), Variable("Baz")])
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_conversion() -> None:
+    binding = Binding(Conversion("Type", Variable("A")), {"A": Variable("Baz")})
+    expected = Conversion("Type", Variable("Baz"))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_conversion_name_unchanged() -> None:
+    binding = Binding(Conversion("Type", Variable("A")), {"Type": Variable("Baz")})
+    expected = Conversion("Type", Variable("A"))
     result = binding.simplified()
     assert result == expected
