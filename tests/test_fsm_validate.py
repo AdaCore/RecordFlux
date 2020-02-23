@@ -15,6 +15,7 @@ from rflx.fsm_expression import (
     NotContains,
     String,
     SubprogramCall,
+    Valid,
 )
 from rflx.identifier import ID
 
@@ -251,3 +252,24 @@ def test_undeclared_local_variable() -> None:
             ],
             declarations={"Global": VariableDeclaration("Some_Type")},
         )
+
+
+def test_declared_local_variable_valid() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[
+                    Transition(
+                        target=StateName("END"), condition=Equal(Valid(Variable("Global")), TRUE),
+                    )
+                ],
+                declarations={},
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={"Global": VariableDeclaration("Boolean")},
+    )
