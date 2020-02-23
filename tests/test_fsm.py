@@ -438,3 +438,38 @@ def test_fsm_with_function_decl() -> None:
         },
     )
     assert f.fsms[0] == expected
+
+
+def test_fsm_with_variable_decl() -> None:
+    f = FSM()
+    f.parse_string(
+        "fsm",
+        """
+            initial: START
+            final: END
+            variables:
+                - \"Global : Boolean\"
+            states:
+              - name: START
+                variables:
+                    - \"Local : Boolean\"
+                transitions:
+                  - target: END
+              - name: END
+        """,
+    )
+    expected = StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={ID("Local"): VariableDeclaration("Boolean")},
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={"Global": VariableDeclaration("Boolean")},
+    )
+    assert f.fsms[0] == expected

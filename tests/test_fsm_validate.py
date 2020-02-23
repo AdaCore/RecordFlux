@@ -16,6 +16,7 @@ from rflx.fsm_expression import (
     String,
     SubprogramCall,
 )
+from rflx.identifier import ID
 
 
 def test_binding_aggregate() -> None:
@@ -198,3 +199,55 @@ def test_declared_variable() -> None:
         ],
         declarations={"Defined": VariableDeclaration("Some_Type")},
     )
+
+
+def test_declared_local_variable() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[
+                    Transition(
+                        target=StateName("END"),
+                        condition=Equal(Variable("Local"), Variable("Global")),
+                    )
+                ],
+                declarations={ID("Local"): VariableDeclaration("Some_Type")},
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={"Global": VariableDeclaration("Some_Type")},
+    )
+
+
+def test_undeclared_local_variable() -> None:
+    with pytest.raises(
+        RecordFluxError, match="^model: error: undeclared variable Start_Local",
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("STATE"))],
+                    declarations={ID("Start_Local"): VariableDeclaration("Some_Type")},
+                ),
+                State(
+                    name=StateName("STATE"),
+                    transitions=[
+                        Transition(
+                            target=StateName("END"),
+                            condition=Equal(Variable("Start_Local"), Variable("Global")),
+                        )
+                    ],
+                    declarations={ID("Local"): VariableDeclaration("Some_Type")},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Global": VariableDeclaration("Some_Type")},
+        )

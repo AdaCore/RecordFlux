@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List
 
 import yaml
 
@@ -38,13 +38,15 @@ class State(Base):
     def __init__(
         self,
         name: StateName,
-        transitions: Optional[Iterable[Transition]] = None,
-        actions: Optional[Iterable[Statement]] = None,
+        transitions: Iterable[Transition] = None,
+        actions: Iterable[Statement] = None,
+        declarations: Dict[ID, Declaration] = None,
         location: Location = None,
     ):
         self.__name = name
         self.__transitions = transitions or []
         self.__actions = actions or []
+        self.__declarations = {ID(k): v for k, v in declarations.items()} if declarations else {}
         self.location = location
 
     @property
@@ -54,6 +56,10 @@ class State(Base):
     @property
     def transitions(self) -> Iterable[Transition]:
         return self.__transitions or []
+
+    @property
+    def declarations(self) -> Dict[ID, Declaration]:
+        return self.__declarations
 
 
 class StateMachine(Base):
@@ -86,9 +92,10 @@ class StateMachine(Base):
 
     def __validate_conditions(self) -> None:
         for s in self.__states:
+            declarations = s.declarations
             for t in s.transitions:
                 try:
-                    t.validate(self.__declarations)
+                    t.validate({**self.__declarations, **declarations})
                 except RecordFluxError as e:
                     self.error.extend(e)
 
@@ -289,11 +296,51 @@ class FSM:
                             Severity.ERROR,
                             None,
                         )
-                        continue
+                        condition = TRUE
                 else:
                     condition = TRUE
                 transitions.append(Transition(target=StateName(t["target"]), condition=condition))
         return transitions
+
+    def __parse_states(self, doc: Dict[str, Any]) -> List[State]:
+        states: List[State] = []
+        for s in doc["states"]:
+            rest = s.keys() - ["name", "actions", "transitions", "variables", "doc"]
+            if rest:
+                elements = ", ".join(sorted(rest))
+                self.error.append(
+                    f'unexpected elements in state "{s}": {elements}',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                )
+                continue
+            actions: List[Statement] = []
+            if "actions" in s and s["actions"]:
+                for a in s["actions"]:
+                    try:
+                        actions.append(FSMParser.action().parseString(a)[0])
+                    except RecordFluxError as e:
+                        self.error.extend(e)
+                        continue
+            declarations: Dict[ID, Declaration] = {}
+            if "variables" in s and s["variables"]:
+                for v in s["variables"]:
+                    try:
+                        dname, declaration = FSMParser.declaration().parseString(v)[0]
+                    except RecordFluxError as e:
+                        self.error.extend(e)
+                        continue
+                    declarations[ID(dname)] = declaration
+
+            states.append(
+                State(
+                    name=StateName(s["name"]),
+                    transitions=self.__parse_transitions(s),
+                    actions=actions,
+                    declarations=declarations,
+                )
+            )
+        return states
 
     def __parse(self, name: str, doc: Dict[str, Any]) -> None:
         if "initial" not in doc:
@@ -317,43 +364,11 @@ class FSM:
                 f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.SESSION, Severity.ERROR
             )
 
-        states: List[State] = []
-        for s in doc["states"]:
-            state = s["name"]
-            rest = s.keys() - ["name", "actions", "transitions", "variables", "doc"]
-            if rest:
-                elements = ", ".join(sorted(rest))
-                self.error.append(
-                    f'unexpected elements in state "{state}": {elements}',
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                )
-            transitions: List[Transition] = []
-            transitions = self.__parse_transitions(s)
-            actions: List[Statement] = []
-            if "actions" in s and s["actions"]:
-                for index, a in enumerate(s["actions"]):
-                    try:
-                        actions.append(FSMParser.action().parseString(a)[0])
-                    except RecordFluxError as e:
-                        self.error.extend(e)
-                        sname = s["name"]
-                        self.error.append(
-                            f"error parsing action {index} of state {sname} ({e})",
-                            Subsystem.SESSION,
-                            Severity.ERROR,
-                        )
-            states.append(
-                State(name=StateName(s["name"]), transitions=transitions, actions=actions)
-            )
-
-        self.error.propagate()
-
         fsm = StateMachine(
             name=name,
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
-            states=states,
+            states=self.__parse_states(doc),
             declarations=self.__parse_declarations(doc),
         )
         self.error.extend(fsm.error)
