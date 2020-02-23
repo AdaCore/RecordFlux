@@ -1,9 +1,10 @@
-from typing import Dict, List
+from typing import Callable, Dict, List, Mapping
 
 import z3
 
+from rflx.contract import require
 from rflx.error import Location
-from rflx.expression import Attribute, Expr, Not, Precedence, Relation
+from rflx.expression import Attribute, Expr, Name, Not, Precedence, Relation, Variable, substitution
 from rflx.identifier import ID, StrID
 
 
@@ -28,13 +29,13 @@ class Quantifier(Expr):
         self, quantifier: StrID, iteratable: Expr, predicate: Expr, location: Location = None
     ) -> None:
         super().__init__(location)
-        self.__quantifier = ID(quantifier)
-        self.__iterable = iteratable
-        self.__predicate = predicate
+        self.quantifier = ID(quantifier)
+        self.iterable = iteratable
+        self.predicate = predicate
         self.symbol: str = ""
 
     def __str__(self) -> str:
-        return f"for {self.symbol} {self.__quantifier} in {self.__iterable} => {self.__predicate}"
+        return f"for {self.symbol} {self.quantifier} in {self.iterable} => {self.predicate}"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -44,7 +45,24 @@ class Quantifier(Expr):
         return Precedence.undefined
 
     def simplified(self) -> Expr:
-        raise NotImplementedError
+        return Quantifier(
+            self.quantifier, self.iterable.simplified(), self.predicate.simplified(), self.location,
+        )
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Quantifier):
+            return expr.__class__(
+                expr.quantifier,
+                expr.iterable.substituted(func),
+                expr.predicate.substituted(func),
+                expr.location,
+            )
+        return expr
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -60,9 +78,6 @@ class ForSome(Quantifier):
     def precedence(self) -> Precedence:
         return Precedence.undefined
 
-    def simplified(self) -> Expr:
-        raise NotImplementedError
-
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -76,9 +91,6 @@ class ForAll(Quantifier):
     @property
     def precedence(self) -> Precedence:
         return Precedence.undefined
-
-    def simplified(self) -> Expr:
-        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -119,18 +131,30 @@ class NotContains(Relation):
 class SubprogramCall(Expr):
     def __init__(self, name: StrID, arguments: List[Expr], location: Location = None) -> None:
         super().__init__(location)
-        self.__name = ID(name)
-        self.__arguments = arguments
+        self.name = ID(name)
+        self.arguments = arguments
 
     def __str__(self) -> str:
-        arguments = ", ".join([f"{a}" for a in self.__arguments])
-        return f"{self.__name} ({arguments})"
+        arguments = ", ".join([f"{a}" for a in self.arguments])
+        return f"{self.name} ({arguments})"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
     def simplified(self) -> Expr:
-        raise NotImplementedError
+        return SubprogramCall(self.name, [a.simplified() for a in self.arguments], self.location)
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, SubprogramCall):
+            return expr.__class__(
+                expr.name, [a.substituted(func) for a in expr.arguments], expr.location
+            )
+        return expr
 
     @property
     def precedence(self) -> Precedence:
@@ -143,17 +167,27 @@ class SubprogramCall(Expr):
 class Field(Expr):
     def __init__(self, expression: Expr, field: StrID, location: Location = None) -> None:
         super().__init__(location)
-        self.__expression = expression
-        self.__field = ID(field)
+        self.expression = expression
+        self.field = ID(field)
 
     def __str__(self) -> str:
-        return f"{self.__expression}.{self.__field}"
+        return f"{self.expression}.{self.field}"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
     def simplified(self) -> Expr:
-        raise NotImplementedError
+        return Field(self.expression.simplified(), self.field, self.location)
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Field):
+            return expr.__class__(expr.expression.substituted(func), expr.field, expr.location,)
+        return expr
 
     @property
     def precedence(self) -> Precedence:
@@ -173,22 +207,41 @@ class Comprehension(Expr):
         location: Location = None,
     ) -> None:
         super().__init__(location)
-        self.__iterator = ID(iterator)
-        self.__array = array
-        self.__selector = selector
-        self.__condition = condition
+        self.iterator = ID(iterator)
+        self.array = array
+        self.selector = selector
+        self.condition = condition
 
     def __str__(self) -> str:
-        return (
-            f"[for {self.__iterator} in {self.__array} => "
-            f"{self.__selector} when {self.__condition}]"
-        )
+        return f"[for {self.iterator} in {self.array} => {self.selector} when {self.condition}]"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
     def simplified(self) -> Expr:
-        raise NotImplementedError
+        return Comprehension(
+            self.iterator,
+            self.array.simplified(),
+            self.selector.simplified(),
+            self.condition.simplified(),
+            self.location,
+        )
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Comprehension):
+            return expr.__class__(
+                expr.iterator,
+                expr.array.substituted(func),
+                expr.selector.substituted(func),
+                expr.condition.substituted(func),
+                expr.location,
+            )
+        return expr
 
     @property
     def precedence(self) -> Precedence:
@@ -201,18 +254,32 @@ class Comprehension(Expr):
 class MessageAggregate(Expr):
     def __init__(self, name: StrID, data: Dict[StrID, Expr], location: Location = None) -> None:
         super().__init__(location)
-        self.__name = ID(name)
-        self.__data = {ID(k): v for k, v in data.items()}
+        self.name = ID(name)
+        self.data = {ID(k): v for k, v in data.items()}
 
     def __str__(self) -> str:
-        data = ", ".join([f"{k} => {self.__data[k]}" for k in self.__data])
-        return f"{self.__name}'({data})"
+        data = ", ".join([f"{k} => {self.data[k]}" for k in self.data])
+        return f"{self.name}'({data})"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
     def simplified(self) -> Expr:
-        raise NotImplementedError
+        return MessageAggregate(
+            self.name, {k: self.data[k].simplified() for k in self.data}, self.location
+        )
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, MessageAggregate):
+            return expr.__class__(
+                expr.name, {k: expr.data[k].substituted(func) for k in expr.data}, expr.location,
+            )
+        return expr
 
     @property
     def precedence(self) -> Precedence:
@@ -225,18 +292,31 @@ class MessageAggregate(Expr):
 class Binding(Expr):
     def __init__(self, expr: Expr, data: Dict[StrID, Expr], location: Location = None) -> None:
         super().__init__(location)
-        self.__expr = expr
-        self.__data = {ID(k): v for k, v in data.items()}
+        self.expr = expr
+        self.data = {ID(k): v for k, v in data.items()}
 
     def __str__(self) -> str:
-        data = ", ".join(["{k} = {v}".format(k=k, v=self.__data[k]) for k in self.__data])
-        return f"{self.__expr} where {data}"
+        data = ", ".join(["{k} = {v}".format(k=k, v=self.data[k]) for k in self.data])
+        return f"{self.expr} where {data}"
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
     def simplified(self) -> Expr:
-        raise NotImplementedError
+        facts: Mapping[Name, Expr] = {Variable(k): self.data[k].simplified() for k in self.data}
+        return self.expr.substituted(mapping=facts).simplified()
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Binding):
+            return expr.__class__(
+                expr.expr, {k: self.data[k].substituted(func) for k in expr.data}, expr.location,
+            )
+        return expr
 
     @property
     def precedence(self) -> Precedence:
@@ -249,16 +329,22 @@ class Binding(Expr):
 class String(Expr):
     def __init__(self, data: str, location: Location = None) -> None:
         super().__init__(location)
-        self.__data = data
+        self.data = data
 
     def __str__(self) -> str:
-        return f'"{self.__data}"'
+        return f'"{self.data}"'
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
     def simplified(self) -> Expr:
-        raise NotImplementedError
+        return self
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        return self
 
     @property
     def precedence(self) -> Precedence:
