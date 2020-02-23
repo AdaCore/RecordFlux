@@ -164,6 +164,39 @@ class SubprogramCall(Expr):
         raise NotImplementedError
 
 
+class Conversion(Expr):
+    def __init__(self, name: StrID, argument: Expr, location: Location = None) -> None:
+        super().__init__(location)
+        self.name = ID(name)
+        self.argument = argument
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.argument})"
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Conversion):
+            return expr.__class__(self.name, self.argument.substituted(func))
+        return expr
+
+    def simplified(self) -> Expr:
+        return Conversion(self.name, self.argument.simplified(), self.location)
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+
 class Field(Expr):
     def __init__(self, expression: Expr, field: StrID, location: Location = None) -> None:
         super().__init__(location)
