@@ -10,7 +10,7 @@ import z3
 
 from rflx.common import generic_repr, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
-from rflx.error import Location
+from rflx.error import Location, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 
 
@@ -158,6 +158,9 @@ class Expr(DBC):
     def check(self, facts: Optional[Sequence["Expr"]] = None) -> Proof:
         return Proof(self, facts)
 
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
+
 
 class BooleanLiteral(Expr):
     _str: str
@@ -303,6 +306,10 @@ class BinExpr(Expr):
 
     def simplified(self) -> Expr:
         return self.__class__(self.left.simplified(), self.right.simplified())
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        self.left.validate(declarations)
+        self.right.validate(declarations)
 
     @property
     @abstractmethod
@@ -878,6 +885,10 @@ class Variable(Name):
 
     def variables(self) -> List["Variable"]:
         return [self]
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        if ID(self.name) not in declarations:
+            fail(f"undeclared variable {self.name}", Subsystem.MODEL, Severity.ERROR, self.location)
 
     def z3expr(self) -> z3.ArithRef:
         if self.negative:
@@ -1588,6 +1599,55 @@ class ValueRange(Expr):
         if isinstance(expr, self.__class__):
             return self.__class__(self.lower.substituted(func), self.upper.substituted(func),)
         return expr
+
+
+class ValidationError(Exception):
+    pass
+
+
+class Declaration(ABC):
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
+
+
+class Argument(Declaration):
+    def __init__(self, name: StrID, typ: StrID):
+        self.__name = ID(name)
+        self.__type = ID(typ)
+
+
+class VariableDeclaration(Declaration):
+    def __init__(self, typ: StrID, init: Expr = None):
+        self.__type = ID(typ)
+        self.__init = init
+
+
+class PrivateVariable(Declaration):
+    pass
+
+
+class Subprogram(Declaration):
+    def __init__(self, arguments: List[Argument], return_type: StrID):
+        self.__arguments = arguments
+        self.__return_type = ID(return_type)
+
+
+class Renames(Declaration):
+    def __init__(self, typ: StrID, expr: Expr):
+        self.__type = ID(typ)
+        self.__expr = expr
+
+
+class Channel(Declaration):
+    def __init__(self, read: bool, write: bool):
+        self.__read = read
+        self.__write = write
 
 
 def substitution(

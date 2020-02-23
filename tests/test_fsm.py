@@ -1,9 +1,8 @@
 import pytest
 
 from rflx.error import RecordFluxError
-from rflx.expression import FALSE, Equal, Variable
+from rflx.expression import FALSE, Argument, Equal, Subprogram, Variable, VariableDeclaration
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
-from rflx.fsm_declaration import Argument, Subprogram
 from rflx.identifier import ID
 
 
@@ -216,7 +215,7 @@ def test_multiple_unreachable_states() -> None:
                 ),
                 State(name=StateName("END")),
             ],
-            declarations={},
+            declarations={"Error": VariableDeclaration("Boolean")},
         )
 
 
@@ -262,7 +261,10 @@ def test_multiple_detached_states() -> None:
                 State(name=StateName("DETACHED2")),
                 State(name=StateName("END")),
             ],
-            declarations={},
+            declarations={
+                "Error": VariableDeclaration("Boolean"),
+                "Something": VariableDeclaration("Boolean"),
+            },
         )
 
 
@@ -273,6 +275,8 @@ def test_fsm_with_conditions() -> None:
         """
             initial: START
             final: END
+            variables:
+                - "Error: Boolean"
             states:
               - name: START
                 transitions:
@@ -304,7 +308,7 @@ def test_fsm_with_conditions() -> None:
             ),
             State(name=StateName("END")),
         ],
-        declarations={},
+        declarations={"Error": VariableDeclaration("Boolean")},
     )
     assert f.fsms[0] == expected
 
@@ -345,11 +349,14 @@ def test_fsm_condition_equal() -> None:
         """
             initial: START
             final: END
+            variables:
+                - "Error: Boolean"
+                - "Something: Boolean"
             states:
               - name: START
                 transitions:
                   - target: INTERMEDIATE
-                    condition: Error = Message.Some_Error
+                    condition: Error = Something
                   - target: END
               - name: INTERMEDIATE
                 transitions:
@@ -367,7 +374,7 @@ def test_fsm_condition_equal() -> None:
                 transitions=[
                     Transition(
                         target=StateName("INTERMEDIATE"),
-                        condition=Equal(Variable("Error"), Variable("Message.Some_Error"),),
+                        condition=Equal(Variable("Error"), Variable("Something"),),
                     ),
                     Transition(target=StateName("END")),
                 ],
@@ -377,7 +384,10 @@ def test_fsm_condition_equal() -> None:
             ),
             State(name=StateName("END")),
         ],
-        declarations={},
+        declarations={
+            "Error": VariableDeclaration("Boolean"),
+            "Something": VariableDeclaration("Boolean"),
+        },
     )
     assert f.fsms[0] == expected
 

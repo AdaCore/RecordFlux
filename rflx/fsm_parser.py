@@ -21,6 +21,7 @@ from rflx.expression import (
     TRUE,
     Add,
     And,
+    Argument,
     Div,
     Equal,
     Expr,
@@ -30,10 +31,13 @@ from rflx.expression import (
     Mul,
     NotEqual,
     Or,
+    PrivateVariable,
+    Renames,
     Sub,
+    Subprogram,
     Variable,
+    VariableDeclaration,
 )
-from rflx.fsm_declaration import Argument, PrivateVariable, Renames, Subprogram, VariableDeclaration
 from rflx.fsm_expression import (
     Binding,
     Comprehension,
