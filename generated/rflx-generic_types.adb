@@ -100,6 +100,8 @@ package body RFLX.Generic_Types is
       --  Index pointing to least significant element
       Least_Significant_Index : constant Long_Integer := LSB_Offset / Byte'Size;
 
+      pragma Assert (Least_Significant_Index >= 0 and then Least_Significant_Index < Data'Length);
+
       --  Bits the least significant element (LSE) is shifted left relative to a single element
       LSE_Offset : constant Natural := Natural (LSB_Offset mod Byte'Size);
 
