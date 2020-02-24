@@ -13,6 +13,7 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
+from rflx.fsm_expression import Field
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
 
@@ -78,7 +79,7 @@ def test_renames() -> None:
     )[0]
     expected = (
         ID("Certificate_Message"),
-        Renames("TLS_Handshake.Certificate", Variable("CCR_Handshake_Message.Payload")),
+        Renames("TLS_Handshake.Certificate", Field(Variable("CCR_Handshake_Message"), "Payload")),
     )
     assert result == expected
 
