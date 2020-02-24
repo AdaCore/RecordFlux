@@ -4,13 +4,7 @@ from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger
 from rflx.pyrflx.message import Field, Message
 from rflx.pyrflx.package import Package
 from rflx.pyrflx.pyrflx import PyRFLX
-from rflx.pyrflx.typevalue import (
-    EnumValue,
-    ModularValue,
-    NotInitializedError,
-    OpaqueValue,
-    RangeValue,
-)
+from rflx.pyrflx.typevalue import EnumValue, IntegerValue, NotInitializedError, OpaqueValue
 
 
 class TestPyRFLX(unittest.TestCase):
@@ -27,93 +21,47 @@ class TestPyRFLX(unittest.TestCase):
         tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"].new()
         self.assertEqual(tlv.fields, ["Tag", "Length", "Value", "Checksum"])
         self.assertEqual(tlv.accessible_fields, ["Tag"])
-        tag_value = tlv.field_type("Tag")
-        assert isinstance(tag_value, EnumValue)
-        tag_value.assign("Msg_Data")
-        tlv.set("Tag", tag_value)
+        tlv.set("Tag", "Msg_Data")
         self.assertEqual(tlv.accessible_fields, ["Tag", "Length"])
-        length_value = tlv.field_type("Length")
-        assert isinstance(length_value, ModularValue)
-        length_value.assign(1)
-        tlv.set("Length", length_value)
+        tlv.set("Length", 1)
         self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
-        value = tlv.field_type("Value")
-        assert isinstance(value, OpaqueValue)
-        value.assign(b"\x01")
-        tlv.set("Value", value)
+        tlv.set("Value", b"\x01")
         self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
-        tag_value.assign("Msg_Error")
-        tlv.set("Tag", tag_value)
+        tlv.set("Tag", "Msg_Error")
         self.assertEqual(tlv.accessible_fields, ["Tag"])
 
     def test_set_value(self) -> None:
         tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"].new()
         v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
         v2 = b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10"
-        tag_value = tlv.field_type("Tag")
-        assert isinstance(tag_value, EnumValue)
-        tag_value.assign("Msg_Data")
-        tlv.set("Tag", tag_value)
-        length_value = tlv.field_type("Length")
-        assert isinstance(length_value, ModularValue)
-        length_value.assign(8)
-        tlv.set("Length", length_value)
-        value = tlv.field_type("Value")
-        assert isinstance(value, OpaqueValue)
-        value.assign(v1)
-        tlv.set("Value", value)
-        value.assign(v2)
-        self.assertEqual(tlv.get("Value").value, v1)
+        tlv.set("Tag", "Msg_Data")
+        tlv.set("Length", 8)
+        tlv.set("Value", v1)
         with self.assertRaises(ValueError):
-            tlv.set("Value", value)
+            tlv.set("Value", v2)
 
     def test_tlv_message(self) -> None:
         tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"].new()
         v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-        tag_value = tlv.field_type("Tag")
-        assert isinstance(tag_value, EnumValue)
-        tag_value.assign("Msg_Data")
-        tlv.set("Tag", tag_value)
-        length_value = tlv.field_type("Length")
-        assert isinstance(length_value, ModularValue)
-        length_value.assign(8)
-        tlv.set("Length", length_value)
-        value = tlv.field_type("Value")
-        assert isinstance(value, OpaqueValue)
-        value.assign(v1)
-        tlv.set("Value", value)
-        checksum = tlv.field_type("Checksum")
-        assert isinstance(checksum, ModularValue)
-        checksum.assign(2 ** 32 - 1)
-        tlv.set("Checksum", checksum)
+        tlv.set("Tag", "Msg_Data")
+        tlv.set("Length", 8)
+        tlv.set("Value", v1)
+        tlv.set("Checksum", 2 ** 32 - 1)
 
     def test_tlv_generate(self) -> None:
         test_payload = b"\x01\x02\x03\x04\x05\x06\x07\x08"
         test_data = b"\x40\x08" + test_payload + b"\xff\xff\xff\xff"
         msg: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"].new()
-        tag_value = msg.field_type("Tag")
-        length_value = msg.field_type("Length")
-        value = msg.field_type("Value")
-        checksum = msg.field_type("Checksum")
-        assert isinstance(tag_value, EnumValue)
-        assert isinstance(length_value, ModularValue)
-        assert isinstance(value, OpaqueValue)
-        assert isinstance(checksum, ModularValue)
-        tag_value.assign("Msg_Data")
-        length_value.assign(8)
-        value.assign(test_payload)
-        checksum.assign(0xFFFFFFFF)
-        self.assertEqual(value.value, test_payload)
-        msg.set("Tag", tag_value)
-        msg.set("Length", length_value)
-        msg.set("Value", value)
-        msg.set("Checksum", checksum)
+        msg.set("Tag", "Msg_Data")
+        msg.set("Length", 8)
+        msg.set("Value", test_payload)
+        msg.set("Checksum", 0xFFFFFFFF)
         self.assertEqual(msg.binary, test_data)
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
         modtype = ModularInteger("Test.Int", Number(2 ** 16))
-        modvalue = ModularValue(modtype)
+        modvalue = IntegerValue(modtype)
         self.assertFalse(modvalue.initialized)
         with self.assertRaises(NotInitializedError):
             modvalue.value
@@ -126,12 +74,11 @@ class TestPyRFLX(unittest.TestCase):
             modvalue.assign(2 ** 16)
         with self.assertRaises(ValueError):
             modvalue.assign(-1)
-        self.assertEqual(modvalue, modvalue.copy())
 
     def test_value_range(self) -> None:
         # pylint: disable=pointless-statement
         rangetype = RangeInteger("Test.Int", Number(8), Number(16), Number(8))
-        rangevalue = RangeValue(rangetype)
+        rangevalue = IntegerValue(rangetype)
         self.assertFalse(rangevalue.initialized)
         with self.assertRaises(NotInitializedError):
             rangevalue.value
@@ -144,7 +91,6 @@ class TestPyRFLX(unittest.TestCase):
             rangevalue.assign(17)
         with self.assertRaises(ValueError):
             rangevalue.assign(7)
-        self.assertEqual(rangevalue, rangevalue.copy())
 
     def test_value_enum(self) -> None:
         # pylint: disable=pointless-statement
@@ -160,7 +106,6 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(enumvalue.binary, "00000001")
         with self.assertRaises(KeyError):
             enumvalue.assign("Three")
-        self.assertEqual(enumvalue, enumvalue.copy())
 
     def test_value_opaque(self) -> None:
         # pylint: disable=pointless-statement
@@ -172,7 +117,6 @@ class TestPyRFLX(unittest.TestCase):
         self.assertTrue(opaquevalue.initialized)
         self.assertEqual(opaquevalue.length, 16)
         self.assertEqual(opaquevalue.binary, "0000000100000010")
-        self.assertEqual(opaquevalue, opaquevalue.copy())
 
     def test_field_append(self) -> None:
         f = Field("f")
