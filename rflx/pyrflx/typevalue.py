@@ -38,6 +38,10 @@ class TypeValue:
     def value(self) -> Any:
         return NotImplemented
 
+    @abstractmethod
+    def copy(self) -> "TypeValue":
+        return NotImplemented
+
     @classmethod
     def construct(cls, vtype: Type) -> "TypeValue":
         if isinstance(vtype, ModularInteger):
@@ -94,6 +98,13 @@ class ModularValue(ScalarValue):
         self._raise_initialized()
         return Number(self.__value)
 
+    def copy(self) -> "ModularValue":
+        assert isinstance(self.type, ModularInteger)
+        t = ModularValue(self.type)
+        if self._initialized:
+            t.assign(self.__value)
+        return t
+
 
 class RangeValue(ScalarValue):
 
@@ -120,6 +131,13 @@ class RangeValue(ScalarValue):
     def expr(self) -> Number:
         self._raise_initialized()
         return Number(self.__value)
+
+    def copy(self) -> "RangeValue":
+        assert isinstance(self.type, RangeInteger)
+        t = RangeValue(self.type)
+        if self._initialized:
+            t.assign(self.__value)
+        return t
 
 
 class EnumValue(ScalarValue):
@@ -154,6 +172,13 @@ class EnumValue(ScalarValue):
         self._raise_initialized()
         return Variable(self.__value)
 
+    def copy(self) -> "EnumValue":
+        assert isinstance(self.type, Enumeration)
+        t = EnumValue(self.type)
+        if self._initialized:
+            t.assign(self.__value)
+        return t
+
 
 class OpaqueValue(TypeValue):
 
@@ -175,3 +200,10 @@ class OpaqueValue(TypeValue):
     def value(self) -> bytes:
         self._raise_initialized()
         return self.__value
+
+    def copy(self) -> "OpaqueValue":
+        assert isinstance(self.type, Opaque)
+        t = OpaqueValue(self.type)
+        if self._initialized:
+            t.assign(self.__value)
+        return t
