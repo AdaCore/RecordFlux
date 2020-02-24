@@ -18,6 +18,11 @@ class TypeValue:
         args = ", ".join([f"{k}={v}" for k, v in self.__dict__.items()])
         return f"{self.__class__.__name__}({args})"
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return all([self.__dict__[k] == other.__dict__[k] for k in self.__dict__])
+        return False
+
     @property
     def type(self) -> Type:
         return self.__type
@@ -40,6 +45,10 @@ class TypeValue:
 
     @abstractmethod
     def copy(self) -> "TypeValue":
+        return NotImplemented
+
+    @abstractproperty
+    def binary(self) -> str:
         return NotImplemented
 
     @classmethod
@@ -72,12 +81,9 @@ class ScalarValue(TypeValue):
         raise TypeError("could not resolve size_expr: " + repr(size_expr))
 
 
-class ModularValue(ScalarValue):
+class NumericValue(ScalarValue):
 
     __value: int
-
-    def __init__(self, vtype: ModularInteger) -> None:
-        super(ModularValue, self).__init__(vtype)
 
     def assign(self, value: int, check: bool = True) -> None:
         if (
@@ -89,54 +95,46 @@ class ModularValue(ScalarValue):
         self._initialized = True
 
     @property
+    def expr(self) -> Number:
+        self._raise_initialized()
+        return Number(self.__value)
+
+    @property
     def value(self) -> int:
         self._raise_initialized()
         return self.__value
 
     @property
-    def expr(self) -> Number:
+    def binary(self) -> str:
         self._raise_initialized()
-        return Number(self.__value)
+        return format(self.__value, f"0{self.size}b")
+
+    @abstractmethod
+    def copy(self) -> "NumericValue":
+        return NotImplemented
+
+
+class ModularValue(NumericValue):
+    def __init__(self, vtype: ModularInteger) -> None:
+        super(ModularValue, self).__init__(vtype)
 
     def copy(self) -> "ModularValue":
         assert isinstance(self.type, ModularInteger)
         t = ModularValue(self.type)
         if self._initialized:
-            t.assign(self.__value)
+            t.assign(self.value)
         return t
 
 
-class RangeValue(ScalarValue):
-
-    __value: int
-
+class RangeValue(NumericValue):
     def __init__(self, vtype: RangeInteger) -> None:
         super(RangeValue, self).__init__(vtype)
-
-    def assign(self, value: int, check: bool = True) -> None:
-        if (
-            self.type.constraints("value", check).simplified({Variable("value"): Number(value)})
-            != TRUE
-        ):
-            raise ValueError("value not in type range: " + repr(value))
-        self.__value = value
-        self._initialized = True
-
-    @property
-    def value(self) -> int:
-        self._raise_initialized()
-        return self.__value
-
-    @property
-    def expr(self) -> Number:
-        self._raise_initialized()
-        return Number(self.__value)
 
     def copy(self) -> "RangeValue":
         assert isinstance(self.type, RangeInteger)
         t = RangeValue(self.type)
         if self._initialized:
-            t.assign(self.__value)
+            t.assign(self.value)
         return t
 
 
@@ -172,6 +170,12 @@ class EnumValue(ScalarValue):
         self._raise_initialized()
         return Variable(self.__value)
 
+    @property
+    def binary(self) -> str:
+        assert isinstance(self.type, Enumeration)
+        self._raise_initialized()
+        return format(self.type.literals[self.__value].value, f"0{self.size}b")
+
     def copy(self) -> "EnumValue":
         assert isinstance(self.type, Enumeration)
         t = EnumValue(self.type)
@@ -200,6 +204,11 @@ class OpaqueValue(TypeValue):
     def value(self) -> bytes:
         self._raise_initialized()
         return self.__value
+
+    @property
+    def binary(self) -> str:
+        self._raise_initialized()
+        return format(int.from_bytes(self.__value, "big"), f"0{self.length}b")
 
     def copy(self) -> "OpaqueValue":
         assert isinstance(self.type, Opaque)
