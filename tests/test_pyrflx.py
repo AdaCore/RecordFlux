@@ -24,7 +24,7 @@ class TestPyRFLX(unittest.TestCase):
         self.assertIsInstance(package_tlv["Message"], Message)
 
     def test_fields(self) -> None:
-        tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"]
+        tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"].new()
         self.assertEqual(tlv.fields, ["Tag", "Length", "Value", "Checksum"])
         self.assertEqual(tlv.accessible_fields, ["Tag"])
         tag_value = tlv.field_type("Tag")
@@ -45,6 +45,47 @@ class TestPyRFLX(unittest.TestCase):
         tag_value.assign("Msg_Error")
         tlv.set("Tag", tag_value)
         self.assertEqual(tlv.accessible_fields, ["Tag"])
+
+    def test_set_value(self) -> None:
+        tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"].new()
+        v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
+        v2 = b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10"
+        tag_value = tlv.field_type("Tag")
+        assert isinstance(tag_value, EnumValue)
+        tag_value.assign("Msg_Data")
+        tlv.set("Tag", tag_value)
+        length_value = tlv.field_type("Length")
+        assert isinstance(length_value, ModularValue)
+        length_value.assign(8)
+        tlv.set("Length", length_value)
+        value = tlv.field_type("Value")
+        assert isinstance(value, OpaqueValue)
+        value.assign(v1)
+        tlv.set("Value", value)
+        value.assign(v2)
+        self.assertEqual(tlv.get("Value").value, v1)
+        with self.assertRaises(ValueError):
+            tlv.set("Value", value)
+
+    def test_tlv_message(self) -> None:
+        tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"]["Message"].new()
+        v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
+        tag_value = tlv.field_type("Tag")
+        assert isinstance(tag_value, EnumValue)
+        tag_value.assign("Msg_Data")
+        tlv.set("Tag", tag_value)
+        length_value = tlv.field_type("Length")
+        assert isinstance(length_value, ModularValue)
+        length_value.assign(8)
+        tlv.set("Length", length_value)
+        value = tlv.field_type("Value")
+        assert isinstance(value, OpaqueValue)
+        value.assign(v1)
+        tlv.set("Value", value)
+        checksum = tlv.field_type("Checksum")
+        assert isinstance(checksum, ModularValue)
+        checksum.assign(2 ** 32 - 1)
+        tlv.set("Checksum", checksum)
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
