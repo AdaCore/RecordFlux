@@ -16,6 +16,7 @@ from pyparsing import (
     printables,
 )
 
+from rflx.error import Location
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -89,10 +90,9 @@ class FSMParser:
         return SubprogramCall(tokens[0], tokens[1:])
 
     @classmethod
-    def __identifier(cls) -> Token:
-        identifier = qualified_identifier()
-        identifier.setParseAction(lambda t: ID("".join(map(str, t.asList()))))
-        return identifier
+    def __parse_conversion(cls, tokens: List[Expr]) -> Expr:
+        assert isinstance(tokens[0], ID)
+        return Conversion(tokens[0], tokens[1])
 
     @classmethod
     def __parse_op_comp(cls, tokens: List[Expr]) -> Expr:
@@ -127,6 +127,16 @@ class FSMParser:
         return result
 
     @classmethod
+    def __parse_variable(cls, tokens: List[ID]) -> Expr:
+        assert len(tokens) > 0 and len(tokens) < 3
+        assert tokens[0].location
+        assert tokens[-1].location
+        locn = Location(start=tokens[0].location.start, end=tokens[-1].location.end)
+        if len(tokens) == 2:
+            return Field(Variable(tokens[0]), tokens[1], location=locn)
+        return Variable(tokens[0], location=locn)
+
+    @classmethod
     def __parse_op_mul_div(cls, tokens: List[Expr]) -> Expr:
         result = tokens[0]
         for op, right in zip(tokens[1::2], tokens[2::2]):
@@ -156,9 +166,13 @@ class FSMParser:
                 result = Field(result, suffix[1])
             if suffix[0] == "Binding":
                 result = Binding(result, suffix[1])
-            if suffix[0] == "Aggregate":
-                result = MessageAggregate(result.identifier, suffix[1])
 
+        return result
+
+    @classmethod
+    def __variable(cls) -> Token:
+        result = delimitedList(unqualified_identifier(), ".")
+        result.setParseAction(cls.__parse_variable)
         return result
 
     @classmethod
@@ -183,8 +197,8 @@ class FSMParser:
         function_call = unqualified_identifier() + lpar + parameters + rpar
         function_call.setParseAction(cls.__parse_call)
 
-        conversion = cls.__identifier() + lpar + expression + rpar
-        conversion.setParseAction(lambda t: Conversion(t[0], t[1]))
+        conversion = qualified_identifier() + lpar + expression + rpar
+        conversion.setParseAction(cls.__parse_conversion)
 
         quantifier = (
             Keyword("for").suppress()
@@ -223,8 +237,14 @@ class FSMParser:
         )
         terms.setParseAction(lambda t: dict(zip(t[0::2], t[1::2])))
 
-        variable = cls.__identifier()
-        variable.setParseAction(lambda t: Variable(ID("".join(map(str, t.asList())))))
+        aggregate = (
+            qualified_identifier()
+            + Literal("'").suppress()
+            + lpar
+            + (null_message | components)
+            + rpar
+        )
+        aggregate.setParseAction(lambda t: MessageAggregate(t[0], t[1]))
 
         atom = (
             numeric_literal()
@@ -234,7 +254,8 @@ class FSMParser:
             | comprehension
             | conversion
             | function_call
-            | variable
+            | aggregate
+            | cls.__variable()
         )
 
         attribute_designator = (
@@ -254,10 +275,7 @@ class FSMParser:
         binding = Keyword("where").suppress() + terms
         binding.setParseAction(lambda t: ("Binding", t[0]))
 
-        aggregate = Literal("'").suppress() + lpar + (null_message | components) + rpar
-        aggregate.setParseAction(lambda t: ("Aggregate", t[0]))
-
-        suffix = binding ^ attribute ^ field ^ aggregate
+        suffix = binding ^ attribute ^ field
 
         op_comp = Keyword("<") | Keyword(">") | Keyword("=") | Keyword("/=")
 
@@ -296,25 +314,25 @@ class FSMParser:
 
         parameters = lpar + delimitedList(cls.__expression(), delim=",") + rpar
 
-        call = cls.__identifier() + parameters
+        call = unqualified_identifier() + parameters
         call.setParseAction(cls.__parse_call)
 
-        erase = cls.__identifier() + Literal(":=").suppress() + Keyword("null")
+        erase = unqualified_identifier() + Literal(":=").suppress() + Keyword("null")
         erase.setParseAction(lambda t: Erase(t[0]))
 
-        assignment = cls.__identifier() + Literal(":=").suppress() + cls.expression()
+        assignment = unqualified_identifier() + Literal(":=").suppress() + cls.__expression()
         assignment.setParseAction(lambda t: Assignment(t[0], t[1]))
 
         attribute_designator = Keyword("Append") | Keyword("Extend")
 
         list_operation = (
-            cls.__identifier() + Literal("'").suppress() + attribute_designator + parameters
+            unqualified_identifier() + Literal("'").suppress() + attribute_designator + parameters
         )
         list_operation.setParseAction(
             lambda t: Assignment(t[0], SubprogramCall(t[1], [Variable(t[0]), t[2]]))
         )
 
-        list_reset = cls.__identifier() + Literal("'").suppress() + Keyword("Reset")
+        list_reset = unqualified_identifier() + Literal("'").suppress() + Keyword("Reset")
         list_reset.setParseAction(lambda t: Reset(t[0]))
 
         return (erase | assignment | list_reset | list_operation | call) + StringEnd()
@@ -324,7 +342,7 @@ class FSMParser:
 
         lpar, rpar = map(Suppress, "()")
 
-        parameter = unqualified_identifier() + Literal(":").suppress() + cls.__identifier()
+        parameter = unqualified_identifier() + Literal(":").suppress() + qualified_identifier()
         parameter.setParseAction(lambda t: Argument(t[0], t[1]))
 
         parameter_list = lpar + delimitedList(parameter, delim=";") + rpar
@@ -333,20 +351,22 @@ class FSMParser:
             unqualified_identifier()
             + Optional(parameter_list)
             + Keyword("return").suppress()
-            + cls.__identifier()
+            + qualified_identifier()
         )
         function_decl.setParseAction(lambda t: (t[0], Subprogram(t[1:-1], t[-1])))
 
-        initializer = Literal(":=").suppress() + cls.expression()
+        initializer = Literal(":=").suppress() + cls.__expression()
 
-        variable_base_decl = unqualified_identifier() + Literal(":").suppress() + cls.__identifier()
+        variable_base_decl = (
+            unqualified_identifier() + Literal(":").suppress() + qualified_identifier()
+        )
 
         variable_decl = variable_base_decl + Optional(initializer)
         variable_decl.setParseAction(
             lambda t: (t[0], VariableDeclaration(t[1], t[2] if t[2:] else None))
         )
 
-        renames = variable_base_decl + Keyword("renames").suppress() + cls.expression()
+        renames = variable_base_decl + Keyword("renames").suppress() + cls.__variable()
         renames.setParseAction(lambda t: (t[0], Renames(t[1], t[2])))
 
         private = (

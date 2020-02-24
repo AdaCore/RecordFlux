@@ -38,12 +38,13 @@ from rflx.identifier import ID
 
 def test_simple_equation() -> None:
     result = FSMParser.expression().parseString("Foo.Bar = abc")[0]
-    assert result == Equal(Variable("Foo.Bar"), Variable("abc"))
+    expected = Equal(Field(Variable("Foo"), "Bar"), Variable("abc"))
+    assert result == expected
 
 
 def test_simple_inequation() -> None:
     result = FSMParser.expression().parseString("Foo.Bar /= abc")[0]
-    assert result == NotEqual(Variable("Foo.Bar"), Variable("abc"))
+    assert result == NotEqual(Field(Variable("Foo"), "Bar"), Variable("abc"))
 
 
 def test_valid() -> None:
@@ -114,7 +115,7 @@ def test_parenthesized_expression2() -> None:
 
 def test_numeric_constant_expression() -> None:
     result = FSMParser.expression().parseString("Keystore_Message.Length = 0")[0]
-    assert result == Equal(Variable("Keystore_Message.Length"), Number(0))
+    assert result == Equal(Field(Variable("Keystore_Message"), "Length"), Number(0))
 
 
 def test_complex_expression() -> None:
@@ -128,13 +129,16 @@ def test_complex_expression() -> None:
     result = FSMParser.expression().parseString(expr)[0]
     expected = Or(
         Equal(Valid(Variable("Keystore_Message")), FALSE),
-        NotEqual(Variable("Keystore_Message.Tag"), Variable("KEYSTORE_RESPONSE")),
-        NotEqual(Variable("Keystore_Message.Request"), Variable("KEYSTORE_REQUEST_PSK_IDENTITIES")),
+        NotEqual(Field(Variable("Keystore_Message"), "Tag"), Variable("KEYSTORE_RESPONSE")),
+        NotEqual(
+            Field(Variable("Keystore_Message"), "Request"),
+            Variable("KEYSTORE_REQUEST_PSK_IDENTITIES"),
+        ),
         And(
-            Equal(Variable("Keystore_Message.Length"), Number(0)),
+            Equal(Field(Variable("Keystore_Message"), "Length"), Number(0)),
             NotContains(
-                Variable("TLS_Handshake.PSK_DHE_KE"),
-                Variable("Configuration.PSK_Key_Exchange_Modes"),
+                Field(Variable("TLS_Handshake"), "PSK_DHE_KE"),
+                Field(Variable("Configuration"), "PSK_Key_Exchange_Modes"),
             ),
         ),
     )
@@ -155,13 +159,17 @@ def test_complex_existential_quantification() -> None:
     result = FSMParser.expression().parseString(expr)[0]
     expected = ForSome(
         "E",
-        Variable("Server_Hello_Message.Extensions"),
+        Field(Variable("Server_Hello_Message"), "Extensions"),
         And(
-            Equal(Variable("E.Tag"), Variable("TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS")),
+            Equal(
+                Field(Variable("E"), "Tag"),
+                Field(Variable("TLS_Handshake"), "EXTENSION_SUPPORTED_VERSIONS"),
+            ),
             NotContains(
-                Variable("GreenTLS.TLS_1_3"),
+                Field(Variable("GreenTLS"), "TLS_1_3"),
                 Field(
-                    Conversion("TLS_Handshake.Supported_Versions", Variable("E.Data")), "Versions",
+                    Conversion("TLS_Handshake.Supported_Versions", Field(Variable("E"), "Data")),
+                    "Versions",
                 ),
             ),
         ),
@@ -185,15 +193,20 @@ def test_universal_quantification() -> None:
 
 
 def test_type_conversion_simple() -> None:
-    expr = "Foo (Bar) = 5"
+    expr = "Foo.T (Bar) = 5"
     result = FSMParser.expression().parseString(expr)[0]
-    expected = Equal(Conversion("Foo", Variable("Bar")), Number(5))
+    expected = Equal(Conversion("Foo.T", Variable("Bar")), Number(5))
     assert result == expected
 
 
 def test_field_simple() -> None:
     result = FSMParser.expression().parseString("Bar (Foo).Fld")[0]
     assert result == Field(Conversion("Bar", Variable("Foo")), "Fld")
+
+
+def test_field_variable() -> None:
+    result = FSMParser.expression().parseString("Types.Bar")[0]
+    assert result == Field(Variable("Types"), "Bar")
 
 
 def test_field_length() -> None:
@@ -204,7 +217,9 @@ def test_field_length() -> None:
 def test_type_conversion() -> None:
     expr = "TLS_Handshake.Supported_Versions (E.Data) = 5"
     result = FSMParser.expression().parseString(expr)[0]
-    expected = Equal(Conversion("TLS_Handshake.Supported_Versions", Variable("E.Data")), Number(5))
+    expected = Equal(
+        Conversion("TLS_Handshake.Supported_Versions", Field(Variable("E"), "Data")), Number(5)
+    )
     assert result == expected
 
 
@@ -212,8 +227,11 @@ def test_use_type_conversion() -> None:
     expr = "GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data).Versions"
     result = FSMParser.expression().parseString(expr)[0]
     expected = NotContains(
-        Variable("GreenTLS.TLS_1_3"),
-        Field(Conversion("TLS_Handshake.Supported_Versions", Variable("E.Data")), "Versions",),
+        Field(Variable("GreenTLS"), "TLS_1_3"),
+        Field(
+            Conversion("TLS_Handshake.Supported_Versions", Field(Variable("E"), "Data")),
+            "Versions",
+        ),
     )
     assert result == expected
 
@@ -225,7 +243,7 @@ def test_present() -> None:
 
 def test_list_comprehension_without_condition() -> None:
     result = FSMParser.expression().parseString("[for K in PSKs => K.Identity]")[0]
-    expected = Comprehension("K", Variable("PSKs"), Variable("K.Identity"), TRUE)
+    expected = Comprehension("K", Variable("PSKs"), Field(Variable("K"), "Identity"), TRUE)
     assert result == expected
 
 
@@ -247,7 +265,10 @@ def test_field_length_lt() -> None:
 def test_list_comprehension() -> None:
     result = FSMParser.expression().parseString("[for E in List => E.Bar when E.Tag = Foo]")[0]
     assert result == Comprehension(
-        "E", Variable("List"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
+        "E",
+        Variable("List"),
+        Field(Variable("E"), "Bar"),
+        Equal(Field(Variable("E"), "Tag"), Variable("Foo")),
     )
 
 
@@ -260,14 +281,17 @@ def test_head_attribute_comprehension() -> None:
     result = FSMParser.expression().parseString("[for E in List => E.Bar when E.Tag = Foo]'Head")[0]
     assert result == Head(
         Comprehension(
-            "E", Variable("List"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
+            "E",
+            Variable("List"),
+            Field(Variable("E"), "Bar"),
+            Equal(Field(Variable("E"), "Tag"), Variable("Foo")),
         )
     )
 
 
 def test_gt() -> None:
     result = FSMParser.expression().parseString("Server_Name_Extension.Data_Length > 0")[0]
-    assert result == Greater(Variable("Server_Name_Extension.Data_Length"), Number(0))
+    assert result == Greater(Field(Variable("Server_Name_Extension"), "Data_Length"), Number(0))
 
 
 def test_list_head_field_simple() -> None:
@@ -282,7 +306,10 @@ def test_list_head_field() -> None:
     assert result == Field(
         Head(
             Comprehension(
-                "E", Variable("List"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
+                "E",
+                Variable("List"),
+                Field(Variable("E"), "Bar"),
+                Equal(Field(Variable("E"), "Tag"), Variable("Foo")),
             )
         ),
         "Data",
@@ -305,11 +332,11 @@ def test_complex() -> None:
                         Head(
                             Comprehension(
                                 "E",
-                                Variable("Client_Hello_Message.Extensions"),
+                                Field(Variable("Client_Hello_Message"), "Extensions"),
                                 Variable("E"),
                                 Equal(
-                                    Variable("E.Tag"),
-                                    Variable("TLS_Handshake.EXTENSION_KEY_SHARE"),
+                                    Field(Variable("E"), "Tag"),
+                                    Field(Variable("TLS_Handshake"), "EXTENSION_KEY_SHARE"),
                                 ),
                             )
                         ),
@@ -318,7 +345,7 @@ def test_complex() -> None:
                 ),
                 "Shares",
             ),
-            Equal(Variable("S.Group"), Variable("Selected_Group")),
+            Equal(Field(Variable("S"), "Group"), Variable("Selected_Group")),
         ),
         FALSE,
     )
