@@ -1,4 +1,4 @@
-from typing import List, Mapping, Union
+from typing import Any, List, Mapping, Union
 
 import rflx.model as model
 from rflx.common import unique
@@ -75,23 +75,23 @@ class Message:
         m = Message(self.__model)
         return m
 
-    def field_type(self, fld: str) -> TypeValue:
+    def __field_type(self, fld: str) -> TypeValue:
         return TypeValue.construct(self.__model.types[model.Field(fld)])
 
-    def set(self, fld: str, typedvalue: TypeValue) -> None:
-        if typedvalue.type != self.field_type(fld).type:
+    def set(self, fld: str, value: Any) -> None:
+        typedvalue = self.__field_type(fld)
+        if not isinstance(value, typedvalue.accepted_type):
             raise TypeError(
-                f"cannot assign different types: {repr(typedvalue.type)}"
-                f"!= {repr(self.__fields[fld].typeval.type)}"
+                f"cannot assign different types: {repr(typedvalue.accepted_type)}"
+                f"!= {repr(type(value))}"
             )
-        if not typedvalue.initialized:
-            raise ValueError("cannot assign uninitialized value")
+        typedvalue.assign(value, True)
         incoming = self.__model.incoming(model.Field(fld))
         for i in incoming:
             if i.source.name in self.__fields:
                 source = self.__fields[i.source.name]
                 self.__add_field(
-                    i.target.name, typedvalue.copy(), Add(source.first, source.length), i.length
+                    i.target.name, typedvalue, Add(source.first, source.length), i.length
                 )
                 return
         raise RuntimeError(f"failed to add field {fld}")
