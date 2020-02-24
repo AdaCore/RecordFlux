@@ -91,10 +91,13 @@ class Message:
             if i.source.name in self.__fields:
                 source = self.__fields[i.source.name]
                 self.__add_field(
-                    i.target.name, typedvalue, Add(source.first, source.length), i.length
+                    i.target.name, typedvalue.copy(), Add(source.first, source.length), i.length
                 )
                 return
         raise RuntimeError(f"failed to add field {fld}")
+
+    def get(self, fld: str) -> TypeValue:
+        return self.__fields[fld].typeval
 
     @property
     def fields(self) -> List[str]:
