@@ -100,6 +100,15 @@ class Message:
         return self.__fields[fld].typeval
 
     @property
+    def binary(self) -> bytes:
+        bits = "".join([f.typeval.binary for f in self.__fields.items()[1:]])
+        if len(bits) % 8:
+            raise ValueError(f"message length must be dividable by 8 ({len(bits)})")
+        return b"".join(
+            [int(bits[i : i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)]
+        )
+
+    @property
     def fields(self) -> List[str]:
         return [f.name for f in self.__model.all_fields[1:-1]]
 
