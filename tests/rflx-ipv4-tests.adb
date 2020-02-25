@@ -57,9 +57,9 @@ package body RFLX.IPv4.Tests is
       ECN             : IPv4.ECN;
       Total_Length    : IPv4.Total_Length;
       Identification  : IPv4.Identification;
-      Flag_R          : IPv4.Flag;
-      Flag_DF         : IPv4.Flag;
-      Flag_MF         : IPv4.Flag;
+      Flag_R          : Boolean;
+      Flag_DF         : Boolean;
+      Flag_MF         : Boolean;
       Fragment_Offset : IPv4.Fragment_Offset;
       TTL             : IPv4.TTL;
       Protocol        : IPv4.Protocol;
@@ -104,17 +104,17 @@ package body RFLX.IPv4.Tests is
                         Assert (Valid, "Invalid Flag_R");
                         if Valid then
                            Flag_R := IPv4.Packet.Get_Flag_R (Context);
-                           Assert (Flag_R'Image, IPv4.Flag'Image (Flag_False), "Invalid Flag_R");
+                           Assert (Flag_R'Image, Boolean'Image (False), "Invalid Flag_R");
                            Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_Flag_DF);
                            Assert (Valid, "Invalid Flag_DF");
                            if Valid then
                               Flag_DF := IPv4.Packet.Get_Flag_DF (Context);
-                              Assert (Flag_DF'Image, IPv4.Flag'Image (Flag_False), "Invalid Flag_DF");
+                              Assert (Flag_DF'Image, Boolean'Image (False), "Invalid Flag_DF");
                               Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_Flag_MF);
                               Assert (Valid, "Invalid Flag_MF");
                               if Valid then
                                  Flag_MF := IPv4.Packet.Get_Flag_MF (Context);
-                                 Assert (Flag_MF'Image, IPv4.Flag'Image (Flag_False), "Invalid Flag_MF");
+                                 Assert (Flag_MF'Image, Boolean'Image (False), "Invalid Flag_MF");
                                  Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_Fragment_Offset);
                                  Assert (Valid, "Invalid Fragment_Offset");
                                  if Valid then
@@ -181,7 +181,7 @@ package body RFLX.IPv4.Tests is
       Buffer        : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(68, 3, 42);
       Context       : IPv4.Option.Context := IPv4.Option.Create;
       Valid         : Boolean;
-      Copied        : IPv4.Flag;
+      Copied        : Boolean;
       Option_Class  : IPv4.Option_Class;
       Option_Number : IPv4.Option_Number;
       Option_Length : IPv4.Option_Length;
@@ -193,7 +193,7 @@ package body RFLX.IPv4.Tests is
       Assert (Valid, "Invalid Copied");
       if Valid then
          Copied := IPv4.Option.Get_Copied (Context);
-         Assert (Copied'Image, Flag_False'Image, "Invalid Copied");
+         Assert (Copied'Image, False'Image, "Invalid Copied");
          Valid := IPv4.Option.Valid (Context, IPv4.Option.F_Option_Class);
          Assert (Valid, "Invalid Option_Class");
          if Valid then
@@ -279,9 +279,9 @@ package body RFLX.IPv4.Tests is
       IPv4.Packet.Set_ECN (Context, 0);
       IPv4.Packet.Set_Total_Length (Context, 44);
       IPv4.Packet.Set_Identification (Context, 1);
-      IPv4.Packet.Set_Flag_R (Context, IPv4.Flag_False);
-      IPv4.Packet.Set_Flag_DF (Context, IPv4.Flag_False);
-      IPv4.Packet.Set_Flag_MF (Context, IPv4.Flag_False);
+      IPv4.Packet.Set_Flag_R (Context, False);
+      IPv4.Packet.Set_Flag_DF (Context, False);
+      IPv4.Packet.Set_Flag_MF (Context, False);
       IPv4.Packet.Set_Fragment_Offset (Context, 0);
       IPv4.Packet.Set_TTL (Context, 64);
       IPv4.Packet.Set_Protocol (Context, IPv4.PROTOCOL_UDP);
@@ -310,7 +310,7 @@ package body RFLX.IPv4.Tests is
       Context       : IPv4.Option.Context := IPv4.Option.Create;
    begin
       IPv4.Option.Initialize (Context, Buffer);
-      IPv4.Option.Set_Copied (Context, IPv4.Flag_False);
+      IPv4.Option.Set_Copied (Context, False);
       IPv4.Option.Set_Option_Class (Context, IPv4.Debugging_And_Measurement);
       IPv4.Option.Set_Option_Number (Context, 4);
       IPv4.Option.Set_Option_Length (Context, 3);
