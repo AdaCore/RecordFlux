@@ -1,7 +1,16 @@
 import pytest
 
 from rflx.error import RecordFluxError
-from rflx.expression import FALSE, TRUE, Channel, Equal, Subprogram, Variable, VariableDeclaration
+from rflx.expression import (
+    FALSE,
+    TRUE,
+    Channel,
+    Equal,
+    Renames,
+    Subprogram,
+    Variable,
+    VariableDeclaration,
+)
 from rflx.fsm import State, StateMachine, StateName, Transition
 from rflx.fsm_expression import (
     Binding,
@@ -818,4 +827,88 @@ def test_undeclared_variable_in_subprogram_call() -> None:
                 "Result": VariableDeclaration("Boolean"),
                 "SubProg": Subprogram([], "Boolean"),
             },
+        )
+
+
+def test_function_declaration_is_no_builtin_read() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match='^session: error: Subprogram declaration shadows builtin subprogram "Read"$',
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Read": Subprogram([], "Boolean")},
+        )
+
+
+def test_function_declaration_is_no_builtin_write() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match='^session: error: Channel declaration shadows builtin subprogram "Write"$',
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Write": Channel(read=True, write=False)},
+        )
+
+
+def test_function_declaration_is_no_builtin_call() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match='^session: error: VariableDeclaration declaration shadows builtin subprogram "Call"$',
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Call": VariableDeclaration("Boolean")},
+        )
+
+
+def test_function_declaration_is_no_builtin_data_available() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match='^session: error: Renames declaration shadows builtin subprogram "Data_Available"$',
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Data_Available": Renames("Boolean", Variable("Foo.Bar"))},
         )
