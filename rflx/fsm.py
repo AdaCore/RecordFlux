@@ -93,6 +93,7 @@ class StateMachine(Base):
         self.__validate_state_reachability()
         self.__validate_conditions()
         self.__validate_actions()
+        self.__validate_declarations()
         self.error.propagate()
 
     def __validate_conditions(self) -> None:
@@ -197,6 +198,16 @@ class StateMachine(Base):
                 Severity.ERROR,
                 self.location,
             )
+
+    def __validate_declarations(self) -> None:
+        for k, d in self.__declarations.items():
+            if str(k).upper() in ["READ", "WRITE", "CALL", "DATA_AVAILABLE"]:
+                self.error.append(
+                    f'{type(d).__name__} declaration shadows builtin subprogram "{k}"',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
 
 
 class FSM:
