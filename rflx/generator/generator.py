@@ -51,19 +51,9 @@ from rflx.expression import (
     Slice,
     Variable,
 )
-from rflx.model import (
-    FINAL,
-    Array,
-    Enumeration,
-    Field,
-    Message,
-    ModularInteger,
-    Opaque,
-    Scalar,
-    Type,
-)
+from rflx.model import FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
-from .common import VALID_CONTEXT, GeneratorCommon, length_dependent_condition
+from .common import VALID_CONTEXT, GeneratorCommon, base_type_name, length_dependent_condition
 from .types import Types
 
 
@@ -106,11 +96,9 @@ class GeneratorGenerator:
                         *self.common.field_bit_location_declarations(Selected("Val", "Fld")),
                         *self.common.field_byte_location_declarations(),
                         *unique(
-                            self.insert_function(
-                                t.full_name if isinstance(t, ModularInteger) else t.full_base_name
-                            )
+                            self.insert_function(base_type_name(t))
                             for t in message.types.values()
-                            if not isinstance(t, (Array, Opaque))
+                            if isinstance(t, Scalar)
                         ),
                     ],
                     [
@@ -248,17 +236,16 @@ class GeneratorGenerator:
         self, message: Message, scalar_fields: Mapping[Field, Scalar]
     ) -> UnitPart:
         def specification(field: Field, field_type: Type) -> ProcedureSpecification:
-            type_name = (
-                field_type.enum_name
-                if isinstance(field_type, Enumeration) and field_type.always_valid
-                else field_type.name
-            )
+            if field_type.package == "__BUILTINS__":
+                type_name = field_type.name
+            elif isinstance(field_type, Enumeration) and field_type.always_valid:
+                type_name = field_type.full_enum_name
+            else:
+                type_name = field_type.full_name
+
             return ProcedureSpecification(
                 f"Set_{field.name}",
-                [
-                    InOutParameter(["Ctx"], "Context"),
-                    Parameter(["Val"], f"{message.package}.{type_name}"),
-                ],
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Val"], type_name)],
             )
 
         return UnitPart(

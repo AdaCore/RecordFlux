@@ -457,7 +457,13 @@ class Parser:
 
 
 def convert_to_messages(spec: Specification) -> Dict[str, Message]:
-    types: Dict[str, Type] = {Opaque().name: Opaque()}
+    boolean = Enumeration(
+        "__BUILTINS__.Boolean", {"False": Number(0), "True": Number(1)}, Number(1), False
+    )
+    types: Dict[str, Type] = {
+        Opaque().name: Opaque(),
+        boolean.name: boolean,
+    }
     messages: Dict[str, Message] = {}
 
     for t in spec.package.types:

@@ -6,7 +6,6 @@ package IPv4 is
    type ECN is mod 2**2;
    type Total_Length is range 20 .. 2**16 - 1 with Size => 16;
    type Identification is mod 2**16;
-   type Flag is (Flag_False, Flag_True) with Size => 1;
    type Fragment_Offset is mod 2**13;
    type TTL is mod 2**8;
    type Protocol is (PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
@@ -19,7 +18,7 @@ package IPv4 is
 
    type Option is
       message
-         Copied : Flag;
+         Copied : Boolean;
          Option_Class : Option_Class;
          Option_Number : Option_Number
             then null
@@ -48,11 +47,11 @@ package IPv4 is
             then Identification
                if Total_Length >= IHL * 4;
          Identification : Identification;
-         Flag_R : Flag
+         Flag_R : Boolean
             then Flag_DF
-               if Flag_R = Flag_False;
-         Flag_DF : Flag;
-         Flag_MF : Flag;
+               if Flag_R = False;
+         Flag_DF : Boolean;
+         Flag_MF : Boolean;
          Fragment_Offset : Fragment_Offset;
          TTL : TTL;
          Protocol : Protocol;

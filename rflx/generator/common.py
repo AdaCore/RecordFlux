@@ -485,6 +485,8 @@ class GeneratorCommon:
 
 
 def base_type_name(scalar_type: Scalar) -> str:
+    if scalar_type.package == "__BUILTINS__":
+        return f"Builtin_Types.{scalar_type.base_name}"
     if isinstance(scalar_type, (RangeInteger, Enumeration)):
         return scalar_type.full_base_name
     if isinstance(scalar_type, ModularInteger):

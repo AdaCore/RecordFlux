@@ -191,6 +191,10 @@ class Enumeration(Scalar):
     def enum_name(self) -> str:
         return f"{self.name}_Enum"
 
+    @property
+    def full_enum_name(self) -> str:
+        return f"{self.full_name}_Enum"
+
 
 class Composite(Type):
     @property

@@ -135,6 +135,7 @@ LIBRARY_FILES = (
     "generic_types.ads",
     "generic_types.adb",
     "builtin_types.ads",
+    "builtin_types-conversions.ads",
     "lemmas.adb",
     "lemmas.ads",
     "message_sequence.adb",
@@ -269,9 +270,19 @@ class Generator:
 
     # pylint: disable=too-many-statements
     def __create_generic_message_unit(self, message: Message) -> None:
-        context: List[ContextItem] = [
-            WithClause(self.types.prefixed_generic_types),
-        ]
+        context: List[ContextItem] = []
+
+        if any(t.package == "__BUILTINS__" for t in message.types.values()):
+            context.extend(
+                [
+                    WithClause(self.types.prefixed_builtin_types),
+                    WithClause(self.types.prefixed_builtin_conversions),
+                    UsePackageClause(self.types.prefixed_builtin_conversions),
+                ]
+            )
+
+        context.append(WithClause(self.types.prefixed_generic_types),)
+
         unit_name = full_generic_name(self.prefix, message.package, message.name)
         parameters: List[FormalDeclaration] = [
             FormalPackageDeclaration("Types", self.types.prefixed_generic_types),
@@ -1984,6 +1995,9 @@ class Generator:
 
     def __create_type(self, field_type: Type, message_package: str) -> None:
         unit = self.units[message_package]
+
+        if field_type.package == "__BUILTINS__":
+            return
 
         if isinstance(field_type, ModularInteger):
             unit += UnitPart(modular_types(field_type))
