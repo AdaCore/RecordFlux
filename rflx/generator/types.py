@@ -3,6 +3,14 @@ class Types:
         self.prefix = prefix
 
     @property
+    def prefixed_builtin_types(self) -> str:
+        return f"{self.prefix}Builtin_Types"
+
+    @property
+    def prefixed_builtin_conversions(self) -> str:
+        return f"{self.prefix}Builtin_Types.Conversions"
+
+    @property
     def prefixed_generic_types(self) -> str:
         return f"{self.prefix}Generic_Types"
 

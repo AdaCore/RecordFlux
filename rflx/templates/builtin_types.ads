@@ -14,4 +14,6 @@ is
 
    type Bit_Length is range 0 .. Length'Last * 8;
 
+   type Boolean_Base is mod 2;
+
 end {prefix}Builtin_Types;

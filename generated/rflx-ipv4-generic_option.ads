@@ -1,3 +1,6 @@
+with RFLX.Builtin_Types;
+with RFLX.Builtin_Types.Conversions;
+use RFLX.Builtin_Types.Conversions;
 with RFLX.Generic_Types;
 
 generic
@@ -30,7 +33,7 @@ is
             when F_Initial | F_Option_Data | F_Final =>
                null;
             when F_Copied =>
-               Copied_Value : IPv4.Flag_Base;
+               Copied_Value : Builtin_Types.Boolean_Base;
             when F_Option_Class =>
                Option_Class_Value : IPv4.Option_Class_Base;
             when F_Option_Number =>
@@ -204,7 +207,7 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Copied (Ctx : Context) return IPv4.Flag with
+   function Get_Copied (Ctx : Context) return Boolean with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Copied);
@@ -232,7 +235,7 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Option_Data);
 
-   procedure Set_Copied (Ctx : in out Context; Val : IPv4.Flag) with
+   procedure Set_Copied (Ctx : in out Context; Val : Boolean) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -519,7 +522,7 @@ private
         and then (if Invalid (Cursors (F_Option_Length)) then
            Invalid (Cursors (F_Option_Data))))
       and then (if Structural_Valid (Cursors (F_Copied)) then
-         (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1) = IPv4.Flag_Base'Size
+         (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1) = Builtin_Types.Boolean_Base'Size
            and then Cursors (F_Copied).Predecessor = F_Initial
            and then Cursors (F_Copied).First = First
            and then (if Structural_Valid (Cursors (F_Option_Class)) then

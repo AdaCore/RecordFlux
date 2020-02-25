@@ -49,21 +49,9 @@ from rflx.expression import (
     Selected,
     Slice,
 )
-from rflx.model import (
-    FINAL,
-    INITIAL,
-    Array,
-    Composite,
-    Enumeration,
-    Field,
-    Message,
-    ModularInteger,
-    Opaque,
-    Scalar,
-    Type,
-)
+from rflx.model import FINAL, INITIAL, Composite, Enumeration, Field, Message, Scalar, Type
 
-from .common import NULL, VALID_CONTEXT, GeneratorCommon, length_dependent_condition
+from .common import NULL, VALID_CONTEXT, GeneratorCommon, base_type_name, length_dependent_condition
 from .types import Types
 
 
@@ -170,11 +158,9 @@ class ParserGenerator:
                         *self.common.field_bit_location_declarations(Name("Fld")),
                         *self.common.field_byte_location_declarations(),
                         *unique(
-                            self.extract_function(
-                                t.full_name if isinstance(t, ModularInteger) else t.full_base_name
-                            )
+                            self.extract_function(base_type_name(t))
                             for t in message.types.values()
-                            if not isinstance(t, (Array, Opaque))
+                            if isinstance(t, Scalar)
                         ),
                     ],
                     [
@@ -630,8 +616,13 @@ class ParserGenerator:
     @staticmethod
     def create_scalar_accessor_functions(scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
         def specification(field: Field, field_type: Type) -> FunctionSpecification:
+            if field_type.package == "__BUILTINS__":
+                type_name = field_type.name
+            else:
+                type_name = field_type.full_name
+
             return FunctionSpecification(
-                f"Get_{field.name}", field_type.full_name, [Parameter(["Ctx"], "Context")]
+                f"Get_{field.name}", type_name, [Parameter(["Ctx"], "Context")]
             )
 
         def result(field: Field, field_type: Type) -> Expr:

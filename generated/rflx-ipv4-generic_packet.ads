@@ -1,3 +1,6 @@
+with RFLX.Builtin_Types;
+with RFLX.Builtin_Types.Conversions;
+use RFLX.Builtin_Types.Conversions;
 with RFLX.Generic_Types;
 with RFLX.Message_Sequence;
 
@@ -44,11 +47,11 @@ is
             when F_Identification =>
                Identification_Value : IPv4.Identification;
             when F_Flag_R =>
-               Flag_R_Value : IPv4.Flag_Base;
+               Flag_R_Value : Builtin_Types.Boolean_Base;
             when F_Flag_DF =>
-               Flag_DF_Value : IPv4.Flag_Base;
+               Flag_DF_Value : Builtin_Types.Boolean_Base;
             when F_Flag_MF =>
-               Flag_MF_Value : IPv4.Flag_Base;
+               Flag_MF_Value : Builtin_Types.Boolean_Base;
             when F_Fragment_Offset =>
                Fragment_Offset_Value : IPv4.Fragment_Offset;
             when F_TTL =>
@@ -258,17 +261,17 @@ is
        Valid_Context (Ctx)
           and Valid (Ctx, F_Identification);
 
-   function Get_Flag_R (Ctx : Context) return IPv4.Flag with
+   function Get_Flag_R (Ctx : Context) return Boolean with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Flag_R);
 
-   function Get_Flag_DF (Ctx : Context) return IPv4.Flag with
+   function Get_Flag_DF (Ctx : Context) return Boolean with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Flag_DF);
 
-   function Get_Flag_MF (Ctx : Context) return IPv4.Flag with
+   function Get_Flag_MF (Ctx : Context) return Boolean with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Flag_MF);
@@ -569,7 +572,7 @@ is
           and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
           and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old;
 
-   procedure Set_Flag_R (Ctx : in out Context; Val : IPv4.Flag) with
+   procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -594,7 +597,7 @@ is
           and Invalid (Ctx, F_Destination)
           and Invalid (Ctx, F_Options)
           and Invalid (Ctx, F_Payload)
-          and (if Types.Bit_Length (Convert (Get_Flag_R (Ctx))) = Types.Bit_Length (Convert (Flag_False)) then
+          and (if Types.Bit_Length (Convert (Get_Flag_R (Ctx))) = Types.Bit_Length (Convert (False)) then
              Predecessor (Ctx, F_Flag_DF) = F_Flag_R
                and Valid_Next (Ctx, F_Flag_DF))
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -615,7 +618,7 @@ is
           and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
           and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old;
 
-   procedure Set_Flag_DF (Ctx : in out Context; Val : IPv4.Flag) with
+   procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -661,7 +664,7 @@ is
           and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
           and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old;
 
-   procedure Set_Flag_MF (Ctx : in out Context; Val : IPv4.Flag) with
+   procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -1296,7 +1299,7 @@ private
         and then (if Structural_Valid (Cursors (F_Flag_DF)) then
            (Valid (Cursors (F_Flag_R))
                and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
-               and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (Convert (Flag_False))))
+               and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (Convert (False))))
         and then (if Structural_Valid (Cursors (F_Flag_MF)) then
            (Valid (Cursors (F_Flag_DF))
                and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF))
@@ -1387,16 +1390,16 @@ private
                                     and then Cursors (F_Identification).Predecessor = F_Total_Length
                                     and then Cursors (F_Identification).First = (Cursors (F_Total_Length).Last + 1)
                                     and then (if Structural_Valid (Cursors (F_Flag_R)) then
-                                       (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = IPv4.Flag_Base'Size
+                                       (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Builtin_Types.Boolean_Base'Size
                                          and then Cursors (F_Flag_R).Predecessor = F_Identification
                                          and then Cursors (F_Flag_R).First = (Cursors (F_Identification).Last + 1)
                                          and then (if Structural_Valid (Cursors (F_Flag_DF))
-                                              and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (Convert (Flag_False)) then
-                                            (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = IPv4.Flag_Base'Size
+                                              and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (Convert (False)) then
+                                            (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Builtin_Types.Boolean_Base'Size
                                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
                                               and then Cursors (F_Flag_DF).First = (Cursors (F_Flag_R).Last + 1)
                                               and then (if Structural_Valid (Cursors (F_Flag_MF)) then
-                                                 (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = IPv4.Flag_Base'Size
+                                                 (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Builtin_Types.Boolean_Base'Size
                                                    and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF
                                                    and then Cursors (F_Flag_MF).First = (Cursors (F_Flag_DF).Last + 1)
                                                    and then (if Structural_Valid (Cursors (F_Fragment_Offset)) then

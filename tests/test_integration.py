@@ -20,11 +20,13 @@ class TestIntegration(unittest.TestCase):
         generator.generate(parser.messages, parser.refinements)
 
         for unit in generator.units.values():
-            with open(f"{self.testdir}/{unit.name}.ads", "r") as f:
-                self.assertEqual(unit.specification, f.read())
+            filename = f"{self.testdir}/{unit.name}.ads"
+            with open(filename, "r") as f:
+                self.assertEqual(unit.specification, f.read(), filename)
             if unit.body:
-                with open(f"{self.testdir}/{unit.name}.adb", "r") as f:
-                    self.assertEqual(unit.body, f.read())
+                filename = f"{self.testdir}/{unit.name}.adb"
+                with open(filename, "r") as f:
+                    self.assertEqual(unit.body, f.read(), filename)
 
     def test_ethernet(self) -> None:
         self.assert_integration(["ethernet"])

@@ -2,49 +2,6 @@ package RFLX.IPv4 with
   SPARK_Mode
 is
 
-   type Flag_Base is mod 2**1;
-
-   type Flag is (Flag_False, Flag_True) with
-     Size =>
-       1;
-   for Flag use (Flag_False => 0, Flag_True => 1);
-
-   pragma Warnings (Off, "precondition is statically false");
-
-   function Unreachable_IPv4_Flag return IPv4.Flag is
-     (IPv4.Flag'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is statically false");
-
-   function Valid (Val : IPv4.Flag_Base) return Boolean is
-     ((case Val is
-         when 0 | 1 =>
-            True,
-         when others =>
-            False));
-
-   function Convert (Enum : IPv4.Flag) return IPv4.Flag_Base is
-     ((case Enum is
-         when Flag_False =>
-            0,
-         when Flag_True =>
-            1));
-
-   function Convert (Val : IPv4.Flag_Base) return IPv4.Flag is
-     ((case Val is
-         when 0 =>
-            Flag_False,
-         when 1 =>
-            Flag_True,
-         when others =>
-            Unreachable_IPv4_Flag))
-    with
-     Pre =>
-       Valid (Val);
-
    type Option_Class_Base is mod 2**2;
 
    type Option_Class is (Control, Debugging_And_Measurement) with

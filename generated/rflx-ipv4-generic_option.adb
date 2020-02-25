@@ -123,7 +123,7 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Copied =>
-                     IPv4.Flag_Base'Size,
+                     Builtin_Types.Boolean_Base'Size,
                   when others =>
                      Types.Unreachable_Bit_Length),
          when F_Copied =>
@@ -407,7 +407,7 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (IPv4.Flag_Base);
+      function Extract is new Types.Extract (Builtin_Types.Boolean_Base);
       function Extract is new Types.Extract (IPv4.Option_Class_Base);
       function Extract is new Types.Extract (IPv4.Option_Number);
       function Extract is new Types.Extract (IPv4.Option_Length_Base);
@@ -442,7 +442,7 @@ is
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
                pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Copied)) then
-                   (Ctx.Cursors (F_Copied).Last - Ctx.Cursors (F_Copied).First + 1) = IPv4.Flag_Base'Size
+                   (Ctx.Cursors (F_Copied).Last - Ctx.Cursors (F_Copied).First + 1) = Builtin_Types.Boolean_Base'Size
                      and then Ctx.Cursors (F_Copied).Predecessor = F_Initial
                      and then Ctx.Cursors (F_Copied).First = Ctx.First
                      and then (if Structural_Valid (Ctx.Cursors (F_Option_Class)) then
@@ -573,7 +573,7 @@ is
       or Incomplete (Ctx, F_Option_Length)
       or Incomplete (Ctx, F_Option_Data));
 
-   function Get_Copied (Ctx : Context) return IPv4.Flag is
+   function Get_Copied (Ctx : Context) return Boolean is
      (Convert (Ctx.Cursors (F_Copied).Value.Copied_Value));
 
    function Get_Option_Class (Ctx : Context) return IPv4.Option_Class is
@@ -625,7 +625,7 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (IPv4.Flag_Base);
+      procedure Insert is new Types.Insert (Builtin_Types.Boolean_Base);
       procedure Insert is new Types.Insert (IPv4.Option_Class_Base);
       procedure Insert is new Types.Insert (IPv4.Option_Number);
       procedure Insert is new Types.Insert (IPv4.Option_Length_Base);
@@ -648,7 +648,7 @@ is
       end case;
    end Set_Field_Value;
 
-   procedure Set_Copied (Ctx : in out Context; Val : IPv4.Flag) is
+   procedure Set_Copied (Ctx : in out Context; Val : Boolean) is
       Field_Value : constant Field_Dependent_Value := (F_Copied, Convert (Val));
       First, Last : Types.Bit_Index;
    begin
@@ -711,7 +711,7 @@ is
       Reset_Dependent_Fields (Ctx, F_Option_Data);
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
       pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Copied)) then
-          (Ctx.Cursors (F_Copied).Last - Ctx.Cursors (F_Copied).First + 1) = IPv4.Flag_Base'Size
+          (Ctx.Cursors (F_Copied).Last - Ctx.Cursors (F_Copied).First + 1) = Builtin_Types.Boolean_Base'Size
             and then Ctx.Cursors (F_Copied).Predecessor = F_Initial
             and then Ctx.Cursors (F_Copied).First = Ctx.First
             and then (if Structural_Valid (Ctx.Cursors (F_Option_Class)) then
