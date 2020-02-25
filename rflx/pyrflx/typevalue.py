@@ -10,6 +10,9 @@ class NotInitializedError(Exception):
 
 
 class TypeValue:
+
+    _value: Any
+
     def __init__(self, vtype: Type) -> None:
         self._type = vtype
         self._initialized = False
@@ -20,7 +23,15 @@ class TypeValue:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return all([self.__dict__[k] == other.__dict__[k] for k in self.__dict__])
+            return (
+                self._initialized == other._initialized
+                and (
+                    self._value == other._value
+                    if (self._initialized and other._initialized)
+                    else True
+                )
+                and self._type == other._type
+            )
         return False
 
     @property
@@ -77,7 +88,7 @@ class ScalarValue(TypeValue):
 
 class IntegerValue(ScalarValue):
 
-    __value: int
+    _value: int
 
     def __init__(self, vtype: Union[RangeInteger, ModularInteger]) -> None:
         super(IntegerValue, self).__init__(vtype)
@@ -88,23 +99,23 @@ class IntegerValue(ScalarValue):
             != TRUE
         ):
             raise ValueError("value not in type range: " + repr(value))
-        self.__value = value
+        self._value = value
         self._initialized = True
 
     @property
     def expr(self) -> Number:
         self._raise_initialized()
-        return Number(self.__value)
+        return Number(self._value)
 
     @property
     def value(self) -> int:
         self._raise_initialized()
-        return self.__value
+        return self._value
 
     @property
     def binary(self) -> str:
         self._raise_initialized()
-        return format(self.__value, f"0{self.size}b")
+        return format(self._value, f"0{self.size}b")
 
     @property
     def accepted_type(self) -> type:
@@ -113,7 +124,7 @@ class IntegerValue(ScalarValue):
 
 class EnumValue(ScalarValue):
 
-    __value: str
+    _value: str
 
     def __init__(self, vtype: Enumeration) -> None:
         super(EnumValue, self).__init__(vtype)
@@ -130,24 +141,24 @@ class EnumValue(ScalarValue):
             != TRUE
         ):
             raise ValueError("value not in type range: " + repr(value))
-        self.__value = value
+        self._value = value
         self._initialized = True
 
     @property
     def value(self) -> str:
         self._raise_initialized()
-        return self.__value
+        return self._value
 
     @property
     def expr(self) -> Variable:
         self._raise_initialized()
-        return Variable(self.__value)
+        return Variable(self._value)
 
     @property
     def binary(self) -> str:
         assert isinstance(self._type, Enumeration)
         self._raise_initialized()
-        return format(self._type.literals[self.__value].value, f"0{self.size}b")
+        return format(self._type.literals[self._value].value, f"0{self.size}b")
 
     @property
     def accepted_type(self) -> type:
@@ -156,29 +167,29 @@ class EnumValue(ScalarValue):
 
 class OpaqueValue(TypeValue):
 
-    __value: bytes
+    _value: bytes
 
     def __init__(self, vtype: Opaque) -> None:
         super(OpaqueValue, self).__init__(vtype)
 
     def assign(self, value: bytes, check: bool = True) -> None:
-        self.__value = value
+        self._value = value
         self._initialized = True
 
     @property
     def length(self) -> int:
         self._raise_initialized()
-        return len(self.__value) * 8
+        return len(self._value) * 8
 
     @property
     def value(self) -> bytes:
         self._raise_initialized()
-        return self.__value
+        return self._value
 
     @property
     def binary(self) -> str:
         self._raise_initialized()
-        return format(int.from_bytes(self.__value, "big"), f"0{self.length}b")
+        return format(int.from_bytes(self._value, "big"), f"0{self.length}b")
 
     @property
     def accepted_type(self) -> type:
