@@ -1,7 +1,7 @@
 import pytest
 
 from rflx.error import RecordFluxError
-from rflx.expression import FALSE, TRUE, Equal, Variable, VariableDeclaration
+from rflx.expression import FALSE, TRUE, Channel, Equal, Variable, VariableDeclaration
 from rflx.fsm import State, StateMachine, StateName, Transition
 from rflx.fsm_expression import (
     Binding,
@@ -403,4 +403,366 @@ def test_reset_of_undeclared_list() -> None:
                 State(name=StateName("END")),
             ],
             declarations={},
+        )
+
+
+def test_call_to_undeclared_function() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: undeclared subprogram "UndefSub" called'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[
+                        Assignment("Global", SubprogramCall("UndefSub", [Variable("Global")]))
+                    ],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Global": VariableDeclaration("Boolean")},
+        )
+
+
+def test_call_to_builtin_read() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={},
+                actions=[Assignment("Global", SubprogramCall("Read", [Variable("Some_Channel")]))],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "Global": VariableDeclaration("Boolean"),
+            "Some_Channel": Channel(read=True, write=False),
+        },
+    )
+
+
+def test_call_to_builtin_write() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={},
+                actions=[
+                    Assignment(
+                        "Success", SubprogramCall("Write", [Variable("Some_Channel"), TRUE]),
+                    )
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "Success": VariableDeclaration("Boolean"),
+            "Some_Channel": Channel(read=False, write=True),
+        },
+    )
+
+
+def test_call_to_builtin_call() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={},
+                actions=[
+                    Assignment("Result", SubprogramCall("Call", [Variable("Some_Channel"), TRUE]))
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "Result": VariableDeclaration("Boolean"),
+            "Some_Channel": Channel(read=True, write=True),
+        },
+    )
+
+
+def test_call_to_builtin_data_available() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={},
+                actions=[
+                    Assignment(
+                        "Result", SubprogramCall("Data_Available", [Variable("Some_Channel")]),
+                    )
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "Result": VariableDeclaration("Boolean"),
+            "Some_Channel": Channel(read=True, write=True),
+        },
+    )
+
+
+def test_call_to_builtin_read_without_arguments() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: no channel argument in call to "Read"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Assignment("Result", SubprogramCall("Read", []))],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Result": VariableDeclaration("Boolean")},
+        )
+
+
+def test_call_to_builtin_read_undeclared_channel() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: undeclared channel "Undeclared" in call to "Read"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[
+                        Assignment("Result", SubprogramCall("Read", [Variable("Undeclared")]))
+                    ],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Result": VariableDeclaration("Boolean")},
+        )
+
+
+def test_call_to_builtin_read_invalid_channel_type() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: invalid channel type in call to "Read"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Assignment("Result", SubprogramCall("Read", [Variable("Result")]))],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Result": VariableDeclaration("Boolean")},
+        )
+
+
+def test_call_to_builtin_write_invalid_channel_mode() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: channel not writable in call to "Write"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[
+                        Assignment("Result", SubprogramCall("Write", [Variable("Out_Channel")]))
+                    ],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={
+                "Result": VariableDeclaration("Boolean"),
+                "Out_Channel": Channel(read=True, write=False),
+            },
+        )
+
+
+def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: channel not readable in call to "Data_Available"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[
+                        Assignment(
+                            "Result", SubprogramCall("Data_Available", [Variable("Out_Channel")]),
+                        )
+                    ],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={
+                "Result": VariableDeclaration("Boolean"),
+                "Out_Channel": Channel(read=False, write=True),
+            },
+        )
+
+
+def test_call_to_builtin_read_invalid_channel_mode() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: channel not readable in call to "Read"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Assignment("Result", SubprogramCall("Read", [Variable("Channel")]))],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={
+                "Result": VariableDeclaration("Boolean"),
+                "Channel": Channel(read=False, write=True),
+            },
+        )
+
+
+def test_call_to_builtin_call_channel_not_readable() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: channel not readable in call to "Call"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Assignment("Result", SubprogramCall("Call", [Variable("Channel")]))],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={
+                "Result": VariableDeclaration("Boolean"),
+                "Channel": Channel(read=False, write=True),
+            },
+        )
+
+
+def test_call_to_builtin_call_channel_not_writable() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'session: error: channel not writable in call to "Call"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Assignment("Result", SubprogramCall("Call", [Variable("Channel")]))],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={
+                "Result": VariableDeclaration("Boolean"),
+                "Channel": Channel(read=True, write=False),
+            },
         )
