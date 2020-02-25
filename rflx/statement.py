@@ -35,14 +35,14 @@ class Assignment(Statement):
         return f"{self.__name} := {self.__expression}"
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        if self.__name.name not in declarations:
+        if self.__name not in declarations:
             fail(
                 f'assignment to undeclared variable "{self.__name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
-        self.__expression.validate(declarations)
+        self.__expression.simplified().validate(declarations)
 
 
 class Erase(Statement):
