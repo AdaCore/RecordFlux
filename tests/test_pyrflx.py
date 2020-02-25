@@ -1,10 +1,17 @@
 import unittest
 
-from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger
+from rflx.expression import UNDEFINED, Expr
+from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger, Type
 from rflx.pyrflx.message import Field, Message
 from rflx.pyrflx.package import Package
 from rflx.pyrflx.pyrflx import PyRFLX
-from rflx.pyrflx.typevalue import EnumValue, IntegerValue, NotInitializedError, OpaqueValue
+from rflx.pyrflx.typevalue import (
+    EnumValue,
+    IntegerValue,
+    NotInitializedError,
+    OpaqueValue,
+    TypeValue,
+)
 
 
 # pylint: disable=too-many-public-methods
@@ -130,6 +137,45 @@ class TestPyRFLX(unittest.TestCase):
         msg.set("Checksum", 0xFFFFFFFF)
         self.assertEqual(msg.binary, test_data)
 
+    def test_tlv_binary_length(self) -> None:
+        # pylint: disable=pointless-statement
+        msg = self.tlv.new()
+        msg.set("Tag", "Msg_Data")
+        with self.assertRaises(ValueError):
+            msg.binary
+        msg.set("Length", 8)
+        self.assertEqual(msg.binary, b"\x40\x08")
+
+    def test_tlv_value(self) -> None:
+        tlv = self.tlv.new()
+        v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
+        tlv.set("Tag", "Msg_Data")
+        tlv.set("Length", 8)
+        tlv.set("Value", v1)
+        tlv.set("Checksum", 2 ** 32 - 1)
+        self.assertEqual(tlv.get("Tag").value, "Msg_Data")
+        self.assertEqual(tlv.get("Length").value, 8)
+        self.assertEqual(tlv.get("Value").value, v1)
+        self.assertEqual(tlv.get("Checksum").value, 0xFFFFFFFF)
+
+    def test_tlv_get_invalid_field(self) -> None:
+        tlv = self.tlv.new()
+        with self.assertRaises(IndexError):
+            tlv.get("nofield")
+
+    def test_tlv_set_invalid_field(self) -> None:
+        tlv = self.tlv.new()
+        with self.assertRaises(RuntimeError):
+            tlv.set("Checksum", 8)
+
+    def test_tlv_invalid_value(self) -> None:
+        tlv = self.tlv.new()
+        with self.assertRaises(TypeError):
+            tlv.set("Tag", 1)
+        tlv.set("Tag", "Msg_Data")
+        with self.assertRaises(TypeError):
+            tlv.set("Length", "blubb")
+
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
         modtype = ModularInteger("Test.Int", Number(2 ** 16))
@@ -141,6 +187,7 @@ class TestPyRFLX(unittest.TestCase):
             modvalue.expr
         modvalue.assign(128)
         self.assertTrue(modvalue.initialized)
+        self.assertEqual(modvalue.value, 128)
         self.assertEqual(modvalue.binary, "0000000010000000")
         with self.assertRaises(ValueError):
             modvalue.assign(2 ** 16)
@@ -158,6 +205,7 @@ class TestPyRFLX(unittest.TestCase):
             rangevalue.expr
         rangevalue.assign(10)
         self.assertTrue(rangevalue.initialized)
+        self.assertEqual(rangevalue.value, 10)
         self.assertEqual(rangevalue.binary, "00001010")
         with self.assertRaises(ValueError):
             rangevalue.assign(17)
@@ -175,6 +223,7 @@ class TestPyRFLX(unittest.TestCase):
             enumvalue.expr
         enumvalue.assign("One")
         self.assertTrue(enumvalue.initialized)
+        self.assertEqual(enumvalue.value, "One")
         self.assertEqual(enumvalue.binary, "00000001")
         with self.assertRaises(KeyError):
             enumvalue.assign("Three")
@@ -187,6 +236,7 @@ class TestPyRFLX(unittest.TestCase):
             opaquevalue.value
         opaquevalue.assign(b"\x01\x02")
         self.assertTrue(opaquevalue.initialized)
+        self.assertEqual(opaquevalue.value, b"\x01\x02")
         self.assertEqual(opaquevalue.length, 16)
         self.assertEqual(opaquevalue.binary, "0000000100000010")
 
@@ -214,6 +264,19 @@ class TestPyRFLX(unittest.TestCase):
         rv.assign(10)
         self.assertNotEqual(mv, rv)
 
+    def test_value_invalid(self) -> None:
+        class TestType(Type):
+            @property
+            def size(self) -> Expr:
+                return UNDEFINED
+
+            def constraints(self, name: str, proof: bool = False) -> Expr:
+                return UNDEFINED
+
+        t = TestType("Test.Type")
+        with self.assertRaises(ValueError):
+            TypeValue.construct(t)
+
     def test_field_equal(self) -> None:
         f1 = Field("f")
         f2 = Field("f")
@@ -221,3 +284,8 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(f1, f1)
         f2.typeval.assign(b"", True)
         self.assertNotEqual(f1, f2)
+        self.assertNotEqual(f1, None)
+
+    def test_package_name(self) -> None:
+        p = Package("Test")
+        self.assertEqual(p.name, "Test")
