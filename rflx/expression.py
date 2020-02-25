@@ -159,7 +159,7 @@ class Expr(DBC):
         return Proof(self, facts)
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
+        raise NotImplementedError
 
 
 class BooleanLiteral(Expr):
@@ -182,6 +182,9 @@ class BooleanLiteral(Expr):
 
     def simplified(self) -> Expr:
         return self
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
 
 
 class BooleanTrue(BooleanLiteral):
@@ -254,6 +257,9 @@ class Not(Expr):
         if isinstance(z3expr, z3.BoolRef):
             return z3.Not(z3expr)
         raise TypeError
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        self.expr.validate(declarations)
 
 
 class BinExpr(Expr):
@@ -427,6 +433,10 @@ class AssExpr(Expr):
         if len(terms) == 1:
             return terms[0]
         return self.__class__(*terms, location=self.location)
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        for term in self.terms:
+            term.validate(declarations)
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -655,6 +665,9 @@ class Number(Expr):
 
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
 
 
 class Add(AssExpr):
@@ -887,7 +900,7 @@ class Variable(Name):
         return [self]
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        if ID(self.name) not in declarations:
+        if self.identifier not in declarations:
             fail(
                 f'undeclared variable "{self.name}"', Subsystem.MODEL, Severity.ERROR, self.location
             )
@@ -940,6 +953,9 @@ class Attribute(Name):
         if not isinstance(self.prefix, Variable):
             raise TypeError
         return z3.Int(f"{self.prefix}'{self.__class__.__name__}")
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
 
 
 class Size(Attribute):
