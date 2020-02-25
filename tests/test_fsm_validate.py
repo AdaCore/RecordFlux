@@ -1,7 +1,7 @@
 import pytest
 
 from rflx.error import RecordFluxError
-from rflx.expression import TRUE, Equal, Variable, VariableDeclaration
+from rflx.expression import FALSE, TRUE, Equal, Variable, VariableDeclaration
 from rflx.fsm import State, StateMachine, StateName, Transition
 from rflx.fsm_expression import (
     Binding,
@@ -18,6 +18,7 @@ from rflx.fsm_expression import (
     Valid,
 )
 from rflx.identifier import ID
+from rflx.statement import Assignment, Erase, Reset
 
 
 def test_binding_aggregate() -> None:
@@ -163,7 +164,7 @@ def test_binding_conversion_name_unchanged() -> None:
 
 def test_undeclared_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match="^model: error: undeclared variable Undefined",
+        RecordFluxError, match='^model: error: undeclared variable "Undefined"$',
     ):
         StateMachine(
             name="fsm",
@@ -226,7 +227,7 @@ def test_declared_local_variable() -> None:
 
 def test_undeclared_local_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match="^model: error: undeclared variable Start_Local",
+        RecordFluxError, match='^model: error: undeclared variable "Start_Local"$',
     ):
         StateMachine(
             name="fsm",
@@ -295,3 +296,111 @@ def test_declared_local_variable_field() -> None:
         ],
         declarations={"Global": VariableDeclaration("Boolean")},
     )
+
+
+def test_assignment_to_undeclared_variable() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'model: error: assignment to undeclared variable "Undefined"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Assignment("Undefined", FALSE)],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={},
+        )
+
+
+def test_assignment_from_undeclared_variable() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'model: error: undeclared variable "Undefined"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Assignment("Global", Variable("Undefined"))],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Global": VariableDeclaration("Boolean")},
+        )
+
+
+def test_erasure_of_undeclared_variable() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'model: error: erasure of undeclared variable "Undefined"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Erase("Undefined")],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={},
+        )
+
+
+def test_reset_of_undeclared_list() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'model: error: reset of undeclared variable "Undefined"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[Reset("Undefined")],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={},
+        )

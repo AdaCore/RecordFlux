@@ -61,6 +61,10 @@ class State(Base):
     def declarations(self) -> Dict[ID, Declaration]:
         return self.__declarations
 
+    @property
+    def actions(self) -> Iterable[Statement]:
+        return self.__actions
+
 
 class StateMachine(Base):
     def __init__(
@@ -88,6 +92,7 @@ class StateMachine(Base):
         self.__validate_duplicate_states()
         self.__validate_state_reachability()
         self.__validate_conditions()
+        self.__validate_actions()
         self.error.propagate()
 
     def __validate_conditions(self) -> None:
@@ -97,6 +102,21 @@ class StateMachine(Base):
                 try:
                     t.validate({**self.__declarations, **declarations})
                 except RecordFluxError as e:
+                    self.error.extend(e)
+
+    def __validate_actions(self) -> None:
+        for s in self.__states:
+            declarations = s.declarations
+            for index, a in enumerate(s.actions):
+                try:
+                    a.validate({**self.__declarations, **declarations})
+                except RecordFluxError as e:
+                    self.error.append(
+                        f"invalid action {index} of state {s.name.name}",
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                        a.location,
+                    )
                     self.error.extend(e)
 
     def __validate_state_existence(self) -> None:
@@ -193,7 +213,7 @@ class FSM:
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
-                    f"error parsing global function declaration {index} ({e})",
+                    f"error parsing global function declaration {index}",
                     Subsystem.SESSION,
                     Severity.ERROR,
                 )
@@ -209,7 +229,7 @@ class FSM:
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
-                    f"error parsing global variable declaration {index} ({e})",
+                    f"error parsing global variable declaration {index}",
                     Subsystem.SESSION,
                     Severity.ERROR,
                 )
@@ -225,7 +245,7 @@ class FSM:
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
-                    f"error parsing private variable declaration {index} ({e})",
+                    f"error parsing private variable declaration {index}",
                     Subsystem.SESSION,
                     Severity.ERROR,
                 )

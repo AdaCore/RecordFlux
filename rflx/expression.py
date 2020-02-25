@@ -888,7 +888,9 @@ class Variable(Name):
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         if ID(self.name) not in declarations:
-            fail(f"undeclared variable {self.name}", Subsystem.MODEL, Severity.ERROR, self.location)
+            fail(
+                f'undeclared variable "{self.name}"', Subsystem.MODEL, Severity.ERROR, self.location
+            )
 
     def z3expr(self) -> z3.ArithRef:
         if self.negative:

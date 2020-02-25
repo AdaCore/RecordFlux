@@ -4,6 +4,7 @@ from rflx.error import RecordFluxError
 from rflx.expression import FALSE, Argument, Equal, Subprogram, Variable, VariableDeclaration
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
 from rflx.identifier import ID
+from rflx.statement import Assignment
 
 
 def assert_parse_exception_string(string: str, regex: str) -> None:
@@ -467,6 +468,42 @@ def test_fsm_with_variable_decl() -> None:
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("END"))],
                 declarations={ID("Local"): VariableDeclaration("Boolean")},
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={"Global": VariableDeclaration("Boolean")},
+    )
+    assert f.fsms[0] == expected
+
+
+def test_fsm_with_actions() -> None:
+    f = FSM()
+    f.parse_string(
+        "fsm",
+        """
+            initial: START
+            final: END
+            variables:
+                - \"Global : Boolean\"
+            states:
+              - name: START
+                transitions:
+                  - target: END
+                actions:
+                    - Global := False
+              - name: END
+        """,
+    )
+    expected = StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={},
+                actions=[Assignment("Global", FALSE)],
             ),
             State(name=StateName("END")),
         ],
