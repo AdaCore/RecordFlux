@@ -3,9 +3,10 @@ from typing import Callable, Dict, List, Mapping
 import z3
 
 from rflx.contract import require
-from rflx.error import Location
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
     Attribute,
+    Channel,
     Declaration,
     Expr,
     Name,
@@ -147,6 +148,7 @@ class SubprogramCall(Expr):
         super().__init__(location)
         self.name = ID(name)
         self.arguments = arguments
+        self.error = RecordFluxError()
 
     def __str__(self) -> str:
         arguments = ", ".join([f"{a}" for a in self.arguments])
@@ -156,7 +158,12 @@ class SubprogramCall(Expr):
         raise NotImplementedError
 
     def simplified(self) -> Expr:
-        return SubprogramCall(self.name, [a.simplified() for a in self.arguments], self.location)
+        first = [a if isinstance(a, ID) else a.simplified() for a in self.arguments[0:1]]
+        arguments = [
+            *first,
+            *[a.simplified() for a in self.arguments[1:]],
+        ]
+        return SubprogramCall(self.name, arguments, self.location)
 
     @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
@@ -178,8 +185,69 @@ class SubprogramCall(Expr):
         raise NotImplementedError
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        for a in self.arguments:
-            a.validate(declarations)
+        if len(self.arguments) < 1:
+            fail(
+                f'no channel argument in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+        if self.name.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
+            channel_id = self.arguments[0]
+            if not isinstance(channel_id, Variable):
+                fail(
+                    f'invalid channel ID type in call to "{self.name}"',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
+            assert isinstance(channel_id, Variable)
+            if channel_id.identifier not in declarations:
+                fail(
+                    f'undeclared channel "{channel_id}" in call to "{self.name}"',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
+
+            assert isinstance(channel_id, Variable)
+            channel = declarations[channel_id.identifier]
+            if not isinstance(channel, Channel):
+                fail(
+                    f'invalid channel type in call to "{self.name}"',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
+
+            assert isinstance(channel, Channel)
+            if self.name.name in map(ID, ["Write", "Call"]) and not channel.writable:
+                fail(
+                    f'channel not writable in call to "{self.name}"',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
+            if (
+                self.name.name in map(ID, ["Call", "Read", "Data_Available"])
+                and not channel.readable
+            ):
+                fail(
+                    f'channel not readable in call to "{self.name}"',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
+        else:
+            if self.name not in declarations:
+                fail(
+                    f'undeclared subprogram "{self.name}" called',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
+            for a in self.arguments:
+                a.validate(declarations)
 
 
 class Conversion(Expr):
@@ -213,9 +281,6 @@ class Conversion(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.argument.validate(declarations)
 
 
 class Field(Expr):

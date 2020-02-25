@@ -1619,10 +1619,6 @@ class ValueRange(Expr):
         return expr
 
 
-class ValidationError(Exception):
-    pass
-
-
 class Declaration(ABC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -1666,6 +1662,14 @@ class Channel(Declaration):
     def __init__(self, read: bool, write: bool):
         self.__read = read
         self.__write = write
+
+    @property
+    def readable(self) -> bool:
+        return self.__read
+
+    @property
+    def writable(self) -> bool:
+        return self.__write
 
 
 def substitution(
