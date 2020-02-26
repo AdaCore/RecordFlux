@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Mapping
 
 from rflx.common import generic_repr
-from rflx.error import Location, Severity, Subsystem, fail
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import Declaration, Expr
 from rflx.identifier import ID, StrID
 
@@ -10,6 +10,7 @@ from rflx.identifier import ID, StrID
 class Statement(ABC):
     def __init__(self, location: Location = None):
         self.location = location
+        self.error = RecordFluxError()
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -36,13 +37,19 @@ class Assignment(Statement):
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         if self.__name not in declarations:
-            fail(
+            self.error.append(
                 f'assignment to undeclared variable "{self.__name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
-        self.__expression.simplified().validate(declarations)
+        else:
+            declarations[self.__name].reference()
+        try:
+            self.__expression.simplified().validate(declarations)
+        except RecordFluxError as e:
+            self.error.extend(e)
+        self.error.propagate()
 
 
 class Erase(Statement):

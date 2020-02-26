@@ -220,6 +220,23 @@ class StateMachine(Base):
         assert False, f"Unsupported entity {type(declaration).__name__}"
 
     def __validate_declarations(self) -> None:
+        for s in self.__states:
+            for decl in s.declarations:
+                if decl in self.__declarations:
+                    self.error.append(
+                        f'local variable "{decl}" shadows global declaration'
+                        f" in state {s.name.name}",
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                if not s.declarations[decl].is_referenced:
+                    self.error.append(
+                        f'unused local variable "{decl}" in state {s.name.name}',
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                        self.location,
+                    )
         for k, d in self.__declarations.items():
             if str(k).upper() in ["READ", "WRITE", "CALL", "DATA_AVAILABLE"]:
                 self.error.append(
@@ -228,15 +245,13 @@ class StateMachine(Base):
                     Severity.ERROR,
                     self.location,
                 )
-        for s in self.__states:
-            for decl in s.declarations:
-                if decl in self.__declarations:
-                    self.error.append(
-                        f"local variable {decl} shadows global declaration in state {s.name.name}",
-                        Subsystem.SESSION,
-                        Severity.ERROR,
-                        self.location,
-                    )
+            if not d.is_referenced:
+                self.error.append(
+                    f'unused {self.__entity_name(d)} "{k}"',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
 
 
 class FSM:
@@ -263,6 +278,7 @@ class FSM:
                     f"conflicting function {name}", Subsystem.SESSION, Severity.ERROR,
                 )
             result[ID(name)] = declaration
+        self.error.propagate()
 
     def __parse_variables(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
         if "variables" not in doc:
@@ -283,6 +299,7 @@ class FSM:
                     f"conflicting variable {name}", Subsystem.SESSION, Severity.ERROR,
                 )
             result[ID(name)] = declaration
+        self.error.propagate()
 
     def __parse_types(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
         if "types" not in doc:
@@ -303,6 +320,7 @@ class FSM:
                     f"conflicting type {name}", Subsystem.SESSION, Severity.ERROR,
                 )
             result[ID(name)] = declaration
+        self.error.propagate()
 
     def __parse_channels(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
         if "channels" not in doc:
@@ -338,6 +356,7 @@ class FSM:
                     Severity.ERROR,
                 )
                 continue
+        self.error.propagate()
 
     def __parse_renames(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
         if "renames" not in doc:
@@ -356,6 +375,7 @@ class FSM:
                     f"conflicting renames {name}", Subsystem.SESSION, Severity.ERROR,
                 )
             result[name] = declaration
+        self.error.propagate()
 
     def __parse_declarations(self, doc: Dict[str, Any]) -> Dict[ID, Declaration]:
         result: Dict[ID, Declaration] = {}
@@ -376,7 +396,7 @@ class FSM:
                     elements = ", ".join(sorted(rest))
                     self.error.append(
                         f"unexpected elements in transition {index}"
-                        f' in state "{state}": {elements}',
+                        f' in state "{sname}": {elements}',
                         Subsystem.SESSION,
                         Severity.ERROR,
                     )
@@ -384,7 +404,6 @@ class FSM:
                     try:
                         condition = FSMParser.expression().parseString(t["condition"])[0]
                     except RecordFluxError as e:
-                        self.error.extend(e)
                         tname = t["target"]
                         self.error.append(
                             f'invalid condition {index} from state "{sname}" to "{tname}"',
@@ -392,10 +411,12 @@ class FSM:
                             Severity.ERROR,
                             None,
                         )
+                        self.error.extend(e)
                         condition = TRUE
                 else:
                     condition = TRUE
                 transitions.append(Transition(target=StateName(t["target"]), condition=condition))
+        self.error.propagate()
         return transitions
 
     def __parse_states(self, doc: Dict[str, Any]) -> List[State]:

@@ -13,9 +13,10 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
-from rflx.fsm_expression import Field
+from rflx.fsm_expression import Field, SubprogramCall
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
+from rflx.statement import Assignment
 
 
 def test_simple_function_declaration() -> None:
@@ -108,6 +109,11 @@ def test_channels() -> None:
               - name: START
                 transitions:
                   - target: END
+                variables:
+                  - "Local : Boolean"
+                actions:
+                  - Local := Write(Channel1_Read_Write, Read(Channel2_Read))
+                  - Local := Write(Channel3_Write, Local)
               - name: END
         """,
     )
@@ -116,7 +122,27 @@ def test_channels() -> None:
         initial=StateName("START"),
         final=StateName("END"),
         states=[
-            State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={ID("Local"): VariableDeclaration("Boolean")},
+                actions=[
+                    Assignment(
+                        "Local",
+                        SubprogramCall(
+                            "Write",
+                            [
+                                Variable("Channel1_Read_Write"),
+                                SubprogramCall("Read", [Variable("Channel2_Read")]),
+                            ],
+                        ),
+                    ),
+                    Assignment(
+                        "Local",
+                        SubprogramCall("Write", [Variable("Channel3_Write"), Variable("Local")],),
+                    ),
+                ],
+            ),
             State(name=StateName("END")),
         ],
         declarations={
@@ -145,6 +171,10 @@ def test_channel_with_invalid_mode() -> None:
                   - name: START
                     transitions:
                       - target: END
+                    variables:
+                      - "Local : Boolean"
+                    actions:
+                      - Local := Read(Channel1_Read_Write)
                   - name: END
             """,
         )

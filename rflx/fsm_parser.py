@@ -92,6 +92,8 @@ class FSMParser:
     @classmethod
     def __parse_conversion(cls, tokens: List[Expr]) -> Expr:
         assert isinstance(tokens[0], ID)
+        if tokens[0] in map(ID, ["Read", "Write", "Call", "Data_Available"]):
+            return SubprogramCall(tokens[0], tokens[1:])
         return Conversion(tokens[0], tokens[1])
 
     @classmethod
