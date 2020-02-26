@@ -501,3 +501,6 @@ class String(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        pass
