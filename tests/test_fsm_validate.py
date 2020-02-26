@@ -1052,7 +1052,7 @@ def test_renames_references_undefined_variable() -> None:
         )
 
 
-def test_binding_as_subprogram_parameter() -> None:  # pylint: disable=no-self-use
+def test_binding_as_subprogram_parameter() -> None:
     StateMachine(
         name="fsm",
         initial=StateName("START"),
@@ -1153,3 +1153,37 @@ def test_extend_list_attribute() -> None:
             "Element": VariableDeclaration("Element_Type"),
         },
     )
+
+
+def test_aggregate_with_undefined_parameter() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'model: error: undeclared variable "Undef"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                    actions=[
+                        Assignment(
+                            "Data",
+                            MessageAggregate(
+                                "Data_Type", {"Foo": Variable("Data"), "Bar": Variable("Undef")},
+                            ),
+                        )
+                    ],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Data": VariableDeclaration("Data_Type")},
+        )
