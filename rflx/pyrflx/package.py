@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Dict
 
 from .message import Message
@@ -13,7 +14,7 @@ class Package:
         return self.__name
 
     def __getitem__(self, key: str) -> Message:
-        return self.__messages[key]
+        return copy(self.__messages[key])
 
     def __setitem__(self, key: str, value: Message) -> None:
         self.__messages[key] = value

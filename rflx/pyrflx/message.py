@@ -7,16 +7,11 @@ from .typevalue import OpaqueValue, ScalarValue, TypeValue
 
 
 class Field:
-    name: str
-    typeval: TypeValue
-    first: Expr
-    length: Expr
-
     def __init__(self, name: str) -> None:
         self.name = name
         self.typeval = TypeValue.construct(model.Opaque())
-        self.first = UNDEFINED
-        self.length = UNDEFINED
+        self.first: Expr = UNDEFINED
+        self.length: Expr = UNDEFINED
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -26,7 +21,7 @@ class Field:
                 and self.length == other.length
                 and self.typeval == other.typeval
             )
-        return False
+        return NotImplemented
 
     def __repr__(self) -> str:
         return (
@@ -45,26 +40,24 @@ class Message:
         initial.length = Number(0)
         self._fields: List[Field] = [initial]
 
+    def __copy__(self) -> "Message":
+        new = Message(self._model)
+        return new
+
     def __repr__(self) -> str:
         args = ", ".join([f"{k}={v}" for k, v in self.__dict__.items()])
         return f"{self.__class__.__name__}({args})"
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, self.__class__)
-            and self._fields == other._fields
-            and self._model == other._model
-        )
+        if isinstance(other, self.__class__):
+            return self._fields == other._fields and self._model == other._model
+        return NotImplemented
 
     def __get_field(self, fld: str) -> Field:
         for f in self._fields:
             if f.name == fld:
                 return f
         raise IndexError(f"field {fld} not found")
-
-    def new(self) -> "Message":
-        m = Message(self._model)
-        return m
 
     def __field_type(self, fld: str) -> TypeValue:
         return TypeValue.construct(self._model.types[model.Field(fld)])
@@ -73,8 +66,8 @@ class Message:
         typedvalue = self.__field_type(fld)
         if not isinstance(value, typedvalue.accepted_type):
             raise TypeError(
-                f"cannot assign different types: {repr(typedvalue.accepted_type)}"
-                f"!= {repr(type(value))}"
+                f"cannot assign different types: {typedvalue.accepted_type.__name__}"
+                f" != {type(value).__name__}"
             )
         typedvalue.assign(value, True)
         incoming = self._model.incoming(model.Field(fld))
@@ -87,8 +80,8 @@ class Message:
                 return
         raise RuntimeError(f"failed to add field {fld}")
 
-    def get(self, fld: str) -> TypeValue:
-        return self.__get_field(fld).typeval
+    def get(self, fld: str) -> Any:
+        return self.__get_field(fld).typeval.value
 
     @property
     def binary(self) -> bytes:
@@ -125,11 +118,11 @@ class Message:
         return fields[1:]
 
     @property
-    def set_fields(self) -> List[str]:
+    def valid_fields(self) -> List[str]:
         return [f.name for f in self._fields[1:]]
 
     @property
-    def final(self) -> bool:
+    def valid_message(self) -> bool:
         for o in self._model.outgoing(model.Field(self._fields[-1].name)):
             if o.target == model.FINAL and o.condition.simplified(self.__field_values) == TRUE:
                 return True
@@ -157,8 +150,7 @@ class Message:
             fld.length = Number(fld.typeval.size)
         else:
             fld.length = length.simplified(self.__field_values)
-            if not isinstance(fld.length, Number):
-                raise RuntimeError(f"unable to resolve length: {repr(fld.length)}")
+            assert isinstance(fld.length, Number)
             if isinstance(fld.typeval, OpaqueValue) and fld.length.value != fld.typeval.length:
                 raise ValueError(f"invalid data length: {fld.length.value} != {fld.typeval.length}")
         for f in self._fields:

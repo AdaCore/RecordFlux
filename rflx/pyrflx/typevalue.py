@@ -1,15 +1,15 @@
-from abc import abstractmethod, abstractproperty
-from typing import Any, Union
+from abc import ABC, abstractmethod, abstractproperty
+from typing import Any
 
 from rflx.expression import TRUE, Expr, Variable
-from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger, Scalar, Type
+from rflx.model import Enumeration, Integer, Number, Opaque, Scalar, Type
 
 
 class NotInitializedError(Exception):
     pass
 
 
-class TypeValue:
+class TypeValue(ABC):
 
     _value: Any
 
@@ -32,7 +32,7 @@ class TypeValue:
                 )
                 and self._type == other._type
             )
-        return False
+        return NotImplemented
 
     @property
     def initialized(self) -> bool:
@@ -60,18 +60,18 @@ class TypeValue:
 
     @classmethod
     def construct(cls, vtype: Type) -> "TypeValue":
-        if isinstance(vtype, (ModularInteger, RangeInteger)):
+        if isinstance(vtype, Integer):
             return IntegerValue(vtype)
         if isinstance(vtype, Enumeration):
             return EnumValue(vtype)
         if isinstance(vtype, Opaque):
             return OpaqueValue(vtype)
-        raise ValueError("cannot construct unknown type: " + repr(vtype))
+        raise ValueError("cannot construct unknown type: " + type(vtype).__name__)
 
 
 class ScalarValue(TypeValue):
     def __init__(self, vtype: Scalar) -> None:
-        super(ScalarValue, self).__init__(vtype)
+        super().__init__(vtype)
 
     @abstractproperty
     def expr(self) -> Expr:
@@ -81,21 +81,22 @@ class ScalarValue(TypeValue):
     def size(self) -> int:
         assert isinstance(self._type, Scalar)
         size_expr = self._type.size.simplified()
-        if isinstance(size_expr, Number):
-            return size_expr.value
-        raise TypeError("could not resolve size_expr: " + repr(size_expr))
+        assert isinstance(size_expr, Number)
+        return size_expr.value
 
 
 class IntegerValue(ScalarValue):
 
     _value: int
 
-    def __init__(self, vtype: Union[RangeInteger, ModularInteger]) -> None:
-        super(IntegerValue, self).__init__(vtype)
+    def __init__(self, vtype: Integer) -> None:
+        super().__init__(vtype)
 
     def assign(self, value: int, check: bool = True) -> None:
         if (
-            self._type.constraints("value", check).simplified({Variable("value"): Number(value)})
+            self._type.constraints("__VALUE__", check).simplified(
+                {Variable("__VALUE__"): Number(value)}
+            )
             != TRUE
         ):
             raise ValueError("value not in type range: " + repr(value))
@@ -127,20 +128,22 @@ class EnumValue(ScalarValue):
     _value: str
 
     def __init__(self, vtype: Enumeration) -> None:
-        super(EnumValue, self).__init__(vtype)
+        super().__init__(vtype)
 
     def assign(self, value: str, check: bool = True) -> None:
         assert isinstance(self._type, Enumeration)
-        if (
-            self._type.constraints("value", check).simplified(
+        if value not in self._type.literals:
+            raise KeyError(f"{value} is not a valid enum value")
+        assert (
+            isinstance(self._type, Enumeration)
+            and self._type.constraints("__VALUE__", check).simplified(
                 {
                     **{Variable(k): v for k, v in self._type.literals.items()},
-                    **{Variable("value"): self._type.literals[value]},
+                    **{Variable("__VALUE__"): self._type.literals[value]},
                 }
             )
-            != TRUE
-        ):
-            raise ValueError("value not in type range: " + repr(value))
+            == TRUE
+        )
         self._value = value
         self._initialized = True
 
@@ -170,7 +173,7 @@ class OpaqueValue(TypeValue):
     _value: bytes
 
     def __init__(self, vtype: Opaque) -> None:
-        super(OpaqueValue, self).__init__(vtype)
+        super().__init__(vtype)
 
     def assign(self, value: bytes, check: bool = True) -> None:
         self._value = value
