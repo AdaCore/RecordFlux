@@ -833,7 +833,7 @@ def test_undeclared_variable_in_subprogram_call() -> None:
 def test_function_declaration_is_no_builtin_read() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: Subprogram declaration shadows builtin subprogram "Read"$',
+        match='^session: error: subprogram declaration shadows builtin subprogram "Read"$',
     ):
         StateMachine(
             name="fsm",
@@ -854,7 +854,7 @@ def test_function_declaration_is_no_builtin_read() -> None:
 def test_function_declaration_is_no_builtin_write() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: Channel declaration shadows builtin subprogram "Write"$',
+        match='^session: error: channel declaration shadows builtin subprogram "Write"$',
     ):
         StateMachine(
             name="fsm",
@@ -875,7 +875,7 @@ def test_function_declaration_is_no_builtin_write() -> None:
 def test_function_declaration_is_no_builtin_call() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: VariableDeclaration declaration shadows builtin subprogram "Call"$',
+        match='^session: error: variable declaration shadows builtin subprogram "Call"$',
     ):
         StateMachine(
             name="fsm",
@@ -896,7 +896,7 @@ def test_function_declaration_is_no_builtin_call() -> None:
 def test_function_declaration_is_no_builtin_data_available() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: Renames declaration shadows builtin subprogram "Data_Available"$',
+        match='^session: error: renames declaration shadows builtin subprogram "Data_Available"$',
     ):
         StateMachine(
             name="fsm",

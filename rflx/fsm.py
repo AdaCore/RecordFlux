@@ -3,7 +3,15 @@ from typing import Any, Dict, Iterable, List
 import yaml
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
-from rflx.expression import TRUE, Channel, Declaration, Expr
+from rflx.expression import (
+    TRUE,
+    Channel,
+    Declaration,
+    Expr,
+    Renames,
+    Subprogram,
+    VariableDeclaration,
+)
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID, StrID
 from rflx.model import Base
@@ -199,11 +207,23 @@ class StateMachine(Base):
                 self.location,
             )
 
+    @classmethod
+    def __entity_name(cls, declaration: Declaration) -> str:
+        if isinstance(declaration, Subprogram):
+            return "subprogram"
+        if isinstance(declaration, VariableDeclaration):
+            return "variable"
+        if isinstance(declaration, Renames):
+            return "renames"
+        if isinstance(declaration, Channel):
+            return "channel"
+        assert False, f"Unsupported entity {type(declaration).__name__}"
+
     def __validate_declarations(self) -> None:
         for k, d in self.__declarations.items():
             if str(k).upper() in ["READ", "WRITE", "CALL", "DATA_AVAILABLE"]:
                 self.error.append(
-                    f'{type(d).__name__} declaration shadows builtin subprogram "{k}"',
+                    f'{self.__entity_name(d)} declaration shadows builtin subprogram "{k}"',
                     Subsystem.SESSION,
                     Severity.ERROR,
                     self.location,
@@ -215,7 +235,7 @@ class FSM:
         self.__fsms: List[StateMachine] = []
         self.error = RecordFluxError()
 
-    def __parse_functions(self, doc: Dict[str, Any], result: Dict[StrID, Declaration]) -> None:
+    def __parse_functions(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
         if "functions" not in doc:
             return
         for index, f in enumerate(doc["functions"]):
@@ -229,9 +249,13 @@ class FSM:
                     Severity.ERROR,
                 )
                 continue
+            if ID(name) in result:
+                self.error.append(
+                    f"conflicting function {name}", Subsystem.SESSION, Severity.ERROR,
+                )
             result[ID(name)] = declaration
 
-    def __parse_variables(self, doc: Dict[str, Any], result: Dict[StrID, Declaration]) -> None:
+    def __parse_variables(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
         if "variables" not in doc:
             return
         for index, f in enumerate(doc["variables"]):
@@ -245,9 +269,13 @@ class FSM:
                     Severity.ERROR,
                 )
                 continue
+            if ID(name) in result:
+                self.error.append(
+                    f"conflicting variable {name}", Subsystem.SESSION, Severity.ERROR,
+                )
             result[ID(name)] = declaration
 
-    def __parse_types(self, doc: Dict[str, Any], result: Dict[StrID, Declaration]) -> None:
+    def __parse_types(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
         if "types" not in doc:
             return
         for index, f in enumerate(doc["types"]):
@@ -261,9 +289,13 @@ class FSM:
                     Severity.ERROR,
                 )
                 continue
+            if ID(name) in result:
+                self.error.append(
+                    f"conflicting type {name}", Subsystem.SESSION, Severity.ERROR,
+                )
             result[ID(name)] = declaration
 
-    def __parse_channels(self, doc: Dict[str, Any], result: Dict[StrID, Declaration]) -> None:
+    def __parse_channels(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
         if "channels" not in doc:
             return
         for index, f in enumerate(doc["channels"]):
@@ -282,6 +314,11 @@ class FSM:
                 "Write": {"read": False, "write": True},
                 "Read_Write": {"read": True, "write": True},
             }
+            if ID(f["name"]) in result:
+                name = ID(f["name"])
+                self.error.append(
+                    f'conflicting channel "{name}"', Subsystem.SESSION, Severity.ERROR,
+                )
             mode = f["mode"]
             try:
                 result[ID(f["name"])] = Channel(modes[mode]["read"], modes[mode]["write"])
@@ -293,12 +330,31 @@ class FSM:
                 )
                 continue
 
-    def __parse_declarations(self, doc: Dict[str, Any]) -> Dict[StrID, Declaration]:
-        result: Dict[StrID, Declaration] = {}
+    def __parse_renames(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
+        if "renames" not in doc:
+            return
+        for index, f in enumerate(doc["renames"]):
+            try:
+                name, declaration = FSMParser.declaration().parseString(f)[0]
+            except RecordFluxError as e:
+                self.error.extend(e)
+                self.error.append(
+                    f"error parsing renames declaration {index}", Subsystem.SESSION, Severity.ERROR,
+                )
+                continue
+            if name in result:
+                self.error.append(
+                    f"conflicting renames {name}", Subsystem.SESSION, Severity.ERROR,
+                )
+            result[name] = declaration
+
+    def __parse_declarations(self, doc: Dict[str, Any]) -> Dict[ID, Declaration]:
+        result: Dict[ID, Declaration] = {}
         self.__parse_functions(doc, result)
         self.__parse_variables(doc, result)
         self.__parse_types(doc, result)
         self.__parse_channels(doc, result)
+        self.__parse_renames(doc, result)
         return result
 
     def __parse_transitions(self, state: Dict) -> List[Transition]:
@@ -400,7 +456,7 @@ class FSM:
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
             states=self.__parse_states(doc),
-            declarations=self.__parse_declarations(doc),
+            declarations={ID(k): v for k, v in self.__parse_declarations(doc).items()},
         )
         self.error.extend(fsm.error)
         self.__fsms.append(fsm)
