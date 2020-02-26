@@ -218,14 +218,14 @@ class SubprogramCall(Expr):
         channel.reference()
         if self.name.name in map(ID, ["Write", "Call"]) and not channel.writable:
             self.error.append(
-                f'channel not writable in call to "{self.name}"',
+                f'channel "{channel_id}" not writable in call to "{self.name}"',
                 Subsystem.SESSION,
                 Severity.ERROR,
                 self.location,
             )
         if self.name.name in map(ID, ["Call", "Read", "Data_Available"]) and not channel.readable:
             self.error.append(
-                f'channel not readable in call to "{self.name}"',
+                f'channel "{channel_id}" not readable in call to "{self.name}"',
                 Subsystem.SESSION,
                 Severity.ERROR,
                 self.location,

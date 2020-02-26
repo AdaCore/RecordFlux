@@ -643,7 +643,7 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
         match=(
             "^"
             "session: error: invalid action 0 of state START\n"
-            'session: error: channel not writable in call to "Write"'
+            'session: error: channel "Out_Channel" not writable in call to "Write"'
             "$"
         ),
     ):
@@ -679,7 +679,7 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
         match=(
             "^"
             "session: error: invalid action 0 of state START\n"
-            'session: error: channel not readable in call to "Data_Available"'
+            'session: error: channel "Out_Channel" not readable in call to "Data_Available"'
             "$"
         ),
     ):
@@ -713,7 +713,7 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
         match=(
             "^"
             "session: error: invalid action 0 of state START\n"
-            'session: error: channel not readable in call to "Read"'
+            'session: error: channel "Channel" not readable in call to "Read"'
             "$"
         ),
     ):
@@ -743,7 +743,7 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
         match=(
             "^"
             "session: error: invalid action 0 of state START\n"
-            'session: error: channel not readable in call to "Call"'
+            'session: error: channel "Channel" not readable in call to "Call"'
             "$"
         ),
     ):
@@ -773,7 +773,7 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
         match=(
             "^"
             "session: error: invalid action 0 of state START\n"
-            'session: error: channel not writable in call to "Call"'
+            'session: error: channel "Channel" not writable in call to "Call"'
             "$"
         ),
     ):
