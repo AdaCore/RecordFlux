@@ -1,31 +1,47 @@
 import unittest
+from tempfile import TemporaryDirectory
 
 from rflx.expression import UNDEFINED, Expr
 from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger, Type
-from rflx.pyrflx.message import Field, Message
-from rflx.pyrflx.package import Package
-from rflx.pyrflx.pyrflx import PyRFLX
-from rflx.pyrflx.typevalue import (
+from rflx.pyrflx import (
     EnumValue,
+    Field,
     IntegerValue,
+    Message,
     NotInitializedError,
     OpaqueValue,
+    Package,
+    PyRFLX,
     TypeValue,
 )
 
 
 # pylint: disable=too-many-public-methods
 class TestPyRFLX(unittest.TestCase):
-    def setUp(self) -> None:
-        self.testdir = "specs"
-        self.tlv: Message = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])["TLV"][
-            "Message"
-        ].new()
 
-    def test_new_message(self) -> None:
-        new_tlv = self.tlv.new()
-        self.assertEqual(new_tlv, self.tlv)
-        self.assertIsNot(new_tlv, self.tlv)
+    testdir: str
+    package: Package
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.testdir = "tests"
+        cls.package = PyRFLX([f"{cls.testdir}/tlv_with_checksum.rflx"])["TLV"]
+
+    def setUp(self) -> None:
+        self.tlv = self.package["Message"]
+
+    def test_file_not_found(self) -> None:
+        with self.assertRaises(FileNotFoundError):
+            with TemporaryDirectory() as tmpdir:
+                PyRFLX([f"{tmpdir}/test.rflx"])
+
+    def test_message_eq(self) -> None:
+        m1 = self.package["Message"]
+        self.assertEqual(m1, self.package["Message"])
+        self.assertIsNot(m1, self.package["Message"])
+        self.assertEqual(self.package["Message"], self.package["Message"])
+        self.assertIsNot(self.package["Message"], self.package["Message"])
+        self.assertNotEqual(m1, None)
 
     def test_attributes(self) -> None:
         pyrflx = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])
@@ -34,164 +50,147 @@ class TestPyRFLX(unittest.TestCase):
         self.assertIsInstance(package_tlv["Message"], Message)
 
     def test_all_fields(self) -> None:
-        tlv = self.tlv.new()
-        self.assertEqual(tlv.fields, ["Tag", "Length", "Value", "Checksum"])
+        self.assertEqual(self.tlv.fields, ["Tag", "Length", "Value", "Checksum"])
 
     def test_initial_fields(self) -> None:
-        tlv = self.tlv.new()
-        self.assertEqual(tlv.accessible_fields, ["Tag"])
+        self.assertEqual(self.tlv.accessible_fields, ["Tag"])
 
     def test_tag_fields(self) -> None:
-        tlv = self.tlv.new()
-        tlv.set("Tag", "Msg_Data")
-        self.assertEqual(tlv.accessible_fields, ["Tag", "Length"])
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertEqual(self.tlv.accessible_fields, ["Tag", "Length"])
 
     def test_length_fields(self) -> None:
-        tlv = self.tlv.new()
-        tlv.set("Tag", "Msg_Data")
-        tlv.set("Length", 1)
-        self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
-        tlv.set("Value", b"\x01")
-        self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
+        self.tlv.set("Tag", "Msg_Data")
+        self.tlv.set("Length", 1)
+        self.assertEqual(self.tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
+        self.tlv.set("Value", b"\x01")
+        self.assertEqual(self.tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
 
     def test_error_fields(self) -> None:
-        tlv = self.tlv.new()
-        tlv.set("Tag", "Msg_Error")
-        self.assertEqual(tlv.accessible_fields, ["Tag"])
+        self.tlv.set("Tag", "Msg_Error")
+        self.assertEqual(self.tlv.accessible_fields, ["Tag"])
 
     def test_error_reset_fields(self) -> None:
-        tlv = self.tlv.new()
-        tlv.set("Tag", "Msg_Data")
-        tlv.set("Length", 1)
-        self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
-        tlv.set("Tag", "Msg_Error")
-        self.assertEqual(tlv.accessible_fields, ["Tag"])
+        self.tlv.set("Tag", "Msg_Data")
+        self.tlv.set("Length", 1)
+        self.assertEqual(self.tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
+        self.tlv.set("Tag", "Msg_Error")
+        self.assertEqual(self.tlv.accessible_fields, ["Tag"])
 
     def test_fields_complex(self) -> None:
-        tlv = self.tlv.new()
-        self.assertEqual(tlv.accessible_fields, ["Tag"])
-        tlv.set("Tag", "Msg_Error")
-        self.assertEqual(tlv.accessible_fields, ["Tag"])
-        tlv.set("Tag", "Msg_Data")
-        self.assertEqual(tlv.accessible_fields, ["Tag", "Length"])
-        tlv.set("Length", 1)
-        self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
-        tlv.set("Value", b"\x01")
-        self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
-        tlv.set("Checksum", 0xFFFFFFFF)
-        self.assertEqual(tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
-        tlv.set("Tag", "Msg_Error")
-        self.assertEqual(tlv.accessible_fields, ["Tag"])
+        self.assertEqual(self.tlv.accessible_fields, ["Tag"])
+        self.tlv.set("Tag", "Msg_Error")
+        self.assertEqual(self.tlv.accessible_fields, ["Tag"])
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertEqual(self.tlv.accessible_fields, ["Tag", "Length"])
+        self.tlv.set("Length", 1)
+        self.assertEqual(self.tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
+        self.tlv.set("Value", b"\x01")
+        self.assertEqual(self.tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
+        self.tlv.set("Checksum", 0xFFFFFFFF)
+        self.assertEqual(self.tlv.accessible_fields, ["Tag", "Length", "Value", "Checksum"])
+        self.tlv.set("Tag", "Msg_Error")
+        self.assertEqual(self.tlv.accessible_fields, ["Tag"])
 
-    def test_final(self) -> None:
-        tlv = self.tlv.new()
-        self.assertFalse(tlv.final)
-        tlv.set("Tag", "Msg_Error")
-        self.assertTrue(tlv.final)
-        tlv.set("Tag", "Msg_Data")
-        self.assertFalse(tlv.final)
-        tlv.set("Length", 1)
-        self.assertFalse(tlv.final)
-        tlv.set("Value", b"\x01")
-        self.assertFalse(tlv.final)
-        tlv.set("Checksum", 0xFFFFFFFF)
-        self.assertTrue(tlv.final)
+    def test_valid_message(self) -> None:
+        self.assertFalse(self.tlv.valid_message)
+        self.tlv.set("Tag", "Msg_Error")
+        self.assertTrue(self.tlv.valid_message)
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertFalse(self.tlv.valid_message)
+        self.tlv.set("Length", 1)
+        self.assertFalse(self.tlv.valid_message)
+        self.tlv.set("Value", b"\x01")
+        self.assertFalse(self.tlv.valid_message)
+        self.tlv.set("Checksum", 0xFFFFFFFF)
+        self.assertTrue(self.tlv.valid_message)
 
-    def test_set_fields(self) -> None:
-        tlv = self.tlv.new()
-        self.assertEqual(tlv.set_fields, [])
-        tlv.set("Tag", "Msg_Data")
-        self.assertEqual(tlv.set_fields, ["Tag"])
-        tlv.set("Length", 1)
-        self.assertEqual(tlv.set_fields, ["Tag", "Length"])
-        tlv.set("Value", b"\x01")
-        self.assertEqual(tlv.set_fields, ["Tag", "Length", "Value"])
-        tlv.set("Checksum", 0xFFFFFFFF)
-        self.assertEqual(tlv.set_fields, ["Tag", "Length", "Value", "Checksum"])
+    def test_valid_fields(self) -> None:
+        self.assertEqual(self.tlv.valid_fields, [])
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertEqual(self.tlv.valid_fields, ["Tag"])
+        self.tlv.set("Length", 1)
+        self.assertEqual(self.tlv.valid_fields, ["Tag", "Length"])
+        self.tlv.set("Value", b"\x01")
+        self.assertEqual(self.tlv.valid_fields, ["Tag", "Length", "Value"])
+        self.tlv.set("Checksum", 0xFFFFFFFF)
+        self.assertEqual(self.tlv.valid_fields, ["Tag", "Length", "Value", "Checksum"])
 
     def test_set_value(self) -> None:
-        tlv = self.tlv.new()
         v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
         v2 = b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10"
-        tlv.set("Tag", "Msg_Data")
-        tlv.set("Length", 8)
-        tlv.set("Value", v1)
+        self.tlv.set("Tag", "Msg_Data")
+        self.tlv.set("Length", 8)
+        self.tlv.set("Value", v1)
         with self.assertRaises(ValueError):
-            tlv.set("Value", v2)
+            self.tlv.set("Value", v2)
 
     def test_tlv_message(self) -> None:
-        tlv = self.tlv.new()
         v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-        tlv.set("Tag", "Msg_Data")
-        tlv.set("Length", 8)
-        tlv.set("Value", v1)
-        tlv.set("Checksum", 2 ** 32 - 1)
+        self.tlv.set("Tag", "Msg_Data")
+        self.tlv.set("Length", 8)
+        self.tlv.set("Value", v1)
+        self.tlv.set("Checksum", 2 ** 32 - 1)
 
     def test_tlv_generate(self) -> None:
-        msg = self.tlv.new()
         test_payload = b"\x01\x02\x03\x04\x05\x06\x07\x08"
         test_data = b"\x40\x08" + test_payload + b"\xff\xff\xff\xff"
-        msg.set("Tag", "Msg_Data")
-        msg.set("Length", 8)
-        msg.set("Value", test_payload)
-        msg.set("Checksum", 0xFFFFFFFF)
-        self.assertEqual(msg.binary, test_data)
+        self.tlv.set("Tag", "Msg_Data")
+        self.tlv.set("Length", 8)
+        self.tlv.set("Value", test_payload)
+        self.tlv.set("Checksum", 0xFFFFFFFF)
+        self.assertEqual(self.tlv.binary, test_data)
 
     def test_tlv_binary_length(self) -> None:
         # pylint: disable=pointless-statement
-        msg = self.tlv.new()
-        msg.set("Tag", "Msg_Data")
-        with self.assertRaises(ValueError):
-            msg.binary
-        msg.set("Length", 8)
-        self.assertEqual(msg.binary, b"\x40\x08")
+        self.tlv.set("Tag", "Msg_Data")
+        with self.assertRaisesRegex(ValueError, r"message length must be dividable by 8 \(2\)"):
+            self.tlv.binary
+        self.tlv.set("Length", 8)
+        self.assertEqual(self.tlv.binary, b"\x40\x08")
 
     def test_tlv_value(self) -> None:
-        tlv = self.tlv.new()
         v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-        tlv.set("Tag", "Msg_Data")
-        tlv.set("Length", 8)
-        tlv.set("Value", v1)
-        tlv.set("Checksum", 2 ** 32 - 1)
-        self.assertEqual(tlv.get("Tag").value, "Msg_Data")
-        self.assertEqual(tlv.get("Length").value, 8)
-        self.assertEqual(tlv.get("Value").value, v1)
-        self.assertEqual(tlv.get("Checksum").value, 0xFFFFFFFF)
+        self.tlv.set("Tag", "Msg_Data")
+        self.tlv.set("Length", 8)
+        self.tlv.set("Value", v1)
+        self.tlv.set("Checksum", 2 ** 32 - 1)
+        self.assertEqual(self.tlv.get("Tag"), "Msg_Data")
+        self.assertEqual(self.tlv.get("Length"), 8)
+        self.assertEqual(self.tlv.get("Value"), v1)
+        self.assertEqual(self.tlv.get("Checksum"), 0xFFFFFFFF)
 
     def test_tlv_get_invalid_field(self) -> None:
-        tlv = self.tlv.new()
-        with self.assertRaises(IndexError):
-            tlv.get("nofield")
+        with self.assertRaisesRegex(IndexError, r"field nofield not found"):
+            self.tlv.get("nofield")
 
     def test_tlv_set_invalid_field(self) -> None:
-        tlv = self.tlv.new()
-        with self.assertRaises(RuntimeError):
-            tlv.set("Checksum", 8)
+        with self.assertRaisesRegex(RuntimeError, r"failed to add field Checksum"):
+            self.tlv.set("Checksum", 8)
 
     def test_tlv_invalid_value(self) -> None:
-        tlv = self.tlv.new()
-        with self.assertRaises(TypeError):
-            tlv.set("Tag", 1)
-        tlv.set("Tag", "Msg_Data")
-        with self.assertRaises(TypeError):
-            tlv.set("Length", "blubb")
+        with self.assertRaisesRegex(TypeError, r"cannot assign different types: str != int"):
+            self.tlv.set("Tag", 1)
+        self.tlv.set("Tag", "Msg_Data")
+        with self.assertRaisesRegex(TypeError, r"cannot assign different types: int != str"):
+            self.tlv.set("Length", "blubb")
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
         modtype = ModularInteger("Test.Int", Number(2 ** 16))
         modvalue = IntegerValue(modtype)
         self.assertFalse(modvalue.initialized)
-        with self.assertRaises(NotInitializedError):
+        with self.assertRaisesRegex(NotInitializedError, "value not initialized"):
             modvalue.value
-        with self.assertRaises(NotInitializedError):
+        with self.assertRaisesRegex(NotInitializedError, "value not initialized"):
             modvalue.expr
         modvalue.assign(128)
         self.assertTrue(modvalue.initialized)
         self.assertEqual(modvalue.value, 128)
         self.assertEqual(modvalue.binary, "0000000010000000")
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r"value not in type range: .*"):
             modvalue.assign(2 ** 16)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r"value not in type range: .*"):
             modvalue.assign(-1)
 
     def test_value_range(self) -> None:
@@ -199,17 +198,17 @@ class TestPyRFLX(unittest.TestCase):
         rangetype = RangeInteger("Test.Int", Number(8), Number(16), Number(8))
         rangevalue = IntegerValue(rangetype)
         self.assertFalse(rangevalue.initialized)
-        with self.assertRaises(NotInitializedError):
+        with self.assertRaisesRegex(NotInitializedError, "value not initialized"):
             rangevalue.value
-        with self.assertRaises(NotInitializedError):
+        with self.assertRaisesRegex(NotInitializedError, "value not initialized"):
             rangevalue.expr
         rangevalue.assign(10)
         self.assertTrue(rangevalue.initialized)
         self.assertEqual(rangevalue.value, 10)
         self.assertEqual(rangevalue.binary, "00001010")
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r"value not in type range: .*"):
             rangevalue.assign(17)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r"value not in type range: .*"):
             rangevalue.assign(7)
 
     def test_value_enum(self) -> None:
@@ -217,22 +216,22 @@ class TestPyRFLX(unittest.TestCase):
         enumtype = Enumeration("Test.Enum", {"One": Number(1), "Two": Number(2)}, Number(8), False)
         enumvalue = EnumValue(enumtype)
         self.assertFalse(enumvalue.initialized)
-        with self.assertRaises(NotInitializedError):
+        with self.assertRaisesRegex(NotInitializedError, "value not initialized"):
             enumvalue.value
-        with self.assertRaises(NotInitializedError):
+        with self.assertRaisesRegex(NotInitializedError, "value not initialized"):
             enumvalue.expr
         enumvalue.assign("One")
         self.assertTrue(enumvalue.initialized)
         self.assertEqual(enumvalue.value, "One")
         self.assertEqual(enumvalue.binary, "00000001")
-        with self.assertRaises(KeyError):
+        with self.assertRaisesRegex(KeyError, r"Three is not a valid enum value"):
             enumvalue.assign("Three")
 
     def test_value_opaque(self) -> None:
         # pylint: disable=pointless-statement
         opaquevalue = OpaqueValue(Opaque())
         self.assertFalse(opaquevalue.initialized)
-        with self.assertRaises(NotInitializedError):
+        with self.assertRaisesRegex(NotInitializedError, "value not initialized"):
             opaquevalue.value
         opaquevalue.assign(b"\x01\x02")
         self.assertTrue(opaquevalue.initialized)
@@ -274,7 +273,7 @@ class TestPyRFLX(unittest.TestCase):
                 return UNDEFINED
 
         t = TestType("Test.Type")
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "cannot construct unknown type: TestType"):
             TypeValue.construct(t)
 
     def test_field_equal(self) -> None:

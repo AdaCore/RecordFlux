@@ -76,7 +76,13 @@ class Scalar(Type):
         raise NotImplementedError
 
 
-class ModularInteger(Scalar):
+class Integer(Scalar):
+    @property
+    def size(self) -> Expr:
+        raise NotImplementedError
+
+
+class ModularInteger(Integer):
     def __init__(self, full_name: str, modulus: Expr) -> None:
         super().__init__(full_name)
         modulus_num = modulus.simplified()
@@ -106,7 +112,7 @@ class ModularInteger(Scalar):
         return TRUE
 
 
-class RangeInteger(Scalar):
+class RangeInteger(Integer):
     def __init__(self, full_name: str, first: Expr, last: Expr, size: Expr) -> None:
         super().__init__(full_name)
         first_num = first.simplified()
