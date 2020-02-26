@@ -945,7 +945,10 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
                 ),
                 State(name=StateName("END")),
             ],
-            declarations={"Data_Available": Renames("Boolean", Variable("Foo.Bar"))},
+            declarations={
+                "Data_Available": Renames("Boolean", Variable("Foo")),
+                "Foo": VariableDeclaration("Boolean"),
+            },
         )
 
 
@@ -1015,4 +1018,26 @@ def test_unused_local_variable() -> None:
                 State(name=StateName("END")),
             ],
             declarations={},
+        )
+
+
+def test_renames_references_undefined_variable() -> None:
+    with pytest.raises(
+        RecordFluxError, match='^model: error: undeclared variable "Foo"$',
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[
+                        Transition(target=StateName("END"), condition=Equal(Variable("Ren"), TRUE))
+                    ],
+                    declarations={},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Ren": Renames("Boolean", Variable("Foo"))},
         )

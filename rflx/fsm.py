@@ -245,6 +245,11 @@ class StateMachine(Base):
                     Severity.ERROR,
                     self.location,
                 )
+            try:
+                d.validate(self.__declarations)
+            except RecordFluxError as e:
+                self.error.extend(e)
+        for k, d in self.__declarations.items():
             if not d.is_referenced:
                 self.error.append(
                     f'unused {self.__entity_name(d)} "{k}"',
