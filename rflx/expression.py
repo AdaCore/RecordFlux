@@ -1658,9 +1658,9 @@ class Argument(Declaration):
 
 
 class VariableDeclaration(Declaration):
-    def __init__(self, typ: StrID, init: Expr = None):
+    def __init__(self, typ: StrID = None, init: Expr = None):
         super().__init__()
-        self.__type = ID(typ)
+        self.__type = ID(typ) if typ else None
         self.__init = init
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:

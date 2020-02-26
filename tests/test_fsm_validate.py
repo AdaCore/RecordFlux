@@ -8,6 +8,7 @@ from rflx.expression import (
     Channel,
     Equal,
     Length,
+    Number,
     Renames,
     Subprogram,
     Variable,
@@ -1078,4 +1079,27 @@ def test_binding_as_subprogram_parameter() -> None:  # pylint: disable=no-self-u
             "Variable": VariableDeclaration("Boolean"),
             "SubProg": Subprogram([], "Boolean"),
         },
+    )
+
+
+def test_for_all() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[
+                    Transition(
+                        target=StateName("END"),
+                        condition=ForAll(
+                            "E", Variable("List"), Equal(Field(Variable("E"), "Tag"), Number(42)),
+                        ),
+                    )
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={"List": VariableDeclaration("Foo")},
     )
