@@ -238,7 +238,7 @@ class StateMachine(Base):
                         self.location,
                     )
         for k, d in self.__declarations.items():
-            if str(k).upper() in ["READ", "WRITE", "CALL", "DATA_AVAILABLE"]:
+            if str(k).upper() in ["READ", "WRITE", "CALL", "DATA_AVAILABLE", "APPEND", "EXTEND"]:
                 self.error.append(
                     f'{self.__entity_name(d)} declaration shadows builtin subprogram "{k}"',
                     Subsystem.SESSION,

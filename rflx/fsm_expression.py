@@ -186,6 +186,53 @@ class SubprogramCall(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
+    def __validate_channel(self, declarations: Mapping[ID, Declaration]) -> None:
+        channel_id = self.arguments[0]
+        if not isinstance(channel_id, Variable):
+            fail(
+                f'invalid channel ID type in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+        assert isinstance(channel_id, Variable)
+        if channel_id.identifier not in declarations:
+            fail(
+                f'undeclared channel "{channel_id}" in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+
+        assert isinstance(channel_id, Variable)
+        channel = declarations[channel_id.identifier]
+        if not isinstance(channel, Channel):
+            fail(
+                f'invalid channel type in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+
+        assert isinstance(channel, Channel)
+        channel.reference()
+        if self.name.name in map(ID, ["Write", "Call"]) and not channel.writable:
+            self.error.append(
+                f'channel not writable in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+        if self.name.name in map(ID, ["Call", "Read", "Data_Available"]) and not channel.readable:
+            self.error.append(
+                f'channel not readable in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+        for a in self.arguments[1:]:
+            a.validate(declarations)
+
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         if len(self.arguments) < 1:
             fail(
@@ -195,63 +242,17 @@ class SubprogramCall(Expr):
                 self.location,
             )
         if self.name.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
-            channel_id = self.arguments[0]
-            if not isinstance(channel_id, Variable):
-                fail(
-                    f'invalid channel ID type in call to "{self.name}"',
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                    self.location,
-                )
-            assert isinstance(channel_id, Variable)
-            if channel_id.identifier not in declarations:
-                fail(
-                    f'undeclared channel "{channel_id}" in call to "{self.name}"',
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                    self.location,
-                )
-
-            assert isinstance(channel_id, Variable)
-            channel = declarations[channel_id.identifier]
-            if not isinstance(channel, Channel):
-                fail(
-                    f'invalid channel type in call to "{self.name}"',
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                    self.location,
-                )
-
-            assert isinstance(channel, Channel)
-            channel.reference()
-            if self.name.name in map(ID, ["Write", "Call"]) and not channel.writable:
-                self.error.append(
-                    f'channel not writable in call to "{self.name}"',
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                    self.location,
-                )
-            if (
-                self.name.name in map(ID, ["Call", "Read", "Data_Available"])
-                and not channel.readable
-            ):
-                self.error.append(
-                    f'channel not readable in call to "{self.name}"',
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                    self.location,
-                )
-            for a in self.arguments[1:]:
-                a.validate(declarations)
+            self.__validate_channel(declarations)
         else:
-            if self.name not in declarations:
-                fail(
-                    f'undeclared subprogram "{self.name}" called',
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                    self.location,
-                )
-            declarations[self.name].reference()
+            if self.name not in map(ID, ["Append", "Extend"]):
+                if self.name not in declarations:
+                    fail(
+                        f'undeclared subprogram "{self.name}" called',
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                declarations[self.name].reference()
             for a in self.arguments:
                 try:
                     a.validate(declarations)
