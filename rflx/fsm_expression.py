@@ -387,9 +387,13 @@ class Comprehension(Expr):
         raise NotImplementedError
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.array.validate(declarations)
-        self.selector.validate(declarations)
-        self.condition.validate(declarations)
+        decls: Mapping[ID, Declaration] = {
+            **declarations,
+            self.iterator: VariableDeclaration(),
+        }
+        self.array.validate(decls)
+        self.selector.validate(decls)
+        self.condition.validate(decls)
 
 
 class MessageAggregate(Expr):

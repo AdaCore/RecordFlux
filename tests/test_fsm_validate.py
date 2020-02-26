@@ -1187,3 +1187,30 @@ def test_aggregate_with_undefined_parameter() -> None:
             ],
             declarations={"Data": VariableDeclaration("Data_Type")},
         )
+
+
+def test_comprehension() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                actions=[
+                    Assignment(
+                        "Input",
+                        Comprehension(
+                            "K",
+                            Variable("Input"),
+                            Field(Variable("K"), "Data"),
+                            Equal(Field(Variable("K"), "Valid"), TRUE),
+                        ),
+                    )
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={"Input": VariableDeclaration("Foo")},
+    )
