@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import pytest
 
 from rflx.error import RecordFluxError
@@ -236,7 +237,7 @@ def test_declared_local_variable() -> None:
 
 def test_undeclared_local_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match='^model: error: undeclared variable "Start_Local"$',
+        RecordFluxError, match=('^model: error: undeclared variable "Local"$'),
     ):
         StateMachine(
             name="fsm",
@@ -245,18 +246,20 @@ def test_undeclared_local_variable() -> None:
             states=[
                 State(
                     name=StateName("START"),
-                    transitions=[Transition(target=StateName("STATE"))],
-                    declarations={ID("Start_Local"): VariableDeclaration("Some_Type")},
+                    transitions=[
+                        Transition(target=StateName("STATE"), condition=Variable("Global"))
+                    ],
+                    declarations={},
                 ),
                 State(
                     name=StateName("STATE"),
                     transitions=[
                         Transition(
                             target=StateName("END"),
-                            condition=Equal(Variable("Start_Local"), Variable("Global")),
+                            condition=Equal(Variable("Local"), Variable("Global")),
                         )
                     ],
-                    declarations={ID("Local"): VariableDeclaration("Some_Type")},
+                    declarations={},
                 ),
                 State(name=StateName("END")),
             ],
@@ -582,7 +585,11 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
             states=[
                 State(
                     name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    transitions=[
+                        Transition(
+                            target=StateName("END"), condition=Equal(Variable("Result"), TRUE)
+                        )
+                    ],
                     declarations={},
                     actions=[
                         Assignment("Result", SubprogramCall("Read", [Variable("Undeclared")]))
@@ -638,7 +645,11 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
             states=[
                 State(
                     name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    transitions=[
+                        Transition(
+                            target=StateName("END"), condition=Equal(Variable("Result"), TRUE)
+                        )
+                    ],
                     declarations={},
                     actions=[
                         Assignment("Result", SubprogramCall("Write", [Variable("Out_Channel")]))
@@ -815,7 +826,11 @@ def test_undeclared_variable_in_subprogram_call() -> None:
             states=[
                 State(
                     name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    transitions=[
+                        Transition(
+                            target=StateName("END"), condition=Equal(Variable("Result"), TRUE)
+                        )
+                    ],
                     declarations={},
                     actions=[
                         Assignment("Result", SubprogramCall("SubProg", [Variable("Undefined")]),)
@@ -833,7 +848,12 @@ def test_undeclared_variable_in_subprogram_call() -> None:
 def test_function_declaration_is_no_builtin_read() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: subprogram declaration shadows builtin subprogram "Read"$',
+        match=(
+            "^"
+            'session: error: subprogram declaration shadows builtin subprogram "Read"\n'
+            'session: error: unused subprogram "Read"'
+            "$"
+        ),
     ):
         StateMachine(
             name="fsm",
@@ -854,7 +874,12 @@ def test_function_declaration_is_no_builtin_read() -> None:
 def test_function_declaration_is_no_builtin_write() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: channel declaration shadows builtin subprogram "Write"$',
+        match=(
+            "^"
+            'session: error: channel declaration shadows builtin subprogram "Write"\n'
+            'session: error: unused channel "Write"'
+            "$"
+        ),
     ):
         StateMachine(
             name="fsm",
@@ -875,7 +900,12 @@ def test_function_declaration_is_no_builtin_write() -> None:
 def test_function_declaration_is_no_builtin_call() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: variable declaration shadows builtin subprogram "Call"$',
+        match=(
+            "^"
+            'session: error: variable declaration shadows builtin subprogram "Call"\n'
+            'session: error: unused variable "Call"'
+            "$"
+        ),
     ):
         StateMachine(
             name="fsm",
@@ -896,7 +926,12 @@ def test_function_declaration_is_no_builtin_call() -> None:
 def test_function_declaration_is_no_builtin_data_available() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: renames declaration shadows builtin subprogram "Data_Available"$',
+        match=(
+            "^"
+            'session: error: renames declaration shadows builtin subprogram "Data_Available"\n'
+            'session: error: unused renames "Data_Available"'
+            "$"
+        ),
     ):
         StateMachine(
             name="fsm",
@@ -917,7 +952,35 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
 def test_local_variable_shadows_global() -> None:
     with pytest.raises(
         RecordFluxError,
-        match="^session: error: local variable Global shadows global declaration in state START$",
+        match=(
+            "^"
+            'session: error: local variable "Global" shadows global declaration in state START\n'
+            'session: error: unused variable "Global"'
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[
+                        Transition(
+                            target=StateName("END"), condition=Equal(Variable("Global"), TRUE)
+                        )
+                    ],
+                    declarations={ID("Global"): VariableDeclaration("Boolean")},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={ID("Global"): VariableDeclaration("Boolean")},
+        )
+
+
+def test_unused_global_variable() -> None:
+    with pytest.raises(
+        RecordFluxError, match='^session: error: unused variable "Global"$',
     ):
         StateMachine(
             name="fsm",
@@ -927,9 +990,29 @@ def test_local_variable_shadows_global() -> None:
                 State(
                     name=StateName("START"),
                     transitions=[Transition(target=StateName("END"))],
-                    declarations={ID("Global"): VariableDeclaration("Boolean")},
+                    declarations={},
                 ),
                 State(name=StateName("END")),
             ],
-            declarations={ID("Global"): VariableDeclaration("Boolean")},
+            declarations={"Global": VariableDeclaration("Boolean")},
+        )
+
+
+def test_unused_local_variable() -> None:
+    with pytest.raises(
+        RecordFluxError, match='^session: error: unused local variable "Data" in state START$',
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={ID("Data"): VariableDeclaration("Boolean")},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={},
         )

@@ -221,8 +221,9 @@ class SubprogramCall(Expr):
                 )
 
             assert isinstance(channel, Channel)
+            channel.reference()
             if self.name.name in map(ID, ["Write", "Call"]) and not channel.writable:
-                fail(
+                self.error.append(
                     f'channel not writable in call to "{self.name}"',
                     Subsystem.SESSION,
                     Severity.ERROR,
@@ -232,12 +233,14 @@ class SubprogramCall(Expr):
                 self.name.name in map(ID, ["Call", "Read", "Data_Available"])
                 and not channel.readable
             ):
-                fail(
+                self.error.append(
                     f'channel not readable in call to "{self.name}"',
                     Subsystem.SESSION,
                     Severity.ERROR,
                     self.location,
                 )
+            for a in self.arguments[1:]:
+                a.validate(declarations)
         else:
             if self.name not in declarations:
                 fail(
@@ -246,8 +249,13 @@ class SubprogramCall(Expr):
                     Severity.ERROR,
                     self.location,
                 )
+            declarations[self.name].reference()
             for a in self.arguments:
-                a.validate(declarations)
+                try:
+                    a.validate(declarations)
+                except RecordFluxError as e:
+                    self.error.extend(e)
+        self.error.propagate()
 
 
 class Conversion(Expr):
@@ -281,6 +289,9 @@ class Conversion(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        self.argument.validate(declarations)
 
 
 class Field(Expr):

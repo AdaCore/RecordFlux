@@ -5,12 +5,15 @@ from rflx.expression import (
     FALSE,
     Argument,
     Equal,
+    Greater,
+    Number,
     Renames,
     Subprogram,
     Variable,
     VariableDeclaration,
 )
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
+from rflx.fsm_expression import SubprogramCall
 from rflx.identifier import ID
 from rflx.statement import Assignment
 
@@ -249,7 +252,7 @@ def test_multiple_unreachable_states() -> None:
                 ),
                 State(name=StateName("END")),
             ],
-            declarations={"Error": VariableDeclaration("Boolean")},
+            declarations={},
         )
 
 
@@ -295,10 +298,7 @@ def test_multiple_detached_states() -> None:
                 State(name=StateName("DETACHED2")),
                 State(name=StateName("END")),
             ],
-            declarations={
-                "Error": VariableDeclaration("Boolean"),
-                "Something": VariableDeclaration("Boolean"),
-            },
+            declarations={},
         )
 
 
@@ -352,8 +352,8 @@ def test_fsm_with_invalid_condition() -> None:
         RecordFluxError,
         match=(
             "^"
-            '<stdin>:1:1: parser: error: reserved word "and" used as identifier\n'
-            'session: error: invalid condition 0 from state "START" to "INTERMEDIATE"'
+            'session: error: invalid condition 0 from state "START" to "INTERMEDIATE"\n'
+            '<stdin>:1:1: parser: error: reserved word "and" used as identifier'
             "$"
         ),
     ):
@@ -371,6 +371,7 @@ def test_fsm_with_invalid_condition() -> None:
                   - name: INTERMEDIATE
                     transitions:
                       - target: END
+                        condition: Foo = False
                   - name: END
             """,
         )
@@ -456,6 +457,7 @@ def test_fsm_with_function_decl() -> None:
               - name: START
                 transitions:
                   - target: END
+                    condition: Foo (100, 200) > 1000
               - name: END
         """,
     )
@@ -464,7 +466,17 @@ def test_fsm_with_function_decl() -> None:
         initial=StateName("START"),
         final=StateName("END"),
         states=[
-            State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+            State(
+                name=StateName("START"),
+                transitions=[
+                    Transition(
+                        target=StateName("END"),
+                        condition=Greater(
+                            SubprogramCall("Foo", [Number(100), Number(200)]), Number(1000),
+                        ),
+                    )
+                ],
+            ),
             State(name=StateName("END")),
         ],
         declarations={
@@ -489,6 +501,7 @@ def test_fsm_with_variable_decl() -> None:
                     - \"Local : Boolean\"
                 transitions:
                   - target: END
+                    condition: Local = Global
               - name: END
         """,
     )
@@ -499,7 +512,12 @@ def test_fsm_with_variable_decl() -> None:
         states=[
             State(
                 name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                transitions=[
+                    Transition(
+                        target=StateName("END"),
+                        condition=Equal(Variable("Local"), Variable("Global")),
+                    )
+                ],
                 declarations={ID("Local"): VariableDeclaration("Boolean")},
             ),
             State(name=StateName("END")),
@@ -616,6 +634,7 @@ def test_fsm_with_renames() -> None:
               - name: START
                 transitions:
                   - target: END
+                    condition: Foo = False
               - name: END
         """,
     )
@@ -624,7 +643,12 @@ def test_fsm_with_renames() -> None:
         initial=StateName("START"),
         final=StateName("END"),
         states=[
-            State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+            State(
+                name=StateName("START"),
+                transitions=[
+                    Transition(target=StateName("END"), condition=Equal(Variable("Foo"), FALSE))
+                ],
+            ),
             State(name=StateName("END")),
         ],
         declarations={"Foo": Renames("Boolean", Variable("Bar"))},

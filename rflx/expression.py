@@ -159,7 +159,7 @@ class Expr(DBC):
         return Proof(self, facts)
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        raise NotImplementedError
+        raise NotImplementedError(f"{self.__class__.__name__}")
 
 
 class BooleanLiteral(Expr):
@@ -904,6 +904,7 @@ class Variable(Name):
             fail(
                 f'undeclared variable "{self.name}"', Subsystem.MODEL, Severity.ERROR, self.location
             )
+        declarations[self.identifier].reference()
 
     def z3expr(self) -> z3.ArithRef:
         if self.negative:
@@ -955,7 +956,7 @@ class Attribute(Name):
         return z3.Int(f"{self.prefix}'{self.__class__.__name__}")
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
+        self.prefix.validate(declarations)
 
 
 class Size(Attribute):
@@ -1620,6 +1621,9 @@ class ValueRange(Expr):
 
 
 class Declaration(ABC):
+    def __init__(self) -> None:
+        self.__refcount = 0
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
@@ -1629,15 +1633,24 @@ class Declaration(ABC):
         args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
         return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
 
+    def reference(self) -> None:
+        self.__refcount += 1
+
+    @property
+    def is_referenced(self) -> bool:
+        return self.__refcount > 0
+
 
 class Argument(Declaration):
     def __init__(self, name: StrID, typ: StrID):
+        super().__init__()
         self.__name = ID(name)
         self.__type = ID(typ)
 
 
 class VariableDeclaration(Declaration):
     def __init__(self, typ: StrID, init: Expr = None):
+        super().__init__()
         self.__type = ID(typ)
         self.__init = init
 
@@ -1648,18 +1661,21 @@ class PrivateVariable(Declaration):
 
 class Subprogram(Declaration):
     def __init__(self, arguments: List[Argument], return_type: StrID):
+        super().__init__()
         self.__arguments = arguments
         self.__return_type = ID(return_type)
 
 
 class Renames(Declaration):
     def __init__(self, typ: StrID, expr: Expr):
+        super().__init__()
         self.__type = ID(typ)
         self.__expr = expr
 
 
 class Channel(Declaration):
     def __init__(self, read: bool, write: bool):
+        super().__init__()
         self.__read = read
         self.__write = write
 
