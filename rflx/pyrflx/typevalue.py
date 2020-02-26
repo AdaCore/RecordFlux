@@ -2,7 +2,16 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Any
 
 from rflx.expression import TRUE, Expr, Variable
-from rflx.model import Enumeration, Integer, Number, Opaque, Scalar, Type
+from rflx.model import (
+    Enumeration,
+    Integer,
+    ModularInteger,
+    Number,
+    Opaque,
+    RangeInteger,
+    Scalar,
+    Type,
+)
 
 
 class NotInitializedError(Exception):
@@ -92,6 +101,26 @@ class IntegerValue(ScalarValue):
     def __init__(self, vtype: Integer) -> None:
         super().__init__(vtype)
 
+    @property
+    def _first(self) -> int:
+        if isinstance(self._type, ModularInteger):
+            return 0
+        assert isinstance(self._type, RangeInteger)
+        first = self._type.first.simplified()
+        assert isinstance(first, Number)
+        return first.value
+
+    @property
+    def _last(self) -> int:
+        if isinstance(self._type, ModularInteger):
+            mod = self._type.modulus.simplified()
+            assert isinstance(mod, Number)
+            return mod.value - 1
+        assert isinstance(self._type, RangeInteger)
+        last = self._type.last.simplified()
+        assert isinstance(last, Number)
+        return last.value
+
     def assign(self, value: int, check: bool = True) -> None:
         if (
             self._type.constraints("__VALUE__", check).simplified(
@@ -99,7 +128,7 @@ class IntegerValue(ScalarValue):
             )
             != TRUE
         ):
-            raise ValueError("value not in type range: " + repr(value))
+            raise ValueError(f"value {value} not in type range {self._first} .. {self._last}")
         self._value = value
         self._initialized = True
 

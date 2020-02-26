@@ -122,7 +122,7 @@ class TestPyRFLX(unittest.TestCase):
         self.tlv.set("Tag", "Msg_Data")
         self.tlv.set("Length", 8)
         self.tlv.set("Value", v1)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "invalid data length: 64 != 80"):
             self.tlv.set("Value", v2)
 
     def test_tlv_message(self) -> None:
@@ -188,9 +188,9 @@ class TestPyRFLX(unittest.TestCase):
         self.assertTrue(modvalue.initialized)
         self.assertEqual(modvalue.value, 128)
         self.assertEqual(modvalue.binary, "0000000010000000")
-        with self.assertRaisesRegex(ValueError, r"value not in type range: .*"):
+        with self.assertRaisesRegex(ValueError, r"value 65536 not in type range 0 .. 65535"):
             modvalue.assign(2 ** 16)
-        with self.assertRaisesRegex(ValueError, r"value not in type range: .*"):
+        with self.assertRaisesRegex(ValueError, r"value -1 not in type range 0 .. 65535"):
             modvalue.assign(-1)
 
     def test_value_range(self) -> None:
@@ -206,9 +206,9 @@ class TestPyRFLX(unittest.TestCase):
         self.assertTrue(rangevalue.initialized)
         self.assertEqual(rangevalue.value, 10)
         self.assertEqual(rangevalue.binary, "00001010")
-        with self.assertRaisesRegex(ValueError, r"value not in type range: .*"):
+        with self.assertRaisesRegex(ValueError, r"value 17 not in type range 8 .. 16"):
             rangevalue.assign(17)
-        with self.assertRaisesRegex(ValueError, r"value not in type range: .*"):
+        with self.assertRaisesRegex(ValueError, r"value 7 not in type range 8 .. 16"):
             rangevalue.assign(7)
 
     def test_value_enum(self) -> None:
