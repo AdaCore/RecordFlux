@@ -912,3 +912,24 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
             ],
             declarations={"Data_Available": Renames("Boolean", Variable("Foo.Bar"))},
         )
+
+
+def test_local_variable_shadows_global() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match="^session: error: local variable Global shadows global declaration in state START$",
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={ID("Global"): VariableDeclaration("Boolean")},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={ID("Global"): VariableDeclaration("Boolean")},
+        )

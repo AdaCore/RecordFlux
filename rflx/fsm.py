@@ -228,6 +228,15 @@ class StateMachine(Base):
                     Severity.ERROR,
                     self.location,
                 )
+        for s in self.__states:
+            for decl in s.declarations:
+                if decl in self.__declarations:
+                    self.error.append(
+                        f"local variable {decl} shadows global declaration in state {s.name.name}",
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                        self.location,
+                    )
 
 
 class FSM:
