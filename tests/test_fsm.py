@@ -362,6 +362,10 @@ def test_fsm_with_invalid_condition() -> None:
             """
                 initial: START
                 final: END
+                variables:
+                    - "Bar : Boolean"
+                renames:
+                    - "Foo : Boolean renames Bar"
                 states:
                   - name: START
                     transitions:
@@ -628,6 +632,8 @@ def test_fsm_with_renames() -> None:
         """
             initial: START
             final: END
+            variables:
+                - "Bar : Boolean"
             renames:
                 - "Foo : Boolean renames Bar"
             states:
@@ -651,6 +657,9 @@ def test_fsm_with_renames() -> None:
             ),
             State(name=StateName("END")),
         ],
-        declarations={"Foo": Renames("Boolean", Variable("Bar"))},
+        declarations={
+            "Foo": Renames("Boolean", Variable("Bar")),
+            "Bar": VariableDeclaration("Boolean"),
+        },
     )
     assert f.fsms[0] == expected

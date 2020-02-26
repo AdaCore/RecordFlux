@@ -900,6 +900,9 @@ class Variable(Name):
         return [self]
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        builtin_types = map(ID, ["Boolean"])
+        if self.identifier in builtin_types:
+            return
         if self.identifier not in declarations:
             fail(
                 f'undeclared variable "{self.name}"', Subsystem.MODEL, Severity.ERROR, self.location
@@ -1636,6 +1639,9 @@ class Declaration(ABC):
     def reference(self) -> None:
         self.__refcount += 1
 
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        raise NotImplementedError(f"Validation not implemented for {type(self).__name__}")
+
     @property
     def is_referenced(self) -> bool:
         return self.__refcount > 0
@@ -1647,6 +1653,9 @@ class Argument(Declaration):
         self.__name = ID(name)
         self.__type = ID(typ)
 
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
+
 
 class VariableDeclaration(Declaration):
     def __init__(self, typ: StrID, init: Expr = None):
@@ -1654,9 +1663,13 @@ class VariableDeclaration(Declaration):
         self.__type = ID(typ)
         self.__init = init
 
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
+
 
 class PrivateVariable(Declaration):
-    pass
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
 
 
 class Subprogram(Declaration):
@@ -1665,12 +1678,19 @@ class Subprogram(Declaration):
         self.__arguments = arguments
         self.__return_type = ID(return_type)
 
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        for a in self.__arguments:
+            a.validate(declarations)
+
 
 class Renames(Declaration):
     def __init__(self, typ: StrID, expr: Expr):
         super().__init__()
         self.__type = ID(typ)
         self.__expr = expr
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        self.__expr.validate(declarations)
 
 
 class Channel(Declaration):
@@ -1686,6 +1706,9 @@ class Channel(Declaration):
     @property
     def writable(self) -> bool:
         return self.__write
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
 
 
 def substitution(
