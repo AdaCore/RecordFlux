@@ -1103,3 +1103,53 @@ def test_for_all() -> None:
         ],
         declarations={"List": VariableDeclaration("Foo")},
     )
+
+
+def test_append_list_attribute() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={},
+                actions=[
+                    Assignment(
+                        "List", SubprogramCall("Append", [Variable("List"), Variable("Element")]),
+                    )
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "List": VariableDeclaration("List_Type"),
+            "Element": VariableDeclaration("Element_Type"),
+        },
+    )
+
+
+def test_extend_list_attribute() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={},
+                actions=[
+                    Assignment(
+                        "List", SubprogramCall("Extend", [Variable("List"), Variable("Element")]),
+                    )
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "List": VariableDeclaration("List_Type"),
+            "Element": VariableDeclaration("Element_Type"),
+        },
+    )
