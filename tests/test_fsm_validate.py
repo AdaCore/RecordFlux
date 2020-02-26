@@ -7,6 +7,7 @@ from rflx.expression import (
     TRUE,
     Channel,
     Equal,
+    Length,
     Renames,
     Subprogram,
     Variable,
@@ -46,6 +47,13 @@ def test_binding_forall_predicate() -> None:
         ForAll("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))), {"Bar": Variable("Baz")},
     )
     expected = ForAll("X", Variable("Y"), Equal(Variable("X"), Variable("Baz")))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_length() -> None:
+    binding = Binding(Length(Variable("A")), {"A": Variable("Baz")})
+    expected = Length(Variable("Baz"))
     result = binding.simplified()
     assert result == expected
 
@@ -1041,3 +1049,33 @@ def test_renames_references_undefined_variable() -> None:
             ],
             declarations={"Ren": Renames("Boolean", Variable("Foo"))},
         )
+
+
+def test_binding_as_subprogram_parameter() -> None:  # pylint: disable=no-self-use
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                declarations={},
+                actions=[
+                    Assignment(
+                        "Result",
+                        Binding(
+                            SubprogramCall("SubProg", [Length(Variable("Bound"))]),
+                            {"Bound": Variable("Variable")},
+                        ),
+                    )
+                ],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "Result": VariableDeclaration("Boolean"),
+            "Variable": VariableDeclaration("Boolean"),
+            "SubProg": Subprogram([], "Boolean"),
+        },
+    )
