@@ -14,6 +14,7 @@ from rflx.expression import (
     Precedence,
     Relation,
     Variable,
+    VariableDeclaration,
     substitution,
 )
 from rflx.identifier import ID, StrID
@@ -79,8 +80,9 @@ class Quantifier(Expr):
         raise NotImplementedError
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.iterable.validate(declarations)
-        self.predicate.validate(declarations)
+        quantifier: Mapping[ID, Declaration] = {self.quantifier: VariableDeclaration()}
+        self.iterable.validate({**declarations, **quantifier})
+        self.predicate.validate({**declarations, **quantifier})
 
 
 class ForSome(Quantifier):
