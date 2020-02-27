@@ -8,7 +8,7 @@ from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import z3
 
-from rflx.common import indent, indent_next, unique, verify_identifier
+from rflx.common import generic_repr, indent, indent_next, unique, verify_identifier
 
 
 class Precedence(Enum):
@@ -35,8 +35,7 @@ class Expr(ABC):
         return NotImplemented
 
     def __repr__(self) -> str:
-        args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
+        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __hash__(self) -> int:
         return hash(repr(self))
