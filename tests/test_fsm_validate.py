@@ -5,6 +5,7 @@ from rflx.error import RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
+    Argument,
     Channel,
     Equal,
     Length,
@@ -25,6 +26,7 @@ from rflx.fsm_expression import (
     ForSome,
     MessageAggregate,
     NotContains,
+    Opaque,
     String,
     SubprogramCall,
     Valid,
@@ -1213,4 +1215,55 @@ def test_comprehension() -> None:
             State(name=StateName("END")),
         ],
         declarations={"Input": VariableDeclaration("Foo")},
+    )
+
+
+def test_assignment_opaque_subprogram_undef_parameter() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: invalid action 0 of state START\n"
+            'model: error: undeclared variable "UndefData"'
+            "$"
+        ),
+    ):
+        StateMachine(
+            name="fsm",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    actions=[
+                        Assignment("Data", Opaque(SubprogramCall("Sub", [Variable("UndefData")]),),)
+                    ],
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={
+                "Data": VariableDeclaration("Foo"),
+                "Sub": Subprogram([Argument("Param", "Param_Type")], "Result_Type"),
+            },
+        )
+
+
+def test_assignment_opaque_subprogram_result() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                actions=[Assignment("Data", Opaque(SubprogramCall("Sub", [Variable("Data")]),),)],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "Data": VariableDeclaration("Foo"),
+            "Sub": Subprogram([Argument("Param", "Param_Type")], "Result_Type"),
+        },
     )
