@@ -32,7 +32,7 @@ from rflx.expression import (
     Mul,
     NotEqual,
     Or,
-    PrivateVariable,
+    PrivateDeclaration,
     Renames,
     Sub,
     Subprogram,
@@ -374,6 +374,6 @@ class FSMParser:
         private = (
             unqualified_identifier() + Keyword("is").suppress() + Keyword("private").suppress()
         )
-        private.setParseAction(lambda t: (t[0], PrivateVariable()))
+        private.setParseAction(lambda t: (t[0], PrivateDeclaration()))
 
         return (private | renames | variable_decl | function_decl) + StringEnd()
