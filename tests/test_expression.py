@@ -111,6 +111,8 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(And(TRUE, FALSE, TRUE).simplified(), FALSE)
         self.assertEqual(And(TRUE, EXPR).simplified(), EXPR)
         self.assertEqual(And(EXPR, TRUE).simplified(), EXPR)
+        self.assertEqual(And(EXPR, FALSE).simplified(), FALSE)
+        self.assertEqual(And(FALSE, EXPR).simplified(), FALSE)
 
     def test_and_str(self) -> None:
         self.assertEqual(str(And(Variable("X"), Variable("Y"))), "X\n   and Y")
