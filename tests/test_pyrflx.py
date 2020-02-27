@@ -198,7 +198,7 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(self.tlv.get("Checksum"), 0xFFFFFFFF)
 
     def test_tlv_get_invalid_field(self) -> None:
-        with self.assertRaisesRegex(IndexError, r"field nofield not found"):
+        with self.assertRaisesRegex(ValueError, r"field nofield not valid"):
             self.tlv.get("nofield")
 
     def test_tlv_set_invalid_field(self) -> None:
@@ -207,6 +207,9 @@ class TestPyRFLX(unittest.TestCase):
             self.tlv.set("Value", b"")
         with self.assertRaisesRegex(RuntimeError, r"cannot determine first of Checksum"):
             self.tlv.set("Checksum", 8)
+        self.tlv.set("Tag", "Msg_Error")
+        with self.assertRaisesRegex(KeyError, r"cannot access field Length"):
+            self.tlv.set("Length", 8)
 
     def test_tlv_invalid_value(self) -> None:
         with self.assertRaisesRegex(TypeError, r"cannot assign different types: str != int"):
@@ -229,6 +232,17 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(self.tlv._prev_field(INITIAL.name), "")
         self.tlv.set("Tag", "Msg_Error")
         self.assertEqual(self.tlv._prev_field("Length"), "")
+
+    def test_tlv_required_fields(self) -> None:
+        self.assertEqual(self.tlv.required_fields, ["Tag"])
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertEqual(self.tlv.required_fields, ["Length"])
+        self.tlv.set("Length", 1)
+        self.assertEqual(self.tlv.required_fields, ["Value", "Checksum"])
+        self.tlv.set("Value", b"\x01")
+        self.assertEqual(self.tlv.required_fields, ["Checksum"])
+        self.tlv.set("Checksum", 0xFFFFFFFF)
+        self.assertEqual(self.tlv.required_fields, [])
 
     def test_ethernet_all_fields(self) -> None:
         self.assertEqual(
@@ -311,6 +325,11 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(
             self.record.accessible_fields, ["Tag", "Legacy_Record_Version", "Length", "Fragment"]
         )
+
+    def test_tls_invalid_outgoing(self) -> None:
+        self.record.set("Tag", "INVALID")
+        with self.assertRaisesRegex(ValueError, "value does not allow path to next field"):
+            self.record.set("Length", 2 ** 14 + 1)
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
