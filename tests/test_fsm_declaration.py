@@ -6,7 +6,7 @@ from rflx.expression import (
     FALSE,
     Argument,
     Channel,
-    PrivateVariable,
+    PrivateDeclaration,
     Renames,
     Subprogram,
     Variable,
@@ -46,6 +46,12 @@ def test_invalid_parameter_name() -> None:
         )[0]
 
 
+def test_private_variable_declaration() -> None:
+    result = FSMParser.declaration().parseString("Hash_Context is private")[0]
+    expected = (ID("Hash_Context"), PrivateDeclaration())
+    assert result == expected
+
+
 def test_parameterless_function_declaration() -> None:
     result = FSMParser.declaration().parseString("Foo return Foo_Type")[0]
     expected = (ID("Foo"), Subprogram([], "Foo_Type"))
@@ -82,12 +88,6 @@ def test_renames() -> None:
         ID("Certificate_Message"),
         Renames("TLS_Handshake.Certificate", Field(Variable("CCR_Handshake_Message"), "Payload")),
     )
-    assert result == expected
-
-
-def test_private_variable_declaration() -> None:
-    result = FSMParser.declaration().parseString("Hash_Context is private")[0]
-    expected = (ID("Hash_Context"), PrivateVariable())
     assert result == expected
 
 

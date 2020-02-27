@@ -8,6 +8,7 @@ from rflx.expression import (
     Channel,
     Declaration,
     Expr,
+    PrivateDeclaration,
     Renames,
     Subprogram,
     VariableDeclaration,
@@ -217,6 +218,8 @@ class StateMachine(Base):
             return "renames"
         if isinstance(declaration, Channel):
             return "channel"
+        if isinstance(declaration, PrivateDeclaration):
+            return "private declaration"
         assert False, f"Unsupported entity {type(declaration).__name__}"
 
     def __validate_declarations(self) -> None:
@@ -250,6 +253,10 @@ class StateMachine(Base):
             except RecordFluxError as e:
                 self.error.extend(e)
         for k, d in self.__declarations.items():
+            # pylint: disable=fixme
+            # FIXME: We do not validate variable declarations at the moment
+            if isinstance(d, PrivateDeclaration):
+                continue
             if not d.is_referenced:
                 self.error.append(
                     f'unused {self.__entity_name(d)} "{k}"',
