@@ -21,6 +21,9 @@ class Field:
             )
         return NotImplemented
 
+    def __repr__(self) -> str:
+        return f"Field(typeval={self.typeval}, first={self.first}, length={self.length})"
+
     @property
     def set(self) -> bool:
         return (
@@ -125,12 +128,22 @@ class Message:
     def _preset_fields(self, fld: str) -> None:
         nxt = self._next_field(fld)
         while nxt and nxt != model.FINAL.name:
+            field = self._fields[nxt]
             try:
-                self._fields[nxt].first = self._get_first(nxt)
-                self._fields[nxt].length = self._get_length(nxt)
-                nxt = self._next_field(nxt)
+                field.first = self._get_first(nxt)
+                field.length = self._get_length(nxt)
+                if (
+                    field.set
+                    and isinstance(field.typeval, OpaqueValue)
+                    and field.typeval.length != field.length.value
+                ):
+                    raise RuntimeError
             except RuntimeError:
+                field.first = UNDEFINED
+                field.length = UNDEFINED
+                field.typeval.clear()
                 break
+            nxt = self._next_field(nxt)
 
     def get(self, fld: str) -> Any:
         try:
