@@ -1,6 +1,11 @@
 from typing import Iterable, Iterator, Set, TypeVar
 
 
+def generic_repr(class_name: str, obj_dict: dict) -> str:
+    args = "\n" + ",\n".join(f"{k}={v!r}" for k, v in obj_dict.items())
+    return indent_next(f"\n{class_name}({indent(args, 4)})", 4)
+
+
 def indent(string: str, indentation: int) -> str:
     return "\n".join((indentation * " " + l if l else "") for l in string.split("\n"))
 

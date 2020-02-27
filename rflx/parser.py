@@ -26,6 +26,7 @@ from pyparsing import (
     opAssoc,
 )
 
+from rflx.common import generic_repr
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -77,8 +78,7 @@ class SyntaxTree:
         return NotImplemented
 
     def __repr__(self) -> str:
-        args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
+        return generic_repr(self.__class__.__name__, self.__dict__)
 
 
 class MessageSpec(Type):

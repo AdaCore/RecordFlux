@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
-from rflx.common import indent, indent_next, unique, verify_identifier
+from rflx.common import generic_repr, indent, indent_next, unique, verify_identifier
 from rflx.expression import Case, Expr, Number
 
 
@@ -17,8 +17,7 @@ class Ada(ABC):
         return hash(repr(self))
 
     def __repr__(self) -> str:
-        args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
+        return generic_repr(self.__class__.__name__, self.__dict__)
 
     @abstractmethod
     def __str__(self) -> str:
