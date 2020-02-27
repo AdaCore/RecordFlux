@@ -42,6 +42,10 @@ class Transition(Base):
     def validate(self, declarations: Dict[ID, Declaration]) -> None:
         self.__condition.simplified().validate(declarations)
 
+    @property
+    def condition(self) -> Expr:
+        return self.__condition
+
 
 class State(Base):
     def __init__(
@@ -264,6 +268,22 @@ class StateMachine(Base):
                     Severity.ERROR,
                     self.location,
                 )
+
+    @property
+    def name(self) -> str:
+        return self.__name
+
+    @property
+    def initial(self) -> StateName:
+        return self.__initial
+
+    @property
+    def final(self) -> StateName:
+        return self.__final
+
+    @property
+    def states(self) -> Iterable[State]:
+        return self.__states
 
 
 class FSM:

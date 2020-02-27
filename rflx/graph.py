@@ -1,20 +1,24 @@
 import logging
 from copy import copy
 from pathlib import Path
+from typing import Union
 
 from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
+from rflx.fsm import StateMachine
 from rflx.model import FINAL, INITIAL, Link, Message
 
 log = logging.getLogger(__name__)
 
 
 class Graph:
-    def __init__(self, data: Message) -> None:
+    def __init__(self, data: Union[StateMachine, Message]) -> None:
         self.__data = copy(data)
 
     def __target_size(self, link: Link) -> str:
+        if not isinstance(self.__data, Message):
+            raise TypeError(f"Invalid data format {type(self.__data).__name__}")
         return str(self.__data.field_size(link.target))
 
     def __edge_label(self, link: Link) -> str:
@@ -30,14 +34,15 @@ class Graph:
     def get(self) -> Dot:
         if isinstance(self.__data, Message):
             return self.__get_message
-        raise TypeError
+        if isinstance(self.__data, StateMachine):
+            return self.__get_session
+        raise NotImplementedError(f"Unsupported data format {type(self.__data).__name__}")
 
-    @property
-    def __get_message(self) -> Dot:
-        """Return pydot graph representation of message."""
-        if not self.__data.structure:
-            self.__data.structure = [Link(INITIAL, FINAL)]
-        result = Dot(graph_name=self.__data.full_name)
+    @classmethod
+    def __graph_with_defaults(cls, name: str) -> Dot:
+        """Return default pydot graph."""
+
+        result = Dot(graph_name=name)
         result.set_graph_defaults(
             splines="true", ranksep="0.1 equally", pad="0.1", truecolor="true", bgcolor="#00000000"
         )
@@ -51,6 +56,40 @@ class Graph:
             style='"rounded,filled"',
             shape="box",
         )
+        return result
+
+    @property
+    def __get_session(self) -> Dot:
+        """Return pydot graph representation of session."""
+
+        if not isinstance(self.__data, StateMachine):
+            raise TypeError(f"Invalid data format {type(self.__data).__name__}")
+
+        result = self.__graph_with_defaults("StateMachine")
+        for s in self.__data.states:
+            if s.name == self.__data.initial:
+                result.add_node(Node(name=s.name.name, fillcolor="#ffffff", fontcolor="black"))
+            elif s.name == self.__data.final:
+                result.add_node(Node(name=s.name.name, fillcolor="#6f6f6f"))
+            else:
+                result.add_node(Node(name=s.name.name))
+
+            for index, t in enumerate(s.transitions):
+                condition = f"[{index}] {t.condition}" if t.condition != TRUE else ""
+                result.add_edge(Edge(src=s.name.name, dst=t.target.name, xlabel=condition))
+        return result
+
+    @property
+    def __get_message(self) -> Dot:
+        """Return pydot graph representation of message."""
+
+        if not isinstance(self.__data, Message):
+            raise TypeError(f"Invalid data format {type(self.__data).__name__}")
+
+        if not self.__data.structure:
+            self.__data.structure = [Link(INITIAL, FINAL)]
+
+        result = self.__graph_with_defaults(self.__data.full_name)
         result.add_node(
             Node(name="Initial", fillcolor="#ffffff", shape="circle", width="0.5", label="")
         )
