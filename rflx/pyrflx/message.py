@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping
 
 import rflx.model as model
-from rflx.expression import TRUE, UNDEFINED, Add, Expr, First, Length, Name, Number, Variable
+from rflx.expression import FALSE, TRUE, UNDEFINED, Add, Expr, First, Length, Name, Number, Variable
 
 from .typevalue import OpaqueValue, ScalarValue, TypeValue
 
@@ -37,8 +37,7 @@ class Message:
     def __init__(self, message_model: model.Message) -> None:
         self._model = message_model
         self._fields: Dict[str, Field] = {
-            f.name: Field(TypeValue.construct(self._model.types[f]))
-            for f in self._model.all_fields[1:-1]
+            f.name: Field(TypeValue.construct(self._model.types[f])) for f in self._model.fields
         }
         self.__type_literals: Mapping[Name, Expr] = {}
         for t in [f.typeval.literals for f in self._fields.values()]:
@@ -119,10 +118,21 @@ class Message:
                 f"cannot assign different types: {self._fields[fld].typeval.accepted_type.__name__}"
                 f" != {type(value).__name__}"
             )
-        field = self._fields[fld]
-        field.first = self._get_first(fld)
-        field.length = self._get_length(fld)
-        self._fields[fld].typeval.assign(value, True)
+        try:
+            field = self._fields[fld]
+            field.first = self._get_first(fld)
+            field.length = self._get_length(fld)
+            self._fields[fld].typeval.assign(value, True)
+            if all(
+                [
+                    self.__simplified(o.condition) == FALSE
+                    for o in self._model.outgoing(model.Field(fld))
+                ]
+            ):
+                self._fields[fld].typeval.clear()
+                raise ValueError("value does not allow path to next field")
+        except KeyError:
+            raise KeyError(f"cannot access field {fld}")
         if isinstance(field.typeval, OpaqueValue) and field.typeval.length != field.length.value:
             flength = field.typeval.length
             field.typeval.clear()
@@ -150,10 +160,9 @@ class Message:
             nxt = self._next_field(nxt)
 
     def get(self, fld: str) -> Any:
-        try:
-            return self._fields[fld].typeval.value
-        except KeyError:
-            raise IndexError(f"field {fld} not found")
+        if fld not in self.valid_fields:
+            raise ValueError(f"field {fld} not valid")
+        return self._fields[fld].typeval.value
 
     @property
     def binary(self) -> bytes:
@@ -179,7 +188,7 @@ class Message:
 
     @property
     def fields(self) -> List[str]:
-        return [f.name for f in self._model.all_fields[1:-1]]
+        return [f.name for f in self._model.fields]
 
     @property
     def accessible_fields(self) -> List[str]:
@@ -199,6 +208,12 @@ class Message:
     @property
     def valid_fields(self) -> List[str]:
         return [f for f in self.accessible_fields if self._fields[f].set]
+
+    @property
+    def required_fields(self) -> List[str]:
+        accessible = self.accessible_fields
+        valid = self.valid_fields
+        return [f for f in accessible if f not in valid]
 
     @property
     def valid_message(self) -> bool:
