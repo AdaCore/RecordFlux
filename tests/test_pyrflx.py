@@ -2,7 +2,16 @@ import unittest
 from tempfile import TemporaryDirectory
 
 from rflx.expression import UNDEFINED, Expr
-from rflx.model import Enumeration, ModularInteger, Number, Opaque, RangeInteger, Type
+from rflx.model import (
+    FINAL,
+    INITIAL,
+    Enumeration,
+    ModularInteger,
+    Number,
+    Opaque,
+    RangeInteger,
+    Type,
+)
 from rflx.pyrflx import (
     EnumValue,
     Field,
@@ -165,7 +174,10 @@ class TestPyRFLX(unittest.TestCase):
             self.tlv.get("nofield")
 
     def test_tlv_set_invalid_field(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, r"failed to add field Checksum"):
+        self.tlv.set("Tag", "Msg_Data")
+        with self.assertRaisesRegex(RuntimeError, r"cannot determine length of Value"):
+            self.tlv.set("Value", b"")
+        with self.assertRaisesRegex(RuntimeError, r"cannot determine first of Checksum"):
             self.tlv.set("Checksum", 8)
 
     def test_tlv_invalid_value(self) -> None:
@@ -174,6 +186,21 @@ class TestPyRFLX(unittest.TestCase):
         self.tlv.set("Tag", "Msg_Data")
         with self.assertRaisesRegex(TypeError, r"cannot assign different types: int != str"):
             self.tlv.set("Length", "blubb")
+
+    def test_tlv_next(self) -> None:
+        # pylint: disable=protected-access
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertEqual(self.tlv._next_field(INITIAL.name), "Tag")
+        self.assertEqual(self.tlv._next_field("Tag"), "Length")
+        self.assertEqual(self.tlv._next_field(FINAL.name), "")
+
+    def test_tlv_prev(self) -> None:
+        # pylint: disable=protected-access
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertEqual(self.tlv._prev_field("Tag"), INITIAL.name)
+        self.assertEqual(self.tlv._prev_field(INITIAL.name), "")
+        self.tlv.set("Tag", "Msg_Error")
+        self.assertEqual(self.tlv._prev_field("Length"), "")
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
@@ -263,6 +290,14 @@ class TestPyRFLX(unittest.TestCase):
         rv.assign(10)
         self.assertNotEqual(mv, rv)
 
+    def test_value_clear(self) -> None:
+        ov = OpaqueValue(Opaque())
+        self.assertFalse(ov.initialized)
+        ov.assign(b"", True)
+        self.assertTrue(ov.initialized)
+        ov.clear()
+        self.assertFalse(ov.initialized)
+
     def test_value_invalid(self) -> None:
         class TestType(Type):
             @property
@@ -276,14 +311,22 @@ class TestPyRFLX(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot construct unknown type: TestType"):
             TypeValue.construct(t)
 
-    def test_field_equal(self) -> None:
-        f1 = Field("f")
-        f2 = Field("f")
-        self.assertEqual(f1, f2)
-        self.assertEqual(f1, f1)
-        f2.typeval.assign(b"", True)
-        self.assertNotEqual(f1, f2)
+    def test_field_eq(self) -> None:
+        f1 = Field(OpaqueValue(Opaque()))
+        self.assertEqual(f1, Field(OpaqueValue(Opaque())))
+        f1.typeval.assign(b"", True)
+        self.assertNotEqual(f1, Field(OpaqueValue(Opaque())))
         self.assertNotEqual(f1, None)
+
+    def test_field_set(self) -> None:
+        f = Field(OpaqueValue(Opaque()))
+        self.assertFalse(f.set)
+        f.typeval.assign(b"", True)
+        self.assertFalse(f.set)
+        f.first = Number(1)
+        self.assertFalse(f.set)
+        f.length = Number(2)
+        self.assertTrue(f.set)
 
     def test_package_name(self) -> None:
         p = Package("Test")
