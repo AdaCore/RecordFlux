@@ -40,6 +40,9 @@ class Message:
             f.name: Field(TypeValue.construct(self._model.types[f]))
             for f in self._model.all_fields[1:-1]
         }
+        self.__type_literals: Mapping[Name, Expr] = {}
+        for t in [f.typeval.literals for f in self._fields.values()]:
+            self.__type_literals = {**self.__type_literals, **t}
         initial = Field(OpaqueValue(model.Opaque()))
         initial.first = Number(0)
         initial.length = Number(0)
@@ -63,7 +66,7 @@ class Message:
         if fld == model.FINAL.name:
             return ""
         for l in self._model.outgoing(model.Field(fld)):
-            if l.condition.simplified(self.__field_values) == TRUE:
+            if self.__simplified(l.condition) == TRUE:
                 return l.target.name
         return ""
 
@@ -71,14 +74,14 @@ class Message:
         if fld == model.INITIAL.name:
             return ""
         for l in self._model.incoming(model.Field(fld)):
-            if l.condition.simplified(self.__field_values) == TRUE:
+            if self.__simplified(l.condition) == TRUE:
                 return l.source.name
         return ""
 
     def _get_length(self, fld: str) -> Number:
         prv = self._prev_field(fld)
         for l in self._model.outgoing(model.Field(prv)):
-            length = l.length.simplified(self.__field_values)
+            length = self.__simplified(l.length)
             if isinstance(length, Number):
                 return length
         typeval = self._fields[fld].typeval
@@ -89,29 +92,25 @@ class Message:
     def _has_length(self, fld: str) -> bool:
         prv = self._prev_field(fld)
         for l in self._model.outgoing(model.Field(prv)):
-            if isinstance(l.length.simplified(self.__field_values), Number):
+            if isinstance(self.__simplified(l.length), Number):
                 return True
         return isinstance(self._fields[fld].typeval, ScalarValue)
 
     def _get_first(self, fld: str) -> Number:
         for l in self._model.incoming(model.Field(fld)):
-            if l.condition.simplified(self.__field_values) == TRUE and l.first != UNDEFINED:
-                first = l.first.simplified(self.__field_values)
+            if self.__simplified(l.condition) == TRUE and l.first != UNDEFINED:
+                first = self.__simplified(l.first)
                 break
         else:
             prv = self._prev_field(fld)
-            first = Add(self._fields[prv].first, self._fields[prv].length).simplified(
-                self.__field_values
-            )
+            first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].length))
         if isinstance(first, Number):
             return first
         raise RuntimeError(f"cannot determine first of {fld}")
 
     def _has_first(self, fld: str) -> bool:
         prv = self._prev_field(fld)
-        first = Add(self._fields[prv].first, self._fields[prv].length).simplified(
-            self.__field_values
-        )
+        first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].length))
         return isinstance(first, Number)
 
     def set(self, fld: str, value: Any) -> None:
@@ -188,8 +187,7 @@ class Message:
         fields: List[str] = []
         while nxt and nxt != model.FINAL.name:
             if (
-                self._model.field_condition(model.Field(nxt)).simplified(self.__field_values)
-                != TRUE
+                self.__simplified(self._model.field_condition(model.Field(nxt))) != TRUE
                 or not self._has_first(nxt)
                 or not self._has_length(nxt)
             ):
@@ -208,9 +206,8 @@ class Message:
             bool(self.valid_fields) and self._next_field(self.valid_fields[-1]) == model.FINAL.name
         )
 
-    @property
-    def __field_values(self) -> Mapping[Name, Expr]:
-        return {
+    def __simplified(self, expr: Expr) -> Expr:
+        field_values: Mapping[Name, Expr] = {
             **{
                 Variable(k): v.typeval.expr
                 for k, v in self._fields.items()
@@ -219,3 +216,4 @@ class Message:
             **{Length(k): v.length for k, v in self._fields.items() if v.set},
             **{First(k): v.first for k, v in self._fields.items() if v.set},
         }
+        return expr.simplified(field_values).simplified(self.__type_literals)

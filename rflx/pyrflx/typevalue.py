@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Any
+from typing import Any, Mapping
 
-from rflx.expression import TRUE, Expr, Variable
+from rflx.expression import TRUE, Expr, Name, Variable
 from rflx.model import (
     Enumeration,
     Integer,
@@ -60,15 +60,19 @@ class TypeValue(ABC):
 
     @abstractproperty
     def value(self) -> Any:
-        return NotImplemented
+        raise NotImplementedError
 
     @abstractproperty
     def binary(self) -> str:
-        return NotImplemented
+        raise NotImplementedError
 
     @abstractproperty
     def accepted_type(self) -> type:
-        return NotImplemented
+        raise NotImplementedError
+
+    @abstractproperty
+    def literals(self) -> Mapping[Name, Expr]:
+        raise NotImplementedError
 
     @classmethod
     def construct(cls, vtype: Type) -> "TypeValue":
@@ -88,6 +92,10 @@ class ScalarValue(TypeValue):
     @abstractproperty
     def expr(self) -> Expr:
         return NotImplemented
+
+    @abstractproperty
+    def literals(self) -> Mapping[Name, Expr]:
+        raise NotImplementedError
 
     @property
     def size(self) -> int:
@@ -154,6 +162,10 @@ class IntegerValue(ScalarValue):
     def accepted_type(self) -> type:
         return int
 
+    @property
+    def literals(self) -> Mapping[Name, Expr]:
+        return {}
+
 
 class EnumValue(ScalarValue):
 
@@ -199,6 +211,11 @@ class EnumValue(ScalarValue):
     def accepted_type(self) -> type:
         return str
 
+    @property
+    def literals(self) -> Mapping[Name, Expr]:
+        assert isinstance(self._type, Enumeration)
+        return {Variable(k): v for k, v in self._type.literals.items()}
+
 
 class OpaqueValue(TypeValue):
 
@@ -229,3 +246,7 @@ class OpaqueValue(TypeValue):
     @property
     def accepted_type(self) -> type:
         return bytes
+
+    @property
+    def literals(self) -> Mapping[Name, Expr]:
+        return {}
