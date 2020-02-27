@@ -183,6 +183,15 @@ def test_binding_conversion_name_unchanged() -> None:
     assert result == expected
 
 
+def test_binding_opaque() -> None:
+    binding = Binding(
+        Opaque(SubprogramCall("Sub", [Variable("Bound")])), {"Bound": Variable("Foo")}
+    )
+    expected = Opaque(SubprogramCall("Sub", [Variable("Foo")]))
+    result = binding.simplified()
+    assert result == expected
+
+
 def test_undeclared_variable() -> None:
     with pytest.raises(
         RecordFluxError, match='^model: error: undeclared variable "Undefined"$',
@@ -1259,6 +1268,34 @@ def test_assignment_opaque_subprogram_result() -> None:
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("END"))],
                 actions=[Assignment("Data", Opaque(SubprogramCall("Sub", [Variable("Data")]),),)],
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={
+            "Data": VariableDeclaration("Foo"),
+            "Sub": Subprogram([Argument("Param", "Param_Type")], "Result_Type"),
+        },
+    )
+
+
+def test_assignment_opaque_subprogram_binding() -> None:
+    StateMachine(
+        name="fsm",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
+                actions=[
+                    Assignment(
+                        "Data",
+                        Binding(
+                            Opaque(SubprogramCall("Sub", [Variable("Bound")])),
+                            {"Bound": Variable("Data")},
+                        ),
+                    )
+                ],
             ),
             State(name=StateName("END")),
         ],
