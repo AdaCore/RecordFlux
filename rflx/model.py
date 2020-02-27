@@ -394,6 +394,12 @@ class Message(Element):
             raise ModelError(f'superfluous field "{f.name}" in field types of "{self.full_name}"')
         if len(self.outgoing(INITIAL)) != 1:
             raise ModelError(f'ambiguous first field in "{self.full_name}"')
+        duplicate_links = set(l for l in self.structure if self.structure.count(l) > 1)
+        if duplicate_links:
+            raise ModelError(
+                f'duplicate links in "{self.full_name}": '
+                + ", ".join(f"{l.source.name} -> {l.target.name}" for l in duplicate_links)
+            )
 
     @staticmethod
     def __check_vars(
