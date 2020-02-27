@@ -150,6 +150,19 @@ class TestPyRFLX(unittest.TestCase):
         self.tlv.set("Checksum", 0xFFFFFFFF)
         self.assertEqual(self.tlv.binary, test_data)
 
+    def test_tlv_change_field(self) -> None:
+        self.tlv.set("Tag", "Msg_Data")
+        self.tlv.set("Length", 1)
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertIn("Length", self.tlv.valid_fields)
+        self.tlv.set("Value", b"a")
+        self.tlv.set("Checksum", 0)
+        self.tlv.set("Length", 2)
+        self.assertNotIn("Value", self.tlv.valid_fields)
+        self.assertNotIn("Checksum", self.tlv.valid_fields)
+        self.tlv.set("Value", b"ab")
+        self.assertIn("Checksum", self.tlv.valid_fields)
+
     def test_tlv_binary_length(self) -> None:
         # pylint: disable=pointless-statement
         self.tlv.set("Tag", "Msg_Data")
