@@ -349,6 +349,12 @@ class And(LogExpr):
     def precedence(self) -> Precedence:
         return Precedence.logical_operator
 
+    def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
+        simplified_expr = super().simplified(facts)
+        if isinstance(simplified_expr, And) and FALSE in simplified_expr.terms:
+            return FALSE
+        return simplified_expr
+
     def operation(self, left: int, right: int) -> int:
         return left and right
 
@@ -383,9 +389,8 @@ class Or(LogExpr):
 
     def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         simplified_expr = super().simplified(facts)
-        if isinstance(simplified_expr, Or):
-            if TRUE in simplified_expr.terms:
-                return TRUE
+        if isinstance(simplified_expr, Or) and TRUE in simplified_expr.terms:
+            return TRUE
         return simplified_expr
 
     def operation(self, left: int, right: int) -> int:
