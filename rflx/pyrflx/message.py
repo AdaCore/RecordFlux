@@ -94,10 +94,15 @@ class Message:
         return isinstance(self._fields[fld].typeval, ScalarValue)
 
     def _get_first(self, fld: str) -> Number:
-        prv = self._prev_field(fld)
-        first = Add(self._fields[prv].first, self._fields[prv].length).simplified(
-            self.__field_values
-        )
+        for l in self._model.incoming(model.Field(fld)):
+            if l.condition.simplified(self.__field_values) == TRUE and l.first != UNDEFINED:
+                first = l.first.simplified(self.__field_values)
+                break
+        else:
+            prv = self._prev_field(fld)
+            first = Add(self._fields[prv].first, self._fields[prv].length).simplified(
+                self.__field_values
+            )
         if isinstance(first, Number):
             return first
         raise RuntimeError(f"cannot determine first of {fld}")
@@ -162,10 +167,10 @@ class Message:
             if (
                 not field_val.set
                 or not isinstance(field_val.first, Number)
-                or not field_val.first.value == len(bits)
+                or not field_val.first.value <= len(bits)
             ):
                 break
-            bits += self._fields[field].typeval.binary
+            bits = bits[: field_val.first.value] + self._fields[field].typeval.binary
             field = self._next_field(field)
         if len(bits) % 8:
             raise ValueError(f"message length must be dividable by 8 ({len(bits)})")

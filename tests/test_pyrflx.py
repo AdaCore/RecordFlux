@@ -29,15 +29,21 @@ from rflx.pyrflx import (
 class TestPyRFLX(unittest.TestCase):
 
     testdir: str
-    package: Package
+    specdir: str
+    package_tlv: Package
+    package_ethernet: Package
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.testdir = "tests"
-        cls.package = PyRFLX([f"{cls.testdir}/tlv_with_checksum.rflx"])["TLV"]
+        cls.specdir = "specs"
+        pyrflx = PyRFLX([f"{cls.testdir}/tlv_with_checksum.rflx", f"{cls.specdir}/ethernet.rflx"])
+        cls.package_tlv = pyrflx["TLV"]
+        cls.package_ethernet = pyrflx["Ethernet"]
 
     def setUp(self) -> None:
-        self.tlv = self.package["Message"]
+        self.tlv = self.package_tlv["Message"]
+        self.frame = self.package_ethernet["Frame"]
 
     def test_file_not_found(self) -> None:
         with self.assertRaises(FileNotFoundError):
@@ -45,11 +51,11 @@ class TestPyRFLX(unittest.TestCase):
                 PyRFLX([f"{tmpdir}/test.rflx"])
 
     def test_message_eq(self) -> None:
-        m1 = self.package["Message"]
-        self.assertEqual(m1, self.package["Message"])
-        self.assertIsNot(m1, self.package["Message"])
-        self.assertEqual(self.package["Message"], self.package["Message"])
-        self.assertIsNot(self.package["Message"], self.package["Message"])
+        m1 = self.package_tlv["Message"]
+        self.assertEqual(m1, self.package_tlv["Message"])
+        self.assertIsNot(m1, self.package_tlv["Message"])
+        self.assertEqual(self.package_tlv["Message"], self.package_tlv["Message"])
+        self.assertIsNot(self.package_tlv["Message"], self.package_tlv["Message"])
         self.assertNotEqual(m1, None)
 
     def test_attributes(self) -> None:
@@ -214,6 +220,80 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(self.tlv._prev_field(INITIAL.name), "")
         self.tlv.set("Tag", "Msg_Error")
         self.assertEqual(self.tlv._prev_field("Length"), "")
+
+    def test_ethernet_all_fields(self) -> None:
+        self.assertEqual(
+            self.frame.fields,
+            ["Destination", "Source", "Type_Length_TPID", "TPID", "TCI", "Type_Length", "Payload"],
+        )
+
+    def test_ethernet_initial(self) -> None:
+        self.assertEqual(
+            self.frame.accessible_fields, ["Destination", "Source", "Type_Length_TPID"]
+        )
+
+    def test_ethernet_set_tltpid(self) -> None:
+        self.frame.set("Destination", 0)
+        self.frame.set("Source", 1)
+        self.frame.set("Type_Length_TPID", 0x8100)
+        self.assertEqual(self.frame.valid_fields, ["Destination", "Source", "Type_Length_TPID"])
+        self.assertEqual(
+            self.frame.accessible_fields,
+            ["Destination", "Source", "Type_Length_TPID", "TPID", "TCI", "Type_Length"],
+        )
+        self.frame.set("Type_Length_TPID", 64)
+        self.assertEqual(self.frame.valid_fields, ["Destination", "Source", "Type_Length_TPID"])
+        self.assertEqual(
+            self.frame.accessible_fields,
+            ["Destination", "Source", "Type_Length_TPID", "Type_Length"],
+        )
+
+    def test_ethernet_set_nonlinear(self) -> None:
+        self.assertEqual(
+            self.frame.accessible_fields, ["Destination", "Source", "Type_Length_TPID"]
+        )
+        self.frame.set("Type_Length_TPID", 0x8100)
+        self.frame.set("TCI", 100)
+        self.assertEqual(self.frame.valid_fields, ["Type_Length_TPID", "TCI"])
+
+    def test_ethernet_final(self) -> None:
+        self.assertFalse(self.frame.valid_message)
+        self.frame.set("Destination", 0)
+        self.assertFalse(self.frame.valid_message)
+        self.frame.set("Source", 1)
+        self.assertFalse(self.frame.valid_message)
+        self.frame.set("Type_Length_TPID", 46)
+        self.assertFalse(self.frame.valid_message)
+        self.frame.set("Type_Length", 46)
+        self.assertFalse(self.frame.valid_message)
+        self.frame.set("Payload", bytes(46))
+        self.assertTrue(self.frame.valid_message)
+
+    def test_ethernet_802_3(self) -> None:
+        self.frame.set("Destination", 2 ** 48 - 1)
+        self.frame.set("Source", 0)
+        self.frame.set("Type_Length_TPID", 46)
+        self.frame.set("Type_Length", 46)
+        self.frame.set(
+            "Payload",
+            (
+                b"\x45\x00\x00\x14"
+                b"\x00\x01\x00\x00"
+                b"\x40\x00\x7c\xe7"
+                b"\x7f\x00\x00\x01"
+                b"\x7f\x00\x00\x01"
+                b"\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00"
+                b"\x00\x00"
+            ),
+        )
+        self.assertTrue(self.frame.valid_message)
+        with open(f"{self.testdir}/ethernet_802.3.raw", "rb") as raw:
+            self.assertEqual(self.frame.binary, raw.read())
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
