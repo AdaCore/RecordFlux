@@ -32,18 +32,27 @@ class TestPyRFLX(unittest.TestCase):
     specdir: str
     package_tlv: Package
     package_ethernet: Package
+    package_tls: Package
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.testdir = "tests"
         cls.specdir = "specs"
-        pyrflx = PyRFLX([f"{cls.testdir}/tlv_with_checksum.rflx", f"{cls.specdir}/ethernet.rflx"])
+        pyrflx = PyRFLX(
+            [
+                f"{cls.testdir}/tlv_with_checksum.rflx",
+                f"{cls.specdir}/ethernet.rflx",
+                f"{cls.specdir}/tls_record.rflx",
+            ]
+        )
         cls.package_tlv = pyrflx["TLV"]
         cls.package_ethernet = pyrflx["Ethernet"]
+        cls.package_tls = pyrflx["TLS_Record"]
 
     def setUp(self) -> None:
         self.tlv = self.package_tlv["Message"]
         self.frame = self.package_ethernet["Frame"]
+        self.record = self.package_tls["TLS_Record"]
 
     def test_file_not_found(self) -> None:
         with self.assertRaises(FileNotFoundError):
@@ -294,6 +303,14 @@ class TestPyRFLX(unittest.TestCase):
         self.assertTrue(self.frame.valid_message)
         with open(f"{self.testdir}/ethernet_802.3.raw", "rb") as raw:
             self.assertEqual(self.frame.binary, raw.read())
+
+    def test_tls_fields(self) -> None:
+        self.assertEqual(self.record.accessible_fields, ["Tag", "Legacy_Record_Version", "Length"])
+        self.record.set("Tag", "INVALID")
+        self.record.set("Length", 3)
+        self.assertEqual(
+            self.record.accessible_fields, ["Tag", "Legacy_Record_Version", "Length", "Fragment"]
+        )
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
