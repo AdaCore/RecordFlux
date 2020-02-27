@@ -46,7 +46,7 @@ format:
 test: check test_python test_spark prove_spark
 
 test_python:
-	coverage run --branch --source=rflx -m unittest -b
+	coverage run --branch --source=rflx -m unittest -vb
 
 test_spark: $(test-files)
 	gprbuild -P$(project)
