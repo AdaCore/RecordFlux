@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping
+from typing import Any, Dict, List, Mapping
 
 import rflx.model as model
 from rflx.expression import TRUE, UNDEFINED, Add, Expr, First, Length, Name, Number, Variable
@@ -7,38 +7,41 @@ from .typevalue import OpaqueValue, ScalarValue, TypeValue
 
 
 class Field:
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.typeval = TypeValue.construct(model.Opaque())
-        self.first: Expr = UNDEFINED
+    def __init__(self, t: TypeValue):
+        self.typeval = t
         self.length: Expr = UNDEFINED
+        self.first: Expr = UNDEFINED
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
+        if isinstance(other, Field):
             return (
-                self.name == other.name
+                self.length == other.length
                 and self.first == other.first
-                and self.length == other.length
                 and self.typeval == other.typeval
             )
         return NotImplemented
 
-    def __repr__(self) -> str:
+    @property
+    def set(self) -> bool:
         return (
-            f"Field(name={self.name}, "
-            f"typeval={repr(self.typeval)}, "
-            f"first={repr(self.first)}, "
-            f"length={repr(self.length)})"
+            self.typeval.initialized
+            and isinstance(self.length, Number)
+            and isinstance(self.first, Number)
         )
 
 
 class Message:
     def __init__(self, message_model: model.Message) -> None:
         self._model = message_model
-        initial = Field(model.INITIAL.name)
+        self._fields: Dict[str, Field] = {
+            f.name: Field(TypeValue.construct(self._model.types[f]))
+            for f in self._model.all_fields[1:-1]
+        }
+        initial = Field(OpaqueValue(model.Opaque()))
         initial.first = Number(0)
         initial.length = Number(0)
-        self._fields: List[Field] = [initial]
+        self._fields[model.INITIAL.name] = initial
+        self._preset_fields(model.INITIAL.name)
 
     def __copy__(self) -> "Message":
         new = Message(self._model)
@@ -53,39 +56,104 @@ class Message:
             return self._fields == other._fields and self._model == other._model
         return NotImplemented
 
-    def __get_field(self, fld: str) -> Field:
-        for f in self._fields:
-            if f.name == fld:
-                return f
-        raise IndexError(f"field {fld} not found")
+    def _next_field(self, fld: str) -> str:
+        if fld == model.FINAL.name:
+            return ""
+        for l in self._model.outgoing(model.Field(fld)):
+            if l.condition.simplified(self.__field_values) == TRUE:
+                return l.target.name
+        return ""
 
-    def __field_type(self, fld: str) -> TypeValue:
-        return TypeValue.construct(self._model.types[model.Field(fld)])
+    def _prev_field(self, fld: str) -> str:
+        if fld == model.INITIAL.name:
+            return ""
+        for l in self._model.incoming(model.Field(fld)):
+            if l.condition.simplified(self.__field_values) == TRUE:
+                return l.source.name
+        return ""
+
+    def _get_length(self, fld: str) -> Number:
+        prv = self._prev_field(fld)
+        for l in self._model.outgoing(model.Field(prv)):
+            length = l.length.simplified(self.__field_values)
+            if isinstance(length, Number):
+                return length
+        typeval = self._fields[fld].typeval
+        if isinstance(typeval, ScalarValue):
+            return Number(typeval.size)
+        raise RuntimeError(f"cannot determine length of {fld}")
+
+    def _has_length(self, fld: str) -> bool:
+        prv = self._prev_field(fld)
+        for l in self._model.outgoing(model.Field(prv)):
+            if isinstance(l.length.simplified(self.__field_values), Number):
+                return True
+        return isinstance(self._fields[fld].typeval, ScalarValue)
+
+    def _get_first(self, fld: str) -> Number:
+        prv = self._prev_field(fld)
+        first = Add(self._fields[prv].first, self._fields[prv].length).simplified(
+            self.__field_values
+        )
+        if isinstance(first, Number):
+            return first
+        raise RuntimeError(f"cannot determine first of {fld}")
+
+    def _has_first(self, fld: str) -> bool:
+        prv = self._prev_field(fld)
+        first = Add(self._fields[prv].first, self._fields[prv].length).simplified(
+            self.__field_values
+        )
+        return isinstance(first, Number)
 
     def set(self, fld: str, value: Any) -> None:
-        typedvalue = self.__field_type(fld)
-        if not isinstance(value, typedvalue.accepted_type):
+        if not isinstance(value, self._fields[fld].typeval.accepted_type):
             raise TypeError(
-                f"cannot assign different types: {typedvalue.accepted_type.__name__}"
+                f"cannot assign different types: {self._fields[fld].typeval.accepted_type.__name__}"
                 f" != {type(value).__name__}"
             )
-        typedvalue.assign(value, True)
-        incoming = self._model.incoming(model.Field(fld))
-        for i in incoming:
-            if i.source.name in [f.name for f in self._fields]:
-                source = self.__get_field(i.source.name)
-                self.__add_field(
-                    i.target.name, typedvalue, Add(source.first, source.length), i.length
-                )
-                return
-        raise RuntimeError(f"failed to add field {fld}")
+        field = self._fields[fld]
+        field.first = self._get_first(fld)
+        field.length = self._get_length(fld)
+        self._fields[fld].typeval.assign(value, True)
+        if isinstance(field.typeval, OpaqueValue) and field.typeval.length != field.length.value:
+            flength = field.typeval.length
+            field.typeval.clear()
+            raise ValueError(f"invalid data length: {field.length.value} != {flength}")
+        self._preset_fields(fld)
+
+    def _preset_fields(self, fld: str) -> None:
+        nxt = self._next_field(fld)
+        while nxt and nxt != model.FINAL.name:
+            try:
+                self._fields[nxt].first = self._get_first(nxt)
+                self._fields[nxt].length = self._get_length(nxt)
+                nxt = self._next_field(nxt)
+            except RuntimeError:
+                break
 
     def get(self, fld: str) -> Any:
-        return self.__get_field(fld).typeval.value
+        try:
+            return self._fields[fld].typeval.value
+        except KeyError:
+            raise IndexError(f"field {fld} not found")
 
     @property
     def binary(self) -> bytes:
-        bits = "".join([f.typeval.binary for f in self._fields[1:]])
+        bits = ""
+        field = self._next_field(model.INITIAL.name)
+        while True:
+            if not field or field == model.FINAL.name:
+                break
+            field_val = self._fields[field]
+            if (
+                not field_val.set
+                or not isinstance(field_val.first, Number)
+                or not field_val.first.value == len(bits)
+            ):
+                break
+            bits += self._fields[field].typeval.binary
+            field = self._next_field(field)
         if len(bits) % 8:
             raise ValueError(f"message length must be dividable by 8 ({len(bits)})")
         return b"".join(
@@ -98,63 +166,38 @@ class Message:
 
     @property
     def accessible_fields(self) -> List[str]:
-        fields = [f.name for f in self._fields]
-        added = True
-        while added:
-            added = False
-            for l in self._model.outgoing(model.Field(fields[-1])):
-                if (
-                    l.target.name not in fields
-                    and l.target != model.FINAL
-                    and l.condition.simplified(self.__field_values) == TRUE
-                    and (
-                        l.length == UNDEFINED
-                        or isinstance(l.length.simplified(self.__field_values), Number)
-                    )
-                ):
-                    fields.append(l.target.name)
-                    added = True
-                    break
-        return fields[1:]
+        nxt = self._next_field(model.INITIAL.name)
+        fields: List[str] = []
+        while nxt and nxt != model.FINAL.name:
+            if (
+                self._model.field_condition(model.Field(nxt)).simplified(self.__field_values)
+                != TRUE
+                or not self._has_first(nxt)
+                or not self._has_length(nxt)
+            ):
+                break
+            fields.append(nxt)
+            nxt = self._next_field(nxt)
+        return fields
 
     @property
     def valid_fields(self) -> List[str]:
-        return [f.name for f in self._fields[1:]]
+        return [f for f in self.accessible_fields if self._fields[f].set]
 
     @property
     def valid_message(self) -> bool:
-        for o in self._model.outgoing(model.Field(self._fields[-1].name)):
-            if o.target == model.FINAL and o.condition.simplified(self.__field_values) == TRUE:
-                return True
-        return False
+        return (
+            bool(self.valid_fields) and self._next_field(self.valid_fields[-1]) == model.FINAL.name
+        )
 
     @property
     def __field_values(self) -> Mapping[Name, Expr]:
         return {
             **{
-                Variable(v.name): v.typeval.expr
-                for v in self._fields
-                if isinstance(v.typeval, ScalarValue) and v.typeval.initialized
+                Variable(k): v.typeval.expr
+                for k, v in self._fields.items()
+                if isinstance(v.typeval, ScalarValue) and v.set
             },
-            **{Length(v.name): v.length for v in self._fields},
-            **{First(v.name): v.first for v in self._fields},
+            **{Length(k): v.length for k, v in self._fields.items() if v.set},
+            **{First(k): v.first for k, v in self._fields.items() if v.set},
         }
-
-    def __add_field(
-        self, name: str, typeval: TypeValue, first: Expr, length: Expr = UNDEFINED
-    ) -> None:
-        fld = Field(name)
-        fld.typeval = typeval
-        fld.first = first
-        if isinstance(fld.typeval, ScalarValue):
-            fld.length = Number(fld.typeval.size)
-        else:
-            fld.length = length.simplified(self.__field_values)
-            assert isinstance(fld.length, Number)
-            if isinstance(fld.typeval, OpaqueValue) and fld.length.value != fld.typeval.length:
-                raise ValueError(f"invalid data length: {fld.length.value} != {fld.typeval.length}")
-        for f in self._fields:
-            if fld.name == f.name:
-                self._fields = self._fields[: self._fields.index(f)]
-                break
-        self._fields.append(fld)

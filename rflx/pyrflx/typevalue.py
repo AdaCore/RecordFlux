@@ -51,6 +51,9 @@ class TypeValue(ABC):
         if not self._initialized:
             raise NotInitializedError("value not initialized")
 
+    def clear(self) -> None:
+        self._initialized = False
+
     @abstractmethod
     def assign(self, value: Any, check: bool) -> None:
         raise NotImplementedError
