@@ -148,6 +148,20 @@ class TestModel(TestCase):
         with self.assertRaisesRegex(ModelError, '^ambiguous first field in "P.M"$'):
             Message("P.M", structure, types)
 
+    def test_message_duplicate_link(self) -> None:
+        t = ModularInteger("P.T", Number(2))
+
+        structure = [
+            Link(INITIAL, Field("X")),
+            Link(Field("X"), FINAL),
+            Link(Field("X"), FINAL),
+        ]
+
+        types = {Field("X"): t}
+
+        with self.assertRaisesRegex(ModelError, f'^duplicate links in "P.M": X -> {FINAL.name}$'):
+            Message("P.M", structure, types)
+
     def test_message_cycle(self) -> None:
         t = ModularInteger("P.T", Number(2))
 
