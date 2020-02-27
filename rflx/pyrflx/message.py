@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Mapping
 
 import rflx.model as model
+from rflx.common import generic_repr
 from rflx.expression import FALSE, TRUE, UNDEFINED, Add, Expr, First, Length, Name, Number, Variable
 
 from .typevalue import OpaqueValue, ScalarValue, TypeValue
@@ -22,7 +23,7 @@ class Field:
         return NotImplemented
 
     def __repr__(self) -> str:
-        return f"Field(typeval={self.typeval}, first={self.first}, length={self.length})"
+        return generic_repr(self.__class__.__name__, self.__dict__)
 
     @property
     def set(self) -> bool:
@@ -53,8 +54,7 @@ class Message:
         return new
 
     def __repr__(self) -> str:
-        args = ", ".join([f"{k}={v}" for k, v in self.__dict__.items()])
-        return f"{self.__class__.__name__}({args})"
+        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
+from rflx.common import generic_repr
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -35,8 +36,7 @@ class Element(ABC):
         return NotImplemented
 
     def __repr__(self) -> str:
-        args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
+        return generic_repr(self.__class__.__name__, self.__dict__)
 
 
 class Type(Element):
@@ -264,6 +264,10 @@ class Reference(Type):
 class Field(NamedTuple):
     name: str
 
+    def __repr__(self) -> str:
+        # pylint: disable=no-member
+        return generic_repr(self.__class__.__name__, self._asdict())
+
     @property
     def affixed_name(self) -> str:
         return f"F_{self.name}"
@@ -279,6 +283,10 @@ class Link(NamedTuple):
     condition: Expr = TRUE
     length: Expr = UNDEFINED
     first: Expr = UNDEFINED
+
+    def __repr__(self) -> str:
+        # pylint: disable=no-member
+        return generic_repr(self.__class__.__name__, self._asdict())
 
 
 class Message(Element):

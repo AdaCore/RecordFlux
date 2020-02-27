@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Mapping
 
+from rflx.common import generic_repr
 from rflx.expression import TRUE, Expr, Name, Variable
 from rflx.model import Enumeration, Integer, Number, Opaque, Scalar, Type
 
@@ -17,8 +18,7 @@ class TypeValue(ABC):
         self._type = vtype
 
     def __repr__(self) -> str:
-        args = ", ".join([f"{k}={v}" for k, v in self.__dict__.items()])
-        return f"{self.__class__.__name__}({args})"
+        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
