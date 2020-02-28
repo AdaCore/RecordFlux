@@ -81,6 +81,14 @@ class Integer(Scalar):
     def size(self) -> Expr:
         raise NotImplementedError
 
+    @abstractproperty
+    def first(self) -> Expr:
+        raise NotImplementedError
+
+    @abstractproperty
+    def last(self) -> Expr:
+        raise NotImplementedError
+
 
 class ModularInteger(Integer):
     def __init__(self, full_name: str, modulus: Expr) -> None:
@@ -99,6 +107,14 @@ class ModularInteger(Integer):
     @property
     def modulus(self) -> Expr:
         return self.__modulus
+
+    @property
+    def first(self) -> Expr:
+        return Number(0)
+
+    @property
+    def last(self) -> Expr:
+        return Sub(self.modulus, Number(1))
 
     @property
     def size(self) -> Expr:
