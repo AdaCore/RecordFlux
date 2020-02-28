@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Dict
+from typing import Dict, Iterator
 
 from .message import Message
 
@@ -18,3 +18,6 @@ class Package:
 
     def __setitem__(self, key: str, value: Message) -> None:
         self.__messages[key] = value
+
+    def __iter__(self) -> Iterator:
+        return self.__messages.values().__iter__()

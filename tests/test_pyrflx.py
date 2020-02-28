@@ -32,7 +32,8 @@ class TestPyRFLX(unittest.TestCase):
     specdir: str
     package_tlv: Package
     package_ethernet: Package
-    package_tls: Package
+    package_tls_record: Package
+    package_tls_alert: Package
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -43,16 +44,23 @@ class TestPyRFLX(unittest.TestCase):
                 f"{cls.testdir}/tlv_with_checksum.rflx",
                 f"{cls.specdir}/ethernet.rflx",
                 f"{cls.specdir}/tls_record.rflx",
+                f"{cls.specdir}/tls_alert.rflx",
             ]
         )
         cls.package_tlv = pyrflx["TLV"]
         cls.package_ethernet = pyrflx["Ethernet"]
-        cls.package_tls = pyrflx["TLS_Record"]
+        cls.package_tls_record = pyrflx["TLS_Record"]
+        cls.package_tls_alert = pyrflx["TLS_Alert"]
 
     def setUp(self) -> None:
         self.tlv = self.package_tlv["Message"]
         self.frame = self.package_ethernet["Frame"]
-        self.record = self.package_tls["TLS_Record"]
+        self.record = self.package_tls_record["TLS_Record"]
+        self.alert = self.package_tls_alert["Alert"]
+
+    def test_partially_supported_packages(self) -> None:
+        p = PyRFLX([f"{self.testdir}/array_message.rflx"])["Test"]
+        self.assertEqual([m.name for m in p], ["Foo"])
 
     def test_file_not_found(self) -> None:
         with self.assertRaises(FileNotFoundError):
@@ -203,9 +211,9 @@ class TestPyRFLX(unittest.TestCase):
 
     def test_tlv_set_invalid_field(self) -> None:
         self.tlv.set("Tag", "Msg_Data")
-        with self.assertRaisesRegex(RuntimeError, r"cannot determine length of Value"):
+        with self.assertRaisesRegex(KeyError, r"cannot access field Value"):
             self.tlv.set("Value", b"")
-        with self.assertRaisesRegex(RuntimeError, r"cannot determine first of Checksum"):
+        with self.assertRaisesRegex(KeyError, r"cannot access field Checksum"):
             self.tlv.set("Checksum", 8)
         self.tlv.set("Tag", "Msg_Error")
         with self.assertRaisesRegex(KeyError, r"cannot access field Length"):
@@ -243,6 +251,24 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(self.tlv.required_fields, ["Checksum"])
         self.tlv.set("Checksum", 0xFFFFFFFF)
         self.assertEqual(self.tlv.required_fields, [])
+
+    def test_tlv_length_unchecked(self) -> None:
+        # pylint: disable=protected-access
+        self.tlv.set("Tag", "Msg_Error")
+        self.assertNotIsInstance(self.tlv._get_length_unchecked("Value"), Number)
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertNotIsInstance(self.tlv._get_length_unchecked("Value"), Number)
+        self.tlv.set("Length", 1)
+        self.assertIsInstance(self.tlv._get_length_unchecked("Value"), Number)
+
+    def test_tlv_first_unchecked(self) -> None:
+        # pylint: disable=protected-access
+        self.tlv.set("Tag", "Msg_Error")
+        self.assertNotIsInstance(self.tlv._get_first_unchecked("Checksum"), Number)
+        self.tlv.set("Tag", "Msg_Data")
+        self.assertNotIsInstance(self.tlv._get_first_unchecked("Checksum"), Number)
+        self.tlv.set("Length", 1)
+        self.assertIsInstance(self.tlv._get_first_unchecked("Checksum"), Number)
 
     def test_ethernet_all_fields(self) -> None:
         self.assertEqual(
@@ -328,8 +354,23 @@ class TestPyRFLX(unittest.TestCase):
 
     def test_tls_invalid_outgoing(self) -> None:
         self.record.set("Tag", "INVALID")
-        with self.assertRaisesRegex(ValueError, "value does not allow path to next field"):
+        with self.assertRaisesRegex(ValueError, "value does not fulfill field condition"):
             self.record.set("Length", 2 ** 14 + 1)
+
+    def test_tls_invalid_path(self) -> None:
+        self.alert.set("Level", "WARNING")
+        self.alert.set("Description", "CLOSE_NOTIFY")
+        self.assertTrue(self.alert.valid_message)
+        self.assertEqual(self.alert.valid_fields, ["Level", "Description"])
+        self.alert.set("Level", "FATAL")
+        self.assertFalse(self.alert.valid_message)
+        self.assertEqual(self.alert.valid_fields, ["Level"])
+
+    def test_tls_length_unchecked(self) -> None:
+        # pylint: disable=protected-access
+        self.record.set("Tag", "APPLICATION_DATA")
+        self.record.set("Legacy_Record_Version", "TLS_1_2")
+        self.assertNotIsInstance(self.record._get_length_unchecked("Fragment"), Number)
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
@@ -460,3 +501,6 @@ class TestPyRFLX(unittest.TestCase):
     def test_package_name(self) -> None:
         p = Package("Test")
         self.assertEqual(p.name, "Test")
+
+    def test_package_iterator(self) -> None:
+        self.assertEqual([m.name for m in self.package_tlv], ["Message"])
