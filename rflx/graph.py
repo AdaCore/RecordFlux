@@ -77,6 +77,7 @@ class Graph:
             for index, t in enumerate(s.transitions):
                 condition = f"[{index}] {t.condition}" if t.condition != TRUE else ""
                 result.add_edge(Edge(src=s.name.name, dst=t.target.name, xlabel=condition))
+                print(f"{t.condition} ==> {t.condition.variables()}")
         return result
 
     @property

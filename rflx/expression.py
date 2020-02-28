@@ -1526,9 +1526,9 @@ class Case(Expr):
 
 
 class QuantifiedExpression(Expr):
-    def __init__(self, parameter_name: str, iterable: Expr, predicate: Expr) -> None:
+    def __init__(self, parameter_name: StrID, iterable: Expr, predicate: Expr) -> None:
         super().__init__()
-        self.parameter_name = parameter_name
+        self.parameter_name = ID(parameter_name)
         self.iterable = iterable
         self.predicate = predicate
 
