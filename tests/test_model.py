@@ -51,6 +51,16 @@ class TestModel(TestCase):
     def test_modular_size(self) -> None:
         self.assertEqual(ModularInteger("P.T", Pow(Number(2), Number(64))).size, Number(64))
 
+    def test_modular_first(self) -> None:
+        mod = ModularInteger("P.T", Pow(Number(2), Number(64)))
+        self.assertEqual(mod.first, Number(0))
+        self.assertEqual(mod.first.simplified(), Number(0))
+
+    def test_modular_last(self) -> None:
+        mod = ModularInteger("P.T", Pow(Number(2), Number(64)))
+        self.assertEqual(mod.last, Sub(Pow(Number(2), Number(64)), Number(1)))
+        self.assertEqual(mod.last.simplified(), Number(2 ** 64 - 1))
+
     def test_modular_invalid_modulus_power_of_two(self) -> None:
         with self.assertRaises(ModelError):
             ModularInteger("P.T", Number(255))
