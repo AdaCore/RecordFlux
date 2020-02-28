@@ -20,15 +20,20 @@ from rflx.expression import (
 from rflx.identifier import ID, StrID
 
 
-class Valid(Attribute):
+class FSMAttribute(Attribute):
+    def variables(self) -> List["Variable"]:
+        return self.prefix.variables()
+
+
+class Valid(FSMAttribute):
     pass
 
 
-class Present(Attribute):
+class Present(FSMAttribute):
     pass
 
 
-class Head(Attribute):
+class Head(FSMAttribute):
     pass
 
 
@@ -83,6 +88,13 @@ class Quantifier(Expr):
         quantifier: Mapping[ID, Declaration] = {self.quantifier: VariableDeclaration()}
         self.iterable.validate({**declarations, **quantifier})
         self.predicate.validate({**declarations, **quantifier})
+
+    def variables(self) -> List["Variable"]:
+        return [
+            v
+            for v in self.predicate.variables() + self.iterable.variables()
+            if v.identifier != self.quantifier
+        ]
 
 
 class ForSome(Quantifier):
@@ -260,6 +272,12 @@ class SubprogramCall(Expr):
                     self.error.extend(e)
         self.error.propagate()
 
+    def variables(self) -> List["Variable"]:
+        result = []
+        for t in self.arguments:
+            result.extend(t.variables())
+        return result
+
 
 class Conversion(Expr):
     def __init__(self, name: StrID, argument: Expr, location: Location = None) -> None:
@@ -296,6 +314,9 @@ class Conversion(Expr):
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.argument.validate(declarations)
 
+    def variables(self) -> List["Variable"]:
+        return self.argument.variables()
+
 
 class Field(Expr):
     def __init__(self, expression: Expr, field: StrID, location: Location = None) -> None:
@@ -331,6 +352,9 @@ class Field(Expr):
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.expression.validate(declarations)
+
+    def variables(self) -> List["Variable"]:
+        return self.expression.variables()
 
 
 class Comprehension(Expr):
@@ -395,6 +419,13 @@ class Comprehension(Expr):
         self.selector.validate(decls)
         self.condition.validate(decls)
 
+    def variables(self) -> List["Variable"]:
+        return [
+            v
+            for v in self.array.variables() + self.selector.variables() + self.condition.variables()
+            if v.identifier != self.iterator
+        ]
+
 
 class MessageAggregate(Expr):
     def __init__(self, name: StrID, data: Dict[StrID, Expr], location: Location = None) -> None:
@@ -437,6 +468,12 @@ class MessageAggregate(Expr):
         for k in self.data:
             self.data[k].validate(declarations)
 
+    def variables(self) -> List["Variable"]:
+        result = []
+        for v in self.data.values():
+            result.extend(v.variables())
+        return result
+
 
 class Binding(Expr):
     def __init__(self, expr: Expr, data: Dict[StrID, Expr], location: Location = None) -> None:
@@ -473,6 +510,9 @@ class Binding(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+    def variables(self) -> List["Variable"]:
+        return self.simplified().variables()
 
 
 class String(Expr):

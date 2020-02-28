@@ -5,10 +5,12 @@ from rflx.error import RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
+    And,
     Argument,
     Channel,
     Equal,
     Length,
+    Less,
     Number,
     Renames,
     Subprogram,
@@ -24,9 +26,12 @@ from rflx.fsm_expression import (
     Field,
     ForAll,
     ForSome,
+    Head,
     MessageAggregate,
     NotContains,
     Opaque,
+    Present,
+    Quantifier,
     String,
     SubprogramCall,
     Valid,
@@ -1304,3 +1309,103 @@ def test_assignment_opaque_subprogram_binding() -> None:
             "Sub": Subprogram([Argument("Param", "Param_Type")], "Result_Type"),
         },
     )
+
+
+def test_extract_variables_simple() -> None:
+    result = Variable("Foo").variables()
+    expected = [Variable("Foo")]
+    assert result == expected
+
+
+def test_extract_variables_and() -> None:
+    result = And(Variable("Foo"), Variable("Bar")).variables()
+    expected = [Variable("Foo"), Variable("Bar")]
+    assert result == expected
+
+
+def test_extract_variables_field() -> None:
+    result = Field(Variable("Foo"), "Bar").variables()
+    expected = [Variable("Foo")]
+    assert result == expected
+
+
+def test_extract_variables_valid() -> None:
+    result = Valid(Variable("Foo")).variables()
+    expected = [Variable("Foo")]
+    assert result == expected
+
+
+def test_extract_variables_present() -> None:
+    result = Present(Variable("Foo")).variables()
+    expected = [Variable("Foo")]
+    assert result == expected
+
+
+def test_extract_variables_head() -> None:
+    result = Head(Variable("Foo")).variables()
+    expected = [Variable("Foo")]
+    assert result == expected
+
+
+def test_extract_variables_opaque() -> None:
+    result = Opaque(Variable("Foo")).variables()
+    expected = [Variable("Foo")]
+    assert result == expected
+
+
+def test_extract_variables_quantifier() -> None:
+    result = Quantifier(
+        "Q", Variable("List"), Equal(Field(Variable("Q"), "Fld"), Variable("X"))
+    ).variables()
+    expected = [Variable("X"), Variable("List")]
+    assert result == expected
+
+
+def test_extract_variables_contains() -> None:
+    result = Contains(Variable("A"), Variable("B")).variables()
+    expected = [Variable("A"), Variable("B")]
+    assert result == expected
+
+
+def test_extract_variables_subprogramcall() -> None:
+    result = SubprogramCall("Sub", [Variable("A"), Variable("B")]).variables()
+    expected = [Variable("A"), Variable("B")]
+    assert result == expected
+
+
+def test_extract_variables_conversion() -> None:
+    result = Conversion("Sub", Variable("X")).variables()
+    expected = [Variable("X")]
+    assert result == expected
+
+
+def test_extract_variables_comprehension() -> None:
+    result = Comprehension(
+        "I",
+        Variable("List"),
+        Field(Variable("I"), "Data"),
+        Less(Field(Variable("I"), "X"), Variable("Z")),
+    ).variables()
+    expected = [Variable("List"), Variable("Z")]
+    assert result == expected
+
+
+def test_extract_variables_message_aggregate() -> None:
+    result = MessageAggregate(
+        "Aggr", {"Foo": Variable("A"), "Bar": Variable("B"), "Baz": Variable("C")}
+    ).variables()
+    expected = [Variable("A"), Variable("B"), Variable("C")]
+    assert result == expected
+
+
+def test_extract_variables_binding() -> None:
+    result = Binding(
+        Less(Variable("A"), Variable("Bound")), {"Bound": Less(Variable("B"), Variable("C"))}
+    ).variables()
+    expected = [Variable("A"), Variable("B"), Variable("C")]
+    assert result == expected
+
+
+def test_extract_variables_string() -> None:
+    result = String("Foo").variables()
+    assert result == []
