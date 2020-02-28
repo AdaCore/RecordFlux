@@ -77,40 +77,43 @@ class Message:
                 return l.source.name
         return ""
 
-    def _get_length(self, fld: str) -> Number:
-        prv = self._prev_field(fld)
-        for l in self._model.outgoing(model.Field(prv)):
-            length = self.__simplified(l.length)
-            if isinstance(length, Number):
-                return length
+    def _get_length_unchecked(self, fld: str) -> Expr:
+        for l in self._model.incoming(model.Field(fld)):
+            if self.__simplified(l.condition) == TRUE and l.length != UNDEFINED:
+                return self.__simplified(l.length)
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
             return Number(typeval.size)
-        raise RuntimeError(f"cannot determine length of {fld}")
+        return UNDEFINED
 
     def _has_length(self, fld: str) -> bool:
-        prv = self._prev_field(fld)
-        for l in self._model.outgoing(model.Field(prv)):
-            if isinstance(self.__simplified(l.length), Number):
-                return True
-        return isinstance(self._fields[fld].typeval, ScalarValue)
+        return isinstance(self._get_length_unchecked(fld), Number)
 
-    def _get_first(self, fld: str) -> Number:
+    def _get_length(self, fld: str) -> Number:
+        length = self._get_length_unchecked(fld)
+        assert isinstance(length, Number)
+        return length
+
+    def _get_first_unchecked(self, fld: str) -> Expr:
         for l in self._model.incoming(model.Field(fld)):
             if self.__simplified(l.condition) == TRUE and l.first != UNDEFINED:
-                first = self.__simplified(l.first)
-                break
-        else:
-            prv = self._prev_field(fld)
-            first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].length))
-        if isinstance(first, Number):
-            return first
-        raise RuntimeError(f"cannot determine first of {fld}")
+                return self.__simplified(l.first)
+        prv = self._prev_field(fld)
+        if prv:
+            return self.__simplified(Add(self._fields[prv].first, self._fields[prv].length))
+        return UNDEFINED
 
     def _has_first(self, fld: str) -> bool:
-        prv = self._prev_field(fld)
-        first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].length))
-        return isinstance(first, Number)
+        return isinstance(self._get_first_unchecked(fld), Number)
+
+    def _get_first(self, fld: str) -> Number:
+        first = self._get_first_unchecked(fld)
+        assert isinstance(first, Number)
+        return first
+
+    @property
+    def name(self) -> str:
+        return self._model.name
 
     def set(self, fld: str, value: Any) -> None:
         if not isinstance(value, self._fields[fld].typeval.accepted_type):
@@ -118,7 +121,7 @@ class Message:
                 f"cannot assign different types: {self._fields[fld].typeval.accepted_type.__name__}"
                 f" != {type(value).__name__}"
             )
-        try:
+        if fld in self._fields and self._has_first(fld) and self._has_length(fld):
             field = self._fields[fld]
             field.first = self._get_first(fld)
             field.length = self._get_length(fld)
@@ -130,8 +133,8 @@ class Message:
                 ]
             ):
                 self._fields[fld].typeval.clear()
-                raise ValueError("value does not allow path to next field")
-        except KeyError:
+                raise ValueError("value does not fulfill field condition")
+        else:
             raise KeyError(f"cannot access field {fld}")
         if isinstance(field.typeval, OpaqueValue) and field.typeval.length != field.length.value:
             flength = field.typeval.length
@@ -143,16 +146,15 @@ class Message:
         nxt = self._next_field(fld)
         while nxt and nxt != model.FINAL.name:
             field = self._fields[nxt]
-            try:
-                field.first = self._get_first(nxt)
-                field.length = self._get_length(nxt)
-                if (
-                    field.set
-                    and isinstance(field.typeval, OpaqueValue)
-                    and field.typeval.length != field.length.value
-                ):
-                    raise RuntimeError
-            except RuntimeError:
+            if not self._has_first(nxt) or not self._has_length(nxt):
+                break
+            field.first = self._get_first(nxt)
+            field.length = self._get_length(nxt)
+            if (
+                field.set
+                and isinstance(field.typeval, OpaqueValue)
+                and field.typeval.length != field.length.value
+            ):
                 field.first = UNDEFINED
                 field.length = UNDEFINED
                 field.typeval.clear()
@@ -207,7 +209,26 @@ class Message:
 
     @property
     def valid_fields(self) -> List[str]:
-        return [f for f in self.accessible_fields if self._fields[f].set]
+        return [
+            f
+            for f in self.accessible_fields
+            if (
+                self._fields[f].set
+                and self.__simplified(self._model.field_condition(model.Field(f))) == TRUE
+                and any(
+                    [
+                        self.__simplified(i.condition) == TRUE
+                        for i in self._model.incoming(model.Field(f))
+                    ]
+                )
+                and any(
+                    [
+                        self.__simplified(o.condition) == TRUE
+                        for o in self._model.outgoing(model.Field(f))
+                    ]
+                )
+            )
+        ]
 
     @property
     def required_fields(self) -> List[str]:

@@ -2,16 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Mapping
 
 from rflx.expression import TRUE, Expr, Name, Variable
-from rflx.model import (
-    Enumeration,
-    Integer,
-    ModularInteger,
-    Number,
-    Opaque,
-    RangeInteger,
-    Scalar,
-    Type,
-)
+from rflx.model import Enumeration, Integer, Number, Opaque, Scalar, Type
 
 
 class NotInitializedError(Exception):
@@ -20,11 +11,10 @@ class NotInitializedError(Exception):
 
 class TypeValue(ABC):
 
-    _value: Any
+    _value: Any = None
 
     def __init__(self, vtype: Type) -> None:
         self._type = vtype
-        self._initialized = False
 
     def __repr__(self) -> str:
         args = ", ".join([f"{k}={v}" for k, v in self.__dict__.items()])
@@ -32,27 +22,19 @@ class TypeValue(ABC):
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return (
-                self._initialized == other._initialized
-                and (
-                    self._value == other._value
-                    if (self._initialized and other._initialized)
-                    else True
-                )
-                and self._type == other._type
-            )
+            return self._value == other._value and self._type == other._type
         return NotImplemented
 
     @property
     def initialized(self) -> bool:
-        return self._initialized
+        return self._value is not None
 
     def _raise_initialized(self) -> None:
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitializedError("value not initialized")
 
     def clear(self) -> None:
-        self._initialized = False
+        self._value = None
 
     @abstractmethod
     def assign(self, value: Any, check: bool) -> None:
@@ -114,20 +96,14 @@ class IntegerValue(ScalarValue):
 
     @property
     def _first(self) -> int:
-        if isinstance(self._type, ModularInteger):
-            return 0
-        assert isinstance(self._type, RangeInteger)
+        assert isinstance(self._type, Integer)
         first = self._type.first.simplified()
         assert isinstance(first, Number)
         return first.value
 
     @property
     def _last(self) -> int:
-        if isinstance(self._type, ModularInteger):
-            mod = self._type.modulus.simplified()
-            assert isinstance(mod, Number)
-            return mod.value - 1
-        assert isinstance(self._type, RangeInteger)
+        assert isinstance(self._type, Integer)
         last = self._type.last.simplified()
         assert isinstance(last, Number)
         return last.value
@@ -141,7 +117,6 @@ class IntegerValue(ScalarValue):
         ):
             raise ValueError(f"value {value} not in type range {self._first} .. {self._last}")
         self._value = value
-        self._initialized = True
 
     @property
     def expr(self) -> Number:
@@ -189,7 +164,6 @@ class EnumValue(ScalarValue):
             == TRUE
         )
         self._value = value
-        self._initialized = True
 
     @property
     def value(self) -> str:
@@ -226,7 +200,6 @@ class OpaqueValue(TypeValue):
 
     def assign(self, value: bytes, check: bool = True) -> None:
         self._value = value
-        self._initialized = True
 
     @property
     def length(self) -> int:

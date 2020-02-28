@@ -1,0 +1,21 @@
+package Test is
+
+   type Byte is mod 256;
+   type Bytes is array of Byte;
+
+   type Foo is
+      message
+         Byte : Byte;
+      end message;
+
+   type Bar is array of Foo;
+
+   type Bars is
+      message
+          Length : Byte
+             then Bars
+                with Length => Length * 8;
+          Bars : Bar;
+      end message;
+
+end Test;
