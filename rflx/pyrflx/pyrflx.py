@@ -21,7 +21,10 @@ class PyRFLX:
         for p in packages:
             self.__packages[p] = Package(p)
             for m in [x for x in messages if x.package == p]:
-                self.__packages[p][m.name] = Message(m)
+                try:
+                    self.__packages[p][m.name] = Message(m)
+                except ValueError as e:
+                    print(f"ignored message {m.name}: {e}")
 
     def __getitem__(self, key: str) -> Package:
         return self.__packages[key]
