@@ -20,13 +20,9 @@ from rflx.statement import Statement
 
 
 class StateName(Base):
-    def __init__(self, name: str, location: Location = None):
-        self.__name = name
+    def __init__(self, name: StrID, location: Location = None):
+        self.name = ID(name)
         self.location = location
-
-    @property
-    def name(self) -> str:
-        return self.__name
 
 
 class Transition(Base):
@@ -162,8 +158,8 @@ class StateMachine(Base):
 
     def __validate_duplicate_states(self) -> None:
         state_names = [s.name for s in self.__states]
-        seen: Dict[str, int] = {}
-        duplicates: List[str] = []
+        seen: Dict[ID, int] = {}
+        duplicates: List[ID] = []
         for n in [x.name for x in state_names]:
             if n not in seen:
                 seen[n] = 1
@@ -174,14 +170,14 @@ class StateMachine(Base):
 
         if duplicates:
             self.error.append(
-                f'duplicate states: {", ".join(sorted(duplicates))}',
+                f'duplicate states: {", ".join(map(str, sorted(duplicates)))}',
                 Subsystem.SESSION,
                 Severity.ERROR,
                 self.location,
             )
 
     def __validate_state_reachability(self) -> None:
-        inputs: Dict[str, List[str]] = {}
+        inputs: Dict[ID, List[ID]] = {}
         for s in self.__states:
             for t in s.transitions:
                 if t.target.name in inputs:
@@ -189,7 +185,7 @@ class StateMachine(Base):
                 else:
                     inputs[t.target.name] = [s.name.name]
         unreachable = [
-            s.name.name
+            str(s.name.name)
             for s in self.__states
             if s.name != self.__initial and s.name.name not in inputs
         ]
@@ -202,7 +198,7 @@ class StateMachine(Base):
             )
 
         detached = [
-            s.name.name for s in self.__states if s.name != self.__final and not s.transitions
+            str(s.name.name) for s in self.__states if s.name != self.__final and not s.transitions
         ]
         if detached:
             self.error.append(

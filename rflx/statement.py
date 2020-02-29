@@ -8,7 +8,8 @@ from rflx.identifier import ID, StrID
 
 
 class Statement(ABC):
-    def __init__(self, location: Location = None):
+    def __init__(self, name: StrID, location: Location = None):
+        self.name = ID(name)
         self.location = location
         self.error = RecordFluxError()
 
@@ -28,42 +29,41 @@ class Statement(ABC):
 
 class Assignment(Statement):
     def __init__(self, name: StrID, expression: Expr, location: Location = None) -> None:
-        super().__init__(location)
-        self.__name = ID(name)
+        super().__init__(name, location)
         self.__expression = expression
 
     def __str__(self) -> str:
-        return f"{self.__name} := {self.__expression}"
+        return f"{self.name} := {self.__expression}"
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        if self.__name not in declarations:
+        if self.name not in declarations:
             self.error.append(
-                f'assignment to undeclared variable "{self.__name}"',
+                f'assignment to undeclared variable "{self.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
         else:
-            declarations[self.__name].reference()
+            declarations[self.name].reference()
         try:
             self.__expression.simplified().validate(declarations)
         except RecordFluxError as e:
             self.error.extend(e)
         self.error.propagate()
 
+    @property
+    def expression(self) -> Expr:
+        return self.__expression
+
 
 class Erase(Statement):
-    def __init__(self, name: StrID, location: Location = None) -> None:
-        super().__init__(location)
-        self.__name = ID(name)
-
     def __str__(self) -> str:
-        return f"{self.__name} := null"
+        return f"{self.name} := null"
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        if self.__name not in declarations:
+        if self.name not in declarations:
             fail(
-                f'erasure of undeclared variable "{self.__name}"',
+                f'erasure of undeclared variable "{self.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
@@ -71,18 +71,14 @@ class Erase(Statement):
 
 
 class Reset(Statement):
-    def __init__(self, name: StrID, location: Location = None) -> None:
-        super().__init__(location)
-        self.__name = ID(name)
-
-    def __str__(self) -> str:
-        return f"{self.__name}'Reset"
-
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        if self.__name not in declarations:
+        if self.name not in declarations:
             fail(
-                f'reset of undeclared variable "{self.__name}"',
+                f'reset of undeclared variable "{self.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
+
+    def __str__(self) -> str:
+        return f"{self.name}'Reset"
