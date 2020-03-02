@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List, Sequence
 
 import yaml
 
@@ -47,8 +47,8 @@ class State(Base):
     def __init__(
         self,
         name: StateName,
-        transitions: Iterable[Transition] = None,
-        actions: Iterable[Statement] = None,
+        transitions: Sequence[Transition] = None,
+        actions: Sequence[Statement] = None,
         declarations: Dict[ID, Declaration] = None,
         location: Location = None,
     ):
@@ -63,7 +63,7 @@ class State(Base):
         return self.__name
 
     @property
-    def transitions(self) -> Iterable[Transition]:
+    def transitions(self) -> Sequence[Transition]:
         return self.__transitions or []
 
     @property
@@ -71,7 +71,7 @@ class State(Base):
         return self.__declarations
 
     @property
-    def actions(self) -> Iterable[Statement]:
+    def actions(self) -> Sequence[Statement]:
         return self.__actions
 
 
@@ -81,7 +81,7 @@ class StateMachine(Base):
         name: str,
         initial: StateName,
         final: StateName,
-        states: Iterable[State],
+        states: Sequence[State],
         declarations: Dict[StrID, Declaration],
         location: Location = None,
     ):  # pylint: disable=too-many-arguments
@@ -278,7 +278,7 @@ class StateMachine(Base):
         return self.__final
 
     @property
-    def states(self) -> Iterable[State]:
+    def states(self) -> Sequence[State]:
         return self.__states
 
 
