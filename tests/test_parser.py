@@ -2,6 +2,7 @@ import unittest
 from itertools import zip_longest
 from typing import Dict, List
 
+from rflx.model import DerivedMessage
 from rflx.parser import (
     FINAL,
     INITIAL,
@@ -11,7 +12,6 @@ from rflx.parser import (
     Component,
     ContextSpec,
     DerivationSpec,
-    DerivedMessage,
     Div,
     Enumeration,
     Equal,
@@ -29,6 +29,7 @@ from rflx.parser import (
     Mul,
     NotEqual,
     Number,
+    Opaque,
     PackageSpec,
     ParseFatalException,
     Parser,
@@ -179,24 +180,6 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 end Test;
             """,
             r'^undefined type "T" in "PDU"$',
-        )
-
-    def test_message_unsupported_type(self) -> None:
-        self.assert_parser_error_string(
-            """
-                package Test is
-                   type T is mod 256;
-                   type M is
-                      message
-                         Foo : T;
-                      end message;
-                   type PDU is
-                      message
-                         Bar : M;
-                      end message;
-                end Test;
-            """,
-            r'^unsupported type "M" in "PDU"$',
         )
 
     def test_message_undefined_component(self) -> None:
@@ -656,6 +639,55 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
         self.assert_messages_files(
             [f"{self.testdir}/message_type.rflx"], [message, simple_message, empty_message]
+        )
+
+    def test_message_in_message(self) -> None:
+        length = ModularInteger("Message_In_Message.Length", Pow(Number(2), Number(16)))
+
+        length_value = Message(
+            "Message_In_Message.Length_Value",
+            [
+                Link(INITIAL, Field("Length")),
+                Link(Field("Length"), Field("Value"), length=Variable("Length")),
+                Link(Field("Value"), FINAL),
+            ],
+            {Field("Length"): length, Field("Value"): Opaque()},
+        )
+
+        derived_length_value = DerivedMessage(
+            "Message_In_Message.Derived_Length_Value",
+            length_value.full_name,
+            length_value.structure,
+            length_value.types,
+        )
+
+        message = Message(
+            "Message_In_Message.Message",
+            [
+                Link(INITIAL, Field("Foo_Length")),
+                Link(Field("Foo_Value"), Field("Bar_Length")),
+                Link(Field("Bar_Value"), FINAL),
+                Link(Field("Foo_Length"), Field("Foo_Value"), length=Variable("Foo_Length")),
+                Link(Field("Bar_Length"), Field("Bar_Value"), length=Variable("Bar_Length")),
+            ],
+            {
+                Field("Foo_Length"): length,
+                Field("Foo_Value"): Opaque(),
+                Field("Bar_Length"): length,
+                Field("Bar_Value"): Opaque(),
+            },
+        )
+
+        derived_message = DerivedMessage(
+            "Message_In_Message.Derived_Message",
+            message.full_name,
+            message.structure,
+            message.types,
+        )
+
+        self.assert_messages_files(
+            [f"{self.testdir}/message_in_message.rflx"],
+            [length_value, derived_length_value, message, derived_message],
         )
 
     def test_type_refinement_spec(self) -> None:
