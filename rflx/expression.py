@@ -768,22 +768,22 @@ class Variable(Name):
         raise TypeError
 
 
-class Attribute(Name):
+class Attribute(Variable):
     @property
     def representation(self) -> str:
         return f"{self.name}'{self.__class__.__name__}"
 
-    def z3expr(self) -> z3.ExprRef:
+    def z3expr(self) -> z3.ArithRef:
         if not isinstance(self.name, str):
             raise TypeError
         return z3.Int(f"{self.name}'{self.__class__.__name__}")
 
-    def variables(self, proof: bool = False) -> List["Variable"]:
+    def variables(self, proof: bool = False) -> List[Variable]:
         if proof:
             if not isinstance(self.name, str):
                 raise TypeError
             return [Variable(f"{self.name}'{self.__class__.__name__}")]
-        return []
+        return [self]
 
 
 class Size(Attribute):

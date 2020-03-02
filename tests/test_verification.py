@@ -490,7 +490,7 @@ class TestVerification(TestCase):
         ]
 
         types = {Field("F1"): foo_type, Field("F2"): foo_type}
-        with mock.patch("rflx.model.Message._Message__verify_conditions", lambda x: None):
+        with mock.patch("rflx.model.Message._AbstractMessage__verify_conditions", lambda x: None):
             with self.assertRaisesRegex(ModelError, "^path F1 -> F2 does not cover whole message"):
                 Message("P.M", structure, types)
 
@@ -516,7 +516,7 @@ class TestVerification(TestCase):
             Field("F3"): foo_type,
             Field("F4"): foo_type,
         }
-        with mock.patch("rflx.model.Message._Message__verify_conditions", lambda x: None):
+        with mock.patch("rflx.model.Message._AbstractMessage__verify_conditions", lambda x: None):
             with self.assertRaisesRegex(
                 ModelError, "^path F1 -> F2 -> F3 -> F4 does not cover whole message"
             ):
@@ -531,7 +531,7 @@ class TestVerification(TestCase):
         ]
 
         types = {Field("F1"): foo_type, Field("F2"): foo_type}
-        with mock.patch("rflx.model.Message._Message__verify_conditions", lambda x: None):
+        with mock.patch("rflx.model.Message._AbstractMessage__verify_conditions", lambda x: None):
             with self.assertRaisesRegex(
                 ModelError, '^start of field "F2" on path F1 -> F2 before' " message start"
             ):
