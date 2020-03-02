@@ -1,3 +1,5 @@
+from copy import deepcopy
+from typing import Dict
 from unittest import TestCase
 
 from rflx.expression import (
@@ -27,17 +29,138 @@ from rflx.model import (
     Message,
     ModelError,
     ModularInteger,
+    Opaque,
     RangeInteger,
+    Reference,
+    UnprovenDerivedMessage,
+    UnprovenMessage,
+    merge_message,
+    prefixed_message,
 )
 from tests.models import ETHERNET_FRAME
 
-SOME_LOG_EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
+MODULAR_INTEGER = ModularInteger("P.Modular", Number(256))
+RANGE_INTEGER = RangeInteger("P.Range", Number(1), Number(100), Number(8))
+
+M_NO_REF = {
+    "P.No_Ref": UnprovenMessage(
+        "P.No_Ref",
+        [
+            Link(INITIAL, Field("F1"), length=Number(16)),
+            Link(Field("F1"), Field("F2")),
+            Link(
+                Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),
+            ),
+            Link(
+                Field("F2"),
+                Field("F4"),
+                GreaterEqual(Variable("F2"), Number(200)),
+                first=First("F2"),
+            ),
+            Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
+            Link(Field("F4"), FINAL),
+        ],
+        {
+            Field("F1"): Opaque(),
+            Field("F2"): MODULAR_INTEGER,
+            Field("F3"): MODULAR_INTEGER,
+            Field("F4"): RANGE_INTEGER,
+        },
+    ),
+}
+
+M_SMPL_REF = {
+    "P.Smpl_Ref": UnprovenMessage(
+        "P.Smpl_Ref",
+        [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
+        {Field("NR"): Reference("P.No_Ref")},
+    ),
+}
+
+M_CMPLX_REF = {
+    "P.Cmplx_Ref": UnprovenMessage(
+        "P.Cmplx_Ref",
+        [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
+            Link(Field("F1"), Field("F3"), GreaterEqual(Variable("F1"), Number(200))),
+            Link(Field("F2"), Field("NR"), LessEqual(Variable("F1"), Number(10))),
+            Link(Field("F3"), Field("NR"), GreaterEqual(Variable("F1"), Number(220))),
+            Link(Field("NR"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
+            Link(Field("NR"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
+            Link(Field("F5"), FINAL),
+            Link(Field("F6"), FINAL),
+        ],
+        {
+            Field("F1"): deepcopy(MODULAR_INTEGER),
+            Field("F2"): deepcopy(MODULAR_INTEGER),
+            Field("F3"): deepcopy(RANGE_INTEGER),
+            Field("NR"): Reference("P.No_Ref"),
+            Field("F5"): deepcopy(MODULAR_INTEGER),
+            Field("F6"): deepcopy(RANGE_INTEGER),
+        },
+    ),
+}
+
+M_DBL_REF = {
+    "P.Dbl_Ref": UnprovenMessage(
+        "P.Dbl_Ref",
+        [Link(INITIAL, Field("SR")), Link(Field("SR"), Field("NR")), Link(Field("NR"), FINAL)],
+        {Field("SR"): Reference("P.Smpl_Ref"), Field("NR"): Reference("P.No_Ref")},
+    ),
+}
+
+M_NO_REF_DERI = {
+    "P.No_Ref_Deri": UnprovenDerivedMessage(
+        "P.No_Ref_Deri",
+        "P.No_Ref",
+        [
+            Link(INITIAL, Field("F1"), length=Number(16)),
+            Link(Field("F1"), Field("F2")),
+            Link(
+                Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),
+            ),
+            Link(
+                Field("F2"),
+                Field("F4"),
+                GreaterEqual(Variable("F2"), Number(200)),
+                first=First("F2"),
+            ),
+            Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
+            Link(Field("F4"), FINAL),
+        ],
+        {
+            Field("F1"): Opaque(),
+            Field("F2"): MODULAR_INTEGER,
+            Field("F3"): MODULAR_INTEGER,
+            Field("F4"): RANGE_INTEGER,
+        },
+    ),
+}
+
+M_SMPL_REF_DERI = {
+    "P.Smpl_Ref_Deri": UnprovenDerivedMessage(
+        "P.Smpl_Ref_Deri",
+        "P.Smpl_Ref",
+        [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
+        {Field("NR"): Reference("P.No_Ref_Deri")},
+    ),
+}
 
 
 # pylint: disable=too-many-public-methods
 class TestModel(TestCase):
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
+
+        self.addTypeEqualityFunc(Message, self.assert_message)
+
+    def assert_message(self, actual: Message, expected: Message, msg: str = None) -> None:
+        msg = f"{expected.full_name} - {msg}" if msg else expected.full_name
+        self.assertEqual(actual.full_name, expected.full_name, msg)
+        self.assertEqual(actual.structure, expected.structure, msg)
+        self.assertEqual(actual.types, expected.types, msg)
+        self.assertEqual(actual.fields, expected.fields, msg)
 
     def test_type_name(self) -> None:
         t = ModularInteger("Package.Type_Name", Number(256))
@@ -381,3 +504,337 @@ class TestModel(TestCase):
             '^subsequent field "F2" referenced in ' + 'condition 0 from field "F1" to "F2"',
         ):
             Message("P.M", structure, types)
+
+    def test_prefixed_message(self) -> None:
+        self.assertEqual(
+            prefixed_message(
+                UnprovenMessage(
+                    "P.M",
+                    [
+                        Link(INITIAL, Field("F1")),
+                        Link(
+                            Field("F1"),
+                            Field("F2"),
+                            LessEqual(Variable("F1"), Number(100)),
+                            first=First("F1"),
+                        ),
+                        Link(
+                            Field("F1"),
+                            Field("F3"),
+                            GreaterEqual(Variable("F1"), Number(200)),
+                            first=First("F1"),
+                        ),
+                        Link(Field("F2"), FINAL),
+                        Link(Field("F3"), Field("F4"), length=Variable("F3")),
+                        Link(Field("F4"), FINAL),
+                    ],
+                    {
+                        Field("F1"): deepcopy(MODULAR_INTEGER),
+                        Field("F2"): deepcopy(MODULAR_INTEGER),
+                        Field("F3"): deepcopy(RANGE_INTEGER),
+                        Field("F4"): Opaque(),
+                    },
+                ),
+                "X_",
+            ),
+            UnprovenMessage(
+                "P.M",
+                [
+                    Link(INITIAL, Field("X_F1")),
+                    Link(
+                        Field("X_F1"),
+                        Field("X_F2"),
+                        LessEqual(Variable("X_F1"), Number(100)),
+                        first=First("X_F1"),
+                    ),
+                    Link(
+                        Field("X_F1"),
+                        Field("X_F3"),
+                        GreaterEqual(Variable("X_F1"), Number(200)),
+                        first=First("X_F1"),
+                    ),
+                    Link(Field("X_F2"), FINAL),
+                    Link(Field("X_F3"), Field("X_F4"), length=Variable("X_F3")),
+                    Link(Field("X_F4"), FINAL),
+                ],
+                {
+                    Field("X_F1"): deepcopy(MODULAR_INTEGER),
+                    Field("X_F2"): deepcopy(MODULAR_INTEGER),
+                    Field("X_F3"): deepcopy(RANGE_INTEGER),
+                    Field("X_F4"): Opaque(),
+                },
+            ),
+        )
+
+    def test_merge_message_simple(self) -> None:
+        messages = {
+            **deepcopy(M_NO_REF),
+            **deepcopy(M_SMPL_REF),
+        }
+
+        merge_message("P.Smpl_Ref", messages)
+
+        self.assertEqual(
+            messages["P.Smpl_Ref"],
+            UnprovenMessage(
+                "P.Smpl_Ref",
+                [
+                    Link(INITIAL, Field("NR_F1"), length=Number(16)),
+                    Link(Field("NR_F3"), FINAL, LessEqual(Variable("NR_F3"), Number(10))),
+                    Link(Field("NR_F4"), FINAL),
+                    Link(Field("NR_F1"), Field("NR_F2")),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F3"),
+                        LessEqual(Variable("NR_F2"), Number(100)),
+                        first=First("NR_F2"),
+                    ),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F4"),
+                        GreaterEqual(Variable("NR_F2"), Number(200)),
+                        first=First("NR_F2"),
+                    ),
+                ],
+                {
+                    Field("NR_F1"): Opaque(),
+                    Field("NR_F2"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F4"): deepcopy(RANGE_INTEGER),
+                },
+            ),
+        )
+
+    def test_merge_message_complex(self) -> None:
+        messages = {
+            **deepcopy(M_CMPLX_REF),
+            **deepcopy(M_NO_REF),
+        }
+
+        merge_message("P.Cmplx_Ref", messages)
+
+        self.assertEqual(
+            messages["P.Cmplx_Ref"],
+            UnprovenMessage(
+                "P.Cmplx_Ref",
+                [
+                    Link(INITIAL, Field("F1")),
+                    Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
+                    Link(Field("F1"), Field("F3"), GreaterEqual(Variable("F1"), Number(200))),
+                    Link(
+                        Field("F2"),
+                        Field("NR_F1"),
+                        LessEqual(Variable("F1"), Number(10)),
+                        length=Number(16),
+                    ),
+                    Link(
+                        Field("F3"),
+                        Field("NR_F1"),
+                        GreaterEqual(Variable("F1"), Number(220)),
+                        length=Number(16),
+                    ),
+                    Link(
+                        Field("NR_F3"),
+                        Field("F5"),
+                        And(
+                            LessEqual(Variable("F1"), Number(100)),
+                            LessEqual(Variable("NR_F3"), Number(10)),
+                        ),
+                    ),
+                    Link(Field("NR_F4"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
+                    Link(
+                        Field("NR_F3"),
+                        Field("F6"),
+                        And(
+                            GreaterEqual(Variable("F1"), Number(200)),
+                            LessEqual(Variable("NR_F3"), Number(10)),
+                        ),
+                    ),
+                    Link(Field("NR_F4"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
+                    Link(Field("F5"), FINAL),
+                    Link(Field("F6"), FINAL),
+                    Link(Field("NR_F1"), Field("NR_F2")),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F3"),
+                        LessEqual(Variable("NR_F2"), Number(100)),
+                        first=First("NR_F2"),
+                    ),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F4"),
+                        GreaterEqual(Variable("NR_F2"), Number(200)),
+                        first=First("NR_F2"),
+                    ),
+                ],
+                {
+                    Field("F1"): deepcopy(MODULAR_INTEGER),
+                    Field("F2"): deepcopy(MODULAR_INTEGER),
+                    Field("F3"): deepcopy(RANGE_INTEGER),
+                    Field("NR_F1"): Opaque(),
+                    Field("NR_F2"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F4"): deepcopy(RANGE_INTEGER),
+                    Field("F5"): deepcopy(MODULAR_INTEGER),
+                    Field("F6"): deepcopy(RANGE_INTEGER),
+                },
+            ),
+        )
+
+    def test_merge_message_recursive(self) -> None:
+        messages = {
+            **deepcopy(M_CMPLX_REF),
+            **deepcopy(M_SMPL_REF),
+            **deepcopy(M_DBL_REF),
+            **deepcopy(M_NO_REF),
+        }
+
+        merge_message("P.Dbl_Ref", messages)
+
+        self.assertEqual(
+            messages["P.Dbl_Ref"],
+            UnprovenMessage(
+                "P.Dbl_Ref",
+                [
+                    Link(INITIAL, Field("SR_NR_F1"), length=Number(16)),
+                    Link(
+                        Field("SR_NR_F3"),
+                        Field("NR_F1"),
+                        LessEqual(Variable("SR_NR_F3"), Number(10)),
+                        length=Number(16),
+                    ),
+                    Link(Field("SR_NR_F4"), Field("NR_F1"), length=Number(16)),
+                    Link(Field("NR_F3"), FINAL, LessEqual(Variable("NR_F3"), Number(10))),
+                    Link(Field("NR_F4"), FINAL),
+                    Link(Field("SR_NR_F1"), Field("SR_NR_F2")),
+                    Link(
+                        Field("SR_NR_F2"),
+                        Field("SR_NR_F3"),
+                        LessEqual(Variable("SR_NR_F2"), Number(100)),
+                        first=First("SR_NR_F2"),
+                    ),
+                    Link(
+                        Field("SR_NR_F2"),
+                        Field("SR_NR_F4"),
+                        GreaterEqual(Variable("SR_NR_F2"), Number(200)),
+                        first=First("SR_NR_F2"),
+                    ),
+                    Link(Field("NR_F1"), Field("NR_F2")),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F3"),
+                        LessEqual(Variable("NR_F2"), Number(100)),
+                        first=First("NR_F2"),
+                    ),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F4"),
+                        GreaterEqual(Variable("NR_F2"), Number(200)),
+                        first=First("NR_F2"),
+                    ),
+                ],
+                {
+                    Field("SR_NR_F1"): Opaque(),
+                    Field("SR_NR_F2"): deepcopy(MODULAR_INTEGER),
+                    Field("SR_NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("SR_NR_F4"): deepcopy(RANGE_INTEGER),
+                    Field("NR_F1"): Opaque(),
+                    Field("NR_F2"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F4"): deepcopy(RANGE_INTEGER),
+                },
+            ),
+        )
+
+    def test_merge_message_simple_derived(self) -> None:
+        messages: Dict[str, UnprovenMessage] = {
+            **deepcopy(M_NO_REF_DERI),
+            **deepcopy(M_SMPL_REF_DERI),
+        }
+
+        merge_message("P.Smpl_Ref_Deri", messages)
+
+        self.assertEqual(
+            messages["P.Smpl_Ref_Deri"],
+            UnprovenDerivedMessage(
+                "P.Smpl_Ref_Deri",
+                "P.Smpl_Ref",
+                [
+                    Link(INITIAL, Field("NR_F1"), length=Number(16)),
+                    Link(Field("NR_F3"), FINAL, LessEqual(Variable("NR_F3"), Number(10))),
+                    Link(Field("NR_F4"), FINAL),
+                    Link(Field("NR_F1"), Field("NR_F2")),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F3"),
+                        LessEqual(Variable("NR_F2"), Number(100)),
+                        first=First("NR_F2"),
+                    ),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F4"),
+                        GreaterEqual(Variable("NR_F2"), Number(200)),
+                        first=First("NR_F2"),
+                    ),
+                ],
+                {
+                    Field("NR_F1"): Opaque(),
+                    Field("NR_F2"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F4"): deepcopy(RANGE_INTEGER),
+                },
+            ),
+        )
+
+    def test_merge_message_error_unknown_message(self) -> None:
+        with self.assertRaisesRegex(
+            ModelError, f'^reference to unknown message "P.No_Ref"$',
+        ):
+            merge_message("P.Smpl_Ref", deepcopy(M_SMPL_REF))
+
+    def test_merge_message_error_name_conflict(self) -> None:
+        messages = {
+            "P.M1": UnprovenMessage(
+                "P.M1",
+                [
+                    Link(INITIAL, Field("F1")),
+                    Link(Field("F1"), Field("F1_F1")),
+                    Link(Field("F1_F1"), FINAL),
+                ],
+                {Field("F1"): Reference("P.M2"), Field("F1_F1"): MODULAR_INTEGER},
+            ),
+            "P.M2": UnprovenMessage(
+                "P.M2",
+                [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
+                {Field("F1"): MODULAR_INTEGER},
+            ),
+        }
+
+        with self.assertRaisesRegex(
+            ModelError, f'^name conflict for "F1_F1" in "P.M1" caused by reference "F1" to "P.M2"$',
+        ):
+            merge_message("P.M1", messages)
+
+    def test_merge_message_error_cycle(self) -> None:
+        messages = {
+            "P.M1": UnprovenMessage(
+                "P.M1",
+                [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
+                {Field("F1"): Reference("P.M2")},
+            ),
+            "P.M2": UnprovenMessage(
+                "P.M2",
+                [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
+                {Field("F1"): Reference("P.M3")},
+            ),
+            "P.M3": UnprovenMessage(
+                "P.M3",
+                [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
+                {Field("F1"): Reference("P.M1")},
+            ),
+        }
+
+        with self.assertRaisesRegex(
+            ModelError, f'^references in "P.M1" contain cycle$',
+        ):
+            merge_message("P.M1", messages)

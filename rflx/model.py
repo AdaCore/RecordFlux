@@ -1,5 +1,6 @@
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
+from copy import copy
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
@@ -10,6 +11,7 @@ from rflx.expression import (
     UNDEFINED,
     Add,
     And,
+    Attribute,
     Equal,
     Expr,
     First,
@@ -289,7 +291,7 @@ class Link(NamedTuple):
         return generic_repr(self.__class__.__name__, self._asdict())
 
 
-class Message(Element):
+class AbstractMessage(Element):
     def __init__(
         self, full_name: str, structure: Sequence[Link], types: Mapping[Field, Type]
     ) -> None:
@@ -311,7 +313,6 @@ class Message(Element):
                 f: self.__compute_field_condition(f).simplified() for f in self.all_fields
             }
             self.__verify_conditions()
-            self.__prove()
         else:
             self.__fields = ()
             self.__paths = {}
@@ -492,7 +493,9 @@ class Message(Element):
             *[
                 self.types[Field(v.name)].constraints(name=v.name, proof=True)
                 for v in expr.variables()
-                if isinstance(v.name, str) and v.name not in literals
+                if not isinstance(v, Attribute)
+                and isinstance(v.name, str)
+                and v.name not in literals
             ]
         )
 
@@ -690,7 +693,7 @@ class Message(Element):
                             f" ({result}: {message})"
                         )
 
-    def __prove(self) -> None:
+    def _prove(self) -> None:
         self.__prove_field_positions()
         self.__prove_conflicting_conditions()
         self.__prove_reachability()
@@ -741,6 +744,16 @@ class Message(Element):
         )
 
 
+class Message(AbstractMessage):
+    def __init__(
+        self, full_name: str, structure: Sequence[Link], types: Mapping[Field, Type]
+    ) -> None:
+        super().__init__(full_name, structure, types)
+
+        if structure or types:
+            self._prove()
+
+
 class DerivedMessage(Message):
     def __init__(
         self,
@@ -761,6 +774,53 @@ class DerivedMessage(Message):
     @property
     def base_package(self) -> str:
         return self.full_base_name.rsplit(".", 1)[0]
+
+
+class UnprovenMessage(AbstractMessage):
+    def proven_message(self) -> Message:
+        return Message(self.full_name, self.structure, self.types)
+
+    def copy(
+        self,
+        full_name: str = None,
+        structure: Sequence[Link] = None,
+        types: Mapping[Field, Type] = None,
+    ) -> "UnprovenMessage":
+        return UnprovenMessage(
+            full_name if full_name else self.full_name,
+            structure if structure else copy(self.structure),
+            types if types else copy(self.types),
+        )
+
+
+class UnprovenDerivedMessage(UnprovenMessage):
+    def __init__(
+        self,
+        full_name: str,
+        full_base_name: str,
+        structure: Sequence[Link],
+        types: Mapping[Field, Type],
+    ) -> None:
+        super().__init__(full_name, structure, types)
+        if full_base_name.count(".") != 1:
+            raise ModelError(f'unexpected format of message name "{full_name}"')
+        self.full_base_name = full_base_name
+
+    def proven_message(self) -> DerivedMessage:
+        return DerivedMessage(self.full_name, self.full_base_name, self.structure, self.types)
+
+    def copy(
+        self,
+        full_name: str = None,
+        structure: Sequence[Link] = None,
+        types: Mapping[Field, Type] = None,
+    ) -> "UnprovenDerivedMessage":
+        return UnprovenDerivedMessage(
+            full_name if full_name else self.full_name,
+            self.full_base_name,
+            structure if structure else copy(self.structure),
+            types if types else copy(self.types),
+        )
 
 
 class Refinement(Type):
@@ -794,3 +854,113 @@ class Refinement(Type):
 
 class ModelError(Exception):
     pass
+
+
+def prefixed_message(message: UnprovenMessage, prefix: str) -> UnprovenMessage:
+    def prefixed_expression(expression: Expr) -> Expr:
+        return expression.simplified(
+            {v: v.__class__(f"{prefix}{v.name}") for v in expression.variables()}
+        )
+
+    structure = []
+
+    for l in message.structure:
+        source = Field(f"{prefix}{l.source.name}") if l.source != INITIAL else INITIAL
+        target = Field(f"{prefix}{l.target.name}") if l.target != FINAL else FINAL
+        condition = prefixed_expression(l.condition)
+        length = prefixed_expression(l.length) if l.length != UNDEFINED else UNDEFINED
+        first = prefixed_expression(l.first) if l.first != UNDEFINED else UNDEFINED
+        structure.append(Link(source, target, condition, length, first))
+
+    types = {Field(f"{prefix}{f.name}"): t for f, t in message.types.items()}
+
+    return message.copy(structure=structure, types=types)
+
+
+def merge_message(name: str, messages: Dict[str, UnprovenMessage]) -> None:
+    assert name in messages, f'unknown message "{name}"'
+
+    check_message_references(name, messages)
+
+    message = messages[name]
+
+    while True:
+        references = [(f, t) for f, t in message.types.items() if isinstance(t, Reference)]
+
+        if not references:
+            break
+
+        ref_field, ref_type = references.pop(0)
+        inner_message = prefixed_message(messages[ref_type.full_name], f"{ref_field.name}_")
+
+        name_conflicts = [
+            f.name for f in message.fields for g in inner_message.fields if f.name == g.name
+        ]
+
+        if name_conflicts:
+            raise ModelError(
+                f'name conflict for "{name_conflicts.pop(0)}" in "{name}" caused by reference'
+                f' "{ref_field.name}" to "{ref_type.full_name}"'
+            )
+
+        structure = []
+
+        for link in message.structure:
+            if link.target == ref_field:
+                initial_link = inner_message.outgoing(INITIAL)[0]
+                structure.append(
+                    Link(
+                        link.source,
+                        initial_link.target,
+                        link.condition,
+                        initial_link.length,
+                        link.first,
+                    )
+                )
+            elif link.source == ref_field:
+                for final_link in inner_message.incoming(FINAL):
+                    structure.append(
+                        Link(
+                            final_link.source,
+                            link.target,
+                            And(link.condition, final_link.condition).simplified(),
+                            link.length,
+                            link.first,
+                        )
+                    )
+            else:
+                structure.append(link)
+
+        structure.extend(
+            l for l in inner_message.structure if l.target != FINAL and l.source != INITIAL
+        )
+
+        types = {
+            **{f: t for f, t in message.types.items() if f != ref_field},
+            **inner_message.types,
+        }
+
+        message = message.copy(structure=structure, types=types)
+
+        messages[name] = message
+
+
+def check_message_references(name: str, messages: Dict[str, UnprovenMessage]) -> None:
+    nodes = [messages[name]]
+    edges: Set[Tuple[str, str, str]] = set()
+
+    while nodes:
+        message = nodes.pop(0)
+        for e in [
+            (message.full_name, f.name, t.full_name)
+            for f, t in message.types.items()
+            if isinstance(t, Reference)
+        ]:
+            if e in edges:
+                raise ModelError(f'references in "{name}" contain cycle')
+
+            if e[2] not in messages:
+                raise ModelError(f'reference to unknown message "{e[2]}"')
+
+            edges.add(e)
+            nodes.append(messages[e[2]])

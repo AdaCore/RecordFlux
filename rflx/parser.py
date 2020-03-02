@@ -56,7 +56,6 @@ from rflx.model import (
     FINAL,
     INITIAL,
     Array,
-    DerivedMessage,
     Enumeration,
     Field,
     Link,
@@ -68,6 +67,9 @@ from rflx.model import (
     Reference,
     Refinement,
     Type,
+    UnprovenDerivedMessage,
+    UnprovenMessage,
+    merge_message,
 )
 
 
@@ -464,7 +466,7 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
         Opaque().name: Opaque(),
         boolean.name: boolean,
     }
-    messages: Dict[str, Message] = {}
+    messages: Dict[str, UnprovenMessage] = {}
 
     for t in spec.package.types:
         if t.name in types:
@@ -480,7 +482,7 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
             )
             if t.element_type.name not in types:
                 raise ParserError(f'undefined type "{t.element_type.name}" in "{t.name}"')
-            if not isinstance(types[t.element_type.name], MessageSpec):
+            if not isinstance(types[t.element_type.name], Reference):
                 element_type_size = types[t.element_type.name].size.simplified()
                 if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
                     raise ParserError(
@@ -491,6 +493,7 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
                 t = Array(t.full_name, types[t.element_type.name])
         elif isinstance(t, MessageSpec):
             messages[t.full_name] = create_message(t.full_name, types, t.components, t.name)
+            t = Reference(t.full_name)
         elif isinstance(t, DerivationSpec):
             base = t.base
             if base not in types and base not in messages:
@@ -501,10 +504,10 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
                 messages,
                 f'unsupported type "{t.base}" in "{t.name}"',
             )
-            messages[t.full_name] = DerivedMessage(
+            messages[t.full_name] = UnprovenDerivedMessage(
                 t.full_name, base, messages[base].structure, messages[base].types
             )
-            t = MessageSpec(t.full_name, [])
+            t = Reference(t.full_name)
         elif isinstance(t, Refinement):
             continue
         else:
@@ -512,12 +515,12 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
 
         types[t.name] = t
 
-    return messages
+    return proved_messages(messages)
 
 
 def create_message(
     full_name: str, types: Dict[str, Type], components: List[Component], message_name: str
-) -> Message:
+) -> UnprovenMessage:
     components = list(components)
 
     if components and components[0].name != "null":
@@ -529,8 +532,6 @@ def create_message(
         if component.name != "null":
             if component.type not in types:
                 raise ParserError(f'undefined type "{component.type}" in "{message_name}"')
-            if isinstance(types[component.type], MessageSpec):
-                raise ParserError(f'unsupported type "{component.type}" in "{message_name}"')
             field_types[Field(component.name)] = types[component.type]
 
     structure: List[Link] = []
@@ -553,7 +554,14 @@ def create_message(
                 Link(source_node, target_node, then.condition, then.length, then.first)
             )
 
-    return Message(full_name, structure, field_types)
+    return UnprovenMessage(full_name, structure, field_types)
+
+
+def proved_messages(messages: Dict[str, UnprovenMessage]) -> Dict[str, Message]:
+    for message in messages:
+        merge_message(message, messages)
+
+    return {name: message.proven_message() for name, message in messages.items()}
 
 
 def convert_to_refinements(spec: Specification, messages: Dict[str, Message]) -> List[Refinement]:
