@@ -294,6 +294,26 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(
             Sub(Variable("X"), Variable("Y")).simplified(), Add(Variable("X"), Variable("Y", True))
         )
+        # 3.simplified(1)
+        self.assertEqual(
+            Sub(Variable("X"), Variable("Y")).simplified({Variable("X"): Variable("Z")}),
+            Add(Variable("Z"), -Variable("Y")),
+        )
+
+        # 3.simplified(1).simplified(2) = 4
+        self.assertEqual(
+            Sub(Variable("Z"), Variable("Y")).simplified(
+                {Variable("Z"): Add(Variable("Y"), Variable("Q"))}
+            ),
+            Add(Add(Variable("Y"), Variable("Q")), -Variable("Y")),
+        )
+
+        # 4.simplified() = TRUE
+        self.assertTrue(
+            Equal(Variable("Q"), Sub(Add(Variable("Y"), Variable("Q")), Variable("Y")))
+            .simplified()
+            .simplified()
+        )
 
     def test_div_neg(self) -> None:
         self.assertEqual(-Div(Variable("X"), Number(1)), Div(Variable("X", True), Number(1)))
