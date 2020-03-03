@@ -2,7 +2,19 @@ from typing import Any, Dict, List, Mapping
 
 import rflx.model as model
 from rflx.common import generic_repr
-from rflx.expression import FALSE, TRUE, UNDEFINED, Add, Expr, First, Length, Name, Number, Variable
+from rflx.expression import (
+    FALSE,
+    TRUE,
+    UNDEFINED,
+    Add,
+    Expr,
+    First,
+    Length,
+    Name,
+    Number,
+    Sub,
+    Variable,
+)
 
 from .typevalue import OpaqueValue, ScalarValue, TypeValue
 
@@ -18,6 +30,7 @@ class Field:
             return (
                 self.length == other.length
                 and self.first == other.first
+                and self.last == other.last
                 and self.typeval == other.typeval
             )
         return NotImplemented
@@ -31,7 +44,12 @@ class Field:
             self.typeval.initialized
             and isinstance(self.length, Number)
             and isinstance(self.first, Number)
+            and isinstance(self.last, Number)
         )
+
+    @property
+    def last(self) -> Expr:
+        return Sub(Add(self.first, self.length), Number(1)).simplified()
 
 
 class Message:
@@ -121,11 +139,18 @@ class Message:
                 f"cannot assign different types: {self._fields[fld].typeval.accepted_type.__name__}"
                 f" != {type(value).__name__}"
             )
-        if fld in self._fields and self._has_first(fld) and self._has_length(fld):
+        if fld in self._fields and self._has_first(fld):
             field = self._fields[fld]
             field.first = self._get_first(fld)
-            field.length = self._get_length(fld)
-            self._fields[fld].typeval.assign(value, True)
+            if self._has_length(fld):
+                field.length = self._get_length(fld)
+                field.typeval.assign(value, True)
+            else:
+                if not isinstance(field.typeval, OpaqueValue):
+                    raise KeyError(f"cannot access field {fld}")
+                field.typeval.assign(value, True)
+                field.length = Number(field.typeval.length)
+
             if all(
                 [
                     self.__simplified(o.condition) == FALSE
@@ -200,7 +225,11 @@ class Message:
             if (
                 self.__simplified(self._model.field_condition(model.Field(nxt))) != TRUE
                 or not self._has_first(nxt)
-                or not self._has_length(nxt)
+                or (
+                    not self._has_length(nxt)
+                    if not isinstance(self._fields[nxt].typeval, OpaqueValue)
+                    else (self._get_length_unchecked(nxt) in [FALSE, UNDEFINED])
+                )
             ):
                 break
             fields.append(nxt)

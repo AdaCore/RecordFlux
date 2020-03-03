@@ -344,6 +344,16 @@ class TestPyRFLX(unittest.TestCase):
         with open(f"{self.testdir}/ethernet_802.3.raw", "rb") as raw:
             self.assertEqual(self.frame.binary, raw.read())
 
+    def test_ethernet_payload(self) -> None:
+        self.frame.set("Source", 0)
+        self.frame.set("Destination", 0)
+        self.frame.set("Type_Length_TPID", 47)
+        self.frame.set("Type_Length", 1537)
+        self.assertEqual(
+            self.frame.accessible_fields,
+            ["Destination", "Source", "Type_Length_TPID", "Type_Length", "Payload"],
+        )
+
     def test_tls_fields(self) -> None:
         self.assertEqual(self.record.accessible_fields, ["Tag", "Legacy_Record_Version", "Length"])
         self.record.set("Tag", "INVALID")
