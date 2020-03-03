@@ -1,8 +1,21 @@
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, Sequence
 
 import rflx.model as model
 from rflx.common import generic_repr
-from rflx.expression import FALSE, TRUE, UNDEFINED, Add, Expr, First, Length, Name, Number, Variable
+from rflx.expression import (
+    FALSE,
+    TRUE,
+    UNDEFINED,
+    Add,
+    Expr,
+    First,
+    Last,
+    Length,
+    Name,
+    Number,
+    Sub,
+    Variable,
+)
 
 from .typevalue import OpaqueValue, ScalarValue, TypeValue
 
@@ -18,6 +31,7 @@ class Field:
             return (
                 self.length == other.length
                 and self.first == other.first
+                and self.last == other.last
                 and self.typeval == other.typeval
             )
         return NotImplemented
@@ -31,7 +45,12 @@ class Field:
             self.typeval.initialized
             and isinstance(self.length, Number)
             and isinstance(self.first, Number)
+            and isinstance(self.last, Number)
         )
+
+    @property
+    def last(self) -> Expr:
+        return Sub(Add(self.first, self.length), Number(1)).simplified()
 
 
 class Message:
@@ -41,6 +60,8 @@ class Message:
             f.name: Field(TypeValue.construct(self._model.types[f])) for f in self._model.fields
         }
         self.__type_literals: Mapping[Name, Expr] = {}
+        self._last_field: str = self._next_field(model.INITIAL.name)
+
         for t in [f.typeval.literals for f in self._fields.values()]:
             self.__type_literals = {**self.__type_literals, **t}
         initial = Field(OpaqueValue(model.Opaque()))
@@ -64,6 +85,9 @@ class Message:
     def _next_field(self, fld: str) -> str:
         if fld == model.FINAL.name:
             return ""
+        if fld == model.INITIAL.name:
+            return self._model.outgoing(model.INITIAL)[0].target.name
+
         for l in self._model.outgoing(model.Field(fld)):
             if self.__simplified(l.condition) == TRUE:
                 return l.target.name
@@ -81,6 +105,7 @@ class Message:
         for l in self._model.incoming(model.Field(fld)):
             if self.__simplified(l.condition) == TRUE and l.length != UNDEFINED:
                 return self.__simplified(l.length)
+
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
             return Number(typeval.size)
@@ -116,38 +141,64 @@ class Message:
         return self._model.name
 
     def set(self, fld: str, value: Any) -> None:
-        if not isinstance(value, self._fields[fld].typeval.accepted_type):
-            raise TypeError(
-                f"cannot assign different types: {self._fields[fld].typeval.accepted_type.__name__}"
-                f" != {type(value).__name__}"
-            )
-        if fld in self._fields and self._has_first(fld) and self._has_length(fld):
+
+        # if node is in accessible fields its length and first are known
+        if fld in self.accessible_fields:
+
             field = self._fields[fld]
-            field.first = self._get_first(fld)
-            field.length = self._get_length(fld)
-            self._fields[fld].typeval.assign(value, True)
-            if all(
-                [
-                    self.__simplified(o.condition) == FALSE
-                    for o in self._model.outgoing(model.Field(fld))
-                ]
-            ):
-                self._fields[fld].typeval.clear()
-                raise ValueError("value does not fulfill field condition")
+
+            if not isinstance(value, field.typeval.accepted_type):
+                raise TypeError(
+                    f"cannot assign different types: {field.typeval.accepted_type.__name__}"
+                    f" != {type(value).__name__}"
+                )
+
+            # if field is of type opaque and does not have a specified length
+            if isinstance(field.typeval, OpaqueValue) and not self._has_length(fld):
+                assert isinstance(value, bytes)
+                field.first = self._get_first(fld)
+                field.typeval.assign(value, True)
+                field.length = Number(field.typeval.length)
+            else:
+                field.first = self._get_first(fld)
+                field.length = self._get_length(fld)
+                field.typeval.assign(value, True)
+
         else:
             raise KeyError(f"cannot access field {fld}")
+
+        if all(
+            [
+                self.__simplified(o.condition) == FALSE
+                for o in self._model.outgoing(model.Field(fld))
+            ]
+        ):
+            self._fields[fld].typeval.clear()
+            print([o.condition for o in self._model.outgoing(model.Field(fld))])
+            raise ValueError("value does not fulfill field condition")
+
         if isinstance(field.typeval, OpaqueValue) and field.typeval.length != field.length.value:
             flength = field.typeval.length
             field.typeval.clear()
             raise ValueError(f"invalid data length: {field.length.value} != {flength}")
+        # setze Länge der nächdsten Felder
         self._preset_fields(fld)
 
     def _preset_fields(self, fld: str) -> None:
+        """
+        Iterates through the following nodes of fld until reaches a node whose successor
+        does not have a first or length field. It sets the first and length fields of all
+        nodes it reaches.
+        """
+
         nxt = self._next_field(fld)
         while nxt and nxt != model.FINAL.name:
             field = self._fields[nxt]
+
             if not self._has_first(nxt) or not self._has_length(nxt):
+
                 break
+
             field.first = self._get_first(nxt)
             field.length = self._get_length(nxt)
             if (
@@ -159,6 +210,8 @@ class Message:
                 field.length = UNDEFINED
                 field.typeval.clear()
                 break
+
+            self._last_field = nxt
             nxt = self._next_field(nxt)
 
     def get(self, fld: str) -> Any:
@@ -194,18 +247,72 @@ class Message:
 
     @property
     def accessible_fields(self) -> List[str]:
+        """
+        Field is accessible if the condition(s) of the incoming edge from its predecessor
+        evaluates to true and if the field has a specified length and first. If it is an
+        opaque field (has no previously known length) evaluate its accessibility by
+        call to __check_nodes_opaque
+        :return: str List of all accessible fields
+        """
+
         nxt = self._next_field(model.INITIAL.name)
         fields: List[str] = []
         while nxt and nxt != model.FINAL.name:
+
             if (
                 self.__simplified(self._model.field_condition(model.Field(nxt))) != TRUE
                 or not self._has_first(nxt)
-                or not self._has_length(nxt)
+                or (
+                    not self._has_length(nxt)
+                    if not isinstance(self._fields[nxt].typeval, OpaqueValue)
+                    else self.__check_nodes_opaque(nxt)
+                )
             ):
                 break
-            fields.append(nxt)
+
+            fields.append(nxt)  # field is accessible
             nxt = self._next_field(nxt)
         return fields
+
+    def __check_nodes_opaque(self, nxt: str) -> bool:
+        """
+        Evaluate the accessibility of an opaque field.
+        :param nxt: String name of field (node) to evaluate
+        :return: False if field is accessible
+        """
+
+        # get all incoming edges of the node
+        incoming_edges: Sequence[model.Link] = self._model.incoming(model.Field(nxt))
+        length_nxt: Expr = self._get_length_unchecked(nxt)
+
+        if length_nxt in [FALSE, UNDEFINED]:
+            return True
+
+        # evaluate which of the incoming edges is valid (cond. evaluates to Expr. TRUE)
+        for edge in incoming_edges:
+            if self.__simplified(edge.condition) == TRUE:
+                valid_edge = edge
+                break
+        else:
+            return False
+
+        # evaluate length of node
+        for ve in valid_edge.length.variables():
+            # if the referenced node (which its length depends on) is a known node and is already
+            # set i.e. its length and first are already known, the field is accessible
+            assert isinstance(ve.name, str)
+            if ve.name in self._fields and not self._fields[ve.name].set:
+                return True
+
+            # if length depends on Message'Last -> set field accessible
+            if isinstance(ve, Last) and ve.name == "Message":
+                return False
+
+            # if length does not depend on previous node but e.g. on Message'First
+            if not isinstance(self.__simplified(ve), Number):
+                return True
+
+        return False
 
     @property
     def valid_fields(self) -> List[str]:
@@ -243,13 +350,25 @@ class Message:
         )
 
     def __simplified(self, expr: Expr) -> Expr:
-        field_values: Mapping[Name, Expr] = {
-            **{
-                Variable(k): v.typeval.expr
-                for k, v in self._fields.items()
-                if isinstance(v.typeval, ScalarValue) and v.set
-            },
-            **{Length(k): v.length for k, v in self._fields.items() if v.set},
-            **{First(k): v.first for k, v in self._fields.items() if v.set},
-        }
+        field_values: Mapping[Name, Expr] = dict(
+            {
+                **{
+                    Variable(k): v.typeval.expr
+                    for k, v in self._fields.items()
+                    if isinstance(v.typeval, ScalarValue) and v.set
+                },
+                **{Length(k): v.length for k, v in self._fields.items() if v.set},
+                **{First(k): v.first for k, v in self._fields.items() if v.set},
+                **{Last(k): v.last for k, v in self._fields.items() if v.set},
+                **{First("Message"): self._fields[self._next_field(model.INITIAL.name)].first},
+            }
+        )
+
+        final_incoming = self._model.incoming(model.FINAL)
+
+        for edge in final_incoming:
+            if edge.condition.simplified(field_values) == TRUE:
+                assert isinstance(field_values, dict)
+                field_values[Last("Message")] = self._fields[edge.source.name].last
+
         return expr.simplified(field_values).simplified(self.__type_literals)
