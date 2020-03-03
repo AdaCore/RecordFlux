@@ -1,0 +1,27 @@
+package ICMP is
+
+    type Tag is (Echo_Reply => 0, Echo_Request => 8)
+        with Size => 8;
+
+    type Code is range 0 .. 0
+        with Size => 8;
+
+    type Checksum is mod 2**16;
+
+    type Identifier is mod 2**16;
+
+    type Sequence_Number is mod 2**16;
+
+    type Echo_Message is
+        message
+            Tag : Tag;
+            Code : Code;
+            Checksum : Checksum;
+            Identifier : Identifier;
+            Sequence_Number : Sequence_Number
+                then Data
+                with Length => Message'Last - Sequence_Number'Last;
+            Data : Opaque;
+        end message;
+
+end ICMP;
