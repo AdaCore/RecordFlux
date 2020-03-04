@@ -192,18 +192,16 @@ class Parser:
 
     @classmethod
     def qualified_identifier(cls) -> Token:
-        return (Optional(cls.identifier() + Literal(".")) - cls.identifier()).setParseAction(
+        return (Optional(cls.identifier() + Literal(".")) + cls.identifier()).setParseAction(
             lambda t: "".join(t.asList())
         )
 
     @classmethod
-    def name(cls) -> Token:
+    def attribute_reference(cls) -> Token:
         attribute_designator = Keyword("First") | Keyword("Last") | Keyword("Length")
         attribute_reference = cls.identifier() + Literal("'") - attribute_designator
         attribute_reference.setParseAction(parse_attribute)
-        attribute_reference.setName("Attribute")
-
-        return (attribute_reference | cls.identifier()).setName("Name")
+        return attribute_reference.setName("Attribute")
 
     @classmethod
     def numeric_literal(cls) -> Token:
@@ -259,7 +257,12 @@ class Parser:
         )
         array_aggregate.setParseAction(parse_array_aggregate)
 
-        term = cls.numeric_literal() | cls.name() | array_aggregate
+        term = (
+            cls.numeric_literal()
+            | cls.attribute_reference()
+            | cls.qualified_identifier()
+            | array_aggregate
+        )
         term.setParseAction(parse_term)
 
         return (
@@ -302,7 +305,7 @@ class Parser:
 
     @classmethod
     def enumeration_type_definition(cls) -> Token:
-        enumeration_literal = cls.name()
+        enumeration_literal = cls.identifier()
         positional_enumeration = enumeration_literal + ZeroOrMore(COMMA - enumeration_literal)
         positional_enumeration.setParseAction(
             lambda t: [(k, Number(v)) for v, k in enumerate(t.asList())]
@@ -333,7 +336,7 @@ class Parser:
 
     @classmethod
     def array_type_definition(cls) -> Token:
-        return (Keyword("array of") + cls.name()).setName("Array")
+        return (Keyword("array of") + cls.identifier()).setName("Array")
 
     @classmethod
     def message_type_definition(cls) -> Token:
@@ -358,7 +361,7 @@ class Parser:
             + ~CaselessKeyword("Message")
             - cls.identifier()
             + Literal(":")
-            - cls.name()
+            - cls.qualified_identifier()
             - Optional(then_list)
             - SEMICOLON
         )
