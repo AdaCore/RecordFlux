@@ -16,11 +16,11 @@ class PyRFLX:
             if not Path(f).is_file():
                 raise FileNotFoundError(f'file not found: "{f}"')
             parser.parse(Path(f))
-        messages = parser.messages
-        packages = set(m.package for m in messages)
+        model = parser.create_model()
+        packages = set(m.package for m in model.messages)
         for p in packages:
             self.__packages[p] = Package(p)
-            for m in [x for x in messages if x.package == p]:
+            for m in [x for x in model.messages if x.package == p]:
                 try:
                     self.__packages[p][m.name] = Message(m)
                 except ValueError as e:

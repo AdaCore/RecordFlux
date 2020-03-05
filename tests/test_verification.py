@@ -10,9 +10,11 @@ class TestVerification(TestCase):
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
 
-    def assert_parse_exception_string(self, string: str, regex: str) -> None:
+    def assert_model_error(self, string: str, regex: str) -> None:
+        parser = Parser()
         with self.assertRaisesRegex(ModelError, regex):
-            Parser().parse_string(string)
+            parser.parse_string(string)
+            parser.create_model()
 
     @staticmethod
     def test_exclusive_valid() -> None:
@@ -56,7 +58,7 @@ class TestVerification(TestCase):
         )
 
     def test_exclusive_conflict(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
@@ -95,7 +97,7 @@ class TestVerification(TestCase):
         )
 
     def test_exclusive_with_length_invalid(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
@@ -114,7 +116,7 @@ class TestVerification(TestCase):
         )
 
     def test_no_valid_path(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
@@ -138,7 +140,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_path_1(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
@@ -152,7 +154,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_path_2(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
@@ -167,7 +169,7 @@ class TestVerification(TestCase):
         )
 
     def test_contradiction(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is range 0..2**32-1 with Size => 32;
@@ -185,7 +187,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_type_condition_range_low(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is range 100 .. 1000 with Size => 32;
@@ -200,7 +202,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_type_condition_range_high(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is range 5 .. 50000 with Size => 32;
@@ -215,7 +217,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_type_condition_modular_upper(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -230,7 +232,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_type_condition_modular_lower(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -246,7 +248,7 @@ class TestVerification(TestCase):
 
     # ISSUE: Componolit/RecordFlux#87
     def disabled_test_invalid_type_condition_enum(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element1 is (E1, E2, E3) with Size => 8;
@@ -283,7 +285,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_fixed_size_field_with_length(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -314,7 +316,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_first(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -330,7 +332,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_first_is_last(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -346,7 +348,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_first_forward_reference(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -381,7 +383,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_length_forward_reference(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -398,7 +400,7 @@ class TestVerification(TestCase):
         )
 
     def test_invalid_negative_field_length(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -431,7 +433,7 @@ class TestVerification(TestCase):
         )
 
     def test_payload_no_length(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -446,7 +448,7 @@ class TestVerification(TestCase):
         )
 
     def test_array_no_length(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type Element is mod 2**8;
@@ -462,7 +464,7 @@ class TestVerification(TestCase):
         )
 
     def test_incongruent_overlay(self) -> None:
-        self.assert_parse_exception_string(
+        self.assert_model_error(
             """
             package Foo is
                 type U8 is mod 2**8;

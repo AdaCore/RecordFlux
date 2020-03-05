@@ -17,8 +17,10 @@ class TestIntegration(unittest.TestCase):
         for basename in basenames:
             parser.parse(Path(f"{self.specdir}/{basename}.rflx"))
 
+        model = parser.create_model()
+
         generator = Generator("RFLX", reproducible=True)
-        generator.generate(parser.messages, parser.refinements)
+        generator.generate(model.messages, model.refinements)
 
         for unit in generator.units.values():
             filename = f"{self.testdir}/{unit.name}.ads"

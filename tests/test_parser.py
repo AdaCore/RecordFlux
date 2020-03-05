@@ -1,7 +1,7 @@
 import unittest
 from itertools import zip_longest
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Sequence
 
 from rflx.model import DerivedMessage
 from rflx.parser import (
@@ -54,33 +54,35 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.maxDiff = None  # pylint: disable=invalid-name
 
     def assert_specifications(
-        self, filenames: List[str], specifications: Dict[str, Specification]
+        self, filenames: Sequence[str], specifications: Dict[str, Specification]
     ) -> None:
         parser = Parser()
         for filename in filenames:
             parser.parse(Path(filename))
-        self.assertEqual(parser.specifications(), specifications, filenames)
+        self.assertEqual(parser.specifications, specifications, filenames)
 
     def assert_specifications_string(
         self, string: str, specifications: Dict[str, Specification]
     ) -> None:
         parser = Parser()
         parser.parse_string(string)
-        self.assertEqual(parser.specifications(), specifications)
+        self.assertEqual(parser.specifications, specifications)
 
-    def assert_messages_files(self, filenames: List[str], messages: List[Message]) -> None:
+    def assert_messages_files(self, filenames: Sequence[str], messages: Sequence[Message]) -> None:
         parser = Parser()
         for filename in filenames:
             parser.parse(Path(filename))
-        self.assert_messages(parser.messages, messages)
+        model = parser.create_model()
+        self.assert_messages(model.messages, messages)
 
-    def assert_messages_string(self, string: str, messages: List[Message]) -> None:
+    def assert_messages_string(self, string: str, messages: Sequence[Message]) -> None:
         parser = Parser()
         parser.parse_string(string)
-        self.assert_messages(parser.messages, messages)
+        model = parser.create_model()
+        self.assert_messages(model.messages, messages)
 
     def assert_messages(
-        self, actual_messages: List[Message], expected_messages: List[Message]
+        self, actual_messages: Sequence[Message], expected_messages: Sequence[Message]
     ) -> None:
         for actual, expected in zip_longest(actual_messages, expected_messages):
             self.assertEqual(actual.full_name, expected.full_name)
@@ -89,20 +91,24 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             self.assertEqual(actual.fields, expected.fields, expected.full_name)
         self.assertEqual(actual_messages, expected_messages)
 
-    def assert_refinements_string(self, string: str, refinements: List[Refinement]) -> None:
+    def assert_refinements_string(self, string: str, refinements: Sequence[Refinement]) -> None:
         parser = Parser()
         parser.parse_string(string)
-        self.assertEqual(parser.refinements, refinements)
+        model = parser.create_model()
+        self.assertEqual(model.refinements, refinements)
 
-    def assert_parser_error(self, filenames: List[str], regex: str) -> None:
+    def assert_parser_error(self, filenames: Sequence[str], regex: str) -> None:
         with self.assertRaisesRegex(ParserError, regex):
             parser = Parser()
             for filename in filenames:
                 parser.parse(Path(filename))
+            parser.create_model()
 
     def assert_parser_error_string(self, string: str, regex: str) -> None:
+        parser = Parser()
         with self.assertRaisesRegex(ParserError, regex):
-            Parser().parse_string(string)
+            parser.parse_string(string)
+            parser.create_model()
 
     def assert_parse_exception_string(self, string: str, regex: str) -> None:
         with self.assertRaisesRegex(ParseFatalException, regex):
@@ -490,10 +496,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 PackageSpec(
                     "Integer_Type",
                     [
-                        RangeInteger("Integer_Type.Page_Num", Number(1), Number(2000), Number(16)),
-                        RangeInteger("Integer_Type.Line_Size", Number(0), Number(255), Number(8)),
-                        ModularInteger("Integer_Type.Byte", Number(256)),
-                        ModularInteger("Integer_Type.Hash_Index", Number(64)),
+                        RangeInteger("__PACKAGE__.Page_Num", Number(1), Number(2000), Number(16)),
+                        RangeInteger("__PACKAGE__.Line_Size", Number(0), Number(255), Number(8)),
+                        ModularInteger("__PACKAGE__.Byte", Number(256)),
+                        ModularInteger("__PACKAGE__.Hash_Index", Number(64)),
                     ],
                 ),
             )
@@ -508,7 +514,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                     "Enumeration_Type",
                     [
                         Enumeration(
-                            "Enumeration_Type.Day",
+                            "__PACKAGE__.Day",
                             {
                                 "Mon": Number(1),
                                 "Tue": Number(2),
@@ -522,13 +528,13 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                             False,
                         ),
                         Enumeration(
-                            "Enumeration_Type.Gender",
+                            "__PACKAGE__.Gender",
                             {"M": Number(0), "F": Number(1)},
                             Number(1),
                             False,
                         ),
                         Enumeration(
-                            "Enumeration_Type.Priority",
+                            "__PACKAGE__.Priority",
                             {"LOW": Number(1), "MEDIUM": Number(4), "HIGH": Number(7)},
                             Number(3),
                             True,
@@ -546,10 +552,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 PackageSpec(
                     "Array_Type",
                     [
-                        ModularInteger("Array_Type.Byte", Number(256)),
-                        Array("Array_Type.Bytes", Reference("Array_Type.Byte")),
-                        MessageSpec("Array_Type.Foo", [Component("Byte", "Byte")]),
-                        Array("Array_Type.Bar", Reference("Array_Type.Foo")),
+                        ModularInteger("__PACKAGE__.Byte", Number(256)),
+                        Array("__PACKAGE__.Bytes", Reference("__PACKAGE__.Byte")),
+                        MessageSpec("__PACKAGE__.Foo", [Component("Byte", "Byte")]),
+                        Array("__PACKAGE__.Bar", Reference("__PACKAGE__.Foo")),
                     ],
                 ),
             )
@@ -563,9 +569,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 PackageSpec(
                     "Message_Type",
                     [
-                        ModularInteger("Message_Type.T", Number(256)),
+                        ModularInteger("__PACKAGE__.T", Number(256)),
                         MessageSpec(
-                            "Message_Type.PDU",
+                            "__PACKAGE__.PDU",
                             [
                                 Component(
                                     "Foo",
@@ -594,10 +600,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                             ],
                         ),
                         MessageSpec(
-                            "Message_Type.Simple_PDU",
+                            "__PACKAGE__.Simple_PDU",
                             [Component("Bar", "T"), Component("Baz", "T")],
                         ),
-                        MessageSpec("Message_Type.Empty_PDU", []),
+                        MessageSpec("__PACKAGE__.Empty_PDU", []),
                     ],
                 ),
             )
@@ -703,9 +709,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 PackageSpec(
                     "Message_Type",
                     [
-                        ModularInteger("Message_Type.T", Number(256)),
+                        ModularInteger("__PACKAGE__.T", Number(256)),
                         MessageSpec(
-                            "Message_Type.PDU",
+                            "__PACKAGE__.PDU",
                             [
                                 Component(
                                     "Foo",
@@ -734,10 +740,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                             ],
                         ),
                         MessageSpec(
-                            "Message_Type.Simple_PDU",
+                            "__PACKAGE__.Simple_PDU",
                             [Component("Bar", "T"), Component("Baz", "T")],
                         ),
-                        MessageSpec("Message_Type.Empty_PDU", []),
+                        MessageSpec("__PACKAGE__.Empty_PDU", []),
                     ],
                 ),
             ),
@@ -747,17 +753,14 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                     "Type_Refinement",
                     [
                         Refinement(
-                            "Type_Refinement",
+                            "",
                             "Message_Type.Simple_PDU",
                             Field("Bar"),
                             "Message_Type.PDU",
                             Equal(Variable("Baz"), Number(42)),
                         ),
                         Refinement(
-                            "Type_Refinement",
-                            "Message_Type.PDU",
-                            Field("Bar"),
-                            "Message_Type.Simple_PDU",
+                            "", "Message_Type.PDU", Field("Bar"), "Message_Type.Simple_PDU",
                         ),
                     ],
                 ),
@@ -785,9 +788,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                     PackageSpec(
                         "Test",
                         [
-                            ModularInteger("Test.T", Number(256)),
-                            MessageSpec("Test.Foo", [Component("N", "T")]),
-                            DerivationSpec("Test.Bar", "Foo"),
+                            ModularInteger("__PACKAGE__.T", Number(256)),
+                            MessageSpec("__PACKAGE__.Foo", [Component("N", "T")]),
+                            DerivationSpec("__PACKAGE__.Bar", "Foo"),
                         ],
                     ),
                 )
@@ -848,19 +851,19 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 PackageSpec(
                     "Ethernet",
                     [
-                        ModularInteger("Ethernet.Address", Pow(Number(2), Number(48))),
+                        ModularInteger("__PACKAGE__.Address", Pow(Number(2), Number(48))),
                         RangeInteger(
-                            "Ethernet.Type_Length",
+                            "__PACKAGE__.Type_Length",
                             Number(46),
                             Sub(Pow(Number(2), Number(16)), Number(1)),
                             Number(16),
                         ),
                         RangeInteger(
-                            "Ethernet.TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16)
+                            "__PACKAGE__.TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16)
                         ),
-                        ModularInteger("Ethernet.TCI", Pow(Number(2), Number(16))),
+                        ModularInteger("__PACKAGE__.TCI", Pow(Number(2), Number(16))),
                         MessageSpec(
-                            "Ethernet.Frame",
+                            "__PACKAGE__.Frame",
                             [
                                 Component("Destination", "Address"),
                                 Component("Source", "Address"),
@@ -939,6 +942,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         parser = Parser()
         for f in ["tls_alert.rflx", "tls_handshake.rflx", "tls_heartbeat.rflx", "tls_record.rflx"]:
             parser.parse(Path(f"{self.specdir}/{f}"))
+        parser.create_model()
 
     @staticmethod
     def test_message_with_two_length_fields() -> None:
@@ -958,3 +962,4 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                end Test;
             """
         )
+        parser.create_model()
