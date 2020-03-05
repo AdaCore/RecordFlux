@@ -1,4 +1,4 @@
-package Test is
+package Message_Type is
 
    type T is mod 256;
 
@@ -21,4 +21,4 @@ package Test is
 
    type Empty_PDU is null message;
 
-end Test;
+end Message_Type;

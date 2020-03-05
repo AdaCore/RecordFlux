@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 from typing import List
 
 from rflx.generator import Generator
@@ -14,7 +15,7 @@ class TestIntegration(unittest.TestCase):
     def assert_integration(self, basenames: List[str]) -> None:
         parser = Parser()
         for basename in basenames:
-            parser.parse(f"{self.specdir}/{basename}.rflx")
+            parser.parse(Path(f"{self.specdir}/{basename}.rflx"))
 
         generator = Generator("RFLX", reproducible=True)
         generator.generate(parser.messages, parser.refinements)

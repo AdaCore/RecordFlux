@@ -1,5 +1,6 @@
 import unittest
 from itertools import zip_longest
+from pathlib import Path
 from typing import Dict, List
 
 from rflx.model import DerivedMessage
@@ -57,7 +58,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     ) -> None:
         parser = Parser()
         for filename in filenames:
-            parser.parse(filename)
+            parser.parse(Path(filename))
         self.assertEqual(parser.specifications(), specifications, filenames)
 
     def assert_specifications_string(
@@ -70,7 +71,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def assert_messages_files(self, filenames: List[str], messages: List[Message]) -> None:
         parser = Parser()
         for filename in filenames:
-            parser.parse(filename)
+            parser.parse(Path(filename))
         self.assert_messages(parser.messages, messages)
 
     def assert_messages_string(self, string: str, messages: List[Message]) -> None:
@@ -97,7 +98,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaisesRegex(ParserError, regex):
             parser = Parser()
             for filename in filenames:
-                parser.parse(filename)
+                parser.parse(Path(filename))
 
     def assert_parser_error_string(self, string: str, regex: str) -> None:
         with self.assertRaisesRegex(ParserError, regex):
@@ -137,17 +138,17 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_package_spec(self) -> None:
         self.assert_specifications(
-            [f"{self.testdir}/package.rflx"],
-            {"Test": Specification(ContextSpec([]), PackageSpec("Test", []))},
+            [f"{self.testdir}/empty_package.rflx"],
+            {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []))},
         )
 
     def test_package_message(self) -> None:
-        self.assert_messages_files([f"{self.testdir}/package.rflx"], [])
+        self.assert_messages_files([f"{self.testdir}/empty_package.rflx"], [])
 
     def test_context_spec(self) -> None:
         self.assert_specifications(
             [f"{self.testdir}/context.rflx"],
-            {"Test": Specification(ContextSpec(["Foo", "Bar"]), PackageSpec("Test", []))},
+            {"Context": Specification(ContextSpec(["Foo", "Bar"]), PackageSpec("Context", []))},
         )
 
     def test_context_message(self) -> None:
@@ -155,7 +156,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_duplicate_package(self) -> None:
         self.assert_parser_error(
-            [f"{self.testdir}/package.rflx", f"{self.testdir}/package.rflx"], r"duplicate package"
+            [f"{self.testdir}/empty_package.rflx", f"{self.testdir}/empty_package.rflx"],
+            r"duplicate package",
         )
 
     def test_duplicate_type(self) -> None:
@@ -483,15 +485,15 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_integer_type_spec(self) -> None:
         spec = {
-            "Test": Specification(
+            "Integer_Type": Specification(
                 ContextSpec([]),
                 PackageSpec(
-                    "Test",
+                    "Integer_Type",
                     [
-                        RangeInteger("Test.Page_Num", Number(1), Number(2000), Number(16)),
-                        RangeInteger("Test.Line_Size", Number(0), Number(255), Number(8)),
-                        ModularInteger("Test.Byte", Number(256)),
-                        ModularInteger("Test.Hash_Index", Number(64)),
+                        RangeInteger("Integer_Type.Page_Num", Number(1), Number(2000), Number(16)),
+                        RangeInteger("Integer_Type.Line_Size", Number(0), Number(255), Number(8)),
+                        ModularInteger("Integer_Type.Byte", Number(256)),
+                        ModularInteger("Integer_Type.Hash_Index", Number(64)),
                     ],
                 ),
             )
@@ -500,13 +502,13 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_enumeration_type_spec(self) -> None:
         spec = {
-            "Test": Specification(
+            "Enumeration_Type": Specification(
                 ContextSpec([]),
                 PackageSpec(
-                    "Test",
+                    "Enumeration_Type",
                     [
                         Enumeration(
-                            "Test.Day",
+                            "Enumeration_Type.Day",
                             {
                                 "Mon": Number(1),
                                 "Tue": Number(2),
@@ -520,10 +522,13 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                             False,
                         ),
                         Enumeration(
-                            "Test.Gender", {"M": Number(0), "F": Number(1)}, Number(1), False
+                            "Enumeration_Type.Gender",
+                            {"M": Number(0), "F": Number(1)},
+                            Number(1),
+                            False,
                         ),
                         Enumeration(
-                            "Test.Priority",
+                            "Enumeration_Type.Priority",
                             {"LOW": Number(1), "MEDIUM": Number(4), "HIGH": Number(7)},
                             Number(3),
                             True,
@@ -536,15 +541,15 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_array_type_spec(self) -> None:
         spec = {
-            "Test": Specification(
+            "Array_Type": Specification(
                 ContextSpec([]),
                 PackageSpec(
-                    "Test",
+                    "Array_Type",
                     [
-                        ModularInteger("Test.Byte", Number(256)),
-                        Array("Test.Bytes", Reference("Test.Byte")),
-                        MessageSpec("Test.Foo", [Component("Byte", "Byte")]),
-                        Array("Test.Bar", Reference("Test.Foo")),
+                        ModularInteger("Array_Type.Byte", Number(256)),
+                        Array("Array_Type.Bytes", Reference("Array_Type.Byte")),
+                        MessageSpec("Array_Type.Foo", [Component("Byte", "Byte")]),
+                        Array("Array_Type.Bar", Reference("Array_Type.Foo")),
                     ],
                 ),
             )
@@ -553,14 +558,14 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_message_type_spec(self) -> None:
         spec = {
-            "Test": Specification(
+            "Message_Type": Specification(
                 ContextSpec([]),
                 PackageSpec(
-                    "Test",
+                    "Message_Type",
                     [
-                        ModularInteger("Test.T", Number(256)),
+                        ModularInteger("Message_Type.T", Number(256)),
                         MessageSpec(
-                            "Test.PDU",
+                            "Message_Type.PDU",
                             [
                                 Component(
                                     "Foo",
@@ -589,9 +594,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                             ],
                         ),
                         MessageSpec(
-                            "Test.Simple_PDU", [Component("Bar", "T"), Component("Baz", "T")]
+                            "Message_Type.Simple_PDU",
+                            [Component("Bar", "T"), Component("Baz", "T")],
                         ),
-                        MessageSpec("Test.Empty_PDU", []),
+                        MessageSpec("Message_Type.Empty_PDU", []),
                     ],
                 ),
             )
@@ -606,11 +612,11 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         ]
 
         simple_types = {
-            Field("Bar"): ModularInteger("Test.T", Number(256)),
-            Field("Baz"): ModularInteger("Test.T", Number(256)),
+            Field("Bar"): ModularInteger("Message_Type.T", Number(256)),
+            Field("Baz"): ModularInteger("Message_Type.T", Number(256)),
         }
 
-        simple_message = Message("Test.Simple_PDU", simple_structure, simple_types)
+        simple_message = Message("Message_Type.Simple_PDU", simple_structure, simple_types)
 
         structure = [
             Link(INITIAL, Field("Foo")),
@@ -630,12 +636,12 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
         types = {
             **simple_types,
-            **{Field("Foo"): ModularInteger("Test.T", Number(256))},
+            **{Field("Foo"): ModularInteger("Message_Type.T", Number(256))},
         }
 
-        message = Message("Test.PDU", structure, types)
+        message = Message("Message_Type.PDU", structure, types)
 
-        empty_message = Message("Test.Empty_PDU", [], {})
+        empty_message = Message("Message_Type.Empty_PDU", [], {})
 
         self.assert_messages_files(
             [f"{self.testdir}/message_type.rflx"], [message, simple_message, empty_message]
@@ -692,14 +698,14 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
     def test_type_refinement_spec(self) -> None:
         spec = {
-            "Test": Specification(
+            "Message_Type": Specification(
                 ContextSpec([]),
                 PackageSpec(
-                    "Test",
+                    "Message_Type",
                     [
-                        ModularInteger("Test.T", Number(256)),
+                        ModularInteger("Message_Type.T", Number(256)),
                         MessageSpec(
-                            "Test.PDU",
+                            "Message_Type.PDU",
                             [
                                 Component(
                                     "Foo",
@@ -728,25 +734,31 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                             ],
                         ),
                         MessageSpec(
-                            "Test.Simple_PDU", [Component("Bar", "T"), Component("Baz", "T")]
+                            "Message_Type.Simple_PDU",
+                            [Component("Bar", "T"), Component("Baz", "T")],
                         ),
-                        MessageSpec("Test.Empty_PDU", []),
+                        MessageSpec("Message_Type.Empty_PDU", []),
                     ],
                 ),
             ),
-            "In_Test": Specification(
-                ContextSpec(["Test"]),
+            "Type_Refinement": Specification(
+                ContextSpec(["Message_Type"]),
                 PackageSpec(
-                    "In_Test",
+                    "Type_Refinement",
                     [
                         Refinement(
-                            "In_Test",
-                            "Test.Simple_PDU",
+                            "Type_Refinement",
+                            "Message_Type.Simple_PDU",
                             Field("Bar"),
-                            "Test.PDU",
+                            "Message_Type.PDU",
                             Equal(Variable("Baz"), Number(42)),
                         ),
-                        Refinement("In_Test", "Test.PDU", Field("Bar"), "Test.Simple_PDU"),
+                        Refinement(
+                            "Type_Refinement",
+                            "Message_Type.PDU",
+                            Field("Bar"),
+                            "Message_Type.Simple_PDU",
+                        ),
                     ],
                 ),
             ),
@@ -926,7 +938,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_tls(self) -> None:
         parser = Parser()
         for f in ["tls_alert.rflx", "tls_handshake.rflx", "tls_heartbeat.rflx", "tls_record.rflx"]:
-            parser.parse(f"{self.specdir}/{f}")
+            parser.parse(Path(f"{self.specdir}/{f}"))
 
     @staticmethod
     def test_message_with_two_length_fields() -> None:
