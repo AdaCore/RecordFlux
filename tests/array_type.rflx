@@ -1,4 +1,4 @@
-package Test is
+package Array_Type is
 
    type Byte is mod 256;
    type Bytes is array of Byte;
@@ -10,4 +10,4 @@ package Test is
 
    type Bar is array of Foo;
 
-end Test;
+end Array_Type;

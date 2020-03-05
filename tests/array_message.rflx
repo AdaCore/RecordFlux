@@ -1,4 +1,4 @@
-package Test is
+package Array_Message is
 
    type Byte is mod 256;
    type Bytes is array of Byte;
@@ -10,12 +10,12 @@ package Test is
 
    type Bar is array of Foo;
 
-   type Bars is
+   type Message is
       message
           Length : Byte
-             then Bars
+             then Bar
                 with Length => Length * 8;
-          Bars : Bar;
+          Bar : Bar;
       end message;
 
-end Test;
+end Array_Message;

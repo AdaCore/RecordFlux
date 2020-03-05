@@ -47,7 +47,7 @@ class TestPyRFLX(unittest.TestCase):
                 f"{cls.specdir}/tls_alert.rflx",
             ]
         )
-        cls.package_tlv = pyrflx["TLV"]
+        cls.package_tlv = pyrflx["TLV_With_Checksum"]
         cls.package_ethernet = pyrflx["Ethernet"]
         cls.package_tls_record = pyrflx["TLS_Record"]
         cls.package_tls_alert = pyrflx["TLS_Alert"]
@@ -59,7 +59,7 @@ class TestPyRFLX(unittest.TestCase):
         self.alert = self.package_tls_alert["Alert"]
 
     def test_partially_supported_packages(self) -> None:
-        p = PyRFLX([f"{self.testdir}/array_message.rflx"])["Test"]
+        p = PyRFLX([f"{self.testdir}/array_message.rflx"])["Array_Message"]
         self.assertEqual([m.name for m in p], ["Foo"])
 
     def test_file_not_found(self) -> None:
@@ -77,8 +77,8 @@ class TestPyRFLX(unittest.TestCase):
 
     def test_attributes(self) -> None:
         pyrflx = PyRFLX([f"{self.testdir}/tlv_with_checksum.rflx"])
-        self.assertIsInstance(pyrflx["TLV"], Package)
-        package_tlv = pyrflx["TLV"]
+        self.assertIsInstance(pyrflx["TLV_With_Checksum"], Package)
+        package_tlv = pyrflx["TLV_With_Checksum"]
         self.assertIsInstance(package_tlv["Message"], Message)
 
     def test_all_fields(self) -> None:

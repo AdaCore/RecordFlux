@@ -1,4 +1,5 @@
 import traceback
+from pathlib import Path
 from typing import Callable, Dict, Iterable, List, MutableMapping, Tuple
 
 from pyparsing import (
@@ -158,18 +159,20 @@ class Parser:
         self.__messages: Dict[str, Message] = {}
         self.__refinements: List[Refinement] = []
         self.__grammar = self.specification() + StringEnd()
-        self.__grammar.setParseAction(self.__evaluate_specification)
         self.__grammar.ignore(Regex(r"--.*"))
 
-    def parse(self, filepath: str) -> None:
-        with open(filepath, "r") as filehandle:
+    def parse(self, specfile: Path) -> None:
+        with open(specfile, "r") as filehandle:
             try:
-                self.__grammar.parseFile(filehandle)
+                for specification in self.__grammar.parseFile(filehandle):
+                    check_naming(specfile.name, specification.package.identifier)
+                    self.__process_specification(specification)
             except (ParseException, ParseFatalException) as e:
                 raise ParserError("\n" + ParseException.explain(e, 0))
 
     def parse_string(self, string: str) -> None:
-        self.__grammar.parseString(string)
+        for specification in self.__grammar.parseString(string):
+            self.__process_specification(specification)
 
     def specifications(self) -> Dict[str, Specification]:
         return self.__specifications
@@ -441,20 +444,21 @@ class Parser:
             lambda t: Specification(t[0], t[1]) if len(t) == 2 else None
         )
 
-    def __evaluate_specification(self, tokens: List[Specification]) -> None:
+    def __process_specification(self, specification: Specification) -> None:
+        identifier = specification.package.identifier
+        if identifier in self.__specifications:
+            raise ParserError(f'duplicate package "{identifier}"')
+        self.__specifications[identifier] = specification
+        self.__evaluate_specification(specification)
+
+    def __evaluate_specification(self, specification: Specification) -> None:
         try:
-            if len(tokens) == 1:
-                specification = tokens[0]
-                identifier = specification.package.identifier
-                if identifier in self.__specifications:
-                    raise ParserError(f'duplicate package "{identifier}"')
-                self.__specifications[identifier] = specification
-                messages = convert_to_messages(specification)
-                if messages:
-                    self.__messages.update(messages)
-                refinements = convert_to_refinements(specification, self.__messages)
-                if refinements:
-                    self.__refinements.extend(refinements)
+            messages = convert_to_messages(specification)
+            if messages:
+                self.__messages.update(messages)
+            refinements = convert_to_refinements(specification, self.__messages)
+            if refinements:
+                self.__refinements.extend(refinements)
         except (ParserError, ModelError) as e:
             raise e
         except Exception:
@@ -866,3 +870,12 @@ def parse_refinement(string: str, location: int, tokens: ParseResults) -> Type:
     if "constraint" not in tokens:
         tokens.append(TRUE)
     return Refinement("", tokens[0], Field(tokens[1]), tokens[2], tokens[3])
+
+
+def check_naming(filename: str, package_identifier: str) -> None:
+    expected_filename = f"{package_identifier.lower()}.rflx"
+    if filename != expected_filename:
+        raise ParserError(
+            f'file name "{filename}" does not match unit name "{package_identifier}",'
+            f' should be "{expected_filename}"'
+        )

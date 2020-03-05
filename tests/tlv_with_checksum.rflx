@@ -1,4 +1,4 @@
-package TLV is
+package TLV_With_Checksum is
 
    type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 2;
    type Length is mod 2**14;
@@ -18,4 +18,4 @@ package TLV is
          Checksum : Checksum;
        end message;
 
-end TLV;
+end TLV_With_Checksum;

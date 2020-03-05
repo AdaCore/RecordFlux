@@ -63,7 +63,9 @@ class TestCLI(TestCase):
 
     def test_main_generate_no_output_files(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(cli.main(["rflx", "generate", "-d", tmpdir, "tests/package.rflx"]), 0)
+            self.assertEqual(
+                cli.main(["rflx", "generate", "-d", tmpdir, "tests/empty_package.rflx"]), 0
+            )
 
     def test_main_generate_non_existent_directory(self) -> None:
         self.assertRegex(
@@ -106,7 +108,9 @@ class TestCLI(TestCase):
 
     def test_main_graph_no_output_files(self) -> None:
         with TemporaryDirectory() as tmpdir:
-            self.assertEqual(cli.main(["rflx", "graph", "-d", tmpdir, "tests/package.rflx"]), 0)
+            self.assertEqual(
+                cli.main(["rflx", "graph", "-d", tmpdir, "tests/empty_package.rflx"]), 0
+            )
 
 
 def raise_model_error() -> None:
