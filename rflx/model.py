@@ -852,6 +852,12 @@ class Refinement(Type):
         raise NotImplementedError
 
 
+class Model(Element):
+    def __init__(self, messages: Sequence[Message], refinements: Sequence[Refinement]) -> None:
+        self.messages = messages
+        self.refinements = refinements
+
+
 class ModelError(Exception):
     pass
 

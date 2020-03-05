@@ -1,11 +1,11 @@
 import argparse
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Union
 
 from rflx import __version__
 from rflx.generator import Generator, InternalError
 from rflx.graph import Graph
-from rflx.model import ModelError
+from rflx.model import Model, ModelError
 from rflx.parser import Parser, ParserError
 
 DEFAULT_PREFIX = "RFLX"
@@ -94,14 +94,14 @@ def generate(args: argparse.Namespace) -> None:
     if not directory.is_dir():
         raise Error(f'directory not found: "{directory}"')
 
-    messages, refinements = parse(args.files)
-    if not messages and not refinements:
+    model = parse(args.files)
+    if not model.messages and not model.refinements:
         return
 
     generator = Generator(args.prefix)
 
     print("Generating... ", end="", flush=True)
-    generator.generate(messages, refinements)
+    generator.generate(model.messages, model.refinements)
     written_files = generator.write_units(directory)
     written_files += generator.write_library_files(directory)
     if args.prefix == DEFAULT_PREFIX:
@@ -112,7 +112,7 @@ def generate(args: argparse.Namespace) -> None:
         print(f"Created {f}")
 
 
-def parse(files: List) -> Tuple[List, List]:
+def parse(files: List) -> Model:
     parser = Parser()
 
     for f in files:
@@ -123,7 +123,11 @@ def parse(files: List) -> Tuple[List, List]:
         parser.parse(Path(f))
         print("OK")
 
-    return (parser.messages, parser.refinements)
+    print(f"Processing specifications... ", end="", flush=True)
+    model = parser.create_model()
+    print("OK")
+
+    return model
 
 
 def graph(args: argparse.Namespace) -> None:
@@ -131,9 +135,9 @@ def graph(args: argparse.Namespace) -> None:
     if not directory.is_dir():
         raise Error(f'directory not found: "{directory}"')
 
-    messages, _ = parse(args.files)
+    model = parse(args.files)
 
-    for m in messages:
+    for m in model.messages:
         message = m.full_name.replace(".", "_")
         filename = Path(directory).joinpath(message).with_suffix(f".{args.format}")
         with open(filename, "wb") as f:

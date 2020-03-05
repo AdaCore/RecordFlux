@@ -165,7 +165,7 @@ class Generator:
         if not self.template_dir.is_dir():
             raise InternalError("template directory not found")
 
-    def generate(self, messages: List[Message], refinements: List[Refinement]) -> None:
+    def generate(self, messages: Sequence[Message], refinements: Sequence[Refinement]) -> None:
         self.__process_messages(messages)
         self.__process_refinements(refinements)
 
@@ -228,7 +228,7 @@ class Generator:
             else:
                 self.__process_message(message, seen_types)
 
-    def __process_refinements(self, refinements: List[Refinement]) -> None:
+    def __process_refinements(self, refinements: Sequence[Refinement]) -> None:
         for refinement in refinements:
             if refinement.package not in self.units:
                 self.__create_unit(refinement.package, [])
