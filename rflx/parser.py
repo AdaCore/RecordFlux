@@ -61,6 +61,7 @@ from rflx.model import (
     Field,
     Link,
     Message,
+    Model,
     ModelError,
     ModularInteger,
     Opaque,
@@ -174,16 +175,15 @@ class Parser:
         for specification in self.__grammar.parseString(string):
             self.__process_specification(specification)
 
+    def create_model(self) -> Model:
+        print(self.__specifications)
+        for specification in self.__specifications.values():
+            self.__evaluate_specification(specification)
+        return Model(list(self.__messages.values()), self.__refinements)
+
+    @property
     def specifications(self) -> Dict[str, Specification]:
         return self.__specifications
-
-    @property
-    def messages(self) -> List[Message]:
-        return list(self.__messages.values())
-
-    @property
-    def refinements(self) -> List[Refinement]:
-        return self.__refinements
 
     @classmethod
     def identifier(cls) -> Token:
@@ -449,7 +449,6 @@ class Parser:
         if identifier in self.__specifications:
             raise ParserError(f'duplicate package "{identifier}"')
         self.__specifications[identifier] = specification
-        self.__evaluate_specification(specification)
 
     def __evaluate_specification(self, specification: Specification) -> None:
         try:
