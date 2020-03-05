@@ -353,6 +353,8 @@ class TestPyRFLX(unittest.TestCase):
             self.frame.accessible_fields,
             ["Destination", "Source", "Type_Length_TPID", "Type_Length", "Payload"],
         )
+        self.frame.set("Payload", bytes(46))
+        self.assertTrue(self.frame.valid_message)
 
     def test_tls_fields(self) -> None:
         self.assertEqual(self.record.accessible_fields, ["Tag", "Legacy_Record_Version", "Length"])

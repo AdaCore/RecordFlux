@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, Sequence
 
 import rflx.model as model
 from rflx.common import generic_repr
@@ -9,6 +9,7 @@ from rflx.expression import (
     Add,
     Expr,
     First,
+    Last,
     Length,
     Name,
     Number,
@@ -59,6 +60,8 @@ class Message:
             f.name: Field(TypeValue.construct(self._model.types[f])) for f in self._model.fields
         }
         self.__type_literals: Mapping[Name, Expr] = {}
+        self._last_field: str = self._next_field(model.INITIAL.name)
+
         for t in [f.typeval.literals for f in self._fields.values()]:
             self.__type_literals = {**self.__type_literals, **t}
         initial = Field(OpaqueValue(model.Opaque()))
@@ -82,6 +85,9 @@ class Message:
     def _next_field(self, fld: str) -> str:
         if fld == model.FINAL.name:
             return ""
+        if fld == model.INITIAL.name:
+            return self._model.outgoing(model.INITIAL)[0].target.name
+
         for l in self._model.outgoing(model.Field(fld)):
             if self.__simplified(l.condition) == TRUE:
                 return l.target.name
@@ -134,33 +140,44 @@ class Message:
         return self._model.name
 
     def set(self, fld: str, value: Any) -> None:
+
+        print("set field " + fld)
         if not isinstance(value, self._fields[fld].typeval.accepted_type):
             raise TypeError(
                 f"cannot assign different types: {self._fields[fld].typeval.accepted_type.__name__}"
                 f" != {type(value).__name__}"
             )
-        if fld in self._fields and self._has_first(fld):
+
+        print(self.accessible_fields)
+
+        # if node is in accessible fields its length and first are known
+        if fld in self.accessible_fields:
+
             field = self._fields[fld]
-            field.first = self._get_first(fld)
-            if self._has_length(fld):
-                field.length = self._get_length(fld)
-                field.typeval.assign(value, True)
-            else:
-                if not isinstance(field.typeval, OpaqueValue):
-                    raise KeyError(f"cannot access field {fld}")
+
+            # if field is of type opaque and does not have a specified length
+            if isinstance(field.typeval, OpaqueValue) and not self._has_length(fld):
+                field.first = self._get_first(fld)
                 field.typeval.assign(value, True)
                 field.length = Number(field.typeval.length)
+            else:
+                field.first = self._get_first(fld)
+                field.length = self._get_length(fld)
+                field.typeval.assign(value, True)
 
-            if all(
-                [
-                    self.__simplified(o.condition) == FALSE
-                    for o in self._model.outgoing(model.Field(fld))
-                ]
-            ):
-                self._fields[fld].typeval.clear()
-                raise ValueError("value does not fulfill field condition")
         else:
             raise KeyError(f"cannot access field {fld}")
+
+        if all(
+            [
+                self.__simplified(o.condition) == FALSE
+                for o in self._model.outgoing(model.Field(fld))
+            ]
+        ):
+            self._fields[fld].typeval.clear()
+            print([o.condition for o in self._model.outgoing(model.Field(fld))])
+            raise ValueError("value does not fulfill field condition")
+
         if isinstance(field.typeval, OpaqueValue) and field.typeval.length != field.length.value:
             flength = field.typeval.length
             field.typeval.clear()
@@ -184,6 +201,8 @@ class Message:
                 field.length = UNDEFINED
                 field.typeval.clear()
                 break
+
+            self._last_field = nxt
             nxt = self._next_field(nxt)
 
     def get(self, fld: str) -> Any:
@@ -222,19 +241,55 @@ class Message:
         nxt = self._next_field(model.INITIAL.name)
         fields: List[str] = []
         while nxt and nxt != model.FINAL.name:
+
             if (
                 self.__simplified(self._model.field_condition(model.Field(nxt))) != TRUE
                 or not self._has_first(nxt)
                 or (
                     not self._has_length(nxt)
                     if not isinstance(self._fields[nxt].typeval, OpaqueValue)
-                    else (self._get_length_unchecked(nxt) in [FALSE, UNDEFINED])
+                    else self.__check_nodes_opaque(nxt)
                 )
             ):
                 break
-            fields.append(nxt)
+
+            fields.append(nxt)  # field es accessible
             nxt = self._next_field(nxt)
         return fields
+
+    def __check_nodes_opaque(self, nxt: str) -> bool:
+
+        print("entered check opaque")
+
+        # alle eingehenden kanten des knotens bestimmen
+        incoming_edges: Sequence[model.Link] = self._model.incoming(model.Field(nxt))
+        length_nxt: Expr = self._get_length_unchecked(nxt)
+
+        # falls die länge False oder undef ist, abbrechen
+        if length_nxt in [FALSE, UNDEFINED]:
+            return True
+
+        # valide kante bestimmen
+        for edge in incoming_edges:
+            # valide kante = kante mit condition expr. TRUE
+            if self.__simplified(edge.condition) == TRUE:
+                valid_edge = edge
+                print("node " + nxt + " valid edge \n")
+                print(valid_edge)
+                break
+        else:
+            # wenn es keine valide kante gibt
+            print("keine valide kante")
+            return False
+
+        for ve in valid_edge.length.variables():
+            if ve.name in self._fields and not self._fields[ve.name].set:
+                return True
+
+            if not isinstance(self.__simplified(ve), Number):
+                return True
+
+        return False
 
     @property
     def valid_fields(self) -> List[str]:
@@ -272,13 +327,25 @@ class Message:
         )
 
     def __simplified(self, expr: Expr) -> Expr:
-        field_values: Mapping[Name, Expr] = {
-            **{
-                Variable(k): v.typeval.expr
-                for k, v in self._fields.items()
-                if isinstance(v.typeval, ScalarValue) and v.set
-            },
-            **{Length(k): v.length for k, v in self._fields.items() if v.set},
-            **{First(k): v.first for k, v in self._fields.items() if v.set},
-        }
+        field_values: Mapping[Name, Expr] = dict(
+            {
+                **{
+                    Variable(k): v.typeval.expr
+                    for k, v in self._fields.items()
+                    if isinstance(v.typeval, ScalarValue) and v.set
+                },
+                **{Length(k): v.length for k, v in self._fields.items() if v.set},
+                **{First(k): v.first for k, v in self._fields.items() if v.set},
+                **{Last(k): v.last for k, v in self._fields.items() if v.set},
+                **{First("Message"): self._fields[self._next_field(model.INITIAL.name)].first},
+            }
+        )
+
+        final_incoming = self._model.incoming(model.FINAL.name)
+
+        for edge in final_incoming:
+            if edge.condition.simplified(field_values) == TRUE:
+                assert isinstance(field_values, dict)
+                field_values[Last("Message")] = self._fields[edge.target.name]
+
         return expr.simplified(field_values).simplified(self.__type_literals)
