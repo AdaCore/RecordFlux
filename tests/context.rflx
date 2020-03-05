@@ -1,6 +1,6 @@
 with Foo;
 with Bar;
 
-package Test is
+package Context is
 
-end Test;
+end Context;

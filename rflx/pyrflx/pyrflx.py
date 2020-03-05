@@ -15,7 +15,7 @@ class PyRFLX:
         for f in files:
             if not Path(f).is_file():
                 raise FileNotFoundError(f'file not found: "{f}"')
-            parser.parse(f)
+            parser.parse(Path(f))
         messages = parser.messages
         packages = set(m.package for m in messages)
         for p in packages:

@@ -120,7 +120,7 @@ def parse(files: List) -> Tuple[List, List]:
             raise Error(f'file not found: "{f}"')
 
         print(f"Parsing {f}... ", end="", flush=True)
-        parser.parse(f)
+        parser.parse(Path(f))
         print("OK")
 
     return (parser.messages, parser.refinements)

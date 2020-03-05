@@ -1,10 +1,10 @@
-with Test;
+with Message_Type;
 
-package In_Test is
+package Type_Refinement is
 
-   for Test.Simple_PDU use (Bar => Test.PDU)
+   for Message_Type.Simple_PDU use (Bar => Message_Type.PDU)
       if Baz = 42;
 
-   for Test.PDU use (Bar => Test.Simple_PDU);
+   for Message_Type.PDU use (Bar => Message_Type.Simple_PDU);
 
-end In_Test;
+end Type_Refinement;
