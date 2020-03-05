@@ -3,47 +3,48 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import Dict, Sequence
 
-from rflx.model import DerivedMessage
-from rflx.parser import (
-    FINAL,
-    INITIAL,
+from rflx.expression import (
     UNDEFINED,
     And,
-    Array,
-    Component,
-    ContextSpec,
-    DerivationSpec,
     Div,
-    Enumeration,
     Equal,
-    Field,
     First,
     Greater,
     GreaterEqual,
     Last,
     Length,
     LessEqual,
-    Link,
-    Message,
-    MessageSpec,
-    ModularInteger,
     Mul,
     NotEqual,
     Number,
-    Opaque,
-    PackageSpec,
-    ParseFatalException,
-    Parser,
-    ParserError,
     Pow,
+    Sub,
+    Variable,
+)
+from rflx.model import (
+    FINAL,
+    INITIAL,
+    Array,
+    DerivedMessage,
+    Enumeration,
+    Field,
+    Link,
+    Message,
+    ModularInteger,
+    Opaque,
     RangeInteger,
     Reference,
     Refinement,
-    Specification,
-    Sub,
-    Then,
-    Variable,
 )
+from rflx.parser.ast import (
+    ContextSpec,
+    DerivationSpec,
+    MessageSpec,
+    PackageSpec,
+    Specification,
+    Then,
+)
+from rflx.parser.parser import Component, ParseFatalException, Parser, ParserError
 from tests.models import ETHERNET_FRAME
 
 
