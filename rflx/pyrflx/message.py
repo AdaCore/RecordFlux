@@ -148,8 +148,6 @@ class Message:
                 f" != {type(value).__name__}"
             )
 
-        print(self.accessible_fields)
-
         # if node is in accessible fields its length and first are known
         if fld in self.accessible_fields:
 
@@ -185,11 +183,18 @@ class Message:
         self._preset_fields(fld)
 
     def _preset_fields(self, fld: str) -> None:
+        """
+        Iterates through the following nodes of fld until reaches a node whose successor does not have a first or
+        length field. It sets the first and length fields of all nodes it reaches.
+        """
+
         nxt = self._next_field(fld)
         while nxt and nxt != model.FINAL.name:
             field = self._fields[nxt]
+
             if not self._has_first(nxt) or not self._has_length(nxt):
                 break
+
             field.first = self._get_first(nxt)
             field.length = self._get_length(nxt)
             if (
@@ -238,6 +243,13 @@ class Message:
 
     @property
     def accessible_fields(self) -> List[str]:
+        """
+        Field is accessible if the condition(s) of the incoming edge from its predecessor evaluates to true and if the
+        field has a specified length and first. If it is an opaque field (has no previously known length) evaluate its
+        accessibility by call to __check_nodes_opaque
+        :return: str List of all accessible fields
+        """
+
         nxt = self._next_field(model.INITIAL.name)
         fields: List[str] = []
         while nxt and nxt != model.FINAL.name:
@@ -253,39 +265,39 @@ class Message:
             ):
                 break
 
-            fields.append(nxt)  # field es accessible
+            fields.append(nxt)  # field is accessible
             nxt = self._next_field(nxt)
         return fields
 
     def __check_nodes_opaque(self, nxt: str) -> bool:
+        """
+        Evaluate the accessibility of an opaque field.
+        :param nxt: String name of field (node) to evaluate
+        :return: False if field is accessible
+        """
 
-        print("entered check opaque")
-
-        # alle eingehenden kanten des knotens bestimmen
+        # get all incoming edges of the node
         incoming_edges: Sequence[model.Link] = self._model.incoming(model.Field(nxt))
         length_nxt: Expr = self._get_length_unchecked(nxt)
 
-        # falls die länge False oder undef ist, abbrechen
         if length_nxt in [FALSE, UNDEFINED]:
             return True
 
-        # valide kante bestimmen
+        # evaluate which of the incoming edges is valid (cond. evaluates to Expr. TRUE)
         for edge in incoming_edges:
-            # valide kante = kante mit condition expr. TRUE
             if self.__simplified(edge.condition) == TRUE:
                 valid_edge = edge
-                print("node " + nxt + " valid edge \n")
-                print(valid_edge)
                 break
         else:
-            # wenn es keine valide kante gibt
-            print("keine valide kante")
             return False
 
+        # evaluate length of node
         for ve in valid_edge.length.variables():
+            # if the referenced node (which its length depends on) is a known node and is already set
+            # i.e. its length and first are already known, the field is accessible
             if ve.name in self._fields and not self._fields[ve.name].set:
                 return True
-
+            # if length does not depend on previous node but e.g. on Message'Last or Message'First
             if not isinstance(self.__simplified(ve), Number):
                 return True
 
