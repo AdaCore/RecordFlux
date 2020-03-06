@@ -31,6 +31,8 @@ from rflx.expression import (
     Variable,
 )
 
+BUILTINS_PACKAGE = "__BUILTINS__"
+
 
 class Element(ABC):
     def __eq__(self, other: object) -> bool:
@@ -245,7 +247,7 @@ class Array(Composite):
 
 class Opaque(Composite):
     def __init__(self) -> None:
-        super().__init__("__PACKAGE__.Opaque")
+        super().__init__(f"__PACKAGE__.Opaque")
 
     @property
     def size(self) -> Expr:
@@ -441,9 +443,7 @@ class AbstractMessage(Element):
                 )
 
     def __verify_conditions(self) -> None:
-        literals = {
-            n for t in self.types.values() if isinstance(t, Enumeration) for n in t.literals
-        }
+        literals = qualified_literals(self.types, self.package)
         variables = {
             v
             for f in self.fields
@@ -500,9 +500,7 @@ class AbstractMessage(Element):
                         )
 
     def __type_constraints(self, expr: Expr) -> Expr:
-        literals = {
-            l for v in self.types.values() if isinstance(v, Enumeration) for l in v.literals
-        }
+        literals = qualified_literals(self.types, self.package)
         return And(
             *[
                 self.types[Field(v.name)].constraints(name=v.name, proof=True)
@@ -1015,3 +1013,22 @@ def check_message_references(name: str, messages: Mapping[str, AbstractMessage])
 
             edges.add(e)
             nodes.append(messages[e[2]])
+
+
+def qualified_literals(types: Mapping[Field, Type], package: str) -> Set[str]:
+    return {
+        l if t.package == package or t.package == BUILTINS_PACKAGE else f"{t.package}.{l}"
+        for t in types.values()
+        if isinstance(t, Enumeration)
+        for l in t.literals
+    }
+
+
+BOOLEAN = Enumeration(
+    f"{BUILTINS_PACKAGE}.Boolean", {"False": Number(0), "True": Number(1)}, Number(1), False
+)
+
+BUILTIN_TYPES = {
+    Opaque().name: Opaque(),
+    BOOLEAN.name: BOOLEAN,
+}

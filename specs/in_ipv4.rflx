@@ -1,3 +1,6 @@
+with IPv4;
+with UDP;
+
 package In_IPv4 is
 
    for IPv4.Packet use (Payload => UDP.Datagram)
