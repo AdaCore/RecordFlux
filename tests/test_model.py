@@ -34,7 +34,7 @@ from rflx.model import (
     Reference,
     UnprovenDerivedMessage,
     UnprovenMessage,
-    merge_message,
+    merged_message,
     prefixed_message,
 )
 from tests.models import ETHERNET_FRAME
@@ -572,10 +572,8 @@ class TestModel(TestCase):
             **deepcopy(M_SMPL_REF),
         }
 
-        merge_message("P.Smpl_Ref", messages)
-
         self.assertEqual(
-            messages["P.Smpl_Ref"],
+            merged_message("P.Smpl_Ref", messages),
             UnprovenMessage(
                 "P.Smpl_Ref",
                 [
@@ -611,10 +609,8 @@ class TestModel(TestCase):
             **deepcopy(M_NO_REF),
         }
 
-        merge_message("P.Cmplx_Ref", messages)
-
         self.assertEqual(
-            messages["P.Cmplx_Ref"],
+            merged_message("P.Cmplx_Ref", messages),
             UnprovenMessage(
                 "P.Cmplx_Ref",
                 [
@@ -689,10 +685,8 @@ class TestModel(TestCase):
             **deepcopy(M_NO_REF),
         }
 
-        merge_message("P.Dbl_Ref", messages)
-
         self.assertEqual(
-            messages["P.Dbl_Ref"],
+            merged_message("P.Dbl_Ref", messages),
             UnprovenMessage(
                 "P.Dbl_Ref",
                 [
@@ -752,10 +746,8 @@ class TestModel(TestCase):
             **deepcopy(M_SMPL_REF_DERI),
         }
 
-        merge_message("P.Smpl_Ref_Deri", messages)
-
         self.assertEqual(
-            messages["P.Smpl_Ref_Deri"],
+            merged_message("P.Smpl_Ref_Deri", messages),
             UnprovenDerivedMessage(
                 "P.Smpl_Ref_Deri",
                 "P.Smpl_Ref",
@@ -790,7 +782,7 @@ class TestModel(TestCase):
         with self.assertRaisesRegex(
             ModelError, f'^reference to unknown message "P.No_Ref"$',
         ):
-            merge_message("P.Smpl_Ref", deepcopy(M_SMPL_REF))
+            merged_message("P.Smpl_Ref", deepcopy(M_SMPL_REF))
 
     def test_merge_message_error_name_conflict(self) -> None:
         messages = {
@@ -813,7 +805,7 @@ class TestModel(TestCase):
         with self.assertRaisesRegex(
             ModelError, f'^name conflict for "F1_F1" in "P.M1" caused by reference "F1" to "P.M2"$',
         ):
-            merge_message("P.M1", messages)
+            merged_message("P.M1", messages)
 
     def test_merge_message_error_cycle(self) -> None:
         messages = {
@@ -837,4 +829,4 @@ class TestModel(TestCase):
         with self.assertRaisesRegex(
             ModelError, f'^references in "P.M1" contain cycle$',
         ):
-            merge_message("P.M1", messages)
+            merged_message("P.M1", messages)

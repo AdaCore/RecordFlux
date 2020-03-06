@@ -23,7 +23,7 @@ from rflx.model import (
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
-    merge_message,
+    merged_message,
 )
 
 from . import grammar
@@ -139,7 +139,7 @@ def convert_to_messages(spec: Specification) -> Dict[str, Message]:
 
         types[t.name] = t
 
-    return proved_messages(messages)
+    return proven_messages(messages)
 
 
 def create_message(
@@ -181,11 +181,8 @@ def create_message(
     return UnprovenMessage(full_name, structure, field_types)
 
 
-def proved_messages(messages: Dict[str, UnprovenMessage]) -> Dict[str, Message]:
-    for message in messages:
-        merge_message(message, messages)
-
-    return {name: message.proven_message() for name, message in messages.items()}
+def proven_messages(messages: Dict[str, UnprovenMessage]) -> Dict[str, Message]:
+    return {message: merged_message(message, messages).proven_message() for message in messages}
 
 
 def convert_to_refinements(spec: Specification, messages: Dict[str, Message]) -> List[Refinement]:
