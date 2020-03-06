@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
@@ -318,6 +319,19 @@ class AbstractMessage(Element):
             self.__paths = {}
             self.__definite_predecessors = {}
             self.__field_condition = {}
+
+    @abstractmethod
+    def copy(
+        self,
+        full_name: str = None,
+        structure: Sequence[Link] = None,
+        types: Mapping[Field, Type] = None,
+    ) -> "AbstractMessage":
+        raise NotImplementedError
+
+    @abstractmethod
+    def proven_message(self) -> "Message":
+        raise NotImplementedError
 
     @property
     def name(self) -> str:
@@ -753,6 +767,21 @@ class Message(AbstractMessage):
         if structure or types:
             self._prove()
 
+    def copy(
+        self,
+        full_name: str = None,
+        structure: Sequence[Link] = None,
+        types: Mapping[Field, Type] = None,
+    ) -> "Message":
+        return Message(
+            full_name if full_name else self.full_name,
+            structure if structure else copy(self.structure),
+            types if types else copy(self.types),
+        )
+
+    def proven_message(self) -> "Message":
+        return copy(self)
+
 
 class DerivedMessage(Message):
     def __init__(
@@ -767,6 +796,22 @@ class DerivedMessage(Message):
             raise ModelError(f'unexpected format of message name "{full_name}"')
         self.full_base_name = full_base_name
 
+    def copy(
+        self,
+        full_name: str = None,
+        structure: Sequence[Link] = None,
+        types: Mapping[Field, Type] = None,
+    ) -> "DerivedMessage":
+        return DerivedMessage(
+            full_name if full_name else self.full_name,
+            self.full_base_name,
+            structure if structure else copy(self.structure),
+            types if types else copy(self.types),
+        )
+
+    def proven_message(self) -> "DerivedMessage":
+        return copy(self)
+
     @property
     def base_name(self) -> str:
         return self.full_base_name.rsplit(".", 1)[1]
@@ -777,9 +822,6 @@ class DerivedMessage(Message):
 
 
 class UnprovenMessage(AbstractMessage):
-    def proven_message(self) -> Message:
-        return Message(self.full_name, self.structure, self.types)
-
     def copy(
         self,
         full_name: str = None,
@@ -791,6 +833,9 @@ class UnprovenMessage(AbstractMessage):
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
         )
+
+    def proven_message(self) -> Message:
+        return Message(self.full_name, self.structure, self.types)
 
 
 class UnprovenDerivedMessage(UnprovenMessage):
@@ -806,9 +851,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
             raise ModelError(f'unexpected format of message name "{full_name}"')
         self.full_base_name = full_base_name
 
-    def proven_message(self) -> DerivedMessage:
-        return DerivedMessage(self.full_name, self.full_base_name, self.structure, self.types)
-
     def copy(
         self,
         full_name: str = None,
@@ -821,6 +863,9 @@ class UnprovenDerivedMessage(UnprovenMessage):
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
         )
+
+    def proven_message(self) -> DerivedMessage:
+        return DerivedMessage(self.full_name, self.full_base_name, self.structure, self.types)
 
 
 class Refinement(Type):
@@ -862,7 +907,7 @@ class ModelError(Exception):
     pass
 
 
-def prefixed_message(message: UnprovenMessage, prefix: str) -> UnprovenMessage:
+def prefixed_message(message: AbstractMessage, prefix: str) -> AbstractMessage:
     def prefixed_expression(expression: Expr) -> Expr:
         return expression.simplified(
             {v: v.__class__(f"{prefix}{v.name}") for v in expression.variables()}
@@ -883,7 +928,7 @@ def prefixed_message(message: UnprovenMessage, prefix: str) -> UnprovenMessage:
     return message.copy(structure=structure, types=types)
 
 
-def merge_message(name: str, messages: Dict[str, UnprovenMessage]) -> None:
+def merged_message(name: str, messages: Mapping[str, AbstractMessage]) -> AbstractMessage:
     assert name in messages, f'unknown message "{name}"'
 
     check_message_references(name, messages)
@@ -948,10 +993,10 @@ def merge_message(name: str, messages: Dict[str, UnprovenMessage]) -> None:
 
         message = message.copy(structure=structure, types=types)
 
-        messages[name] = message
+    return message
 
 
-def check_message_references(name: str, messages: Dict[str, UnprovenMessage]) -> None:
+def check_message_references(name: str, messages: Mapping[str, AbstractMessage]) -> None:
     nodes = [messages[name]]
     edges: Set[Tuple[str, str, str]] = set()
 
