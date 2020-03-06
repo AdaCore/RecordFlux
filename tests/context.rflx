@@ -1,5 +1,5 @@
-with Foo;
-with Bar;
+with Empty_File;
+with Empty_Package;
 
 package Context is
 

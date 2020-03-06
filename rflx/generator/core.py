@@ -101,6 +101,7 @@ from rflx.expression import (
     Variable,
 )
 from rflx.model import (
+    BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
     Array,
@@ -272,7 +273,7 @@ class Generator:
     def __create_generic_message_unit(self, message: Message) -> None:
         context: List[ContextItem] = []
 
-        if any(t.package == "__BUILTINS__" for t in message.types.values()):
+        if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
             context.extend(
                 [
                     WithClause(self.types.prefixed_builtin_types),
@@ -1996,7 +1997,7 @@ class Generator:
     def __create_type(self, field_type: Type, message_package: str) -> None:
         unit = self.units[message_package]
 
-        if field_type.package == "__BUILTINS__":
+        if field_type.package == BUILTINS_PACKAGE:
             return
 
         if isinstance(field_type, ModularInteger):

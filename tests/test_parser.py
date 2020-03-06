@@ -155,16 +155,21 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_context_spec(self) -> None:
         self.assert_specifications(
             [f"{self.testdir}/context.rflx"],
-            {"Context": Specification(ContextSpec(["Foo", "Bar"]), PackageSpec("Context", []))},
+            {
+                "Context": Specification(
+                    ContextSpec(["Empty_File", "Empty_Package"]), PackageSpec("Context", [])
+                ),
+                "Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [])),
+            },
         )
 
     def test_context_message(self) -> None:
         self.assert_messages_files([f"{self.testdir}/context.rflx"], [])
 
-    def test_duplicate_package(self) -> None:
+    def test_context_dependency_cycle(self) -> None:
         self.assert_parser_error(
-            [f"{self.testdir}/empty_package.rflx", f"{self.testdir}/empty_package.rflx"],
-            r"duplicate package",
+            [f"{self.testdir}/context_cycle.rflx"],
+            r'^dependency cycle due to context item "Context_Cycle_2" in "Context_Cycle_1"$',
         )
 
     def test_duplicate_type(self) -> None:
@@ -175,7 +180,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type T is mod 256;
                 end Test;
             """,
-            r'duplicate type "T"',
+            r'duplicate type "Test.T"',
         )
 
     def test_message_undefined_type(self) -> None:
@@ -188,7 +193,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'^undefined type "T" in "PDU"$',
+            r'^undefined component type "Test.T" in message "Test.PDU"$',
         )
 
     def test_message_undefined_component(self) -> None:
@@ -203,7 +208,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'^undefined component "Bar" in "PDU"$',
+            r'^undefined component "Bar" in message "Test.PDU"$',
         )
 
     def test_invalid_location_expression(self) -> None:
@@ -271,7 +276,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type T is array of Foo;
                 end Test;
             """,
-            r'^undefined type "Foo" in "T"$',
+            r'^undefined element type "Test.Foo" in array "Test.T"$',
         )
 
     def test_array_unsupported_element_type(self) -> None:
@@ -300,7 +305,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'duplicate type "PDU"',
+            r'duplicate type "Test.PDU"',
         )
 
     def test_duplicate_refinement(self) -> None:
@@ -388,7 +393,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type Bar is new Foo;
                 end Test;
             """,
-            r'^duplicate type "Bar"$',
+            r'^duplicate type "Test.Bar"$',
         )
 
     def test_derivation_undefined_type(self) -> None:
@@ -398,7 +403,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type Bar is new Foo;
                 end Test;
             """,
-            r'^undefined type "Foo" in "Bar"$',
+            r'^undefined message "Test.Foo" in derived message "Test.Bar"$',
         )
 
     def test_derivation_unsupported_type(self) -> None:
@@ -409,7 +414,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type Bar is new Foo;
                 end Test;
             """,
-            r'^unsupported type "Foo" in "Bar"$',
+            r'^undefined message "Test.Foo" in derived message "Test.Bar"$',
         )
 
     def test_invalid_first_in_initial_node(self) -> None:
@@ -426,7 +431,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       end message;
                 end Test;
             """,
-            r'^invalid first expression in initial node in "PDU"$',
+            r'^invalid first expression in initial node of message "Test.PDU"$',
         )
 
     def test_multiple_initial_node_edges(self) -> None:
@@ -963,4 +968,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                end Test;
             """
         )
+        parser.create_model()
+
+    def test_feature_integration(self) -> None:
+        parser = Parser()
+        parser.parse(Path(f"{self.testdir}/feature_integration.rflx"))
         parser.create_model()
