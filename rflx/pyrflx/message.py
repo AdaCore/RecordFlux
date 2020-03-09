@@ -356,7 +356,7 @@ class Message:
         )
 
         field_count = self._model.all_fields.__len__()
-        final_field = self._model.all_fields[field_count-1]
+        final_field = self._model.all_fields[field_count - 1]
 
         final_incoming = self._model.incoming(final_field)
 
