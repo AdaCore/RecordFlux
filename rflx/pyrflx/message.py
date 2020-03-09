@@ -103,7 +103,6 @@ class Message:
 
     def _get_length_unchecked(self, fld: str) -> Expr:
         for l in self._model.incoming(model.Field(fld)):
-            # genutzte Kante -> True und die Länge explizit an der genutzten Kante angegeben
             if self.__simplified(l.condition) == TRUE and l.length != UNDEFINED:
                 return self.__simplified(l.length)
 
