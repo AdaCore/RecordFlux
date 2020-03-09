@@ -269,6 +269,27 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             r'"T" contains elements with same value',
         )
 
+    def test_invalid_enumeration_type_identical_literals(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T1 is (Foo, Bar) with Size => 1;
+                   type T2 is (Bar, Baz) with Size => 1;
+                end Test;
+            """,
+            r'"Test.T2" contains identical literals as "Test.T1": Bar',
+        )
+
+    def test_invalid_enumeration_type_builtin_literals(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is (True, False) with Size => 1;
+                end Test;
+            """,
+            r'"Test.T" contains identical literals as "__BUILTINS__.Boolean": False, True',
+        )
+
     def test_array_undefined_type(self) -> None:
         self.assert_parser_error_string(
             """
