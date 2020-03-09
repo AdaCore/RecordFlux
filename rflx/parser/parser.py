@@ -8,6 +8,7 @@ from pyparsing import ParseException, ParseFatalException
 from rflx.expression import UNDEFINED, Number
 from rflx.model import (
     BUILTIN_TYPES,
+    BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
     Array,
@@ -87,6 +88,7 @@ class Parser:
                 self.__messages.update(messages)
 
             self.__types.update(types)
+            check_types(self.__types)
 
             refinements = create_refinements(specification, self.__messages, self.__types)
 
@@ -100,6 +102,31 @@ class Parser:
 
 class ParserError(Exception):
     pass
+
+
+def check_types(types: Mapping[str, Type]) -> None:
+    for e1, e2 in [
+        (e1, e2)
+        for e1 in types.values()
+        for e2 in types.values()
+        if (
+            isinstance(e1, Enumeration)
+            and isinstance(e2, Enumeration)
+            and e1 != e2
+            and (
+                e1.package == e2.package
+                or e1.package == BUILTINS_PACKAGE
+                or e2.package in BUILTINS_PACKAGE
+            )
+        )
+    ]:
+        identical_literals = set(e1.literals) & set(e2.literals)
+
+        if identical_literals:
+            raise ParserError(
+                f'"{e2.full_name}" contains identical literals as "{e1.full_name}": '
+                + ", ".join(sorted(identical_literals))
+            )
 
 
 def create_messages(
