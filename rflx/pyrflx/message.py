@@ -104,7 +104,24 @@ class Message:
     def _get_length_unchecked(self, fld: str) -> Expr:
         for l in self._model.incoming(model.Field(fld)):
             if self.__simplified(l.condition) == TRUE and l.length != UNDEFINED:
+                """
+                if isinstance(self._fields[l.target.name].typeval, OpaqueValue) and isinstance(l.length, Expr):
+                    # versuche die Expr. zu vereinfachen
+                    f = self.__simplified(l.length)
+                """
                 return self.__simplified(l.length)
+
+            """
+            # ToDo Länge auflösen, wenn nicht explizit angegeben (aber als Expression abhängig
+            # von anderen Feldern
+            t = isinstance(self._fields[l.target.name].typeval, OpaqueValue)
+            f = isinstance(l.length, Expr)
+            d = self.__simplified(l.condition) == TRUE
+
+            if self.__simplified(l.condition) == TRUE and isinstance(self._fields[l.target.name].typeval, OpaqueValue) and isinstance(l.length, Expr):
+                # versuche die Expr. zu vereinfachen
+                f = l.length.simplified()
+            """
 
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
@@ -183,6 +200,7 @@ class Message:
             flength = field.typeval.length
             field.typeval.clear()
             raise ValueError(f"invalid data length: {field.length.value} != {flength}")
+        # setze Länge der nächdsten Felder
         self._preset_fields(fld)
 
     def _preset_fields(self, fld: str) -> None:
@@ -197,6 +215,7 @@ class Message:
             field = self._fields[nxt]
 
             if not self._has_first(nxt) or not self._has_length(nxt):
+
                 break
 
             field.first = self._get_first(nxt)
@@ -255,6 +274,9 @@ class Message:
         :return: str List of all accessible fields
         """
 
+        # exception for fields with by default unspecified length
+        # -> length has to be explicitly specified as a parameter
+
         nxt = self._next_field(model.INITIAL.name)
         fields: List[str] = []
         while nxt and nxt != model.FINAL.name:
@@ -303,7 +325,12 @@ class Message:
             assert isinstance(ve.name, str)
             if ve.name in self._fields and not self._fields[ve.name].set:
                 return True
-            # if length does not depend on previous node but e.g. on Message'Last or Message'First
+
+            # if length depends on Message'Last -> set field accessible
+            if isinstance(ve, Last) and ve.name == "Message":
+                return False
+
+            # if length does not depend on previous node but e.g. on Message'First
             if not isinstance(self.__simplified(ve), Number):
                 return True
 
