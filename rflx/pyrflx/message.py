@@ -103,8 +103,10 @@ class Message:
 
     def _get_length_unchecked(self, fld: str) -> Expr:
         for l in self._model.incoming(model.Field(fld)):
+            # genutzte Kante -> True und die Länge explizit an der genutzten Kante angegeben
             if self.__simplified(l.condition) == TRUE and l.length != UNDEFINED:
                 return self.__simplified(l.length)
+
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
             return Number(typeval.size)
@@ -299,7 +301,8 @@ class Message:
         for ve in valid_edge.length.variables():
             # if the referenced node (which its length depends on) is a known node and is already
             # set i.e. its length and first are already known, the field is accessible
-            if ve.name in self._fields and not self._fields[ve.name.__str__()].set:
+            assert isinstance(ve.name, str)
+            if ve.name in self._fields and not self._fields[ve.name].set:
                 return True
             # if length does not depend on previous node but e.g. on Message'Last or Message'First
             if not isinstance(self.__simplified(ve), Number):
@@ -362,6 +365,6 @@ class Message:
         for edge in final_incoming:
             if edge.condition.simplified(field_values) == TRUE:
                 assert isinstance(field_values, dict)
-                field_values[Last("Message")] = self._fields[edge.source.name]
+                field_values[Last("Message")] = self._fields[edge.source.name].last
 
         return expr.simplified(field_values).simplified(self.__type_literals)
