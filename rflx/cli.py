@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 from pathlib import Path
 from typing import List, Union
 
@@ -103,7 +104,7 @@ def generate(args: argparse.Namespace) -> None:
     if not directory.is_dir():
         raise Error(f'directory not found: "{directory}"')
 
-    generator = Generator(args.prefix)
+    generator = Generator(args.prefix, reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None)
 
     model = parse(args.files)
     generator.generate(model)
