@@ -184,8 +184,9 @@ class Message:
 
     def _preset_fields(self, fld: str) -> None:
         """
-        Iterates through the following nodes of fld until reaches a node whose successor does not have a first or
-        length field. It sets the first and length fields of all nodes it reaches.
+        Iterates through the following nodes of fld until reaches a node whose successor
+        does not have a first or length field. It sets the first and length fields of all
+        nodes it reaches.
         """
 
         nxt = self._next_field(fld)
@@ -244,9 +245,10 @@ class Message:
     @property
     def accessible_fields(self) -> List[str]:
         """
-        Field is accessible if the condition(s) of the incoming edge from its predecessor evaluates to true and if the
-        field has a specified length and first. If it is an opaque field (has no previously known length) evaluate its
-        accessibility by call to __check_nodes_opaque
+        Field is accessible if the condition(s) of the incoming edge from its predecessor
+        evaluates to true and if the field has a specified length and first. If it is an
+        opaque field (has no previously known length) evaluate its accessibility by
+        call to __check_nodes_opaque
         :return: str List of all accessible fields
         """
 
@@ -293,9 +295,9 @@ class Message:
 
         # evaluate length of node
         for ve in valid_edge.length.variables():
-            # if the referenced node (which its length depends on) is a known node and is already set
-            # i.e. its length and first are already known, the field is accessible
-            if ve.name in self._fields and not self._fields[ve.name].set:
+            # if the referenced node (which its length depends on) is a known node and is already
+            # set i.e. its length and first are already known, the field is accessible
+            if ve.name in self._fields and not self._fields[ve.name.__str__()].set:
                 return True
             # if length does not depend on previous node but e.g. on Message'Last or Message'First
             if not isinstance(self.__simplified(ve), Number):
@@ -353,11 +355,18 @@ class Message:
             }
         )
 
+        #ToDo Argument 1 to "incoming" of "AbstractMessage" has incompatible type "str"; expected "Field"
+        # g = model.FINAL.name
+        # t = self._model.all_fields.__len__()
+        # f = self._model.all_fields[t-1]
+
         final_incoming = self._model.incoming(model.FINAL.name)
 
         for edge in final_incoming:
             if edge.condition.simplified(field_values) == TRUE:
                 assert isinstance(field_values, dict)
-                field_values[Last("Message")] = self._fields[edge.target.name]
+                # Node Final ist nicht in _fields
+                # p = self._fields[edge.source.name]
+                field_values[Last("Message")] = self._fields[edge.source.name]
 
         return expr.simplified(field_values).simplified(self.__type_literals)

@@ -228,6 +228,27 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             Add(Variable("X"), Variable("Y")),
         )
 
+        # 3.simplified(1)
+        self.assertEqual(
+            Sub(Variable("X"), Variable("Y")).simplified({Variable("X"): Variable("Z")}),
+            Add(Variable("Z"), -Variable("Y")),
+        )
+
+        # 3.simplified(1).simplified(2) = 4
+        self.assertEqual(
+            Sub(Variable("Z"), Variable("Y")).simplified(
+                {Variable("Z"): Add(Variable("Y"), Variable("Q"))}
+            ),
+            Add(Add(Variable("Y"), Variable("Q")), -Variable("Y")),
+        )
+
+        # 4.simplified() = TRUE
+        self.assertTrue(
+            Equal(Variable("Q"), Sub(Add(Variable("Y"), Variable("Q")), Variable("Y")))
+            .simplified()
+            .simplified()
+        )
+
     def test_add_lt(self) -> None:
         self.assertEqual(Add(Variable("X"), Number(1)) < Add(Variable("X"), Number(2)), True)
         self.assertEqual(Add(Variable("X"), Number(2)) < Add(Variable("X"), Number(2)), False)
