@@ -142,19 +142,21 @@ class Message:
     def set(self, fld: str, value: Any) -> None:
 
         print("set field " + fld)
-        if not isinstance(value, self._fields[fld].typeval.accepted_type):
-            raise TypeError(
-                f"cannot assign different types: {self._fields[fld].typeval.accepted_type.__name__}"
-                f" != {type(value).__name__}"
-            )
 
         # if node is in accessible fields its length and first are known
         if fld in self.accessible_fields:
 
             field = self._fields[fld]
 
+            if not isinstance(value, field.typeval.accepted_type):
+                raise TypeError(
+                    f"cannot assign different types: {field.typeval.accepted_type.__name__}"
+                    f" != {type(value).__name__}"
+                )
+
             # if field is of type opaque and does not have a specified length
             if isinstance(field.typeval, OpaqueValue) and not self._has_length(fld):
+                assert isinstance(value, bytes)
                 field.first = self._get_first(fld)
                 field.typeval.assign(value, True)
                 field.length = Number(field.typeval.length)
@@ -355,10 +357,7 @@ class Message:
             }
         )
 
-        field_count = self._model.all_fields.__len__()
-        final_field = self._model.all_fields[field_count - 1]
-
-        final_incoming = self._model.incoming(final_field)
+        final_incoming = self._model.incoming(model.FINAL)
 
         for edge in final_incoming:
             if edge.condition.simplified(field_values) == TRUE:
