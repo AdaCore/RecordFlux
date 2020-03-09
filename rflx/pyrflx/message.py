@@ -355,18 +355,14 @@ class Message:
             }
         )
 
-        #ToDo Argument 1 to "incoming" of "AbstractMessage" has incompatible type "str"; expected "Field"
-        # g = model.FINAL.name
-        # t = self._model.all_fields.__len__()
-        # f = self._model.all_fields[t-1]
+        field_count = self._model.all_fields.__len__()
+        final_field = self._model.all_fields[field_count-1]
 
-        final_incoming = self._model.incoming(model.FINAL.name)
+        final_incoming = self._model.incoming(final_field)
 
         for edge in final_incoming:
             if edge.condition.simplified(field_values) == TRUE:
                 assert isinstance(field_values, dict)
-                # Node Final ist nicht in _fields
-                # p = self._fields[edge.source.name]
                 field_values[Last("Message")] = self._fields[edge.source.name]
 
         return expr.simplified(field_values).simplified(self.__type_literals)
