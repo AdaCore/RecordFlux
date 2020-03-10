@@ -288,7 +288,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(Sub(Variable("X"), Name("Y")).variables(), [Variable("X")])
 
     def test_sub_simplified(self) -> None:
-        self.assertEqual(Sub(Number(1), Variable("X")).simplified(), Add(Variable("X"), Number(-1)))
+        self.assertEqual(Sub(Number(1), Variable("X")).simplified(), Add(Number(1), -Variable("X")))
         self.assertEqual(Sub(Variable("X"), Number(1)).simplified(), Add(Variable("X"), Number(-1)))
         self.assertEqual(Sub(Number(6), Number(2)).simplified(), Number(4))
         self.assertEqual(
