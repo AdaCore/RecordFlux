@@ -104,24 +104,7 @@ class Message:
     def _get_length_unchecked(self, fld: str) -> Expr:
         for l in self._model.incoming(model.Field(fld)):
             if self.__simplified(l.condition) == TRUE and l.length != UNDEFINED:
-                """
-                if isinstance(self._fields[l.target.name].typeval, OpaqueValue) and isinstance(l.length, Expr):
-                    # versuche die Expr. zu vereinfachen
-                    f = self.__simplified(l.length)
-                """
                 return self.__simplified(l.length)
-
-            """
-            # ToDo Länge auflösen, wenn nicht explizit angegeben (aber als Expression abhängig
-            # von anderen Feldern
-            t = isinstance(self._fields[l.target.name].typeval, OpaqueValue)
-            f = isinstance(l.length, Expr)
-            d = self.__simplified(l.condition) == TRUE
-
-            if self.__simplified(l.condition) == TRUE and isinstance(self._fields[l.target.name].typeval, OpaqueValue) and isinstance(l.length, Expr):
-                # versuche die Expr. zu vereinfachen
-                f = l.length.simplified()
-            """
 
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
@@ -158,8 +141,6 @@ class Message:
         return self._model.name
 
     def set(self, fld: str, value: Any) -> None:
-
-        print("set field " + fld)
 
         # if node is in accessible fields its length and first are known
         if fld in self.accessible_fields:
@@ -273,9 +254,6 @@ class Message:
         call to __check_nodes_opaque
         :return: str List of all accessible fields
         """
-
-        # exception for fields with by default unspecified length
-        # -> length has to be explicitly specified as a parameter
 
         nxt = self._next_field(model.INITIAL.name)
         fields: List[str] = []
