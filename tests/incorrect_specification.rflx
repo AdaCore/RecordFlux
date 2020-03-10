@@ -1,0 +1,5 @@
+package Incorrect_Specification is
+
+   type T;
+
+end Incorrect_Specification;

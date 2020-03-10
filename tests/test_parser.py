@@ -1,4 +1,6 @@
+# pylint: disable=too-many-lines
 import unittest
+import unittest.mock
 from itertools import zip_longest
 from pathlib import Path
 from typing import Dict, Sequence
@@ -36,6 +38,7 @@ from rflx.model import (
     Reference,
     Refinement,
 )
+from rflx.parser import grammar
 from rflx.parser.ast import (
     ContextSpec,
     DerivationSpec,
@@ -54,7 +57,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.specdir = "specs"
         self.maxDiff = None  # pylint: disable=invalid-name
 
-    def assert_specifications(
+    def assert_specifications_files(
         self, filenames: Sequence[str], specifications: Dict[str, Specification]
     ) -> None:
         parser = Parser()
@@ -115,36 +118,104 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaisesRegex(ParseFatalException, regex):
             Parser().parse_string(string)
 
+    def test_unexpected_exception_in_grammar(self) -> None:
+        with self.assertRaisesRegex(
+            ParseFatalException, r"implementation error \(division by zero\)"
+        ):
+            with unittest.mock.patch(
+                "rflx.parser.grammar.parse_mathematical_expression",
+                grammar.fatalexceptions(lambda x, y, z: 1 / 0),
+            ):
+                grammar.mathematical_expression().parseString("1 + 1")
+
     # ISSUE: Componolit/RecordFlux#60
+
+    def test_unsupported_array_aggregate(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r"^unsupported array aggregate"):
+            grammar.mathematical_expression().parseString("(1, 2)")
 
     # def test_mathematical_expression_array(self) -> None:
     #     self.assertEqual(
-    #         Parser.mathematical_expression().parseString('(1, 2)')[0],
+    #         grammar.mathematical_expression().parseString('(1, 2)')[0],
     #         Aggregate(Number(1), Number(2)))
 
     # def test_mathematical_expression_array_no_number(self) -> None:
     #     with self.assertRaisesRegex(ParseFatalException, r'^Expected Number'):
-    #         Parser.mathematical_expression().parseString('(1, Foo)')
+    #         grammar.mathematical_expression().parseString('(1, Foo)')
 
     # def test_mathematical_expression_array_out_of_range(self) -> None:
     #     with self.assertRaisesRegex(ParseFatalException,
     #                                 r'^Number "256" is out of range 0 .. 255'):
-    #         Parser.mathematical_expression().parseString('(1, 2, 256)')
+    #         grammar.mathematical_expression().parseString('(1, 2, 256)')
+
+    def test_unexpected_relation_operator(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r"^unexpected relation operator"):
+            grammar.parse_relation("", 0, [Number(1), "<>", Number(1)])
+
+    def test_unexpected_logical_operator(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r"^unexpected logical operator"):
+            grammar.parse_logical_expression("", 0, [[Number(1), "xor", Number(1)]])
+
+    def test_unexpected_mathematical_operator(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r"^unexpected mathematical operator"):
+            grammar.parse_mathematical_expression("", 0, [[Number(1), "//", Number(1)]])
+
+    def test_unexpected_attribute(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r"^unexpected attribute"):
+            grammar.parse_attribute("", 0, ["V", "'", "Access"])
+
+    def test_unexpected_type(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r"^unexpected type"):
+            grammar.parse_type("", 0, ["type", "T", "is", "X"])
+
+    def test_inconsistent_package_identifiers(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package A is
+                end B;
+            """,
+            r"^inconsistent package identifiers",
+        )
 
     def test_empty_file_spec(self) -> None:
-        self.assert_specifications([f"{self.testdir}/empty_file.rflx"], {})
+        self.assert_specifications_files([f"{self.testdir}/empty_file.rflx"], {})
 
     def test_empty_file_message(self) -> None:
         self.assert_messages_files([f"{self.testdir}/empty_file.rflx"], [])
 
     def test_comment_only_spec(self) -> None:
-        self.assert_specifications([f"{self.testdir}/comment_only.rflx"], {})
+        self.assert_specifications_files([f"{self.testdir}/comment_only.rflx"], {})
 
     def test_comment_only_message(self) -> None:
         self.assert_messages_files([f"{self.testdir}/comment_only.rflx"], [])
 
+    def test_incorrect_name(self) -> None:
+        self.assert_parser_error(
+            [f"{self.testdir}/incorrect_name.rflx"],
+            r'^file name "incorrect_name.rflx" does not match unit name "Test",'
+            r' should be "test.rflx"$',
+        )
+
+    def test_incorrect_specification(self) -> None:
+        self.assert_parser_error(
+            [f"{self.testdir}/incorrect_specification.rflx"], r"Expected \"is\", found ';'",
+        )
+
+    def test_unexpected_exception_in_parser(self) -> None:
+        parser = Parser()
+        with self.assertRaisesRegex(ParserError, r"division by zero"):
+            with unittest.mock.patch("rflx.parser.parser.check_types", lambda x: 1 / 0):
+                parser.parse_string(
+                    """
+                        package Test is
+                           type T is mod 256;
+                        end Test;
+                    """
+                )
+                parser.create_model()
+
     def test_package_spec(self) -> None:
-        self.assert_specifications(
+        self.assert_specifications_files(
             [f"{self.testdir}/empty_package.rflx"],
             {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []))},
         )
@@ -152,8 +223,16 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_package_message(self) -> None:
         self.assert_messages_files([f"{self.testdir}/empty_package.rflx"], [])
 
+    def test_duplicate_specifications(self) -> None:
+        files = [f"{self.testdir}/empty_package.rflx", f"{self.testdir}/empty_package.rflx"]
+        self.assert_specifications_files(
+            files,
+            {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []))},
+        )
+        self.assert_messages_files(files, [])
+
     def test_context_spec(self) -> None:
-        self.assert_specifications(
+        self.assert_specifications_files(
             [f"{self.testdir}/context.rflx"],
             {
                 "Context": Specification(
@@ -531,7 +610,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 ),
             )
         }
-        self.assert_specifications([f"{self.testdir}/integer_type.rflx"], spec)
+        self.assert_specifications_files([f"{self.testdir}/integer_type.rflx"], spec)
 
     def test_enumeration_type_spec(self) -> None:
         spec = {
@@ -570,7 +649,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 ),
             )
         }
-        self.assert_specifications([f"{self.testdir}/enumeration_type.rflx"], spec)
+        self.assert_specifications_files([f"{self.testdir}/enumeration_type.rflx"], spec)
 
     def test_array_type_spec(self) -> None:
         spec = {
@@ -587,7 +666,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 ),
             )
         }
-        self.assert_specifications([f"{self.testdir}/array_type.rflx"], spec)
+        self.assert_specifications_files([f"{self.testdir}/array_type.rflx"], spec)
 
     def test_message_type_spec(self) -> None:
         spec = {
@@ -635,7 +714,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 ),
             )
         }
-        self.assert_specifications([f"{self.testdir}/message_type.rflx"], spec)
+        self.assert_specifications_files([f"{self.testdir}/message_type.rflx"], spec)
 
     def test_message_type_message(self) -> None:
         simple_structure = [
@@ -793,7 +872,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 ),
             ),
         }
-        self.assert_specifications(
+        self.assert_specifications_files(
             [f"{self.testdir}/message_type.rflx", f"{self.testdir}/type_refinement.rflx"], spec
         )
 
@@ -960,7 +1039,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             )
         }
 
-        self.assert_specifications([f"{self.specdir}/ethernet.rflx"], spec)
+        self.assert_specifications_files([f"{self.specdir}/ethernet.rflx"], spec)
 
     def test_ethernet_message(self) -> None:
         self.assert_messages_files([f"{self.specdir}/ethernet.rflx"], [ETHERNET_FRAME])
