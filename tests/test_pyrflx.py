@@ -59,7 +59,7 @@ class TestPyRFLX(unittest.TestCase):
         self.frame = self.package_ethernet["Frame"]
         self.record = self.package_tls_record["TLS_Record"]
         self.alert = self.package_tls_alert["Alert"]
-        self.icmp = self.package_icmp["Echo_Request"]
+        self.icmp = self.package_icmp["Echo_Message"]
 
     def test_partially_supported_packages(self) -> None:
         p = PyRFLX([f"{self.testdir}/array_message.rflx"])["Test"]

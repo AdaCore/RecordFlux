@@ -12,7 +12,7 @@ package ICMP is
 
     type Sequence_Number is mod 2**16;
 
-    type Echo_Request is
+    type Echo_Message is
         message
             Tag : Tag;
             Code : Code;
