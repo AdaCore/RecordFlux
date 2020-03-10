@@ -23,6 +23,7 @@ from rflx.model import (
     FINAL,
     INITIAL,
     Array,
+    DerivedMessage,
     Enumeration,
     Field,
     Link,
@@ -42,110 +43,92 @@ from tests.models import ETHERNET_FRAME
 MODULAR_INTEGER = ModularInteger("P.Modular", Number(256))
 RANGE_INTEGER = RangeInteger("P.Range", Number(1), Number(100), Number(8))
 
-M_NO_REF = {
-    "P.No_Ref": UnprovenMessage(
-        "P.No_Ref",
-        [
-            Link(INITIAL, Field("F1"), length=Number(16)),
-            Link(Field("F1"), Field("F2")),
-            Link(
-                Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),
-            ),
-            Link(
-                Field("F2"),
-                Field("F4"),
-                GreaterEqual(Variable("F2"), Number(200)),
-                first=First("F2"),
-            ),
-            Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
-            Link(Field("F4"), FINAL),
-        ],
-        {
-            Field("F1"): Opaque(),
-            Field("F2"): MODULAR_INTEGER,
-            Field("F3"): MODULAR_INTEGER,
-            Field("F4"): RANGE_INTEGER,
-        },
-    ),
-}
+M_NO_REF = UnprovenMessage(
+    "P.No_Ref",
+    [
+        Link(INITIAL, Field("F1"), length=Number(16)),
+        Link(Field("F1"), Field("F2")),
+        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),),
+        Link(
+            Field("F2"), Field("F4"), GreaterEqual(Variable("F2"), Number(200)), first=First("F2"),
+        ),
+        Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
+        Link(Field("F4"), FINAL),
+    ],
+    {
+        Field("F1"): Opaque(),
+        Field("F2"): MODULAR_INTEGER,
+        Field("F3"): MODULAR_INTEGER,
+        Field("F4"): RANGE_INTEGER,
+    },
+)
 
-M_SMPL_REF = {
-    "P.Smpl_Ref": UnprovenMessage(
-        "P.Smpl_Ref",
-        [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
-        {Field("NR"): Reference("P.No_Ref")},
-    ),
-}
+M_SMPL_REF = UnprovenMessage(
+    "P.Smpl_Ref",
+    [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
+    {Field("NR"): Reference("P.No_Ref")},
+)
 
-M_CMPLX_REF = {
-    "P.Cmplx_Ref": UnprovenMessage(
-        "P.Cmplx_Ref",
-        [
-            Link(INITIAL, Field("F1")),
-            Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
-            Link(Field("F1"), Field("F3"), GreaterEqual(Variable("F1"), Number(200))),
-            Link(Field("F2"), Field("NR"), LessEqual(Variable("F1"), Number(10))),
-            Link(Field("F3"), Field("NR"), GreaterEqual(Variable("F1"), Number(220))),
-            Link(Field("NR"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
-            Link(Field("NR"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
-            Link(Field("F5"), FINAL),
-            Link(Field("F6"), FINAL),
-        ],
-        {
-            Field("F1"): deepcopy(MODULAR_INTEGER),
-            Field("F2"): deepcopy(MODULAR_INTEGER),
-            Field("F3"): deepcopy(RANGE_INTEGER),
-            Field("NR"): Reference("P.No_Ref"),
-            Field("F5"): deepcopy(MODULAR_INTEGER),
-            Field("F6"): deepcopy(RANGE_INTEGER),
-        },
-    ),
-}
 
-M_DBL_REF = {
-    "P.Dbl_Ref": UnprovenMessage(
-        "P.Dbl_Ref",
-        [Link(INITIAL, Field("SR")), Link(Field("SR"), Field("NR")), Link(Field("NR"), FINAL)],
-        {Field("SR"): Reference("P.Smpl_Ref"), Field("NR"): Reference("P.No_Ref")},
-    ),
-}
+M_CMPLX_REF = UnprovenMessage(
+    "P.Cmplx_Ref",
+    [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
+        Link(Field("F1"), Field("F3"), GreaterEqual(Variable("F1"), Number(200))),
+        Link(Field("F2"), Field("NR"), LessEqual(Variable("F1"), Number(10))),
+        Link(Field("F3"), Field("NR"), GreaterEqual(Variable("F1"), Number(220))),
+        Link(Field("NR"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
+        Link(Field("NR"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
+        Link(Field("F5"), FINAL),
+        Link(Field("F6"), FINAL),
+    ],
+    {
+        Field("F1"): deepcopy(MODULAR_INTEGER),
+        Field("F2"): deepcopy(MODULAR_INTEGER),
+        Field("F3"): deepcopy(RANGE_INTEGER),
+        Field("NR"): Reference("P.No_Ref"),
+        Field("F5"): deepcopy(MODULAR_INTEGER),
+        Field("F6"): deepcopy(RANGE_INTEGER),
+    },
+)
 
-M_NO_REF_DERI = {
-    "P.No_Ref_Deri": UnprovenDerivedMessage(
-        "P.No_Ref_Deri",
-        "P.No_Ref",
-        [
-            Link(INITIAL, Field("F1"), length=Number(16)),
-            Link(Field("F1"), Field("F2")),
-            Link(
-                Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),
-            ),
-            Link(
-                Field("F2"),
-                Field("F4"),
-                GreaterEqual(Variable("F2"), Number(200)),
-                first=First("F2"),
-            ),
-            Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
-            Link(Field("F4"), FINAL),
-        ],
-        {
-            Field("F1"): Opaque(),
-            Field("F2"): MODULAR_INTEGER,
-            Field("F3"): MODULAR_INTEGER,
-            Field("F4"): RANGE_INTEGER,
-        },
-    ),
-}
 
-M_SMPL_REF_DERI = {
-    "P.Smpl_Ref_Deri": UnprovenDerivedMessage(
-        "P.Smpl_Ref_Deri",
-        "P.Smpl_Ref",
-        [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
-        {Field("NR"): Reference("P.No_Ref_Deri")},
-    ),
-}
+M_DBL_REF = UnprovenMessage(
+    "P.Dbl_Ref",
+    [Link(INITIAL, Field("SR")), Link(Field("SR"), Field("NR")), Link(Field("NR"), FINAL)],
+    {Field("SR"): Reference("P.Smpl_Ref"), Field("NR"): Reference("P.No_Ref")},
+)
+
+
+M_NO_REF_DERI = UnprovenDerivedMessage(
+    "P.No_Ref_Deri",
+    "P.No_Ref",
+    [
+        Link(INITIAL, Field("F1"), length=Number(16)),
+        Link(Field("F1"), Field("F2")),
+        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),),
+        Link(
+            Field("F2"), Field("F4"), GreaterEqual(Variable("F2"), Number(200)), first=First("F2"),
+        ),
+        Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
+        Link(Field("F4"), FINAL),
+    ],
+    {
+        Field("F1"): Opaque(),
+        Field("F2"): MODULAR_INTEGER,
+        Field("F3"): MODULAR_INTEGER,
+        Field("F4"): RANGE_INTEGER,
+    },
+)
+
+
+M_SMPL_REF_DERI = UnprovenDerivedMessage(
+    "P.Smpl_Ref_Deri",
+    "P.Smpl_Ref",
+    [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
+    {Field("NR"): Reference("P.No_Ref_Deri")},
+)
 
 
 # pylint: disable=too-many-public-methods
@@ -228,10 +211,14 @@ class TestModel(TestCase):
         with self.assertRaises(ModelError):
             RangeInteger("P.T", Number(0), Number(256), Number(8))
 
-    def test_array_invalid_call(self) -> None:
-        with self.assertRaises(ModelError):
+    def test_array_size(self) -> None:
+        with self.assertRaisesRegex(ModelError, r'^size of "T" undefined$'):
             # pylint: disable=expression-not-assigned
-            Array("P.T", ModularInteger("B", Number(256))).size
+            Array("P.T", ModularInteger("P.I", Number(256))).size
+
+    def test_message_incorrect_name(self) -> None:
+        with self.assertRaisesRegex(ModelError, '^unexpected format of message name "M"$'):
+            Message("M", [], {})
 
     def test_message_missing_type(self) -> None:
         structure = [
@@ -474,7 +461,7 @@ class TestModel(TestCase):
         self.assertTupleEqual(ETHERNET_FRAME.successors(Field("Payload")), ())
         self.assertTupleEqual(ETHERNET_FRAME.successors(FINAL), ())
 
-    def test_nonexistent_variable(self) -> None:
+    def test_message_nonexistent_variable(self) -> None:
         mod_type = ModularInteger("P.MT", Pow(Number(2), Number(32)))
         enum_type = Enumeration("P.ET", {"Val1": Number(0), "Val2": Number(1)}, Number(8), True)
         structure = [
@@ -486,11 +473,11 @@ class TestModel(TestCase):
         types = {Field("F1"): enum_type, Field("F2"): mod_type}
         with self.assertRaisesRegex(
             ModelError,
-            '^undefined variable "Val3" referenced in ' + 'condition 0 from field "F1" to "F2"',
+            '^undefined variable "Val3" referenced in condition 0 from field "F1" to "F2"',
         ):
             Message("P.M", structure, types)
 
-    def test_subsequent_variable(self) -> None:
+    def test_message_subsequent_variable(self) -> None:
         t = ModularInteger("P.T", Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field("F1")),
@@ -500,10 +487,73 @@ class TestModel(TestCase):
 
         types = {Field("F1"): t, Field("F2"): t}
         with self.assertRaisesRegex(
-            ModelError,
-            '^subsequent field "F2" referenced in ' + 'condition 0 from field "F1" to "F2"',
+            ModelError, '^subsequent field "F2" referenced in condition 0 from field "F1" to "F2"',
         ):
             Message("P.M", structure, types)
+
+    def test_message_field_size(self) -> None:
+        message = Message(
+            "P.M",
+            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+            {Field("F"): MODULAR_INTEGER},
+        )
+
+        self.assertEqual(message.field_size(FINAL), Number(0))
+        self.assertEqual(message.field_size(Field("F")), Number(8))
+
+        with self.assertRaisesRegex(ValueError, '^field "X" not found$'):
+            message.field_size(Field("X"))
+
+    def test_message_copy(self) -> None:
+        message = Message(
+            "P.M",
+            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+            {Field("F"): MODULAR_INTEGER},
+        )
+        self.assertEqual(
+            message.copy(full_name="A.B"),
+            Message(
+                "A.B",
+                [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+                {Field("F"): MODULAR_INTEGER},
+            ),
+        )
+        self.assertEqual(
+            message.copy(
+                structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
+                types={Field("C"): RANGE_INTEGER},
+            ),
+            Message(
+                "P.M",
+                [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
+                {Field("C"): RANGE_INTEGER},
+            ),
+        )
+
+    def test_message_proven_message(self) -> None:
+        message = Message(
+            "P.M",
+            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+            {Field("F"): MODULAR_INTEGER},
+        )
+        self.assertEqual(
+            message.proven_message(), message,
+        )
+
+    def test_derived_message_incorrect_base_name(self) -> None:
+        with self.assertRaisesRegex(ModelError, '^unexpected format of message name "M"$'):
+            DerivedMessage("P.M", "M", [], {})
+
+    def test_derived_message_proven_message(self) -> None:
+        message = DerivedMessage(
+            "P.M",
+            "X.M",
+            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+            {Field("F"): MODULAR_INTEGER},
+        )
+        self.assertEqual(
+            message.proven_message(), message,
+        )
 
     def test_prefixed_message(self) -> None:
         self.assertEqual(
@@ -567,10 +617,7 @@ class TestModel(TestCase):
         )
 
     def test_merge_message_simple(self) -> None:
-        messages = {
-            **deepcopy(M_NO_REF),
-            **deepcopy(M_SMPL_REF),
-        }
+        messages = {m.full_name: m for m in [deepcopy(M_NO_REF), deepcopy(M_SMPL_REF)]}
 
         self.assertEqual(
             merged_message("P.Smpl_Ref", messages),
@@ -604,10 +651,7 @@ class TestModel(TestCase):
         )
 
     def test_merge_message_complex(self) -> None:
-        messages = {
-            **deepcopy(M_CMPLX_REF),
-            **deepcopy(M_NO_REF),
-        }
+        messages = {m.full_name: m for m in [deepcopy(M_CMPLX_REF), deepcopy(M_NO_REF)]}
 
         self.assertEqual(
             merged_message("P.Cmplx_Ref", messages),
@@ -679,10 +723,13 @@ class TestModel(TestCase):
 
     def test_merge_message_recursive(self) -> None:
         messages = {
-            **deepcopy(M_CMPLX_REF),
-            **deepcopy(M_SMPL_REF),
-            **deepcopy(M_DBL_REF),
-            **deepcopy(M_NO_REF),
+            m.full_name: m
+            for m in [
+                deepcopy(M_CMPLX_REF),
+                deepcopy(M_SMPL_REF),
+                deepcopy(M_DBL_REF),
+                deepcopy(M_NO_REF),
+            ]
         }
 
         self.assertEqual(
@@ -742,8 +789,7 @@ class TestModel(TestCase):
 
     def test_merge_message_simple_derived(self) -> None:
         messages: Dict[str, UnprovenMessage] = {
-            **deepcopy(M_NO_REF_DERI),
-            **deepcopy(M_SMPL_REF_DERI),
+            m.full_name: m for m in [deepcopy(M_NO_REF_DERI), deepcopy(M_SMPL_REF_DERI)]
         }
 
         self.assertEqual(
@@ -782,7 +828,7 @@ class TestModel(TestCase):
         with self.assertRaisesRegex(
             ModelError, f'^reference to unknown message "P.No_Ref"$',
         ):
-            merged_message("P.Smpl_Ref", deepcopy(M_SMPL_REF))
+            merged_message("P.Smpl_Ref", {M_SMPL_REF.full_name: deepcopy(M_SMPL_REF)})
 
     def test_merge_message_error_name_conflict(self) -> None:
         messages = {
