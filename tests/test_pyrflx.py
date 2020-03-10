@@ -27,13 +27,13 @@ from rflx.pyrflx import (
 
 # pylint: disable=too-many-public-methods
 class TestPyRFLX(unittest.TestCase):
-
     testdir: str
     specdir: str
     package_tlv: Package
     package_ethernet: Package
     package_tls_record: Package
     package_tls_alert: Package
+    package_icmp: Package
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -45,18 +45,21 @@ class TestPyRFLX(unittest.TestCase):
                 f"{cls.specdir}/ethernet.rflx",
                 f"{cls.specdir}/tls_record.rflx",
                 f"{cls.specdir}/tls_alert.rflx",
+                f"{cls.specdir}/icmp.rflx",
             ]
         )
         cls.package_tlv = pyrflx["TLV"]
         cls.package_ethernet = pyrflx["Ethernet"]
         cls.package_tls_record = pyrflx["TLS_Record"]
         cls.package_tls_alert = pyrflx["TLS_Alert"]
+        cls.package_icmp = pyrflx["ICMP"]
 
     def setUp(self) -> None:
         self.tlv = self.package_tlv["Message"]
         self.frame = self.package_ethernet["Frame"]
         self.record = self.package_tls_record["TLS_Record"]
         self.alert = self.package_tls_alert["Alert"]
+        self.icmp = self.package_icmp["Echo_Request"]
 
     def test_partially_supported_packages(self) -> None:
         p = PyRFLX([f"{self.testdir}/array_message.rflx"])["Test"]
@@ -383,6 +386,24 @@ class TestPyRFLX(unittest.TestCase):
         self.record.set("Tag", "APPLICATION_DATA")
         self.record.set("Legacy_Record_Version", "TLS_1_2")
         self.assertNotIsInstance(self.record._get_length_unchecked("Fragment"), Number)
+
+    def test_icmp_echo_request(self) -> None:
+
+        self.icmp.set("Tag", "Echo_Request")
+        self.icmp.set("Code", 0)
+        self.icmp.set("Checksum", 46957)
+        self.icmp.set("Identifier", 4)
+        self.icmp.set("Sequence_Number", 1)
+        self.icmp.set("Data",
+                      b"\xe0\x28\x6d\x39\x80\x1e\x1c\x1b\x0d\xe0\xd8\xa8\x08\x00\x45\x00"
+                      b"\x00\x54\x16\xf3\x40\x00\x40\x01\xe9\x73\xc0\xa8\xbc\x3d\xac\xd9"
+                      b"\x10\x83\x08\x00\xb7\x6d\x00\x04\x00\x01\x6e\x5d\x67\x5e\x00\x00"
+                      b"\x00\x00\xa2\xfe\x09\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15"
+                      b"\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25"
+                      b"\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35"
+                      b"\x36\x37"
+                      )
+        self.assertTrue(self.icmp.valid_message)
 
     def test_value_mod(self) -> None:
         # pylint: disable=pointless-statement
