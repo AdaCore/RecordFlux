@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Sequence
+from typing import Any, Dict, List, Mapping
 
 import rflx.model as model
 from rflx.common import generic_repr
@@ -181,7 +181,6 @@ class Message:
             flength = field.typeval.length
             field.typeval.clear()
             raise ValueError(f"invalid data length: {field.length.value} != {flength}")
-        # setze Länge der nächdsten Felder
         self._preset_fields(fld)
 
     def _preset_fields(self, fld: str) -> None:
@@ -196,7 +195,6 @@ class Message:
             field = self._fields[nxt]
 
             if not self._has_first(nxt) or not self._has_length(nxt):
-
                 break
 
             field.first = self._get_first(nxt)
@@ -281,15 +279,11 @@ class Message:
         :return: False if field is accessible
         """
 
-        # get all incoming edges of the node
-        incoming_edges: Sequence[model.Link] = self._model.incoming(model.Field(nxt))
-        length_nxt: Expr = self._get_length_unchecked(nxt)
-
-        if length_nxt in [FALSE, UNDEFINED]:
+        if self._get_length_unchecked(nxt) in [FALSE, UNDEFINED]:
             return True
 
         # evaluate which of the incoming edges is valid (cond. evaluates to Expr. TRUE)
-        for edge in incoming_edges:
+        for edge in self._model.incoming(model.Field(nxt)):
             if self.__simplified(edge.condition) == TRUE:
                 valid_edge = edge
                 break
@@ -350,25 +344,15 @@ class Message:
         )
 
     def __simplified(self, expr: Expr) -> Expr:
-        field_values: Mapping[Name, Expr] = dict(
-            {
-                **{
-                    Variable(k): v.typeval.expr
-                    for k, v in self._fields.items()
-                    if isinstance(v.typeval, ScalarValue) and v.set
-                },
-                **{Length(k): v.length for k, v in self._fields.items() if v.set},
-                **{First(k): v.first for k, v in self._fields.items() if v.set},
-                **{Last(k): v.last for k, v in self._fields.items() if v.set},
-                **{First("Message"): self._fields[self._next_field(model.INITIAL.name)].first},
-            }
-        )
-
-        final_incoming = self._model.incoming(model.FINAL)
-
-        for edge in final_incoming:
-            if edge.condition.simplified(field_values) == TRUE:
-                assert isinstance(field_values, dict)
-                field_values[Last("Message")] = self._fields[edge.source.name].last
+        field_values: Mapping[Name, Expr] = {
+            **{
+                Variable(k): v.typeval.expr
+                for k, v in self._fields.items()
+                if isinstance(v.typeval, ScalarValue) and v.set
+            },
+            **{Length(k): v.length for k, v in self._fields.items() if v.set},
+            **{First(k): v.first for k, v in self._fields.items() if v.set},
+            **{Last(k): v.last for k, v in self._fields.items() if v.set},
+        }
 
         return expr.simplified(field_values).simplified(self.__type_literals)
