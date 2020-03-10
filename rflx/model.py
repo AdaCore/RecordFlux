@@ -298,8 +298,8 @@ class AbstractMessage(Element):
     def __init__(
         self, full_name: str, structure: Sequence[Link], types: Mapping[Field, Type]
     ) -> None:
-        if full_name.count(".") != 1:
-            raise ModelError(f'unexpected format of message name "{full_name}"')
+        check_message_name(full_name)
+
         self.full_name = full_name
         self.structure = structure
         self.__types = types
@@ -399,7 +399,7 @@ class AbstractMessage(Element):
         if field == FINAL:
             return Number(0)
         if field not in self.fields:
-            raise ValueError(f"field {field} not found")
+            raise ValueError(f'field "{field.name}" not found')
         return self.types[field].size
 
     def __verify(self) -> None:
@@ -789,9 +789,9 @@ class DerivedMessage(Message):
         structure: Sequence[Link],
         types: Mapping[Field, Type],
     ) -> None:
+        check_message_name(full_base_name)
+
         super().__init__(full_name, structure, types)
-        if full_base_name.count(".") != 1:
-            raise ModelError(f'unexpected format of message name "{full_name}"')
         self.full_base_name = full_base_name
 
     def copy(
@@ -844,9 +844,9 @@ class UnprovenDerivedMessage(UnprovenMessage):
         structure: Sequence[Link],
         types: Mapping[Field, Type],
     ) -> None:
+        check_message_name(full_base_name)
+
         super().__init__(full_name, structure, types)
-        if full_base_name.count(".") != 1:
-            raise ModelError(f'unexpected format of message name "{full_name}"')
         self.full_base_name = full_base_name
 
     def copy(
@@ -992,6 +992,11 @@ def merged_message(name: str, messages: Mapping[str, AbstractMessage]) -> Abstra
         message = message.copy(structure=structure, types=types)
 
     return message
+
+
+def check_message_name(full_name: str) -> None:
+    if full_name.count(".") != 1:
+        raise ModelError(f'unexpected format of message name "{full_name}"')
 
 
 def check_message_references(name: str, messages: Mapping[str, AbstractMessage]) -> None:
