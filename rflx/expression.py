@@ -615,10 +615,6 @@ class Sub(BinExpr):
         right = self.right.simplified(facts)
         if isinstance(left, Number) and isinstance(right, Number):
             return left - right
-        if isinstance(left, Number):
-            return Add(right, -left)
-        if isinstance(right, Number):
-            return Add(left, -right)
         return Add(left, -right)
 
     @property
