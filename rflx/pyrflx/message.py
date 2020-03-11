@@ -280,15 +280,11 @@ class Message:
         :return: False if field is accessible
         """
 
-        # get all incoming edges of the node
-        incoming_edges: Sequence[model.Link] = self._model.incoming(model.Field(nxt))
-        length_nxt: Expr = self._get_length_unchecked(nxt)
-
-        if length_nxt in [FALSE, UNDEFINED]:
+        if self._get_length_unchecked(nxt) in [FALSE, UNDEFINED]:
             return True
 
         # evaluate which of the incoming edges is valid (cond. evaluates to Expr. TRUE)
-        for edge in incoming_edges:
+        for edge in self._model.incoming(model.Field(nxt)):
             if self.__simplified(edge.condition) == TRUE:
                 valid_edge = edge
                 break
