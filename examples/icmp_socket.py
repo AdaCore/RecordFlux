@@ -64,9 +64,6 @@ class ICMPSocket:
         return icmp
 
 
-def main():
+if __name__ == "__main__":
     s = ICMPSocket()
     s.send_icmp_request()
-
-
-main()
