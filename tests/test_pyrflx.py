@@ -389,10 +389,11 @@ class TestPyRFLX(unittest.TestCase):
 
     def test_icmp_echo_request(self) -> None:
 
-        test_data = \
-            b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17" \
-            b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27" \
+        test_data = (
+            b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+            b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
             b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+        )
 
         self.icmp.set("Tag", "Echo_Request")
         self.icmp.set("Code", 0)
@@ -400,8 +401,7 @@ class TestPyRFLX(unittest.TestCase):
         self.icmp.set("Identifier", 5)
         self.icmp.set("Sequence_Number", 1)
         self.icmp.set(
-            "Data",
-            test_data,
+            "Data", test_data,
         )
         self.assertEqual(self.icmp.binary, b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data)
         self.assertTrue(self.icmp.valid_message)
