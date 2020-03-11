@@ -263,7 +263,7 @@ class Message:
                 or (
                     not self._has_length(nxt)
                     if not isinstance(self._fields[nxt].typeval, OpaqueValue)
-                    else self.__check_nodes_opaque(nxt)
+                    else self._check_nodes_opaque(nxt)
                 )
             ):
                 break
@@ -272,7 +272,7 @@ class Message:
             nxt = self._next_field(nxt)
         return fields
 
-    def __check_nodes_opaque(self, nxt: str) -> bool:
+    def _check_nodes_opaque(self, nxt: str) -> bool:
         """
         Evaluate the accessibility of an opaque field.
         :param nxt: String name of field (node) to evaluate
@@ -301,10 +301,6 @@ class Message:
             # if length depends on Message'Last -> set field accessible
             if isinstance(ve, Last) and ve.name == "Message":
                 return False
-
-            # if length does not depend on previous node but e.g. on Message'First
-            if not isinstance(self.__simplified(ve), Number):
-                return True
 
         return False
 
