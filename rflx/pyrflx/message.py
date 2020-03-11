@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Sequence
+from typing import Any, Dict, List, Mapping
 
 import rflx.model as model
 from rflx.common import generic_repr
@@ -354,14 +354,6 @@ class Message:
             **{Length(k): v.length for k, v in self._fields.items() if v.set},
             **{First(k): v.first for k, v in self._fields.items() if v.set},
             **{Last(k): v.last for k, v in self._fields.items() if v.set},
-            **{First("Message"): self._fields[self._next_field(model.INITIAL.name)].first},
         }
-
-        final_incoming = self._model.incoming(model.FINAL)
-
-        for edge in final_incoming:
-            if edge.condition.simplified(field_values) == TRUE:
-                assert isinstance(field_values, dict)
-                field_values[Last("Message")] = self._fields[edge.source.name].last
 
         return expr.simplified(field_values).simplified(self.__type_literals)

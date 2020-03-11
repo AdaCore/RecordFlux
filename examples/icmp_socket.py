@@ -12,6 +12,8 @@ class ICMPSocket:
     package_icmp: Package
 
     def __init__(self):
+        pyrflx = PyRFLX([f"specs/icmp.rflx"])
+        self.package_icmp = pyrflx["ICMP"]
         self.icmp_data = \
             b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17" \
             b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27" \
@@ -42,15 +44,12 @@ class ICMPSocket:
         print("Reply received: ")
         print(echo.hex())
 
-        if echo[8:len(echo)] == self.icmp_data:
+        if echo[8:] == self.icmp_data:
             print("ICMP data is equal")
 
     def __create_msg(self) -> Message:
 
-        pyrflx = PyRFLX([f"specs/icmp.rflx"])
-        package_icmp = pyrflx["ICMP"]
-
-        icmp = package_icmp["Echo_Message"]
+        icmp = self.package_icmp["Echo_Message"]
         icmp.set("Tag", "Echo_Request")
         icmp.set("Code", 0)
         icmp.set("Checksum", 12824)
