@@ -359,6 +359,13 @@ class TestPyRFLX(unittest.TestCase):
         self.frame.set("Payload", bytes(46))
         self.assertTrue(self.frame.valid_message)
 
+    def test_ethernet_invalid(self) -> None:
+        self.frame.set("Destination", 2 ** 48 - 1)
+        self.frame.set("Source", 0)
+        self.frame.set("Type_Length_TPID", 1501)
+        with self.assertRaisesRegex(ValueError, "value does not fulfill field condition"):
+            self.frame.set("Type_Length", 1501)
+
     def test_tls_fields(self) -> None:
         self.assertEqual(self.record.accessible_fields, ["Tag", "Legacy_Record_Version", "Length"])
         self.record.set("Tag", "INVALID")
@@ -538,3 +545,19 @@ class TestPyRFLX(unittest.TestCase):
 
     def test_package_iterator(self) -> None:
         self.assertEqual([m.name for m in self.package_tlv], ["Message"])
+
+    def test_tlv_get_first_unchecked_undefined(self) -> None:
+        # pylint: disable=protected-access
+        self.assertEqual(self.tlv._get_first_unchecked("Length"), UNDEFINED)
+
+    def test_check_nodes_opaque(self) -> None:
+        # pylint: disable=protected-access
+        self.assertFalse(self.tlv._check_nodes_opaque("Length"))
+        self.assertTrue(self.tlv._check_nodes_opaque("Value"))
+
+        self.frame.set("Destination", 2 ** 48 - 1)
+        self.frame.set("Source", 0)
+        self.frame.set("Type_Length_TPID", 1501)
+        self.frame._fields["Type_Length"].typeval.assign(1501, True)
+
+        self.assertTrue(self.frame._check_nodes_opaque("Payload"))
