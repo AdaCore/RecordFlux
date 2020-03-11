@@ -3,6 +3,11 @@ import socket
 
 
 class ICMPSocket:
+    """
+    Creates a socket, generates an ICMP Message using the protocol specification,
+    sends the message and waits for the ICMP Reply. It checks weather the data
+    (payload) is equal.
+    """
 
     package_icmp: Package
 
@@ -14,10 +19,8 @@ class ICMPSocket:
 
     def send_icmp_request(self) -> None:
 
-        # create the icmp message
         icmp_request: Message = self.__create_msg()
 
-        # create socket
         icmp_socket = None
         try:
             icmp_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM, proto=socket.IPPROTO_ICMP)
@@ -25,7 +28,6 @@ class ICMPSocket:
             print("Error while creating socket " + e.strerror)
             exit(1)
 
-        # send the msg
         try:
             icmp_socket.sendto(icmp_request.binary, ('localhost', 1))
         except InterruptedError as e:
@@ -33,7 +35,6 @@ class ICMPSocket:
             print("Error while sending icmp request" + e.strerror)
             exit(1)
 
-        # receive reply
         echo = icmp_socket.recv(4096)
 
         print("Request sent: ")

@@ -350,16 +350,16 @@ class Message:
 
     def __simplified(self, expr: Expr) -> Expr:
         field_values: Mapping[Name, Expr] = {
-                **{
-                    Variable(k): v.typeval.expr
-                    for k, v in self._fields.items()
-                    if isinstance(v.typeval, ScalarValue) and v.set
-                },
-                **{Length(k): v.length for k, v in self._fields.items() if v.set},
-                **{First(k): v.first for k, v in self._fields.items() if v.set},
-                **{Last(k): v.last for k, v in self._fields.items() if v.set},
-                **{First("Message"): self._fields[self._next_field(model.INITIAL.name)].first},
-            }
+            **{
+                Variable(k): v.typeval.expr
+                for k, v in self._fields.items()
+                if isinstance(v.typeval, ScalarValue) and v.set
+            },
+            **{Length(k): v.length for k, v in self._fields.items() if v.set},
+            **{First(k): v.first for k, v in self._fields.items() if v.set},
+            **{Last(k): v.last for k, v in self._fields.items() if v.set},
+            **{First("Message"): self._fields[self._next_field(model.INITIAL.name)].first},
+        }
 
         final_incoming = self._model.incoming(model.FINAL)
 
