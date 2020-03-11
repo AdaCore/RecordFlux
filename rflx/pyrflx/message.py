@@ -195,7 +195,6 @@ class Message:
             field = self._fields[nxt]
 
             if not self._has_first(nxt) or not self._has_length(nxt):
-
                 break
 
             field.first = self._get_first(nxt)
