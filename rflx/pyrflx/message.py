@@ -181,7 +181,6 @@ class Message:
             flength = field.typeval.length
             field.typeval.clear()
             raise ValueError(f"invalid data length: {field.length.value} != {flength}")
-        # setze Länge der nächdsten Felder
         self._preset_fields(fld)
 
     def _preset_fields(self, fld: str) -> None:
@@ -350,8 +349,7 @@ class Message:
         )
 
     def __simplified(self, expr: Expr) -> Expr:
-        field_values: Mapping[Name, Expr] = dict(
-            {
+        field_values: Mapping[Name, Expr] = {
                 **{
                     Variable(k): v.typeval.expr
                     for k, v in self._fields.items()
@@ -362,7 +360,6 @@ class Message:
                 **{Last(k): v.last for k, v in self._fields.items() if v.set},
                 **{First("Message"): self._fields[self._next_field(model.INITIAL.name)].first},
             }
-        )
 
         final_incoming = self._model.incoming(model.FINAL)
 
