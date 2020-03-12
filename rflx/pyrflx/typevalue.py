@@ -74,12 +74,10 @@ class TypeValue(ABC):
     def convert_bytes_to_bitstring(msg: bytes) -> str:
 
         binary_repr: str = ""
-        for i in range(0, len(msg)):
-            b = bin(msg[i]).lstrip("0b")
+        for i in msg:
+            b = bin(i).lstrip("0b")
             b = b.zfill(8)
             binary_repr += b
-
-        enumerate(msg)
 
         return binary_repr
 
@@ -148,8 +146,8 @@ class IntegerValue(ScalarValue):
 
     def assign_bitvalue(self, value: str, check: bool = True) -> None:
 
-        for i in range(0, len(value)):
-            if value[i] not in {"0", "1"}:
+        for i in value:
+            if i not in {"0", "1"}:
                 raise ValueError("String is not a bitstring: only 0 and 1 allowed")
 
         self.assign(self.convert_bits_to_integer(value))
@@ -203,8 +201,8 @@ class EnumValue(ScalarValue):
 
     def assign_bitvalue(self, value: str, check: bool = True) -> None:
 
-        for i in range(0, len(value)):
-            if value[i] not in {"0", "1"}:
+        for i in value:
+            if i not in {"0", "1"}:
                 raise ValueError("String is not a bitstring: only 0 and 1 allowed")
 
         value_as_int: int = self.convert_bits_to_integer(value)
@@ -213,10 +211,7 @@ class EnumValue(ScalarValue):
 
         for k, v in self.literals.items():
             if v == Number(value_as_int):
-                self._value = k.name
-                return
-        else:
-            raise KeyError(f"No valid key found for {value_as_int}")
+                self._value = str(k.name)
 
     @property
     def value(self) -> str:
@@ -254,17 +249,17 @@ class OpaqueValue(TypeValue):
     def assign(self, value: bytes, check: bool = True) -> None:
         self._value = value
 
-    def assign_bitvalue(self, bits: str, check: bool = True) -> None:
+    def assign_bitvalue(self, value: str, check: bool = True) -> None:
 
-        for i in range(0, len(bits)):
-            if bits[i] not in {"0", "1"}:
+        for i in value:
+            if i not in {"0", "1"}:
                 raise ValueError("String is not a bitstring: only 0 and 1 allowed")
 
-        while len(bits) % 8 != 0:
-            bits = "0" + bits
+        while len(value) % 8 != 0:
+            value = "0" + value
 
         bytestring = b"".join(
-            [int(bits[i : i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)]
+            [int(value[i : i + 8], 2).to_bytes(1, "big") for i in range(0, len(value), 8)]
         )
 
         self._value = bytestring

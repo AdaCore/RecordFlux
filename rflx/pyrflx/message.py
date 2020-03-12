@@ -355,53 +355,26 @@ class Message:
 
     def parse_from_bitstring(self, msg: str) -> None:
 
-        # get first field
         current_field_name = self._next_field(model.INITIAL.name)
 
         while current_field_name != model.FINAL.name:
 
-            if current_field_name in self.accessible_fields:
-
-                # wenn current ein opaques feld ist
-                current_field = self._fields[current_field_name]
-                if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(
-                    current_field_name
-                ):
-                    current_field.first = self._get_first(current_field_name)
-                    # first: int = self._get_first(current).value
-                    # ToDo geht nur, wenn opaques feld am ende ist
-                    current_field.typeval.assign_bitvalue(msg[current_field.first.value :], True)
-                    # assert(isinstance(current_field.typeval, OpaqueValue))
-                    current_field.length = Number(current_field.typeval.length)
-                else:
-                    length = current_field.length.value
-                    first = current_field.first.value
-                    """
-                    length_exp: Expr = current_field.length
-                    first_exp: Expr = current_field.first
-                    assert(isinstance(length_exp, Number), isinstance(first_exp, Number))
-                    length = length_exp.__int__()
-                    first = first_exp.__int__()
-                    """
-                    self._fields[current_field_name].typeval.assign_bitvalue(
-                        msg[first : first + length], True
-                    )
+            current_field = self._fields[current_field_name]
+            if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(
+                current_field_name
+            ):
+                current_field.first = self._get_first(current_field_name)
+                current_field.typeval.assign_bitvalue(msg[current_field.first.value :], True)
+                current_field.length = Number(current_field.typeval.length)
             else:
-                raise KeyError("nxt is not accessible")
+                assert isinstance(current_field.length, Number) and isinstance(
+                    current_field.first, Number
+                )
+                length = current_field.length.value
+                first = current_field.first.value
+                self._fields[current_field_name].typeval.assign_bitvalue(
+                    msg[first : first + length], True
+                )
 
             self._preset_fields(current_field_name)
             current_field_name = self._next_field(current_field_name)
-
-            """
-                        # get incoming edges
-                        edges = self._model.incoming(self._fields[nxt])
-
-                        # get length of field
-                        for edge in edges:
-                            # get valid edge
-                            if self.__simplified(edge.condition) == TRUE:
-                                nxt_length = self.__simplified(edge.length)
-                                assert(isinstance(nxt_length, Number))
-                        else:
-                            raise KeyError("no valid edge found for node: " + nxt)
-                        """
