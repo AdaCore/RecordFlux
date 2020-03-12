@@ -5,10 +5,8 @@ from rflx.common import generic_repr
 from rflx.expression import TRUE, Expr, Name, Variable
 from rflx.model import Enumeration, Integer, Number, Opaque, Scalar, Type
 
-
 class NotInitializedError(Exception):
     pass
-
 
 class TypeValue(ABC):
 
@@ -40,6 +38,10 @@ class TypeValue(ABC):
     def assign(self, value: Any, check: bool) -> None:
         raise NotImplementedError
 
+    @abstractmethod
+    def assign_bitvalue(self, value: Any, check: bool) -> None:
+        raise NotImplementedError
+
     @abstractproperty
     def value(self) -> Any:
         raise NotImplementedError
@@ -65,6 +67,34 @@ class TypeValue(ABC):
         if isinstance(vtype, Opaque):
             return OpaqueValue(vtype)
         raise ValueError("cannot construct unknown type: " + type(vtype).__name__)
+
+    @staticmethod
+    def convert_bytes_to_bitstring(msg: bytes) -> str:
+        binary_repr: str = ""
+
+        for i in range(0, len(msg)):
+            b = bin(msg[i]).lstrip('0b')
+            b = b.zfill(8)
+
+            binary_repr = binary_repr + b
+
+        return binary_repr
+
+    @staticmethod
+    def convert_bits_to_integer(bitstring: str) -> int:
+
+        # Todo: Methode vereinfachen
+        data_for_nxt_field_int = []
+        j = 0
+        for i in range(len(bitstring), 0, -1):
+            data_for_nxt_field_int.append(int(bitstring[i - 1]) * 2 ** j)
+            j += 1
+
+        d = 0
+        for i in range(0, len(data_for_nxt_field_int)):
+            d = d + data_for_nxt_field_int[i]
+
+        return d
 
 
 class ScalarValue(TypeValue):
@@ -118,6 +148,15 @@ class IntegerValue(ScalarValue):
             raise ValueError(f"value {value} not in type range {self._first} .. {self._last}")
         self._value = value
 
+    def assign_bitvalue(self, value: str, check: bool = True) -> None:
+
+        for i in range(0, len(value)):
+            if value[i] not in {'0', '1'}:
+                raise ValueError("String is not a bitstring: only 0 and 1 allowed")
+
+        self.assign(self.convert_bits_to_integer(value))
+
+
     @property
     def expr(self) -> Number:
         self._raise_initialized()
@@ -165,6 +204,22 @@ class EnumValue(ScalarValue):
         )
         self._value = value
 
+    def assign_bitvalue(self, value: str, check: bool = True) -> None:
+        #  check ob ein bit string übergeben wurde
+        for i in range(0, len(value)):
+            if value[i] not in {'0', '1'}:
+                b= value[i]
+                raise ValueError("String is not a bitstring: only 0 and 1 allowed")
+
+        value_as_int: int = self.convert_bits_to_integer(value)
+
+        # check ob bitstring (als int) ein valides enum value ist -> in dem Falle muss das EnumValue eine Zahl sein,
+        # weil ein String nicht in ein Paket geschrieben werden kann
+        if not Number(value_as_int) in self.literals.values():
+            raise KeyError(f"Number {value_as_int} is not a valid enum value")
+
+        self._value = value
+
     @property
     def value(self) -> str:
         self._raise_initialized()
@@ -201,6 +256,24 @@ class OpaqueValue(TypeValue):
     def assign(self, value: bytes, check: bool = True) -> None:
         self._value = value
 
+    def assign_bitvalue(self, bits: str, check: bool = True) -> None:
+
+        for i in range(0, len(bits)):
+            if bits[i] not in {'0', '1'}:
+                b= bits[i]
+                raise ValueError("String is not a bitstring: only 0 and 1 allowed")
+
+        # ist der bitstring druch 8 teilbar?
+        while len(bits) % 8 != 0:
+            # wenn nicht, dann fülle vorne mit 0 auf
+            bits = '0' + bits
+
+        # convertierte bitstring wieder in bytes
+        bytestring = b"".join(
+            [int(bits[i: i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)])
+
+        self._value = bytestring
+
     @property
     def length(self) -> int:
         self._raise_initialized()
@@ -223,3 +296,6 @@ class OpaqueValue(TypeValue):
     @property
     def literals(self) -> Mapping[Name, Expr]:
         return {}
+
+
+
