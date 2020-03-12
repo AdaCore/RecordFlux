@@ -236,7 +236,7 @@ class Message:
         if len(bits) % 8:
             raise ValueError(f"message length must be dividable by 8 ({len(bits)})")
         return b"".join(
-            [int(bits[i: i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)]
+            [int(bits[i : i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)]
         )
 
     @property
@@ -364,11 +364,13 @@ class Message:
 
                 # wenn current ein opaques feld ist
                 current_field = self._fields[current_field_name]
-                if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(current_field_name):
+                if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(
+                    current_field_name
+                ):
                     current_field.first = self._get_first(current_field_name)
                     # first: int = self._get_first(current).value
                     # ToDo geht nur, wenn opaques feld am ende ist
-                    current_field.typeval.assign_bitvalue(msg[current_field.first.value:], True)
+                    current_field.typeval.assign_bitvalue(msg[current_field.first.value :], True)
                     # assert(isinstance(current_field.typeval, OpaqueValue))
                     current_field.length = Number(current_field.typeval.length)
                 else:
@@ -381,20 +383,14 @@ class Message:
                     length = length_exp.__int__()
                     first = first_exp.__int__()
                     """
-                    self._fields[current_field_name].typeval.assign_bitvalue(msg[first:first+length], True)
+                    self._fields[current_field_name].typeval.assign_bitvalue(
+                        msg[first : first + length], True
+                    )
             else:
                 raise KeyError("nxt is not accessible")
 
             self._preset_fields(current_field_name)
             current_field_name = self._next_field(current_field_name)
-
-
-
-
-
-
-
-
 
             """
                         # get incoming edges

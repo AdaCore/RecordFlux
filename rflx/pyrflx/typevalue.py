@@ -5,8 +5,10 @@ from rflx.common import generic_repr
 from rflx.expression import TRUE, Expr, Name, Variable
 from rflx.model import Enumeration, Integer, Number, Opaque, Scalar, Type
 
+
 class NotInitializedError(Exception):
     pass
+
 
 class TypeValue(ABC):
 
@@ -70,31 +72,27 @@ class TypeValue(ABC):
 
     @staticmethod
     def convert_bytes_to_bitstring(msg: bytes) -> str:
+
         binary_repr: str = ""
-
         for i in range(0, len(msg)):
-            b = bin(msg[i]).lstrip('0b')
+            b = bin(msg[i]).lstrip("0b")
             b = b.zfill(8)
+            binary_repr += b
 
-            binary_repr = binary_repr + b
+        enumerate(msg)
 
         return binary_repr
 
     @staticmethod
     def convert_bits_to_integer(bitstring: str) -> int:
 
-        # Todo: Methode vereinfachen
-        data_for_nxt_field_int = []
         j = 0
+        int_value = 0
         for i in range(len(bitstring), 0, -1):
-            data_for_nxt_field_int.append(int(bitstring[i - 1]) * 2 ** j)
+            int_value += int(bitstring[i - 1]) * 2 ** j
             j += 1
 
-        d = 0
-        for i in range(0, len(data_for_nxt_field_int)):
-            d = d + data_for_nxt_field_int[i]
-
-        return d
+        return int_value
 
 
 class ScalarValue(TypeValue):
@@ -151,11 +149,10 @@ class IntegerValue(ScalarValue):
     def assign_bitvalue(self, value: str, check: bool = True) -> None:
 
         for i in range(0, len(value)):
-            if value[i] not in {'0', '1'}:
+            if value[i] not in {"0", "1"}:
                 raise ValueError("String is not a bitstring: only 0 and 1 allowed")
 
         self.assign(self.convert_bits_to_integer(value))
-
 
     @property
     def expr(self) -> Number:
@@ -205,20 +202,21 @@ class EnumValue(ScalarValue):
         self._value = value
 
     def assign_bitvalue(self, value: str, check: bool = True) -> None:
-        #  check ob ein bit string übergeben wurde
+
         for i in range(0, len(value)):
-            if value[i] not in {'0', '1'}:
-                b= value[i]
+            if value[i] not in {"0", "1"}:
                 raise ValueError("String is not a bitstring: only 0 and 1 allowed")
 
         value_as_int: int = self.convert_bits_to_integer(value)
-
-        # check ob bitstring (als int) ein valides enum value ist -> in dem Falle muss das EnumValue eine Zahl sein,
-        # weil ein String nicht in ein Paket geschrieben werden kann
         if not Number(value_as_int) in self.literals.values():
             raise KeyError(f"Number {value_as_int} is not a valid enum value")
 
-        self._value = value
+        for k, v in self.literals.items():
+            if v == Number(value_as_int):
+                self._value = k.name
+                return
+        else:
+            raise KeyError(f"No valid key found for {value_as_int}")
 
     @property
     def value(self) -> str:
@@ -259,18 +257,15 @@ class OpaqueValue(TypeValue):
     def assign_bitvalue(self, bits: str, check: bool = True) -> None:
 
         for i in range(0, len(bits)):
-            if bits[i] not in {'0', '1'}:
-                b= bits[i]
+            if bits[i] not in {"0", "1"}:
                 raise ValueError("String is not a bitstring: only 0 and 1 allowed")
 
-        # ist der bitstring druch 8 teilbar?
         while len(bits) % 8 != 0:
-            # wenn nicht, dann fülle vorne mit 0 auf
-            bits = '0' + bits
+            bits = "0" + bits
 
-        # convertierte bitstring wieder in bytes
         bytestring = b"".join(
-            [int(bits[i: i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)])
+            [int(bits[i : i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)]
+        )
 
         self._value = bytestring
 
@@ -296,6 +291,3 @@ class OpaqueValue(TypeValue):
     @property
     def literals(self) -> Mapping[Name, Expr]:
         return {}
-
-
-
