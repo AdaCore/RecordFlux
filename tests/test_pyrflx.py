@@ -463,14 +463,12 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(enumvalue.binary, "00000001")
         with self.assertRaisesRegex(KeyError, r"Three is not a valid enum value"):
             enumvalue.assign("Three")
-        with self.assertRaisesRegex(ValueError, r"String is not a bitstring: only 0 and 1 allowed"):
-            enumvalue.assign_bitvalue("01234", True)
         with self.assertRaisesRegex(KeyError, r"Number 15 is not a valid enum value"):
             enumvalue.assign_bitvalue("1111", True)
 
     def test_value_opaque(self) -> None:
         # pylint: disable=pointless-statement
-        # pylint: disable= protected-access
+        # pylint: disable=protected-access
         opaquevalue = OpaqueValue(Opaque())
         self.assertFalse(opaquevalue.initialized)
         with self.assertRaisesRegex(NotInitializedError, "value not initialized"):
@@ -480,8 +478,6 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(opaquevalue.value, b"\x01\x02")
         self.assertEqual(opaquevalue.length, 16)
         self.assertEqual(opaquevalue.binary, "0000000100000010")
-        with self.assertRaisesRegex(ValueError, r"String is not a bitstring: only 0 and 1 allowed"):
-            opaquevalue.assign_bitvalue("01234", True)
         opaquevalue.assign_bitvalue("1111", True)
         self.assertEqual(opaquevalue._value, b"\x0f")
 
@@ -578,8 +574,7 @@ class TestPyRFLX(unittest.TestCase):
             b"\x30\x31\x32\x33\x34\x35\x36\x37"
         )
 
-        bits = TypeValue.convert_bytes_to_bitstring(test_bytes)
-        self.icmp.parse_from_bitstring(bits)
+        self.icmp.parse_from_bytes(test_bytes)
 
         self.assertTrue(self.icmp.valid_message)
         self.assertEqual(self.icmp.binary, test_bytes)
@@ -594,14 +589,31 @@ class TestPyRFLX(unittest.TestCase):
             b"\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
         )
 
-        bits = TypeValue.convert_bytes_to_bitstring(test_bytes)
-        self.frame.parse_from_bitstring(bits)
+        self.frame.parse_from_bytes(test_bytes)
+        print(self.frame.binary.hex())
+        print(test_bytes.hex())
 
         self.assertTrue(self.frame.valid_message)
+
         self.assertEqual(self.frame.binary, test_bytes)
 
-    def test_value_integer(self) -> None:
-        modtype = ModularInteger("Test.Int", Number(2 ** 16))
-        modvalue = IntegerValue(modtype)
-        with self.assertRaisesRegex(ValueError, r"String is not a bitstring: only 0 and 1 allowed"):
-            modvalue.assign_bitvalue("01234", True)
+    def test_tlv_checksum_binary(self) -> None:
+        test_bytes = b"\x01"
+
+        from rflx.pyrflx import PyRFLX
+        p = PyRFLX(["tests/tlv_with_checksum.rflx"])
+        m = p["TLV"]["Message"]
+        m.parse_from_bytes(test_bytes)
+
+        self.assertFalse(m.valid_message)
+
+    def test_TEST_checksum_binary(self) -> None:
+        test_bytes = b"\x01\x02\x01\xff\xb8"
+
+        from rflx.pyrflx import PyRFLX
+        p = PyRFLX(["tests/test_odd_length.rflx"])
+        m = p["TEST"]["Message"]
+        m.parse_from_bytes(test_bytes)
+
+        self.assertTrue(m.valid_message)
+

@@ -353,28 +353,49 @@ class Message:
 
         return expr.simplified(field_values).simplified(self.__type_literals)
 
-    def parse_from_bitstring(self, msg: str) -> None:
+    def parse_from_bytes(self, msg_as_bytes: bytes) -> None:
 
+        msg = TypeValue.convert_bytes_to_bitstring(msg_as_bytes)
         current_field_name = self._next_field(model.INITIAL.name)
+        first = 0
+        length = 0
 
-        while current_field_name != model.FINAL.name:
+        while current_field_name != model.FINAL.name and first + length != len(msg):
 
             current_field = self._fields[current_field_name]
-            if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(
-                current_field_name
-            ):
-                current_field.first = self._get_first(current_field_name)
-                current_field.typeval.assign_bitvalue(msg[current_field.first.value :], True)
-                current_field.length = Number(current_field.typeval.length)
+            if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(current_field_name):
+                self._fields[current_field_name].first = self._get_first(current_field_name)
+                self._fields[current_field_name].typeval.assign_bitvalue(msg[first:], True)
+                self._fields[current_field_name].length = Number(current_field.typeval.length)
             else:
-                assert isinstance(current_field.length, Number) and isinstance(
-                    current_field.first, Number
-                )
+                assert isinstance(current_field.length, Number)
                 length = current_field.length.value
-                first = current_field.first.value
-                self._fields[current_field_name].typeval.assign_bitvalue(
-                    msg[first : first + length], True
-                )
+
+                if length < 8:
+                    first = first + 8 - length
+                    self._fields[current_field_name].typeval.assign_bitvalue(msg[first: first + length], True)
+                    first = first + length
+                elif length > 9 and length % 8 != 0:
+                    x = length // 8 + 1
+                    s = first
+                    v = ""
+                    for i in range(x - 1):
+                        # immer 8 bit nehemn
+                        v += msg[s: s + 8]
+                        s = s + 8
+                    else:
+                        # wenn das letzte erreicht ist
+                        k = 30 // x + 1
+                        v += msg[s + 8 - k: current_field.first.value + length]
+
+                    self._fields[current_field_name].typeval.assign_bitvalue(v, True)
+                else:
+                    self._fields[current_field_name].typeval.assign_bitvalue(
+                        msg[first: first + length], True
+                    )
+                    print(self._fields[current_field_name].typeval.binary)
+                    print(TypeValue.convert_bits_to_integer(msg[first: first + length]))
+                    first = first + length
 
             self._preset_fields(current_field_name)
             current_field_name = self._next_field(current_field_name)

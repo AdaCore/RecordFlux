@@ -73,24 +73,12 @@ class TypeValue(ABC):
     @staticmethod
     def convert_bytes_to_bitstring(msg: bytes) -> str:
 
-        binary_repr: str = ""
-        for i in msg:
-            b = bin(i).lstrip("0b")
-            b = b.zfill(8)
-            binary_repr += b
-
-        return binary_repr
+        return format(int.from_bytes(msg, "big"), f"0{len(msg) * 8}b")
 
     @staticmethod
     def convert_bits_to_integer(bitstring: str) -> int:
 
-        j = 0
-        int_value = 0
-        for i in range(len(bitstring), 0, -1):
-            int_value += int(bitstring[i - 1]) * 2 ** j
-            j += 1
-
-        return int_value
+        return int(bitstring, 2)
 
 
 class ScalarValue(TypeValue):
@@ -146,10 +134,6 @@ class IntegerValue(ScalarValue):
 
     def assign_bitvalue(self, value: str, check: bool = True) -> None:
 
-        for i in value:
-            if i not in {"0", "1"}:
-                raise ValueError("String is not a bitstring: only 0 and 1 allowed")
-
         self.assign(self.convert_bits_to_integer(value))
 
     @property
@@ -201,10 +185,6 @@ class EnumValue(ScalarValue):
 
     def assign_bitvalue(self, value: str, check: bool = True) -> None:
 
-        for i in value:
-            if i not in {"0", "1"}:
-                raise ValueError("String is not a bitstring: only 0 and 1 allowed")
-
         value_as_int: int = self.convert_bits_to_integer(value)
         if not Number(value_as_int) in self.literals.values():
             raise KeyError(f"Number {value_as_int} is not a valid enum value")
@@ -250,10 +230,6 @@ class OpaqueValue(TypeValue):
         self._value = value
 
     def assign_bitvalue(self, value: str, check: bool = True) -> None:
-
-        for i in value:
-            if i not in {"0", "1"}:
-                raise ValueError("String is not a bitstring: only 0 and 1 allowed")
 
         while len(value) % 8 != 0:
             value = "0" + value
