@@ -360,10 +360,12 @@ class Message:
         first = 0
         length = 0
 
-        while current_field_name != model.FINAL.name and first + length != len(msg):
+        while current_field_name != model.FINAL.name and (first + length) < len(msg):
 
             current_field = self._fields[current_field_name]
-            if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(current_field_name):
+            if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(
+                current_field_name
+            ):
                 self._fields[current_field_name].first = self._get_first(current_field_name)
                 self._fields[current_field_name].typeval.assign_bitvalue(msg[first:], True)
                 self._fields[current_field_name].length = Number(current_field.typeval.length)
@@ -373,29 +375,38 @@ class Message:
 
                 if length < 8:
                     first = first + 8 - length
-                    self._fields[current_field_name].typeval.assign_bitvalue(msg[first: first + length], True)
+                    self._fields[current_field_name].typeval.assign_bitvalue(
+                        msg[first : first + length], True
+                    )
                     first = first + length
                 elif length > 9 and length % 8 != 0:
                     x = length // 8 + 1
                     s = first
                     v = ""
                     for i in range(x - 1):
-                        # immer 8 bit nehemn
-                        v += msg[s: s + 8]
+                        v += msg[s : s + 8]
                         s = s + 8
-                    else:
-                        # wenn das letzte erreicht ist
-                        k = 30 // x + 1
-                        v += msg[s + 8 - k: current_field.first.value + length]
+
+                    assert isinstance(current_field.first, Number)
+                    k = 30 // x + 1
+                    v += msg[s + 8 - k : current_field.first.value + length]
 
                     self._fields[current_field_name].typeval.assign_bitvalue(v, True)
                 else:
+                    # ToDo evaluate if this is generally applicable
+                    # tested for (Ethernet Type Length TPID and TypeLength)
+                    prev_first = self._fields[current_field_name].first
+                    this_first = self._fields[self._prev_field(current_field_name)].first
+                    assert isinstance(prev_first, Number)
+                    assert isinstance(this_first, Number)
+                    if prev_first.value == this_first.value:
+                        s = prev_first.value
+                    else:
+                        s = first
                     self._fields[current_field_name].typeval.assign_bitvalue(
-                        msg[first: first + length], True
+                        msg[s : s + length], True
                     )
-                    print(self._fields[current_field_name].typeval.binary)
-                    print(TypeValue.convert_bits_to_integer(msg[first: first + length]))
-                    first = first + length
+                    first = s + length
 
             self._preset_fields(current_field_name)
             current_field_name = self._next_field(current_field_name)
