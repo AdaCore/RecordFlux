@@ -1,3 +1,4 @@
+import itertools
 from typing import Any, Dict, List, Mapping
 
 import rflx.model as model
@@ -355,46 +356,51 @@ class Message:
 
     def parse_from_bytes(self, msg_as_bytes: bytes) -> None:
 
-        msg = TypeValue.convert_bytes_to_bitstring(msg_as_bytes)
+        msg_as_bitstr = TypeValue.convert_bytes_to_bitstring(msg_as_bytes)
         current_field_name = self._next_field(model.INITIAL.name)
-        first = 0
-        length = 0
+        field_first_in_bistr = 0
+        field_length = 0
 
-        while current_field_name != model.FINAL.name and (first + length) < len(msg):
+        while current_field_name != model.FINAL.name and (
+            field_first_in_bistr + field_length
+        ) < len(msg_as_bitstr):
 
             current_field = self._fields[current_field_name]
             if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(
                 current_field_name
             ):
                 self._fields[current_field_name].first = self._get_first(current_field_name)
-                self._fields[current_field_name].typeval.assign_bitvalue(msg[first:], True)
+                self._fields[current_field_name].typeval.assign_bitvalue(
+                    msg_as_bitstr[field_first_in_bistr:], True
+                )
                 self._fields[current_field_name].length = Number(current_field.typeval.length)
             else:
                 assert isinstance(current_field.length, Number)
-                length = current_field.length.value
+                field_length = current_field.length.value
 
-                if length < 8:
-                    first = first + 8 - length
+                if field_length < 8:
+                    field_first_in_bistr = field_first_in_bistr + 8 - field_length
                     self._fields[current_field_name].typeval.assign_bitvalue(
-                        msg[first : first + length], True
+                        msg_as_bitstr[field_first_in_bistr : field_first_in_bistr + field_length],
+                        True,
                     )
-                    first = first + length
-                elif length > 9 and length % 8 != 0:
-                    x = length // 8 + 1
-                    s = first
-                    v = ""
-                    for i in range(x - 1):
-                        v += msg[s : s + 8]
-                        s = s + 8
+                    field_first_in_bistr = field_first_in_bistr + field_length
+                elif field_length > 9 and field_length % 8 != 0:
+                    number_of_bytes = field_length // 8 + 1
+                    field_bits = ""
+
+                    for _ in itertools.repeat(None, number_of_bytes - 1):
+                        field_bits += msg_as_bitstr[field_first_in_bistr : field_first_in_bistr + 8]
+                        field_first_in_bistr += 8
 
                     assert isinstance(current_field.first, Number)
-                    k = 30 // x + 1
-                    v += msg[s + 8 - k : current_field.first.value + length]
+                    k = field_length // number_of_bytes + 1
+                    field_bits += msg_as_bitstr[
+                        field_first_in_bistr + 8 - k : current_field.first.value + field_length
+                    ]
 
-                    self._fields[current_field_name].typeval.assign_bitvalue(v, True)
+                    self._fields[current_field_name].typeval.assign_bitvalue(field_bits, True)
                 else:
-                    # ToDo evaluate if this is generally applicable
-                    # tested for (Ethernet Type Length TPID and TypeLength)
                     prev_first = self._fields[current_field_name].first
                     this_first = self._fields[self._prev_field(current_field_name)].first
                     assert isinstance(prev_first, Number)
@@ -402,11 +408,11 @@ class Message:
                     if prev_first.value == this_first.value:
                         s = prev_first.value
                     else:
-                        s = first
+                        s = field_first_in_bistr
                     self._fields[current_field_name].typeval.assign_bitvalue(
-                        msg[s : s + length], True
+                        msg_as_bitstr[s : s + field_length], True
                     )
-                    first = s + length
+                    field_first_in_bistr = s + field_length
 
             self._preset_fields(current_field_name)
             current_field_name = self._next_field(current_field_name)
