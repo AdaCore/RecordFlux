@@ -358,11 +358,11 @@ class Message:
 
         msg_as_bitstr = TypeValue.convert_bytes_to_bitstring(msg_as_bytes)
         current_field_name = self._next_field(model.INITIAL.name)
-        field_first_in_bistr = 0
+        field_first_in_bitstr = 0
         field_length = 0
 
         while current_field_name != model.FINAL.name and (
-            field_first_in_bistr + field_length
+            field_first_in_bitstr + field_length
         ) < len(msg_as_bitstr):
 
             current_field = self._fields[current_field_name]
@@ -371,7 +371,7 @@ class Message:
             ):
                 self._fields[current_field_name].first = self._get_first(current_field_name)
                 self._fields[current_field_name].typeval.assign_bitvalue(
-                    msg_as_bitstr[field_first_in_bistr:], True
+                    msg_as_bitstr[field_first_in_bitstr:], True
                 )
                 self._fields[current_field_name].length = Number(current_field.typeval.length)
             else:
@@ -379,24 +379,26 @@ class Message:
                 field_length = current_field.length.value
 
                 if field_length < 8:
-                    field_first_in_bistr = field_first_in_bistr + 8 - field_length
+                    field_first_in_bitstr = field_first_in_bitstr + 8 - field_length
                     self._fields[current_field_name].typeval.assign_bitvalue(
-                        msg_as_bitstr[field_first_in_bistr : field_first_in_bistr + field_length],
+                        msg_as_bitstr[field_first_in_bitstr : field_first_in_bitstr + field_length],
                         True,
                     )
-                    field_first_in_bistr = field_first_in_bistr + field_length
+                    field_first_in_bitstr = field_first_in_bitstr + field_length
                 elif field_length > 9 and field_length % 8 != 0:
                     number_of_bytes = field_length // 8 + 1
                     field_bits = ""
 
                     for _ in itertools.repeat(None, number_of_bytes - 1):
-                        field_bits += msg_as_bitstr[field_first_in_bistr : field_first_in_bistr + 8]
-                        field_first_in_bistr += 8
+                        field_bits += msg_as_bitstr[
+                            field_first_in_bitstr : field_first_in_bitstr + 8
+                        ]
+                        field_first_in_bitstr += 8
 
                     assert isinstance(current_field.first, Number)
                     k = field_length // number_of_bytes + 1
                     field_bits += msg_as_bitstr[
-                        field_first_in_bistr + 8 - k : current_field.first.value + field_length
+                        field_first_in_bitstr + 8 - k : current_field.first.value + field_length
                     ]
 
                     self._fields[current_field_name].typeval.assign_bitvalue(field_bits, True)
@@ -408,11 +410,11 @@ class Message:
                     if prev_first.value == this_first.value:
                         s = prev_first.value
                     else:
-                        s = field_first_in_bistr
+                        s = field_first_in_bitstr
                     self._fields[current_field_name].typeval.assign_bitvalue(
                         msg_as_bitstr[s : s + field_length], True
                     )
-                    field_first_in_bistr = s + field_length
+                    field_first_in_bitstr = s + field_length
 
             self._preset_fields(current_field_name)
             current_field_name = self._next_field(current_field_name)

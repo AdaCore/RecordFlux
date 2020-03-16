@@ -579,7 +579,6 @@ class TestPyRFLX(unittest.TestCase):
         )
 
         self.icmp.parse_from_bytes(test_bytes)
-
         self.assertTrue(self.icmp.valid_message)
         self.assertEqual(self.icmp.binary, test_bytes)
 
@@ -594,9 +593,6 @@ class TestPyRFLX(unittest.TestCase):
         )
 
         self.frame.parse_from_bytes(test_bytes)
-        print(self.frame.binary.hex())
-        print(test_bytes.hex())
-
         self.assertTrue(self.frame.valid_message)
         self.assertEqual(self.frame.binary, test_bytes)
 
