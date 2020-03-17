@@ -20,6 +20,7 @@ from rflx.expression import (
     Variable,
 )
 from rflx.model import (
+    BOOLEAN,
     FINAL,
     INITIAL,
     Array,
@@ -270,6 +271,19 @@ class TestModel(TestCase):
         types = {Field("X"): t}
 
         with self.assertRaisesRegex(ModelError, f'^duplicate links in "P.M": X -> {FINAL.name}$'):
+            Message("P.M", structure, types)
+
+    def test_message_unreachable_field(self) -> None:
+        structure = [
+            Link(INITIAL, Field("X")),
+            Link(Field("X"), Field("Z")),
+            Link(Field("Y"), Field("Z")),
+            Link(Field("Z"), FINAL),
+        ]
+
+        types = {Field("X"): BOOLEAN, Field("Y"): BOOLEAN, Field("Z"): BOOLEAN}
+
+        with self.assertRaisesRegex(ModelError, '^unreachable field "Y" in "P.M"$'):
             Message("P.M", structure, types)
 
     def test_message_cycle(self) -> None:
