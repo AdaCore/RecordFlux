@@ -128,6 +128,12 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             ):
                 grammar.mathematical_expression().parseString("1 + 1")
 
+    def test_numeric_literal(self) -> None:
+        self.assertEqual(grammar.numeric_literal().parseString("1000")[0], Number(1000))
+        self.assertEqual(grammar.numeric_literal().parseString("1_000")[0], Number(1000))
+        self.assertEqual(grammar.numeric_literal().parseString("16#6664#")[0], Number(26212))
+        self.assertEqual(grammar.numeric_literal().parseString("16#66_64#")[0], Number(26212))
+
     # ISSUE: Componolit/RecordFlux#60
 
     def test_unsupported_array_aggregate(self) -> None:
