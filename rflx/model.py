@@ -405,12 +405,23 @@ class AbstractMessage(Element):
     def __verify(self) -> None:
         type_fields = self.__types.keys() | {INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
+
         for f in structure_fields - type_fields:
             raise ModelError(f'missing type for field "{f.name}" of "{self.full_name}"')
+
         for f in type_fields - structure_fields:
             raise ModelError(f'superfluous field "{f.name}" in field types of "{self.full_name}"')
+
         if len(self.outgoing(INITIAL)) != 1:
             raise ModelError(f'ambiguous first field in "{self.full_name}"')
+
+        for f in structure_fields:
+            for l in self.structure:
+                if f in (INITIAL, l.target):
+                    break
+            else:
+                raise ModelError(f'unreachable field "{f.name}" in "{self.full_name}"')
+
         duplicate_links = set(l for l in self.structure if self.structure.count(l) > 1)
         if duplicate_links:
             raise ModelError(
