@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 import itertools
+import logging
 from datetime import date
 from pathlib import Path
 from typing import Dict, List, Mapping, Sequence, Set, Tuple, cast
@@ -131,6 +132,8 @@ from .generator import GeneratorGenerator
 from .parser import ParserGenerator
 from .types import Types
 
+log = logging.getLogger(__name__)
+
 TEMPLATE_DIR = ("rflx", "templates/")
 LIBRARY_FILES = (
     "generic_types.ads",
@@ -170,54 +173,36 @@ class Generator:
         self.__process_messages(messages)
         self.__process_refinements(refinements)
 
-    def write_library_files(self, directory: Path) -> List[Path]:
-        written_files = []
+    def write_library_files(self, directory: Path) -> None:
 
         for template_filename in LIBRARY_FILES:
             self.check_template_file(template_filename)
 
             filename = self.prefix.replace(".", "-").lower() + template_filename
-            file_path = Path(directory).joinpath(filename)
 
-            with open(self.template_dir.joinpath(template_filename)) as template_file:
-                with open(file_path, "w") as library_file:
-                    library_file.write(
-                        self.license_header() + template_file.read().format(prefix=self.prefix)
-                    )
-                    written_files.append(file_path)
+            with open(self.template_dir / Path(template_filename)) as template_file:
+                create_file(
+                    Path(directory) / Path(filename),
+                    self.license_header() + template_file.read().format(prefix=self.prefix),
+                )
 
-        return written_files
-
-    def write_top_level_package(self, directory: Path) -> List[Path]:
-        written_files = []
-
+    def write_top_level_package(self, directory: Path) -> None:
         if self.prefix:
             prefix = self.prefix[:-1]
-            filename = prefix.lower() + ".ads"
-            file_path = Path(directory).joinpath(filename)
 
-            with open(file_path, "w") as library_file:
-                library_file.write(self.license_header() + f"package {prefix} is\n\nend {prefix};")
-                written_files.append(file_path)
+            create_file(
+                Path(directory) / Path(prefix.lower() + ".ads"),
+                self.license_header() + f"package {prefix} is\n\nend {prefix};",
+            )
 
-        return written_files
-
-    def write_units(self, directory: Path) -> List[Path]:
-        written_files = []
-
+    def write_units(self, directory: Path) -> None:
         for unit in self.units.values():
-            filename = directory.joinpath(unit.name + ".ads")
-            written_files.append(filename)
-            with open(filename, "w") as f:
-                f.write(self.license_header() + unit.specification)
+            create_file(
+                directory / Path(unit.name + ".ads"), self.license_header() + unit.specification
+            )
 
             if unit.body:
-                filename = directory.joinpath(unit.name + ".adb")
-                written_files.append(filename)
-                with open(filename, "w") as f:
-                    f.write(self.license_header() + unit.body)
-
-        return written_files
+                create_file(directory / Path(unit.name + ".adb"), self.license_header() + unit.body)
 
     def __process_messages(self, messages: Sequence[Message]) -> None:
         seen_types: Set[str] = set()
@@ -2429,6 +2414,13 @@ class Generator:
 
 class InternalError(Exception):
     pass
+
+
+def create_file(filename: Path, content: str) -> None:
+    log.info("Creating %s", filename)
+
+    with open(filename, "w") as f:
+        f.write(content)
 
 
 def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:

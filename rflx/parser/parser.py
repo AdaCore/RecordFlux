@@ -1,3 +1,4 @@
+import logging
 import traceback
 from collections import deque
 from pathlib import Path
@@ -31,6 +32,8 @@ from rflx.model import (
 from . import grammar
 from .ast import Component, DerivationSpec, MessageSpec, Specification
 
+log = logging.getLogger(__name__)
+
 
 class Parser:
     def __init__(self) -> None:
@@ -44,6 +47,8 @@ class Parser:
         self.__parse(specfile)
 
     def __parse(self, specfile: Path, transitions: Set[Tuple[str, str]] = None) -> None:
+        log.info("Parsing %s", specfile)
+
         if not transitions:
             transitions = set()
 
@@ -81,6 +86,8 @@ class Parser:
         return {s.package.identifier: s for s in self.__specifications}
 
     def __evaluate_specification(self, specification: Specification) -> None:
+        log.info("Processing %s", specification.package.identifier)
+
         try:
             messages, types = create_messages(specification, self.__messages, self.__types)
 
