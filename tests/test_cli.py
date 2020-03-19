@@ -23,6 +23,10 @@ class TestCLI(TestCase):
     def test_main_check(self) -> None:
         self.assertEqual(cli.main(["rflx", "check", "specs/tlv.rflx"]), 0)
 
+    def test_main_check_quiet(self) -> None:
+        self.assertEqual(cli.main(["rflx", "-q", "check", "specs/tlv.rflx"]), 0)
+        self.assertEqual(cli.main(["rflx", "--quiet", "check", "specs/tlv.rflx"]), 0)
+
     def test_main_check_parser_error(self) -> None:
         self.assertRegex(str(cli.main(["rflx", "check", "README.md"])), r"parser error: ")
 
