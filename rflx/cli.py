@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 from typing import List, Union
 
@@ -7,6 +8,8 @@ from rflx.generator import Generator, InternalError
 from rflx.graph import Graph
 from rflx.model import Model, ModelError
 from rflx.parser import Parser, ParserError
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 DEFAULT_PREFIX = "RFLX"
 
@@ -17,6 +20,9 @@ class Error(Exception):
 
 def main(argv: List[str]) -> Union[int, str]:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-q", "--quiet", action="store_true", help="disable logging to standard output"
+    )
     parser.add_argument("--version", action="store_true")
 
     subparsers = parser.add_subparsers(dest="subcommand")
@@ -68,6 +74,9 @@ def main(argv: List[str]) -> Union[int, str]:
         parser.print_usage()
         return 2
 
+    if args.quiet:
+        logging.disable(logging.CRITICAL)
+
     try:
         args.func(args)
     except ParserError as e:
@@ -100,16 +109,11 @@ def generate(args: argparse.Namespace) -> None:
 
     generator = Generator(args.prefix)
 
-    print("Generating... ", end="", flush=True)
     generator.generate(model.messages, model.refinements)
-    written_files = generator.write_units(directory)
-    written_files += generator.write_library_files(directory)
+    generator.write_units(directory)
+    generator.write_library_files(directory)
     if args.prefix == DEFAULT_PREFIX:
-        written_files += generator.write_top_level_package(directory)
-    print("OK")
-
-    for f in written_files:
-        print(f"Created {f}")
+        generator.write_top_level_package(directory)
 
 
 def parse(files: List) -> Model:
@@ -119,13 +123,9 @@ def parse(files: List) -> Model:
         if not Path(f).is_file():
             raise Error(f'file not found: "{f}"')
 
-        print(f"Parsing {f}... ", end="", flush=True)
         parser.parse(Path(f))
-        print("OK")
 
-    print(f"Processing specifications... ", end="", flush=True)
     model = parser.create_model()
-    print("OK")
 
     return model
 
@@ -140,7 +140,4 @@ def graph(args: argparse.Namespace) -> None:
     for m in model.messages:
         message = m.full_name.replace(".", "_")
         filename = Path(directory).joinpath(message).with_suffix(f".{args.format}")
-        with open(filename, "wb") as f:
-            print(f"Creating graph {filename}... ", end="", flush=True)
-            Graph(m).write(f, fmt=args.format)
-            print("OK")
+        Graph(m).write(filename, fmt=args.format)

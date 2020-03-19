@@ -1,5 +1,6 @@
 import unittest
-from io import BytesIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from rflx.expression import Greater, Variable
 from rflx.graph import Graph
@@ -9,6 +10,13 @@ from rflx.model import FINAL, INITIAL, Field, Less, Link, Message, ModularIntege
 class TestGraph(unittest.TestCase):
     def setUp(self) -> None:
         self.maxDiff = None  # pylint: disable=invalid-name
+
+    def assert_graph(self, graph: Graph, expected: str) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / Path("test.dot")
+            graph.write(path, fmt="raw")
+            with open(path) as f:
+                self.assertEqual(f.read().split(), expected.split())
 
     def test_graph_object(self) -> None:
         f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
@@ -41,9 +49,7 @@ class TestGraph(unittest.TestCase):
             }
             """
 
-        out = BytesIO(b"")
-        Graph(m).write(out, fmt="raw")
-        self.assertEqual(out.getvalue().split(), bytes(expected, "utf-8").split())
+        self.assert_graph(Graph(m), expected)
 
     def test_dot_graph(self) -> None:
         f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
@@ -66,9 +72,7 @@ class TestGraph(unittest.TestCase):
             }
             """
 
-        out = BytesIO(b"")
-        Graph(m).write(out, fmt="raw")
-        self.assertEqual(out.getvalue().split(), bytes(expected, "utf-8").split())
+        self.assert_graph(Graph(m), expected)
 
     def test_dot_graph_with_condition(self) -> None:
         f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
@@ -94,9 +98,7 @@ class TestGraph(unittest.TestCase):
             }
             """
 
-        out = BytesIO(b"")
-        Graph(m).write(out, fmt="raw")
-        self.assertEqual(out.getvalue().split(), bytes(expected, "utf-8").split())
+        self.assert_graph(Graph(m), expected)
 
     def test_dot_graph_with_double_edge(self) -> None:
         f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
@@ -124,6 +126,4 @@ class TestGraph(unittest.TestCase):
             }
             """
 
-        out = BytesIO(b"")
-        Graph(m).write(out, fmt="raw")
-        self.assertEqual(out.getvalue().split(), bytes(expected, "utf-8").split())
+        self.assert_graph(Graph(m), expected)

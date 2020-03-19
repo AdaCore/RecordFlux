@@ -6,6 +6,8 @@ disable=missing-docstring, bad-continuation
 
 [BASIC]
 
+good-names=log
+
 # Regular expression matching correct variable names. Overrides variable-
 # naming-style
 variable-rgx=[a-z0-9_]{1,30}$

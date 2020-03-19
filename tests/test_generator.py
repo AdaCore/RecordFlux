@@ -38,17 +38,24 @@ class TestGenerator(unittest.TestCase):
         generator = Generator("RFLX", reproducible=True)
         with TemporaryDirectory() as directory:
             tmpdir = Path(directory)
-            files = generator.write_top_level_package(tmpdir)
-            for filename in files:
-                with open(tmpdir / filename) as library_file:
-                    with open(self.testdir / filename) as expected_file:
-                        self.assertEqual(library_file.read(), expected_file.read(), filename)
+            generator.write_top_level_package(tmpdir)
+
+            created_files = list(tmpdir.glob("*"))
+            self.assertEqual(created_files, [tmpdir / Path("rflx.ads")])
+
+            for created_file in created_files:
+                with open(created_file) as library_file:
+                    with open(self.testdir / created_file.name) as expected_file:
+                        self.assertEqual(
+                            library_file.read(), expected_file.read(), created_file.name
+                        )
 
     def test_top_level_package_no_prefix(self) -> None:
         generator = Generator("", reproducible=True)
         with TemporaryDirectory() as directory:
             tmpdir = Path(directory)
-            self.assertEqual(generator.write_top_level_package(tmpdir), [])
+            generator.write_top_level_package(tmpdir)
+            self.assertEqual(list(tmpdir.glob("*")), [])
 
     def assert_specification(self, generator: Generator) -> None:
         for unit in generator.units.values():

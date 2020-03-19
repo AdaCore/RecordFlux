@@ -1,10 +1,13 @@
+import logging
 from copy import copy
-from typing import BinaryIO
+from pathlib import Path
 
 from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
 from rflx.model import FINAL, INITIAL, Link, Message
+
+log = logging.getLogger(__name__)
 
 
 class Graph:
@@ -52,5 +55,8 @@ class Graph:
         )
         return result
 
-    def write(self, handle: BinaryIO, fmt: str = "svg") -> None:
-        self.get.write(handle, format=fmt)
+    def write(self, filename: Path, fmt: str = "svg") -> None:
+        log.info("Creating %s", filename)
+
+        with open(filename, "wb") as f:
+            self.get.write(f, format=fmt)

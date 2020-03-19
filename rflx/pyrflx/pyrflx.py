@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Dict, List
 
@@ -5,6 +6,8 @@ from rflx.parser import Parser
 
 from .message import Message
 from .package import Package
+
+log = logging.getLogger(__name__)
 
 
 class PyRFLX:
@@ -24,7 +27,7 @@ class PyRFLX:
                 try:
                     self.__packages[p][m.name] = Message(m)
                 except ValueError as e:
-                    print(f"ignored message {m.name}: {e}")
+                    log.warning("Ignoring message %s: %s", m.name, e)
 
     def __getitem__(self, key: str) -> Package:
         return self.__packages[key]
