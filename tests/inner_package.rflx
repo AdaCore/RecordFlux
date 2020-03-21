@@ -1,0 +1,14 @@
+package Inner_Package
+is
+   type Kind is (K_ONE, K_TWO, K_THREE) with Size => 8;
+   type Tag is (T_ONE, T_TWO, T_THREE) with Size => 8;
+   type Inner_Data is
+      message
+         Tag  : Tag;
+         Kind : Kind
+             then Payload
+                 with Length => 100
+                     if Tag = T_THREE and Kind = K_ONE;
+         Payload : Opaque;
+      end message;
+end Inner_Package;

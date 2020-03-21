@@ -5,7 +5,7 @@ from typing import Deque, Dict, Iterable, List, Mapping, MutableMapping, Set, Tu
 
 from pyparsing import ParseException, ParseFatalException
 
-from rflx.expression import UNDEFINED, Number
+from rflx.expression import UNDEFINED, Number, Variable
 from rflx.model import (
     BUILTIN_TYPES,
     BUILTINS_PACKAGE,
@@ -73,16 +73,20 @@ class Parser:
             if specification.package.identifier in self.__evaluated_specifications:
                 continue
             self.__evaluated_specifications.add(specification.package.identifier)
-            self.__evaluate_specification(specification)
+            self.__evaluate_specification(specification, self.specifications)
         return Model(list(self.__messages.values()), self.__refinements)
 
     @property
     def specifications(self) -> Dict[str, Specification]:
         return {s.package.identifier: s for s in self.__specifications}
 
-    def __evaluate_specification(self, specification: Specification) -> None:
+    def __evaluate_specification(
+        self, specification: Specification, specifications: Dict[str, Specification]
+    ) -> None:
         try:
-            messages, types = create_messages(specification, self.__messages, self.__types)
+            messages, types = create_messages(
+                specification, self.__messages, self.__types, specifications
+            )
 
             if messages:
                 self.__messages.update(messages)
@@ -130,11 +134,24 @@ def check_types(types: Mapping[str, Type]) -> None:
 
 
 def create_messages(
-    spec: Specification, messages: Mapping[str, Message], types: Mapping[str, Type]
+    spec: Specification,
+    messages: Mapping[str, Message],
+    types: Mapping[str, Type],
+    specifications: Dict[str, Specification],
 ) -> Tuple[Dict[str, Message], Dict[str, Type]]:
 
     spec_types: Dict[str, Type] = dict(BUILTIN_TYPES)
     spec_messages: Dict[str, UnprovenMessage] = {}
+
+    literals = {
+        name: {
+            Variable(l)
+            for t in spec.package.types + [v for _, v in spec_types.items()]
+            if isinstance(t, Enumeration)
+            for l in t.literals
+        }
+        for name, spec in specifications.items()
+    }
 
     for t in spec.package.types:
         t.full_name = f"{spec.package.identifier}.{t.name}"
@@ -159,7 +176,7 @@ def create_messages(
 
         spec_types[t.full_name] = t
 
-    return (proven_messages(spec_messages, messages), spec_types)
+    return (proven_messages(spec_messages, messages, literals), spec_types)
 
 
 def create_array(array: Array, types: Mapping[str, Type]) -> Array:
@@ -252,10 +269,13 @@ def create_derived_message(
 
 
 def proven_messages(
-    messages: Mapping[str, UnprovenMessage], known_messages: Mapping[str, Message]
+    messages: Mapping[str, UnprovenMessage],
+    known_messages: Mapping[str, Message],
+    literals: Dict[str, Set[Variable]],
 ) -> Dict[str, Message]:
+
     return {
-        message: merged_message(message, {**messages, **known_messages}).proven_message()
+        message: merged_message(message, {**messages, **known_messages}, literals).proven_message()
         for message in messages
     }
 

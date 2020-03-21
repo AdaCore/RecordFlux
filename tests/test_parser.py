@@ -795,10 +795,10 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 Link(Field("Bar_Length"), Field("Bar_Value"), length=Variable("Bar_Length")),
             ],
             {
-                Field("Foo_Length"): length,
-                Field("Foo_Value"): Opaque(),
-                Field("Bar_Length"): length,
-                Field("Bar_Value"): Opaque(),
+                Field("Foo_Length"): length.embedded,
+                Field("Foo_Value"): Opaque().embedded,
+                Field("Bar_Length"): length.embedded,
+                Field("Bar_Value"): Opaque().embedded,
             },
         )
 
@@ -1079,4 +1079,58 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_feature_integration(self) -> None:
         parser = Parser()
         parser.parse(Path(f"{self.testdir}/feature_integration.rflx"))
+        parser.create_model()
+
+    @staticmethod
+    def test_message_in_message_with_enum_literals() -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+               package Test is
+                  type Kind is (K_ONE, K_TWO, K_THREE) with Size => 8;
+                  type Tag is (T_ONE, T_TWO, T_THREE) with Size => 8;
+                  type Inner is
+                     message
+                        Tag  : Tag;
+                        Kind : Kind
+                            then Payload
+                                with Length => 100
+                                    if Tag = T_THREE and Kind = K_ONE;
+                        Payload : Opaque;
+                     end message;
+                  type Outer is
+                     message
+                        Data : Inner;
+                     end message;
+               end Test;
+            """
+        )
+        parser.create_model()
+
+    @staticmethod
+    def test_message_in_message_with_builtin_literal() -> None:
+        parser = Parser()
+        parser.parse_string(
+            """
+               package Test is
+                  type Inner is
+                     message
+                        Flag : Boolean
+                            then Payload
+                                with Length => 100
+                                    if Flag = True;
+                        Payload : Opaque;
+                     end message;
+                  type Outer is
+                     message
+                        Data : Inner;
+                     end message;
+               end Test;
+            """
+        )
+        parser.create_model()
+
+    def test_message_in_message_with_external_enum_literals(self) -> None:
+        parser = Parser()
+        parser.parse(Path(f"{self.testdir}/outer_package.rflx"))
         parser.create_model()

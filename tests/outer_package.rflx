@@ -1,0 +1,8 @@
+with Inner_Package;
+
+package Outer_Package is
+   type Outer_Data is
+      message
+         I : Inner_Package.Inner_Data;
+      end message;
+end Outer_Package;

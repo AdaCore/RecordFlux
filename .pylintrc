@@ -2,7 +2,7 @@
 
 # Enable/disable the message, report, category or checker with the given id(s).
 enable=useless-suppression
-disable=missing-docstring, bad-continuation
+disable=missing-docstring, bad-continuation, bad-whitespace
 
 [BASIC]
 

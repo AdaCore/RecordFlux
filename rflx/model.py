@@ -3,7 +3,7 @@ import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
 from math import log
-from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
+from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
 
 from rflx.common import generic_repr
 from rflx.expression import (
@@ -49,6 +49,7 @@ class Type(Element):
         if full_name.count(".") != 1:
             raise ModelError(f'unexpected format of type name "{full_name}"')
         self.full_name = full_name
+        self.is_embedded = False
 
     @abstractproperty
     def size(self) -> Expr:
@@ -57,6 +58,12 @@ class Type(Element):
     @abstractmethod
     def constraints(self, name: str, proof: bool = False) -> Expr:
         raise NotImplementedError
+
+    @property
+    def embedded(self) -> "Type":
+        result = copy(self)
+        result.is_embedded = True
+        return result
 
     @property
     def name(self) -> str:
@@ -916,10 +923,13 @@ class ModelError(Exception):
     pass
 
 
-def prefixed_message(message: AbstractMessage, prefix: str) -> AbstractMessage:
+def prefixed_message(
+    message: AbstractMessage, prefix: str, literals: Optional[Set[Variable]] = None
+) -> AbstractMessage:
     def prefixed_expression(expression: Expr) -> Expr:
+        lit: Set[Variable] = literals or set()
         return expression.simplified(
-            {v: v.__class__(f"{prefix}{v.name}") for v in expression.variables()}
+            {v: v.__class__(f"{prefix}{v.name}") for v in expression.variables() if v not in lit}
         )
 
     structure = []
@@ -932,12 +942,16 @@ def prefixed_message(message: AbstractMessage, prefix: str) -> AbstractMessage:
         first = prefixed_expression(l.first) if l.first != UNDEFINED else UNDEFINED
         structure.append(Link(source, target, condition, length, first))
 
-    types = {Field(f"{prefix}{f.name}"): t for f, t in message.types.items()}
+    types = {Field(f"{prefix}{f.name}"): t.embedded for f, t in message.types.items()}
 
     return message.copy(structure=structure, types=types)
 
 
-def merged_message(name: str, messages: Mapping[str, AbstractMessage]) -> AbstractMessage:
+def merged_message(
+    name: str,
+    messages: Mapping[str, AbstractMessage],
+    literals: Optional[Dict[str, Set[Variable]]] = None,
+) -> AbstractMessage:
     assert name in messages, f'unknown message "{name}"'
 
     check_message_references(name, messages)
@@ -951,7 +965,10 @@ def merged_message(name: str, messages: Mapping[str, AbstractMessage]) -> Abstra
             break
 
         ref_field, ref_type = references.pop(0)
-        inner_message = prefixed_message(messages[ref_type.full_name], f"{ref_field.name}_")
+        package_literals = literals[ref_type.package] if literals else None
+        inner_message = prefixed_message(
+            messages[ref_type.full_name], f"{ref_field.name}_", package_literals
+        )
 
         name_conflicts = [
             f.name for f in message.fields for g in inner_message.fields if f.name == g.name
@@ -1033,7 +1050,9 @@ def check_message_references(name: str, messages: Mapping[str, AbstractMessage])
 
 def qualified_literals(types: Mapping[Field, Type], package: str) -> Set[str]:
     return {
-        l if t.package == package or t.package == BUILTINS_PACKAGE else f"{t.package}.{l}"
+        l
+        if t.package == package or t.package == BUILTINS_PACKAGE or t.is_embedded
+        else f"{t.package}.{l}"
         for t in types.values()
         if isinstance(t, Enumeration)
         for l in t.literals
