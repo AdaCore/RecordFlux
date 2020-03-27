@@ -11,29 +11,29 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_TLV_Tag return TLV.Tag is
-     (TLV.Tag'First)
+   function Unreachable_TLV_Tag return RFLX.TLV.Tag is
+     (RFLX.TLV.Tag'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : TLV.Tag_Base) return Boolean is
+   function Valid (Val : RFLX.TLV.Tag_Base) return Boolean is
      ((case Val is
          when 1 | 3 =>
             True,
          when others =>
             False));
 
-   function Convert (Enum : TLV.Tag) return TLV.Tag_Base is
+   function Convert (Enum : RFLX.TLV.Tag) return RFLX.TLV.Tag_Base is
      ((case Enum is
          when Msg_Data =>
             1,
          when Msg_Error =>
             3));
 
-   function Convert (Val : TLV.Tag_Base) return TLV.Tag is
+   function Convert (Val : RFLX.TLV.Tag_Base) return RFLX.TLV.Tag is
      ((case Val is
          when 1 =>
             Msg_Data,
@@ -49,8 +49,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_TLV_Length return TLV.Length is
-     (TLV.Length'First)
+   function Unreachable_TLV_Length return RFLX.TLV.Length is
+     (RFLX.TLV.Length'First)
     with
      Pre =>
        False;
@@ -59,12 +59,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : TLV.Length) return Boolean is
+   function Valid (Val : RFLX.TLV.Length) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : TLV.Length) return TLV.Length is
+   function Convert (Val : RFLX.TLV.Length) return RFLX.TLV.Length is
      (Val)
     with
      Pre =>

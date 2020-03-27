@@ -535,9 +535,8 @@ class Generator:
             ],
         )
 
-    @staticmethod
     def __create_field_dependent_type(
-        scalar_fields: Mapping[Field, Scalar], composite_fields: Sequence[Field]
+        self, scalar_fields: Mapping[Field, Scalar], composite_fields: Sequence[Field]
     ) -> UnitPart:
         result_variants = [
             Variant(
@@ -545,7 +544,10 @@ class Generator:
                 [NullComponent()],
             )
         ] + [
-            Variant([Name(f.affixed_name)], [Component(f"{f.name}_Value", base_type_name(t))])
+            Variant(
+                [Name(f.affixed_name)],
+                [Component(f"{f.name}_Value", self.prefix + base_type_name(t))],
+            )
             for f, t in scalar_fields.items()
         ]
 
@@ -884,7 +886,7 @@ class Generator:
                 field_type = message.types[target]
                 length: Expr
                 if isinstance(field_type, Scalar):
-                    length = Size(base_type_name(field_type))
+                    length = Size(self.prefix + base_type_name(field_type))
                 else:
                     if len(links) == 1:
                         length = links[0].length
@@ -1987,15 +1989,15 @@ class Generator:
 
         if isinstance(field_type, ModularInteger):
             unit += UnitPart(modular_types(field_type))
-            unit += UnitPart(type_dependent_unreachable_function(field_type))
+            unit += UnitPart(self.type_dependent_unreachable_function(field_type))
             unit += self.__modular_functions(field_type)
         elif isinstance(field_type, RangeInteger):
             unit += UnitPart(range_types(field_type))
-            unit += UnitPart(type_dependent_unreachable_function(field_type))
+            unit += UnitPart(self.type_dependent_unreachable_function(field_type))
             unit += self.__range_functions(field_type)
         elif isinstance(field_type, Enumeration):
             unit += UnitPart(enumeration_types(field_type))
-            unit += UnitPart(type_dependent_unreachable_function(field_type))
+            unit += UnitPart(self.type_dependent_unreachable_function(field_type))
             unit += self.__enumeration_functions(field_type)
         elif isinstance(field_type, Array):
             if not isinstance(field_type.element_type, Reference):
@@ -2114,8 +2116,7 @@ class Generator:
 
         self.units[array_package.name] = InstantiationUnit(array_context, array_package)
 
-    @staticmethod
-    def __range_functions(integer: RangeInteger) -> SubprogramUnitPart:
+    def __range_functions(self, integer: RangeInteger) -> SubprogramUnitPart:
         specification: List[Subprogram] = []
 
         for range_type in range_types(integer):
@@ -2123,27 +2124,33 @@ class Generator:
                 continue
 
         specification.append(
-            type_validation_function(integer, integer.constraints("Val").simplified())
+            self.type_validation_function(integer, integer.constraints("Val").simplified())
         )
-        specification.append(integer_conversion_function(integer.full_name, integer.full_base_name))
+        specification.append(
+            integer_conversion_function(
+                self.prefix + integer.full_name, self.prefix + integer.full_base_name
+            )
+        )
 
         return SubprogramUnitPart(specification)
 
-    @staticmethod
-    def __modular_functions(integer: ModularInteger) -> UnitPart:
+    def __modular_functions(self, integer: ModularInteger) -> UnitPart:
         specification: List[Declaration] = []
 
         specification.append(Pragma("Warnings", ["Off", '"unused variable ""Val"""']))
         specification.append(
-            type_validation_function(integer, integer.constraints("Val").simplified())
+            self.type_validation_function(integer, integer.constraints("Val").simplified())
         )
         specification.append(Pragma("Warnings", ["On", '"unused variable ""Val"""']))
-        specification.append(integer_conversion_function(integer.full_name, integer.full_name))
+        specification.append(
+            integer_conversion_function(
+                self.prefix + integer.full_name, self.prefix + integer.full_name
+            )
+        )
 
         return UnitPart(specification)
 
-    @staticmethod
-    def __enumeration_functions(enum: Enumeration) -> UnitPart:
+    def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
         specification: List[Declaration] = []
 
         enum_value = Name("Val")
@@ -2160,7 +2167,7 @@ class Generator:
 
         if enum.always_valid:
             specification.append(Pragma("Warnings", ["Off", '"unused variable ""Val"""']))
-        specification.append(type_validation_function(enum, validation_expression))
+        specification.append(self.type_validation_function(enum, validation_expression))
         if enum.always_valid:
             specification.append(Pragma("Warnings", ["On", '"unused variable ""Val"""']))
 
@@ -2168,15 +2175,23 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "Convert",
-                    enum.full_base_name,
-                    [Parameter(["Enum"], enum.enum_name if enum.always_valid else enum.full_name)],
+                    self.prefix + enum.full_base_name,
+                    [
+                        Parameter(
+                            ["Enum"],
+                            self.prefix
+                            + (enum.full_enum_name if enum.always_valid else enum.full_name),
+                        )
+                    ],
                 ),
                 Case(Name("Enum"), [(Name(key), value) for key, value in enum.literals.items()]),
             )
         )
 
         conversion_function = FunctionSpecification(
-            "Convert", enum.full_name, [Parameter(["Val"], enum.full_base_name)]
+            "Convert",
+            self.prefix + enum.full_name,
+            [Parameter(["Val"], self.prefix + enum.full_base_name)],
         )
         precondition = Precondition(Call("Valid", [Name("Val")]))
         conversion_cases: List[Tuple[Expr, Expr]] = []
@@ -2185,7 +2200,9 @@ class Generator:
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "Convert", enum.full_name, [Parameter(["Enum"], enum.enum_name)]
+                        "Convert",
+                        self.prefix + enum.full_name,
+                        [Parameter(["Enum"], enum.enum_name)],
                     ),
                     Aggregate(TRUE, Name("Enum")),
                 )
@@ -2205,7 +2222,9 @@ class Generator:
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "Convert", enum.full_base_name, [Parameter(["Val"], enum.full_name)]
+                        "Convert",
+                        self.prefix + enum.full_base_name,
+                        [Parameter(["Val"], self.prefix + enum.full_name)],
                     ),
                     If(
                         [(Selected("Val", "Known"), Call("Convert", [Selected("Val", "Enum")]))],
@@ -2411,6 +2430,35 @@ class Generator:
             today = date.today()
             return license_file.read().format(version=__version__, date=today, year=today.year,)
 
+    def type_validation_function(
+        self, scalar_type: Scalar, validation_expression: Expr
+    ) -> Subprogram:
+        return ExpressionFunctionDeclaration(
+            FunctionSpecification(
+                f"Valid",
+                "Boolean",
+                [Parameter(["Val"], self.prefix + base_type_name(scalar_type))],
+            ),
+            validation_expression,
+        )
+
+    def type_dependent_unreachable_function(self, scalar_type: Scalar) -> List[Declaration]:
+        base_name = None
+        if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
+            base_name = self.prefix + scalar_type.full_base_name
+
+        type_name = self.prefix + scalar_type.full_name
+
+        return [
+            Pragma("Warnings", ["Off", '"precondition is statically false"']),
+            ExpressionFunctionDeclaration(
+                FunctionSpecification(unreachable_function_name(scalar_type.full_name), type_name),
+                First(type_name) if not base_name else Aggregate(Name("False"), First(base_name)),
+                [Precondition(FALSE)],
+            ),
+            Pragma("Warnings", ["On", '"precondition is statically false"']),
+        ]
+
 
 class InternalError(Exception):
     pass
@@ -2470,15 +2518,6 @@ def integer_conversion_function(type_name: str, type_base_name: str) -> Subprogr
     )
 
 
-def type_validation_function(scalar_type: Scalar, validation_expression: Expr) -> Subprogram:
-    return ExpressionFunctionDeclaration(
-        FunctionSpecification(
-            f"Valid", "Boolean", [Parameter(["Val"], base_type_name(scalar_type))]
-        ),
-        validation_expression,
-    )
-
-
 def renamed_subprogram_specification(
     specification: SubprogramSpecification, name: str
 ) -> SubprogramSpecification:
@@ -2487,25 +2526,6 @@ def renamed_subprogram_specification(
     if isinstance(specification, FunctionSpecification):
         return FunctionSpecification(name, specification.return_type, specification.parameters)
     raise NotImplementedError('unhandled subprogram specification "{type(specification).__name__}"')
-
-
-def unreachable_function(type_name: str, base_name: str = None) -> List[Declaration]:
-    return [
-        Pragma("Warnings", ["Off", '"precondition is statically false"']),
-        ExpressionFunctionDeclaration(
-            FunctionSpecification(unreachable_function_name(type_name), type_name),
-            First(type_name) if not base_name else Aggregate(Name("False"), First(base_name)),
-            [Precondition(FALSE)],
-        ),
-        Pragma("Warnings", ["On", '"precondition is statically false"']),
-    ]
-
-
-def type_dependent_unreachable_function(scalar_type: Scalar) -> List[Declaration]:
-    base_name = None
-    if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
-        base_name = scalar_type.full_base_name
-    return unreachable_function(scalar_type.full_name, base_name)
 
 
 def generic_name(full_name: str) -> str:

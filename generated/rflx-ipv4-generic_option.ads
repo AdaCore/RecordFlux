@@ -33,13 +33,13 @@ is
             when F_Initial | F_Option_Data | F_Final =>
                null;
             when F_Copied =>
-               Copied_Value : Builtin_Types.Boolean_Base;
+               Copied_Value : RFLX.Builtin_Types.Boolean_Base;
             when F_Option_Class =>
-               Option_Class_Value : IPv4.Option_Class_Base;
+               Option_Class_Value : RFLX.IPv4.Option_Class_Base;
             when F_Option_Number =>
-               Option_Number_Value : IPv4.Option_Number;
+               Option_Number_Value : RFLX.IPv4.Option_Number;
             when F_Option_Length =>
-               Option_Length_Value : IPv4.Option_Length_Base;
+               Option_Length_Value : RFLX.IPv4.Option_Length_Base;
          end case;
       end record;
 
@@ -212,17 +212,17 @@ is
        Valid_Context (Ctx)
           and Valid (Ctx, F_Copied);
 
-   function Get_Option_Class (Ctx : Context) return IPv4.Option_Class with
+   function Get_Option_Class (Ctx : Context) return RFLX.IPv4.Option_Class with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Option_Class);
 
-   function Get_Option_Number (Ctx : Context) return IPv4.Option_Number with
+   function Get_Option_Number (Ctx : Context) return RFLX.IPv4.Option_Number with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Option_Number);
 
-   function Get_Option_Length (Ctx : Context) return IPv4.Option_Length with
+   function Get_Option_Length (Ctx : Context) return RFLX.IPv4.Option_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Option_Length);
@@ -262,7 +262,7 @@ is
           and Predecessor (Ctx, F_Copied) = Predecessor (Ctx, F_Copied)'Old
           and Valid_Next (Ctx, F_Copied) = Valid_Next (Ctx, F_Copied)'Old;
 
-   procedure Set_Option_Class (Ctx : in out Context; Val : IPv4.Option_Class) with
+   procedure Set_Option_Class (Ctx : in out Context; Val : RFLX.IPv4.Option_Class) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -290,7 +290,7 @@ is
           and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
           and Cursor (Ctx, F_Copied) = Cursor (Ctx, F_Copied)'Old;
 
-   procedure Set_Option_Number (Ctx : in out Context; Val : IPv4.Option_Number) with
+   procedure Set_Option_Number (Ctx : in out Context; Val : RFLX.IPv4.Option_Number) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -320,7 +320,7 @@ is
           and Cursor (Ctx, F_Copied) = Cursor (Ctx, F_Copied)'Old
           and Cursor (Ctx, F_Option_Class) = Cursor (Ctx, F_Option_Class)'Old;
 
-   procedure Set_Option_Length (Ctx : in out Context; Val : IPv4.Option_Length) with
+   procedure Set_Option_Length (Ctx : in out Context; Val : RFLX.IPv4.Option_Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -522,20 +522,20 @@ private
         and then (if Invalid (Cursors (F_Option_Length)) then
            Invalid (Cursors (F_Option_Data))))
       and then (if Structural_Valid (Cursors (F_Copied)) then
-         (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1) = Builtin_Types.Boolean_Base'Size
+         (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
            and then Cursors (F_Copied).Predecessor = F_Initial
            and then Cursors (F_Copied).First = First
            and then (if Structural_Valid (Cursors (F_Option_Class)) then
-              (Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1) = IPv4.Option_Class_Base'Size
+              (Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1) = RFLX.IPv4.Option_Class_Base'Size
                 and then Cursors (F_Option_Class).Predecessor = F_Copied
                 and then Cursors (F_Option_Class).First = (Cursors (F_Copied).Last + 1)
                 and then (if Structural_Valid (Cursors (F_Option_Number)) then
-                   (Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1) = IPv4.Option_Number'Size
+                   (Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1) = RFLX.IPv4.Option_Number'Size
                      and then Cursors (F_Option_Number).Predecessor = F_Option_Class
                      and then Cursors (F_Option_Number).First = (Cursors (F_Option_Class).Last + 1)
                      and then (if Structural_Valid (Cursors (F_Option_Length))
                           and then Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
-                        (Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1) = IPv4.Option_Length_Base'Size
+                        (Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1) = RFLX.IPv4.Option_Length_Base'Size
                           and then Cursors (F_Option_Length).Predecessor = F_Option_Number
                           and then Cursors (F_Option_Length).First = (Cursors (F_Option_Number).Last + 1)
                           and then (if Structural_Valid (Cursors (F_Option_Data))

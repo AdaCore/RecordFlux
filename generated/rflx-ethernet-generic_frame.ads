@@ -30,17 +30,17 @@ is
             when F_Initial | F_Payload | F_Final =>
                null;
             when F_Destination =>
-               Destination_Value : Ethernet.Address;
+               Destination_Value : RFLX.Ethernet.Address;
             when F_Source =>
-               Source_Value : Ethernet.Address;
+               Source_Value : RFLX.Ethernet.Address;
             when F_Type_Length_TPID =>
-               Type_Length_TPID_Value : Ethernet.Type_Length_Base;
+               Type_Length_TPID_Value : RFLX.Ethernet.Type_Length_Base;
             when F_TPID =>
-               TPID_Value : Ethernet.TPID_Base;
+               TPID_Value : RFLX.Ethernet.TPID_Base;
             when F_TCI =>
-               TCI_Value : Ethernet.TCI;
+               TCI_Value : RFLX.Ethernet.TCI;
             when F_Type_Length =>
-               Type_Length_Value : Ethernet.Type_Length_Base;
+               Type_Length_Value : RFLX.Ethernet.Type_Length_Base;
          end case;
       end record;
 
@@ -208,32 +208,32 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Destination (Ctx : Context) return Ethernet.Address with
+   function Get_Destination (Ctx : Context) return RFLX.Ethernet.Address with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Destination);
 
-   function Get_Source (Ctx : Context) return Ethernet.Address with
+   function Get_Source (Ctx : Context) return RFLX.Ethernet.Address with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Source);
 
-   function Get_Type_Length_TPID (Ctx : Context) return Ethernet.Type_Length with
+   function Get_Type_Length_TPID (Ctx : Context) return RFLX.Ethernet.Type_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Type_Length_TPID);
 
-   function Get_TPID (Ctx : Context) return Ethernet.TPID with
+   function Get_TPID (Ctx : Context) return RFLX.Ethernet.TPID with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_TPID);
 
-   function Get_TCI (Ctx : Context) return Ethernet.TCI with
+   function Get_TCI (Ctx : Context) return RFLX.Ethernet.TCI with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_TCI);
 
-   function Get_Type_Length (Ctx : Context) return Ethernet.Type_Length with
+   function Get_Type_Length (Ctx : Context) return RFLX.Ethernet.Type_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Type_Length);
@@ -246,7 +246,7 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Payload);
 
-   procedure Set_Destination (Ctx : in out Context; Val : Ethernet.Address) with
+   procedure Set_Destination (Ctx : in out Context; Val : RFLX.Ethernet.Address) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -275,7 +275,7 @@ is
           and Predecessor (Ctx, F_Destination) = Predecessor (Ctx, F_Destination)'Old
           and Valid_Next (Ctx, F_Destination) = Valid_Next (Ctx, F_Destination)'Old;
 
-   procedure Set_Source (Ctx : in out Context; Val : Ethernet.Address) with
+   procedure Set_Source (Ctx : in out Context; Val : RFLX.Ethernet.Address) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -305,7 +305,7 @@ is
           and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
           and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old;
 
-   procedure Set_Type_Length_TPID (Ctx : in out Context; Val : Ethernet.Type_Length) with
+   procedure Set_Type_Length_TPID (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -340,7 +340,7 @@ is
           and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old
           and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old;
 
-   procedure Set_TPID (Ctx : in out Context; Val : Ethernet.TPID) with
+   procedure Set_TPID (Ctx : in out Context; Val : RFLX.Ethernet.TPID) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -372,7 +372,7 @@ is
           and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old
           and Cursor (Ctx, F_Type_Length_TPID) = Cursor (Ctx, F_Type_Length_TPID)'Old;
 
-   procedure Set_TCI (Ctx : in out Context; Val : Ethernet.TCI) with
+   procedure Set_TCI (Ctx : in out Context; Val : RFLX.Ethernet.TCI) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -405,7 +405,7 @@ is
           and Cursor (Ctx, F_Type_Length_TPID) = Cursor (Ctx, F_Type_Length_TPID)'Old
           and Cursor (Ctx, F_TPID) = Cursor (Ctx, F_TPID)'Old;
 
-   procedure Set_Type_Length (Ctx : in out Context; Val : Ethernet.Type_Length) with
+   procedure Set_Type_Length (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -665,28 +665,28 @@ private
         and then (if Invalid (Cursors (F_Type_Length)) then
            Invalid (Cursors (F_Payload))))
       and then (if Structural_Valid (Cursors (F_Destination)) then
-         (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = Ethernet.Address'Size
+         (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = RFLX.Ethernet.Address'Size
            and then Cursors (F_Destination).Predecessor = F_Initial
            and then Cursors (F_Destination).First = First
            and then (if Structural_Valid (Cursors (F_Source)) then
-              (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = Ethernet.Address'Size
+              (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = RFLX.Ethernet.Address'Size
                 and then Cursors (F_Source).Predecessor = F_Destination
                 and then Cursors (F_Source).First = (Cursors (F_Destination).Last + 1)
                 and then (if Structural_Valid (Cursors (F_Type_Length_TPID)) then
-                   (Cursors (F_Type_Length_TPID).Last - Cursors (F_Type_Length_TPID).First + 1) = Ethernet.Type_Length_Base'Size
+                   (Cursors (F_Type_Length_TPID).Last - Cursors (F_Type_Length_TPID).First + 1) = RFLX.Ethernet.Type_Length_Base'Size
                      and then Cursors (F_Type_Length_TPID).Predecessor = F_Source
                      and then Cursors (F_Type_Length_TPID).First = (Cursors (F_Source).Last + 1)
                      and then (if Structural_Valid (Cursors (F_TPID))
                           and then Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100# then
-                        (Cursors (F_TPID).Last - Cursors (F_TPID).First + 1) = Ethernet.TPID_Base'Size
+                        (Cursors (F_TPID).Last - Cursors (F_TPID).First + 1) = RFLX.Ethernet.TPID_Base'Size
                           and then Cursors (F_TPID).Predecessor = F_Type_Length_TPID
                           and then Cursors (F_TPID).First = Cursors (F_Type_Length_TPID).First
                           and then (if Structural_Valid (Cursors (F_TCI)) then
-                             (Cursors (F_TCI).Last - Cursors (F_TCI).First + 1) = Ethernet.TCI'Size
+                             (Cursors (F_TCI).Last - Cursors (F_TCI).First + 1) = RFLX.Ethernet.TCI'Size
                                and then Cursors (F_TCI).Predecessor = F_TPID
                                and then Cursors (F_TCI).First = (Cursors (F_TPID).Last + 1)
                                and then (if Structural_Valid (Cursors (F_Type_Length)) then
-                                  (Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1) = Ethernet.Type_Length_Base'Size
+                                  (Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1) = RFLX.Ethernet.Type_Length_Base'Size
                                     and then Cursors (F_Type_Length).Predecessor = F_TCI
                                     and then Cursors (F_Type_Length).First = (Cursors (F_TCI).Last + 1)
                                     and then (if Structural_Valid (Cursors (F_Payload))
@@ -701,7 +701,7 @@ private
                                          and then Cursors (F_Payload).First = (Cursors (F_Type_Length).Last + 1)))))
                      and then (if Structural_Valid (Cursors (F_Type_Length))
                           and then Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100# then
-                        (Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1) = Ethernet.Type_Length_Base'Size
+                        (Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1) = RFLX.Ethernet.Type_Length_Base'Size
                           and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
                           and then Cursors (F_Type_Length).First = Cursors (F_Type_Length_TPID).First
                           and then (if Structural_Valid (Cursors (F_Payload))

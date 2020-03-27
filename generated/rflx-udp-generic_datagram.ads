@@ -30,13 +30,13 @@ is
             when F_Initial | F_Payload | F_Final =>
                null;
             when F_Source_Port =>
-               Source_Port_Value : UDP.Port;
+               Source_Port_Value : RFLX.UDP.Port;
             when F_Destination_Port =>
-               Destination_Port_Value : UDP.Port;
+               Destination_Port_Value : RFLX.UDP.Port;
             when F_Length =>
-               Length_Value : UDP.Length_Base;
+               Length_Value : RFLX.UDP.Length_Base;
             when F_Checksum =>
-               Checksum_Value : UDP.Checksum;
+               Checksum_Value : RFLX.UDP.Checksum;
          end case;
       end record;
 
@@ -204,22 +204,22 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Source_Port (Ctx : Context) return UDP.Port with
+   function Get_Source_Port (Ctx : Context) return RFLX.UDP.Port with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Source_Port);
 
-   function Get_Destination_Port (Ctx : Context) return UDP.Port with
+   function Get_Destination_Port (Ctx : Context) return RFLX.UDP.Port with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Destination_Port);
 
-   function Get_Length (Ctx : Context) return UDP.Length with
+   function Get_Length (Ctx : Context) return RFLX.UDP.Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Length);
 
-   function Get_Checksum (Ctx : Context) return UDP.Checksum with
+   function Get_Checksum (Ctx : Context) return RFLX.UDP.Checksum with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Checksum);
@@ -232,7 +232,7 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Payload);
 
-   procedure Set_Source_Port (Ctx : in out Context; Val : UDP.Port) with
+   procedure Set_Source_Port (Ctx : in out Context; Val : RFLX.UDP.Port) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -259,7 +259,7 @@ is
           and Predecessor (Ctx, F_Source_Port) = Predecessor (Ctx, F_Source_Port)'Old
           and Valid_Next (Ctx, F_Source_Port) = Valid_Next (Ctx, F_Source_Port)'Old;
 
-   procedure Set_Destination_Port (Ctx : in out Context; Val : UDP.Port) with
+   procedure Set_Destination_Port (Ctx : in out Context; Val : RFLX.UDP.Port) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -287,7 +287,7 @@ is
           and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
           and Cursor (Ctx, F_Source_Port) = Cursor (Ctx, F_Source_Port)'Old;
 
-   procedure Set_Length (Ctx : in out Context; Val : UDP.Length) with
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -316,7 +316,7 @@ is
           and Cursor (Ctx, F_Source_Port) = Cursor (Ctx, F_Source_Port)'Old
           and Cursor (Ctx, F_Destination_Port) = Cursor (Ctx, F_Destination_Port)'Old;
 
-   procedure Set_Checksum (Ctx : in out Context; Val : UDP.Checksum) with
+   procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -493,19 +493,19 @@ private
         and then (if Invalid (Cursors (F_Checksum)) then
            Invalid (Cursors (F_Payload))))
       and then (if Structural_Valid (Cursors (F_Source_Port)) then
-         (Cursors (F_Source_Port).Last - Cursors (F_Source_Port).First + 1) = UDP.Port'Size
+         (Cursors (F_Source_Port).Last - Cursors (F_Source_Port).First + 1) = RFLX.UDP.Port'Size
            and then Cursors (F_Source_Port).Predecessor = F_Initial
            and then Cursors (F_Source_Port).First = First
            and then (if Structural_Valid (Cursors (F_Destination_Port)) then
-              (Cursors (F_Destination_Port).Last - Cursors (F_Destination_Port).First + 1) = UDP.Port'Size
+              (Cursors (F_Destination_Port).Last - Cursors (F_Destination_Port).First + 1) = RFLX.UDP.Port'Size
                 and then Cursors (F_Destination_Port).Predecessor = F_Source_Port
                 and then Cursors (F_Destination_Port).First = (Cursors (F_Source_Port).Last + 1)
                 and then (if Structural_Valid (Cursors (F_Length)) then
-                   (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = UDP.Length_Base'Size
+                   (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = RFLX.UDP.Length_Base'Size
                      and then Cursors (F_Length).Predecessor = F_Destination_Port
                      and then Cursors (F_Length).First = (Cursors (F_Destination_Port).Last + 1)
                      and then (if Structural_Valid (Cursors (F_Checksum)) then
-                        (Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1) = UDP.Checksum'Size
+                        (Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1) = RFLX.UDP.Checksum'Size
                           and then Cursors (F_Checksum).Predecessor = F_Length
                           and then Cursors (F_Checksum).First = (Cursors (F_Length).Last + 1)
                           and then (if Structural_Valid (Cursors (F_Payload)) then

@@ -6,8 +6,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Arrays_Length return Arrays.Length is
-     (Arrays.Length'First)
+   function Unreachable_Arrays_Length return RFLX.Arrays.Length is
+     (RFLX.Arrays.Length'First)
     with
      Pre =>
        False;
@@ -16,12 +16,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : Arrays.Length) return Boolean is
+   function Valid (Val : RFLX.Arrays.Length) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : Arrays.Length) return Arrays.Length is
+   function Convert (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length is
      (Val)
     with
      Pre =>
@@ -31,8 +31,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Arrays_Modular_Integer return Arrays.Modular_Integer is
-     (Arrays.Modular_Integer'First)
+   function Unreachable_Arrays_Modular_Integer return RFLX.Arrays.Modular_Integer is
+     (RFLX.Arrays.Modular_Integer'First)
     with
      Pre =>
        False;
@@ -41,12 +41,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : Arrays.Modular_Integer) return Boolean is
+   function Valid (Val : RFLX.Arrays.Modular_Integer) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : Arrays.Modular_Integer) return Arrays.Modular_Integer is
+   function Convert (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer is
      (Val)
     with
      Pre =>
@@ -60,19 +60,19 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Arrays_Range_Integer return Arrays.Range_Integer is
-     (Arrays.Range_Integer'First)
+   function Unreachable_Arrays_Range_Integer return RFLX.Arrays.Range_Integer is
+     (RFLX.Arrays.Range_Integer'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : Arrays.Range_Integer_Base) return Boolean is
+   function Valid (Val : RFLX.Arrays.Range_Integer_Base) return Boolean is
      (Val >= 1
       and Val <= 100);
 
-   function Convert (Val : Arrays.Range_Integer_Base) return Arrays.Range_Integer is
+   function Convert (Val : RFLX.Arrays.Range_Integer_Base) return RFLX.Arrays.Range_Integer is
      (Val)
     with
      Pre =>
@@ -87,22 +87,22 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Arrays_Enumeration return Arrays.Enumeration is
-     (Arrays.Enumeration'First)
+   function Unreachable_Arrays_Enumeration return RFLX.Arrays.Enumeration is
+     (RFLX.Arrays.Enumeration'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : Arrays.Enumeration_Base) return Boolean is
+   function Valid (Val : RFLX.Arrays.Enumeration_Base) return Boolean is
      ((case Val is
          when 0 | 1 | 2 =>
             True,
          when others =>
             False));
 
-   function Convert (Enum : Arrays.Enumeration) return Arrays.Enumeration_Base is
+   function Convert (Enum : RFLX.Arrays.Enumeration) return RFLX.Arrays.Enumeration_Base is
      ((case Enum is
          when ZERO =>
             0,
@@ -111,7 +111,7 @@ is
          when TWO =>
             2));
 
-   function Convert (Val : Arrays.Enumeration_Base) return Arrays.Enumeration is
+   function Convert (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration is
      ((case Val is
          when 0 =>
             ZERO,
@@ -144,8 +144,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Arrays_AV_Enumeration return Arrays.AV_Enumeration is
-     ((False, Arrays.AV_Enumeration_Base'First))
+   function Unreachable_Arrays_AV_Enumeration return RFLX.Arrays.AV_Enumeration is
+     ((False, RFLX.Arrays.AV_Enumeration_Base'First))
     with
      Pre =>
        False;
@@ -154,12 +154,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : Arrays.AV_Enumeration_Base) return Boolean is
+   function Valid (Val : RFLX.Arrays.AV_Enumeration_Base) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : AV_Enumeration_Enum) return Arrays.AV_Enumeration_Base is
+   function Convert (Enum : RFLX.Arrays.AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration_Base is
      ((case Enum is
          when AV_ZERO =>
             0,
@@ -168,10 +168,10 @@ is
          when AV_TWO =>
             2));
 
-   function Convert (Enum : AV_Enumeration_Enum) return Arrays.AV_Enumeration is
+   function Convert (Enum : AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration is
      ((True, Enum));
 
-   function Convert (Val : Arrays.AV_Enumeration_Base) return Arrays.AV_Enumeration is
+   function Convert (Val : RFLX.Arrays.AV_Enumeration_Base) return RFLX.Arrays.AV_Enumeration is
      ((case Val is
          when 0 =>
             (True, AV_ZERO),
@@ -185,7 +185,7 @@ is
      Pre =>
        Valid (Val);
 
-   function Convert (Val : Arrays.AV_Enumeration) return Arrays.AV_Enumeration_Base is
+   function Convert (Val : RFLX.Arrays.AV_Enumeration) return RFLX.Arrays.AV_Enumeration_Base is
      ((if Val.Known then
        Convert (Val.Enum)
     else

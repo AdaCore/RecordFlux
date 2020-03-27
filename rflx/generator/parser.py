@@ -49,7 +49,17 @@ from rflx.expression import (
     Selected,
     Slice,
 )
-from rflx.model import FINAL, INITIAL, Composite, Enumeration, Field, Message, Scalar, Type
+from rflx.model import (
+    BUILTINS_PACKAGE,
+    FINAL,
+    INITIAL,
+    Composite,
+    Enumeration,
+    Field,
+    Message,
+    Scalar,
+    Type,
+)
 
 from .common import NULL, VALID_CONTEXT, GeneratorCommon, base_type_name, length_dependent_condition
 from .types import Types
@@ -69,7 +79,7 @@ class ParserGenerator:
                 type_name,
                 [Parameter(["Buffer"], self.types.bytes), Parameter(["Offset"], self.types.offset)],
             ),
-            [type_name],
+            [self.types.prefixed(type_name)],
         )
 
     def create_internal_functions(
@@ -613,13 +623,12 @@ class ParserGenerator:
             ],
         )
 
-    @staticmethod
-    def create_scalar_accessor_functions(scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
+    def create_scalar_accessor_functions(self, scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
         def specification(field: Field, field_type: Type) -> FunctionSpecification:
-            if field_type.package == "__BUILTINS__":
+            if field_type.package == BUILTINS_PACKAGE:
                 type_name = field_type.name
             else:
-                type_name = field_type.full_name
+                type_name = self.prefix + field_type.full_name
 
             return FunctionSpecification(
                 f"Get_{field.name}", type_name, [Parameter(["Ctx"], "Context")]

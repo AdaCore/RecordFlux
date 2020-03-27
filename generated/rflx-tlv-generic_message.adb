@@ -83,13 +83,13 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Tag =>
-                     TLV.Tag_Base'Size,
+                     RFLX.TLV.Tag_Base'Size,
                   when others =>
                      Types.Unreachable_Bit_Length),
          when F_Tag =>
             (case Fld is
                   when F_Length =>
-                     TLV.Length'Size,
+                     RFLX.TLV.Length'Size,
                   when others =>
                      Types.Unreachable_Bit_Length),
          when F_Length =>
@@ -271,8 +271,8 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (TLV.Tag_Base);
-      function Extract is new Types.Extract (TLV.Length);
+      function Extract is new Types.Extract (RFLX.TLV.Tag_Base);
+      function Extract is new Types.Extract (RFLX.TLV.Length);
    begin
       return ((case Fld is
             when F_Tag =>
@@ -300,12 +300,12 @@ is
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
                pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Tag)) then
-                   (Ctx.Cursors (F_Tag).Last - Ctx.Cursors (F_Tag).First + 1) = TLV.Tag_Base'Size
+                   (Ctx.Cursors (F_Tag).Last - Ctx.Cursors (F_Tag).First + 1) = RFLX.TLV.Tag_Base'Size
                      and then Ctx.Cursors (F_Tag).Predecessor = F_Initial
                      and then Ctx.Cursors (F_Tag).First = Ctx.First
                      and then (if Structural_Valid (Ctx.Cursors (F_Length))
                           and then Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (Convert (Msg_Data)) then
-                        (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = TLV.Length'Size
+                        (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.TLV.Length'Size
                           and then Ctx.Cursors (F_Length).Predecessor = F_Tag
                           and then Ctx.Cursors (F_Length).First = (Ctx.Cursors (F_Tag).Last + 1)
                           and then (if Structural_Valid (Ctx.Cursors (F_Value)) then
@@ -373,10 +373,10 @@ is
       or Incomplete (Ctx, F_Length)
       or Incomplete (Ctx, F_Value));
 
-   function Get_Tag (Ctx : Context) return TLV.Tag is
+   function Get_Tag (Ctx : Context) return RFLX.TLV.Tag is
      (Convert (Ctx.Cursors (F_Tag).Value.Tag_Value));
 
-   function Get_Length (Ctx : Context) return TLV.Length is
+   function Get_Length (Ctx : Context) return RFLX.TLV.Length is
      (Ctx.Cursors (F_Length).Value.Length_Value);
 
    procedure Get_Value (Ctx : Context) is
@@ -419,8 +419,8 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (TLV.Tag_Base);
-      procedure Insert is new Types.Insert (TLV.Length);
+      procedure Insert is new Types.Insert (RFLX.TLV.Tag_Base);
+      procedure Insert is new Types.Insert (RFLX.TLV.Length);
    begin
       Fst := First;
       Lst := Last;
@@ -436,7 +436,7 @@ is
       end case;
    end Set_Field_Value;
 
-   procedure Set_Tag (Ctx : in out Context; Val : TLV.Tag) is
+   procedure Set_Tag (Ctx : in out Context; Val : RFLX.TLV.Tag) is
       Field_Value : constant Field_Dependent_Value := (F_Tag, Convert (Val));
       First, Last : Types.Bit_Index;
    begin
@@ -447,7 +447,7 @@ is
       Ctx.Cursors (Successor (Ctx, F_Tag)) := (State => S_Invalid, Predecessor => F_Tag);
    end Set_Tag;
 
-   procedure Set_Length (Ctx : in out Context; Val : TLV.Length) is
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.TLV.Length) is
       Field_Value : constant Field_Dependent_Value := (F_Length, Val);
       First, Last : Types.Bit_Index;
    begin
@@ -477,12 +477,12 @@ is
       Reset_Dependent_Fields (Ctx, F_Value);
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
       pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Tag)) then
-          (Ctx.Cursors (F_Tag).Last - Ctx.Cursors (F_Tag).First + 1) = TLV.Tag_Base'Size
+          (Ctx.Cursors (F_Tag).Last - Ctx.Cursors (F_Tag).First + 1) = RFLX.TLV.Tag_Base'Size
             and then Ctx.Cursors (F_Tag).Predecessor = F_Initial
             and then Ctx.Cursors (F_Tag).First = Ctx.First
             and then (if Structural_Valid (Ctx.Cursors (F_Length))
                  and then Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (Convert (Msg_Data)) then
-               (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = TLV.Length'Size
+               (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.TLV.Length'Size
                  and then Ctx.Cursors (F_Length).Predecessor = F_Tag
                  and then Ctx.Cursors (F_Length).First = (Ctx.Cursors (F_Tag).Last + 1)
                  and then (if Structural_Valid (Ctx.Cursors (F_Value)) then

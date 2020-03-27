@@ -61,7 +61,7 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Priority =>
-                     Enumeration.Priority_Base'Size,
+                     RFLX.Enumeration.Priority_Base'Size,
                   when others =>
                      Types.Unreachable_Bit_Length),
          when F_Priority | F_Final =>
@@ -176,7 +176,7 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (Enumeration.Priority_Base);
+      function Extract is new Types.Extract (RFLX.Enumeration.Priority_Base);
    begin
       return ((case Fld is
             when F_Priority =>
@@ -200,7 +200,7 @@ is
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
                pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Priority)) then
-                   (Ctx.Cursors (F_Priority).Last - Ctx.Cursors (F_Priority).First + 1) = Enumeration.Priority_Base'Size
+                   (Ctx.Cursors (F_Priority).Last - Ctx.Cursors (F_Priority).First + 1) = RFLX.Enumeration.Priority_Base'Size
                      and then Ctx.Cursors (F_Priority).Predecessor = F_Initial
                      and then Ctx.Cursors (F_Priority).First = Ctx.First));
                if Fld = F_Priority then
@@ -248,7 +248,7 @@ is
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Priority));
 
-   function Get_Priority (Ctx : Context) return Enumeration.Priority is
+   function Get_Priority (Ctx : Context) return RFLX.Enumeration.Priority is
      (Convert (Ctx.Cursors (F_Priority).Value.Priority_Value));
 
    procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out Types.Bit_Index) with
@@ -284,7 +284,7 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (Enumeration.Priority_Base);
+      procedure Insert is new Types.Insert (RFLX.Enumeration.Priority_Base);
    begin
       Fst := First;
       Lst := Last;
@@ -298,7 +298,7 @@ is
       end case;
    end Set_Field_Value;
 
-   procedure Set_Priority (Ctx : in out Context; Val : Enumeration.Priority_Enum) is
+   procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) is
       Field_Value : constant Field_Dependent_Value := (F_Priority, Convert (Val));
       First, Last : Types.Bit_Index;
    begin

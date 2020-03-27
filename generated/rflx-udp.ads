@@ -6,8 +6,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_UDP_Port return UDP.Port is
-     (UDP.Port'First)
+   function Unreachable_UDP_Port return RFLX.UDP.Port is
+     (RFLX.UDP.Port'First)
     with
      Pre =>
        False;
@@ -16,12 +16,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : UDP.Port) return Boolean is
+   function Valid (Val : RFLX.UDP.Port) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : UDP.Port) return UDP.Port is
+   function Convert (Val : RFLX.UDP.Port) return RFLX.UDP.Port is
      (Val)
     with
      Pre =>
@@ -35,18 +35,18 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_UDP_Length return UDP.Length is
-     (UDP.Length'First)
+   function Unreachable_UDP_Length return RFLX.UDP.Length is
+     (RFLX.UDP.Length'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : UDP.Length_Base) return Boolean is
+   function Valid (Val : RFLX.UDP.Length_Base) return Boolean is
      (Val >= 8);
 
-   function Convert (Val : UDP.Length_Base) return UDP.Length is
+   function Convert (Val : RFLX.UDP.Length_Base) return RFLX.UDP.Length is
      (Val)
     with
      Pre =>
@@ -56,8 +56,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_UDP_Checksum return UDP.Checksum is
-     (UDP.Checksum'First)
+   function Unreachable_UDP_Checksum return RFLX.UDP.Checksum is
+     (RFLX.UDP.Checksum'First)
     with
      Pre =>
        False;
@@ -66,12 +66,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : UDP.Checksum) return Boolean is
+   function Valid (Val : RFLX.UDP.Checksum) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : UDP.Checksum) return UDP.Checksum is
+   function Convert (Val : RFLX.UDP.Checksum) return RFLX.UDP.Checksum is
      (Val)
     with
      Pre =>

@@ -30,9 +30,9 @@ is
             when F_Initial | F_Value | F_Final =>
                null;
             when F_Tag =>
-               Tag_Value : TLV.Tag_Base;
+               Tag_Value : RFLX.TLV.Tag_Base;
             when F_Length =>
-               Length_Value : TLV.Length;
+               Length_Value : RFLX.TLV.Length;
          end case;
       end record;
 
@@ -200,12 +200,12 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Tag (Ctx : Context) return TLV.Tag with
+   function Get_Tag (Ctx : Context) return RFLX.TLV.Tag with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Tag);
 
-   function Get_Length (Ctx : Context) return TLV.Length with
+   function Get_Length (Ctx : Context) return RFLX.TLV.Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Length);
@@ -218,7 +218,7 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Value);
 
-   procedure Set_Tag (Ctx : in out Context; Val : TLV.Tag) with
+   procedure Set_Tag (Ctx : in out Context; Val : RFLX.TLV.Tag) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -244,7 +244,7 @@ is
           and Predecessor (Ctx, F_Tag) = Predecessor (Ctx, F_Tag)'Old
           and Valid_Next (Ctx, F_Tag) = Valid_Next (Ctx, F_Tag)'Old;
 
-   procedure Set_Length (Ctx : in out Context; Val : TLV.Length) with
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.TLV.Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -400,12 +400,12 @@ private
         and then (if Invalid (Cursors (F_Length)) then
            Invalid (Cursors (F_Value))))
       and then (if Structural_Valid (Cursors (F_Tag)) then
-         (Cursors (F_Tag).Last - Cursors (F_Tag).First + 1) = TLV.Tag_Base'Size
+         (Cursors (F_Tag).Last - Cursors (F_Tag).First + 1) = RFLX.TLV.Tag_Base'Size
            and then Cursors (F_Tag).Predecessor = F_Initial
            and then Cursors (F_Tag).First = First
            and then (if Structural_Valid (Cursors (F_Length))
                 and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (Convert (Msg_Data)) then
-              (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = TLV.Length'Size
+              (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = RFLX.TLV.Length'Size
                 and then Cursors (F_Length).Predecessor = F_Tag
                 and then Cursors (F_Length).First = (Cursors (F_Tag).Last + 1)
                 and then (if Structural_Valid (Cursors (F_Value)) then
