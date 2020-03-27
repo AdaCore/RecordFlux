@@ -89,7 +89,7 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Length =>
-                     Arrays.Length'Size,
+                     RFLX.Arrays.Length'Size,
                   when others =>
                      Types.Unreachable_Bit_Length),
          when F_Length =>
@@ -338,7 +338,7 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (Arrays.Length);
+      function Extract is new Types.Extract (RFLX.Arrays.Length);
    begin
       return ((case Fld is
             when F_Length =>
@@ -370,7 +370,7 @@ is
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
                pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Length)) then
-                   (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = Arrays.Length'Size
+                   (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
                      and then Ctx.Cursors (F_Length).Predecessor = F_Initial
                      and then Ctx.Cursors (F_Length).First = Ctx.First
                      and then (if Structural_Valid (Ctx.Cursors (F_Modular_Vector)) then
@@ -458,7 +458,7 @@ is
       or Incomplete (Ctx, F_Enumeration_Vector)
       or Incomplete (Ctx, F_AV_Enumeration_Vector));
 
-   function Get_Length (Ctx : Context) return Arrays.Length is
+   function Get_Length (Ctx : Context) return RFLX.Arrays.Length is
      (Ctx.Cursors (F_Length).Value.Length_Value);
 
    procedure Get_Modular_Vector (Ctx : Context) is
@@ -522,7 +522,7 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (Arrays.Length);
+      procedure Insert is new Types.Insert (RFLX.Arrays.Length);
    begin
       Fst := First;
       Lst := Last;
@@ -536,7 +536,7 @@ is
       end case;
    end Set_Field_Value;
 
-   procedure Set_Length (Ctx : in out Context; Val : Arrays.Length) is
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.Arrays.Length) is
       Field_Value : constant Field_Dependent_Value := (F_Length, Val);
       First, Last : Types.Bit_Index;
    begin
@@ -556,7 +556,7 @@ is
          Reset_Dependent_Fields (Ctx, F_Modular_Vector);
          Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
          pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Length)) then
-             (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = Arrays.Length'Size
+             (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
                and then Ctx.Cursors (F_Length).Predecessor = F_Initial
                and then Ctx.Cursors (F_Length).First = Ctx.First
                and then (if Structural_Valid (Ctx.Cursors (F_Modular_Vector)) then
@@ -593,7 +593,7 @@ is
          Reset_Dependent_Fields (Ctx, F_Range_Vector);
          Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
          pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Length)) then
-             (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = Arrays.Length'Size
+             (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
                and then Ctx.Cursors (F_Length).Predecessor = F_Initial
                and then Ctx.Cursors (F_Length).First = Ctx.First
                and then (if Structural_Valid (Ctx.Cursors (F_Modular_Vector)) then
@@ -630,7 +630,7 @@ is
          Reset_Dependent_Fields (Ctx, F_Enumeration_Vector);
          Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
          pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Length)) then
-             (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = Arrays.Length'Size
+             (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
                and then Ctx.Cursors (F_Length).Predecessor = F_Initial
                and then Ctx.Cursors (F_Length).First = Ctx.First
                and then (if Structural_Valid (Ctx.Cursors (F_Modular_Vector)) then
@@ -667,7 +667,7 @@ is
          Reset_Dependent_Fields (Ctx, F_AV_Enumeration_Vector);
          Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
          pragma Assert ((if Structural_Valid (Ctx.Cursors (F_Length)) then
-             (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = Arrays.Length'Size
+             (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
                and then Ctx.Cursors (F_Length).Predecessor = F_Initial
                and then Ctx.Cursors (F_Length).First = Ctx.First
                and then (if Structural_Valid (Ctx.Cursors (F_Modular_Vector)) then

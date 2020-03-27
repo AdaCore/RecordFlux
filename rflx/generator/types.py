@@ -1,6 +1,14 @@
+from rflx.model import BUILTIN_TYPES
+
+
 class Types:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
+
+    def prefixed(self, type_name: str) -> str:
+        if type_name in BUILTIN_TYPES:
+            return type_name
+        return f"{self.prefix}{type_name}"
 
     @property
     def prefixed_builtin_types(self) -> str:

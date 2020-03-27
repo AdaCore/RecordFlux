@@ -11,29 +11,29 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Option_Class return IPv4.Option_Class is
-     (IPv4.Option_Class'First)
+   function Unreachable_IPv4_Option_Class return RFLX.IPv4.Option_Class is
+     (RFLX.IPv4.Option_Class'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : IPv4.Option_Class_Base) return Boolean is
+   function Valid (Val : RFLX.IPv4.Option_Class_Base) return Boolean is
      ((case Val is
          when 0 | 2 =>
             True,
          when others =>
             False));
 
-   function Convert (Enum : IPv4.Option_Class) return IPv4.Option_Class_Base is
+   function Convert (Enum : RFLX.IPv4.Option_Class) return RFLX.IPv4.Option_Class_Base is
      ((case Enum is
          when Control =>
             0,
          when Debugging_And_Measurement =>
             2));
 
-   function Convert (Val : IPv4.Option_Class_Base) return IPv4.Option_Class is
+   function Convert (Val : RFLX.IPv4.Option_Class_Base) return RFLX.IPv4.Option_Class is
      ((case Val is
          when 0 =>
             Control,
@@ -49,8 +49,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Option_Number return IPv4.Option_Number is
-     (IPv4.Option_Number'First)
+   function Unreachable_IPv4_Option_Number return RFLX.IPv4.Option_Number is
+     (RFLX.IPv4.Option_Number'First)
     with
      Pre =>
        False;
@@ -59,12 +59,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.Option_Number) return Boolean is
+   function Valid (Val : RFLX.IPv4.Option_Number) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : IPv4.Option_Number) return IPv4.Option_Number is
+   function Convert (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
      (Val)
     with
      Pre =>
@@ -78,18 +78,18 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Option_Length return IPv4.Option_Length is
-     (IPv4.Option_Length'First)
+   function Unreachable_IPv4_Option_Length return RFLX.IPv4.Option_Length is
+     (RFLX.IPv4.Option_Length'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : IPv4.Option_Length_Base) return Boolean is
+   function Valid (Val : RFLX.IPv4.Option_Length_Base) return Boolean is
      (Val >= 2);
 
-   function Convert (Val : IPv4.Option_Length_Base) return IPv4.Option_Length is
+   function Convert (Val : RFLX.IPv4.Option_Length_Base) return RFLX.IPv4.Option_Length is
      (Val)
     with
      Pre =>
@@ -103,19 +103,19 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Version return IPv4.Version is
-     (IPv4.Version'First)
+   function Unreachable_IPv4_Version return RFLX.IPv4.Version is
+     (RFLX.IPv4.Version'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : IPv4.Version_Base) return Boolean is
+   function Valid (Val : RFLX.IPv4.Version_Base) return Boolean is
      (Val >= 4
       and Val <= 4);
 
-   function Convert (Val : IPv4.Version_Base) return IPv4.Version is
+   function Convert (Val : RFLX.IPv4.Version_Base) return RFLX.IPv4.Version is
      (Val)
     with
      Pre =>
@@ -129,18 +129,18 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_IHL return IPv4.IHL is
-     (IPv4.IHL'First)
+   function Unreachable_IPv4_IHL return RFLX.IPv4.IHL is
+     (RFLX.IPv4.IHL'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : IPv4.IHL_Base) return Boolean is
+   function Valid (Val : RFLX.IPv4.IHL_Base) return Boolean is
      (Val >= 5);
 
-   function Convert (Val : IPv4.IHL_Base) return IPv4.IHL is
+   function Convert (Val : RFLX.IPv4.IHL_Base) return RFLX.IPv4.IHL is
      (Val)
     with
      Pre =>
@@ -150,8 +150,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_DCSP return IPv4.DCSP is
-     (IPv4.DCSP'First)
+   function Unreachable_IPv4_DCSP return RFLX.IPv4.DCSP is
+     (RFLX.IPv4.DCSP'First)
     with
      Pre =>
        False;
@@ -160,12 +160,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.DCSP) return Boolean is
+   function Valid (Val : RFLX.IPv4.DCSP) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : IPv4.DCSP) return IPv4.DCSP is
+   function Convert (Val : RFLX.IPv4.DCSP) return RFLX.IPv4.DCSP is
      (Val)
     with
      Pre =>
@@ -175,8 +175,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_ECN return IPv4.ECN is
-     (IPv4.ECN'First)
+   function Unreachable_IPv4_ECN return RFLX.IPv4.ECN is
+     (RFLX.IPv4.ECN'First)
     with
      Pre =>
        False;
@@ -185,12 +185,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.ECN) return Boolean is
+   function Valid (Val : RFLX.IPv4.ECN) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : IPv4.ECN) return IPv4.ECN is
+   function Convert (Val : RFLX.IPv4.ECN) return RFLX.IPv4.ECN is
      (Val)
     with
      Pre =>
@@ -204,18 +204,18 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Total_Length return IPv4.Total_Length is
-     (IPv4.Total_Length'First)
+   function Unreachable_IPv4_Total_Length return RFLX.IPv4.Total_Length is
+     (RFLX.IPv4.Total_Length'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : IPv4.Total_Length_Base) return Boolean is
+   function Valid (Val : RFLX.IPv4.Total_Length_Base) return Boolean is
      (Val >= 20);
 
-   function Convert (Val : IPv4.Total_Length_Base) return IPv4.Total_Length is
+   function Convert (Val : RFLX.IPv4.Total_Length_Base) return RFLX.IPv4.Total_Length is
      (Val)
     with
      Pre =>
@@ -225,8 +225,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Identification return IPv4.Identification is
-     (IPv4.Identification'First)
+   function Unreachable_IPv4_Identification return RFLX.IPv4.Identification is
+     (RFLX.IPv4.Identification'First)
     with
      Pre =>
        False;
@@ -235,12 +235,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.Identification) return Boolean is
+   function Valid (Val : RFLX.IPv4.Identification) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : IPv4.Identification) return IPv4.Identification is
+   function Convert (Val : RFLX.IPv4.Identification) return RFLX.IPv4.Identification is
      (Val)
     with
      Pre =>
@@ -250,8 +250,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Fragment_Offset return IPv4.Fragment_Offset is
-     (IPv4.Fragment_Offset'First)
+   function Unreachable_IPv4_Fragment_Offset return RFLX.IPv4.Fragment_Offset is
+     (RFLX.IPv4.Fragment_Offset'First)
     with
      Pre =>
        False;
@@ -260,12 +260,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.Fragment_Offset) return Boolean is
+   function Valid (Val : RFLX.IPv4.Fragment_Offset) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : IPv4.Fragment_Offset) return IPv4.Fragment_Offset is
+   function Convert (Val : RFLX.IPv4.Fragment_Offset) return RFLX.IPv4.Fragment_Offset is
      (Val)
     with
      Pre =>
@@ -275,8 +275,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_TTL return IPv4.TTL is
-     (IPv4.TTL'First)
+   function Unreachable_IPv4_TTL return RFLX.IPv4.TTL is
+     (RFLX.IPv4.TTL'First)
     with
      Pre =>
        False;
@@ -285,12 +285,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.TTL) return Boolean is
+   function Valid (Val : RFLX.IPv4.TTL) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : IPv4.TTL) return IPv4.TTL is
+   function Convert (Val : RFLX.IPv4.TTL) return RFLX.IPv4.TTL is
      (Val)
     with
      Pre =>
@@ -315,8 +315,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Protocol return IPv4.Protocol is
-     ((False, IPv4.Protocol_Base'First))
+   function Unreachable_IPv4_Protocol return RFLX.IPv4.Protocol is
+     ((False, RFLX.IPv4.Protocol_Base'First))
     with
      Pre =>
        False;
@@ -325,20 +325,20 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.Protocol_Base) return Boolean is
+   function Valid (Val : RFLX.IPv4.Protocol_Base) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : Protocol_Enum) return IPv4.Protocol_Base is
+   function Convert (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.IPv4.Protocol_Base is
      ((case Enum is
          when PROTOCOL_UDP =>
             17));
 
-   function Convert (Enum : Protocol_Enum) return IPv4.Protocol is
+   function Convert (Enum : Protocol_Enum) return RFLX.IPv4.Protocol is
      ((True, Enum));
 
-   function Convert (Val : IPv4.Protocol_Base) return IPv4.Protocol is
+   function Convert (Val : RFLX.IPv4.Protocol_Base) return RFLX.IPv4.Protocol is
      ((case Val is
          when 17 =>
             (True, PROTOCOL_UDP),
@@ -348,7 +348,7 @@ is
      Pre =>
        Valid (Val);
 
-   function Convert (Val : IPv4.Protocol) return IPv4.Protocol_Base is
+   function Convert (Val : RFLX.IPv4.Protocol) return RFLX.IPv4.Protocol_Base is
      ((if Val.Known then
        Convert (Val.Enum)
     else
@@ -358,8 +358,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Header_Checksum return IPv4.Header_Checksum is
-     (IPv4.Header_Checksum'First)
+   function Unreachable_IPv4_Header_Checksum return RFLX.IPv4.Header_Checksum is
+     (RFLX.IPv4.Header_Checksum'First)
     with
      Pre =>
        False;
@@ -368,12 +368,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.Header_Checksum) return Boolean is
+   function Valid (Val : RFLX.IPv4.Header_Checksum) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : IPv4.Header_Checksum) return IPv4.Header_Checksum is
+   function Convert (Val : RFLX.IPv4.Header_Checksum) return RFLX.IPv4.Header_Checksum is
      (Val)
     with
      Pre =>
@@ -383,8 +383,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_IPv4_Address return IPv4.Address is
-     (IPv4.Address'First)
+   function Unreachable_IPv4_Address return RFLX.IPv4.Address is
+     (RFLX.IPv4.Address'First)
     with
      Pre =>
        False;
@@ -393,12 +393,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : IPv4.Address) return Boolean is
+   function Valid (Val : RFLX.IPv4.Address) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : IPv4.Address) return IPv4.Address is
+   function Convert (Val : RFLX.IPv4.Address) return RFLX.IPv4.Address is
      (Val)
     with
      Pre =>

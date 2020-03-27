@@ -30,7 +30,7 @@ is
             when F_Initial | F_Final =>
                null;
             when F_Priority =>
-               Priority_Value : Enumeration.Priority_Base;
+               Priority_Value : RFLX.Enumeration.Priority_Base;
          end case;
       end record;
 
@@ -198,12 +198,12 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Priority (Ctx : Context) return Enumeration.Priority with
+   function Get_Priority (Ctx : Context) return RFLX.Enumeration.Priority with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Priority);
 
-   procedure Set_Priority (Ctx : in out Context; Val : Enumeration.Priority_Enum) with
+   procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -297,7 +297,7 @@ private
       and then (True)
       and then (True)
       and then (if Structural_Valid (Cursors (F_Priority)) then
-         (Cursors (F_Priority).Last - Cursors (F_Priority).First + 1) = Enumeration.Priority_Base'Size
+         (Cursors (F_Priority).Last - Cursors (F_Priority).First + 1) = RFLX.Enumeration.Priority_Base'Size
            and then Cursors (F_Priority).Predecessor = F_Initial
            and then Cursors (F_Priority).First = First));
 

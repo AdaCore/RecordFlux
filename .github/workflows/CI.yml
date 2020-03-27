@@ -100,9 +100,12 @@ jobs:
         sudo apt install graphviz
         python -m pip install --upgrade pip
         pip install --user -r requirements.txt
+        mkdir $HOME/bin
+        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2019 gprbuild $@' > $HOME/bin/gprbuild
+        chmod +x $HOME/bin/gprbuild
     - name: Test
       run: |
-        export PATH=~/.local/bin:$PATH
+        export PATH=~/.local/bin:$HOME/bin:$PATH
         make test_python
         coverage xml
     - name: Upload coverage to Codecov

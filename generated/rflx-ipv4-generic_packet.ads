@@ -35,35 +35,35 @@ is
             when F_Initial | F_Options | F_Payload | F_Final =>
                null;
             when F_Version =>
-               Version_Value : IPv4.Version_Base;
+               Version_Value : RFLX.IPv4.Version_Base;
             when F_IHL =>
-               IHL_Value : IPv4.IHL_Base;
+               IHL_Value : RFLX.IPv4.IHL_Base;
             when F_DSCP =>
-               DSCP_Value : IPv4.DCSP;
+               DSCP_Value : RFLX.IPv4.DCSP;
             when F_ECN =>
-               ECN_Value : IPv4.ECN;
+               ECN_Value : RFLX.IPv4.ECN;
             when F_Total_Length =>
-               Total_Length_Value : IPv4.Total_Length_Base;
+               Total_Length_Value : RFLX.IPv4.Total_Length_Base;
             when F_Identification =>
-               Identification_Value : IPv4.Identification;
+               Identification_Value : RFLX.IPv4.Identification;
             when F_Flag_R =>
-               Flag_R_Value : Builtin_Types.Boolean_Base;
+               Flag_R_Value : RFLX.Builtin_Types.Boolean_Base;
             when F_Flag_DF =>
-               Flag_DF_Value : Builtin_Types.Boolean_Base;
+               Flag_DF_Value : RFLX.Builtin_Types.Boolean_Base;
             when F_Flag_MF =>
-               Flag_MF_Value : Builtin_Types.Boolean_Base;
+               Flag_MF_Value : RFLX.Builtin_Types.Boolean_Base;
             when F_Fragment_Offset =>
-               Fragment_Offset_Value : IPv4.Fragment_Offset;
+               Fragment_Offset_Value : RFLX.IPv4.Fragment_Offset;
             when F_TTL =>
-               TTL_Value : IPv4.TTL;
+               TTL_Value : RFLX.IPv4.TTL;
             when F_Protocol =>
-               Protocol_Value : IPv4.Protocol_Base;
+               Protocol_Value : RFLX.IPv4.Protocol_Base;
             when F_Header_Checksum =>
-               Header_Checksum_Value : IPv4.Header_Checksum;
+               Header_Checksum_Value : RFLX.IPv4.Header_Checksum;
             when F_Source =>
-               Source_Value : IPv4.Address;
+               Source_Value : RFLX.IPv4.Address;
             when F_Destination =>
-               Destination_Value : IPv4.Address;
+               Destination_Value : RFLX.IPv4.Address;
          end case;
       end record;
 
@@ -231,32 +231,32 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Version (Ctx : Context) return IPv4.Version with
+   function Get_Version (Ctx : Context) return RFLX.IPv4.Version with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Version);
 
-   function Get_IHL (Ctx : Context) return IPv4.IHL with
+   function Get_IHL (Ctx : Context) return RFLX.IPv4.IHL with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_IHL);
 
-   function Get_DSCP (Ctx : Context) return IPv4.DCSP with
+   function Get_DSCP (Ctx : Context) return RFLX.IPv4.DCSP with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_DSCP);
 
-   function Get_ECN (Ctx : Context) return IPv4.ECN with
+   function Get_ECN (Ctx : Context) return RFLX.IPv4.ECN with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_ECN);
 
-   function Get_Total_Length (Ctx : Context) return IPv4.Total_Length with
+   function Get_Total_Length (Ctx : Context) return RFLX.IPv4.Total_Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Total_Length);
 
-   function Get_Identification (Ctx : Context) return IPv4.Identification with
+   function Get_Identification (Ctx : Context) return RFLX.IPv4.Identification with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Identification);
@@ -276,32 +276,32 @@ is
        Valid_Context (Ctx)
           and Valid (Ctx, F_Flag_MF);
 
-   function Get_Fragment_Offset (Ctx : Context) return IPv4.Fragment_Offset with
+   function Get_Fragment_Offset (Ctx : Context) return RFLX.IPv4.Fragment_Offset with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Fragment_Offset);
 
-   function Get_TTL (Ctx : Context) return IPv4.TTL with
+   function Get_TTL (Ctx : Context) return RFLX.IPv4.TTL with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_TTL);
 
-   function Get_Protocol (Ctx : Context) return IPv4.Protocol with
+   function Get_Protocol (Ctx : Context) return RFLX.IPv4.Protocol with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Protocol);
 
-   function Get_Header_Checksum (Ctx : Context) return IPv4.Header_Checksum with
+   function Get_Header_Checksum (Ctx : Context) return RFLX.IPv4.Header_Checksum with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Header_Checksum);
 
-   function Get_Source (Ctx : Context) return IPv4.Address with
+   function Get_Source (Ctx : Context) return RFLX.IPv4.Address with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Source);
 
-   function Get_Destination (Ctx : Context) return IPv4.Address with
+   function Get_Destination (Ctx : Context) return RFLX.IPv4.Address with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Destination);
@@ -322,7 +322,7 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Payload);
 
-   procedure Set_Version (Ctx : in out Context; Val : IPv4.Version) with
+   procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -361,7 +361,7 @@ is
           and Predecessor (Ctx, F_Version) = Predecessor (Ctx, F_Version)'Old
           and Valid_Next (Ctx, F_Version) = Valid_Next (Ctx, F_Version)'Old;
 
-   procedure Set_IHL (Ctx : in out Context; Val : IPv4.IHL) with
+   procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -401,7 +401,7 @@ is
           and Get_Version (Ctx) = Get_Version (Ctx)'Old
           and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old;
 
-   procedure Set_DSCP (Ctx : in out Context; Val : IPv4.DCSP) with
+   procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -442,7 +442,7 @@ is
           and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
           and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old;
 
-   procedure Set_ECN (Ctx : in out Context; Val : IPv4.ECN) with
+   procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -484,7 +484,7 @@ is
           and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
           and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old;
 
-   procedure Set_Total_Length (Ctx : in out Context; Val : IPv4.Total_Length) with
+   procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -528,7 +528,7 @@ is
           and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
           and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old;
 
-   procedure Set_Identification (Ctx : in out Context; Val : IPv4.Identification) with
+   procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -711,7 +711,7 @@ is
           and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
           and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old;
 
-   procedure Set_Fragment_Offset (Ctx : in out Context; Val : IPv4.Fragment_Offset) with
+   procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -759,7 +759,7 @@ is
           and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
           and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old;
 
-   procedure Set_TTL (Ctx : in out Context; Val : IPv4.TTL) with
+   procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -808,7 +808,7 @@ is
           and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old
           and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old;
 
-   procedure Set_Protocol (Ctx : in out Context; Val : IPv4.Protocol_Enum) with
+   procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -858,7 +858,7 @@ is
           and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old
           and Cursor (Ctx, F_TTL) = Cursor (Ctx, F_TTL)'Old;
 
-   procedure Set_Header_Checksum (Ctx : in out Context; Val : IPv4.Header_Checksum) with
+   procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -909,7 +909,7 @@ is
           and Cursor (Ctx, F_TTL) = Cursor (Ctx, F_TTL)'Old
           and Cursor (Ctx, F_Protocol) = Cursor (Ctx, F_Protocol)'Old;
 
-   procedure Set_Source (Ctx : in out Context; Val : IPv4.Address) with
+   procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -961,7 +961,7 @@ is
           and Cursor (Ctx, F_Protocol) = Cursor (Ctx, F_Protocol)'Old
           and Cursor (Ctx, F_Header_Checksum) = Cursor (Ctx, F_Header_Checksum)'Old;
 
-   procedure Set_Destination (Ctx : in out Context; Val : IPv4.Address) with
+   procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -1365,65 +1365,65 @@ private
              and then Invalid (Cursors (F_Options)) then
            Invalid (Cursors (F_Payload))))
       and then (if Structural_Valid (Cursors (F_Version)) then
-         (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = IPv4.Version_Base'Size
+         (Cursors (F_Version).Last - Cursors (F_Version).First + 1) = RFLX.IPv4.Version_Base'Size
            and then Cursors (F_Version).Predecessor = F_Initial
            and then Cursors (F_Version).First = First
            and then (if Structural_Valid (Cursors (F_IHL)) then
-              (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = IPv4.IHL_Base'Size
+              (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1) = RFLX.IPv4.IHL_Base'Size
                 and then Cursors (F_IHL).Predecessor = F_Version
                 and then Cursors (F_IHL).First = (Cursors (F_Version).Last + 1)
                 and then (if Structural_Valid (Cursors (F_DSCP)) then
-                   (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = IPv4.DCSP'Size
+                   (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1) = RFLX.IPv4.DCSP'Size
                      and then Cursors (F_DSCP).Predecessor = F_IHL
                      and then Cursors (F_DSCP).First = (Cursors (F_IHL).Last + 1)
                      and then (if Structural_Valid (Cursors (F_ECN)) then
-                        (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = IPv4.ECN'Size
+                        (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1) = RFLX.IPv4.ECN'Size
                           and then Cursors (F_ECN).Predecessor = F_DSCP
                           and then Cursors (F_ECN).First = (Cursors (F_DSCP).Last + 1)
                           and then (if Structural_Valid (Cursors (F_Total_Length)) then
-                             (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = IPv4.Total_Length_Base'Size
+                             (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = RFLX.IPv4.Total_Length_Base'Size
                                and then Cursors (F_Total_Length).Predecessor = F_ECN
                                and then Cursors (F_Total_Length).First = (Cursors (F_ECN).Last + 1)
                                and then (if Structural_Valid (Cursors (F_Identification))
                                     and then Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4 then
-                                  (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = IPv4.Identification'Size
+                                  (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = RFLX.IPv4.Identification'Size
                                     and then Cursors (F_Identification).Predecessor = F_Total_Length
                                     and then Cursors (F_Identification).First = (Cursors (F_Total_Length).Last + 1)
                                     and then (if Structural_Valid (Cursors (F_Flag_R)) then
-                                       (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = Builtin_Types.Boolean_Base'Size
+                                       (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
                                          and then Cursors (F_Flag_R).Predecessor = F_Identification
                                          and then Cursors (F_Flag_R).First = (Cursors (F_Identification).Last + 1)
                                          and then (if Structural_Valid (Cursors (F_Flag_DF))
                                               and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (Convert (False)) then
-                                            (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = Builtin_Types.Boolean_Base'Size
+                                            (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
                                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
                                               and then Cursors (F_Flag_DF).First = (Cursors (F_Flag_R).Last + 1)
                                               and then (if Structural_Valid (Cursors (F_Flag_MF)) then
-                                                 (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = Builtin_Types.Boolean_Base'Size
+                                                 (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
                                                    and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF
                                                    and then Cursors (F_Flag_MF).First = (Cursors (F_Flag_DF).Last + 1)
                                                    and then (if Structural_Valid (Cursors (F_Fragment_Offset)) then
-                                                      (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = IPv4.Fragment_Offset'Size
+                                                      (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1) = RFLX.IPv4.Fragment_Offset'Size
                                                         and then Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF
                                                         and then Cursors (F_Fragment_Offset).First = (Cursors (F_Flag_MF).Last + 1)
                                                         and then (if Structural_Valid (Cursors (F_TTL)) then
-                                                           (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = IPv4.TTL'Size
+                                                           (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1) = RFLX.IPv4.TTL'Size
                                                              and then Cursors (F_TTL).Predecessor = F_Fragment_Offset
                                                              and then Cursors (F_TTL).First = (Cursors (F_Fragment_Offset).Last + 1)
                                                              and then (if Structural_Valid (Cursors (F_Protocol)) then
-                                                                (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = IPv4.Protocol_Base'Size
+                                                                (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1) = RFLX.IPv4.Protocol_Base'Size
                                                                   and then Cursors (F_Protocol).Predecessor = F_TTL
                                                                   and then Cursors (F_Protocol).First = (Cursors (F_TTL).Last + 1)
                                                                   and then (if Structural_Valid (Cursors (F_Header_Checksum)) then
-                                                                     (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = IPv4.Header_Checksum'Size
+                                                                     (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1) = RFLX.IPv4.Header_Checksum'Size
                                                                        and then Cursors (F_Header_Checksum).Predecessor = F_Protocol
                                                                        and then Cursors (F_Header_Checksum).First = (Cursors (F_Protocol).Last + 1)
                                                                        and then (if Structural_Valid (Cursors (F_Source)) then
-                                                                          (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = IPv4.Address'Size
+                                                                          (Cursors (F_Source).Last - Cursors (F_Source).First + 1) = RFLX.IPv4.Address'Size
                                                                             and then Cursors (F_Source).Predecessor = F_Header_Checksum
                                                                             and then Cursors (F_Source).First = (Cursors (F_Header_Checksum).Last + 1)
                                                                             and then (if Structural_Valid (Cursors (F_Destination)) then
-                                                                               (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = IPv4.Address'Size
+                                                                               (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1) = RFLX.IPv4.Address'Size
                                                                                  and then Cursors (F_Destination).Predecessor = F_Source
                                                                                  and then Cursors (F_Destination).First = (Cursors (F_Source).Last + 1)
                                                                                  and then (if Structural_Valid (Cursors (F_Payload))
