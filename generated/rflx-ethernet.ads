@@ -6,8 +6,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Ethernet_Address return Ethernet.Address is
-     (Ethernet.Address'First)
+   function Unreachable_Ethernet_Address return RFLX.Ethernet.Address is
+     (RFLX.Ethernet.Address'First)
     with
      Pre =>
        False;
@@ -16,12 +16,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : Ethernet.Address) return Boolean is
+   function Valid (Val : RFLX.Ethernet.Address) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : Ethernet.Address) return Ethernet.Address is
+   function Convert (Val : RFLX.Ethernet.Address) return RFLX.Ethernet.Address is
      (Val)
     with
      Pre =>
@@ -35,18 +35,18 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Ethernet_Type_Length return Ethernet.Type_Length is
-     (Ethernet.Type_Length'First)
+   function Unreachable_Ethernet_Type_Length return RFLX.Ethernet.Type_Length is
+     (RFLX.Ethernet.Type_Length'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : Ethernet.Type_Length_Base) return Boolean is
+   function Valid (Val : RFLX.Ethernet.Type_Length_Base) return Boolean is
      (Val >= 46);
 
-   function Convert (Val : Ethernet.Type_Length_Base) return Ethernet.Type_Length is
+   function Convert (Val : RFLX.Ethernet.Type_Length_Base) return RFLX.Ethernet.Type_Length is
      (Val)
     with
      Pre =>
@@ -60,19 +60,19 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Ethernet_TPID return Ethernet.TPID is
-     (Ethernet.TPID'First)
+   function Unreachable_Ethernet_TPID return RFLX.Ethernet.TPID is
+     (RFLX.Ethernet.TPID'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is statically false");
 
-   function Valid (Val : Ethernet.TPID_Base) return Boolean is
+   function Valid (Val : RFLX.Ethernet.TPID_Base) return Boolean is
      (Val >= 16#8100#
       and Val <= 16#8100#);
 
-   function Convert (Val : Ethernet.TPID_Base) return Ethernet.TPID is
+   function Convert (Val : RFLX.Ethernet.TPID_Base) return RFLX.Ethernet.TPID is
      (Val)
     with
      Pre =>
@@ -82,8 +82,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Ethernet_TCI return Ethernet.TCI is
-     (Ethernet.TCI'First)
+   function Unreachable_Ethernet_TCI return RFLX.Ethernet.TCI is
+     (RFLX.Ethernet.TCI'First)
     with
      Pre =>
        False;
@@ -92,12 +92,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : Ethernet.TCI) return Boolean is
+   function Valid (Val : RFLX.Ethernet.TCI) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : Ethernet.TCI) return Ethernet.TCI is
+   function Convert (Val : RFLX.Ethernet.TCI) return RFLX.Ethernet.TCI is
      (Val)
     with
      Pre =>

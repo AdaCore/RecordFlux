@@ -43,6 +43,7 @@ from rflx.expression import (
     Variable,
 )
 from rflx.model import (
+    BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
     Enumeration,
@@ -63,6 +64,7 @@ VALID_CONTEXT = Call("Valid_Context", [Name("Ctx")])  # WORKAROUND: Componolit/W
 
 class GeneratorCommon:
     def __init__(self, prefix: str = "") -> None:
+        self.prefix = prefix
         self.types = Types(prefix)
 
     def substitution(self, message: Message, prefix: bool = True) -> Mapping[Name, Expr]:
@@ -174,7 +176,7 @@ class GeneratorCommon:
         field_type = message.types[target]
         condition = link.condition.simplified(self.substitution(message, prefix))
         length = (
-            Size(base_type_name(field_type))
+            Size(self.prefix + base_type_name(field_type))
             if isinstance(field_type, Scalar)
             else link.length.simplified(self.substitution(message, prefix))
         )
@@ -485,7 +487,7 @@ class GeneratorCommon:
 
 
 def base_type_name(scalar_type: Scalar) -> str:
-    if scalar_type.package == "__BUILTINS__":
+    if scalar_type.package == BUILTINS_PACKAGE:
         return f"Builtin_Types.{scalar_type.base_name}"
     if isinstance(scalar_type, (RangeInteger, Enumeration)):
         return scalar_type.full_base_name

@@ -21,8 +21,8 @@ is
 
    pragma Warnings (Off, "precondition is statically false");
 
-   function Unreachable_Enumeration_Priority return Enumeration.Priority is
-     ((False, Enumeration.Priority_Base'First))
+   function Unreachable_Enumeration_Priority return RFLX.Enumeration.Priority is
+     ((False, RFLX.Enumeration.Priority_Base'First))
     with
      Pre =>
        False;
@@ -31,12 +31,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
-   function Valid (Val : Enumeration.Priority_Base) return Boolean is
+   function Valid (Val : RFLX.Enumeration.Priority_Base) return Boolean is
      (True);
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : Priority_Enum) return Enumeration.Priority_Base is
+   function Convert (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.Enumeration.Priority_Base is
      ((case Enum is
          when LOW =>
             1,
@@ -45,10 +45,10 @@ is
          when HIGH =>
             7));
 
-   function Convert (Enum : Priority_Enum) return Enumeration.Priority is
+   function Convert (Enum : Priority_Enum) return RFLX.Enumeration.Priority is
      ((True, Enum));
 
-   function Convert (Val : Enumeration.Priority_Base) return Enumeration.Priority is
+   function Convert (Val : RFLX.Enumeration.Priority_Base) return RFLX.Enumeration.Priority is
      ((case Val is
          when 1 =>
             (True, LOW),
@@ -62,7 +62,7 @@ is
      Pre =>
        Valid (Val);
 
-   function Convert (Val : Enumeration.Priority) return Enumeration.Priority_Base is
+   function Convert (Val : RFLX.Enumeration.Priority) return RFLX.Enumeration.Priority_Base is
      ((if Val.Known then
        Convert (Val.Enum)
     else

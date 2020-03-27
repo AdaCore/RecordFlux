@@ -30,7 +30,7 @@ is
             when F_Initial | F_Payload | F_Final =>
                null;
             when F_Length =>
-               Length_Value : Arrays.Length;
+               Length_Value : RFLX.Arrays.Length;
          end case;
       end record;
 
@@ -198,7 +198,7 @@ is
      Pre =>
        Valid_Context (Ctx);
 
-   function Get_Length (Ctx : Context) return Arrays.Length with
+   function Get_Length (Ctx : Context) return RFLX.Arrays.Length with
      Pre =>
        Valid_Context (Ctx)
           and Valid (Ctx, F_Length);
@@ -211,7 +211,7 @@ is
           and Has_Buffer (Ctx)
           and Present (Ctx, F_Payload);
 
-   procedure Set_Length (Ctx : in out Context; Val : Arrays.Length) with
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.Arrays.Length) with
      Pre =>
        Valid_Context (Ctx)
           and then not Ctx'Constrained
@@ -355,7 +355,7 @@ private
       and then ((if Invalid (Cursors (F_Length)) then
            Invalid (Cursors (F_Payload))))
       and then (if Structural_Valid (Cursors (F_Length)) then
-         (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = Arrays.Length'Size
+         (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
            and then Cursors (F_Length).Predecessor = F_Initial
            and then Cursors (F_Length).First = First
            and then (if Structural_Valid (Cursors (F_Payload)) then

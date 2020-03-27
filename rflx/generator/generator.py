@@ -51,7 +51,7 @@ from rflx.expression import (
     Slice,
     Variable,
 )
-from rflx.model import FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
+from rflx.model import BUILTINS_PACKAGE, FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
 from .common import VALID_CONTEXT, GeneratorCommon, base_type_name, length_dependent_condition
 from .types import Types
@@ -74,7 +74,7 @@ class GeneratorGenerator:
                     Parameter(["Offset"], self.types.offset),
                 ],
             ),
-            [type_name],
+            [self.types.prefixed(type_name)],
         )
 
     def create_internal_functions(
@@ -236,12 +236,12 @@ class GeneratorGenerator:
         self, message: Message, scalar_fields: Mapping[Field, Scalar]
     ) -> UnitPart:
         def specification(field: Field, field_type: Type) -> ProcedureSpecification:
-            if field_type.package == "__BUILTINS__":
+            if field_type.package == BUILTINS_PACKAGE:
                 type_name = field_type.name
             elif isinstance(field_type, Enumeration) and field_type.always_valid:
-                type_name = field_type.full_enum_name
+                type_name = self.types.prefixed(field_type.full_enum_name)
             else:
-                type_name = field_type.full_name
+                type_name = self.types.prefixed(field_type.full_name)
 
             return ProcedureSpecification(
                 f"Set_{field.name}",
