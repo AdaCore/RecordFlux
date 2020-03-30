@@ -50,14 +50,6 @@ class Type(Element):
             raise ModelError(f'unexpected format of type name "{full_name}"')
         self.full_name = full_name
 
-    @abstractproperty
-    def size(self) -> Expr:
-        raise NotImplementedError
-
-    @abstractmethod
-    def constraints(self, name: str, proof: bool = False) -> Expr:
-        raise NotImplementedError
-
     @property
     def name(self) -> str:
         return self.full_name.rsplit(".", 1)[1]
@@ -66,26 +58,18 @@ class Type(Element):
     def package(self) -> str:
         return self.full_name.rsplit(".", 1)[0]
 
-    @property
-    def base_name(self) -> str:
-        return f"{self.name}_Base"
-
-    @property
-    def full_base_name(self) -> str:
-        return f"{self.full_name}_Base"
-
 
 class Scalar(Type):
     @property
     def size(self) -> Expr:
         raise NotImplementedError
 
-
-class Integer(Scalar):
-    @property
-    def size(self) -> Expr:
+    @abstractmethod
+    def constraints(self, name: str, proof: bool = False) -> Expr:
         raise NotImplementedError
 
+
+class Integer(Scalar):
     @abstractproperty
     def first(self) -> Expr:
         raise NotImplementedError
@@ -224,12 +208,7 @@ class Enumeration(Scalar):
 
 
 class Composite(Type):
-    @property
-    def size(self) -> Expr:
-        raise NotImplementedError
-
-    def constraints(self, name: str, proof: bool = False) -> Expr:
-        raise NotImplementedError
+    pass
 
 
 class Array(Composite):
@@ -237,33 +216,14 @@ class Array(Composite):
         super().__init__(full_name)
         self.element_type = element_type
 
-    @property
-    def size(self) -> Expr:
-        raise ModelError(f'size of "{self.name}" undefined')
-
-    def constraints(self, name: str, proof: bool = False) -> Expr:
-        raise NotImplementedError
-
 
 class Opaque(Composite):
     def __init__(self) -> None:
         super().__init__(f"__PACKAGE__.Opaque")
 
-    @property
-    def size(self) -> Expr:
-        raise NotImplementedError
-
-    def constraints(self, name: str, proof: bool = False) -> Expr:
-        return TRUE
-
 
 class Reference(Type):
-    @property
-    def size(self) -> Expr:
-        raise NotImplementedError
-
-    def constraints(self, name: str, proof: bool = False) -> Expr:
-        raise NotImplementedError
+    pass
 
 
 class Field(NamedTuple):
@@ -294,13 +254,12 @@ class Link(NamedTuple):
         return generic_repr(self.__class__.__name__, self._asdict())
 
 
-class AbstractMessage(Element):
+class AbstractMessage(Type):
     def __init__(
         self, full_name: str, structure: Sequence[Link], types: Mapping[Field, Type]
     ) -> None:
-        check_message_name(full_name)
+        super().__init__(full_name)
 
-        self.full_name = full_name
         self.structure = structure
         self.__types = types
 
@@ -398,9 +357,15 @@ class AbstractMessage(Element):
     def field_size(self, field: Field) -> Expr:
         if field == FINAL:
             return Number(0)
+
         if field not in self.fields:
             raise ValueError(f'field "{field.name}" not found')
-        return self.types[field].size
+
+        field_type = self.types[field]
+        if isinstance(field_type, Scalar):
+            return field_type.size
+
+        raise NotImplementedError
 
     def __verify(self) -> None:
         type_fields = self.__types.keys() | {INITIAL, FINAL}
@@ -514,11 +479,15 @@ class AbstractMessage(Element):
         literals = qualified_literals(self.types, self.package)
         return And(
             *[
-                self.types[Field(v.name)].constraints(name=v.name, proof=True)
-                for v in expr.variables()
-                if not isinstance(v, Attribute)
-                and isinstance(v.name, str)
-                and v.name not in literals
+                t.constraints(name=n, proof=True)
+                for n, t in [
+                    (v.name, self.types[Field(v.name)])
+                    for v in expr.variables()
+                    if not isinstance(v, Attribute)
+                    and isinstance(v.name, str)
+                    and v.name not in literals
+                ]
+                if isinstance(t, Scalar)
             ]
         )
 
@@ -771,6 +740,7 @@ class Message(AbstractMessage):
     def __init__(
         self, full_name: str, structure: Sequence[Link], types: Mapping[Field, Type]
     ) -> None:
+
         super().__init__(full_name, structure, types)
 
         if structure or types:
@@ -800,6 +770,7 @@ class DerivedMessage(Message):
         structure: Sequence[Link],
         types: Mapping[Field, Type],
     ) -> None:
+
         check_message_name(full_base_name)
 
         super().__init__(full_name, structure, types)
@@ -855,6 +826,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         structure: Sequence[Link],
         types: Mapping[Field, Type],
     ) -> None:
+
         check_message_name(full_base_name)
 
         super().__init__(full_name, structure, types)
@@ -897,13 +869,6 @@ class Refinement(Type):
                 and self.sdu == other.sdu
             )
         return NotImplemented
-
-    def constraints(self, name: str, proof: bool = False) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def size(self) -> Number:
-        raise NotImplementedError
 
 
 class Model(Element):

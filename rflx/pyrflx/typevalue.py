@@ -68,6 +68,9 @@ class TypeValue(ABC):
 
 
 class ScalarValue(TypeValue):
+
+    _type: Scalar
+
     def __init__(self, vtype: Scalar) -> None:
         super().__init__(vtype)
 
@@ -81,7 +84,6 @@ class ScalarValue(TypeValue):
 
     @property
     def size(self) -> int:
-        assert isinstance(self._type, Scalar)
         size_expr = self._type.size.simplified()
         assert isinstance(size_expr, Number)
         return size_expr.value
@@ -90,20 +92,19 @@ class ScalarValue(TypeValue):
 class IntegerValue(ScalarValue):
 
     _value: int
+    _type: Integer
 
     def __init__(self, vtype: Integer) -> None:
         super().__init__(vtype)
 
     @property
     def _first(self) -> int:
-        assert isinstance(self._type, Integer)
         first = self._type.first.simplified()
         assert isinstance(first, Number)
         return first.value
 
     @property
     def _last(self) -> int:
-        assert isinstance(self._type, Integer)
         last = self._type.last.simplified()
         assert isinstance(last, Number)
         return last.value
@@ -145,17 +146,16 @@ class IntegerValue(ScalarValue):
 class EnumValue(ScalarValue):
 
     _value: str
+    _type: Enumeration
 
     def __init__(self, vtype: Enumeration) -> None:
         super().__init__(vtype)
 
     def assign(self, value: str, check: bool = True) -> None:
-        assert isinstance(self._type, Enumeration)
         if value not in self._type.literals:
             raise KeyError(f"{value} is not a valid enum value")
         assert (
-            isinstance(self._type, Enumeration)
-            and self._type.constraints("__VALUE__", check).simplified(
+            self._type.constraints("__VALUE__", check).simplified(
                 {
                     **{Variable(k): v for k, v in self._type.literals.items()},
                     **{Variable("__VALUE__"): self._type.literals[value]},
@@ -177,7 +177,6 @@ class EnumValue(ScalarValue):
 
     @property
     def binary(self) -> str:
-        assert isinstance(self._type, Enumeration)
         self._raise_initialized()
         return format(self._type.literals[self._value].value, f"0{self.size}b")
 
@@ -187,7 +186,6 @@ class EnumValue(ScalarValue):
 
     @property
     def literals(self) -> Mapping[Name, Expr]:
-        assert isinstance(self._type, Enumeration)
         return {Variable(k): v for k, v in self._type.literals.items()}
 
 

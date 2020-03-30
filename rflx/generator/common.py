@@ -51,7 +51,6 @@ from rflx.model import (
     Link,
     Message,
     ModularInteger,
-    RangeInteger,
     Scalar,
     Type,
 )
@@ -176,7 +175,7 @@ class GeneratorCommon:
         field_type = message.types[target]
         condition = link.condition.simplified(self.substitution(message, prefix))
         length = (
-            Size(self.prefix + base_type_name(field_type))
+            Size(self.prefix + full_base_type_name(field_type))
             if isinstance(field_type, Scalar)
             else link.length.simplified(self.substitution(message, prefix))
         )
@@ -487,14 +486,20 @@ class GeneratorCommon:
 
 
 def base_type_name(scalar_type: Scalar) -> str:
+    if isinstance(scalar_type, ModularInteger):
+        return scalar_type.name
+
+    return f"{scalar_type.name}_Base"
+
+
+def full_base_type_name(scalar_type: Scalar) -> str:
     if scalar_type.package == BUILTINS_PACKAGE:
-        return f"Builtin_Types.{scalar_type.base_name}"
-    if isinstance(scalar_type, (RangeInteger, Enumeration)):
-        return scalar_type.full_base_name
+        return f"Builtin_Types.{scalar_type.name}_Base"
+
     if isinstance(scalar_type, ModularInteger):
         return scalar_type.full_name
-    assert False, 'unexpected scalar type "{type(scalar_type)}"'
-    return None
+
+    return f"{scalar_type.full_name}_Base"
 
 
 def sequence_name(message: Message, field: Field) -> str:
