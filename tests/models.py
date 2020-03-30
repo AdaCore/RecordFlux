@@ -236,3 +236,6 @@ ARRAY_INNER_MESSAGE = create_array_inner_message()
 ARRAY_MESSAGES_MESSAGE = create_array_messages_message()
 EXPRESSION_MESSAGE = create_expression_message()
 DERIVATION_MESSAGE = create_derivation_message()
+
+MODULAR_INTEGER = ModularInteger("P.Modular", Number(256))
+RANGE_INTEGER = RangeInteger("P.Range", Number(1), Number(100), Number(8))

@@ -61,7 +61,13 @@ from rflx.model import (
     Type,
 )
 
-from .common import NULL, VALID_CONTEXT, GeneratorCommon, base_type_name, length_dependent_condition
+from .common import (
+    NULL,
+    VALID_CONTEXT,
+    GeneratorCommon,
+    full_base_type_name,
+    length_dependent_condition,
+)
 from .types import Types
 
 
@@ -168,7 +174,7 @@ class ParserGenerator:
                         *self.common.field_bit_location_declarations(Name("Fld")),
                         *self.common.field_byte_location_declarations(),
                         *unique(
-                            self.extract_function(base_type_name(t))
+                            self.extract_function(full_base_type_name(t))
                             for t in message.types.values()
                             if isinstance(t, Scalar)
                         ),

@@ -1,7 +1,6 @@
 import unittest
 from tempfile import TemporaryDirectory
 
-from rflx.expression import UNDEFINED, Expr
 from rflx.model import (
     FINAL,
     INITIAL,
@@ -470,12 +469,7 @@ class TestPyRFLX(unittest.TestCase):
 
     def test_value_invalid(self) -> None:
         class TestType(Type):
-            @property
-            def size(self) -> Expr:
-                return UNDEFINED
-
-            def constraints(self, name: str, proof: bool = False) -> Expr:
-                return UNDEFINED
+            pass
 
         t = TestType("Test.Type")
         with self.assertRaisesRegex(ValueError, "cannot construct unknown type: TestType"):
