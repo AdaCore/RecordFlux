@@ -23,6 +23,7 @@ from rflx.model import (
     RangeInteger,
     Reference,
     Refinement,
+    Scalar,
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
@@ -173,13 +174,15 @@ def create_array(array: Array, types: Mapping[str, Type]) -> Array:
     array.element_type.full_name = array.element_type.full_name.replace(
         "__PACKAGE__", array.package
     )
+
     if array.element_type.full_name in types:
         element_type = types[array.element_type.full_name]
     else:
         raise ParserError(
             f'undefined element type "{array.element_type.full_name}" in array "{array.full_name}"'
         )
-    if not isinstance(element_type, Reference):
+
+    if isinstance(element_type, Scalar):
         element_type_size = element_type.size.simplified()
         if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
             raise ParserError(
@@ -187,8 +190,8 @@ def create_array(array: Array, types: Mapping[str, Type]) -> Array:
                 f'"{array.element_type.name}" in "{array.name}" '
                 "(no multiple of 8)"
             )
-        return Array(array.full_name, element_type)
-    return array
+
+    return Array(array.full_name, element_type)
 
 
 def create_message(message: MessageSpec, types: Mapping[str, Type]) -> UnprovenMessage:

@@ -23,7 +23,6 @@ from rflx.model import (
     BOOLEAN,
     FINAL,
     INITIAL,
-    Array,
     DerivedMessage,
     Enumeration,
     Field,
@@ -39,10 +38,7 @@ from rflx.model import (
     merged_message,
     prefixed_message,
 )
-from tests.models import ETHERNET_FRAME
-
-MODULAR_INTEGER = ModularInteger("P.Modular", Number(256))
-RANGE_INTEGER = RangeInteger("P.Range", Number(1), Number(100), Number(8))
+from tests.models import ETHERNET_FRAME, MODULAR_INTEGER, RANGE_INTEGER
 
 M_NO_REF = UnprovenMessage(
     "P.No_Ref",
@@ -212,13 +208,8 @@ class TestModel(TestCase):
         with self.assertRaises(ModelError):
             RangeInteger("P.T", Number(0), Number(256), Number(8))
 
-    def test_array_size(self) -> None:
-        with self.assertRaisesRegex(ModelError, r'^size of "T" undefined$'):
-            # pylint: disable=expression-not-assigned
-            Array("P.T", ModularInteger("P.I", Number(256))).size
-
     def test_message_incorrect_name(self) -> None:
-        with self.assertRaisesRegex(ModelError, '^unexpected format of message name "M"$'):
+        with self.assertRaisesRegex(ModelError, '^unexpected format of type name "M"$'):
             Message("M", [], {})
 
     def test_message_missing_type(self) -> None:

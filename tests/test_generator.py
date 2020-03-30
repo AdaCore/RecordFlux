@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 from rflx.generator import Generator
+from rflx.generator.common import base_type_name, full_base_type_name
 from rflx.generator.core import LIBRARY_FILES
 from rflx.model import Message, Refinement
 from tests.models import (
@@ -13,12 +14,15 @@ from tests.models import (
     DERIVATION_MESSAGE,
     ENUMERATION_MESSAGE,
     ETHERNET_FRAME,
+    MODULAR_INTEGER,
     NULL_MESSAGE,
     NULL_MESSAGE_IN_TLV_MESSAGE,
+    RANGE_INTEGER,
     TLV_MESSAGE,
 )
 
 
+# pylint: disable=too-many-public-methods
 class TestGenerator(unittest.TestCase):
     def setUp(self) -> None:
         self.testdir = Path("generated")
@@ -133,6 +137,14 @@ class TestGenerator(unittest.TestCase):
     def test_derivation_body(self) -> None:
         generator = generate([ARRAY_MESSAGE, DERIVATION_MESSAGE], [])
         self.assert_body(generator)
+
+    def test_base_type_name(self) -> None:
+        self.assertEqual(base_type_name(MODULAR_INTEGER), "Modular")
+        self.assertEqual(base_type_name(RANGE_INTEGER), "Range_Base")
+
+    def test_full_base_type_name(self) -> None:
+        self.assertEqual(full_base_type_name(MODULAR_INTEGER), "P.Modular")
+        self.assertEqual(full_base_type_name(RANGE_INTEGER), "P.Range_Base")
 
 
 def generate(pdus: List[Message], refinements: List[Refinement]) -> Generator:

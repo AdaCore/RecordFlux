@@ -110,6 +110,7 @@ from rflx.model import (
     DerivedMessage,
     Enumeration,
     Field,
+    Integer,
     Message,
     ModularInteger,
     Opaque,
@@ -125,6 +126,7 @@ from .common import (
     VALID_CONTEXT,
     GeneratorCommon,
     base_type_name,
+    full_base_type_name,
     length_dependent_condition,
     sequence_name,
 )
@@ -546,7 +548,7 @@ class Generator:
         ] + [
             Variant(
                 [Name(f.affixed_name)],
-                [Component(f"{f.name}_Value", self.prefix + base_type_name(t))],
+                [Component(f"{f.name}_Value", self.prefix + full_base_type_name(t))],
             )
             for f, t in scalar_fields.items()
         ]
@@ -886,7 +888,7 @@ class Generator:
                 field_type = message.types[target]
                 length: Expr
                 if isinstance(field_type, Scalar):
-                    length = Size(self.prefix + base_type_name(field_type))
+                    length = Size(self.prefix + full_base_type_name(field_type))
                 else:
                     if len(links) == 1:
                         length = links[0].length
@@ -2092,7 +2094,7 @@ class Generator:
                     f"{element_type.name}.Valid_Context",
                 ],
             )
-        else:
+        elif isinstance(element_type, Scalar):
             array_context = [
                 Pragma("SPARK_Mode"),
                 WithClause(f"{self.prefix}Scalar_Sequence"),
@@ -2105,7 +2107,7 @@ class Generator:
                 [
                     self.types.prefixed_types,
                     element_type.name,
-                    element_type.base_name
+                    base_type_name(element_type)
                     if not isinstance(element_type, ModularInteger)
                     else element_type.name,
                     "Valid",
@@ -2113,6 +2115,8 @@ class Generator:
                     "Convert",
                 ],
             )
+        else:
+            assert False, 'unexpected element type "{type(element_type)}"'
 
         self.units[array_package.name] = InstantiationUnit(array_context, array_package)
 
@@ -2126,11 +2130,7 @@ class Generator:
         specification.append(
             self.type_validation_function(integer, integer.constraints("Val").simplified())
         )
-        specification.append(
-            integer_conversion_function(
-                self.prefix + integer.full_name, self.prefix + integer.full_base_name
-            )
-        )
+        specification.append(self.integer_conversion_function(integer))
 
         return SubprogramUnitPart(specification)
 
@@ -2142,11 +2142,7 @@ class Generator:
             self.type_validation_function(integer, integer.constraints("Val").simplified())
         )
         specification.append(Pragma("Warnings", ["On", '"unused variable ""Val"""']))
-        specification.append(
-            integer_conversion_function(
-                self.prefix + integer.full_name, self.prefix + integer.full_name
-            )
-        )
+        specification.append(self.integer_conversion_function(integer))
 
         return UnitPart(specification)
 
@@ -2175,7 +2171,7 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "Convert",
-                    self.prefix + enum.full_base_name,
+                    self.prefix + full_base_type_name(enum),
                     [
                         Parameter(
                             ["Enum"],
@@ -2191,7 +2187,7 @@ class Generator:
         conversion_function = FunctionSpecification(
             "Convert",
             self.prefix + enum.full_name,
-            [Parameter(["Val"], self.prefix + enum.full_base_name)],
+            [Parameter(["Val"], self.prefix + full_base_type_name(enum))],
         )
         precondition = Precondition(Call("Valid", [Name("Val")]))
         conversion_cases: List[Tuple[Expr, Expr]] = []
@@ -2223,7 +2219,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "Convert",
-                        self.prefix + enum.full_base_name,
+                        self.prefix + full_base_type_name(enum),
                         [Parameter(["Val"], self.prefix + enum.full_name)],
                     ),
                     If(
@@ -2437,7 +2433,7 @@ class Generator:
             FunctionSpecification(
                 f"Valid",
                 "Boolean",
-                [Parameter(["Val"], self.prefix + base_type_name(scalar_type))],
+                [Parameter(["Val"], self.prefix + full_base_type_name(scalar_type))],
             ),
             validation_expression,
         )
@@ -2445,7 +2441,7 @@ class Generator:
     def type_dependent_unreachable_function(self, scalar_type: Scalar) -> List[Declaration]:
         base_name = None
         if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
-            base_name = self.prefix + scalar_type.full_base_name
+            base_name = self.prefix + full_base_type_name(scalar_type)
 
         type_name = self.prefix + scalar_type.full_name
 
@@ -2458,6 +2454,17 @@ class Generator:
             ),
             Pragma("Warnings", ["On", '"precondition is statically false"']),
         ]
+
+    def integer_conversion_function(self, integer: Integer) -> Subprogram:
+        return ExpressionFunctionDeclaration(
+            FunctionSpecification(
+                "Convert",
+                self.prefix + integer.full_name,
+                [Parameter(["Val"], self.prefix + full_base_type_name(integer))],
+            ),
+            Name("Val"),
+            [Precondition(Call(f"Valid", [Name("Val")]))],
+        )
 
 
 class InternalError(Exception):
@@ -2477,15 +2484,15 @@ def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
 
 def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
     return [
-        RangeType(integer.base_name, integer.base_first, integer.base_last, integer.size),
-        RangeSubtype(integer.name, integer.base_name, integer.first, integer.last),
+        RangeType(base_type_name(integer), integer.base_first, integer.base_last, integer.size),
+        RangeSubtype(integer.name, base_type_name(integer), integer.first, integer.last),
     ]
 
 
 def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
     types: List[TypeDeclaration] = []
 
-    types.append(ModularType(enum.base_name, Pow(Number(2), enum.size)))
+    types.append(ModularType(base_type_name(enum), Pow(Number(2), enum.size)))
     types.append(
         EnumerationType(
             enum.enum_name if enum.always_valid else enum.name, enum.literals, enum.size
@@ -2501,21 +2508,13 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
                     "Known",
                     [
                         Variant([TRUE], [Component("Enum", enum.enum_name)]),
-                        Variant([FALSE], [Component("Raw", enum.base_name)]),
+                        Variant([FALSE], [Component("Raw", base_type_name(enum))]),
                     ],
                 ),
             )
         )
 
     return types
-
-
-def integer_conversion_function(type_name: str, type_base_name: str) -> Subprogram:
-    return ExpressionFunctionDeclaration(
-        FunctionSpecification("Convert", type_name, [Parameter(["Val"], type_base_name)]),
-        Name("Val"),
-        [Precondition(Call(f"Valid", [Name("Val")]))],
-    )
 
 
 def renamed_subprogram_specification(

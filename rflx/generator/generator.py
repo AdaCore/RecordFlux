@@ -53,7 +53,7 @@ from rflx.expression import (
 )
 from rflx.model import BUILTINS_PACKAGE, FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
-from .common import VALID_CONTEXT, GeneratorCommon, base_type_name, length_dependent_condition
+from .common import VALID_CONTEXT, GeneratorCommon, full_base_type_name, length_dependent_condition
 from .types import Types
 
 
@@ -96,7 +96,7 @@ class GeneratorGenerator:
                         *self.common.field_bit_location_declarations(Selected("Val", "Fld")),
                         *self.common.field_byte_location_declarations(),
                         *unique(
-                            self.insert_function(base_type_name(t))
+                            self.insert_function(full_base_type_name(t))
                             for t in message.types.values()
                             if isinstance(t, Scalar)
                         ),
