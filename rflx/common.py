@@ -18,6 +18,10 @@ def verify_identifier(name: str) -> None:
     assert " " not in name, f'whitespace in identifier "{name}"'
 
 
+def flat_name(full_name: str) -> str:
+    return full_name.replace(".", "_")
+
+
 T = TypeVar("T")  # pylint: disable=invalid-name
 
 

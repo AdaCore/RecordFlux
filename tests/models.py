@@ -27,7 +27,6 @@ from rflx.model import (
     ModularInteger,
     Opaque,
     RangeInteger,
-    Reference,
     Refinement,
 )
 
@@ -203,7 +202,7 @@ def create_array_messages_message() -> Message:
 
     types = {
         Field("Length"): ModularInteger("Arrays.Length", Pow(Number(2), Number(8))),
-        Field("Messages"): Array("Arrays.Inner_Messages", Reference("Arrays.Inner_Message")),
+        Field("Messages"): Array("Arrays.Inner_Messages", ARRAY_INNER_MESSAGE),
     }
 
     return Message("Arrays.Messages_Message", structure, types)

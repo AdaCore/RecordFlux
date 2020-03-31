@@ -35,7 +35,6 @@ from rflx.model import (
     ModularInteger,
     Opaque,
     RangeInteger,
-    Reference,
     Refinement,
 )
 from rflx.parser import grammar
@@ -44,6 +43,7 @@ from rflx.parser.ast import (
     DerivationSpec,
     MessageSpec,
     PackageSpec,
+    ReferenceSpec,
     Specification,
     Then,
 )
@@ -665,9 +665,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                     "Array_Type",
                     [
                         ModularInteger("__PACKAGE__.Byte", Number(256)),
-                        Array("__PACKAGE__.Bytes", Reference("__PACKAGE__.Byte")),
+                        Array("__PACKAGE__.Bytes", ReferenceSpec("__PACKAGE__.Byte")),
                         MessageSpec("__PACKAGE__.Foo", [Component("Byte", "Byte")]),
-                        Array("__PACKAGE__.Bar", Reference("__PACKAGE__.Foo")),
+                        Array("__PACKAGE__.Bar", ReferenceSpec("__PACKAGE__.Foo")),
                     ],
                 ),
             )

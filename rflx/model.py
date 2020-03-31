@@ -5,7 +5,7 @@ from copy import copy
 from math import log
 from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
 
-from rflx.common import generic_repr
+from rflx.common import flat_name, generic_repr
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -34,7 +34,7 @@ from rflx.expression import (
 BUILTINS_PACKAGE = "__BUILTINS__"
 
 
-class Element(ABC):
+class Base(ABC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
@@ -44,7 +44,7 @@ class Element(ABC):
         return generic_repr(self.__class__.__name__, self.__dict__)
 
 
-class Type(Element):
+class Type(Base):
     def __init__(self, full_name: str) -> None:
         if full_name.count(".") != 1:
             raise ModelError(f'unexpected format of type name "{full_name}"')
@@ -222,10 +222,6 @@ class Opaque(Composite):
         super().__init__(f"__PACKAGE__.Opaque")
 
 
-class Reference(Type):
-    pass
-
-
 class Field(NamedTuple):
     name: str
 
@@ -291,7 +287,7 @@ class AbstractMessage(Type):
         raise NotImplementedError
 
     @abstractmethod
-    def proven_message(self) -> "Message":
+    def proven(self) -> "Message":
         raise NotImplementedError
 
     @property
@@ -367,6 +363,26 @@ class AbstractMessage(Type):
 
         raise NotImplementedError
 
+    def prefixed(self, prefix: str) -> "AbstractMessage":
+        def prefixed_expression(expression: Expr) -> Expr:
+            return expression.simplified(
+                {v: v.__class__(f"{prefix}{v.name}") for v in expression.variables()}
+            )
+
+        structure = []
+
+        for l in self.structure:
+            source = Field(f"{prefix}{l.source.name}") if l.source != INITIAL else INITIAL
+            target = Field(f"{prefix}{l.target.name}") if l.target != FINAL else FINAL
+            condition = prefixed_expression(l.condition)
+            length = prefixed_expression(l.length) if l.length != UNDEFINED else UNDEFINED
+            first = prefixed_expression(l.first) if l.first != UNDEFINED else UNDEFINED
+            structure.append(Link(source, target, condition, length, first))
+
+        types = {Field(f"{prefix}{f.name}"): t for f, t in self.types.items()}
+
+        return self.copy(structure=structure, types=types)
+
     def __verify(self) -> None:
         type_fields = self.__types.keys() | {INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
@@ -393,6 +409,8 @@ class AbstractMessage(Type):
                 f'duplicate links in "{self.full_name}": '
                 + ", ".join(f"{l.source.name} -> {l.target.name}" for l in duplicate_links)
             )
+
+        check_message_field_types(self)
 
     @staticmethod
     def __check_vars(
@@ -758,7 +776,7 @@ class Message(AbstractMessage):
             types if types else copy(self.types),
         )
 
-    def proven_message(self) -> "Message":
+    def proven(self) -> "Message":
         return copy(self)
 
 
@@ -789,7 +807,7 @@ class DerivedMessage(Message):
             types if types else copy(self.types),
         )
 
-    def proven_message(self) -> "DerivedMessage":
+    def proven(self) -> "DerivedMessage":
         return copy(self)
 
     @property
@@ -814,8 +832,75 @@ class UnprovenMessage(AbstractMessage):
             types if types else copy(self.types),
         )
 
-    def proven_message(self) -> Message:
+    def proven(self) -> Message:
         return Message(self.full_name, self.structure, self.types)
+
+    def merged(self) -> "UnprovenMessage":
+        message = self
+
+        while True:
+            inner_messages = [
+                (f, t) for f, t in message.types.items() if isinstance(t, AbstractMessage)
+            ]
+
+            if not inner_messages:
+                break
+
+            field, inner_message = inner_messages.pop(0)
+            inner_message = inner_message.prefixed(f"{field.name}_")
+
+            name_conflicts = [
+                f.name for f in message.fields for g in inner_message.fields if f.name == g.name
+            ]
+
+            if name_conflicts:
+                raise ModelError(
+                    f'name conflict for "{name_conflicts.pop(0)}" in "{message.full_name}" '
+                    f'caused by merging message "{inner_message.full_name}" in field "{field.name}"'
+                )
+
+            structure = []
+
+            for link in message.structure:
+                if link.target == field:
+                    initial_link = inner_message.outgoing(INITIAL)[0]
+                    structure.append(
+                        Link(
+                            link.source,
+                            initial_link.target,
+                            link.condition,
+                            initial_link.length,
+                            link.first,
+                        )
+                    )
+                elif link.source == field:
+                    for final_link in inner_message.incoming(FINAL):
+                        structure.append(
+                            Link(
+                                final_link.source,
+                                link.target,
+                                And(link.condition, final_link.condition).simplified(),
+                                link.length,
+                                link.first,
+                            )
+                        )
+                else:
+                    structure.append(link)
+
+            structure.extend(
+                l for l in inner_message.structure if l.target != FINAL and l.source != INITIAL
+            )
+
+            types = {
+                **{f: t for f, t in message.types.items() if f != field},
+                **inner_message.types,
+            }
+
+            message = message.copy(structure=structure, types=types)
+
+        check_message_field_types(message)
+
+        return message
 
 
 class UnprovenDerivedMessage(UnprovenMessage):
@@ -845,7 +930,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
             types if types else copy(self.types),
         )
 
-    def proven_message(self) -> DerivedMessage:
+    def proven(self) -> DerivedMessage:
         return DerivedMessage(self.full_name, self.full_base_name, self.structure, self.types)
 
 
@@ -854,7 +939,9 @@ class Refinement(Type):
     def __init__(
         self, package: str, pdu: str, field: Field, sdu: str, condition: Expr = TRUE
     ) -> None:
-        super().__init__(f"{package}.")
+        super().__init__(
+            f"{package}.__REFINEMENT__{flat_name(sdu)}__{flat_name(pdu)}__{field.name}__"
+        )
         self.pdu = pdu
         self.field = field
         self.sdu = sdu
@@ -871,103 +958,21 @@ class Refinement(Type):
         return NotImplemented
 
 
-class Model(Element):
-    def __init__(self, messages: Sequence[Message], refinements: Sequence[Refinement]) -> None:
-        self.messages = messages
-        self.refinements = refinements
+class Model(Base):
+    def __init__(self, types: Sequence[Type]) -> None:
+        self.types = types
+
+    @property
+    def messages(self) -> Sequence[Message]:
+        return [m for m in self.types if isinstance(m, Message)]
+
+    @property
+    def refinements(self) -> Sequence[Refinement]:
+        return [m for m in self.types if isinstance(m, Refinement)]
 
 
 class ModelError(Exception):
     pass
-
-
-def prefixed_message(message: AbstractMessage, prefix: str) -> AbstractMessage:
-    def prefixed_expression(expression: Expr) -> Expr:
-        return expression.simplified(
-            {v: v.__class__(f"{prefix}{v.name}") for v in expression.variables()}
-        )
-
-    structure = []
-
-    for l in message.structure:
-        source = Field(f"{prefix}{l.source.name}") if l.source != INITIAL else INITIAL
-        target = Field(f"{prefix}{l.target.name}") if l.target != FINAL else FINAL
-        condition = prefixed_expression(l.condition)
-        length = prefixed_expression(l.length) if l.length != UNDEFINED else UNDEFINED
-        first = prefixed_expression(l.first) if l.first != UNDEFINED else UNDEFINED
-        structure.append(Link(source, target, condition, length, first))
-
-    types = {Field(f"{prefix}{f.name}"): t for f, t in message.types.items()}
-
-    return message.copy(structure=structure, types=types)
-
-
-def merged_message(name: str, messages: Mapping[str, AbstractMessage]) -> AbstractMessage:
-    assert name in messages, f'unknown message "{name}"'
-
-    check_message_references(name, messages)
-
-    message = messages[name]
-
-    while True:
-        references = [(f, t) for f, t in message.types.items() if isinstance(t, Reference)]
-
-        if not references:
-            break
-
-        ref_field, ref_type = references.pop(0)
-        inner_message = prefixed_message(messages[ref_type.full_name], f"{ref_field.name}_")
-
-        name_conflicts = [
-            f.name for f in message.fields for g in inner_message.fields if f.name == g.name
-        ]
-
-        if name_conflicts:
-            raise ModelError(
-                f'name conflict for "{name_conflicts.pop(0)}" in "{name}" caused by reference'
-                f' "{ref_field.name}" to "{ref_type.full_name}"'
-            )
-
-        structure = []
-
-        for link in message.structure:
-            if link.target == ref_field:
-                initial_link = inner_message.outgoing(INITIAL)[0]
-                structure.append(
-                    Link(
-                        link.source,
-                        initial_link.target,
-                        link.condition,
-                        initial_link.length,
-                        link.first,
-                    )
-                )
-            elif link.source == ref_field:
-                for final_link in inner_message.incoming(FINAL):
-                    structure.append(
-                        Link(
-                            final_link.source,
-                            link.target,
-                            And(link.condition, final_link.condition).simplified(),
-                            link.length,
-                            link.first,
-                        )
-                    )
-            else:
-                structure.append(link)
-
-        structure.extend(
-            l for l in inner_message.structure if l.target != FINAL and l.source != INITIAL
-        )
-
-        types = {
-            **{f: t for f, t in message.types.items() if f != ref_field},
-            **inner_message.types,
-        }
-
-        message = message.copy(structure=structure, types=types)
-
-    return message
 
 
 def check_message_name(full_name: str) -> None:
@@ -975,25 +980,12 @@ def check_message_name(full_name: str) -> None:
         raise ModelError(f'unexpected format of message name "{full_name}"')
 
 
-def check_message_references(name: str, messages: Mapping[str, AbstractMessage]) -> None:
-    nodes = [messages[name]]
-    edges: Set[Tuple[str, str, str]] = set()
-
-    while nodes:
-        message = nodes.pop(0)
-        for e in [
-            (message.full_name, f.name, t.full_name)
-            for f, t in message.types.items()
-            if isinstance(t, Reference)
-        ]:
-            if e in edges:
-                raise ModelError(f'references in "{name}" contain cycle')
-
-            if e[2] not in messages:
-                raise ModelError(f'reference to unknown message "{e[2]}"')
-
-            edges.add(e)
-            nodes.append(messages[e[2]])
+def check_message_field_types(message: AbstractMessage) -> None:
+    for f, t in message.types.items():
+        assert isinstance(t, (Scalar, Composite, AbstractMessage)), (
+            f'field "{f.name}" has invalid type "{t.full_name}" ({type(t).__name__})'
+            f' in "{message.full_name}"'
+        )
 
 
 def qualified_literals(types: Mapping[Field, Type], package: str) -> Set[str]:
