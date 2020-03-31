@@ -103,13 +103,11 @@ def generate(args: argparse.Namespace) -> None:
     if not directory.is_dir():
         raise Error(f'directory not found: "{directory}"')
 
-    model = parse(args.files)
-    if not model.messages and not model.refinements:
-        return
-
     generator = Generator(args.prefix)
 
-    generator.generate(model.messages, model.refinements)
+    model = parse(args.files)
+    generator.generate(model)
+
     generator.write_units(directory)
     generator.write_library_files(directory)
     if args.prefix == DEFAULT_PREFIX:
@@ -125,9 +123,7 @@ def parse(files: List) -> Model:
 
         parser.parse(Path(f))
 
-    model = parser.create_model()
-
-    return model
+    return parser.create_model()
 
 
 def graph(args: argparse.Namespace) -> None:

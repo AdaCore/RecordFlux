@@ -65,6 +65,7 @@ from rflx.ada import (
     VariantPart,
     WithClause,
 )
+from rflx.common import flat_name
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -105,6 +106,7 @@ from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
+    AbstractMessage,
     Array,
     Composite,
     DerivedMessage,
@@ -112,10 +114,10 @@ from rflx.model import (
     Field,
     Integer,
     Message,
+    Model,
     ModularInteger,
     Opaque,
     RangeInteger,
-    Reference,
     Refinement,
     Scalar,
     Type,
@@ -171,9 +173,9 @@ class Generator:
         if not self.template_dir.is_dir():
             raise InternalError("template directory not found")
 
-    def generate(self, messages: Sequence[Message], refinements: Sequence[Refinement]) -> None:
-        self.__process_messages(messages)
-        self.__process_refinements(refinements)
+    def generate(self, model: Model) -> None:
+        self.__process_messages(model.messages)
+        self.__process_refinements(model.refinements)
 
     def write_library_files(self, directory: Path) -> None:
 
@@ -284,7 +286,7 @@ class Generator:
 
         for field_type in message.types.values():
             if isinstance(field_type, Array):
-                if isinstance(field_type.element_type, Reference):
+                if isinstance(field_type.element_type, AbstractMessage):
                     name = "Message_Sequence"
                 else:
                     name = "Scalar_Sequence"
@@ -1637,7 +1639,7 @@ class Generator:
             field_type = message.types[field]
             assert isinstance(field_type, Array)
 
-            if isinstance(field_type.element_type, Reference):
+            if isinstance(field_type.element_type, AbstractMessage):
                 arguments.extend([Name("Ctx.First"), Name("Ctx.Last")])
 
             return arguments
@@ -2002,7 +2004,7 @@ class Generator:
             unit += UnitPart(self.type_dependent_unreachable_function(field_type))
             unit += self.__enumeration_functions(field_type)
         elif isinstance(field_type, Array):
-            if not isinstance(field_type.element_type, Reference):
+            if not isinstance(field_type.element_type, AbstractMessage):
                 self.__create_type(field_type.element_type, message_package)
             self.__create_array_unit(field_type, message_package)
         elif isinstance(field_type, Opaque):
@@ -2057,7 +2059,7 @@ class Generator:
                 )
 
         elif isinstance(field_type, Array):
-            if not isinstance(field_type.element_type, Reference):
+            if not isinstance(field_type.element_type, AbstractMessage):
                 self.__create_subtype(field_type.element_type, message_package, base_package)
             self.__create_array_unit(field_type, message_package)
 
@@ -2072,7 +2074,7 @@ class Generator:
 
         array_context: List[ContextItem] = []
         array_package: GenericPackageInstantiation
-        if isinstance(element_type, Reference):
+        if isinstance(element_type, AbstractMessage):
             array_context = [
                 Pragma("SPARK_Mode"),
                 WithClause(f"{self.prefix}Message_Sequence"),
@@ -2095,6 +2097,7 @@ class Generator:
                 ],
             )
         elif isinstance(element_type, Scalar):
+            print(element_type)
             array_context = [
                 Pragma("SPARK_Mode"),
                 WithClause(f"{self.prefix}Scalar_Sequence"),
@@ -2535,10 +2538,6 @@ def generic_name(full_name: str) -> str:
 
 def full_generic_name(prefix: str, package: str, message: str) -> str:
     return f"{prefix}{package}.{generic_name(message)}"
-
-
-def flat_name(full_name: str) -> str:
-    return full_name.replace(".", "_")
 
 
 def contains_function_name(refinement: Refinement) -> str:

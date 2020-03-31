@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Dict
 from unittest import TestCase
 
 from rflx.expression import (
@@ -32,11 +31,8 @@ from rflx.model import (
     ModularInteger,
     Opaque,
     RangeInteger,
-    Reference,
     UnprovenDerivedMessage,
     UnprovenMessage,
-    merged_message,
-    prefixed_message,
 )
 from tests.models import ETHERNET_FRAME, MODULAR_INTEGER, RANGE_INTEGER
 
@@ -63,7 +59,7 @@ M_NO_REF = UnprovenMessage(
 M_SMPL_REF = UnprovenMessage(
     "P.Smpl_Ref",
     [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
-    {Field("NR"): Reference("P.No_Ref")},
+    {Field("NR"): deepcopy(M_NO_REF)},
 )
 
 
@@ -84,7 +80,7 @@ M_CMPLX_REF = UnprovenMessage(
         Field("F1"): deepcopy(MODULAR_INTEGER),
         Field("F2"): deepcopy(MODULAR_INTEGER),
         Field("F3"): deepcopy(RANGE_INTEGER),
-        Field("NR"): Reference("P.No_Ref"),
+        Field("NR"): deepcopy(M_NO_REF),
         Field("F5"): deepcopy(MODULAR_INTEGER),
         Field("F6"): deepcopy(RANGE_INTEGER),
     },
@@ -94,7 +90,7 @@ M_CMPLX_REF = UnprovenMessage(
 M_DBL_REF = UnprovenMessage(
     "P.Dbl_Ref",
     [Link(INITIAL, Field("SR")), Link(Field("SR"), Field("NR")), Link(Field("NR"), FINAL)],
-    {Field("SR"): Reference("P.Smpl_Ref"), Field("NR"): Reference("P.No_Ref")},
+    {Field("SR"): deepcopy(M_SMPL_REF), Field("NR"): deepcopy(M_NO_REF)},
 )
 
 
@@ -124,7 +120,7 @@ M_SMPL_REF_DERI = UnprovenDerivedMessage(
     "P.Smpl_Ref_Deri",
     "P.Smpl_Ref",
     [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
-    {Field("NR"): Reference("P.No_Ref_Deri")},
+    {Field("NR"): deepcopy(M_NO_REF_DERI)},
 )
 
 
@@ -535,21 +531,21 @@ class TestModel(TestCase):
             ),
         )
 
-    def test_message_proven_message(self) -> None:
+    def test_message_proven(self) -> None:
         message = Message(
             "P.M",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
             {Field("F"): MODULAR_INTEGER},
         )
         self.assertEqual(
-            message.proven_message(), message,
+            message.proven(), message,
         )
 
     def test_derived_message_incorrect_base_name(self) -> None:
         with self.assertRaisesRegex(ModelError, '^unexpected format of message name "M"$'):
             DerivedMessage("P.M", "M", [], {})
 
-    def test_derived_message_proven_message(self) -> None:
+    def test_derived_message_proven(self) -> None:
         message = DerivedMessage(
             "P.M",
             "X.M",
@@ -557,41 +553,38 @@ class TestModel(TestCase):
             {Field("F"): MODULAR_INTEGER},
         )
         self.assertEqual(
-            message.proven_message(), message,
+            message.proven(), message,
         )
 
     def test_prefixed_message(self) -> None:
         self.assertEqual(
-            prefixed_message(
-                UnprovenMessage(
-                    "P.M",
-                    [
-                        Link(INITIAL, Field("F1")),
-                        Link(
-                            Field("F1"),
-                            Field("F2"),
-                            LessEqual(Variable("F1"), Number(100)),
-                            first=First("F1"),
-                        ),
-                        Link(
-                            Field("F1"),
-                            Field("F3"),
-                            GreaterEqual(Variable("F1"), Number(200)),
-                            first=First("F1"),
-                        ),
-                        Link(Field("F2"), FINAL),
-                        Link(Field("F3"), Field("F4"), length=Variable("F3")),
-                        Link(Field("F4"), FINAL),
-                    ],
-                    {
-                        Field("F1"): deepcopy(MODULAR_INTEGER),
-                        Field("F2"): deepcopy(MODULAR_INTEGER),
-                        Field("F3"): deepcopy(RANGE_INTEGER),
-                        Field("F4"): Opaque(),
-                    },
-                ),
-                "X_",
-            ),
+            UnprovenMessage(
+                "P.M",
+                [
+                    Link(INITIAL, Field("F1")),
+                    Link(
+                        Field("F1"),
+                        Field("F2"),
+                        LessEqual(Variable("F1"), Number(100)),
+                        first=First("F1"),
+                    ),
+                    Link(
+                        Field("F1"),
+                        Field("F3"),
+                        GreaterEqual(Variable("F1"), Number(200)),
+                        first=First("F1"),
+                    ),
+                    Link(Field("F2"), FINAL),
+                    Link(Field("F3"), Field("F4"), length=Variable("F3")),
+                    Link(Field("F4"), FINAL),
+                ],
+                {
+                    Field("F1"): deepcopy(MODULAR_INTEGER),
+                    Field("F2"): deepcopy(MODULAR_INTEGER),
+                    Field("F3"): deepcopy(RANGE_INTEGER),
+                    Field("F4"): Opaque(),
+                },
+            ).prefixed("X_"),
             UnprovenMessage(
                 "P.M",
                 [
@@ -622,10 +615,8 @@ class TestModel(TestCase):
         )
 
     def test_merge_message_simple(self) -> None:
-        messages = {m.full_name: m for m in [deepcopy(M_NO_REF), deepcopy(M_SMPL_REF)]}
-
         self.assertEqual(
-            merged_message("P.Smpl_Ref", messages),
+            deepcopy(M_SMPL_REF).merged(),
             UnprovenMessage(
                 "P.Smpl_Ref",
                 [
@@ -656,10 +647,8 @@ class TestModel(TestCase):
         )
 
     def test_merge_message_complex(self) -> None:
-        messages = {m.full_name: m for m in [deepcopy(M_CMPLX_REF), deepcopy(M_NO_REF)]}
-
         self.assertEqual(
-            merged_message("P.Cmplx_Ref", messages),
+            deepcopy(M_CMPLX_REF).merged(),
             UnprovenMessage(
                 "P.Cmplx_Ref",
                 [
@@ -727,18 +716,8 @@ class TestModel(TestCase):
         )
 
     def test_merge_message_recursive(self) -> None:
-        messages = {
-            m.full_name: m
-            for m in [
-                deepcopy(M_CMPLX_REF),
-                deepcopy(M_SMPL_REF),
-                deepcopy(M_DBL_REF),
-                deepcopy(M_NO_REF),
-            ]
-        }
-
         self.assertEqual(
-            merged_message("P.Dbl_Ref", messages),
+            deepcopy(M_DBL_REF).merged(),
             UnprovenMessage(
                 "P.Dbl_Ref",
                 [
@@ -793,12 +772,8 @@ class TestModel(TestCase):
         )
 
     def test_merge_message_simple_derived(self) -> None:
-        messages: Dict[str, UnprovenMessage] = {
-            m.full_name: m for m in [deepcopy(M_NO_REF_DERI), deepcopy(M_SMPL_REF_DERI)]
-        }
-
         self.assertEqual(
-            merged_message("P.Smpl_Ref_Deri", messages),
+            deepcopy(M_SMPL_REF_DERI).merged(),
             UnprovenDerivedMessage(
                 "P.Smpl_Ref_Deri",
                 "P.Smpl_Ref",
@@ -829,55 +804,24 @@ class TestModel(TestCase):
             ),
         )
 
-    def test_merge_message_error_unknown_message(self) -> None:
-        with self.assertRaisesRegex(
-            ModelError, f'^reference to unknown message "P.No_Ref"$',
-        ):
-            merged_message("P.Smpl_Ref", {M_SMPL_REF.full_name: deepcopy(M_SMPL_REF)})
-
     def test_merge_message_error_name_conflict(self) -> None:
-        messages = {
-            "P.M1": UnprovenMessage(
-                "P.M1",
-                [
-                    Link(INITIAL, Field("F1")),
-                    Link(Field("F1"), Field("F1_F1")),
-                    Link(Field("F1_F1"), FINAL),
-                ],
-                {Field("F1"): Reference("P.M2"), Field("F1_F1"): MODULAR_INTEGER},
-            ),
-            "P.M2": UnprovenMessage(
-                "P.M2",
-                [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
-                {Field("F1"): MODULAR_INTEGER},
-            ),
-        }
+        m2 = UnprovenMessage(
+            "P.M2",
+            [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
+            {Field("F1"): MODULAR_INTEGER},
+        )
+        m1 = UnprovenMessage(
+            "P.M1",
+            [
+                Link(INITIAL, Field("F1")),
+                Link(Field("F1"), Field("F1_F1")),
+                Link(Field("F1_F1"), FINAL),
+            ],
+            {Field("F1"): m2, Field("F1_F1"): MODULAR_INTEGER},
+        )
 
         with self.assertRaisesRegex(
-            ModelError, f'^name conflict for "F1_F1" in "P.M1" caused by reference "F1" to "P.M2"$',
+            ModelError,
+            f'^name conflict for "F1_F1" in "P.M1" caused by merging message "P.M2" in field "F1"$',
         ):
-            merged_message("P.M1", messages)
-
-    def test_merge_message_error_cycle(self) -> None:
-        messages = {
-            "P.M1": UnprovenMessage(
-                "P.M1",
-                [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
-                {Field("F1"): Reference("P.M2")},
-            ),
-            "P.M2": UnprovenMessage(
-                "P.M2",
-                [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
-                {Field("F1"): Reference("P.M3")},
-            ),
-            "P.M3": UnprovenMessage(
-                "P.M3",
-                [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
-                {Field("F1"): Reference("P.M1")},
-            ),
-        }
-
-        with self.assertRaisesRegex(
-            ModelError, f'^references in "P.M1" contain cycle$',
-        ):
-            merged_message("P.M1", messages)
+            m1.merged()

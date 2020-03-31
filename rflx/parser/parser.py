@@ -2,7 +2,7 @@ import logging
 import traceback
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, Iterable, List, Mapping, MutableMapping, Set, Tuple
+from typing import Deque, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
@@ -12,6 +12,7 @@ from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
+    AbstractMessage,
     Array,
     Enumeration,
     Field,
@@ -19,15 +20,11 @@ from rflx.model import (
     Message,
     Model,
     ModelError,
-    ModularInteger,
-    RangeInteger,
-    Reference,
     Refinement,
     Scalar,
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
-    merged_message,
 )
 
 from . import grammar
@@ -40,9 +37,7 @@ class Parser:
     def __init__(self) -> None:
         self.__specifications: Deque[Specification] = deque()
         self.__evaluated_specifications: Set[str] = set()
-        self.__messages: Dict[str, Message] = {}
-        self.__types: Dict[str, Type] = {}
-        self.__refinements: List[Refinement] = []
+        self.__types: Dict[str, Type] = dict(BUILTIN_TYPES)
 
     def parse(self, specfile: Path) -> None:
         self.__parse(specfile)
@@ -80,7 +75,7 @@ class Parser:
                 continue
             self.__evaluated_specifications.add(specification.package.identifier)
             self.__evaluate_specification(specification)
-        return Model(list(self.__messages.values()), self.__refinements)
+        return Model(list(self.__types.values()))
 
     @property
     def specifications(self) -> Dict[str, Specification]:
@@ -90,26 +85,52 @@ class Parser:
         log.info("Processing %s", specification.package.identifier)
 
         try:
-            messages, types = create_messages(specification, self.__messages, self.__types)
-
-            if messages:
-                self.__messages.update(messages)
-
-            self.__types.update(types)
+            self.__evaluate_types(specification)
             check_types(self.__types)
-
-            refinements = create_refinements(specification, self.__messages, self.__types)
-
-            if refinements:
-                self.__refinements.extend(refinements)
         except (ParserError, ModelError) as e:
             raise e
         except Exception:
             raise ParserError(traceback.format_exc())
 
+    def __evaluate_types(self, spec: Specification) -> None:
+        for t in spec.package.types:
+            t.full_name = f"{spec.package.identifier}.{t.name}"
+
+            if t.full_name in self.__types:
+                raise ParserError(f'duplicate type "{t.full_name}"')
+
+            if isinstance(t, Scalar):
+                self.__types[t.full_name] = t
+
+            elif isinstance(t, Array):
+                self.__types[t.full_name] = create_array(t, self.__types)
+
+            elif isinstance(t, MessageSpec):
+                self.__types[t.full_name] = create_message(t, self.__types)
+
+            elif isinstance(t, DerivationSpec):
+                for r in create_derived_refinements(t, type_refinements(self.__types)):
+                    self.__types[r.full_name] = r
+
+                self.__types[t.full_name] = create_derived_message(t, message_types(self.__types))
+
+            elif isinstance(t, Refinement):
+                self.__types[t.full_name] = create_refinement(t, self.__types)
+
+            else:
+                raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
+
 
 class ParserError(Exception):
     pass
+
+
+def message_types(types: Mapping[str, Type]) -> Mapping[str, Message]:
+    return {n: m for n, m in types.items() if isinstance(m, Message)}
+
+
+def type_refinements(types: Mapping[str, Type]) -> Mapping[str, Refinement]:
+    return {n: m for n, m in types.items() if isinstance(m, Refinement)}
 
 
 def check_types(types: Mapping[str, Type]) -> None:
@@ -137,39 +158,6 @@ def check_types(types: Mapping[str, Type]) -> None:
             )
 
 
-def create_messages(
-    spec: Specification, messages: Mapping[str, Message], types: Mapping[str, Type]
-) -> Tuple[Dict[str, Message], Dict[str, Type]]:
-
-    spec_types: Dict[str, Type] = dict(BUILTIN_TYPES)
-    spec_messages: Dict[str, UnprovenMessage] = {}
-
-    for t in spec.package.types:
-        t.full_name = f"{spec.package.identifier}.{t.name}"
-
-        if t.full_name in spec_types:
-            raise ParserError(f'duplicate type "{t.full_name}"')
-
-        if isinstance(t, (ModularInteger, RangeInteger, Enumeration)):
-            pass
-        elif isinstance(t, Array):
-            t = create_array(t, {**spec_types, **types})
-        elif isinstance(t, MessageSpec):
-            spec_messages[t.full_name] = create_message(t, {**spec_types, **types})
-            t = Reference(t.full_name)
-        elif isinstance(t, DerivationSpec):
-            spec_messages[t.full_name] = create_derived_message(t, spec_messages, messages)
-            t = Reference(t.full_name)
-        elif isinstance(t, Refinement):
-            continue
-        else:
-            raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
-
-        spec_types[t.full_name] = t
-
-    return (proven_messages(spec_messages, messages), spec_types)
-
-
 def create_array(array: Array, types: Mapping[str, Type]) -> Array:
     array.element_type.full_name = array.element_type.full_name.replace(
         "__PACKAGE__", array.package
@@ -194,7 +182,7 @@ def create_array(array: Array, types: Mapping[str, Type]) -> Array:
     return Array(array.full_name, element_type)
 
 
-def create_message(message: MessageSpec, types: Mapping[str, Type]) -> UnprovenMessage:
+def create_message(message: MessageSpec, types: Mapping[str, Type]) -> Message:
     components = list(message.components)
 
     if components and components[0].name != "null":
@@ -239,90 +227,90 @@ def create_message(message: MessageSpec, types: Mapping[str, Type]) -> UnprovenM
                 Link(source_node, target_node, then.condition, then.length, then.first)
             )
 
-    return UnprovenMessage(message.full_name, structure, field_types)
+    return UnprovenMessage(message.full_name, structure, field_types).merged().proven()
 
 
 def create_derived_message(
-    derivation: DerivationSpec,
-    messages: Mapping[str, UnprovenMessage],
-    known_messages: Mapping[str, Message],
-) -> UnprovenMessage:
+    derivation: DerivationSpec, messages: Mapping[str, AbstractMessage],
+) -> Message:
     base = derivation.base if "." in derivation.base else f"{derivation.package}.{derivation.base}"
 
-    if base in messages:
-        message_structure = messages[base].structure
-        message_types = messages[base].types
-    elif base in known_messages:
-        message_structure = known_messages[base].structure
-        message_types = known_messages[base].types
-    else:
+    if base not in messages:
         raise ParserError(f'undefined message "{base}" in derived message "{derivation.full_name}"')
 
-    return UnprovenDerivedMessage(derivation.full_name, base, message_structure, message_types,)
+    return (
+        UnprovenDerivedMessage(
+            derivation.full_name, base, messages[base].structure, messages[base].types
+        )
+        .merged()
+        .proven()
+    )
 
 
-def proven_messages(
-    messages: Mapping[str, UnprovenMessage], known_messages: Mapping[str, Message]
-) -> Dict[str, Message]:
-    return {
-        message: merged_message(message, {**messages, **known_messages}).proven_message()
-        for message in messages
-    }
+def create_refinement(refinement: Refinement, types: Mapping[str, Type]) -> Refinement:
+    messages = message_types(types)
 
+    pdu = qualified_type_name(
+        refinement.pdu,
+        refinement.package,
+        messages.keys(),
+        f'undefined type "{refinement.pdu}" in refinement',
+    )
 
-def create_refinements(
-    spec: Specification, messages: Dict[str, Message], types: Dict[str, Type]
-) -> List[Refinement]:
-    refinements: List[Refinement] = []
-    for t in spec.package.types:
-        if isinstance(t, Refinement):
-            pdu = qualified_type_name(
-                t.pdu,
-                spec.package.identifier,
-                messages.keys(),
-                f'undefined type "{t.pdu}" in refinement',
+    if refinement.field not in messages[pdu].fields:
+        raise ParserError(
+            f'invalid field "{refinement.field.name}" in refinement of "{refinement.pdu}"'
+        )
+
+    sdu = qualified_type_name(
+        refinement.sdu,
+        refinement.package,
+        messages.keys(),
+        f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"',
+    )
+
+    for variable in refinement.condition.variables():
+        literals = [
+            l
+            for e in messages[pdu].types.values()
+            if isinstance(e, Enumeration)
+            for l in e.literals.keys()
+        ] + [
+            f"{e.package}.{l}"
+            for e in types.values()
+            if isinstance(e, Enumeration)
+            for l in e.literals.keys()
+        ]
+
+        if (
+            Field(str(variable.name)) not in messages[pdu].fields
+            and str(variable.name) not in literals
+        ):
+            raise ParserError(
+                f'unknown field or literal "{variable.name}" in refinement'
+                f' condition of "{refinement.pdu}"'
             )
-            if t.field not in messages[pdu].fields:
-                raise ParserError(f'invalid field "{t.field.name}" in refinement of "{t.pdu}"')
-            sdu = qualified_type_name(
-                t.sdu,
-                spec.package.identifier,
-                messages.keys(),
-                f'undefined type "{t.sdu}" in refinement of "{t.pdu}"',
-            )
-            refinement = Refinement(spec.package.identifier, pdu, t.field, sdu, t.condition)
-            if refinement in refinements:
-                raise ParserError(
-                    f'duplicate refinement of field "{t.field.name}" with "{t.sdu}"'
-                    f' in "{t.pdu}"'
-                )
-            refinements.append(refinement)
-            for variable in t.condition.variables():
-                literals = [
-                    l
-                    for e in messages[pdu].types.values()
-                    if isinstance(e, Enumeration)
-                    for l in e.literals.keys()
-                ] + [
-                    f"{e.package}.{l}"
-                    for e in types.values()
-                    if isinstance(e, Enumeration)
-                    for l in e.literals.keys()
-                ]
-                if (
-                    Field(str(variable.name)) not in messages[pdu].fields
-                    and str(variable.name) not in literals
-                ):
-                    raise ParserError(
-                        f'unknown field or literal "{variable.name}" in refinement'
-                        f' condition of "{t.pdu}"'
-                    )
-        elif isinstance(t, DerivationSpec):
-            for r in refinements:
-                if r.pdu == f"{t.base}" or r.pdu == f"{spec.package.identifier}.{t.base}":
-                    pdu = f"{spec.package.identifier}.{t.name}"
-                    refinements.append(Refinement(spec.package.identifier, pdu, r.field, r.sdu))
-    return refinements
+
+    result = Refinement(refinement.package, pdu, refinement.field, sdu, refinement.condition)
+
+    if result in types.values():
+        raise ParserError(
+            f'duplicate refinement of field "{refinement.field.name}" with "{refinement.sdu}"'
+            f' in "{refinement.pdu}"'
+        )
+
+    return result
+
+
+def create_derived_refinements(
+    derivation: DerivationSpec, refinements: Mapping[str, Refinement]
+) -> Sequence[Refinement]:
+    result: List[Refinement] = []
+    for r in list(refinements.values()):
+        if r.pdu == f"{derivation.base}" or r.pdu == f"{derivation.package}.{derivation.base}":
+            pdu = f"{derivation.package}.{derivation.name}"
+            result.append(Refinement(derivation.package, pdu, r.field, r.sdu))
+    return result
 
 
 def qualified_type_name(name: str, package: str, types: Iterable[str], error_message: str) -> str:
