@@ -1,7 +1,7 @@
 from typing import List
 
 from rflx.common import generic_repr
-from rflx.expression import TRUE, UNDEFINED, Expr, Number
+from rflx.expression import TRUE, UNDEFINED, Expr
 from rflx.model import Type
 
 
@@ -48,25 +48,15 @@ class MessageSpec(Type):
         super().__init__(name)
         self.components = components
 
-    def constraints(self, name: str, proof: bool = False) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def size(self) -> Number:
-        raise NotImplementedError
-
 
 class DerivationSpec(Type):
     def __init__(self, name: str, base: str) -> None:
         super().__init__(name)
         self.base = base
 
-    def constraints(self, name: str, proof: bool = False) -> Expr:
-        raise NotImplementedError
 
-    @property
-    def size(self) -> Number:
-        raise NotImplementedError
+class ReferenceSpec(Type):
+    pass
 
 
 class Specification(SyntaxTree):

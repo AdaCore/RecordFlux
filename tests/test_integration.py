@@ -22,7 +22,7 @@ class TestIntegration(unittest.TestCase):
         model = parser.create_model()
 
         generator = Generator("RFLX", reproducible=True)
-        generator.generate(model.messages, model.refinements)
+        generator.generate(model)
 
         for unit in generator.units.values():
             filename = f"{self.testdir}/{unit.name}.ads"
@@ -41,7 +41,7 @@ class TestIntegration(unittest.TestCase):
         model = parser.create_model()
 
         generator = Generator("RFLX")
-        generator.generate(model.messages, model.refinements)
+        generator.generate(model)
 
         with TemporaryDirectory() as tmpdir:
             path = Path(tmpdir)

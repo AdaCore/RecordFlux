@@ -57,7 +57,6 @@ from rflx.model import (
     ModelError,
     ModularInteger,
     RangeInteger,
-    Reference,
     Refinement,
     Type,
 )
@@ -68,6 +67,7 @@ from .ast import (
     DerivationSpec,
     MessageSpec,
     PackageSpec,
+    ReferenceSpec,
     Specification,
     Then,
 )
@@ -555,7 +555,8 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
             return DerivationSpec(full_name, tokens[4])
         if tokens[3] == "array of":
             return Array(
-                full_name, Reference(tokens[4] if "." in tokens[4] else f"__PACKAGE__.{tokens[4]}")
+                full_name,
+                ReferenceSpec(tokens[4] if "." in tokens[4] else f"__PACKAGE__.{tokens[4]}"),
             )
     except ModelError as e:
         raise ParseFatalException(string, location, e)
