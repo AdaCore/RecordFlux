@@ -645,7 +645,7 @@ class ParserGenerator:
                 Indexed("Ctx.Cursors", Name(field.affixed_name)), f"Value.{field.name}_Value"
             )
             if isinstance(field_type, Enumeration):
-                return Call("Convert", [value])
+                return Call("To_Actual", [value])
             return value
 
         return UnitPart(

@@ -702,8 +702,8 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Derivation.Message.Switch_To_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
-      Derivation.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Derivation.Convert (Derivation.AV_ONE));
-      Derivation.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Derivation.Convert (Derivation.AV_TWO));
+      Derivation.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Derivation.To_Actual (Derivation.AV_ONE));
+      Derivation.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Derivation.To_Actual (Derivation.AV_TWO));
       Assert (not Derivation.AV_Enumeration_Vector.Valid_Element (AV_Enumeration_Vector_Context), "Invalid acceptance of further element");
       Assert (not Derivation.Message.Valid (Context, Derivation.Message.F_AV_Enumeration_Vector), "Valid AV_Enumeration_Vector before context update");
       Derivation.Message.Update_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);

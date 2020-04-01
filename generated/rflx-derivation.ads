@@ -8,13 +8,17 @@ is
 
    function Valid (Val : RFLX.Arrays.Length) return Boolean renames Arrays.Valid;
 
-   function Convert (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length renames Arrays.Convert;
+   function To_Base (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length renames Arrays.To_Base;
+
+   function To_Actual (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length renames Arrays.To_Actual;
 
    subtype Modular_Integer is Arrays.Modular_Integer;
 
    function Valid (Val : RFLX.Arrays.Modular_Integer) return Boolean renames Arrays.Valid;
 
-   function Convert (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer renames Arrays.Convert;
+   function To_Base (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer renames Arrays.To_Base;
+
+   function To_Actual (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer renames Arrays.To_Actual;
 
    subtype Range_Integer_Base is Arrays.Range_Integer_Base;
 
@@ -22,7 +26,9 @@ is
 
    function Valid (Val : RFLX.Arrays.Range_Integer_Base) return Boolean renames Arrays.Valid;
 
-   function Convert (Val : RFLX.Arrays.Range_Integer_Base) return RFLX.Arrays.Range_Integer renames Arrays.Convert;
+   function To_Base (Val : RFLX.Arrays.Range_Integer) return RFLX.Arrays.Range_Integer_Base renames Arrays.To_Base;
+
+   function To_Actual (Val : RFLX.Arrays.Range_Integer_Base) return RFLX.Arrays.Range_Integer renames Arrays.To_Actual;
 
    subtype Enumeration_Base is Arrays.Enumeration_Base;
 
@@ -30,9 +36,9 @@ is
 
    function Valid (Val : RFLX.Arrays.Enumeration_Base) return Boolean renames Arrays.Valid;
 
-   function Convert (Enum : RFLX.Arrays.Enumeration) return RFLX.Arrays.Enumeration_Base renames Arrays.Convert;
+   function To_Base (Enum : RFLX.Arrays.Enumeration) return RFLX.Arrays.Enumeration_Base renames Arrays.To_Base;
 
-   function Convert (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration renames Arrays.Convert;
+   function To_Actual (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration renames Arrays.To_Actual;
 
    ZERO : constant Enumeration := Arrays.ZERO;
 
@@ -48,13 +54,13 @@ is
 
    function Valid (Val : RFLX.Arrays.AV_Enumeration_Base) return Boolean renames Arrays.Valid;
 
-   function Convert (Enum : RFLX.Arrays.AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration_Base renames Arrays.Convert;
+   function To_Base (Enum : RFLX.Arrays.AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration_Base renames Arrays.To_Base;
 
-   function Convert (Enum : AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration renames Arrays.Convert;
+   function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration renames Arrays.To_Actual;
 
-   function Convert (Val : RFLX.Arrays.AV_Enumeration_Base) return RFLX.Arrays.AV_Enumeration renames Arrays.Convert;
+   function To_Actual (Val : RFLX.Arrays.AV_Enumeration_Base) return RFLX.Arrays.AV_Enumeration renames Arrays.To_Actual;
 
-   function Convert (Val : RFLX.Arrays.AV_Enumeration) return RFLX.Arrays.AV_Enumeration_Base renames Arrays.Convert;
+   function To_Base (Val : RFLX.Arrays.AV_Enumeration) return RFLX.Arrays.AV_Enumeration_Base renames Arrays.To_Base;
 
    AV_ZERO : constant AV_Enumeration_Enum := Arrays.AV_ZERO;
 

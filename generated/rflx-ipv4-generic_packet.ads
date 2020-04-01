@@ -579,7 +579,7 @@ is
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Flag_R)
           and then Field_Last (Ctx, F_Flag_R) <= Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Flag_R, Convert (Val)))
+          and then Field_Condition (Ctx, (F_Flag_R, To_Base (Val)))
           and then True
           and then Available_Space (Ctx, F_Flag_R) >= Field_Length (Ctx, F_Flag_R),
      Post =>
@@ -597,7 +597,7 @@ is
           and Invalid (Ctx, F_Destination)
           and Invalid (Ctx, F_Options)
           and Invalid (Ctx, F_Payload)
-          and (if Types.Bit_Length (Convert (Get_Flag_R (Ctx))) = Types.Bit_Length (Convert (False)) then
+          and (if Types.Bit_Length (To_Base (Get_Flag_R (Ctx))) = Types.Bit_Length (To_Base (False)) then
              Predecessor (Ctx, F_Flag_DF) = F_Flag_R
                and Valid_Next (Ctx, F_Flag_DF))
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -625,7 +625,7 @@ is
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Flag_DF)
           and then Field_Last (Ctx, F_Flag_DF) <= Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Flag_DF, Convert (Val)))
+          and then Field_Condition (Ctx, (F_Flag_DF, To_Base (Val)))
           and then True
           and then Available_Space (Ctx, F_Flag_DF) >= Field_Length (Ctx, F_Flag_DF),
      Post =>
@@ -671,7 +671,7 @@ is
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Flag_MF)
           and then Field_Last (Ctx, F_Flag_MF) <= Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Flag_MF, Convert (Val)))
+          and then Field_Condition (Ctx, (F_Flag_MF, To_Base (Val)))
           and then True
           and then Available_Space (Ctx, F_Flag_MF) >= Field_Length (Ctx, F_Flag_MF),
      Post =>
@@ -815,7 +815,7 @@ is
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Protocol)
           and then Field_Last (Ctx, F_Protocol) <= Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Protocol, Convert (Val)))
+          and then Field_Condition (Ctx, (F_Protocol, To_Base (Val)))
           and then True
           and then Available_Space (Ctx, F_Protocol) >= Field_Length (Ctx, F_Protocol),
      Post =>
@@ -1299,7 +1299,7 @@ private
         and then (if Structural_Valid (Cursors (F_Flag_DF)) then
            (Valid (Cursors (F_Flag_R))
                and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
-               and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (Convert (False))))
+               and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (To_Base (False))))
         and then (if Structural_Valid (Cursors (F_Flag_MF)) then
            (Valid (Cursors (F_Flag_DF))
                and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF))
@@ -1394,7 +1394,7 @@ private
                                          and then Cursors (F_Flag_R).Predecessor = F_Identification
                                          and then Cursors (F_Flag_R).First = (Cursors (F_Identification).Last + 1)
                                          and then (if Structural_Valid (Cursors (F_Flag_DF))
-                                              and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (Convert (False)) then
+                                              and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (To_Base (False)) then
                                             (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
                                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
                                               and then Cursors (F_Flag_DF).First = (Cursors (F_Flag_R).Last + 1)

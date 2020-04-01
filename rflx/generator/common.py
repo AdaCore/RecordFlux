@@ -52,7 +52,6 @@ from rflx.model import (
     Message,
     ModularInteger,
     Scalar,
-    Type,
 )
 
 from .types import Types
@@ -112,7 +111,7 @@ class GeneratorCommon:
                 if isinstance(t, Enumeration)
             },
             **{
-                Variable(l): Call(self.types.bit_length, [Call("Convert", [Name(l)])])
+                Variable(l): Call(self.types.bit_length, [Call("To_Base", [Name(l)])])
                 for l in itertools.chain.from_iterable(
                     t.literals.keys() for t in message.types.values() if isinstance(t, Enumeration)
                 )
@@ -144,13 +143,13 @@ class GeneratorCommon:
             },
             **{
                 Variable(f.name): Call(
-                    self.types.bit_length, [Call("Convert", [Call(f"Get_{f.name}", [Name("Ctx")])])]
+                    self.types.bit_length, [Call("To_Base", [Call(f"Get_{f.name}", [Name("Ctx")])])]
                 )
                 for f, t in message.types.items()
                 if isinstance(t, Enumeration)
             },
             **{
-                Variable(l): Call(self.types.bit_length, [Call("Convert", [Name(l)])])
+                Variable(l): Call(self.types.bit_length, [Call("To_Base", [Name(l)])])
                 for l in itertools.chain.from_iterable(
                     t.literals.keys() for t in message.types.values() if isinstance(t, Enumeration)
                 )
@@ -364,9 +363,7 @@ class GeneratorCommon:
             self.message_structure_invariant(message, prefix=False),
         )
 
-    def valid_path_to_next_field_condition(
-        self, message: Message, field: Field, field_type: Type
-    ) -> Sequence[Expr]:
+    def valid_path_to_next_field_condition(self, message: Message, field: Field) -> Sequence[Expr]:
         return [
             If(
                 [
@@ -383,16 +380,7 @@ class GeneratorCommon:
                         ),
                     )
                 ]
-            ).simplified(
-                {
-                    **{
-                        Variable(field.name): Call("Convert", [Name("Value")])
-                        if isinstance(field_type, Enumeration) and field_type.always_valid
-                        else Name("Value")
-                    },
-                    **self.public_substitution(message),
-                }
-            )
+            ).simplified(self.public_substitution(message))
             for l in message.outgoing(field)
             if l.target != FINAL
         ]

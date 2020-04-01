@@ -264,7 +264,7 @@ class GeneratorGenerator:
                                             Name(f.affixed_name),
                                             Name("Val")
                                             if not isinstance(t, Enumeration)
-                                            else Call("Convert", [Name("Val")]),
+                                            else Call("To_Base", [Name("Val")]),
                                         ),
                                     ],
                                 ),
@@ -287,7 +287,7 @@ class GeneratorGenerator:
                                     if isinstance(t, Enumeration) and t.always_valid
                                     else Name("Val"),
                                 ),
-                                *self.setter_postconditions(message, f, t),
+                                *self.setter_postconditions(message, f),
                                 *[
                                     Equal(
                                         Call("Cursor", [Name("Ctx"), Name(p.affixed_name)]),
@@ -312,7 +312,7 @@ class GeneratorGenerator:
                                 Name(f.affixed_name),
                                 Name("Val")
                                 if not isinstance(t, Enumeration)
-                                else Call("Convert", [Name("Val")]),
+                                else Call("To_Base", [Name("Val")]),
                             ),
                             True,
                         ),
@@ -398,11 +398,7 @@ class GeneratorGenerator:
                                 *self.unbounded_composite_setter_preconditions(message, f),
                             )
                         ),
-                        Postcondition(
-                            And(
-                                *self.composite_setter_postconditions(message, f, message.types[f]),
-                            )
-                        ),
+                        Postcondition(And(*self.composite_setter_postconditions(message, f),)),
                     ],
                     formal_parameters(f),
                 )
@@ -419,11 +415,7 @@ class GeneratorGenerator:
                                 *self.bounded_composite_setter_preconditions(message, f),
                             )
                         ),
-                        Postcondition(
-                            And(
-                                *self.composite_setter_postconditions(message, f, message.types[f]),
-                            )
-                        ),
+                        Postcondition(And(*self.composite_setter_postconditions(message, f),)),
                     ],
                     formal_parameters(f),
                 )
@@ -530,11 +522,7 @@ class GeneratorGenerator:
                                 *self.unbounded_composite_setter_preconditions(message, f),
                             )
                         ),
-                        Postcondition(
-                            And(
-                                *self.composite_setter_postconditions(message, f, message.types[f]),
-                            )
-                        ),
+                        Postcondition(And(*self.composite_setter_postconditions(message, f),)),
                     ],
                 )
                 for f, t in message.types.items()
@@ -550,11 +538,7 @@ class GeneratorGenerator:
                                 *self.bounded_composite_setter_preconditions(message, f),
                             )
                         ),
-                        Postcondition(
-                            And(
-                                *self.composite_setter_postconditions(message, f, message.types[f]),
-                            )
-                        ),
+                        Postcondition(And(*self.composite_setter_postconditions(message, f),)),
                     ],
                 )
                 for f, t in message.types.items()
@@ -605,16 +589,14 @@ class GeneratorGenerator:
             ),
         ]
 
-    def setter_postconditions(
-        self, message: Message, field: Field, field_type: Type
-    ) -> Sequence[Expr]:
+    def setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
         return [
             *[
                 Call("Invalid", [Name("Ctx"), Name(p.affixed_name)])
                 for p in message.successors(field)
                 if p != FINAL
             ],
-            *self.common.valid_path_to_next_field_condition(message, field, field_type),
+            *self.common.valid_path_to_next_field_condition(message, field),
             *[
                 Equal(e, Old(e))
                 for e in [
@@ -632,13 +614,11 @@ class GeneratorGenerator:
             ],
         ]
 
-    def composite_setter_postconditions(
-        self, message: Message, field: Field, field_type: Type
-    ) -> Sequence[Expr]:
+    def composite_setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
         return [
             VALID_CONTEXT,
             Call("Has_Buffer", [Name("Ctx")]),
-            *self.setter_postconditions(message, field, field_type),
+            *self.setter_postconditions(message, field),
             Call("Structural_Valid", [Name("Ctx"), Name(field.affixed_name)]),
         ]
 

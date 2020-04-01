@@ -225,7 +225,7 @@ is
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Tag)
           and then Field_Last (Ctx, F_Tag) <= Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Tag, Convert (Val)))
+          and then Field_Condition (Ctx, (F_Tag, To_Base (Val)))
           and then True
           and then Available_Space (Ctx, F_Tag) >= Field_Length (Ctx, F_Tag),
      Post =>
@@ -235,7 +235,7 @@ is
           and Get_Tag (Ctx) = Val
           and Invalid (Ctx, F_Length)
           and Invalid (Ctx, F_Value)
-          and (if Types.Bit_Length (Convert (Get_Tag (Ctx))) = Types.Bit_Length (Convert (Msg_Data)) then
+          and (if Types.Bit_Length (To_Base (Get_Tag (Ctx))) = Types.Bit_Length (To_Base (Msg_Data)) then
              Predecessor (Ctx, F_Length) = F_Tag
                and Valid_Next (Ctx, F_Length))
           and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -391,7 +391,7 @@ private
       and then ((if Structural_Valid (Cursors (F_Length)) then
            (Valid (Cursors (F_Tag))
                and then Cursors (F_Length).Predecessor = F_Tag
-               and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (Convert (Msg_Data))))
+               and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))))
         and then (if Structural_Valid (Cursors (F_Value)) then
            (Valid (Cursors (F_Length))
                and then Cursors (F_Value).Predecessor = F_Length)))
@@ -404,7 +404,7 @@ private
            and then Cursors (F_Tag).Predecessor = F_Initial
            and then Cursors (F_Tag).First = First
            and then (if Structural_Valid (Cursors (F_Length))
-                and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (Convert (Msg_Data)) then
+                and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data)) then
               (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = RFLX.TLV.Length'Size
                 and then Cursors (F_Length).Predecessor = F_Tag
                 and then Cursors (F_Length).First = (Cursors (F_Tag).Last + 1)
