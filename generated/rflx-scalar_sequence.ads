@@ -5,8 +5,8 @@ generic
    type Element_Type is private;
    type Element_Base_Type is (<>);
    with function Valid (Element : Element_Base_Type) return Boolean;
-   with function Convert_To_Element_Type (Element : Element_Base_Type) return Element_Type;
-   with function Convert_To_Element_Base_Type (Element : Element_Type) return Element_Base_Type;
+   with function To_Actual (Element : Element_Base_Type) return Element_Type;
+   with function To_Base (Element : Element_Type) return Element_Base_Type;
 package RFLX.Scalar_Sequence with
   SPARK_Mode
 is
@@ -78,7 +78,7 @@ is
    procedure Append_Element (Ctx : in out Context; Value : Element_Type) with
      Pre =>
        (Has_Buffer (Ctx)
-        and then Valid (Convert_To_Element_Base_Type (Value))
+        and then Valid (To_Base (Value))
         and then Available_Space (Ctx) >= Element_Base_Type'Size),
      Post =>
        (Has_Buffer (Ctx)

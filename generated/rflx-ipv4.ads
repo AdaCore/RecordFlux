@@ -26,14 +26,14 @@ is
          when others =>
             False));
 
-   function Convert (Enum : RFLX.IPv4.Option_Class) return RFLX.IPv4.Option_Class_Base is
+   function To_Base (Enum : RFLX.IPv4.Option_Class) return RFLX.IPv4.Option_Class_Base is
      ((case Enum is
          when Control =>
             0,
          when Debugging_And_Measurement =>
             2));
 
-   function Convert (Val : RFLX.IPv4.Option_Class_Base) return RFLX.IPv4.Option_Class is
+   function To_Actual (Val : RFLX.IPv4.Option_Class_Base) return RFLX.IPv4.Option_Class is
      ((case Val is
          when 0 =>
             Control,
@@ -64,7 +64,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
+   function To_Base (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
      (Val)
     with
      Pre =>
@@ -89,7 +95,13 @@ is
    function Valid (Val : RFLX.IPv4.Option_Length_Base) return Boolean is
      (Val >= 2);
 
-   function Convert (Val : RFLX.IPv4.Option_Length_Base) return RFLX.IPv4.Option_Length is
+   function To_Base (Val : RFLX.IPv4.Option_Length) return RFLX.IPv4.Option_Length_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Option_Length_Base) return RFLX.IPv4.Option_Length is
      (Val)
     with
      Pre =>
@@ -115,7 +127,13 @@ is
      (Val >= 4
       and Val <= 4);
 
-   function Convert (Val : RFLX.IPv4.Version_Base) return RFLX.IPv4.Version is
+   function To_Base (Val : RFLX.IPv4.Version) return RFLX.IPv4.Version_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Version_Base) return RFLX.IPv4.Version is
      (Val)
     with
      Pre =>
@@ -140,7 +158,13 @@ is
    function Valid (Val : RFLX.IPv4.IHL_Base) return Boolean is
      (Val >= 5);
 
-   function Convert (Val : RFLX.IPv4.IHL_Base) return RFLX.IPv4.IHL is
+   function To_Base (Val : RFLX.IPv4.IHL) return RFLX.IPv4.IHL_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.IHL_Base) return RFLX.IPv4.IHL is
      (Val)
     with
      Pre =>
@@ -165,7 +189,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.IPv4.DCSP) return RFLX.IPv4.DCSP is
+   function To_Base (Val : RFLX.IPv4.DCSP) return RFLX.IPv4.DCSP is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.DCSP) return RFLX.IPv4.DCSP is
      (Val)
     with
      Pre =>
@@ -190,7 +220,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.IPv4.ECN) return RFLX.IPv4.ECN is
+   function To_Base (Val : RFLX.IPv4.ECN) return RFLX.IPv4.ECN is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.ECN) return RFLX.IPv4.ECN is
      (Val)
     with
      Pre =>
@@ -215,7 +251,13 @@ is
    function Valid (Val : RFLX.IPv4.Total_Length_Base) return Boolean is
      (Val >= 20);
 
-   function Convert (Val : RFLX.IPv4.Total_Length_Base) return RFLX.IPv4.Total_Length is
+   function To_Base (Val : RFLX.IPv4.Total_Length) return RFLX.IPv4.Total_Length_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Total_Length_Base) return RFLX.IPv4.Total_Length is
      (Val)
     with
      Pre =>
@@ -240,7 +282,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.IPv4.Identification) return RFLX.IPv4.Identification is
+   function To_Base (Val : RFLX.IPv4.Identification) return RFLX.IPv4.Identification is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Identification) return RFLX.IPv4.Identification is
      (Val)
     with
      Pre =>
@@ -265,7 +313,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.IPv4.Fragment_Offset) return RFLX.IPv4.Fragment_Offset is
+   function To_Base (Val : RFLX.IPv4.Fragment_Offset) return RFLX.IPv4.Fragment_Offset is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Fragment_Offset) return RFLX.IPv4.Fragment_Offset is
      (Val)
     with
      Pre =>
@@ -290,7 +344,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.IPv4.TTL) return RFLX.IPv4.TTL is
+   function To_Base (Val : RFLX.IPv4.TTL) return RFLX.IPv4.TTL is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.TTL) return RFLX.IPv4.TTL is
      (Val)
     with
      Pre =>
@@ -330,15 +390,15 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.IPv4.Protocol_Base is
+   function To_Base (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.IPv4.Protocol_Base is
      ((case Enum is
          when PROTOCOL_UDP =>
             17));
 
-   function Convert (Enum : Protocol_Enum) return RFLX.IPv4.Protocol is
+   function To_Actual (Enum : Protocol_Enum) return RFLX.IPv4.Protocol is
      ((True, Enum));
 
-   function Convert (Val : RFLX.IPv4.Protocol_Base) return RFLX.IPv4.Protocol is
+   function To_Actual (Val : RFLX.IPv4.Protocol_Base) return RFLX.IPv4.Protocol is
      ((case Val is
          when 17 =>
             (True, PROTOCOL_UDP),
@@ -348,9 +408,9 @@ is
      Pre =>
        Valid (Val);
 
-   function Convert (Val : RFLX.IPv4.Protocol) return RFLX.IPv4.Protocol_Base is
+   function To_Base (Val : RFLX.IPv4.Protocol) return RFLX.IPv4.Protocol_Base is
      ((if Val.Known then
-       Convert (Val.Enum)
+       To_Base (Val.Enum)
     else
        Val.Raw));
 
@@ -373,7 +433,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.IPv4.Header_Checksum) return RFLX.IPv4.Header_Checksum is
+   function To_Base (Val : RFLX.IPv4.Header_Checksum) return RFLX.IPv4.Header_Checksum is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Header_Checksum) return RFLX.IPv4.Header_Checksum is
      (Val)
     with
      Pre =>
@@ -398,7 +464,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.IPv4.Address) return RFLX.IPv4.Address is
+   function To_Base (Val : RFLX.IPv4.Address) return RFLX.IPv4.Address is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Address) return RFLX.IPv4.Address is
      (Val)
     with
      Pre =>

@@ -1566,7 +1566,7 @@ class Generator:
                             (
                                 Name("others"),
                                 And(
-                                    *self.common.valid_path_to_next_field_condition(message, f, t),
+                                    *self.common.valid_path_to_next_field_condition(message, f),
                                     *[
                                         Call("Invalid", [Name("Ctx"), Name(s.affixed_name)])
                                         for s in message.successors(f)
@@ -2118,8 +2118,8 @@ class Generator:
                     if not isinstance(element_type, ModularInteger)
                     else element_type.name,
                     "Valid",
-                    "Convert",
-                    "Convert",
+                    "To_Actual",
+                    "To_Base",
                 ],
             )
         else:
@@ -2137,7 +2137,7 @@ class Generator:
         specification.append(
             self.type_validation_function(integer, integer.constraints("Val").simplified())
         )
-        specification.append(self.integer_conversion_function(integer))
+        specification.extend(self.integer_conversion_functions(integer))
 
         return SubprogramUnitPart(specification)
 
@@ -2149,7 +2149,7 @@ class Generator:
             self.type_validation_function(integer, integer.constraints("Val").simplified())
         )
         specification.append(Pragma("Warnings", ["On", '"unused variable ""Val"""']))
-        specification.append(self.integer_conversion_function(integer))
+        specification.extend(self.integer_conversion_functions(integer))
 
         return UnitPart(specification)
 
@@ -2177,7 +2177,7 @@ class Generator:
         specification.append(
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "Convert",
+                    "To_Base",
                     self.prefix + full_base_type_name(enum),
                     [
                         Parameter(
@@ -2192,7 +2192,7 @@ class Generator:
         )
 
         conversion_function = FunctionSpecification(
-            "Convert",
+            "To_Actual",
             self.prefix + enum.full_name,
             [Parameter(["Val"], self.prefix + full_base_type_name(enum))],
         )
@@ -2203,7 +2203,7 @@ class Generator:
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "Convert",
+                        "To_Actual",
                         self.prefix + enum.full_name,
                         [Parameter(["Enum"], enum.enum_name)],
                     ),
@@ -2225,12 +2225,12 @@ class Generator:
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "Convert",
+                        "To_Base",
                         self.prefix + full_base_type_name(enum),
                         [Parameter(["Val"], self.prefix + enum.full_name)],
                     ),
                     If(
-                        [(Selected("Val", "Known"), Call("Convert", [Selected("Val", "Enum")]))],
+                        [(Selected("Val", "Known"), Call("To_Base", [Selected("Val", "Enum")]))],
                         Selected("Val", "Raw"),
                     ),
                 )
@@ -2462,16 +2462,27 @@ class Generator:
             Pragma("Warnings", ["On", '"precondition is statically false"']),
         ]
 
-    def integer_conversion_function(self, integer: Integer) -> Subprogram:
-        return ExpressionFunctionDeclaration(
-            FunctionSpecification(
-                "Convert",
-                self.prefix + integer.full_name,
-                [Parameter(["Val"], self.prefix + full_base_type_name(integer))],
+    def integer_conversion_functions(self, integer: Integer) -> Sequence[Subprogram]:
+        return [
+            ExpressionFunctionDeclaration(
+                FunctionSpecification(
+                    "To_Base",
+                    self.prefix + full_base_type_name(integer),
+                    [Parameter(["Val"], self.prefix + integer.full_name)],
+                ),
+                Name("Val"),
+                [Precondition(Call(f"Valid", [Name("Val")]))],
             ),
-            Name("Val"),
-            [Precondition(Call(f"Valid", [Name("Val")]))],
-        )
+            ExpressionFunctionDeclaration(
+                FunctionSpecification(
+                    "To_Actual",
+                    self.prefix + integer.full_name,
+                    [Parameter(["Val"], self.prefix + full_base_type_name(integer))],
+                ),
+                Name("Val"),
+                [Precondition(Call(f"Valid", [Name("Val")]))],
+            ),
+        ]
 
 
 class InternalError(Exception):

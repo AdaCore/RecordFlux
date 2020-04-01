@@ -36,7 +36,7 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.Enumeration.Priority_Base is
+   function To_Base (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.Enumeration.Priority_Base is
      ((case Enum is
          when LOW =>
             1,
@@ -45,10 +45,10 @@ is
          when HIGH =>
             7));
 
-   function Convert (Enum : Priority_Enum) return RFLX.Enumeration.Priority is
+   function To_Actual (Enum : Priority_Enum) return RFLX.Enumeration.Priority is
      ((True, Enum));
 
-   function Convert (Val : RFLX.Enumeration.Priority_Base) return RFLX.Enumeration.Priority is
+   function To_Actual (Val : RFLX.Enumeration.Priority_Base) return RFLX.Enumeration.Priority is
      ((case Val is
          when 1 =>
             (True, LOW),
@@ -62,9 +62,9 @@ is
      Pre =>
        Valid (Val);
 
-   function Convert (Val : RFLX.Enumeration.Priority) return RFLX.Enumeration.Priority_Base is
+   function To_Base (Val : RFLX.Enumeration.Priority) return RFLX.Enumeration.Priority_Base is
      ((if Val.Known then
-       Convert (Val.Enum)
+       To_Base (Val.Enum)
     else
        Val.Raw));
 

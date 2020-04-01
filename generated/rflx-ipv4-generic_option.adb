@@ -38,7 +38,7 @@ is
 
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if Structural_Valid (Ctx.Cursors (F_Option_Number))
-         and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+         and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
          and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1 then
        Ctx.Cursors (F_Option_Number).Last
     elsif Structural_Valid (Ctx.Cursors (F_Option_Data)) then
@@ -75,17 +75,17 @@ is
          when F_Option_Length =>
             (case Fld is
                   when F_Option_Data =>
-                     (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                     (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
                           and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                        or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                        or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                           and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                             or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                             or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
                         or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                          and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                          and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                           and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
                         or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                          and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                          and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                           and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8),
                   when others =>
                      False),
@@ -97,21 +97,21 @@ is
          when F_Initial | F_Copied | F_Option_Class =>
             True,
          when F_Option_Number =>
-            (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+            (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                  and Types.Bit_Length (Val.Option_Number_Value) = 1)
                or Types.Bit_Length (Val.Option_Number_Value) > 1,
          when F_Option_Length =>
-            (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+            (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
                  and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-               or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+               or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                  and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                    or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                    or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
                or (Types.Bit_Length (Val.Option_Length_Value) = 11
-                 and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                 and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                  and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
                or (Types.Bit_Length (Val.Option_Length_Value) = 4
-                 and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                 and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                  and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8),
          when F_Option_Data =>
             True,
@@ -175,17 +175,17 @@ is
                 Types.Unreachable_Bit_Length),
          when F_Option_Data =>
             (if Ctx.Cursors (Fld).Predecessor = F_Option_Length
-                  and ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                  and ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
                       and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                    or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                    or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                       and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                         or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                         or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
                     or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                      and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                      and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                       and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
                     or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                      and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                      and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                       and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
              else
@@ -208,7 +208,7 @@ is
          when F_Option_Class =>
             F_Option_Number,
          when F_Option_Number =>
-            (if Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+            (if Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                   and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1 then
                 F_Final
              elsif Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1 then
@@ -216,17 +216,17 @@ is
              else
                 F_Initial),
          when F_Option_Length =>
-            (if (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+            (if (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
                     and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                     and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                       or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                       or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
                   or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                     and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
                   or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                     and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8) then
                 F_Option_Data
              else
@@ -459,17 +459,17 @@ is
                                     and then Ctx.Cursors (F_Option_Length).Predecessor = F_Option_Number
                                     and then Ctx.Cursors (F_Option_Length).First = (Ctx.Cursors (F_Option_Number).Last + 1)
                                     and then (if Structural_Valid (Ctx.Cursors (F_Option_Data))
-                                         and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                                         and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
                                              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                                           or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                           or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                                              and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                                                or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                                                or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
                                            or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                                              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
                                            or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                             and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                                              and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
                                        (Ctx.Cursors (F_Option_Data).Last - Ctx.Cursors (F_Option_Data).First + 1) = ((Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8
                                          and then Ctx.Cursors (F_Option_Data).Predecessor = F_Option_Length
@@ -526,44 +526,44 @@ is
      (Valid (Ctx, F_Copied)
       and then Valid (Ctx, F_Option_Class)
       and then Valid (Ctx, F_Option_Number)
-      and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+      and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
           and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1)
         or (Valid (Ctx, F_Option_Length)
           and then Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1
           and then Structural_Valid (Ctx, F_Option_Data)
-          and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+          and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
               and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-            or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+            or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
               and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                 or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                 or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
             or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
               and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
             or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
               and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Copied)
       and then Valid (Ctx, F_Option_Class)
       and then Valid (Ctx, F_Option_Number)
-      and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+      and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
           and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 1)
         or (Valid (Ctx, F_Option_Length)
           and then Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) > 1
           and then Valid (Ctx, F_Option_Data)
-          and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+          and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
               and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-            or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+            or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
               and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                 or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                 or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
             or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
               and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
             or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+              and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
               and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
@@ -574,10 +574,10 @@ is
       or Incomplete (Ctx, F_Option_Data));
 
    function Get_Copied (Ctx : Context) return Boolean is
-     (Convert (Ctx.Cursors (F_Copied).Value.Copied_Value));
+     (To_Actual (Ctx.Cursors (F_Copied).Value.Copied_Value));
 
    function Get_Option_Class (Ctx : Context) return RFLX.IPv4.Option_Class is
-     (Convert (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value));
+     (To_Actual (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value));
 
    function Get_Option_Number (Ctx : Context) return RFLX.IPv4.Option_Number is
      (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value);
@@ -649,7 +649,7 @@ is
    end Set_Field_Value;
 
    procedure Set_Copied (Ctx : in out Context; Val : Boolean) is
-      Field_Value : constant Field_Dependent_Value := (F_Copied, Convert (Val));
+      Field_Value : constant Field_Dependent_Value := (F_Copied, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Copied);
@@ -660,7 +660,7 @@ is
    end Set_Copied;
 
    procedure Set_Option_Class (Ctx : in out Context; Val : RFLX.IPv4.Option_Class) is
-      Field_Value : constant Field_Dependent_Value := (F_Option_Class, Convert (Val));
+      Field_Value : constant Field_Dependent_Value := (F_Option_Class, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Class);
@@ -728,17 +728,17 @@ is
                            and then Ctx.Cursors (F_Option_Length).Predecessor = F_Option_Number
                            and then Ctx.Cursors (F_Option_Length).First = (Ctx.Cursors (F_Option_Number).Last + 1)
                            and then (if Structural_Valid (Ctx.Cursors (F_Option_Data))
-                                and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Debugging_And_Measurement))
+                                and then ((Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
                                     and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                  or (Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                                     and (Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 9
                                       or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 3
                                       or Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
                                   or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                                     and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
                                   or (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (Convert (Control))
+                                    and Types.Bit_Length (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
                                     and Types.Bit_Length (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value) = 8)) then
                               (Ctx.Cursors (F_Option_Data).Last - Ctx.Cursors (F_Option_Data).First + 1) = ((Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8
                                 and then Ctx.Cursors (F_Option_Data).Predecessor = F_Option_Length

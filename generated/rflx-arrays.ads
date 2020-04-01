@@ -21,7 +21,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length is
+   function To_Base (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length is
      (Val)
     with
      Pre =>
@@ -46,7 +52,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer is
+   function To_Base (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer is
      (Val)
     with
      Pre =>
@@ -72,7 +84,13 @@ is
      (Val >= 1
       and Val <= 100);
 
-   function Convert (Val : RFLX.Arrays.Range_Integer_Base) return RFLX.Arrays.Range_Integer is
+   function To_Base (Val : RFLX.Arrays.Range_Integer) return RFLX.Arrays.Range_Integer_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.Arrays.Range_Integer_Base) return RFLX.Arrays.Range_Integer is
      (Val)
     with
      Pre =>
@@ -102,7 +120,7 @@ is
          when others =>
             False));
 
-   function Convert (Enum : RFLX.Arrays.Enumeration) return RFLX.Arrays.Enumeration_Base is
+   function To_Base (Enum : RFLX.Arrays.Enumeration) return RFLX.Arrays.Enumeration_Base is
      ((case Enum is
          when ZERO =>
             0,
@@ -111,7 +129,7 @@ is
          when TWO =>
             2));
 
-   function Convert (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration is
+   function To_Actual (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration is
      ((case Val is
          when 0 =>
             ZERO,
@@ -159,7 +177,7 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Enum : RFLX.Arrays.AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration_Base is
+   function To_Base (Enum : RFLX.Arrays.AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration_Base is
      ((case Enum is
          when AV_ZERO =>
             0,
@@ -168,10 +186,10 @@ is
          when AV_TWO =>
             2));
 
-   function Convert (Enum : AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration is
+   function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration is
      ((True, Enum));
 
-   function Convert (Val : RFLX.Arrays.AV_Enumeration_Base) return RFLX.Arrays.AV_Enumeration is
+   function To_Actual (Val : RFLX.Arrays.AV_Enumeration_Base) return RFLX.Arrays.AV_Enumeration is
      ((case Val is
          when 0 =>
             (True, AV_ZERO),
@@ -185,9 +203,9 @@ is
      Pre =>
        Valid (Val);
 
-   function Convert (Val : RFLX.Arrays.AV_Enumeration) return RFLX.Arrays.AV_Enumeration_Base is
+   function To_Base (Val : RFLX.Arrays.AV_Enumeration) return RFLX.Arrays.AV_Enumeration_Base is
      ((if Val.Known then
-       Convert (Val.Enum)
+       To_Base (Val.Enum)
     else
        Val.Raw));
 

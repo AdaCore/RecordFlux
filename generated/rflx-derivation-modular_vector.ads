@@ -3,4 +3,4 @@ with RFLX.Scalar_Sequence;
 with RFLX.Derivation;
 with RFLX.Types;
 
-package RFLX.Derivation.Modular_Vector is new RFLX.Scalar_Sequence (RFLX.Types, Modular_Integer, Modular_Integer, Valid, Convert, Convert);
+package RFLX.Derivation.Modular_Vector is new RFLX.Scalar_Sequence (RFLX.Types, Modular_Integer, Modular_Integer, Valid, To_Actual, To_Base);

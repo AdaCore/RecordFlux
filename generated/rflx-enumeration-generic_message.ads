@@ -210,7 +210,7 @@ is
           and then Has_Buffer (Ctx)
           and then Valid_Next (Ctx, F_Priority)
           and then Field_Last (Ctx, F_Priority) <= Types.Bit_Index'Last / 2
-          and then Field_Condition (Ctx, (F_Priority, Convert (Val)))
+          and then Field_Condition (Ctx, (F_Priority, To_Base (Val)))
           and then True
           and then Available_Space (Ctx, F_Priority) >= Field_Length (Ctx, F_Priority),
      Post =>

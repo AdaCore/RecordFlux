@@ -59,7 +59,7 @@ is
      (Ctx.State = S_Processing and then Valid (Ctx.Next_Element));
 
    function Get_Element (Ctx : Context) return Element_Type is
-     (Convert_To_Element_Type (Ctx.Next_Element));
+     (To_Actual (Ctx.Next_Element));
 
    procedure Append_Element (Ctx : in out Context; Value : Element_Type) is
       Last_Bit : Types.Bit_Index;
@@ -73,7 +73,7 @@ is
       Last := Types.Byte_Index (Last_Bit);
       Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
       if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-         Insert (Convert_To_Element_Base_Type (Value), Ctx.Buffer.all (First .. Last), Offset);
+         Insert (To_Base (Value), Ctx.Buffer.all (First .. Last), Offset);
       end if;
       Ctx.Index := Ctx.Index + Element_Base_Type'Size;
       if Ctx.Index = Ctx.Last + 1 then

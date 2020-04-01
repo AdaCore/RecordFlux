@@ -249,7 +249,7 @@ is
      (Incomplete (Ctx, F_Priority));
 
    function Get_Priority (Ctx : Context) return RFLX.Enumeration.Priority is
-     (Convert (Ctx.Cursors (F_Priority).Value.Priority_Value));
+     (To_Actual (Ctx.Cursors (F_Priority).Value.Priority_Value));
 
    procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out Types.Bit_Index) with
      Pre =>
@@ -299,7 +299,7 @@ is
    end Set_Field_Value;
 
    procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) is
-      Field_Value : constant Field_Dependent_Value := (F_Priority, Convert (Val));
+      Field_Value : constant Field_Dependent_Value := (F_Priority, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Priority);
