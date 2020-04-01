@@ -21,7 +21,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.UDP.Port) return RFLX.UDP.Port is
+   function To_Base (Val : RFLX.UDP.Port) return RFLX.UDP.Port is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.UDP.Port) return RFLX.UDP.Port is
      (Val)
     with
      Pre =>
@@ -46,7 +52,13 @@ is
    function Valid (Val : RFLX.UDP.Length_Base) return Boolean is
      (Val >= 8);
 
-   function Convert (Val : RFLX.UDP.Length_Base) return RFLX.UDP.Length is
+   function To_Base (Val : RFLX.UDP.Length) return RFLX.UDP.Length_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.UDP.Length_Base) return RFLX.UDP.Length is
      (Val)
     with
      Pre =>
@@ -71,7 +83,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.UDP.Checksum) return RFLX.UDP.Checksum is
+   function To_Base (Val : RFLX.UDP.Checksum) return RFLX.UDP.Checksum is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.UDP.Checksum) return RFLX.UDP.Checksum is
      (Val)
     with
      Pre =>

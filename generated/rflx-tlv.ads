@@ -26,14 +26,14 @@ is
          when others =>
             False));
 
-   function Convert (Enum : RFLX.TLV.Tag) return RFLX.TLV.Tag_Base is
+   function To_Base (Enum : RFLX.TLV.Tag) return RFLX.TLV.Tag_Base is
      ((case Enum is
          when Msg_Data =>
             1,
          when Msg_Error =>
             3));
 
-   function Convert (Val : RFLX.TLV.Tag_Base) return RFLX.TLV.Tag is
+   function To_Actual (Val : RFLX.TLV.Tag_Base) return RFLX.TLV.Tag is
      ((case Val is
          when 1 =>
             Msg_Data,
@@ -64,7 +64,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.TLV.Length) return RFLX.TLV.Length is
+   function To_Base (Val : RFLX.TLV.Length) return RFLX.TLV.Length is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.TLV.Length) return RFLX.TLV.Length is
      (Val)
     with
      Pre =>

@@ -21,7 +21,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.Ethernet.Address) return RFLX.Ethernet.Address is
+   function To_Base (Val : RFLX.Ethernet.Address) return RFLX.Ethernet.Address is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.Ethernet.Address) return RFLX.Ethernet.Address is
      (Val)
     with
      Pre =>
@@ -46,7 +52,13 @@ is
    function Valid (Val : RFLX.Ethernet.Type_Length_Base) return Boolean is
      (Val >= 46);
 
-   function Convert (Val : RFLX.Ethernet.Type_Length_Base) return RFLX.Ethernet.Type_Length is
+   function To_Base (Val : RFLX.Ethernet.Type_Length) return RFLX.Ethernet.Type_Length_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.Ethernet.Type_Length_Base) return RFLX.Ethernet.Type_Length is
      (Val)
     with
      Pre =>
@@ -72,7 +84,13 @@ is
      (Val >= 16#8100#
       and Val <= 16#8100#);
 
-   function Convert (Val : RFLX.Ethernet.TPID_Base) return RFLX.Ethernet.TPID is
+   function To_Base (Val : RFLX.Ethernet.TPID) return RFLX.Ethernet.TPID_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.Ethernet.TPID_Base) return RFLX.Ethernet.TPID is
      (Val)
     with
      Pre =>
@@ -97,7 +115,13 @@ is
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function Convert (Val : RFLX.Ethernet.TCI) return RFLX.Ethernet.TCI is
+   function To_Base (Val : RFLX.Ethernet.TCI) return RFLX.Ethernet.TCI is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.Ethernet.TCI) return RFLX.Ethernet.TCI is
      (Val)
     with
      Pre =>

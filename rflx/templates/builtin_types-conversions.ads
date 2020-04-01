@@ -9,14 +9,14 @@ package {prefix}Builtin_Types.Conversions is
          when others =>
             False);
 
-   function Convert (Enum : Boolean) return Boolean_Base is
+   function To_Base (Enum : Boolean) return Boolean_Base is
      (case Enum is
          when False =>
             0,
          when True =>
             1);
 
-   function Convert (Val : Boolean_Base) return Boolean is
+   function To_Actual (Val : Boolean_Base) return Boolean is
      (case Val is
          when 0 =>
             False,
