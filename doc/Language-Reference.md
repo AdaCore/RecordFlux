@@ -173,7 +173,7 @@ A type derivation allows to create a new message type based on an existing messa
 
 #### Static Semantics
 
-A derived message type derives its specification from a base type. All type refinements of the base type which were specified at the time of the derivation will also apply to the derived type.
+A derived message type derives its specification from a base type. Type refinements of the base type do not apply to the derived message.
 
 #### Example
 

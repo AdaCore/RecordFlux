@@ -1902,23 +1902,27 @@ class Generator:
     def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
         name = "Contains"
         unit_name = full_generic_name(self.prefix, refinement.package, name)
-        pdu_name = f"{self.prefix}{generic_name(refinement.pdu)}"
-        sdu_name = f"{self.prefix}{generic_name(refinement.sdu)}"
+        generic_pdu_name = self.prefix + generic_name(refinement.pdu.full_name)
+        generic_sdu_name = self.prefix + generic_name(refinement.sdu.full_name)
 
-        null_sdu = not self.messages[refinement.sdu].fields
+        null_sdu = not refinement.sdu.fields
 
         context: List[ContextItem] = [
             WithClause(self.types.prefixed_generic_types),
         ]
 
-        pdu_package = self.prefix + refinement.pdu.rsplit(".", 1)[0]
-        if pdu_package != refinement.package:
-            context.extend([WithClause(pdu_package), UsePackageClause(pdu_package)])
+        if refinement.pdu.package != refinement.package:
+            context.extend(
+                [
+                    WithClause(self.prefix + refinement.pdu.package),
+                    UsePackageClause(self.prefix + refinement.pdu.package),
+                ]
+            )
 
-        context.extend([WithClause(pdu_name)])
+        context.extend([WithClause(generic_pdu_name)])
 
         if not null_sdu:
-            context.append(WithClause(sdu_name))
+            context.append(WithClause(generic_sdu_name))
 
         if unit_name in self.units:
             self.units[unit_name].context.extend(context)
@@ -1926,14 +1930,16 @@ class Generator:
             parameters: List[FormalDeclaration] = [
                 FormalPackageDeclaration("Types", self.types.prefixed_generic_types),
                 FormalPackageDeclaration(
-                    flat_name(refinement.pdu), pdu_name, ["Types", "others => <>"]
+                    flat_name(refinement.pdu.full_name), generic_pdu_name, ["Types", "others => <>"]
                 ),
             ]
 
             if not null_sdu:
                 parameters.append(
                     FormalPackageDeclaration(
-                        flat_name(refinement.sdu), sdu_name, ["Types", "others => <>"]
+                        flat_name(refinement.sdu.full_name),
+                        generic_sdu_name,
+                        ["Types", "others => <>"],
                     ),
                 )
 
@@ -1944,12 +1950,12 @@ class Generator:
             )
             self.units[unit_name] += self.__create_specification_pragmas(generic_name(name))
             self.units[unit_name] += self.__create_use_type_clause(
-                additional_types=[f"{flat_name(refinement.pdu)}.Field_Cursors"]
+                additional_types=[f"{flat_name(refinement.pdu.full_name)}.Field_Cursors"]
             )
 
         condition_fields = {
             f: t
-            for f, t in self.messages[refinement.pdu].types.items()
+            for f, t in refinement.pdu.types.items()
             if Variable(f.name) in refinement.condition
         }
 
@@ -1963,10 +1969,10 @@ class Generator:
         name = "Contains"
         unit_name = f"{refinement.package}.{name}"
         generic_unit_name = full_generic_name(self.prefix, refinement.package, name)
-        pdu_name = f"{self.prefix}{refinement.pdu}"
-        sdu_name = f"{self.prefix}{refinement.sdu}"
+        pdu_name = self.prefix + refinement.pdu.full_name
+        sdu_name = self.prefix + refinement.sdu.full_name
 
-        null_sdu = not self.messages[refinement.sdu].fields
+        null_sdu = not refinement.sdu.fields
 
         context: List[ContextItem] = [
             Pragma("SPARK_Mode"),
@@ -2250,7 +2256,7 @@ class Generator:
     def __create_contains_function(
         refinement: Refinement, condition_fields: Mapping[Field, Type], null_sdu: bool
     ) -> SubprogramUnitPart:
-        pdu_name = flat_name(refinement.pdu)
+        pdu_name = flat_name(refinement.pdu.full_name)
         condition = refinement.condition
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
@@ -2287,8 +2293,8 @@ class Generator:
     def __create_switch_procedure(
         self, refinement: Refinement, condition_fields: Mapping[Field, Type]
     ) -> UnitPart:
-        pdu_name = flat_name(refinement.pdu)
-        sdu_name = flat_name(refinement.sdu)
+        pdu_name = flat_name(refinement.pdu.full_name)
+        sdu_name = flat_name(refinement.sdu.full_name)
         pdu_context = f"{pdu_name}_Context"
         sdu_context = f"{sdu_name}_Context"
         refined_field_affixed_name = f"{pdu_name}.{refinement.field.affixed_name}"
@@ -2541,15 +2547,15 @@ def full_generic_name(prefix: str, package: str, message: str) -> str:
 
 
 def contains_function_name(refinement: Refinement) -> str:
-    sdu_name = (
-        refinement.sdu.rsplit(".", 1)[1]
-        if refinement.sdu.startswith(refinement.package)
-        else refinement.sdu
+    sdu_name: str = (
+        refinement.sdu.name
+        if refinement.sdu.package == refinement.package
+        else refinement.sdu.full_name
     )
-    pdu_name = (
-        refinement.pdu.rsplit(".", 1)[1]
-        if refinement.pdu.startswith(refinement.package)
-        else refinement.pdu
+    pdu_name: str = (
+        refinement.pdu.name
+        if refinement.pdu.package == refinement.package
+        else refinement.pdu.full_name
     )
     return flat_name(f"{sdu_name}_In_{pdu_name}_{refinement.field.name}")
 
@@ -2584,7 +2590,7 @@ def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
 def refinement_conditions(
     refinement: Refinement, pdu_context: str, condition_fields: Mapping[Field, Type], null_sdu: bool
 ) -> Sequence[Expr]:
-    pdu_name = flat_name(refinement.pdu)
+    pdu_name = flat_name(refinement.pdu.full_name)
 
     conditions: List[Expr] = [Call(f"{pdu_name}.Has_Buffer", [Name(pdu_context)])]
 

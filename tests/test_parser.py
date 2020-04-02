@@ -44,6 +44,7 @@ from rflx.parser.ast import (
     MessageSpec,
     PackageSpec,
     ReferenceSpec,
+    RefinementSpec,
     Specification,
     Then,
 )
@@ -427,7 +428,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    for PDU use (Foo => PDU);
                 end Test;
             """,
-            r'^duplicate refinement of field "Foo" with "PDU" in "PDU"$',
+            r'^duplicate refinement of field "Foo" with "Test.PDU" for "Test.PDU"$',
         )
 
     def test_refinement_undefined_message(self) -> None:
@@ -437,7 +438,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    for PDU use (Foo => Bar);
                 end Test;
             """,
-            r'^undefined type "PDU" in refinement$',
+            r'^undefined type "Test.PDU" in refinement$',
         )
 
     def test_refinement_undefined_sdu(self) -> None:
@@ -452,7 +453,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    for PDU use (Foo => Bar);
                 end Test;
             """,
-            r'^undefined type "Bar" in refinement of "PDU"$',
+            r'^undefined type "Test.Bar" in refinement of "Test.PDU"$',
         )
 
     def test_refinement_invalid_field(self) -> None:
@@ -467,7 +468,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    for PDU use (Bar => PDU);
                 end Test;
             """,
-            r'^invalid field "Bar" in refinement of "PDU"$',
+            r'^invalid field "Bar" in refinement of "Test.PDU"$',
         )
 
     def test_refinement_invalid_condition(self) -> None:
@@ -483,7 +484,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                       if X < Y + 1;
                 end Test;
             """,
-            r'^unknown field or literal "X" in refinement condition of "PDU"$',
+            r'^unknown field or literal "X" in refinement condition of "Test.PDU"$',
         )
 
     def test_derivation_duplicate_type(self) -> None:
@@ -864,16 +865,14 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 PackageSpec(
                     "Type_Refinement",
                     [
-                        Refinement(
+                        RefinementSpec(
                             "",
                             "Message_Type.Simple_PDU",
-                            Field("Bar"),
+                            "Bar",
                             "Message_Type.PDU",
                             Equal(Variable("Baz"), Number(42)),
                         ),
-                        Refinement(
-                            "", "Message_Type.PDU", Field("Bar"), "Message_Type.Simple_PDU",
-                        ),
+                        RefinementSpec("", "Message_Type.PDU", "Bar", "Message_Type.Simple_PDU",),
                     ],
                 ),
             ),
@@ -934,6 +933,18 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         )
 
     def test_type_derivation_refinements(self) -> None:
+        message_foo = Message(
+            "Test.Foo",
+            [Link(INITIAL, Field("Baz"), length=Number(42)), Link(Field("Baz"), FINAL)],
+            {Field("Baz"): Opaque()},
+        )
+        message_bar = DerivedMessage(
+            "Test.Bar",
+            "Test.Foo",
+            [Link(INITIAL, Field("Baz"), length=Number(42)), Link(Field("Baz"), FINAL)],
+            {Field("Baz"): Opaque()},
+        )
+
         self.assert_refinements_string(
             """
                 package Test is
@@ -950,9 +961,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 end Test;
             """,
             [
-                Refinement("Test", "Test.Foo", Field("Baz"), "Test.Foo"),
-                Refinement("Test", "Test.Bar", Field("Baz"), "Test.Foo"),
-                Refinement("Test", "Test.Bar", Field("Baz"), "Test.Bar"),
+                Refinement("Test", message_foo, Field("Baz"), message_foo),
+                Refinement("Test", message_bar, Field("Baz"), message_bar),
             ],
         )
 

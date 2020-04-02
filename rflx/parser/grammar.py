@@ -50,16 +50,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
-from rflx.model import (
-    Array,
-    Enumeration,
-    Field,
-    ModelError,
-    ModularInteger,
-    RangeInteger,
-    Refinement,
-    Type,
-)
+from rflx.model import Array, Enumeration, ModelError, ModularInteger, RangeInteger, Type
 
 from .ast import (
     Component,
@@ -68,6 +59,7 @@ from .ast import (
     MessageSpec,
     PackageSpec,
     ReferenceSpec,
+    RefinementSpec,
     Specification,
     Then,
 )
@@ -564,10 +556,10 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
 
 
 @fatalexceptions
-def parse_refinement(string: str, location: int, tokens: ParseResults) -> Type:
+def parse_refinement(string: str, location: int, tokens: ParseResults) -> RefinementSpec:
     if "constraint" not in tokens:
         tokens.append(TRUE)
-    return Refinement("", tokens[0], Field(tokens[1]), tokens[2], tokens[3])
+    return RefinementSpec("", tokens[0], tokens[1], tokens[2], tokens[3])
 
 
 @fatalexceptions
