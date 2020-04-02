@@ -1,6 +1,6 @@
 from typing import List
 
-from rflx.common import generic_repr
+from rflx.common import flat_name, generic_repr
 from rflx.expression import TRUE, UNDEFINED, Expr
 from rflx.model import Type
 
@@ -53,6 +53,18 @@ class DerivationSpec(Type):
     def __init__(self, name: str, base: str) -> None:
         super().__init__(name)
         self.base = base
+
+
+class RefinementSpec(Type):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self, package: str, pdu: str, field: str, sdu: str, condition: Expr = TRUE
+    ) -> None:
+        super().__init__(f"{package}.__REFINEMENT__{flat_name(sdu)}__{flat_name(pdu)}__{field}__")
+        self.pdu = pdu
+        self.field = field
+        self.sdu = sdu
+        self.condition = condition
 
 
 class ReferenceSpec(Type):
