@@ -242,15 +242,13 @@ class Generator:
 
     def __process_derived_message(self, message: DerivedMessage, seen_types: Set[str]) -> None:
         if message.package not in self.units:
-            self.__create_unit(
-                message.package, [WithClause(f"{self.prefix}{message.base_package}")]
-            )
+            self.__create_unit(message.package, [WithClause(self.prefix + message.base.package)])
 
         self.__create_message_unit(message)
 
         for field_type in message.types.values():
             if not is_seen_type(f"{message.package}.{field_type.name}", seen_types):
-                self.__create_subtype(field_type, message.package, message.base_package)
+                self.__create_subtype(field_type, message.package, message.base.package)
 
     def __create_unit(self, package_name: str, context: List[ContextItem]) -> None:
         name = f"{self.prefix}{package_name}"
@@ -1880,7 +1878,7 @@ class Generator:
 
     def __create_message_unit(self, message: Message) -> None:
         if isinstance(message, DerivedMessage):
-            name = full_generic_name(self.prefix, message.base_package, message.base_name)
+            name = full_generic_name(self.prefix, message.base.package, message.base.name)
         else:
             name = full_generic_name(self.prefix, message.package, message.name)
 

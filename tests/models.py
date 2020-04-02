@@ -220,9 +220,7 @@ def create_expression_message() -> Message:
 
 
 def create_derivation_message() -> Message:
-    return DerivedMessage(
-        "Derivation.Message", ARRAY_MESSAGE.full_name, ARRAY_MESSAGE.structure, ARRAY_MESSAGE.types
-    )
+    return DerivedMessage("Derivation.Message", ARRAY_MESSAGE)
 
 
 NULL_MESSAGE = create_null_message()
