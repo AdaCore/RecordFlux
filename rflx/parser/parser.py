@@ -2,7 +2,7 @@ import logging
 import traceback
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Set, Tuple
+from typing import Deque, Dict, List, Mapping, MutableMapping, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
@@ -28,7 +28,7 @@ from rflx.model import (
 )
 
 from . import grammar
-from .ast import Component, DerivationSpec, MessageSpec, Specification
+from .ast import Component, DerivationSpec, MessageSpec, RefinementSpec, Specification
 
 log = logging.getLogger(__name__)
 
@@ -109,12 +109,9 @@ class Parser:
                 self.__types[t.full_name] = create_message(t, self.__types)
 
             elif isinstance(t, DerivationSpec):
-                for r in create_derived_refinements(t, type_refinements(self.__types)):
-                    self.__types[r.full_name] = r
-
                 self.__types[t.full_name] = create_derived_message(t, message_types(self.__types))
 
-            elif isinstance(t, Refinement):
+            elif isinstance(t, RefinementSpec):
                 self.__types[t.full_name] = create_refinement(t, self.__types)
 
             else:
@@ -127,10 +124,6 @@ class ParserError(Exception):
 
 def message_types(types: Mapping[str, Type]) -> Mapping[str, Message]:
     return {n: m for n, m in types.items() if isinstance(m, Message)}
-
-
-def type_refinements(types: Mapping[str, Type]) -> Mapping[str, Refinement]:
-    return {n: m for n, m in types.items() if isinstance(m, Refinement)}
 
 
 def check_types(types: Mapping[str, Type]) -> None:
@@ -247,34 +240,29 @@ def create_derived_message(
     )
 
 
-def create_refinement(refinement: Refinement, types: Mapping[str, Type]) -> Refinement:
+def create_refinement(refinement: RefinementSpec, types: Mapping[str, Type]) -> Refinement:
     messages = message_types(types)
 
-    pdu = qualified_type_name(
-        refinement.pdu,
-        refinement.package,
-        messages.keys(),
-        f'undefined type "{refinement.pdu}" in refinement',
-    )
+    if "." not in refinement.pdu:
+        refinement.pdu = f"{refinement.package}.{refinement.pdu}"
+    if refinement.pdu not in messages:
+        raise ParserError(f'undefined type "{refinement.pdu}" in refinement')
 
-    if refinement.field not in messages[pdu].fields:
-        raise ParserError(
-            f'invalid field "{refinement.field.name}" in refinement of "{refinement.pdu}"'
-        )
+    pdu = messages[refinement.pdu]
 
-    sdu = qualified_type_name(
-        refinement.sdu,
-        refinement.package,
-        messages.keys(),
-        f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"',
-    )
+    if Field(refinement.field) not in pdu.fields:
+        raise ParserError(f'invalid field "{refinement.field}" in refinement of "{refinement.pdu}"')
+
+    if "." not in refinement.sdu:
+        refinement.sdu = f"{refinement.package}.{refinement.sdu}"
+    if refinement.sdu not in messages:
+        raise ParserError(f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"')
+
+    sdu = messages[refinement.sdu]
 
     for variable in refinement.condition.variables():
         literals = [
-            l
-            for e in messages[pdu].types.values()
-            if isinstance(e, Enumeration)
-            for l in e.literals.keys()
+            l for e in pdu.types.values() if isinstance(e, Enumeration) for l in e.literals.keys()
         ] + [
             f"{e.package}.{l}"
             for e in types.values()
@@ -282,47 +270,21 @@ def create_refinement(refinement: Refinement, types: Mapping[str, Type]) -> Refi
             for l in e.literals.keys()
         ]
 
-        if (
-            Field(str(variable.name)) not in messages[pdu].fields
-            and str(variable.name) not in literals
-        ):
+        if Field(str(variable.name)) not in pdu.fields and str(variable.name) not in literals:
             raise ParserError(
                 f'unknown field or literal "{variable.name}" in refinement'
                 f' condition of "{refinement.pdu}"'
             )
 
-    result = Refinement(refinement.package, pdu, refinement.field, sdu, refinement.condition)
+    result = Refinement(refinement.package, pdu, Field(refinement.field), sdu, refinement.condition)
 
     if result in types.values():
         raise ParserError(
-            f'duplicate refinement of field "{refinement.field.name}" with "{refinement.sdu}"'
-            f' in "{refinement.pdu}"'
+            f'duplicate refinement of field "{refinement.field}" with "{refinement.sdu}"'
+            f' for "{refinement.pdu}"'
         )
 
     return result
-
-
-def create_derived_refinements(
-    derivation: DerivationSpec, refinements: Mapping[str, Refinement]
-) -> Sequence[Refinement]:
-    result: List[Refinement] = []
-    for r in list(refinements.values()):
-        if r.pdu == f"{derivation.base}" or r.pdu == f"{derivation.package}.{derivation.base}":
-            pdu = f"{derivation.package}.{derivation.name}"
-            result.append(Refinement(derivation.package, pdu, r.field, r.sdu))
-    return result
-
-
-def qualified_type_name(name: str, package: str, types: Iterable[str], error_message: str) -> str:
-    if name in types:
-        return name
-
-    name = f"{package}.{name}"
-
-    if name not in types:
-        raise ParserError(error_message)
-
-    return name
 
 
 def check_naming(filename: str, package_identifier: str) -> None:

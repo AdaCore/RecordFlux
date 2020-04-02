@@ -55,7 +55,7 @@ def create_tlv_message() -> Message:
 
 
 def create_null_message_in_tlv_message() -> Refinement:
-    return Refinement("In_TLV", "TLV.Message", Field("Value"), "Null.Message")
+    return Refinement("In_TLV", TLV_MESSAGE, Field("Value"), NULL_MESSAGE)
 
 
 def create_ethernet_frame() -> Message:
