@@ -524,6 +524,18 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             r'^undefined message "Test.Foo" in derived message "Test.Bar"$',
         )
 
+    def test_derivation_of_derived_type(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type Foo is null message;
+                   type Bar is new Foo;
+                   type Baz is new Bar;
+                end Test;
+            """,
+            r'^illegal derivation "Test.Baz" of derived message "Test.Bar"$',
+        )
+
     def test_invalid_first_in_initial_node(self) -> None:
         self.assert_parser_error_string(
             """
@@ -780,10 +792,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         )
 
         derived_length_value = DerivedMessage(
-            "Message_In_Message.Derived_Length_Value",
-            length_value.full_name,
-            length_value.structure,
-            length_value.types,
+            "Message_In_Message.Derived_Length_Value", length_value
         )
 
         message = Message(
@@ -803,12 +812,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             },
         )
 
-        derived_message = DerivedMessage(
-            "Message_In_Message.Derived_Message",
-            message.full_name,
-            message.structure,
-            message.types,
-        )
+        derived_message = DerivedMessage("Message_In_Message.Derived_Message", message)
 
         self.assert_messages_files(
             [f"{self.testdir}/message_in_message.rflx"],
@@ -915,6 +919,9 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
         types = {Field("Baz"): t}
 
+        message_foo = Message("Test.Foo", structure, types)
+        message_bar = DerivedMessage("Test.Bar", message_foo)
+
         self.assert_messages_string(
             """
                 package Test is
@@ -926,10 +933,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type Bar is new Foo;
                 end Test;
             """,
-            [
-                Message("Test.Foo", structure, types),
-                DerivedMessage("Test.Bar", "Test.Foo", structure, types),
-            ],
+            [message_foo, message_bar],
         )
 
     def test_type_derivation_refinements(self) -> None:
@@ -938,12 +942,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             [Link(INITIAL, Field("Baz"), length=Number(42)), Link(Field("Baz"), FINAL)],
             {Field("Baz"): Opaque()},
         )
-        message_bar = DerivedMessage(
-            "Test.Bar",
-            "Test.Foo",
-            [Link(INITIAL, Field("Baz"), length=Number(42)), Link(Field("Baz"), FINAL)],
-            {Field("Baz"): Opaque()},
-        )
+        message_bar = DerivedMessage("Test.Bar", message_foo)
 
         self.assert_refinements_string(
             """
