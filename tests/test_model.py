@@ -96,7 +96,7 @@ M_DBL_REF = UnprovenMessage(
 
 M_NO_REF_DERI = UnprovenDerivedMessage(
     "P.No_Ref_Deri",
-    "P.No_Ref",
+    M_NO_REF,
     [
         Link(INITIAL, Field("F1"), length=Number(16)),
         Link(Field("F1"), Field("F2")),
@@ -118,7 +118,7 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
 
 M_SMPL_REF_DERI = UnprovenDerivedMessage(
     "P.Smpl_Ref_Deri",
-    "P.Smpl_Ref",
+    M_SMPL_REF,
     [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
     {Field("NR"): deepcopy(M_NO_REF_DERI)},
 )
@@ -542,15 +542,17 @@ class TestModel(TestCase):
         )
 
     def test_derived_message_incorrect_base_name(self) -> None:
-        with self.assertRaisesRegex(ModelError, '^unexpected format of message name "M"$'):
-            DerivedMessage("P.M", "M", [], {})
+        with self.assertRaisesRegex(ModelError, '^unexpected format of type name "M"$'):
+            DerivedMessage("P.M", Message("M", [], {}))
 
     def test_derived_message_proven(self) -> None:
         message = DerivedMessage(
             "P.M",
-            "X.M",
-            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): MODULAR_INTEGER},
+            Message(
+                "X.M",
+                [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+                {Field("F"): MODULAR_INTEGER},
+            ),
         )
         self.assertEqual(
             message.proven(), message,
@@ -776,7 +778,7 @@ class TestModel(TestCase):
             deepcopy(M_SMPL_REF_DERI).merged(),
             UnprovenDerivedMessage(
                 "P.Smpl_Ref_Deri",
-                "P.Smpl_Ref",
+                M_SMPL_REF,
                 [
                     Link(INITIAL, Field("NR_F1"), length=Number(16)),
                     Link(Field("NR_F3"), FINAL, LessEqual(Variable("NR_F3"), Number(10))),

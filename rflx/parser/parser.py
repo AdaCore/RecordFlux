@@ -12,8 +12,8 @@ from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
-    AbstractMessage,
     Array,
+    DerivedMessage,
     Enumeration,
     Field,
     Link,
@@ -223,21 +223,24 @@ def create_message(message: MessageSpec, types: Mapping[str, Type]) -> Message:
     return UnprovenMessage(message.full_name, structure, field_types).merged().proven()
 
 
-def create_derived_message(
-    derivation: DerivationSpec, messages: Mapping[str, AbstractMessage],
-) -> Message:
-    base = derivation.base if "." in derivation.base else f"{derivation.package}.{derivation.base}"
-
-    if base not in messages:
-        raise ParserError(f'undefined message "{base}" in derived message "{derivation.full_name}"')
-
-    return (
-        UnprovenDerivedMessage(
-            derivation.full_name, base, messages[base].structure, messages[base].types
-        )
-        .merged()
-        .proven()
+def create_derived_message(derivation: DerivationSpec, messages: Mapping[str, Message],) -> Message:
+    base_name = (
+        derivation.base if "." in derivation.base else f"{derivation.package}.{derivation.base}"
     )
+
+    if base_name not in messages:
+        raise ParserError(
+            f'undefined message "{base_name}" in derived message "{derivation.full_name}"'
+        )
+
+    base = messages[base_name]
+
+    if isinstance(base, DerivedMessage):
+        raise ParserError(
+            f'illegal derivation "{derivation.full_name}" of derived message "{base_name}"'
+        )
+
+    return UnprovenDerivedMessage(derivation.full_name, base).merged().proven()
 
 
 def create_refinement(refinement: RefinementSpec, types: Mapping[str, Type]) -> Refinement:

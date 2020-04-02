@@ -1,4 +1,3 @@
-# pylint: disable=too-many-lines
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
@@ -784,15 +783,17 @@ class DerivedMessage(Message):
     def __init__(
         self,
         full_name: str,
-        full_base_name: str,
-        structure: Sequence[Link],
-        types: Mapping[Field, Type],
+        base: AbstractMessage,
+        structure: Sequence[Link] = None,
+        types: Mapping[Field, Type] = None,
     ) -> None:
 
-        check_message_name(full_base_name)
-
-        super().__init__(full_name, structure, types)
-        self.full_base_name = full_base_name
+        super().__init__(
+            full_name,
+            structure if structure else copy(base.structure),
+            types if types else copy(base.types),
+        )
+        self.base = base
 
     def copy(
         self,
@@ -802,21 +803,13 @@ class DerivedMessage(Message):
     ) -> "DerivedMessage":
         return DerivedMessage(
             full_name if full_name else self.full_name,
-            self.full_base_name,
+            self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
         )
 
     def proven(self) -> "DerivedMessage":
         return copy(self)
-
-    @property
-    def base_name(self) -> str:
-        return self.full_base_name.rsplit(".", 1)[1]
-
-    @property
-    def base_package(self) -> str:
-        return self.full_base_name.rsplit(".", 1)[0]
 
 
 class UnprovenMessage(AbstractMessage):
@@ -907,15 +900,17 @@ class UnprovenDerivedMessage(UnprovenMessage):
     def __init__(
         self,
         full_name: str,
-        full_base_name: str,
-        structure: Sequence[Link],
-        types: Mapping[Field, Type],
+        base: AbstractMessage,
+        structure: Sequence[Link] = None,
+        types: Mapping[Field, Type] = None,
     ) -> None:
 
-        check_message_name(full_base_name)
-
-        super().__init__(full_name, structure, types)
-        self.full_base_name = full_base_name
+        super().__init__(
+            full_name,
+            structure if structure else copy(base.structure),
+            types if types else copy(base.types),
+        )
+        self.base = base
 
     def copy(
         self,
@@ -925,13 +920,13 @@ class UnprovenDerivedMessage(UnprovenMessage):
     ) -> "UnprovenDerivedMessage":
         return UnprovenDerivedMessage(
             full_name if full_name else self.full_name,
-            self.full_base_name,
+            self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
         )
 
     def proven(self) -> DerivedMessage:
-        return DerivedMessage(self.full_name, self.full_base_name, self.structure, self.types)
+        return DerivedMessage(self.full_name, self.base, self.structure, self.types)
 
 
 class Refinement(Type):
@@ -974,11 +969,6 @@ class Model(Base):
 
 class ModelError(Exception):
     pass
-
-
-def check_message_name(full_name: str) -> None:
-    if full_name.count(".") != 1:
-        raise ModelError(f'unexpected format of message name "{full_name}"')
 
 
 def check_message_field_types(message: AbstractMessage) -> None:
