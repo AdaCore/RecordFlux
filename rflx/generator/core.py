@@ -52,10 +52,7 @@ from rflx.ada import (
     Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
-    SubprogramRenamingDeclaration,
-    SubprogramSpecification,
     SubprogramUnitPart,
-    Subtype,
     TypeDeclaration,
     Unit,
     UnitPart,
@@ -106,7 +103,7 @@ from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
-    AbstractMessage,
+    INTERNAL_PACKAGE,
     Array,
     Composite,
     DerivedMessage,
@@ -116,7 +113,6 @@ from rflx.model import (
     Message,
     Model,
     ModularInteger,
-    Opaque,
     RangeInteger,
     Refinement,
     Scalar,
@@ -128,7 +124,9 @@ from .common import (
     VALID_CONTEXT,
     GeneratorCommon,
     base_type_name,
+    enum_name,
     full_base_type_name,
+    full_enum_name,
     length_dependent_condition,
     sequence_name,
 )
@@ -153,6 +151,8 @@ LIBRARY_FILES = (
     "types.ads",
 )
 
+REFINEMENT_PACKAGE = "Contains"
+
 
 class Generator:
     # pylint: disable=too-many-instance-attributes
@@ -163,7 +163,7 @@ class Generator:
         self.prefix = f"{prefix}." if prefix else ""
         self.reproducible = reproducible
         self.units: Dict[str, Unit] = {}
-        self.messages: Dict[str, Message] = {}
+        self.seen_types: Set[str] = set()
         self.types = Types(self.prefix)
         self.common = GeneratorCommon(self.prefix)
         self.parser = ParserGenerator(self.prefix)
@@ -174,20 +174,38 @@ class Generator:
             raise InternalError("template directory not found")
 
     def generate(self, model: Model) -> None:
-        self.__process_messages(model.messages)
-        self.__process_refinements(model.refinements)
+        for t in model.types:
+            if t.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
+                continue
+
+            if t.package not in self.units:
+                self.__create_unit(t.package, [])
+
+            if isinstance(t, (Scalar, Composite)):
+                self.__create_type(t, t.package)
+
+            elif isinstance(t, Message):
+                if isinstance(t, DerivedMessage):
+                    self.__create_derived_message(t)
+                else:
+                    self.__create_message(t)
+
+            elif isinstance(t, Refinement):
+                self.__create_refinement(t)
+
+            else:
+                assert False, f'unexpected type "{type(t).__name__}"'
 
     def write_library_files(self, directory: Path) -> None:
-
         for template_filename in LIBRARY_FILES:
-            self.check_template_file(template_filename)
+            self.__check_template_file(template_filename)
 
             filename = self.prefix.replace(".", "-").lower() + template_filename
 
             with open(self.template_dir / Path(template_filename)) as template_file:
                 create_file(
                     Path(directory) / Path(filename),
-                    self.license_header() + template_file.read().format(prefix=self.prefix),
+                    self.__license_header() + template_file.read().format(prefix=self.prefix),
                 )
 
     def write_top_level_package(self, directory: Path) -> None:
@@ -196,59 +214,33 @@ class Generator:
 
             create_file(
                 Path(directory) / Path(prefix.lower() + ".ads"),
-                self.license_header() + f"package {prefix} is\n\nend {prefix};",
+                self.__license_header() + f"package {prefix} is\n\nend {prefix};",
             )
 
     def write_units(self, directory: Path) -> None:
         for unit in self.units.values():
             create_file(
-                directory / Path(unit.name + ".ads"), self.license_header() + unit.specification
+                directory / Path(unit.name + ".ads"), self.__license_header() + unit.specification
             )
 
             if unit.body:
-                create_file(directory / Path(unit.name + ".adb"), self.license_header() + unit.body)
+                create_file(
+                    directory / Path(unit.name + ".adb"), self.__license_header() + unit.body
+                )
 
-    def __process_messages(self, messages: Sequence[Message]) -> None:
-        seen_types: Set[str] = set()
+    def __create_refinement(self, refinement: Refinement) -> None:
+        self.__create_generic_refinement_unit(refinement)
+        self.__create_refinement_unit(refinement)
 
-        for message in messages:
-            self.messages[message.full_name] = message
-            if isinstance(message, DerivedMessage):
-                self.__process_derived_message(message, seen_types)
-            else:
-                self.__process_message(message, seen_types)
-
-    def __process_refinements(self, refinements: Sequence[Refinement]) -> None:
-        for refinement in refinements:
-            if refinement.package not in self.units:
-                self.__create_unit(refinement.package, [])
-
-            self.__create_generic_refinement_unit(refinement)
-            self.__create_refinement_unit(refinement)
-
-    def __process_message(self, message: Message, seen_types: Set[str]) -> None:
+    def __create_message(self, message: Message) -> None:
         if not message.fields:
             return
-
-        if message.package not in self.units:
-            self.__create_unit(message.package, [])
 
         self.__create_generic_message_unit(message)
         self.__create_message_unit(message)
 
-        for field_type in message.types.values():
-            if not is_seen_type(f"{message.package}.{field_type}", seen_types):
-                self.__create_type(field_type, message.package)
-
-    def __process_derived_message(self, message: DerivedMessage, seen_types: Set[str]) -> None:
-        if message.package not in self.units:
-            self.__create_unit(message.package, [WithClause(self.prefix + message.base.package)])
-
+    def __create_derived_message(self, message: DerivedMessage) -> None:
         self.__create_message_unit(message)
-
-        for field_type in message.types.values():
-            if not is_seen_type(f"{message.package}.{field_type.name}", seen_types):
-                self.__create_subtype(field_type, message.package, message.base.package)
 
     def __create_unit(self, package_name: str, context: List[ContextItem]) -> None:
         name = f"{self.prefix}{package_name}"
@@ -269,7 +261,7 @@ class Generator:
                 ]
             )
 
-        context.append(WithClause(self.types.prefixed_generic_types),)
+        context.append(WithClause(self.types.prefixed_generic_types))
 
         unit_name = full_generic_name(self.prefix, message.package, message.name)
         parameters: List[FormalDeclaration] = [
@@ -283,8 +275,19 @@ class Generator:
         self.units[unit_name] = unit
 
         for field_type in message.types.values():
-            if isinstance(field_type, Array):
-                if isinstance(field_type.element_type, AbstractMessage):
+            if field_type.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
+                continue
+
+            if isinstance(field_type, Scalar) and field_type.package != message.package:
+                context.extend(
+                    [
+                        WithClause(f"{self.prefix}{field_type.package}"),
+                        UsePackageClause(f"{self.prefix}{field_type.package}"),
+                    ]
+                )
+
+            elif isinstance(field_type, Array):
+                if isinstance(field_type.element_type, Message):
                     name = "Message_Sequence"
                 else:
                     name = "Scalar_Sequence"
@@ -1637,7 +1640,7 @@ class Generator:
             field_type = message.types[field]
             assert isinstance(field_type, Array)
 
-            if isinstance(field_type.element_type, AbstractMessage):
+            if isinstance(field_type.element_type, Message):
                 arguments.extend([Name("Ctx.First"), Name("Ctx.Last")])
 
             return arguments
@@ -1882,73 +1885,87 @@ class Generator:
         else:
             name = full_generic_name(self.prefix, message.package, message.name)
 
-        arrays = [
-            message.types[f].name for f in message.fields if isinstance(message.types[f], Array)
-        ]
-
         context: List[ContextItem] = [
             Pragma("SPARK_Mode"),
             WithClause(name),
             WithClause(self.types.prefixed_types),
         ]
-        context.extend(WithClause(f"{self.prefix}{message.package}.{array}") for array in arrays)
+
+        arrays = [
+            f"{self.prefix}{t.full_name}" for t in message.types.values() if isinstance(t, Array)
+        ]
+        context.extend(WithClause(array) for array in arrays)
         instantiation = GenericPackageInstantiation(
             f"{self.prefix}{message.full_name}", name, [self.types.prefixed_types] + arrays
         )
+
         self.units[message.full_name] = InstantiationUnit(context, instantiation)
 
     def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
-        name = "Contains"
-        unit_name = full_generic_name(self.prefix, refinement.package, name)
-        generic_pdu_name = self.prefix + generic_name(refinement.pdu.full_name)
-        generic_sdu_name = self.prefix + generic_name(refinement.sdu.full_name)
+        unit_name = full_generic_name(self.prefix, refinement.package, REFINEMENT_PACKAGE)
+
+        if unit_name in self.units:
+            unit = self.units[unit_name]
+
+        else:
+            unit = PackageUnit(
+                [WithClause(self.types.prefixed_generic_types)],
+                PackageDeclaration(
+                    unit_name,
+                    formal_parameters=[
+                        FormalPackageDeclaration("Types", self.types.prefixed_generic_types)
+                    ],
+                ),
+                PackageBody(unit_name),
+            )
+            unit += self.__create_specification_pragmas(generic_name(REFINEMENT_PACKAGE))
+            unit += self.__create_use_type_clause()
+            self.units[unit_name] = unit
 
         null_sdu = not refinement.sdu.fields
 
-        context: List[ContextItem] = [
-            WithClause(self.types.prefixed_generic_types),
-        ]
+        assert isinstance(unit, PackageUnit), f"unexpected unit type"
+        assert isinstance(unit.declaration.formal_parameters, List), f"missing formal parameters"
 
         if refinement.pdu.package != refinement.package:
-            context.extend(
+            pdu_package = (
+                refinement.pdu.base.package
+                if isinstance(refinement.pdu, DerivedMessage)
+                else refinement.pdu.package
+            )
+
+            unit.context.extend(
                 [
-                    WithClause(self.prefix + refinement.pdu.package),
-                    UsePackageClause(self.prefix + refinement.pdu.package),
+                    WithClause(self.prefix + pdu_package),
+                    UsePackageClause(self.prefix + pdu_package),
                 ]
             )
 
-        context.extend([WithClause(generic_pdu_name)])
+        generic_pdu_name = self.prefix + (
+            generic_name(refinement.pdu.base.full_name)
+            if isinstance(refinement.pdu, DerivedMessage)
+            else generic_name(refinement.pdu.full_name)
+        )
+
+        unit.context.append(WithClause(generic_pdu_name))
+        unit.declaration.formal_parameters.append(
+            FormalPackageDeclaration(
+                flat_name(refinement.pdu.full_name), generic_pdu_name, ["Types", "others => <>"]
+            )
+        )
+
+        generic_sdu_name = self.prefix + (
+            generic_name(refinement.sdu.base.full_name)
+            if isinstance(refinement.sdu, DerivedMessage)
+            else generic_name(refinement.sdu.full_name)
+        )
 
         if not null_sdu:
-            context.append(WithClause(generic_sdu_name))
-
-        if unit_name in self.units:
-            self.units[unit_name].context.extend(context)
-        else:
-            parameters: List[FormalDeclaration] = [
-                FormalPackageDeclaration("Types", self.types.prefixed_generic_types),
+            unit.context.append(WithClause(generic_sdu_name))
+            unit.declaration.formal_parameters.append(
                 FormalPackageDeclaration(
-                    flat_name(refinement.pdu.full_name), generic_pdu_name, ["Types", "others => <>"]
+                    flat_name(refinement.sdu.full_name), generic_sdu_name, ["Types", "others => <>"]
                 ),
-            ]
-
-            if not null_sdu:
-                parameters.append(
-                    FormalPackageDeclaration(
-                        flat_name(refinement.sdu.full_name),
-                        generic_sdu_name,
-                        ["Types", "others => <>"],
-                    ),
-                )
-
-            self.units[unit_name] = PackageUnit(
-                context,
-                PackageDeclaration(unit_name, formal_parameters=parameters),
-                PackageBody(unit_name),
-            )
-            self.units[unit_name] += self.__create_specification_pragmas(generic_name(name))
-            self.units[unit_name] += self.__create_use_type_clause(
-                additional_types=[f"{flat_name(refinement.pdu.full_name)}.Field_Cursors"]
             )
 
         condition_fields = {
@@ -1957,128 +1974,73 @@ class Generator:
             if Variable(f.name) in refinement.condition
         }
 
-        self.units[unit_name] += self.__create_contains_function(
-            refinement, condition_fields, null_sdu
-        )
+        unit += self.__create_contains_function(refinement, condition_fields, null_sdu)
         if not null_sdu:
-            self.units[unit_name] += self.__create_switch_procedure(refinement, condition_fields)
+            unit += self.__create_switch_procedure(refinement, condition_fields)
 
     def __create_refinement_unit(self, refinement: Refinement) -> None:
-        name = "Contains"
-        unit_name = f"{refinement.package}.{name}"
-        generic_unit_name = full_generic_name(self.prefix, refinement.package, name)
-        pdu_name = self.prefix + refinement.pdu.full_name
-        sdu_name = self.prefix + refinement.sdu.full_name
+        unit_name = f"{refinement.package}.{REFINEMENT_PACKAGE}"
+        generic_unit_name = full_generic_name(self.prefix, refinement.package, REFINEMENT_PACKAGE)
+
+        if unit_name in self.units:
+            unit = self.units[unit_name]
+        else:
+            context = [
+                Pragma("SPARK_Mode"),
+                WithClause(self.types.prefixed_types),
+                WithClause(generic_unit_name),
+            ]
+            instantiation = GenericPackageInstantiation(
+                f"{self.prefix}{unit_name}", generic_unit_name, [self.types.prefixed_types]
+            )
+            unit = InstantiationUnit(context, instantiation)
+            self.units[unit_name] = unit
 
         null_sdu = not refinement.sdu.fields
 
-        context: List[ContextItem] = [
-            Pragma("SPARK_Mode"),
-            WithClause(generic_unit_name),
-            WithClause(self.types.prefixed_types),
-            WithClause(pdu_name),
-        ]
+        assert isinstance(unit, InstantiationUnit), f"unexpected unit type"
 
-        if not null_sdu:
-            context.append(WithClause(sdu_name))
+        pdu_name = self.prefix + refinement.pdu.full_name
 
-        instantiation = GenericPackageInstantiation(
-            f"{self.prefix}{unit_name}",
-            generic_unit_name,
-            [self.types.prefixed_types, pdu_name] + ([sdu_name] if not null_sdu else []),
-        )
-        self.units[unit_name] = InstantiationUnit(context, instantiation)
+        if pdu_name not in unit.declaration.associations:
+            unit.context.append(WithClause(pdu_name))
+            unit.declaration.associations.append(pdu_name)
+
+        sdu_name = self.prefix + refinement.sdu.full_name
+
+        if not null_sdu and sdu_name not in unit.declaration.associations:
+            unit.context.append(WithClause(sdu_name))
+            unit.declaration.associations.append(sdu_name)
 
     def __create_type(self, field_type: Type, message_package: str) -> None:
         unit = self.units[message_package]
 
-        if field_type.package == BUILTINS_PACKAGE:
+        if field_type.package == BUILTINS_PACKAGE or self.__is_seen_type(field_type):
             return
 
         if isinstance(field_type, ModularInteger):
             unit += UnitPart(modular_types(field_type))
-            unit += UnitPart(self.type_dependent_unreachable_function(field_type))
+            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
             unit += self.__modular_functions(field_type)
         elif isinstance(field_type, RangeInteger):
             unit += UnitPart(range_types(field_type))
-            unit += UnitPart(self.type_dependent_unreachable_function(field_type))
+            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
             unit += self.__range_functions(field_type)
         elif isinstance(field_type, Enumeration):
             unit += UnitPart(enumeration_types(field_type))
-            unit += UnitPart(self.type_dependent_unreachable_function(field_type))
+            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
             unit += self.__enumeration_functions(field_type)
         elif isinstance(field_type, Array):
-            if not isinstance(field_type.element_type, AbstractMessage):
-                self.__create_type(field_type.element_type, message_package)
             self.__create_array_unit(field_type, message_package)
-        elif isinstance(field_type, Opaque):
-            pass
         else:
-            raise NotImplementedError(f'unsupported type "{type(field_type).__name__}"')
-
-    def __create_subtype(self, field_type: Type, message_package: str, base_package: str) -> None:
-        unit = self.units[message_package]
-
-        if isinstance(field_type, (ModularInteger, RangeInteger, Enumeration)):
-            types: List[TypeDeclaration]
-            subprograms: Sequence[Subprogram]
-            if isinstance(field_type, ModularInteger):
-                types = modular_types(field_type)
-                subprograms = [
-                    s
-                    for s in self.__modular_functions(field_type).specification
-                    if isinstance(s, Subprogram)
-                ]
-            elif isinstance(field_type, RangeInteger):
-                types = range_types(field_type)
-                subprograms = self.__range_functions(field_type).specification
-            elif isinstance(field_type, Enumeration):
-                types = enumeration_types(field_type)
-                subprograms = [
-                    s
-                    for s in self.__enumeration_functions(field_type).specification
-                    if isinstance(s, Subprogram)
-                ]
-
-            unit += UnitPart([Subtype(t.name, f"{base_package}.{t.name}") for t in types])
-            unit += UnitPart(
-                [
-                    SubprogramRenamingDeclaration(
-                        renamed_subprogram_specification(s.specification, s.name),
-                        f"{base_package}.{s.name}",
-                    )
-                    for s in subprograms
-                ]
-            )
-
-            if isinstance(field_type, Enumeration):
-                type_name = field_type.enum_name if field_type.always_valid else field_type.name
-                unit += UnitPart(
-                    [
-                        ObjectDeclaration(
-                            [literal], type_name, Name(f"{base_package}.{literal}"), True
-                        )
-                        for literal in field_type.literals
-                    ]
-                )
-
-        elif isinstance(field_type, Array):
-            if not isinstance(field_type.element_type, AbstractMessage):
-                self.__create_subtype(field_type.element_type, message_package, base_package)
-            self.__create_array_unit(field_type, message_package)
-
-        elif isinstance(field_type, Opaque):
-            pass
-
-        else:
-            raise NotImplementedError(f'unsupported type "{type(field_type).__name__}"')
+            assert False, f'unexpected type "{type(field_type).__name__}"'
 
     def __create_array_unit(self, array_type: Array, package_name: str) -> None:
         element_type = array_type.element_type
 
         array_context: List[ContextItem] = []
         array_package: GenericPackageInstantiation
-        if isinstance(element_type, AbstractMessage):
+        if isinstance(element_type, Message):
             array_context = [
                 Pragma("SPARK_Mode"),
                 WithClause(f"{self.prefix}Message_Sequence"),
@@ -2101,7 +2063,6 @@ class Generator:
                 ],
             )
         elif isinstance(element_type, Scalar):
-            print(element_type)
             array_context = [
                 Pragma("SPARK_Mode"),
                 WithClause(f"{self.prefix}Scalar_Sequence"),
@@ -2135,9 +2096,9 @@ class Generator:
                 continue
 
         specification.append(
-            self.type_validation_function(integer, integer.constraints("Val").simplified())
+            self.__type_validation_function(integer, integer.constraints("Val").simplified())
         )
-        specification.extend(self.integer_conversion_functions(integer))
+        specification.extend(self.__integer_conversion_functions(integer))
 
         return SubprogramUnitPart(specification)
 
@@ -2146,10 +2107,10 @@ class Generator:
 
         specification.append(Pragma("Warnings", ["Off", '"unused variable ""Val"""']))
         specification.append(
-            self.type_validation_function(integer, integer.constraints("Val").simplified())
+            self.__type_validation_function(integer, integer.constraints("Val").simplified())
         )
         specification.append(Pragma("Warnings", ["On", '"unused variable ""Val"""']))
-        specification.extend(self.integer_conversion_functions(integer))
+        specification.extend(self.__integer_conversion_functions(integer))
 
         return UnitPart(specification)
 
@@ -2170,7 +2131,7 @@ class Generator:
 
         if enum.always_valid:
             specification.append(Pragma("Warnings", ["Off", '"unused variable ""Val"""']))
-        specification.append(self.type_validation_function(enum, validation_expression))
+        specification.append(self.__type_validation_function(enum, validation_expression))
         if enum.always_valid:
             specification.append(Pragma("Warnings", ["On", '"unused variable ""Val"""']))
 
@@ -2183,7 +2144,7 @@ class Generator:
                         Parameter(
                             ["Enum"],
                             self.prefix
-                            + (enum.full_enum_name if enum.always_valid else enum.full_name),
+                            + (full_enum_name(enum) if enum.always_valid else enum.full_name),
                         )
                     ],
                 ),
@@ -2205,7 +2166,7 @@ class Generator:
                     FunctionSpecification(
                         "To_Actual",
                         self.prefix + enum.full_name,
-                        [Parameter(["Enum"], enum.enum_name)],
+                        [Parameter(["Enum"], enum_name(enum))],
                     ),
                     Aggregate(TRUE, Name("Enum")),
                 )
@@ -2307,6 +2268,7 @@ class Generator:
 
         return UnitPart(
             [
+                UseTypeClause(f"{pdu_name}.Field_Cursors"),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -2359,7 +2321,7 @@ class Generator:
                             )
                         ),
                     ],
-                )
+                ),
             ],
             [
                 SubprogramBody(
@@ -2419,21 +2381,21 @@ class Generator:
             ],
         )
 
-    def check_template_file(self, filename: str) -> None:
+    def __check_template_file(self, filename: str) -> None:
         if not self.template_dir.joinpath(filename).is_file():
             raise InternalError(f'template file not found: "{filename}"')
 
-    def license_header(self) -> str:
+    def __license_header(self) -> str:
         if self.reproducible:
             return ""
 
         filename = "license_header"
-        self.check_template_file(filename)
+        self.__check_template_file(filename)
         with open(self.template_dir.joinpath(filename)) as license_file:
             today = date.today()
             return license_file.read().format(version=__version__, date=today, year=today.year,)
 
-    def type_validation_function(
+    def __type_validation_function(
         self, scalar_type: Scalar, validation_expression: Expr
     ) -> Subprogram:
         return ExpressionFunctionDeclaration(
@@ -2445,7 +2407,7 @@ class Generator:
             validation_expression,
         )
 
-    def type_dependent_unreachable_function(self, scalar_type: Scalar) -> List[Declaration]:
+    def __type_dependent_unreachable_function(self, scalar_type: Scalar) -> List[Declaration]:
         base_name = None
         if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
             base_name = self.prefix + full_base_type_name(scalar_type)
@@ -2462,7 +2424,7 @@ class Generator:
             Pragma("Warnings", ["On", '"precondition is statically false"']),
         ]
 
-    def integer_conversion_functions(self, integer: Integer) -> Sequence[Subprogram]:
+    def __integer_conversion_functions(self, integer: Integer) -> Sequence[Subprogram]:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
@@ -2483,6 +2445,11 @@ class Generator:
                 [Precondition(Call(f"Valid", [Name("Val")]))],
             ),
         ]
+
+    def __is_seen_type(self, field_type: Type) -> bool:
+        seen = field_type.full_name in self.seen_types
+        self.seen_types.add(field_type.full_name)
+        return seen
 
 
 class InternalError(Exception):
@@ -2513,7 +2480,7 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
     types.append(ModularType(base_type_name(enum), Pow(Number(2), enum.size)))
     types.append(
         EnumerationType(
-            enum.enum_name if enum.always_valid else enum.name, enum.literals, enum.size
+            enum_name(enum) if enum.always_valid else enum.name, enum.literals, enum.size
         )
     )
     if enum.always_valid:
@@ -2525,7 +2492,7 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
                 VariantPart(
                     "Known",
                     [
-                        Variant([TRUE], [Component("Enum", enum.enum_name)]),
+                        Variant([TRUE], [Component("Enum", enum_name(enum))]),
                         Variant([FALSE], [Component("Raw", base_type_name(enum))]),
                     ],
                 ),
@@ -2533,16 +2500,6 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
         )
 
     return types
-
-
-def renamed_subprogram_specification(
-    specification: SubprogramSpecification, name: str
-) -> SubprogramSpecification:
-    if isinstance(specification, ProcedureSpecification):
-        return ProcedureSpecification(name, specification.parameters)
-    if isinstance(specification, FunctionSpecification):
-        return FunctionSpecification(name, specification.return_type, specification.parameters)
-    raise NotImplementedError('unhandled subprogram specification "{type(specification).__name__}"')
 
 
 def generic_name(full_name: str) -> str:
@@ -2571,12 +2528,6 @@ def contains_function_name(refinement: Refinement) -> str:
 
 def unreachable_function_name(type_name: str) -> str:
     return f"Unreachable_{flat_name(type_name)}"
-
-
-def is_seen_type(type_name: str, seen_types: Set[str]) -> bool:
-    seen = type_name in seen_types
-    seen_types.add(type_name)
-    return seen
 
 
 def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:

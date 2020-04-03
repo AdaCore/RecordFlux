@@ -31,6 +31,7 @@ from rflx.expression import (
 )
 
 BUILTINS_PACKAGE = "__BUILTINS__"
+INTERNAL_PACKAGE = "__INTERNAL__"
 
 
 class Base(ABC):
@@ -197,14 +198,6 @@ class Enumeration(Scalar):
     def size(self) -> Number:
         return self.__size
 
-    @property
-    def enum_name(self) -> str:
-        return f"{self.name}_Enum"
-
-    @property
-    def full_enum_name(self) -> str:
-        return f"{self.full_name}_Enum"
-
 
 class Composite(Type):
     pass
@@ -218,7 +211,7 @@ class Array(Composite):
 
 class Opaque(Composite):
     def __init__(self) -> None:
-        super().__init__(f"__PACKAGE__.Opaque")
+        super().__init__(f"{INTERNAL_PACKAGE}.Opaque")
 
 
 class Field(NamedTuple):

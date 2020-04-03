@@ -1,4 +1,3 @@
-import itertools
 from typing import Mapping, Sequence
 
 from rflx.ada import (
@@ -65,7 +64,9 @@ class GeneratorCommon:
         self.prefix = prefix
         self.types = Types(prefix)
 
-    def substitution(self, message: Message, prefix: bool = True) -> Mapping[Name, Expr]:
+    def substitution(
+        self, message: Message, prefix: bool = True, public: bool = False
+    ) -> Mapping[Name, Expr]:
         def prefixed(name: str) -> Expr:
             return Selected(Name("Ctx"), name) if prefix else Name(name)
 
@@ -73,86 +74,76 @@ class GeneratorCommon:
         last = prefixed("Last")
         cursors = prefixed("Cursors")
 
+        def field_first(field: Field) -> Expr:
+            if public:
+                return Call("Field_First", [Name("Ctx"), Name(field.affixed_name)])
+            return Selected(Indexed(cursors, Name(field.affixed_name)), "First")
+
+        def field_last(field: Field) -> Expr:
+            if public:
+                return Call("Field_Last", [Name("Ctx"), Name(field.affixed_name)])
+            return Selected(Indexed(cursors, Name(field.affixed_name)), "Last")
+
+        def field_length(field: Field) -> Expr:
+            if public:
+                return Call("Field_Length", [Name("Ctx"), Name(field.affixed_name)])
+            return Add(
+                Sub(
+                    Selected(Indexed(cursors, Name(field.affixed_name)), "Last"),
+                    Selected(Indexed(cursors, Name(field.affixed_name)), "First"),
+                ),
+                Number(1),
+            )
+
+        def field_value(field: Field) -> Expr:
+            if public:
+                return Call(self.types.bit_length, [Call(f"Get_{field.name}", [Name("Ctx")])])
+            return Call(
+                self.types.bit_length,
+                [Selected(Indexed(cursors, Name(field.affixed_name)), f"Value.{field.name}_Value")],
+            )
+
+        def enum_field_value(field: Field) -> Expr:
+            if public:
+                return Call(
+                    self.types.bit_length,
+                    [Call("To_Base", [Call(f"Get_{field.name}", [Name("Ctx")])])],
+                )
+            return Call(
+                self.types.bit_length,
+                [Selected(Indexed(cursors, Name(field.affixed_name)), f"Value.{field.name}_Value")],
+            )
+
         return {
             **{First("Message"): first},
             **{Last("Message"): last},
+            **{Length("Message"): Add(last, -first, Number(1))},
+            **{First(f.name): field_first(f) for f in message.fields},
+            **{Last(f.name): field_last(f) for f in message.fields},
+            **{Length(f.name): field_length(f) for f in message.fields},
             **{
-                First(f.name): Selected(Indexed(cursors, Name(f.affixed_name)), "First")
-                for f in message.fields
-            },
-            **{
-                Last(f.name): Selected(Indexed(cursors, Name(f.affixed_name)), "Last")
-                for f in message.fields
-            },
-            **{
-                Length(f.name): Add(
-                    Sub(
-                        Selected(Indexed(cursors, Name(f.affixed_name)), "Last"),
-                        Selected(Indexed(cursors, Name(f.affixed_name)), "First"),
-                    ),
-                    Number(1),
-                )
-                for f in message.fields
-            },
-            **{
-                Variable(f.name): Call(
-                    self.types.bit_length,
-                    [Selected(Indexed(cursors, Name(f.affixed_name)), f"Value.{f.name}_Value")],
-                )
+                Variable(f.name): field_value(f)
                 for f, t in message.types.items()
                 if not isinstance(t, Enumeration)
             },
             **{
-                Variable(f.name): Call(
-                    self.types.bit_length,
-                    [Selected(Indexed(cursors, Name(f.affixed_name)), f"Value.{f.name}_Value")],
-                )
+                Variable(f.name): enum_field_value(f)
                 for f, t in message.types.items()
                 if isinstance(t, Enumeration)
             },
             **{
                 Variable(l): Call(self.types.bit_length, [Call("To_Base", [Name(l)])])
-                for l in itertools.chain.from_iterable(
-                    t.literals.keys() for t in message.types.values() if isinstance(t, Enumeration)
-                )
-            },
-        }
-
-    def public_substitution(self, message: Message) -> Mapping[Name, Expr]:
-        return {
-            **{First("Message"): Selected(Name("Ctx"), "First")},
-            **{Last("Message"): Selected(Name("Ctx"), "Last")},
-            **{
-                First(f.name): Call("Field_First", [Name("Ctx"), Name(f.affixed_name)])
-                for f in message.fields
-            },
-            **{
-                Last(f.name): Call("Field_Last", [Name("Ctx"), Name(f.affixed_name)])
-                for f in message.fields
-            },
-            **{
-                Length(f.name): Call("Field_Length", [Name("Ctx"), Name(f.affixed_name)])
-                for f in message.fields
-            },
-            **{
-                Variable(f.name): Call(
-                    self.types.bit_length, [Call(f"Get_{f.name}", [Name("Ctx")])]
-                )
-                for f, t in message.types.items()
-                if not isinstance(t, Enumeration)
-            },
-            **{
-                Variable(f.name): Call(
-                    self.types.bit_length, [Call("To_Base", [Call(f"Get_{f.name}", [Name("Ctx")])])]
-                )
-                for f, t in message.types.items()
+                for t in message.types.values()
                 if isinstance(t, Enumeration)
+                for l in t.literals.keys()
             },
             **{
-                Variable(l): Call(self.types.bit_length, [Call("To_Base", [Name(l)])])
-                for l in itertools.chain.from_iterable(
-                    t.literals.keys() for t in message.types.values() if isinstance(t, Enumeration)
+                Variable(f"{t.package}.{l}"): Call(
+                    self.types.bit_length, [Call("To_Base", [Name(f"{t.package}.{l}")])]
                 )
+                for t in message.types.values()
+                if isinstance(t, Enumeration)
+                for l in t.literals.keys()
             },
         }
 
@@ -380,7 +371,7 @@ class GeneratorCommon:
                         ),
                     )
                 ]
-            ).simplified(self.public_substitution(message))
+            ).simplified(self.substitution(message, public=True))
             for l in message.outgoing(field)
             if l.target != FINAL
         ]
@@ -488,6 +479,14 @@ def full_base_type_name(scalar_type: Scalar) -> str:
         return scalar_type.full_name
 
     return f"{scalar_type.full_name}_Base"
+
+
+def enum_name(enum_type: Enumeration) -> str:
+    return f"{enum_type.name}_Enum"
+
+
+def full_enum_name(enum_type: Enumeration) -> str:
+    return f"{enum_type.full_name}_Enum"
 
 
 def sequence_name(message: Message, field: Field) -> str:

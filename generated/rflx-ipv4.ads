@@ -2,111 +2,6 @@ package RFLX.IPv4 with
   SPARK_Mode
 is
 
-   type Option_Class_Base is mod 2**2;
-
-   type Option_Class is (Control, Debugging_And_Measurement) with
-     Size =>
-       2;
-   for Option_Class use (Control => 0, Debugging_And_Measurement => 2);
-
-   pragma Warnings (Off, "precondition is statically false");
-
-   function Unreachable_IPv4_Option_Class return RFLX.IPv4.Option_Class is
-     (RFLX.IPv4.Option_Class'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is statically false");
-
-   function Valid (Val : RFLX.IPv4.Option_Class_Base) return Boolean is
-     ((case Val is
-         when 0 | 2 =>
-            True,
-         when others =>
-            False));
-
-   function To_Base (Enum : RFLX.IPv4.Option_Class) return RFLX.IPv4.Option_Class_Base is
-     ((case Enum is
-         when Control =>
-            0,
-         when Debugging_And_Measurement =>
-            2));
-
-   function To_Actual (Val : RFLX.IPv4.Option_Class_Base) return RFLX.IPv4.Option_Class is
-     ((case Val is
-         when 0 =>
-            Control,
-         when 2 =>
-            Debugging_And_Measurement,
-         when others =>
-            Unreachable_IPv4_Option_Class))
-    with
-     Pre =>
-       Valid (Val);
-
-   type Option_Number is mod 2**5;
-
-   pragma Warnings (Off, "precondition is statically false");
-
-   function Unreachable_IPv4_Option_Number return RFLX.IPv4.Option_Number is
-     (RFLX.IPv4.Option_Number'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is statically false");
-
-   pragma Warnings (Off, "unused variable ""Val""");
-
-   function Valid (Val : RFLX.IPv4.Option_Number) return Boolean is
-     (True);
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
-
-   function To_Actual (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
-
-   type Option_Length_Base is range 0 .. 2**8 - 1 with
-     Size =>
-       8;
-
-   subtype Option_Length is Option_Length_Base range 2 .. 2**8 - 1;
-
-   pragma Warnings (Off, "precondition is statically false");
-
-   function Unreachable_IPv4_Option_Length return RFLX.IPv4.Option_Length is
-     (RFLX.IPv4.Option_Length'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is statically false");
-
-   function Valid (Val : RFLX.IPv4.Option_Length_Base) return Boolean is
-     (Val >= 2);
-
-   function To_Base (Val : RFLX.IPv4.Option_Length) return RFLX.IPv4.Option_Length_Base is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
-
-   function To_Actual (Val : RFLX.IPv4.Option_Length_Base) return RFLX.IPv4.Option_Length is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
-
    type Version_Base is range 0 .. 2**4 - 1 with
      Size =>
        4;
@@ -471,6 +366,111 @@ is
        Valid (Val);
 
    function To_Actual (Val : RFLX.IPv4.Address) return RFLX.IPv4.Address is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   type Option_Class_Base is mod 2**2;
+
+   type Option_Class is (Control, Debugging_And_Measurement) with
+     Size =>
+       2;
+   for Option_Class use (Control => 0, Debugging_And_Measurement => 2);
+
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_IPv4_Option_Class return RFLX.IPv4.Option_Class is
+     (RFLX.IPv4.Option_Class'First)
+    with
+     Pre =>
+       False;
+
+   pragma Warnings (On, "precondition is statically false");
+
+   function Valid (Val : RFLX.IPv4.Option_Class_Base) return Boolean is
+     ((case Val is
+         when 0 | 2 =>
+            True,
+         when others =>
+            False));
+
+   function To_Base (Enum : RFLX.IPv4.Option_Class) return RFLX.IPv4.Option_Class_Base is
+     ((case Enum is
+         when Control =>
+            0,
+         when Debugging_And_Measurement =>
+            2));
+
+   function To_Actual (Val : RFLX.IPv4.Option_Class_Base) return RFLX.IPv4.Option_Class is
+     ((case Val is
+         when 0 =>
+            Control,
+         when 2 =>
+            Debugging_And_Measurement,
+         when others =>
+            Unreachable_IPv4_Option_Class))
+    with
+     Pre =>
+       Valid (Val);
+
+   type Option_Number is mod 2**5;
+
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_IPv4_Option_Number return RFLX.IPv4.Option_Number is
+     (RFLX.IPv4.Option_Number'First)
+    with
+     Pre =>
+       False;
+
+   pragma Warnings (On, "precondition is statically false");
+
+   pragma Warnings (Off, "unused variable ""Val""");
+
+   function Valid (Val : RFLX.IPv4.Option_Number) return Boolean is
+     (True);
+
+   pragma Warnings (On, "unused variable ""Val""");
+
+   function To_Base (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   type Option_Length_Base is range 0 .. 2**8 - 1 with
+     Size =>
+       8;
+
+   subtype Option_Length is Option_Length_Base range 2 .. 2**8 - 1;
+
+   pragma Warnings (Off, "precondition is statically false");
+
+   function Unreachable_IPv4_Option_Length return RFLX.IPv4.Option_Length is
+     (RFLX.IPv4.Option_Length'First)
+    with
+     Pre =>
+       False;
+
+   pragma Warnings (On, "precondition is statically false");
+
+   function Valid (Val : RFLX.IPv4.Option_Length_Base) return Boolean is
+     (Val >= 2);
+
+   function To_Base (Val : RFLX.IPv4.Option_Length) return RFLX.IPv4.Option_Length_Base is
+     (Val)
+    with
+     Pre =>
+       Valid (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Option_Length_Base) return RFLX.IPv4.Option_Length is
      (Val)
     with
      Pre =>
