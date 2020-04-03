@@ -1,6 +1,6 @@
 pragma SPARK_Mode;
-with RFLX.In_Ethernet.Generic_Contains;
 with RFLX.Types;
+with RFLX.In_Ethernet.Generic_Contains;
 with RFLX.Ethernet.Frame;
 with RFLX.IPv4.Packet;
 

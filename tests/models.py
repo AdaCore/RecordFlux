@@ -24,49 +24,45 @@ from rflx.model import (
     Field,
     Link,
     Message,
+    Model,
     ModularInteger,
     Opaque,
     RangeInteger,
     Refinement,
 )
 
+NULL_MESSAGE = Message("Null.Message", [], {})
+NULL_MODEL = Model([NULL_MESSAGE])
 
-def create_null_message() -> Message:
-    return Message("Null.Message", [], {})
-
-
-def create_tlv_message() -> Message:
-    tag_type = Enumeration(
-        "TLV.Tag", {"Msg_Data": Number(1), "Msg_Error": Number(3)}, Number(2), False
-    )
-    length_type = ModularInteger("TLV.Length", Pow(Number(2), Number(14)))
-
-    structure = [
+TLV_TAG = Enumeration("TLV.Tag", {"Msg_Data": Number(1), "Msg_Error": Number(3)}, Number(2), False)
+TLV_LENGTH = ModularInteger("TLV.Length", Pow(Number(2), Number(14)))
+TLV_MESSAGE = Message(
+    "TLV.Message",
+    [
         Link(INITIAL, Field("Tag")),
         Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("Msg_Data"))),
         Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("Msg_Error"))),
         Link(Field("Length"), Field("Value"), length=Mul(Variable("Length"), Number(8))),
         Link(Field("Value"), FINAL),
-    ]
+    ],
+    {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): Opaque()},
+)
+TLV_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE])
 
-    types = {Field("Tag"): tag_type, Field("Length"): length_type, Field("Value"): Opaque()}
+NULL_MESSAGE_IN_TLV_MESSAGE = Refinement("In_TLV", TLV_MESSAGE, Field("Value"), NULL_MESSAGE)
+NULL_MESSAGE_IN_TLV_MESSAGE_MODEL = Model(
+    [TLV_TAG, TLV_LENGTH, TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE]
+)
 
-    return Message("TLV.Message", structure, types)
-
-
-def create_null_message_in_tlv_message() -> Refinement:
-    return Refinement("In_TLV", TLV_MESSAGE, Field("Value"), NULL_MESSAGE)
-
-
-def create_ethernet_frame() -> Message:
-    address_type = ModularInteger("Ethernet.Address", Pow(Number(2), Number(48)))
-    type_length_type = RangeInteger(
-        "Ethernet.Type_Length", Number(46), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
-    )
-    tpid_type = RangeInteger("Ethernet.TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16))
-    tci_type = ModularInteger("Ethernet.TCI", Pow(Number(2), Number(16)))
-
-    structure = [
+ETHERNET_ADDRESS = ModularInteger("Ethernet.Address", Pow(Number(2), Number(48)))
+ETHERNET_TYPE_LENGTH = RangeInteger(
+    "Ethernet.Type_Length", Number(46), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+)
+ETHERNET_TPID = RangeInteger("Ethernet.TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16))
+ETHERNET_TCI = ModularInteger("Ethernet.TCI", Pow(Number(2), Number(16)))
+ETHERNET_FRAME = Message(
+    "Ethernet.Frame",
+    [
         Link(INITIAL, Field("Destination")),
         Link(Field("Destination"), Field("Source")),
         Link(Field("Source"), Field("Type_Length_TPID")),
@@ -104,135 +100,117 @@ def create_ethernet_frame() -> Message:
                 LessEqual(Div(Length("Payload"), Number(8)), Number(1500)),
             ),
         ),
-    ]
-
-    types = {
-        Field("Destination"): address_type,
-        Field("Source"): address_type,
-        Field("Type_Length_TPID"): type_length_type,
-        Field("TPID"): tpid_type,
-        Field("TCI"): tci_type,
-        Field("Type_Length"): type_length_type,
+    ],
+    {
+        Field("Destination"): ETHERNET_ADDRESS,
+        Field("Source"): ETHERNET_ADDRESS,
+        Field("Type_Length_TPID"): ETHERNET_TYPE_LENGTH,
+        Field("TPID"): ETHERNET_TPID,
+        Field("TCI"): ETHERNET_TCI,
+        Field("Type_Length"): ETHERNET_TYPE_LENGTH,
         Field("Payload"): Opaque(),
-    }
+    },
+)
+ETHERNET_MODEL = Model(
+    [ETHERNET_ADDRESS, ETHERNET_TYPE_LENGTH, ETHERNET_TPID, ETHERNET_TCI, ETHERNET_FRAME]
+)
 
-    return Message("Ethernet.Frame", structure, types)
+ENUMERATION_PRIORITY = Enumeration(
+    "Enumeration.Priority",
+    {"LOW": Number(1), "MEDIUM": Number(4), "HIGH": Number(7)},
+    Number(3),
+    True,
+)
+ENUMERATION_MESSAGE = Message(
+    "Enumeration.Message",
+    [Link(INITIAL, Field("Priority")), Link(Field("Priority"), FINAL)],
+    {Field("Priority"): ENUMERATION_PRIORITY},
+)
+ENUMERATION_MODEL = Model([ENUMERATION_PRIORITY, ENUMERATION_MESSAGE])
 
-
-def create_enumeration_message() -> Message:
-    priority_type = Enumeration(
-        "Enumeration.Priority",
-        {"LOW": Number(1), "MEDIUM": Number(4), "HIGH": Number(7)},
-        Number(3),
-        True,
-    )
-
-    structure = [Link(INITIAL, Field("Priority")), Link(Field("Priority"), FINAL)]
-
-    types = {Field("Priority"): priority_type}
-
-    return Message("Enumeration.Message", structure, types)
-
-
-def create_array_message() -> Message:
-    length_type = ModularInteger("Arrays.Length", Pow(Number(2), Number(8)))
-
-    modular_type = ModularInteger("Arrays.Modular_Integer", Pow(Number(2), Number(16)))
-    modular_vector_type = Array("Arrays.Modular_Vector", modular_type)
-
-    range_type = RangeInteger("Arrays.Range_Integer", Number(1), Number(100), Number(8))
-    range_vector_type = Array("Arrays.Range_Vector", range_type)
-
-    enum_type = Enumeration(
-        "Arrays.Enumeration",
-        {"ZERO": Number(0), "ONE": Number(1), "TWO": Number(2)},
-        Number(8),
-        False,
-    )
-    enum_vector_type = Array("Arrays.Enumeration_Vector", enum_type)
-
-    av_enum_type = Enumeration(
-        "Arrays.AV_Enumeration",
-        {"AV_ZERO": Number(0), "AV_ONE": Number(1), "AV_TWO": Number(2)},
-        Number(8),
-        True,
-    )
-    av_enum_vector_type = Array("Arrays.AV_Enumeration_Vector", av_enum_type)
-
-    structure = [
+ARRAYS_LENGTH = ModularInteger("Arrays.Length", Pow(Number(2), Number(8)))
+ARRAYS_MODULAR_INTEGER = ModularInteger("Arrays.Modular_Integer", Pow(Number(2), Number(16)))
+ARRAYS_MODULAR_VECTOR = Array("Arrays.Modular_Vector", ARRAYS_MODULAR_INTEGER)
+ARRAYS_RANGE_INTEGER = RangeInteger("Arrays.Range_Integer", Number(1), Number(100), Number(8))
+ARRAYS_RANGE_VECTOR = Array("Arrays.Range_Vector", ARRAYS_RANGE_INTEGER)
+ARRAYS_ENUMERATION = Enumeration(
+    "Arrays.Enumeration", {"ZERO": Number(0), "ONE": Number(1), "TWO": Number(2)}, Number(8), False,
+)
+ARRAYS_ENUMERATION_VECTOR = Array("Arrays.Enumeration_Vector", ARRAYS_ENUMERATION)
+ARRAYS_AV_ENUMERATION = Enumeration(
+    "Arrays.AV_Enumeration",
+    {"AV_ZERO": Number(0), "AV_ONE": Number(1), "AV_TWO": Number(2)},
+    Number(8),
+    True,
+)
+ARRAYS_AV_ENUMERATION_VECTOR = Array("Arrays.AV_Enumeration_Vector", ARRAYS_AV_ENUMERATION)
+ARRAYS_MESSAGE = Message(
+    "Arrays.Message",
+    [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Modular_Vector"), length=Mul(Variable("Length"), Number(8))),
         Link(Field("Modular_Vector"), Field("Range_Vector"), length=Number(16)),
         Link(Field("Range_Vector"), Field("Enumeration_Vector"), length=Number(16)),
         Link(Field("Enumeration_Vector"), Field("AV_Enumeration_Vector"), length=Number(16)),
         Link(Field("AV_Enumeration_Vector"), FINAL),
-    ]
-
-    types = {
-        Field("Length"): length_type,
-        Field("Modular_Vector"): modular_vector_type,
-        Field("Range_Vector"): range_vector_type,
-        Field("Enumeration_Vector"): enum_vector_type,
-        Field("AV_Enumeration_Vector"): av_enum_vector_type,
-    }
-
-    return Message("Arrays.Message", structure, types)
-
-
-def create_array_inner_message() -> Message:
-    length_type = ModularInteger("Arrays.Length", Pow(Number(2), Number(8)))
-
-    structure = [
+    ],
+    {
+        Field("Length"): ARRAYS_LENGTH,
+        Field("Modular_Vector"): ARRAYS_MODULAR_VECTOR,
+        Field("Range_Vector"): ARRAYS_RANGE_VECTOR,
+        Field("Enumeration_Vector"): ARRAYS_ENUMERATION_VECTOR,
+        Field("AV_Enumeration_Vector"): ARRAYS_AV_ENUMERATION_VECTOR,
+    },
+)
+ARRAYS_INNER_MESSAGE = Message(
+    "Arrays.Inner_Message",
+    [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Payload"), length=Mul(Variable("Length"), Number(8))),
         Link(Field("Payload"), FINAL),
-    ]
-
-    types = {Field("Length"): length_type, Field("Payload"): Opaque()}
-
-    return Message("Arrays.Inner_Message", structure, types)
-
-
-def create_array_messages_message() -> Message:
-    structure = [
+    ],
+    {Field("Length"): ARRAYS_LENGTH, Field("Payload"): Opaque()},
+)
+ARRAYS_INNER_MESSAGES = Array("Arrays.Inner_Messages", ARRAYS_INNER_MESSAGE)
+ARRAYS_MESSAGES_MESSAGE = Message(
+    "Arrays.Messages_Message",
+    [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Messages"), length=Mul(Variable("Length"), Number(8))),
         Link(Field("Messages"), FINAL),
+    ],
+    {Field("Length"): ARRAYS_LENGTH, Field("Messages"): ARRAYS_INNER_MESSAGES},
+)
+ARRAYS_MODEL = Model(
+    [
+        ARRAYS_LENGTH,
+        ARRAYS_MODULAR_INTEGER,
+        ARRAYS_MODULAR_VECTOR,
+        ARRAYS_RANGE_INTEGER,
+        ARRAYS_RANGE_VECTOR,
+        ARRAYS_ENUMERATION,
+        ARRAYS_ENUMERATION_VECTOR,
+        ARRAYS_AV_ENUMERATION,
+        ARRAYS_AV_ENUMERATION_VECTOR,
+        ARRAYS_MESSAGE,
+        ARRAYS_INNER_MESSAGE,
+        ARRAYS_INNER_MESSAGES,
+        ARRAYS_MESSAGES_MESSAGE,
     ]
+)
 
-    types = {
-        Field("Length"): ModularInteger("Arrays.Length", Pow(Number(2), Number(8))),
-        Field("Messages"): Array("Arrays.Inner_Messages", ARRAY_INNER_MESSAGE),
-    }
-
-    return Message("Arrays.Messages_Message", structure, types)
-
-
-def create_expression_message() -> Message:
-    structure = [
+EXPRESSION_MESSAGE = Message(
+    "Expression.Message",
+    [
         Link(INITIAL, Field("Payload"), length=Number(16)),
         Link(Field("Payload"), FINAL, Equal(Variable("Payload"), Aggregate(Number(1), Number(2)))),
-    ]
+    ],
+    {Field("Payload"): Opaque()},
+)
+EXPRESSION_MODEL = Model([EXPRESSION_MESSAGE])
 
-    types = {Field("Payload"): Opaque()}
-
-    return Message("Expression.Message", structure, types)
-
-
-def create_derivation_message() -> Message:
-    return DerivedMessage("Derivation.Message", ARRAY_MESSAGE)
-
-
-NULL_MESSAGE = create_null_message()
-TLV_MESSAGE = create_tlv_message()
-NULL_MESSAGE_IN_TLV_MESSAGE = create_null_message_in_tlv_message()
-ETHERNET_FRAME = create_ethernet_frame()
-ENUMERATION_MESSAGE = create_enumeration_message()
-ARRAY_MESSAGE = create_array_message()
-ARRAY_INNER_MESSAGE = create_array_inner_message()
-ARRAY_MESSAGES_MESSAGE = create_array_messages_message()
-EXPRESSION_MESSAGE = create_expression_message()
-DERIVATION_MESSAGE = create_derivation_message()
+DERIVATION_MESSAGE = DerivedMessage("Derivation.Message", ARRAYS_MESSAGE)
+DERIVATION_MODEL = Model([*ARRAYS_MODEL.types, DERIVATION_MESSAGE])
 
 MODULAR_INTEGER = ModularInteger("P.Modular", Number(256))
 RANGE_INTEGER = RangeInteger("P.Range", Number(1), Number(100), Number(8))

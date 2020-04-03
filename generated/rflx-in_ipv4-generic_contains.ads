@@ -14,7 +14,7 @@ is
 
    pragma Annotate (GNATprove, Terminating, Generic_Contains);
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length, IPv4_Packet.Field_Cursors;
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
 
    function UDP_Datagram_In_IPv4_Packet_Payload (Ctx : IPv4_Packet.Context) return Boolean is
      (IPv4_Packet.Has_Buffer (Ctx)
@@ -22,6 +22,8 @@ is
       and then IPv4_Packet.Valid (Ctx, IPv4_Packet.F_Protocol)
       and then IPv4_Packet.Get_Protocol (Ctx).Known
       and then IPv4_Packet.Get_Protocol (Ctx).Enum = PROTOCOL_UDP);
+
+   use type IPv4_Packet.Field_Cursors;
 
    procedure Switch_To_Payload (IPv4_Packet_Context : in out IPv4_Packet.Context; UDP_Datagram_Context : out UDP_Datagram.Context) with
      Pre =>

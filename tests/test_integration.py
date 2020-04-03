@@ -10,14 +10,16 @@ from rflx.parser import Parser
 
 class TestIntegration(unittest.TestCase):
     def setUp(self) -> None:
-        self.testdir = "generated"
+        self.codedir = "generated"
         self.specdir = "specs"
+        self.testdir = "tests"
         self.maxDiff = None  # pylint: disable=invalid-name
 
-    def assert_equal_code(self, basenames: List[str]) -> None:
+    def assert_equal_code(self, spec_files: List[str]) -> None:
         parser = Parser()
-        for basename in basenames:
-            parser.parse(Path(f"{self.specdir}/{basename}.rflx"))
+
+        for spec_file in spec_files:
+            parser.parse(Path(spec_file))
 
         model = parser.create_model()
 
@@ -25,19 +27,30 @@ class TestIntegration(unittest.TestCase):
         generator.generate(model)
 
         for unit in generator.units.values():
-            filename = f"{self.testdir}/{unit.name}.ads"
+            filename = f"{self.codedir}/{unit.name}.ads"
             with open(filename, "r") as f:
                 self.assertEqual(unit.specification, f.read(), filename)
             if unit.body:
-                filename = f"{self.testdir}/{unit.name}.adb"
+                filename = f"{self.codedir}/{unit.name}.adb"
                 with open(filename, "r") as f:
                     self.assertEqual(unit.body, f.read(), filename)
 
-    @staticmethod
-    def assert_compilable_code(specification: str) -> None:
+    def assert_compilable_code(self, spec_files: List[str]) -> None:
+        parser = Parser()
+
+        for spec_file in spec_files:
+            parser.parse(Path(spec_file))
+
+        self._assert_compilable_code(parser)
+
+    def assert_compilable_code_string(self, specification: str) -> None:
         parser = Parser()
         parser.parse_string(specification)
 
+        self._assert_compilable_code(parser)
+
+    @staticmethod
+    def _assert_compilable_code(parser: Parser) -> None:
         model = parser.create_model()
 
         generator = Generator("RFLX")
@@ -59,25 +72,49 @@ class TestIntegration(unittest.TestCase):
                 )
 
     def test_ethernet(self) -> None:
-        self.assert_equal_code(["ethernet"])
+        self.assert_equal_code([f"{self.specdir}/ethernet.rflx"])
 
     def test_ipv4(self) -> None:
-        self.assert_equal_code(["ipv4"])
+        self.assert_equal_code([f"{self.specdir}/ipv4.rflx"])
 
     def test_in_ethernet(self) -> None:
-        self.assert_equal_code(["ethernet", "ipv4", "in_ethernet"])
+        self.assert_equal_code(
+            [
+                f"{self.specdir}/ethernet.rflx",
+                f"{self.specdir}/ipv4.rflx",
+                f"{self.specdir}/in_ethernet.rflx",
+            ]
+        )
 
     def test_udp(self) -> None:
-        self.assert_equal_code(["udp"])
+        self.assert_equal_code([f"{self.specdir}/udp.rflx"])
 
     def test_in_ipv4(self) -> None:
-        self.assert_equal_code(["ipv4", "udp", "in_ipv4"])
+        self.assert_equal_code(
+            [
+                f"{self.specdir}/ipv4.rflx",
+                f"{self.specdir}/udp.rflx",
+                f"{self.specdir}/in_ipv4.rflx",
+            ]
+        )
 
     def test_tlv(self) -> None:
-        self.assert_equal_code(["tlv"])
+        self.assert_equal_code([f"{self.specdir}/tlv.rflx"])
+
+    def test_tls(self) -> None:
+        self.assert_compilable_code(
+            [
+                f"{self.specdir}/tls_alert.rflx",
+                f"{self.specdir}/tls_handshake.rflx",
+                f"{self.specdir}/tls_record.rflx",
+            ]
+        )
+
+    def test_feature_integeration(self) -> None:
+        self.assert_compilable_code([f"{self.testdir}/feature_integration.rflx"])
 
     def test_type_name_equals_package_name(self) -> None:
-        specification = """
+        spec = """
                package Test is
 
                   type Test is {};
@@ -89,7 +126,7 @@ class TestIntegration(unittest.TestCase):
 
                end Test;
             """
-        self.assert_compilable_code(specification.format("mod 2**32"))
-        self.assert_compilable_code(specification.format("range 1 .. 2**32 - 1 with Size => 32"))
-        self.assert_compilable_code(specification.format("(A, B, C) with Size => 32"))
-        self.assert_compilable_code(specification.format("(A, B, C) with Size => 32, Always_Valid"))
+        self.assert_compilable_code_string(spec.format("mod 2**32"))
+        self.assert_compilable_code_string(spec.format("range 1 .. 2**32 - 1 with Size => 32"))
+        self.assert_compilable_code_string(spec.format("(A, B, C) with Size => 32"))
+        self.assert_compilable_code_string(spec.format("(A, B, C) with Size => 32, Always_Valid"))

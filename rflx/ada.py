@@ -882,23 +882,24 @@ class Unit(Ada):
 
 class PackageUnit(Unit):
     def __init__(
-        self, context: List[ContextItem], specification: PackageDeclaration, body: PackageBody
+        self, context: List[ContextItem], declaration: PackageDeclaration, body: PackageBody
     ) -> None:
-        assert specification.name == body.name, "name of specification and body differ"
         super().__init__(context)
-        self.__specification = specification
+        self.declaration = declaration
         self.__body = body
+
+        self._check_consistency()
 
     def __str__(self) -> str:
         raise NotImplementedError
 
     def __iadd__(self, other: object) -> "PackageUnit":
         if isinstance(other, (UnitPart, SubprogramUnitPart)):
-            self.__specification.declarations = self.__specification.declarations + list(
+            self.declaration.declarations = self.declaration.declarations + list(
                 other.specification
             )
-            self.__specification.private_declarations = (
-                self.__specification.private_declarations + list(other.private)
+            self.declaration.private_declarations = self.declaration.private_declarations + list(
+                other.private
             )
             self.__body.declarations = self.__body.declarations + list(other.body)
             return self
@@ -906,27 +907,33 @@ class PackageUnit(Unit):
 
     @property
     def specification(self) -> str:
+        self._check_consistency()
         context_clause = ""
         if self.context:
             context_clause = "\n".join(map(str, unique(self.context)))
             context_clause = f"{context_clause}\n\n"
-        return f"{context_clause}{self.__specification}"
+        return f"{context_clause}{self.declaration}"
 
     @property
     def body(self) -> str:
+        self._check_consistency()
         return str(self.__body)
 
     @property
     def name(self) -> str:
-        return self.__specification.name.lower().replace(".", "-")
+        self._check_consistency()
+        return self.declaration.name.lower().replace(".", "-")
+
+    def _check_consistency(self) -> None:
+        assert self.declaration.name == self.__body.name, "name of specification and body differ"
 
 
 class InstantiationUnit(Unit):
     def __init__(
-        self, context: List[ContextItem], specification: GenericPackageInstantiation
+        self, context: List[ContextItem], declaration: GenericPackageInstantiation
     ) -> None:
         super().__init__(context)
-        self.__specification = specification
+        self.declaration = declaration
 
     def __str__(self) -> str:
         raise NotImplementedError
@@ -940,7 +947,7 @@ class InstantiationUnit(Unit):
         if self.context:
             context_clause = "\n".join(map(str, unique(self.context)))
             context_clause = f"{context_clause}\n\n"
-        return f"{context_clause}{self.__specification}"
+        return f"{context_clause}{self.declaration}"
 
     @property
     def body(self) -> str:
@@ -948,7 +955,7 @@ class InstantiationUnit(Unit):
 
     @property
     def name(self) -> str:
-        return self.__specification.name.lower().replace(".", "-")
+        return self.declaration.name.lower().replace(".", "-")
 
 
 class UnitPart(NamedTuple):
@@ -966,7 +973,9 @@ class SubprogramUnitPart(NamedTuple):
 def generic_formal_part(parameters: Sequence[FormalDeclaration] = None) -> str:
     if parameters is None:
         return ""
-    return "generic" + ("".join(f"\n   {p}" for p in parameters) if parameters else "") + "\n"
+    return (
+        "generic" + ("".join(f"\n   {p}" for p in unique(parameters)) if parameters else "") + "\n"
+    )
 
 
 def declarative_items(declarations: List[Declaration], private: bool = False) -> str:

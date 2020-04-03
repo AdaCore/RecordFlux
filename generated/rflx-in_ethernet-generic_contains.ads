@@ -14,13 +14,15 @@ is
 
    pragma Annotate (GNATprove, Terminating, Generic_Contains);
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length, Ethernet_Frame.Field_Cursors;
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
 
    function IPv4_Packet_In_Ethernet_Frame_Payload (Ctx : Ethernet_Frame.Context) return Boolean is
      (Ethernet_Frame.Has_Buffer (Ctx)
       and then Ethernet_Frame.Present (Ctx, Ethernet_Frame.F_Payload)
       and then Ethernet_Frame.Valid (Ctx, Ethernet_Frame.F_Type_Length)
       and then Ethernet_Frame.Get_Type_Length (Ctx) = 16#800#);
+
+   use type Ethernet_Frame.Field_Cursors;
 
    procedure Switch_To_Payload (Ethernet_Frame_Context : in out Ethernet_Frame.Context; IPv4_Packet_Context : out IPv4_Packet.Context) with
      Pre =>
