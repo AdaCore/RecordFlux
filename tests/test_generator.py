@@ -1,24 +1,21 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Sequence
 
-from rflx.generator import Generator
+from rflx.generator import Generator, InternalError
 from rflx.generator.common import base_type_name, full_base_type_name
 from rflx.generator.core import LIBRARY_FILES
 from rflx.model import Model, Type
 from tests.models import (
-    ARRAY_INNER_MESSAGE,
-    ARRAY_MESSAGE,
-    ARRAY_MESSAGES_MESSAGE,
-    DERIVATION_MESSAGE,
-    ENUMERATION_MESSAGE,
-    ETHERNET_FRAME,
+    ARRAYS_MODEL,
+    DERIVATION_MODEL,
+    ENUMERATION_MODEL,
+    ETHERNET_MODEL,
     MODULAR_INTEGER,
-    NULL_MESSAGE,
-    NULL_MESSAGE_IN_TLV_MESSAGE,
+    NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
+    NULL_MODEL,
     RANGE_INTEGER,
-    TLV_MESSAGE,
+    TLV_MODEL,
 )
 
 
@@ -72,70 +69,81 @@ class TestGenerator(unittest.TestCase):
                 with open(f"{self.testdir}/{unit.name}.adb", "r") as f:
                     self.assertEqual(unit.body, f.read(), unit.name)
 
+    def test_invalid_prefix(self) -> None:
+        with self.assertRaisesRegex(InternalError, 'invalid prefix: "A..B"'):
+            Generator("A..B")
+
+    def test_unexpected_type(self) -> None:
+        class TestType(Type):
+            pass
+
+        with self.assertRaisesRegex(AssertionError, 'unexpected type "TestType"'):
+            Generator().generate(Model([TestType("P.T")]))
+
     def test_null_spec(self) -> None:
-        generator = generate([NULL_MESSAGE])
+        generator = generate(NULL_MODEL)
         self.assert_specification(generator)
 
     def test_null_body(self) -> None:
-        generator = generate([NULL_MESSAGE])
+        generator = generate(NULL_MODEL)
         self.assert_body(generator)
 
     def test_tlv_spec(self) -> None:
-        generator = generate([TLV_MESSAGE])
+        generator = generate(TLV_MODEL)
         self.assert_specification(generator)
 
     def test_tlv_body(self) -> None:
-        generator = generate([TLV_MESSAGE])
+        generator = generate(TLV_MODEL)
         self.assert_body(generator)
 
     def test_tlv_refinement_to_null_spec(self) -> None:
-        generator = generate([TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE])
+        generator = generate(NULL_MESSAGE_IN_TLV_MESSAGE_MODEL)
         self.assert_specification(generator)
 
     def test_tlv_refinement_to_null_body(self) -> None:
-        generator = generate([TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE])
+        generator = generate(NULL_MESSAGE_IN_TLV_MESSAGE_MODEL)
         self.assert_body(generator)
 
     def test_ethernet_spec(self) -> None:
-        generator = generate([ETHERNET_FRAME])
+        generator = generate(ETHERNET_MODEL)
         self.assert_specification(generator)
 
     def test_ethernet_body(self) -> None:
-        generator = generate([ETHERNET_FRAME])
+        generator = generate(ETHERNET_MODEL)
         self.assert_body(generator)
 
     def test_enumeration_spec(self) -> None:
-        generator = generate([ENUMERATION_MESSAGE])
+        generator = generate(ENUMERATION_MODEL)
         self.assert_specification(generator)
 
     def test_enumeration_body(self) -> None:
-        generator = generate([ENUMERATION_MESSAGE])
+        generator = generate(ENUMERATION_MODEL)
         self.assert_body(generator)
 
     def test_array_spec(self) -> None:
-        generator = generate([ARRAY_MESSAGE, ARRAY_INNER_MESSAGE, ARRAY_MESSAGES_MESSAGE])
+        generator = generate(ARRAYS_MODEL)
         self.assert_specification(generator)
 
     def test_array_body(self) -> None:
-        generator = generate([ARRAY_MESSAGE, ARRAY_INNER_MESSAGE, ARRAY_MESSAGES_MESSAGE])
+        generator = generate(ARRAYS_MODEL)
         self.assert_body(generator)
 
     # ISSUE: Componolit/RecordFlux#60
 
     # def test_expression_spec(self) -> None:
-    #     generator = generate([EXPRESSION_MESSAGE])
+    #     generator = generate(EXPRESSION_MODEL)
     #     self.assert_specification(generator)
 
     # def test_expression_body(self) -> None:
-    #     generator = generate([EXPRESSION_MESSAGE])
+    #     generator = generate(EXPRESSION_MODEL)
     #     self.assert_body(generator)
 
     def test_derivation_spec(self) -> None:
-        generator = generate([ARRAY_MESSAGE, DERIVATION_MESSAGE])
+        generator = generate(DERIVATION_MODEL)
         self.assert_specification(generator)
 
     def test_derivation_body(self) -> None:
-        generator = generate([ARRAY_MESSAGE, DERIVATION_MESSAGE])
+        generator = generate(DERIVATION_MODEL)
         self.assert_body(generator)
 
     def test_base_type_name(self) -> None:
@@ -147,7 +155,7 @@ class TestGenerator(unittest.TestCase):
         self.assertEqual(full_base_type_name(RANGE_INTEGER), "P.Range_Base")
 
 
-def generate(types: Sequence[Type]) -> Generator:
+def generate(model: Model) -> Generator:
     generator = Generator("RFLX", reproducible=True)
-    generator.generate(Model(types))
+    generator.generate(model)
     return generator

@@ -53,7 +53,13 @@ from rflx.expression import (
 )
 from rflx.model import BUILTINS_PACKAGE, FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
-from .common import VALID_CONTEXT, GeneratorCommon, full_base_type_name, length_dependent_condition
+from .common import (
+    VALID_CONTEXT,
+    GeneratorCommon,
+    full_base_type_name,
+    full_enum_name,
+    length_dependent_condition,
+)
 from .types import Types
 
 
@@ -239,7 +245,7 @@ class GeneratorGenerator:
             if field_type.package == BUILTINS_PACKAGE:
                 type_name = field_type.name
             elif isinstance(field_type, Enumeration) and field_type.always_valid:
-                type_name = self.types.prefixed(field_type.full_enum_name)
+                type_name = self.types.prefixed(full_enum_name(field_type))
             else:
                 type_name = self.types.prefixed(field_type.full_name)
 
