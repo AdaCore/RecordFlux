@@ -367,8 +367,8 @@ class AbstractMessage(Type):
             source = Field(f"{prefix}{l.source.name}") if l.source != INITIAL else INITIAL
             target = Field(f"{prefix}{l.target.name}") if l.target != FINAL else FINAL
             condition = prefixed_expression(l.condition)
-            length = prefixed_expression(l.length) if l.length != UNDEFINED else UNDEFINED
-            first = prefixed_expression(l.first) if l.first != UNDEFINED else UNDEFINED
+            length = prefixed_expression(l.length)
+            first = prefixed_expression(l.first)
             structure.append(Link(source, target, condition, length, first))
 
         types = {Field(f"{prefix}{f.name}"): t for f, t in self.types.items()}
