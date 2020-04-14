@@ -3,8 +3,9 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
-from rflx.common import generic_repr, indent, indent_next, unique, verify_identifier
-from rflx.expression import Case, Expr, Number
+from rflx.common import generic_repr, indent, indent_next, unique
+from rflx.expression import Case, Expr, Number, Variable
+from rflx.identifier import ID, StrID
 
 
 class Ada(ABC):
@@ -25,20 +26,14 @@ class Ada(ABC):
 
 
 class Declaration(Ada):
-    def __init__(self, name: str) -> None:
-        verify_identifier(name)
-        self.name = name
-
     @abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError
 
 
 class ContextItem(Ada):
-    def __init__(self, *names: str) -> None:
-        for name in names:
-            verify_identifier(name)
-        self.names = names
+    def __init__(self, *names: StrID) -> None:
+        self.names = list(map(ID, names))
 
     @abstractmethod
     def __str__(self) -> str:
@@ -47,19 +42,19 @@ class ContextItem(Ada):
 
 class WithClause(ContextItem):
     def __str__(self) -> str:
-        names = ", ".join(self.names)
+        names = ", ".join(map(str, self.names))
         return f"with {names};"
 
 
 class UsePackageClause(ContextItem, Declaration):
     def __str__(self) -> str:
-        names = ", ".join(self.names)
+        names = ", ".join(map(str, self.names))
         return f"use {names};"
 
 
 class UseTypeClause(ContextItem, Declaration):
     def __str__(self) -> str:
-        names = ", ".join(self.names)
+        names = ", ".join(map(str, self.names))
         return f"use type {names};"
 
 
@@ -206,13 +201,15 @@ class FormalSubprogramDeclaration(FormalDeclaration):
 
 
 class FormalPackageDeclaration(FormalDeclaration):
-    def __init__(self, name: str, generic_name: str, associations: Sequence[str] = None) -> None:
-        self.name = name
-        self.generic_name = generic_name
-        self.associations = associations or []
+    def __init__(
+        self, name: StrID, generic_name: StrID, associations: Sequence[StrID] = None
+    ) -> None:
+        self.name = ID(name)
+        self.generic_name = ID(generic_name)
+        self.associations = list(map(str, associations or []))
 
     def __str__(self) -> str:
-        associations = ", ".join(a for a in self.associations) if self.associations else "<>"
+        associations = ", ".join(map(str, self.associations)) if self.associations else "<>"
         return f"with package {self.name} is new {self.generic_name} ({associations});"
 
 
@@ -227,12 +224,12 @@ class FormalTypeDeclaration(FormalDeclaration):
 class PackageDeclaration(Declaration):
     def __init__(
         self,
-        name: str,
+        identifier: StrID,
         declarations: List[Declaration] = None,
         private_declarations: List[Declaration] = None,
         formal_parameters: List[FormalDeclaration] = None,
     ) -> None:
-        super().__init__(name)
+        self.identifier = ID(identifier)
         self.declarations = declarations or []
         self.private_declarations = private_declarations or []
         self.formal_parameters = formal_parameters
@@ -240,16 +237,16 @@ class PackageDeclaration(Declaration):
     def __str__(self) -> str:
         return (
             f"{generic_formal_part(self.formal_parameters)}"
-            f"package {self.name} with\n  SPARK_Mode\nis\n\n"
+            f"package {self.identifier} with\n  SPARK_Mode\nis\n\n"
             f"{declarative_items(self.declarations)}"
             f"{declarative_items(self.private_declarations, True)}"
-            f"end {self.name};\n"
+            f"end {self.identifier};\n"
         )
 
 
 class PackageBody(Declaration):
-    def __init__(self, name: str, declarations: List[Declaration] = None) -> None:
-        super().__init__(name)
+    def __init__(self, identifier: StrID, declarations: List[Declaration] = None) -> None:
+        self.identifier = ID(identifier)
         self.declarations = declarations or []
 
     def __str__(self) -> str:
@@ -257,43 +254,44 @@ class PackageBody(Declaration):
             return ""
 
         return (
-            f"package body {self.name} with\n  SPARK_Mode\nis\n\n"
-            f"{declarative_items(self.declarations)}end {self.name};\n"
+            f"package body {self.identifier} with\n  SPARK_Mode\nis\n\n"
+            f"{declarative_items(self.declarations)}end {self.identifier};\n"
         )
 
 
 class GenericPackageInstantiation(Declaration):
-    def __init__(self, name: str, generic_package: str, associations: List[str] = None) -> None:
-        super().__init__(name)
-        self.generic_package = generic_package
-        self.associations = associations or []
+    def __init__(
+        self, identifier: StrID, generic_package: StrID, associations: Sequence[StrID] = None
+    ) -> None:
+        self.identifier = ID(identifier)
+        self.generic_package = ID(generic_package)
+        self.associations = list(map(ID, associations or []))
 
     def __str__(self) -> str:
-        associations = ", ".join(self.associations)
+        associations = ", ".join(map(str, self.associations))
         if associations:
             associations = f" ({associations})"
-        return f"package {self.name} is new {self.generic_package}{associations};\n"
+        return f"package {self.identifier} is new {self.generic_package}{associations};\n"
 
 
 class ObjectDeclaration(Declaration):
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        identifiers: Sequence[str],
-        type_name: str,
+        identifiers: Sequence[StrID],
+        type_name: StrID,
         expression: Expr = None,
         constant: bool = False,
         aspects: Sequence[Aspect] = None,
     ) -> None:
-        super().__init__("")
-        self.identifiers = identifiers
-        self.type_name = type_name
+        self.identifiers = list(map(ID, identifiers))
+        self.type_name = ID(type_name)
         self.expression = expression
         self.constant = constant
         self.aspects = aspects or []
 
     def __str__(self) -> str:
-        identifiers = ", ".join(self.identifiers)
+        identifiers = ", ".join(map(str, self.identifiers))
         constant = "constant " if self.constant else ""
         expression = f" := {self.expression}" if self.expression else ""
         return (
@@ -303,16 +301,15 @@ class ObjectDeclaration(Declaration):
 
 
 class Discriminant(Ada):
-    def __init__(self, identifiers: Sequence[str], type_name: str, default: Expr = None) -> None:
-        for name in identifiers:
-            verify_identifier(name)
-        verify_identifier(type_name)
-        self.identifiers = identifiers
-        self.type_name = type_name
+    def __init__(
+        self, identifiers: Sequence[StrID], type_name: StrID, default: Expr = None
+    ) -> None:
+        self.identifiers = list(map(ID, identifiers))
+        self.type_name = ID(type_name)
         self.default = default
 
     def __str__(self) -> str:
-        identifiers = ", ".join(self.identifiers)
+        identifiers = ", ".join(map(str, self.identifiers))
         default = f" := {self.default}" if self.default else ""
         return f"{identifiers} : {self.type_name}{default}"
 
@@ -320,17 +317,17 @@ class Discriminant(Ada):
 class TypeDeclaration(Declaration):
     def __init__(
         self,
-        name: str,
+        identifier: StrID,
         discriminants: Sequence[Discriminant] = None,
         aspects: Sequence[Aspect] = None,
     ) -> None:
-        super().__init__(name)
+        self.identifier = ID(identifier)
         self.discriminants = discriminants
         self.aspects = aspects or []
 
     def __str__(self) -> str:
         return (
-            f"type {self.name}{self.discriminant_part} is{self.type_definition}"
+            f"type {self.identifier}{self.discriminant_part} is{self.type_definition}"
             f"{aspect_specification(self.aspects)};{self.extra_declaration}"
         )
 
@@ -348,8 +345,8 @@ class TypeDeclaration(Declaration):
 
 
 class ModularType(TypeDeclaration):
-    def __init__(self, name: str, modulus: Expr) -> None:
-        super().__init__(name)
+    def __init__(self, identifier: StrID, modulus: Expr) -> None:
+        super().__init__(identifier)
         self.modulus = modulus
 
     @property
@@ -358,8 +355,8 @@ class ModularType(TypeDeclaration):
 
 
 class RangeType(TypeDeclaration):
-    def __init__(self, name: str, first: Expr, last: Expr, size: Expr) -> None:
-        super().__init__(name, aspects=[Size(size)])
+    def __init__(self, identifier: StrID, first: Expr, last: Expr, size: Expr) -> None:
+        super().__init__(identifier, aspects=[Size(size)])
         self.first = first
         self.last = last
         self.size = size
@@ -371,9 +368,9 @@ class RangeType(TypeDeclaration):
 
 class EnumerationType(TypeDeclaration):
     def __init__(
-        self, name: str, literals: Mapping[str, Optional[Number]], size: Number = None
+        self, identifier: StrID, literals: Mapping[str, Optional[Number]], size: Number = None,
     ) -> None:
-        super().__init__(name, aspects=([Size(size)] if size else []))
+        super().__init__(identifier, aspects=([Size(size)] if size else []))
         self.literals = (
             OrderedDict(sorted(literals.items(), key=lambda t: t[1]))
             if None not in literals.values()
@@ -392,14 +389,16 @@ class EnumerationType(TypeDeclaration):
             f"{k} => {v}" for k, v in self.literals.items() if v is not None
         )
         return (
-            f"\nfor {self.name} use ({literal_representation});" if literal_representation else ""
+            f"\nfor {self.identifier} use ({literal_representation});"
+            if literal_representation
+            else ""
         )
 
 
 class Subtype(TypeDeclaration):
-    def __init__(self, name: str, base_name: str) -> None:
-        super().__init__(name)
-        self.base_name = base_name
+    def __init__(self, identifier: StrID, base_name: StrID) -> None:
+        super().__init__(identifier)
+        self.base_name = ID(base_name)
 
     def __str__(self) -> str:
         return "sub" + super().__str__()
@@ -410,8 +409,8 @@ class Subtype(TypeDeclaration):
 
 
 class RangeSubtype(Subtype):
-    def __init__(self, name: str, base_name: str, first: Expr, last: Expr) -> None:
-        super().__init__(name, base_name)
+    def __init__(self, identifier: StrID, base_name: StrID, first: Expr, last: Expr) -> None:
+        super().__init__(identifier, base_name)
         self.first = first
         self.last = last
 
@@ -421,9 +420,9 @@ class RangeSubtype(Subtype):
 
 
 class DerivedType(TypeDeclaration):
-    def __init__(self, name: str, type_name: str) -> None:
-        super().__init__(name)
-        self.type_name = type_name
+    def __init__(self, identifier: StrID, type_name: StrID) -> None:
+        super().__init__(identifier)
+        self.type_name = ID(type_name)
 
     @property
     def type_definition(self) -> str:
@@ -443,11 +442,10 @@ class DiscreteType(TypeDeclaration):
 
 
 class ArrayType(TypeDeclaration):
-    def __init__(self, name: str, index_type: str, component_name: str) -> None:
-        super().__init__(name)
-        self.name = name
-        self.index_type = index_type
-        self.component_name = component_name
+    def __init__(self, identifier: StrID, index_type: StrID, component_name: StrID) -> None:
+        super().__init__(identifier)
+        self.index_type = ID(index_type)
+        self.component_name = ID(component_name)
 
     @property
     def type_definition(self) -> str:
@@ -461,9 +459,9 @@ class UnconstrainedArrayType(ArrayType):
 
 
 class AccessType(TypeDeclaration):
-    def __init__(self, name: str, object_name: str) -> None:
-        super().__init__(name)
-        self.object_name = object_name
+    def __init__(self, identifier: StrID, object_name: StrID) -> None:
+        super().__init__(identifier)
+        self.object_name = ID(object_name)
 
     @property
     def type_definition(self) -> str:
@@ -471,11 +469,9 @@ class AccessType(TypeDeclaration):
 
 
 class Component(Ada):
-    def __init__(self, name: str, type_name: str, default: Expr = None) -> None:
-        verify_identifier(name)
-        verify_identifier(type_name)
-        self.name = name
-        self.type_name = type_name
+    def __init__(self, name: StrID, type_name: StrID, default: Expr = None) -> None:
+        self.name = ID(name)
+        self.type_name = ID(type_name)
         self.default = default
 
     def __str__(self) -> str:
@@ -503,9 +499,8 @@ class Variant(Ada):
 
 
 class VariantPart(Ada):
-    def __init__(self, discriminant_name: str, variants: Sequence[Variant]) -> None:
-        verify_identifier(discriminant_name)
-        self.discriminant_name = discriminant_name
+    def __init__(self, discriminant_name: StrID, variants: Sequence[Variant]) -> None:
+        self.discriminant_name = ID(discriminant_name)
         self.variants = variants
 
     def __str__(self) -> str:
@@ -517,13 +512,13 @@ class RecordType(TypeDeclaration):
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        name: str,
+        identifier: StrID,
         components: List[Component],
         discriminants: Sequence[Discriminant] = None,
         variant_part: VariantPart = None,
         aspects: Sequence[Aspect] = None,
     ) -> None:
-        super().__init__(name, discriminants, aspects)
+        super().__init__(identifier, discriminants, aspects)
         self.components = components
         self.discriminants = discriminants or []
         self.variant_part = variant_part
@@ -552,10 +547,8 @@ class NullStatement(Statement):
 
 
 class Assignment(Statement):
-    def __init__(self, name: Union[str, Expr], expression: Expr) -> None:
-        if isinstance(name, str):
-            verify_identifier(name)
-        self.name = name
+    def __init__(self, name: Union[StrID, Expr], expression: Expr) -> None:
+        self.name = name if isinstance(name, Expr) else Variable(name)
         self.expression = expression
 
     def __str__(self) -> str:
@@ -563,20 +556,18 @@ class Assignment(Statement):
 
 
 class CallStatement(Statement):
-    def __init__(self, name: str, arguments: Sequence[Expr]) -> None:
-        verify_identifier(name)
-        self.name = name
+    def __init__(self, identifier: StrID, arguments: Sequence[Expr]) -> None:
+        self.identifier = ID(identifier)
         self.arguments = arguments
 
     def __str__(self) -> str:
         arguments = ", ".join(map(str, self.arguments))
-        return f"{self.name} ({arguments});"
+        return f"{self.identifier} ({arguments});"
 
 
 class PragmaStatement(Statement):
-    def __init__(self, name: str, parameters: Sequence[str]) -> None:
-        verify_identifier(name)
-        self.name = name
+    def __init__(self, identifier: StrID, parameters: Sequence[str]) -> None:
+        self.identifier = ID(identifier)
         self.pragma_parameters = parameters
 
     def __str__(self) -> str:
@@ -584,7 +575,7 @@ class PragmaStatement(Statement):
         if self.pragma_parameters:
             parameters = ", ".join(self.pragma_parameters)
             parameters = f" ({parameters})"
-        return f"pragma {self.name}{parameters};"
+        return f"pragma {self.identifier}{parameters};"
 
 
 class ReturnStatement(Statement):
@@ -646,16 +637,15 @@ class CaseStatement(Statement):
 
 
 class Parameter(Ada):
-    def __init__(self, identifiers: Sequence[str], type_name: str, default: Expr = None) -> None:
-        for name in identifiers:
-            verify_identifier(name)
-        verify_identifier(type_name)
-        self.identifiers = identifiers
-        self.type_name = type_name
+    def __init__(
+        self, identifiers: Sequence[StrID], type_name: StrID, default: Expr = None
+    ) -> None:
+        self.identifiers = list(map(ID, identifiers))
+        self.type_name = ID(type_name)
         self.default = default
 
     def __str__(self) -> str:
-        identifiers = ", ".join(self.identifiers)
+        identifiers = ", ".join(map(str, self.identifiers))
         default = f" := {self.default}" if self.default else ""
         return f"{identifiers} : {self.mode}{self.type_name}{default}"
 
@@ -679,8 +669,8 @@ class InOutParameter(Parameter):
 class AccessParameter(Parameter):
     def __init__(
         self,
-        identifiers: Sequence[str],
-        type_name: str,
+        identifiers: Sequence[StrID],
+        type_name: StrID,
         default: Expr = None,
         constant: bool = False,
     ) -> None:
@@ -693,9 +683,8 @@ class AccessParameter(Parameter):
 
 
 class SubprogramSpecification(Ada):
-    def __init__(self, name: str, parameters: Sequence[Parameter] = None) -> None:
-        verify_identifier(name)
-        self.name = name
+    def __init__(self, identifier: StrID, parameters: Sequence[Parameter] = None) -> None:
+        self.identifier = ID(identifier)
         self.parameters = parameters or []
 
     def _parameters(self) -> str:
@@ -708,21 +697,22 @@ class SubprogramSpecification(Ada):
 
 class ProcedureSpecification(SubprogramSpecification):
     def __str__(self) -> str:
-        return f"procedure {self.name}{self._parameters()}"
+        return f"procedure {self.identifier}{self._parameters()}"
 
 
 class FunctionSpecification(SubprogramSpecification):
-    def __init__(self, name: str, return_type: str, parameters: Sequence[Parameter] = None) -> None:
-        super().__init__(name, parameters)
-        self.return_type = return_type
+    def __init__(
+        self, identifier: StrID, return_type: StrID, parameters: Sequence[Parameter] = None
+    ) -> None:
+        super().__init__(identifier, parameters)
+        self.return_type = ID(return_type)
 
     def __str__(self) -> str:
-        return f"function {self.name}{self._parameters()} return {self.return_type}"
+        return f"function {self.identifier}{self._parameters()} return {self.return_type}"
 
 
 class Subprogram(Declaration):
     def __init__(self, specification: SubprogramSpecification) -> None:
-        super().__init__(specification.name)
         self.specification = specification
 
     @abstractmethod
@@ -774,7 +764,7 @@ class SubprogramBody(Subprogram):
             f"{self._declarations()}"
             f"begin\n"
             f"{self._statements()}\n"
-            f"end {self.specification.name};"
+            f"end {self.specification.identifier};"
         )
 
 
@@ -793,51 +783,49 @@ class ExpressionFunctionDeclaration(Subprogram):
 
 class GenericProcedureInstantiation(Subprogram):
     def __init__(
-        self, name: str, specification: ProcedureSpecification, associations: List[str] = None
+        self, name: StrID, specification: ProcedureSpecification, associations: List[StrID] = None,
     ) -> None:
-        verify_identifier(name)
         super().__init__(specification)
-        self.name = name
+        self.name = ID(name)
         self.parameters = specification.parameters
-        self.associations = associations or []
+        self.associations = list(map(ID, associations or []))
 
     def __str__(self) -> str:
-        associations = ", ".join(self.associations)
+        associations = ", ".join(map(str, self.associations))
         if associations:
             associations = f" ({associations})"
-        return f"procedure {self.name} is new {self.specification.name}{associations};"
+        return f"procedure {self.name} is new {self.specification.identifier}{associations};"
 
 
 class GenericFunctionInstantiation(Subprogram):
     def __init__(
-        self, name: str, specification: FunctionSpecification, associations: List[str] = None
+        self, name: StrID, specification: FunctionSpecification, associations: List[StrID] = None,
     ) -> None:
-        verify_identifier(name)
         super().__init__(specification)
-        self.name = name
+        self.name = ID(name)
         self.parameters = specification.parameters
-        self.associations = associations or []
+        self.associations = list(map(ID, associations or []))
 
     def __str__(self) -> str:
-        associations = ", ".join(self.associations)
+        associations = ", ".join(map(str, self.associations))
         if associations:
             associations = f" ({associations})"
-        return f"function {self.name} is new {self.specification.name}{associations};"
+        return f"function {self.name} is new {self.specification.identifier}{associations};"
 
 
 class SubprogramRenamingDeclaration(Subprogram):
-    def __init__(self, specification: SubprogramSpecification, subprogram_name: str) -> None:
-        verify_identifier(subprogram_name)
+    def __init__(self, specification: SubprogramSpecification, subprogram_name: StrID) -> None:
         super().__init__(specification)
-        self.subprogram_name = subprogram_name
+        self.subprogram_name = ID(subprogram_name)
 
     def __str__(self) -> str:
         return f"{self.specification} renames {self.subprogram_name};"
 
 
 class Pragma(Declaration, ContextItem):
-    def __init__(self, name: str, parameters: List[str] = None) -> None:
-        super().__init__(name)
+    def __init__(self, identifier: StrID, parameters: List[str] = None) -> None:
+        super().__init__()
+        self.identifier = ID(identifier)
         self.pragma_parameters = parameters or []
 
     def __eq__(self, other: object) -> bool:
@@ -853,7 +841,7 @@ class Pragma(Declaration, ContextItem):
         if self.pragma_parameters:
             parameters = ", ".join(self.pragma_parameters)
             parameters = f" ({parameters})"
-        return f"pragma {self.name}{parameters};"
+        return f"pragma {self.identifier}{parameters};"
 
 
 class Unit(Ada):
@@ -922,10 +910,12 @@ class PackageUnit(Unit):
     @property
     def name(self) -> str:
         self._check_consistency()
-        return self.declaration.name.lower().replace(".", "-")
+        return str(self.declaration.identifier).lower().replace(".", "-")
 
     def _check_consistency(self) -> None:
-        assert self.declaration.name == self.__body.name, "name of specification and body differ"
+        assert (
+            self.declaration.identifier == self.__body.identifier
+        ), "identifier of specification and body differ"
 
 
 class InstantiationUnit(Unit):
@@ -955,7 +945,7 @@ class InstantiationUnit(Unit):
 
     @property
     def name(self) -> str:
-        return self.declaration.name.lower().replace(".", "-")
+        return str(self.declaration.identifier).lower().replace(".", "-")
 
 
 class UnitPart(NamedTuple):

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Union
 
 from rflx import __version__
+from rflx.common import flat_name
 from rflx.generator import Generator, InternalError
 from rflx.graph import Graph
 from rflx.model import Model, ModelError
@@ -135,6 +136,6 @@ def graph(args: argparse.Namespace) -> None:
     model = parse(args.files)
 
     for m in model.messages:
-        message = m.full_name.replace(".", "_")
+        message = flat_name(m.full_name)
         filename = Path(directory).joinpath(message).with_suffix(f".{args.format}")
         Graph(m).write(filename, fmt=args.format)

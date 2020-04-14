@@ -8,7 +8,8 @@ from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import z3
 
-from rflx.common import generic_repr, indent, indent_next, unique, verify_identifier
+from rflx.common import generic_repr, indent, indent_next, unique
+from rflx.identifier import ID, StrID
 
 
 class Precedence(Enum):
@@ -93,7 +94,7 @@ class Expr(ABC):
 
     def __solve(self, forall: bool = False) -> ProofResult:
         cond = self.z3expr()
-        variables = {v for v in self.variables(True) if isinstance(v.name, str)}
+        variables = self.variables(True)
         if variables:
             if forall:
                 cond = z3.ForAll([v.z3expr() for v in variables], cond)
@@ -710,19 +711,13 @@ class Mod(BinExpr):
 
 
 class Name(Expr):
-    def __init__(self, name: Union[str, Expr], negative: bool = False) -> None:
-        if isinstance(name, str):
-            verify_identifier(name)
-        self.name = name
+    def __init__(self, negative: bool = False) -> None:
         self.negative = negative
 
     def __str__(self) -> str:
         if self.negative:
             return f"(-{self.representation})"
         return self.representation
-
-    def __hash__(self) -> int:
-        return hash(str(self.name) + self.__class__.__name__)
 
     def __neg__(self) -> Expr:
         negated_self = copy(self)
@@ -732,6 +727,10 @@ class Name(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.literal
+
+    @abstractproperty
+    def representation(self) -> str:
+        raise NotImplementedError
 
     def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         if facts:
@@ -744,15 +743,23 @@ class Name(Expr):
                 return -facts[positive_self] if self.negative else facts[positive_self]
         return self
 
-    @property
-    def representation(self) -> str:
-        return str(self.name)
-
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
 class Variable(Name):
+    def __init__(self, identifier: StrID, negative: bool = False) -> None:
+        super().__init__(negative)
+        self.identifier = ID(identifier)
+
+    @property
+    def name(self) -> str:
+        return str(self.identifier)
+
+    @property
+    def representation(self) -> str:
+        return str(self.name)
+
     def variables(self, proof: bool = False) -> List["Variable"]:
         return [self]
 
@@ -764,22 +771,33 @@ class Variable(Name):
         raise TypeError
 
 
-class Attribute(Variable):
+class Attribute(Name):
+    def __init__(self, prefix: Expr, negative: bool = False) -> None:
+        super().__init__(negative)
+        self.prefix = prefix
+
     @property
     def representation(self) -> str:
-        return f"{self.name}'{self.__class__.__name__}"
+        return f"{self.prefix}'{self.__class__.__name__}"
 
-    def z3expr(self) -> z3.ArithRef:
-        if not isinstance(self.name, str):
-            raise TypeError
-        return z3.Int(f"{self.name}'{self.__class__.__name__}")
+    def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
+        simplified_expr = super().simplified(facts)
+        if isinstance(simplified_expr, self.__class__):
+            prefix = simplified_expr.prefix.simplified(facts)
+            return self.__class__(prefix, simplified_expr.negative)
+        return simplified_expr
 
     def variables(self, proof: bool = False) -> List[Variable]:
         if proof:
-            if not isinstance(self.name, str):
+            if not isinstance(self.prefix, Variable):
                 raise TypeError
-            return [Variable(f"{self.name}'{self.__class__.__name__}")]
-        return [self]
+            return [Variable(f"{self.prefix}'{self.__class__.__name__}")]
+        return self.prefix.variables()
+
+    def z3expr(self) -> z3.ArithRef:
+        if not isinstance(self.prefix, Variable):
+            raise TypeError
+        return z3.Int(f"{self.prefix}'{self.__class__.__name__}")
 
 
 class Size(Attribute):
@@ -815,35 +833,73 @@ class Constrained(Attribute):
 
 
 class Indexed(Name):
-    def __init__(self, name: Union[str, Expr], *elements: Expr) -> None:
-        super().__init__(name)
+    def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
+        super().__init__(negative)
+        self.prefix = prefix
         self.elements = list(elements)
 
     @property
     def representation(self) -> str:
-        return f"{self.name} (" + ", ".join(map(str, self.elements)) + ")"
+        return f"{self.prefix} (" + ", ".join(map(str, self.elements)) + ")"
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
 class Selected(Name):
-    def __init__(self, name: Union[str, Expr], selector_name: str) -> None:
-        super().__init__(name)
-        verify_identifier(selector_name)
-        self.selector_name = selector_name
+    def __init__(self, prefix: Expr, selector_name: StrID, negative: bool = False) -> None:
+        super().__init__(negative)
+        self.prefix = prefix
+        self.selector_name = ID(selector_name)
 
     @property
     def representation(self) -> str:
-        return f"{self.name}.{self.selector_name}"
+        return f"{self.prefix}.{self.selector_name}"
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+
+class Call(Name):
+    def __init__(self, name: StrID, args: Sequence[Expr] = None) -> None:
+        super().__init__()
+        self.name = name
+        self.args = args or []
+
+    @property
+    def representation(self) -> str:
+        args = ", ".join(map(str, self.args))
+        if args:
+            args = f" ({args})"
+        call = f"{self.name}{args}"
+        return call
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+
+class Slice(Name):
+    def __init__(self, prefix: Expr, first: Expr, last: Expr) -> None:
+        super().__init__()
+        self.prefix = prefix
+        self.first = first
+        self.last = last
+
+    @property
+    def representation(self) -> str:
+        return f"{self.prefix} ({self.first} .. {self.last})"
+
+    def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
+        return Slice(self.prefix, self.first.simplified(facts), self.last.simplified(facts))
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
 class UndefinedExpr(Name):
-    def __init__(self, name: str = "UNDEFINED") -> None:
-        super().__init__(name)
+    @property
+    def representation(self) -> str:
+        return "__UNDEFINED__"
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -874,10 +930,8 @@ class Aggregate(Expr):
 
 
 class NamedAggregate(Expr):
-    def __init__(self, *elements: Tuple[str, Expr]) -> None:
-        self.elements = list(elements)
-        for name, _ in self.elements:
-            verify_identifier(name)
+    def __init__(self, *elements: Tuple[StrID, Expr]) -> None:
+        self.elements = [(ID(n), e) for n, e in elements]
 
     def __str__(self) -> str:
         return "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
@@ -1059,41 +1113,6 @@ class NotIn(Relation):
         raise NotImplementedError
 
 
-class Call(Name):
-    def __init__(self, name: str, args: Sequence[Expr] = None) -> None:
-        super().__init__(name)
-        self.args = args or []
-
-    def __str__(self) -> str:
-        args = ", ".join(map(str, self.args))
-        if args:
-            args = f" ({args})"
-        call = f"{self.name}{args}"
-        return call
-
-    def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
-        return self
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-
-class Slice(Name):
-    def __init__(self, name: Union[str, Expr], first: Expr, last: Expr) -> None:
-        super().__init__(name)
-        self.first = first
-        self.last = last
-
-    def __str__(self) -> str:
-        return f"{self.name} ({self.first} .. {self.last})"
-
-    def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
-        return Slice(self.name, self.first.simplified(facts), self.last.simplified(facts))
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-
 class If(Expr):
     def __init__(
         self, condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None
@@ -1184,7 +1203,7 @@ class Case(Expr):
         return Precedence.literal
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
-        if len(self.case_statements) == 1 and self.case_statements[0][0] == Name("others"):
+        if len(self.case_statements) == 1 and self.case_statements[0][0] == Variable("others"):
             return self.case_statements[0][1]
         return Case(
             self.control_expression.simplified(facts),

@@ -618,7 +618,6 @@ class TestPyRFLX(unittest.TestCase):
         self.assertTrue(self.icmp.valid_message)
         self.assertEqual(self.icmp.bytestring, test_bytes)
         self.assertEqual(self.icmp.accepted_type, bytes)
-        self.assertEqual(self.icmp.literals, {})
         self.assertEqual(self.icmp.size, Number(448))
 
     def test_ethernet_parse_binary(self) -> None:

@@ -50,6 +50,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import Array, Enumeration, ModelError, ModularInteger, RangeInteger, Type
 
 from .ast import (
@@ -247,7 +248,7 @@ def message_type_definition() -> Token:
     )
     component_item.setName("Component")
     null_component_item = Keyword("null") - then - semicolon()
-    null_component_item.setParseAction(lambda t: Component(t[0], "", [t[1]]))
+    null_component_item.setParseAction(lambda t: Component("null", "null", [t[1]]))
     null_component_item.setName("NullComponent")
     component_list = Group(
         Optional(null_component_item) - component_item - ZeroOrMore(component_item)
@@ -503,11 +504,12 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> str:
 @fatalexceptions
 def parse_attribute(string: str, location: int, tokens: ParseResults) -> Attribute:
     if tokens[2] == "First":
-        return First(tokens[0])
+        return First(Variable(tokens[0]))
     if tokens[2] == "Last":
-        return Last(tokens[0])
+        return Last(Variable(tokens[0]))
     if tokens[2] == "Length":
-        return Length(tokens[0])
+        return Length(Variable(tokens[0]))
+
     raise ParseFatalException(string, location, "unexpected attribute")
 
 
@@ -525,16 +527,16 @@ def parse_aspects(string: str, location: int, tokens: ParseResults) -> Dict[str,
 def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
     try:
         name = tokens[1]
-        full_name = f"__PACKAGE__.{name}"
+        identifier = ID(f"__PACKAGE__.{name}")
         if tokens[3] == "mod":
-            return ModularInteger(full_name, *tokens[4:6])
+            return ModularInteger(identifier, *tokens[4:6])
         if tokens[3] == "range":
             tokens[6] = tokens[6]["size"]
-            return RangeInteger(full_name, *tokens[4:7])
+            return RangeInteger(identifier, *tokens[4:7])
         if tokens[3] == "message":
-            return MessageSpec(full_name, tokens[4])
+            return MessageSpec(identifier, tokens[4])
         if tokens[3] == "null message":
-            return MessageSpec(full_name, [])
+            return MessageSpec(identifier, [])
         if tokens[3] == "(":
             elements = dict(tokens[4:-2])
             aspects = tokens[-1]
@@ -542,12 +544,12 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
                 raise ModelError(f'"{name}" contains duplicate elements')
             if "always_valid" not in aspects:
                 aspects["always_valid"] = False
-            return Enumeration(full_name, elements, aspects["size"], aspects["always_valid"])
+            return Enumeration(identifier, elements, aspects["size"], aspects["always_valid"])
         if tokens[3] == "new":
-            return DerivationSpec(full_name, tokens[4])
+            return DerivationSpec(identifier, tokens[4])
         if tokens[3] == "array of":
             return Array(
-                full_name,
+                identifier,
                 ReferenceSpec(tokens[4] if "." in tokens[4] else f"__PACKAGE__.{tokens[4]}"),
             )
     except ModelError as e:
@@ -559,7 +561,7 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
 def parse_refinement(string: str, location: int, tokens: ParseResults) -> RefinementSpec:
     if "constraint" not in tokens:
         tokens.append(TRUE)
-    return RefinementSpec("", tokens[0], tokens[1], tokens[2], tokens[3])
+    return RefinementSpec(tokens[0], tokens[1], tokens[2], tokens[3])
 
 
 @fatalexceptions

@@ -18,6 +18,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
     FINAL,
@@ -41,9 +42,17 @@ M_NO_REF = UnprovenMessage(
     [
         Link(INITIAL, Field("F1"), length=Number(16)),
         Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),),
         Link(
-            Field("F2"), Field("F4"), GreaterEqual(Variable("F2"), Number(200)), first=First("F2"),
+            Field("F2"),
+            Field("F3"),
+            LessEqual(Variable("F2"), Number(100)),
+            first=First(Variable("F2")),
+        ),
+        Link(
+            Field("F2"),
+            Field("F4"),
+            GreaterEqual(Variable("F2"), Number(200)),
+            first=First(Variable("F2")),
         ),
         Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
         Link(Field("F4"), FINAL),
@@ -100,9 +109,17 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
     [
         Link(INITIAL, Field("F1"), length=Number(16)),
         Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),),
         Link(
-            Field("F2"), Field("F4"), GreaterEqual(Variable("F2"), Number(200)), first=First("F2"),
+            Field("F2"),
+            Field("F3"),
+            LessEqual(Variable("F2"), Number(100)),
+            first=First(Variable("F2")),
+        ),
+        Link(
+            Field("F2"),
+            Field("F4"),
+            GreaterEqual(Variable("F2"), Number(200)),
+            first=First(Variable("F2")),
         ),
         Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
         Link(Field("F4"), FINAL),
@@ -141,10 +158,10 @@ class TestModel(TestCase):
     def test_type_name(self) -> None:
         t = ModularInteger("Package.Type_Name", Number(256))
         self.assertEqual(t.name, "Type_Name")
-        self.assertEqual(t.package, "Package")
-        with self.assertRaises(ModelError):
+        self.assertEqual(t.package, ID("Package"))
+        with self.assertRaisesRegex(ModelError, r'^unexpected format of type name "X"$'):
             ModularInteger("X", Number(256))
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^unexpected format of type name "X.Y.Z"$'):
             ModularInteger("X.Y.Z", Number(256))
 
     def test_modular_size(self) -> None:
@@ -357,7 +374,7 @@ class TestModel(TestCase):
                     Field("Type_Length_TPID"),
                     Field("Type_Length"),
                     NotEqual(Variable("Type_Length_TPID"), Number(0x8100, 16)),
-                    first=First("Type_Length_TPID"),
+                    first=First(Variable("Type_Length_TPID")),
                 ),
                 Link(Field("TCI"), Field("Type_Length")),
             ],
@@ -369,8 +386,8 @@ class TestModel(TestCase):
                     Field("Payload"),
                     FINAL,
                     And(
-                        GreaterEqual(Div(Length("Payload"), Number(8)), Number(46)),
-                        LessEqual(Div(Length("Payload"), Number(8)), Number(1500)),
+                        GreaterEqual(Div(Length(Variable("Payload")), Number(8)), Number(46)),
+                        LessEqual(Div(Length(Variable("Payload")), Number(8)), Number(1500)),
                     ),
                 )
             ],
@@ -512,7 +529,7 @@ class TestModel(TestCase):
             {Field("F"): MODULAR_INTEGER},
         )
         self.assertEqual(
-            message.copy(full_name="A.B"),
+            message.copy(identifier="A.B"),
             Message(
                 "A.B",
                 [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
@@ -568,13 +585,13 @@ class TestModel(TestCase):
                         Field("F1"),
                         Field("F2"),
                         LessEqual(Variable("F1"), Number(100)),
-                        first=First("F1"),
+                        first=First(Variable("F1")),
                     ),
                     Link(
                         Field("F1"),
                         Field("F3"),
                         GreaterEqual(Variable("F1"), Number(200)),
-                        first=First("F1"),
+                        first=First(Variable("F1")),
                     ),
                     Link(Field("F2"), FINAL),
                     Link(Field("F3"), Field("F4"), length=Variable("F3")),
@@ -595,13 +612,13 @@ class TestModel(TestCase):
                         Field("X_F1"),
                         Field("X_F2"),
                         LessEqual(Variable("X_F1"), Number(100)),
-                        first=First("X_F1"),
+                        first=First(Variable("X_F1")),
                     ),
                     Link(
                         Field("X_F1"),
                         Field("X_F3"),
                         GreaterEqual(Variable("X_F1"), Number(200)),
-                        first=First("X_F1"),
+                        first=First(Variable("X_F1")),
                     ),
                     Link(Field("X_F2"), FINAL),
                     Link(Field("X_F3"), Field("X_F4"), length=Variable("X_F3")),
@@ -630,13 +647,13 @@ class TestModel(TestCase):
                         Field("NR_F2"),
                         Field("NR_F3"),
                         LessEqual(Variable("NR_F2"), Number(100)),
-                        first=First("NR_F2"),
+                        first=First(Variable("NR_F2")),
                     ),
                     Link(
                         Field("NR_F2"),
                         Field("NR_F4"),
                         GreaterEqual(Variable("NR_F2"), Number(200)),
-                        first=First("NR_F2"),
+                        first=First(Variable("NR_F2")),
                     ),
                 ],
                 {
@@ -694,13 +711,13 @@ class TestModel(TestCase):
                         Field("NR_F2"),
                         Field("NR_F3"),
                         LessEqual(Variable("NR_F2"), Number(100)),
-                        first=First("NR_F2"),
+                        first=First(Variable("NR_F2")),
                     ),
                     Link(
                         Field("NR_F2"),
                         Field("NR_F4"),
                         GreaterEqual(Variable("NR_F2"), Number(200)),
-                        first=First("NR_F2"),
+                        first=First(Variable("NR_F2")),
                     ),
                 ],
                 {
@@ -738,26 +755,26 @@ class TestModel(TestCase):
                         Field("SR_NR_F2"),
                         Field("SR_NR_F3"),
                         LessEqual(Variable("SR_NR_F2"), Number(100)),
-                        first=First("SR_NR_F2"),
+                        first=First(Variable("SR_NR_F2")),
                     ),
                     Link(
                         Field("SR_NR_F2"),
                         Field("SR_NR_F4"),
                         GreaterEqual(Variable("SR_NR_F2"), Number(200)),
-                        first=First("SR_NR_F2"),
+                        first=First(Variable("SR_NR_F2")),
                     ),
                     Link(Field("NR_F1"), Field("NR_F2")),
                     Link(
                         Field("NR_F2"),
                         Field("NR_F3"),
                         LessEqual(Variable("NR_F2"), Number(100)),
-                        first=First("NR_F2"),
+                        first=First(Variable("NR_F2")),
                     ),
                     Link(
                         Field("NR_F2"),
                         Field("NR_F4"),
                         GreaterEqual(Variable("NR_F2"), Number(200)),
-                        first=First("NR_F2"),
+                        first=First(Variable("NR_F2")),
                     ),
                 ],
                 {
@@ -788,13 +805,13 @@ class TestModel(TestCase):
                         Field("NR_F2"),
                         Field("NR_F3"),
                         LessEqual(Variable("NR_F2"), Number(100)),
-                        first=First("NR_F2"),
+                        first=First(Variable("NR_F2")),
                     ),
                     Link(
                         Field("NR_F2"),
                         Field("NR_F4"),
                         GreaterEqual(Variable("NR_F2"), Number(200)),
-                        first=First("NR_F2"),
+                        first=First(Variable("NR_F2")),
                     ),
                 ],
                 {

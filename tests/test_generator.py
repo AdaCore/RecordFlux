@@ -2,9 +2,10 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from rflx.generator import Generator, InternalError
+from rflx.generator import Generator
 from rflx.generator.common import base_type_name, full_base_type_name
 from rflx.generator.core import LIBRARY_FILES
+from rflx.identifier import ID
 from rflx.model import Model, Type
 from tests.models import (
     ARRAYS_MODEL,
@@ -70,7 +71,7 @@ class TestGenerator(unittest.TestCase):
                     self.assertEqual(unit.body, f.read(), unit.name)
 
     def test_invalid_prefix(self) -> None:
-        with self.assertRaisesRegex(InternalError, 'invalid prefix: "A..B"'):
+        with self.assertRaisesRegex(AssertionError, 'empty part in identifier "A..B"'):
             Generator("A..B")
 
     def test_unexpected_type(self) -> None:
@@ -147,12 +148,12 @@ class TestGenerator(unittest.TestCase):
         self.assert_body(generator)
 
     def test_base_type_name(self) -> None:
-        self.assertEqual(base_type_name(MODULAR_INTEGER), "Modular")
-        self.assertEqual(base_type_name(RANGE_INTEGER), "Range_Base")
+        self.assertEqual(base_type_name(MODULAR_INTEGER), ID("Modular"))
+        self.assertEqual(base_type_name(RANGE_INTEGER), ID("Range_Base"))
 
     def test_full_base_type_name(self) -> None:
-        self.assertEqual(full_base_type_name(MODULAR_INTEGER), "P.Modular")
-        self.assertEqual(full_base_type_name(RANGE_INTEGER), "P.Range_Base")
+        self.assertEqual(full_base_type_name(MODULAR_INTEGER), ID("P.Modular"))
+        self.assertEqual(full_base_type_name(RANGE_INTEGER), ID("P.Range_Base"))
 
 
 def generate(model: Model) -> Generator:

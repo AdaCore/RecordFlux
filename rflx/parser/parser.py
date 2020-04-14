@@ -2,11 +2,12 @@ import logging
 import traceback
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, List, Mapping, MutableMapping, Set, Tuple
+from typing import Deque, Dict, List, Mapping, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
 from rflx.expression import UNDEFINED, Number
+from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
     BUILTINS_PACKAGE,
@@ -37,7 +38,7 @@ class Parser:
     def __init__(self) -> None:
         self.__specifications: Deque[Specification] = deque()
         self.__evaluated_specifications: Set[str] = set()
-        self.__types: Dict[str, Type] = dict(BUILTIN_TYPES)
+        self.__types: Dict[ID, Type] = dict(BUILTIN_TYPES)
 
     def parse(self, specfile: Path) -> None:
         self.__parse(specfile)
@@ -94,25 +95,25 @@ class Parser:
 
     def __evaluate_types(self, spec: Specification) -> None:
         for t in spec.package.types:
-            t.full_name = f"{spec.package.identifier}.{t.name}"
+            t.identifier = ID(f"{spec.package.identifier}.{t.name}")
 
-            if t.full_name in self.__types:
-                raise ParserError(f'duplicate type "{t.full_name}"')
+            if t.identifier in self.__types:
+                raise ParserError(f'duplicate type "{t.identifier}"')
 
             if isinstance(t, Scalar):
-                self.__types[t.full_name] = t
+                self.__types[t.identifier] = t
 
             elif isinstance(t, Array):
-                self.__types[t.full_name] = create_array(t, self.__types)
+                self.__types[t.identifier] = create_array(t, self.__types)
 
             elif isinstance(t, MessageSpec):
-                self.__types[t.full_name] = create_message(t, self.__types)
+                self.__types[t.identifier] = create_message(t, self.__types)
 
             elif isinstance(t, DerivationSpec):
-                self.__types[t.full_name] = create_derived_message(t, message_types(self.__types))
+                self.__types[t.identifier] = create_derived_message(t, message_types(self.__types))
 
             elif isinstance(t, RefinementSpec):
-                self.__types[t.full_name] = create_refinement(t, self.__types)
+                self.__types[t.identifier] = create_refinement(t, self.__types)
 
             else:
                 raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
@@ -122,11 +123,11 @@ class ParserError(Exception):
     pass
 
 
-def message_types(types: Mapping[str, Type]) -> Mapping[str, Message]:
+def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
     return {n: m for n, m in types.items() if isinstance(m, Message)}
 
 
-def check_types(types: Mapping[str, Type]) -> None:
+def check_types(types: Mapping[ID, Type]) -> None:
     for e1, e2 in [
         (e1, e2)
         for e1 in types.values()
@@ -138,7 +139,7 @@ def check_types(types: Mapping[str, Type]) -> None:
             and (
                 e1.package == e2.package
                 or e1.package == BUILTINS_PACKAGE
-                or e2.package in BUILTINS_PACKAGE
+                or e2.package == BUILTINS_PACKAGE
             )
         )
     ]:
@@ -146,21 +147,22 @@ def check_types(types: Mapping[str, Type]) -> None:
 
         if identical_literals:
             raise ParserError(
-                f'"{e2.full_name}" contains identical literals as "{e1.full_name}": '
+                f'"{e2.identifier}" contains identical literals as "{e1.identifier}": '
                 + ", ".join(sorted(identical_literals))
             )
 
 
-def create_array(array: Array, types: Mapping[str, Type]) -> Array:
-    array.element_type.full_name = array.element_type.full_name.replace(
-        "__PACKAGE__", array.package
+def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
+    array.element_type.identifier = ID(
+        array.element_type.full_name.replace("__PACKAGE__", str(array.package))
     )
 
-    if array.element_type.full_name in types:
-        element_type = types[array.element_type.full_name]
+    if array.element_type.identifier in types:
+        element_type = types[array.element_type.identifier]
     else:
         raise ParserError(
-            f'undefined element type "{array.element_type.full_name}" in array "{array.full_name}"'
+            f'undefined element type "{array.element_type.identifier}"'
+            f' in array "{array.identifier}"'
         )
 
     if isinstance(element_type, Scalar):
@@ -172,27 +174,27 @@ def create_array(array: Array, types: Mapping[str, Type]) -> Array:
                 "(no multiple of 8)"
             )
 
-    return Array(array.full_name, element_type)
+    return Array(array.identifier, element_type)
 
 
-def create_message(message: MessageSpec, types: Mapping[str, Type]) -> Message:
+def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
     components = list(message.components)
 
     if components and components[0].name != "null":
-        components.insert(0, Component("null", ""))
+        components.insert(0, Component("null", "null"))
 
-    field_types: MutableMapping[Field, Type] = {}
+    field_types: Dict[Field, Type] = {}
 
     for component in components:
         if component.name != "null":
             type_name = (
-                component.type
-                if "." in component.type or component.type in BUILTIN_TYPES
-                else f"{message.package}.{component.type}"
+                component.type_name
+                if len(component.type_name.parts) == 2 or component.type_name in BUILTIN_TYPES
+                else message.package * component.type_name
             )
             if type_name not in types:
                 raise ParserError(
-                    f'undefined component type "{type_name}" in message "{message.full_name}"'
+                    f'undefined component type "{type_name}" in message "{message.identifier}"'
                 )
             field_types[Field(component.name)] = types[type_name]
 
@@ -201,7 +203,7 @@ def create_message(message: MessageSpec, types: Mapping[str, Type]) -> Message:
     for i, component in enumerate(components):
         if component.name == "null" and any(then.first != UNDEFINED for then in component.thens):
             raise ParserError(
-                f'invalid first expression in initial node of message "{message.full_name}"'
+                f'invalid first expression in initial node of message "{message.identifier}"'
             )
 
         source_node = Field(component.name) if component.name != "null" else INITIAL
@@ -214,40 +216,40 @@ def create_message(message: MessageSpec, types: Mapping[str, Type]) -> Message:
             target_node = Field(then.name) if then.name != "null" else FINAL
             if target_node not in field_types.keys() | {FINAL}:
                 raise ParserError(
-                    f'undefined component "{then.name}" in message "{message.full_name}"'
+                    f'undefined component "{then.name}" in message "{message.identifier}"'
                 )
             structure.append(
                 Link(source_node, target_node, then.condition, then.length, then.first)
             )
 
-    return UnprovenMessage(message.full_name, structure, field_types).merged().proven()
+    return UnprovenMessage(message.identifier, structure, field_types).merged().proven()
 
 
-def create_derived_message(derivation: DerivationSpec, messages: Mapping[str, Message],) -> Message:
+def create_derived_message(derivation: DerivationSpec, messages: Mapping[ID, Message]) -> Message:
     base_name = (
-        derivation.base if "." in derivation.base else f"{derivation.package}.{derivation.base}"
+        derivation.base if len(derivation.base.parts) == 2 else derivation.package * derivation.base
     )
 
     if base_name not in messages:
         raise ParserError(
-            f'undefined message "{base_name}" in derived message "{derivation.full_name}"'
+            f'undefined message "{base_name}" in derived message "{derivation.identifier}"'
         )
 
     base = messages[base_name]
 
     if isinstance(base, DerivedMessage):
         raise ParserError(
-            f'illegal derivation "{derivation.full_name}" of derived message "{base_name}"'
+            f'illegal derivation "{derivation.identifier}" of derived message "{base_name}"'
         )
 
-    return UnprovenDerivedMessage(derivation.full_name, base).merged().proven()
+    return UnprovenDerivedMessage(derivation.identifier, base).merged().proven()
 
 
-def create_refinement(refinement: RefinementSpec, types: Mapping[str, Type]) -> Refinement:
+def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> Refinement:
     messages = message_types(types)
 
-    if "." not in refinement.pdu:
-        refinement.pdu = f"{refinement.package}.{refinement.pdu}"
+    if len(refinement.pdu.parts) == 1:
+        refinement.pdu = refinement.package * refinement.pdu
     if refinement.pdu not in messages:
         raise ParserError(f'undefined type "{refinement.pdu}" in refinement')
 
@@ -256,8 +258,8 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[str, Type]) -> 
     if Field(refinement.field) not in pdu.fields:
         raise ParserError(f'invalid field "{refinement.field}" in refinement of "{refinement.pdu}"')
 
-    if "." not in refinement.sdu:
-        refinement.sdu = f"{refinement.package}.{refinement.sdu}"
+    if len(refinement.sdu.parts) == 1:
+        refinement.sdu = refinement.package * refinement.sdu
     if refinement.sdu not in messages:
         raise ParserError(f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"')
 
