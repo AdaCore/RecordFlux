@@ -20,11 +20,11 @@ class PyRFLX:
                 raise FileNotFoundError(f'file not found: "{f}"')
             parser.parse(Path(f))
         model = parser.create_model()
-        packages = set(m.package for m in model.messages)
+        packages = set(str(m.package) for m in model.messages)
         for p in packages:
             self.__packages[p] = Package(p)
-            for m in [x for x in model.messages if x.package == p]:
-                self.__packages[p][m.name] = MessageValue(m)
+            for m in [x for x in model.messages if str(x.package) == p]:
+                self.__packages[p][str(m.name)] = MessageValue(m)
 
     def __getitem__(self, key: str) -> Package:
         return self.__packages[key]

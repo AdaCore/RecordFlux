@@ -93,11 +93,6 @@ class TypeValue(ABC):
     def accepted_type(self) -> type:
         raise NotImplementedError
 
-    @property
-    @abstractmethod
-    def literals(self) -> Mapping[Name, Expr]:
-        raise NotImplementedError
-
     @classmethod
     def construct(cls, vtype: Type) -> "TypeValue":
         if isinstance(vtype, Integer):
@@ -124,11 +119,6 @@ class ScalarValue(TypeValue):
     @abstractmethod
     def expr(self) -> Expr:
         return NotImplemented
-
-    @property
-    @abstractmethod
-    def literals(self) -> Mapping[Name, Expr]:
-        raise NotImplementedError
 
     @property
     def size(self) -> Number:
@@ -191,10 +181,6 @@ class IntegerValue(ScalarValue):
     def accepted_type(self) -> type:
         return int
 
-    @property
-    def literals(self) -> Mapping[Name, Expr]:
-        return {}
-
 
 class EnumValue(ScalarValue):
 
@@ -227,7 +213,7 @@ class EnumValue(ScalarValue):
 
         for k, v in self.literals.items():
             if v == Number(value_as_int):
-                self._value = str(k.name)
+                self._value = str(k)
 
     @property
     def value(self) -> str:
@@ -285,7 +271,7 @@ class CompositeValue(TypeValue):
 
     @property
     @abstractmethod
-    def literals(self) -> Mapping[Name, Expr]:
+    def value(self) -> Any:
         raise NotImplementedError
 
 
@@ -323,10 +309,6 @@ class OpaqueValue(CompositeValue):
     @property
     def accepted_type(self) -> type:
         return bytes
-
-    @property
-    def literals(self) -> Mapping[Name, Expr]:
-        return {}
 
 
 class ArrayValue(CompositeValue):
@@ -426,10 +408,6 @@ class ArrayValue(CompositeValue):
     def accepted_type(self) -> type:
         return list
 
-    @property
-    def literals(self) -> Mapping[Name, Expr]:
-        return {}
-
 
 class MessageValue(TypeValue):
     def __init__(self, message_model: Message) -> None:
@@ -442,7 +420,9 @@ class MessageValue(TypeValue):
         self.__type_literals: Mapping[Name, Expr] = {}
         self._last_field: str = self._next_field(INITIAL.name)
 
-        for t in [f.typeval.literals for f in self._fields.values()]:
+        for t in [
+            f.typeval.literals for f in self._fields.values() if isinstance(f.typeval, EnumValue)
+        ]:
             self.__type_literals = {**self.__type_literals, **t}
         initial = self.Field(OpaqueValue(Opaque()))
         initial.first = Number(0)
@@ -525,10 +505,6 @@ class MessageValue(TypeValue):
     @property
     def accepted_type(self) -> type:
         return bytes
-
-    @property
-    def literals(self) -> Mapping[Name, Expr]:
-        return {}
 
     @property
     def size(self) -> Number:
@@ -748,11 +724,8 @@ class MessageValue(TypeValue):
 
         return all(
             [
-                bool(
-                    (str(ve.name) in self._fields and self._fields[str(ve.name)].set)
-                    or (ve == Last("Message"))
-                )
-                for ve in valid_edge.length.variables()
+                (v.name in self._fields and self._fields[v.name].set) or v.name == "Message"
+                for v in valid_edge.length.variables()
             ]
         )
 

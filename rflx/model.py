@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
@@ -11,7 +12,6 @@ from rflx.expression import (
     UNDEFINED,
     Add,
     And,
-    Attribute,
     Equal,
     Expr,
     First,
@@ -29,9 +29,10 @@ from rflx.expression import (
     Sub,
     Variable,
 )
+from rflx.identifier import ID, StrID
 
-BUILTINS_PACKAGE = "__BUILTINS__"
-INTERNAL_PACKAGE = "__INTERNAL__"
+BUILTINS_PACKAGE = ID("__BUILTINS__")
+INTERNAL_PACKAGE = ID("__INTERNAL__")
 
 
 class Base(ABC):
@@ -40,23 +41,33 @@ class Base(ABC):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
+    def __hash__(self) -> int:
+        return hash(repr(self))
+
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
 
 
 class Type(Base):
-    def __init__(self, full_name: str) -> None:
-        if full_name.count(".") != 1:
-            raise ModelError(f'unexpected format of type name "{full_name}"')
-        self.full_name = full_name
+    def __init__(self, identifier: StrID) -> None:
+        identifier = ID(identifier)
+
+        if len(identifier.parts) != 2:
+            raise ModelError(f'unexpected format of type name "{identifier}"')
+
+        self.identifier = identifier
+
+    @property
+    def full_name(self) -> str:
+        return str(self.identifier)
 
     @property
     def name(self) -> str:
-        return self.full_name.rsplit(".", 1)[1]
+        return str(self.identifier.name)
 
     @property
-    def package(self) -> str:
-        return self.full_name.rsplit(".", 1)[0]
+    def package(self) -> ID:
+        return self.identifier.parent
 
 
 class Scalar(Type):
@@ -80,8 +91,8 @@ class Integer(Scalar):
 
 
 class ModularInteger(Integer):
-    def __init__(self, full_name: str, modulus: Expr) -> None:
-        super().__init__(full_name)
+    def __init__(self, identifier: StrID, modulus: Expr) -> None:
+        super().__init__(identifier)
         modulus_num = modulus.simplified()
         if not isinstance(modulus_num, Number):
             raise ModelError(f'modulus of "{self.name}" contains variable')
@@ -118,8 +129,8 @@ class ModularInteger(Integer):
 
 
 class RangeInteger(Integer):
-    def __init__(self, full_name: str, first: Expr, last: Expr, size: Expr) -> None:
-        super().__init__(full_name)
+    def __init__(self, identifier: StrID, first: Expr, last: Expr, size: Expr) -> None:
+        super().__init__(identifier)
         first_num = first.simplified()
         if not isinstance(first_num, Number):
             raise ModelError(f'first of "{self.name}" contains variable')
@@ -175,13 +186,16 @@ class RangeInteger(Integer):
 
 class Enumeration(Scalar):
     def __init__(
-        self, full_name: str, literals: Dict[str, Number], size: Number, always_valid: bool
+        self, identifier: StrID, literals: Dict[str, Number], size: Number, always_valid: bool
     ) -> None:
-        super().__init__(full_name)
+        super().__init__(identifier)
         if log(max(map(int, literals.values())) + 1) / log(2) > int(size):
             raise ModelError(f'size for "{self.name}" too small')
         if len(set(literals.values())) < len(literals.values()):
             raise ModelError(f'"{self.name}" contains elements with same value')
+        for l in literals:
+            if " " in l or "." in l:
+                raise ModelError(f'invalid literal name "{l}" in "{self.name}"')
         self.literals = literals
         self.__size = size
         self.always_valid = always_valid
@@ -204,22 +218,23 @@ class Composite(Type):
 
 
 class Array(Composite):
-    def __init__(self, full_name: str, element_type: Type) -> None:
-        super().__init__(full_name)
+    def __init__(self, identifier: StrID, element_type: Type) -> None:
+        super().__init__(identifier)
         self.element_type = element_type
 
 
 class Opaque(Composite):
     def __init__(self) -> None:
-        super().__init__(f"{INTERNAL_PACKAGE}.Opaque")
+        super().__init__(INTERNAL_PACKAGE * "Opaque")
 
 
-class Field(NamedTuple):
-    name: str
+class Field(Base):
+    def __init__(self, identifier: StrID) -> None:
+        self.identifier = ID(identifier)
 
-    def __repr__(self) -> str:
-        # pylint: disable=no-member
-        return generic_repr(self.__class__.__name__, self._asdict())
+    @property
+    def name(self) -> str:
+        return str(self.identifier)
 
     @property
     def affixed_name(self) -> str:
@@ -244,9 +259,9 @@ class Link(NamedTuple):
 
 class AbstractMessage(Type):
     def __init__(
-        self, full_name: str, structure: Sequence[Link], types: Mapping[Field, Type]
+        self, identifier: StrID, structure: Sequence[Link], types: Mapping[Field, Type]
     ) -> None:
-        super().__init__(full_name)
+        super().__init__(identifier)
 
         self.structure = structure
         self.__types = types
@@ -272,7 +287,7 @@ class AbstractMessage(Type):
     @abstractmethod
     def copy(
         self,
-        full_name: str = None,
+        identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
     ) -> "AbstractMessage":
@@ -281,14 +296,6 @@ class AbstractMessage(Type):
     @abstractmethod
     def proven(self) -> "Message":
         raise NotImplementedError
-
-    @property
-    def name(self) -> str:
-        return self.full_name.rsplit(".", 1)[1]
-
-    @property
-    def package(self) -> str:
-        return self.full_name.rsplit(".", 1)[0]
 
     @property
     def fields(self) -> Tuple[Field, ...]:
@@ -364,14 +371,14 @@ class AbstractMessage(Type):
         structure = []
 
         for l in self.structure:
-            source = Field(f"{prefix}{l.source.name}") if l.source != INITIAL else INITIAL
-            target = Field(f"{prefix}{l.target.name}") if l.target != FINAL else FINAL
+            source = Field(prefix + l.source.identifier) if l.source != INITIAL else INITIAL
+            target = Field(prefix + l.target.identifier) if l.target != FINAL else FINAL
             condition = prefixed_expression(l.condition)
             length = prefixed_expression(l.length)
             first = prefixed_expression(l.first)
             structure.append(Link(source, target, condition, length, first))
 
-        types = {Field(f"{prefix}{f.name}"): t for f, t in self.types.items()}
+        types = {Field(prefix + f.identifier): t for f, t in self.types.items()}
 
         return self.copy(structure=structure, types=types)
 
@@ -380,25 +387,25 @@ class AbstractMessage(Type):
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
 
         for f in structure_fields - type_fields:
-            raise ModelError(f'missing type for field "{f.name}" of "{self.full_name}"')
+            raise ModelError(f'missing type for field "{f.name}" of "{self.identifier}"')
 
         for f in type_fields - structure_fields:
-            raise ModelError(f'superfluous field "{f.name}" in field types of "{self.full_name}"')
+            raise ModelError(f'superfluous field "{f.name}" in field types of "{self.identifier}"')
 
         if len(self.outgoing(INITIAL)) != 1:
-            raise ModelError(f'ambiguous first field in "{self.full_name}"')
+            raise ModelError(f'ambiguous first field in "{self.identifier}"')
 
         for f in structure_fields:
             for l in self.structure:
                 if f in (INITIAL, l.target):
                     break
             else:
-                raise ModelError(f'unreachable field "{f.name}" in "{self.full_name}"')
+                raise ModelError(f'unreachable field "{f.name}" in "{self.identifier}"')
 
         duplicate_links = set(l for l in self.structure if self.structure.count(l) > 1)
         if duplicate_links:
             raise ModelError(
-                f'duplicate links in "{self.full_name}": '
+                f'duplicate links in "{self.identifier}": '
                 + ", ".join(f"{l.source.name} -> {l.target.name}" for l in duplicate_links)
             )
 
@@ -410,7 +417,7 @@ class AbstractMessage(Type):
         state: Tuple[Set[str], Set[str], Set[str]],
         link: Link,
         index: int,
-        location: Tuple[str, str],
+        location: Tuple[ID, str],
     ) -> None:
         variables, literals, seen = state
         message, part = location
@@ -433,13 +440,12 @@ class AbstractMessage(Type):
         variables = {
             v
             for f in self.fields
-            if isinstance(f.name, str)
-            for v in [f.name, f"{f.name}'First", f"{f.name}'Length", f"{f.name}'Last"]
+            for v in [f.name, f"{f.name}'First", f"{f.name}'Last", f"{f.name}'Length"]
         }
         seen = set({"Message'First", "Message'Last", "Message'Length"})
-        variables.update(*seen)
+        variables.update(seen)
         for f in (INITIAL, *self.fields):
-            for v in [f.name, f"{f.name}'Length", f"{f.name}'First", f"{f.name}'Last"]:
+            for v in [f.name, f"{f.name}'First", f"{f.name}'Last", f"{f.name}'Length"]:
                 seen.add(v)
             for index, l in enumerate(self.outgoing(f)):
                 self.__check_vars(
@@ -447,28 +453,28 @@ class AbstractMessage(Type):
                     (variables, literals, seen),
                     l,
                     index,
-                    (self.full_name, "condition"),
+                    (self.identifier, "condition"),
                 )
                 self.__check_vars(
                     l.length,
                     (variables, literals, seen),
                     l,
                     index,
-                    (self.full_name, "Length expression"),
+                    (self.identifier, "Length expression"),
                 )
                 self.__check_vars(
                     l.first,
                     (variables, literals, seen),
                     l,
                     index,
-                    (self.full_name, "First expression"),
+                    (self.identifier, "First expression"),
                 )
 
                 if l.first != UNDEFINED and not isinstance(l.first, First):
                     raise ModelError(
                         f'invalid First for field "{l.target.name}" in First'
                         f' expression {index} from field "{f.name}" to'
-                        f' "{l.target.name}" in "{self.full_name}"'
+                        f' "{l.target.name}" in "{self.identifier}"'
                     )
 
                 if l.target != FINAL:
@@ -477,12 +483,12 @@ class AbstractMessage(Type):
                     if not unconstrained and l.length != UNDEFINED:
                         raise ModelError(
                             f'fixed size field "{l.target.name}" with length'
-                            f' expression in "{self.full_name}"'
+                            f' expression in "{self.identifier}"'
                         )
                     if unconstrained and l.length == UNDEFINED:
                         raise ModelError(
                             f'unconstrained field "{l.target.name}" without length'
-                            f' expression in "{self.full_name}"'
+                            f' expression in "{self.identifier}"'
                         )
 
     def __type_constraints(self, expr: Expr) -> Expr:
@@ -491,11 +497,9 @@ class AbstractMessage(Type):
             *[
                 t.constraints(name=n, proof=True)
                 for n, t in [
-                    (v.name, self.types[Field(v.name)])
+                    (v.name, self.types[Field(v.identifier)])
                     for v in expr.variables()
-                    if not isinstance(v, Attribute)
-                    and isinstance(v.name, str)
-                    and v.name not in literals
+                    if v.name not in [*literals, "Message"]
                 ]
                 if isinstance(t, Scalar)
             ]
@@ -520,7 +524,7 @@ class AbstractMessage(Type):
                 message = str(conflict).replace("\n", "")
                 raise ModelError(
                     f'conflicting conditions for field "{f.name}"'
-                    f' in "{self.full_name}" ({result}: {message})'
+                    f' in "{self.identifier}" ({result}: {message})'
                 )
 
     def __prove_reachability(self) -> None:
@@ -535,7 +539,7 @@ class AbstractMessage(Type):
             if result != ProofResult.sat:
                 message = str(reachability).replace("\n", "")
                 raise ModelError(
-                    f'unreachable field "{f.name}" in "{self.full_name}"' f" ({result}: {message})"
+                    f'unreachable field "{f.name}" in "{self.identifier}"' f" ({result}: {message})"
                 )
 
     def __prove_contradictions(self) -> None:
@@ -547,17 +551,17 @@ class AbstractMessage(Type):
                     message = str(contradiction).replace("\n", "")
                     raise ModelError(
                         f'contradicting condition {index} from field "{f.name}" to'
-                        f' "{c.target.name}" in "{self.full_name}"'
+                        f' "{c.target.name}" in "{self.identifier}"'
                         f" ({result}: {message})"
                     )
 
     @staticmethod
     def __target_first(link: Link) -> Expr:
         if link.source == INITIAL:
-            return First("Message")
+            return First(Variable("Message"))
         if link.first != UNDEFINED:
             return link.first
-        return Add(Last(link.source.name), Number(1))
+        return Add(Last(Variable(link.source.name)), Number(1))
 
     def __target_length(self, link: Link) -> Expr:
         if link.length != UNDEFINED:
@@ -571,13 +575,16 @@ class AbstractMessage(Type):
         name = link.target.name
         return And(
             *[
-                Equal(First(name), self.__target_first(link)),
-                Equal(Length(name), self.__target_length(link)),
-                Equal(Last(name), self.__target_last(link)),
-                GreaterEqual(First("Message"), Number(0)),
-                GreaterEqual(Last("Message"), Last(name)),
-                GreaterEqual(Last("Message"), First("Message")),
-                Equal(Length("Message"), Add(Sub(Last("Message"), First("Message")), Number(1))),
+                Equal(First(Variable(name)), self.__target_first(link)),
+                Equal(Length(Variable(name)), self.__target_length(link)),
+                Equal(Last(Variable(name)), self.__target_last(link)),
+                GreaterEqual(First(Variable("Message")), Number(0)),
+                GreaterEqual(Last(Variable("Message")), Last(Variable(name))),
+                GreaterEqual(Last(Variable("Message")), First(Variable("Message"))),
+                Equal(
+                    Length(Variable("Message")),
+                    Add(Sub(Last(Variable("Message")), First(Variable("Message"))), Number(1)),
+                ),
                 link.condition,
             ]
         )
@@ -605,7 +612,7 @@ class AbstractMessage(Type):
                     message = str(positive.simplified()).replace("\n\t", "")
                     raise ModelError(
                         f'negative length for field "{f.name}" on path {path_message}'
-                        f' in "{self.full_name}" ({result}: {message})'
+                        f' in "{self.identifier}" ({result}: {message})'
                     )
 
                 first = self.__target_first(l)
@@ -616,7 +623,7 @@ class AbstractMessage(Type):
                                 self.__type_constraints(And(path_expressions, first)),
                                 path_expressions,
                             ),
-                            GreaterEqual(first, First("Message")),
+                            GreaterEqual(first, First(Variable("Message"))),
                         )
                     ],
                     TRUE,
@@ -627,7 +634,7 @@ class AbstractMessage(Type):
                     message = str(start.simplified()).replace("\n\t", "")
                     raise ModelError(
                         f'start of field "{f.name}" on path {path_message} before'
-                        f' message start in "{self.full_name} ({result}: {message})'
+                        f' message start in "{self.identifier} ({result}: {message})'
                     )
 
     def __prove_coverage(self) -> None:
@@ -645,8 +652,8 @@ class AbstractMessage(Type):
         for path in [p[:-1] for p in self.__paths[FINAL] if p]:
             # Calculate (1)
             message_range = And(
-                GreaterEqual(Variable("f"), First("Message")),
-                LessEqual(Variable("f"), Last("Message")),
+                GreaterEqual(Variable("f"), First(Variable("Message"))),
+                LessEqual(Variable("f"), Last(Variable("Message"))),
             )
             # Calculate (2) for all fields
             fields = And(
@@ -661,7 +668,7 @@ class AbstractMessage(Type):
                 ]
             )
             # Define that the end of the last field of a path is the end of the message
-            last_field = Equal(self.__target_last(path[-1]), Last("Message"))
+            last_field = Equal(self.__target_last(path[-1]), Last(Variable("Message")))
             # Constraints for links and types
             path_expressions = self.__with_constraints(
                 And(*[self.__link_expression(l) for l in path])
@@ -675,7 +682,7 @@ class AbstractMessage(Type):
                 message = str(coverage).replace("\n\t", "")
                 raise ModelError(
                     f"path {path_message} does not cover whole message"
-                    f' in "{self.full_name}" ({result}: {message})'
+                    f' in "{self.identifier}" ({result}: {message})'
                 )
 
     def __prove_overlays(self) -> None:
@@ -684,14 +691,15 @@ class AbstractMessage(Type):
                 if l.first != UNDEFINED and isinstance(l.first, First):
                     path_expressions = And(*[self.__link_expression(l) for l in p])
                     overlaid = If(
-                        [(path_expressions, Equal(self.__target_last(l), Last(l.first.name)))], TRUE
+                        [(path_expressions, Equal(self.__target_last(l), Last(l.first.prefix)))],
+                        TRUE,
                     )
                     result = overlaid.forall()
                     if result != ProofResult.sat:
                         message = str(overlaid).replace("\n", "")
                         raise ModelError(
                             f'field "{f.name}" not congruent with overlaid field '
-                            f'"{l.first.name}" in "{self.full_name}"'
+                            f'"{l.first.prefix}" in "{self.identifier}"'
                             f" ({result}: {message})"
                         )
 
@@ -716,7 +724,7 @@ class AbstractMessage(Type):
                 if set(self.incoming(e.target)) <= visited:
                     fields.append(e.target)
         if set(self.structure) - visited:
-            raise ModelError(f'structure of "{self.full_name}" contains cycle')
+            raise ModelError(f'structure of "{self.identifier}" contains cycle')
         return result[1:-1]
 
     def __compute_paths(self, final: Field) -> Set[Tuple[Link, ...]]:
@@ -748,22 +756,21 @@ class AbstractMessage(Type):
 
 class Message(AbstractMessage):
     def __init__(
-        self, full_name: str, structure: Sequence[Link], types: Mapping[Field, Type]
+        self, identifier: StrID, structure: Sequence[Link], types: Mapping[Field, Type]
     ) -> None:
-
-        super().__init__(full_name, structure, types)
+        super().__init__(identifier, structure, types)
 
         if structure or types:
             self._prove()
 
     def copy(
         self,
-        full_name: str = None,
+        identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
     ) -> "Message":
         return Message(
-            full_name if full_name else self.full_name,
+            identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
         )
@@ -775,14 +782,14 @@ class Message(AbstractMessage):
 class DerivedMessage(Message):
     def __init__(
         self,
-        full_name: str,
+        identifier: StrID,
         base: AbstractMessage,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
     ) -> None:
 
         super().__init__(
-            full_name,
+            identifier,
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
         )
@@ -790,12 +797,12 @@ class DerivedMessage(Message):
 
     def copy(
         self,
-        full_name: str = None,
+        identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
     ) -> "DerivedMessage":
         return DerivedMessage(
-            full_name if full_name else self.full_name,
+            identifier if identifier else self.identifier,
             self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
@@ -808,18 +815,18 @@ class DerivedMessage(Message):
 class UnprovenMessage(AbstractMessage):
     def copy(
         self,
-        full_name: str = None,
+        identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
     ) -> "UnprovenMessage":
         return UnprovenMessage(
-            full_name if full_name else self.full_name,
+            identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
         )
 
     def proven(self) -> Message:
-        return Message(self.full_name, self.structure, self.types)
+        return Message(self.identifier, self.structure, self.types)
 
     def merged(self) -> "UnprovenMessage":
         message = self
@@ -841,8 +848,9 @@ class UnprovenMessage(AbstractMessage):
 
             if name_conflicts:
                 raise ModelError(
-                    f'name conflict for "{name_conflicts.pop(0)}" in "{message.full_name}" '
-                    f'caused by merging message "{inner_message.full_name}" in field "{field.name}"'
+                    f'name conflict for "{name_conflicts.pop(0)}" in "{message.identifier}"'
+                    f' caused by merging message "{inner_message.identifier}"'
+                    f' in field "{field.name}"'
                 )
 
             structure = []
@@ -892,14 +900,14 @@ class UnprovenMessage(AbstractMessage):
 class UnprovenDerivedMessage(UnprovenMessage):
     def __init__(
         self,
-        full_name: str,
+        identifier: StrID,
         base: AbstractMessage,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
     ) -> None:
 
         super().__init__(
-            full_name,
+            identifier,
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
         )
@@ -907,30 +915,36 @@ class UnprovenDerivedMessage(UnprovenMessage):
 
     def copy(
         self,
-        full_name: str = None,
+        identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
     ) -> "UnprovenDerivedMessage":
         return UnprovenDerivedMessage(
-            full_name if full_name else self.full_name,
+            identifier if identifier else self.identifier,
             self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
         )
 
     def proven(self) -> DerivedMessage:
-        return DerivedMessage(self.full_name, self.base, self.structure, self.types)
+        return DerivedMessage(self.identifier, self.base, self.structure, self.types)
 
 
 class Refinement(Type):
     # pylint: disable=too-many-arguments
     def __init__(
-        self, package: str, pdu: Message, field: Field, sdu: Message, condition: Expr = TRUE
+        self, package: StrID, pdu: Message, field: Field, sdu: Message, condition: Expr = TRUE
     ) -> None:
+        package = ID(package)
+
+        if len(package.parts) != 1:
+            raise ModelError(f'unexpected format of package name "{package}"')
+
         super().__init__(
-            f"{package}.__REFINEMENT__"
+            package * "__REFINEMENT__"
             f"{flat_name(sdu.full_name)}__{flat_name(pdu.full_name)}__{field.name}__"
         )
+
         self.pdu = pdu
         self.field = field
         self.sdu = sdu
@@ -967,12 +981,12 @@ class ModelError(Exception):
 def check_message_field_types(message: AbstractMessage) -> None:
     for f, t in message.types.items():
         assert isinstance(t, (Scalar, Composite, AbstractMessage)), (
-            f'field "{f.name}" has invalid type "{t.full_name}" ({type(t).__name__})'
-            f' in "{message.full_name}"'
+            f'field "{f.name}" has invalid type "{t.identifier}" ({type(t).__name__})'
+            f' in "{message.identifier}"'
         )
 
 
-def qualified_literals(types: Mapping[Field, Type], package: str) -> Set[str]:
+def qualified_literals(types: Mapping[Field, Type], package: ID) -> Set[str]:
     return {
         l if t.package == package or t.package == BUILTINS_PACKAGE else f"{t.package}.{l}"
         for t in types.values()
@@ -982,10 +996,10 @@ def qualified_literals(types: Mapping[Field, Type], package: str) -> Set[str]:
 
 
 BOOLEAN = Enumeration(
-    f"{BUILTINS_PACKAGE}.Boolean", {"False": Number(0), "True": Number(1)}, Number(1), False
+    BUILTINS_PACKAGE * "Boolean", {"False": Number(0), "True": Number(1)}, Number(1), False
 )
 
 BUILTIN_TYPES = {
-    Opaque().name: Opaque(),
-    BOOLEAN.name: BOOLEAN,
+    ID(Opaque().name): Opaque(),
+    ID(BOOLEAN.name): BOOLEAN,
 }

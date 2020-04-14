@@ -39,7 +39,6 @@ from rflx.expression import (
     Last,
     Less,
     LessEqual,
-    Name,
     NamedAggregate,
     NotEqual,
     Number,
@@ -48,7 +47,9 @@ from rflx.expression import (
     Result,
     Selected,
     Slice,
+    Variable,
 )
+from rflx.identifier import ID
 from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
@@ -77,7 +78,7 @@ class ParserGenerator:
         self.types = Types(prefix)
         self.common = GeneratorCommon(prefix)
 
-    def extract_function(self, type_name: str) -> Subprogram:
+    def extract_function(self, type_name: ID) -> Subprogram:
         return GenericFunctionInstantiation(
             "Extract",
             FunctionSpecification(
@@ -92,7 +93,7 @@ class ParserGenerator:
         self, message: Message, composite_fields: Sequence[Field]
     ) -> UnitPart:
         def result(field: Field, message: Message) -> NamedAggregate:
-            aggregate: List[Tuple[str, Expr]] = [("Fld", Name(field.affixed_name))]
+            aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
             if field in message.fields and isinstance(message.types[field], Scalar):
                 aggregate.append(
                     (
@@ -100,8 +101,12 @@ class ParserGenerator:
                         Call(
                             "Extract",
                             [
-                                Slice("Ctx.Buffer.all", Name("Buffer_First"), Name("Buffer_Last")),
-                                Name("Offset"),
+                                Slice(
+                                    Variable("Ctx.Buffer.all"),
+                                    Variable("Buffer_First"),
+                                    Variable("Buffer_Last"),
+                                ),
+                                Variable("Offset"),
                             ],
                         ),
                     )
@@ -118,36 +123,43 @@ class ParserGenerator:
                         [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
                     ),
                     And(
-                        NotEqual(Name("Ctx.Buffer"), NULL),
-                        LessEqual(Name("Ctx.First"), Div(Last(self.types.bit_index), Number(2))),
+                        NotEqual(Variable("Ctx.Buffer"), NULL),
                         LessEqual(
-                            Call("Field_First", [Name("Ctx"), Name("Fld")]),
-                            Div(Last(self.types.bit_index), Number(2)),
+                            Variable("Ctx.First"),
+                            Div(Last(Variable(self.types.bit_index)), Number(2)),
                         ),
-                        GreaterEqual(Call("Field_Length", [Name("Ctx"), Name("Fld")]), Number(0)),
                         LessEqual(
-                            Call("Field_Length", [Name("Ctx"), Name("Fld")]),
-                            Div(Last(self.types.bit_length), Number(2)),
+                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                            Div(Last(Variable(self.types.bit_index)), Number(2)),
+                        ),
+                        GreaterEqual(
+                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]), Number(0)
+                        ),
+                        LessEqual(
+                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
+                            Div(Last(Variable(self.types.bit_length)), Number(2)),
                         ),
                         LessEqual(
                             Add(
-                                Call("Field_First", [Name("Ctx"), Name("Fld")]),
-                                Call("Field_Length", [Name("Ctx"), Name("Fld")]),
+                                Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                                Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
                             ),
-                            Div(Last(self.types.bit_length), Number(2)),
+                            Div(Last(Variable(self.types.bit_length)), Number(2)),
                         ),
                         LessEqual(
-                            Name("Ctx.First"), Call("Field_First", [Name("Ctx"), Name("Fld")])
+                            Variable("Ctx.First"),
+                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                         ),
                         GreaterEqual(
-                            Name("Ctx.Last"), Call("Field_Last", [Name("Ctx"), Name("Fld")])
+                            Variable("Ctx.Last"),
+                            Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
                         ),
                     ),
                     [
                         Precondition(
                             And(
-                                Call("Has_Buffer", [Name("Ctx")]),
-                                Call("Valid_Next", [Name("Ctx"), Name("Fld")]),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                             )
                         )
                     ],
@@ -157,9 +169,9 @@ class ParserGenerator:
                         "Composite_Field", "Boolean", [Parameter(["Fld"], "Field")]
                     ),
                     Case(
-                        Name("Fld"),
+                        Variable("Fld"),
                         [
-                            (Name(f.affixed_name), TRUE if f in composite_fields else FALSE)
+                            (Variable(f.affixed_name), TRUE if f in composite_fields else FALSE)
                             for f in message.fields
                         ],
                     ),
@@ -171,7 +183,7 @@ class ParserGenerator:
                         [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
                     ),
                     [
-                        *self.common.field_bit_location_declarations(Name("Fld")),
+                        *self.common.field_bit_location_declarations(Variable("Fld")),
                         *self.common.field_byte_location_declarations(),
                         *unique(
                             self.extract_function(full_base_type_name(t))
@@ -182,9 +194,9 @@ class ParserGenerator:
                     [
                         ReturnStatement(
                             Case(
-                                Name("Fld"),
+                                Variable("Fld"),
                                 [
-                                    (Name(f.affixed_name), result(f, message))
+                                    (Variable(f.affixed_name), result(f, message))
                                     for f in message.fields
                                 ],
                             )
@@ -193,13 +205,18 @@ class ParserGenerator:
                     [
                         Precondition(
                             AndThen(
-                                Call("Has_Buffer", [Name("Ctx")]),
-                                Call("Valid_Next", [Name("Ctx"), Name("Fld")]),
-                                Call("Sufficient_Buffer_Length", [Name("Ctx"), Name("Fld")]),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                                Call(
+                                    "Sufficient_Buffer_Length", [Variable("Ctx"), Variable("Fld")]
+                                ),
                             )
                         ),
                         Postcondition(
-                            Equal(Selected(Result("Get_Field_Value"), "Fld"), Name("Fld"))
+                            Equal(
+                                Selected(Result(Variable("Get_Field_Value")), "Fld"),
+                                Variable("Fld"),
+                            )
                         ),
                     ],
                 ),
@@ -214,15 +231,18 @@ class ParserGenerator:
         )
 
         valid_field_condition = And(
-            Call("Valid_Value", [Name("Value")],),
+            Call("Valid_Value", [Variable("Value")],),
             Call(
                 "Field_Condition",
-                [Name("Ctx"), Name("Value")]
-                + (
-                    [Call("Field_Length", [Name("Ctx"), Name("Fld")])]
-                    if length_dependent_condition(message)
-                    else []
-                ),
+                [
+                    Variable("Ctx"),
+                    Variable("Value"),
+                    *(
+                        [Call("Field_Length", [Variable("Ctx"), Variable("Fld")])]
+                        if length_dependent_condition(message)
+                        else []
+                    ),
+                ],
             ),
         )
 
@@ -230,19 +250,25 @@ class ParserGenerator:
             IfStatement(
                 [
                     (
-                        Call("Composite_Field", [Name("Fld")]),
+                        Call("Composite_Field", [Variable("Fld")]),
                         [
                             Assignment(
-                                Indexed("Ctx.Cursors", Name("Fld")),
+                                Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
                                 NamedAggregate(
-                                    ("State", Name("S_Structural_Valid")),
-                                    ("First", Call("Field_First", [Name("Ctx"), Name("Fld")])),
-                                    ("Last", Call("Field_Last", [Name("Ctx"), Name("Fld")])),
-                                    ("Value", Name("Value")),
+                                    ("State", Variable("S_Structural_Valid")),
+                                    (
+                                        "First",
+                                        Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                                    ),
+                                    (
+                                        "Last",
+                                        Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
+                                    ),
+                                    ("Value", Variable("Value")),
                                     (
                                         "Predecessor",
                                         Selected(
-                                            Indexed(Selected("Ctx", "Cursors"), Name("Fld")),
+                                            Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
                                             "Predecessor",
                                         ),
                                     ),
@@ -253,16 +279,16 @@ class ParserGenerator:
                 ],
                 [
                     Assignment(
-                        Indexed("Ctx.Cursors", Name("Fld")),
+                        Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
                         NamedAggregate(
-                            ("State", Name("S_Valid")),
-                            ("First", Call("Field_First", [Name("Ctx"), Name("Fld")])),
-                            ("Last", Call("Field_Last", [Name("Ctx"), Name("Fld")])),
-                            ("Value", Name("Value")),
+                            ("State", Variable("S_Valid")),
+                            ("First", Call("Field_First", [Variable("Ctx"), Variable("Fld")])),
+                            ("Last", Call("Field_Last", [Variable("Ctx"), Variable("Fld")])),
+                            ("Value", Variable("Value")),
                             (
                                 "Predecessor",
                                 Selected(
-                                    Indexed(Selected("Ctx", "Cursors"), Name("Fld")), "Predecessor"
+                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"
                                 ),
                             ),
                         ),
@@ -283,14 +309,16 @@ class ParserGenerator:
             IfStatement(
                 [
                     (
-                        Equal(Name("Fld"), Name(f.affixed_name)),
+                        Equal(Variable("Fld"), Variable(f.affixed_name)),
                         [
                             Assignment(
                                 Indexed(
-                                    "Ctx.Cursors", Call("Successor", [Name("Ctx"), Name("Fld")])
+                                    Variable("Ctx.Cursors"),
+                                    Call("Successor", [Variable("Ctx"), Variable("Fld")]),
                                 ),
                                 NamedAggregate(
-                                    ("State", Name("S_Invalid")), ("Predecessor", Name("Fld"))
+                                    ("State", Variable("S_Invalid")),
+                                    ("Predecessor", Variable("Fld")),
                                 ),
                             )
                         ],
@@ -310,8 +338,8 @@ class ParserGenerator:
                             And(
                                 VALID_CONTEXT,
                                 Equal(
-                                    Call("Has_Buffer", [Name("Ctx")]),
-                                    Old(Call("Has_Buffer", [Name("Ctx")])),
+                                    Call("Has_Buffer", [Variable("Ctx")]),
+                                    Old(Call("Has_Buffer", [Variable("Ctx")])),
                                 ),
                                 *context_invariant,
                             )
@@ -328,13 +356,15 @@ class ParserGenerator:
                             [
                                 (
                                     AndThen(
-                                        Call("Has_Buffer", [Name("Ctx")]),
+                                        Call("Has_Buffer", [Variable("Ctx")]),
                                         Call(
                                             "Invalid",
-                                            [Indexed(Selected("Ctx", "Cursors"), Name("Fld"))],
+                                            [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))],
                                         ),
-                                        Call("Valid_Predecessor", [Name("Ctx"), Name("Fld")]),
-                                        Call("Path_Condition", [Name("Ctx"), Name("Fld")]),
+                                        Call(
+                                            "Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]
+                                        ),
+                                        Call("Path_Condition", [Variable("Ctx"), Variable("Fld")]),
                                     ),
                                     [
                                         IfStatement(
@@ -342,14 +372,14 @@ class ParserGenerator:
                                                 (
                                                     Call(
                                                         "Sufficient_Buffer_Length",
-                                                        [Name("Ctx"), Name("Fld")],
+                                                        [Variable("Ctx"), Variable("Fld")],
                                                     ),
                                                     [
                                                         Assignment(
                                                             "Value",
                                                             Call(
                                                                 "Get_Field_Value",
-                                                                [Name("Ctx"), Name("Fld")],
+                                                                [Variable("Ctx"), Variable("Fld")],
                                                             ),
                                                         ),
                                                         IfStatement(
@@ -362,16 +392,17 @@ class ParserGenerator:
                                                             [
                                                                 Assignment(
                                                                     Indexed(
-                                                                        "Ctx.Cursors", Name("Fld")
+                                                                        Variable("Ctx.Cursors"),
+                                                                        Variable("Fld"),
                                                                     ),
                                                                     NamedAggregate(
                                                                         (
                                                                             "State",
-                                                                            Name("S_Invalid"),
+                                                                            Variable("S_Invalid"),
                                                                         ),
                                                                         (
                                                                             "Predecessor",
-                                                                            Name(
+                                                                            Variable(
                                                                                 FINAL.affixed_name
                                                                             ),
                                                                         ),
@@ -384,10 +415,15 @@ class ParserGenerator:
                                             ],
                                             [
                                                 Assignment(
-                                                    Indexed("Ctx.Cursors", Name("Fld")),
+                                                    Indexed(
+                                                        Variable("Ctx.Cursors"), Variable("Fld")
+                                                    ),
                                                     NamedAggregate(
-                                                        ("State", Name("S_Incomplete")),
-                                                        ("Predecessor", Name(FINAL.affixed_name)),
+                                                        ("State", Variable("S_Incomplete")),
+                                                        (
+                                                            "Predecessor",
+                                                            Variable(FINAL.affixed_name),
+                                                        ),
                                                     ),
                                                 )
                                             ],
@@ -419,8 +455,8 @@ class ParserGenerator:
                             And(
                                 VALID_CONTEXT,
                                 Equal(
-                                    Call("Has_Buffer", [Name("Ctx")]),
-                                    Old(Call("Has_Buffer", [Name("Ctx")])),
+                                    Call("Has_Buffer", [Variable("Ctx")]),
+                                    Old(Call("Has_Buffer", [Variable("Ctx")])),
                                 ),
                                 *context_invariant,
                             )
@@ -433,7 +469,7 @@ class ParserGenerator:
                     specification,
                     [],
                     [
-                        CallStatement("Verify", [Name("Ctx"), Name(f.affixed_name)])
+                        CallStatement("Verify", [Variable("Ctx"), Variable(f.affixed_name)])
                         for f in message.fields
                     ],
                 )
@@ -452,10 +488,15 @@ class ParserGenerator:
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
-                        Call("Structural_Valid", [Indexed("Ctx.Cursors", Name("Fld"))]),
+                        Call(
+                            "Structural_Valid", [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))]
+                        ),
                         Less(
-                            Selected(Indexed("Ctx.Cursors", Name("Fld")), "First"),
-                            Add(Selected(Indexed("Ctx.Cursors", Name("Fld")), "Last"), Number(1)),
+                            Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "First"),
+                            Add(
+                                Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Last"),
+                                Number(1),
+                            ),
                         ),
                     ),
                 )
@@ -479,7 +520,10 @@ class ParserGenerator:
                         Or(
                             *[
                                 Equal(
-                                    Selected(Indexed("Ctx.Cursors", Name("Fld")), "State"), Name(s)
+                                    Selected(
+                                        Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"
+                                    ),
+                                    Variable(s),
                                 )
                                 for s in ("S_Valid", "S_Structural_Valid")
                             ]
@@ -505,10 +549,13 @@ class ParserGenerator:
                             If(
                                 [
                                     (
-                                        Result("Valid"),
+                                        Result(Variable("Valid")),
                                         And(
-                                            Call("Structural_Valid", [Name("Ctx"), Name("Fld")]),
-                                            Call("Present", [Name("Ctx"), Name("Fld")]),
+                                            Call(
+                                                "Structural_Valid",
+                                                [Variable("Ctx"), Variable("Fld")],
+                                            ),
+                                            Call("Present", [Variable("Ctx"), Variable("Fld")]),
                                         ),
                                     )
                                 ]
@@ -522,11 +569,15 @@ class ParserGenerator:
                     specification,
                     AndThen(
                         Equal(
-                            Selected(Indexed("Ctx.Cursors", Name("Fld")), "State"), Name("S_Valid")
+                            Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"),
+                            Variable("S_Valid"),
                         ),
                         Less(
-                            Selected(Indexed("Ctx.Cursors", Name("Fld")), "First"),
-                            Add(Selected(Indexed("Ctx.Cursors", Name("Fld")), "Last"), Number(1)),
+                            Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "First"),
+                            Add(
+                                Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Last"),
+                                Number(1),
+                            ),
                         ),
                     ),
                 )
@@ -545,7 +596,8 @@ class ParserGenerator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Equal(
-                        Selected(Indexed("Ctx.Cursors", Name("Fld")), "State"), Name("S_Incomplete")
+                        Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"),
+                        Variable("S_Incomplete"),
                     ),
                 )
             ],
@@ -564,12 +616,12 @@ class ParserGenerator:
                     specification,
                     Or(
                         Equal(
-                            Selected(Indexed("Ctx.Cursors", Name("Fld")), "State"),
-                            Name("S_Invalid"),
+                            Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"),
+                            Variable("S_Invalid"),
                         ),
                         Equal(
-                            Selected(Indexed("Ctx.Cursors", Name("Fld")), "State"),
-                            Name("S_Incomplete"),
+                            Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"),
+                            Variable("S_Incomplete"),
                         ),
                     ),
                 )
@@ -621,7 +673,7 @@ class ParserGenerator:
                     specification,
                     Or(
                         *[
-                            Call("Incomplete", [Name("Ctx"), Name(f.affixed_name)])
+                            Call("Incomplete", [Variable("Ctx"), Variable(f.affixed_name)])
                             for f in message.fields
                         ]
                     ),
@@ -632,9 +684,9 @@ class ParserGenerator:
     def create_scalar_accessor_functions(self, scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
         def specification(field: Field, field_type: Type) -> FunctionSpecification:
             if field_type.package == BUILTINS_PACKAGE:
-                type_name = field_type.name
+                type_name = ID(field_type.name)
             else:
-                type_name = self.prefix + field_type.full_name
+                type_name = self.prefix * field_type.identifier
 
             return FunctionSpecification(
                 f"Get_{field.name}", type_name, [Parameter(["Ctx"], "Context")]
@@ -642,7 +694,8 @@ class ParserGenerator:
 
         def result(field: Field, field_type: Type) -> Expr:
             value = Selected(
-                Indexed("Ctx.Cursors", Name(field.affixed_name)), f"Value.{field.name}_Value"
+                Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
+                f"Value.{field.name}_Value",
             )
             if isinstance(field_type, Enumeration):
                 return Call("To_Actual", [value])
@@ -654,7 +707,10 @@ class ParserGenerator:
                     specification(f, t),
                     [
                         Precondition(
-                            And(VALID_CONTEXT, Call("Valid", [Name("Ctx"), Name(f.affixed_name)]))
+                            And(
+                                VALID_CONTEXT,
+                                Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
+                            )
                         )
                     ],
                 )
@@ -678,8 +734,8 @@ class ParserGenerator:
                         Precondition(
                             And(
                                 VALID_CONTEXT,
-                                Call("Has_Buffer", [Name("Ctx")]),
-                                Call("Present", [Name("Ctx"), Name(f.affixed_name)]),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                             )
                         )
                     ],
@@ -702,7 +758,12 @@ class ParserGenerator:
                             self.types.index,
                             Call(
                                 self.types.byte_index,
-                                [Selected(Indexed("Ctx.Cursors", Name(f.affixed_name)), "First")],
+                                [
+                                    Selected(
+                                        Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
+                                        "First",
+                                    )
+                                ],
                             ),
                             True,
                         ),
@@ -711,7 +772,12 @@ class ParserGenerator:
                             self.types.index,
                             Call(
                                 self.types.byte_index,
-                                [Selected(Indexed("Ctx.Cursors", Name(f.affixed_name)), "Last")],
+                                [
+                                    Selected(
+                                        Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
+                                        "Last",
+                                    )
+                                ],
                             ),
                             True,
                         ),
@@ -719,7 +785,11 @@ class ParserGenerator:
                     [
                         CallStatement(
                             f"Process_{f.name}",
-                            [Slice("Ctx.Buffer.all", Name("First"), Name("Last"))],
+                            [
+                                Slice(
+                                    Variable("Ctx.Buffer.all"), Variable("First"), Variable("Last")
+                                )
+                            ],
                         )
                     ],
                 )
@@ -742,7 +812,7 @@ def valid_message_condition(
                     "Structural_Valid"
                     if structural and isinstance(message.types[l.target], Composite)
                     else "Valid",
-                    [Name("Ctx"), Name(l.target.affixed_name)],
+                    [Variable("Ctx"), Variable(l.target.affixed_name)],
                 ),
                 l.condition,
                 valid_message_condition(message, l.target, structural),

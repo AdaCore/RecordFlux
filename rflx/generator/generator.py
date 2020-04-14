@@ -40,7 +40,6 @@ from rflx.expression import (
     Indexed,
     Last,
     LessEqual,
-    Name,
     NamedAggregate,
     Not,
     Number,
@@ -51,6 +50,7 @@ from rflx.expression import (
     Slice,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import BUILTINS_PACKAGE, FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
 from .common import (
@@ -69,7 +69,7 @@ class GeneratorGenerator:
         self.types = Types(prefix)
         self.common = GeneratorCommon(prefix)
 
-    def insert_function(self, type_name: str) -> Subprogram:
+    def insert_function(self, type_name: ID) -> Subprogram:
         return GenericProcedureInstantiation(
             "Insert",
             ProcedureSpecification(
@@ -99,7 +99,7 @@ class GeneratorGenerator:
                         ],
                     ),
                     [
-                        *self.common.field_bit_location_declarations(Selected("Val", "Fld")),
+                        *self.common.field_bit_location_declarations(Variable("Val.Fld")),
                         *self.common.field_byte_location_declarations(),
                         *unique(
                             self.insert_function(full_base_type_name(t))
@@ -108,24 +108,24 @@ class GeneratorGenerator:
                         ),
                     ],
                     [
-                        Assignment("Fst", Name("First")),
-                        Assignment("Lst", Name("Last")),
+                        Assignment("Fst", Variable("First")),
+                        Assignment("Lst", Variable("Last")),
                         CaseStatement(
-                            Selected("Val", "Fld"),
+                            Variable("Val.Fld"),
                             [
                                 (
-                                    Name(f.affixed_name),
+                                    Variable(f.affixed_name),
                                     [
                                         CallStatement(
                                             "Insert",
                                             [
-                                                Selected("Val", f"{f.name}_Value"),
+                                                Variable(f"Val.{f.name}_Value"),
                                                 Slice(
-                                                    Selected(Selected("Ctx", "Buffer"), "all"),
-                                                    Name("Buffer_First"),
-                                                    Name("Buffer_Last"),
+                                                    Variable("Ctx.Buffer.all"),
+                                                    Variable("Buffer_First"),
+                                                    Variable("Buffer_Last"),
                                                 ),
-                                                Name("Offset"),
+                                                Variable("Offset"),
                                             ],
                                         )
                                         if f in scalar_fields
@@ -139,16 +139,16 @@ class GeneratorGenerator:
                     [
                         Precondition(
                             AndThen(
-                                Not(Constrained("Ctx")),
-                                Call("Has_Buffer", [Name("Ctx")]),
-                                In(Selected("Val", "Fld"), Range("Field")),
-                                Call("Valid_Next", [Name("Ctx"), Selected("Val", "Fld")]),
+                                Not(Constrained(Variable("Ctx"))),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                In(Variable("Val.Fld"), Range(Variable("Field"))),
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Val.Fld")]),
                                 self.common.sufficient_space_for_field_condition(
-                                    Selected("Val", "Fld")
+                                    Variable("Val.Fld")
                                 ),
                                 ForAllIn(
                                     "F",
-                                    Range("Field"),
+                                    Range(Variable("Field")),
                                     If(
                                         [
                                             (
@@ -156,20 +156,20 @@ class GeneratorGenerator:
                                                     "Structural_Valid",
                                                     [
                                                         Indexed(
-                                                            Selected("Ctx", "Cursors"), Name("F"),
+                                                            Variable("Ctx.Cursors"), Variable("F"),
                                                         )
                                                     ],
                                                 ),
                                                 LessEqual(
                                                     Selected(
                                                         Indexed(
-                                                            Selected("Ctx", "Cursors"), Name("F"),
+                                                            Variable("Ctx.Cursors"), Variable("F"),
                                                         ),
                                                         "Last",
                                                     ),
                                                     Call(
                                                         "Field_Last",
-                                                        [Name("Ctx"), Selected("Val", "Fld")],
+                                                        [Variable("Ctx"), Variable("Val.Fld")],
                                                     ),
                                                 ),
                                             )
@@ -180,24 +180,24 @@ class GeneratorGenerator:
                         ),
                         Postcondition(
                             And(
-                                Call("Has_Buffer", [Name("Ctx")]),
+                                Call("Has_Buffer", [Variable("Ctx")]),
                                 Equal(
-                                    Name("Fst"),
-                                    Call("Field_First", [Name("Ctx"), Selected("Val", "Fld")]),
+                                    Variable("Fst"),
+                                    Call("Field_First", [Variable("Ctx"), Variable("Val.Fld")]),
                                 ),
                                 Equal(
-                                    Name("Lst"),
-                                    Call("Field_Last", [Name("Ctx"), Selected("Val", "Fld")]),
+                                    Variable("Lst"),
+                                    Call("Field_Last", [Variable("Ctx"), Variable("Val.Fld")]),
                                 ),
-                                GreaterEqual(Name("Fst"), Selected("Ctx", "First")),
-                                LessEqual(Name("Fst"), Add(Name("Lst"), Number(1))),
+                                GreaterEqual(Variable("Fst"), Variable("Ctx.First")),
+                                LessEqual(Variable("Fst"), Add(Variable("Lst"), Number(1))),
                                 LessEqual(
-                                    Call(self.types.byte_index, [Name("Lst")]),
-                                    Selected("Ctx", "Buffer_Last"),
+                                    Call(self.types.byte_index, [Variable("Lst")]),
+                                    Variable("Ctx.Buffer_Last"),
                                 ),
                                 ForAllIn(
                                     "F",
-                                    Range("Field"),
+                                    Range(Variable("Field")),
                                     If(
                                         [
                                             (
@@ -205,18 +205,18 @@ class GeneratorGenerator:
                                                     "Structural_Valid",
                                                     [
                                                         Indexed(
-                                                            Selected("Ctx", "Cursors"), Name("F"),
+                                                            Variable("Ctx.Cursors"), Variable("F"),
                                                         )
                                                     ],
                                                 ),
                                                 LessEqual(
                                                     Selected(
                                                         Indexed(
-                                                            Selected("Ctx", "Cursors"), Name("F"),
+                                                            Variable("Ctx.Cursors"), Variable("F"),
                                                         ),
                                                         "Last",
                                                     ),
-                                                    Name("Lst"),
+                                                    Variable("Lst"),
                                                 ),
                                             )
                                         ]
@@ -225,10 +225,10 @@ class GeneratorGenerator:
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
-                                        Selected("Ctx", "Buffer_First"),
-                                        Selected("Ctx", "Buffer_Last"),
-                                        Selected("Ctx", "First"),
-                                        Selected("Ctx", "Cursors"),
+                                        Variable("Ctx.Buffer_First"),
+                                        Variable("Ctx.Buffer_Last"),
+                                        Variable("Ctx.First"),
+                                        Variable("Ctx.Cursors"),
                                     ]
                                 ],
                             )
@@ -243,11 +243,11 @@ class GeneratorGenerator:
     ) -> UnitPart:
         def specification(field: Field, field_type: Type) -> ProcedureSpecification:
             if field_type.package == BUILTINS_PACKAGE:
-                type_name = field_type.name
+                type_name = ID(field_type.name)
             elif isinstance(field_type, Enumeration) and field_type.always_valid:
                 type_name = self.types.prefixed(full_enum_name(field_type))
             else:
-                type_name = self.types.prefixed(field_type.full_name)
+                type_name = self.types.prefixed(field_type.identifier)
 
             return ProcedureSpecification(
                 f"Set_{field.name}",
@@ -265,39 +265,44 @@ class GeneratorGenerator:
                                 Call(
                                     "Field_Condition",
                                     [
-                                        Name("Ctx"),
+                                        Variable("Ctx"),
                                         Aggregate(
-                                            Name(f.affixed_name),
-                                            Name("Val")
+                                            Variable(f.affixed_name),
+                                            Variable("Val")
                                             if not isinstance(t, Enumeration)
-                                            else Call("To_Base", [Name("Val")]),
+                                            else Call("To_Base", [Variable("Val")]),
                                         ),
                                     ],
                                 ),
-                                Call("Valid", [Name("Val")])
+                                Call("Valid", [Variable("Val")])
                                 if not isinstance(t, Enumeration)
                                 else TRUE,
                                 self.common.sufficient_space_for_field_condition(
-                                    Name(f.affixed_name)
+                                    Variable(f.affixed_name)
                                 ),
                             )
                         ),
                         Postcondition(
                             And(
                                 VALID_CONTEXT,
-                                Call("Has_Buffer", [Name("Ctx")]),
-                                Call("Valid", [Name("Ctx"), Name(f.affixed_name)]),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 Equal(
-                                    Call(f"Get_{f.name}", [Name("Ctx")]),
-                                    Aggregate(TRUE, Name("Val"))
+                                    Call(f"Get_{f.name}", [Variable("Ctx")]),
+                                    Aggregate(TRUE, Variable("Val"))
                                     if isinstance(t, Enumeration) and t.always_valid
-                                    else Name("Val"),
+                                    else Variable("Val"),
                                 ),
                                 *self.setter_postconditions(message, f),
                                 *[
                                     Equal(
-                                        Call("Cursor", [Name("Ctx"), Name(p.affixed_name)]),
-                                        Old(Call("Cursor", [Name("Ctx"), Name(p.affixed_name)])),
+                                        Call("Cursor", [Variable("Ctx"), Variable(p.affixed_name)]),
+                                        Old(
+                                            Call(
+                                                "Cursor",
+                                                [Variable("Ctx"), Variable(p.affixed_name)],
+                                            )
+                                        ),
                                     )
                                     for p in message.predecessors(f)
                                 ],
@@ -315,10 +320,10 @@ class GeneratorGenerator:
                             ["Field_Value"],
                             "Field_Dependent_Value",
                             Aggregate(
-                                Name(f.affixed_name),
-                                Name("Val")
+                                Variable(f.affixed_name),
+                                Variable("Val")
                                 if not isinstance(t, Enumeration)
-                                else Call("To_Base", [Name("Val")]),
+                                else Call("To_Base", [Variable("Val")]),
                             ),
                             True,
                         ),
@@ -326,34 +331,39 @@ class GeneratorGenerator:
                     ],
                     [
                         CallStatement(
-                            "Reset_Dependent_Fields", [Name("Ctx"), Name(f.affixed_name)],
+                            "Reset_Dependent_Fields", [Variable("Ctx"), Variable(f.affixed_name)],
                         ),
                         CallStatement(
                             "Set_Field_Value",
-                            [Name("Ctx"), Name("Field_Value"), Name("First"), Name("Last")],
+                            [
+                                Variable("Ctx"),
+                                Variable("Field_Value"),
+                                Variable("First"),
+                                Variable("Last"),
+                            ],
                         ),
                         Assignment(
                             "Ctx",
                             Aggregate(
-                                Selected("Ctx", "Buffer_First"),
-                                Selected("Ctx", "Buffer_Last"),
-                                Selected("Ctx", "First"),
-                                Name("Last"),
-                                Selected("Ctx", "Buffer"),
-                                Selected("Ctx", "Cursors"),
+                                Variable("Ctx.Buffer_First"),
+                                Variable("Ctx.Buffer_Last"),
+                                Variable("Ctx.First"),
+                                Variable("Last"),
+                                Variable("Ctx.Buffer"),
+                                Variable("Ctx.Cursors"),
                             ),
                         ),
                         Assignment(
-                            Indexed(Selected("Ctx", "Cursors"), Name(f.affixed_name)),
+                            Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
                             NamedAggregate(
-                                ("State", Name("S_Valid")),
-                                ("First", Name("First")),
-                                ("Last", Name("Last")),
-                                ("Value", Name("Field_Value")),
+                                ("State", Variable("S_Valid")),
+                                ("First", Variable("First")),
+                                ("Last", Variable("Last")),
+                                ("Value", Variable("Field_Value")),
                                 (
                                     "Predecessor",
                                     Selected(
-                                        Indexed(Selected("Ctx", "Cursors"), Name(f.affixed_name)),
+                                        Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
                                         "Predecessor",
                                     ),
                                 ),
@@ -361,11 +371,12 @@ class GeneratorGenerator:
                         ),
                         Assignment(
                             Indexed(
-                                Selected("Ctx", "Cursors"),
-                                Call("Successor", [Name("Ctx"), Name(f.affixed_name)]),
+                                Variable("Ctx.Cursors"),
+                                Call("Successor", [Variable("Ctx"), Variable(f.affixed_name)]),
                             ),
                             NamedAggregate(
-                                ("State", Name("S_Invalid")), ("Predecessor", Name(f.affixed_name)),
+                                ("State", Variable("S_Invalid")),
+                                ("Predecessor", Variable(f.affixed_name)),
                             ),
                         ),
                     ],
@@ -432,25 +443,25 @@ class GeneratorGenerator:
                 SubprogramBody(
                     specification(f),
                     [
-                        *self.common.field_bit_location_declarations(Name(f.affixed_name)),
+                        *self.common.field_bit_location_declarations(Variable(f.affixed_name)),
                         ExpressionFunctionDeclaration(
                             FunctionSpecification("Buffer_First", self.types.index),
-                            Call(self.types.byte_index, [Name("First")]),
+                            Call(self.types.byte_index, [Variable("First")]),
                         ),
                         ExpressionFunctionDeclaration(
                             FunctionSpecification("Buffer_Last", self.types.index),
-                            Call(self.types.byte_index, [Name("Last")]),
+                            Call(self.types.byte_index, [Variable("Last")]),
                         ),
                     ],
                     [
-                        CallStatement(f"Initialize_{f.name}", [Name("Ctx")]),
+                        CallStatement(f"Initialize_{f.name}", [Variable("Ctx")]),
                         CallStatement(
                             f"Process_{f.name}",
                             [
                                 Slice(
-                                    Selected(Selected("Ctx", "Buffer"), "all"),
-                                    Name("Buffer_First"),
-                                    Name("Buffer_Last"),
+                                    Selected(Variable("Ctx.Buffer"), "all"),
+                                    Variable("Buffer_First"),
+                                    Variable("Buffer_Last"),
                                 ),
                             ],
                         ),
@@ -466,35 +477,35 @@ class GeneratorGenerator:
                         ObjectDeclaration(
                             ["First"],
                             self.types.bit_index,
-                            Call("Field_First", [Name("Ctx"), Name(f.affixed_name)]),
+                            Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
                             True,
                         ),
                         ObjectDeclaration(
                             ["Last"],
                             self.types.bit_index,
-                            Add(Name("First"), Name("Length"), -Number(1)),
+                            Add(Variable("First"), Variable("Length"), -Number(1)),
                             True,
                         ),
                         ExpressionFunctionDeclaration(
                             FunctionSpecification("Buffer_First", self.types.index),
-                            Call(self.types.byte_index, [Name("First")]),
+                            Call(self.types.byte_index, [Variable("First")]),
                         ),
                         ExpressionFunctionDeclaration(
                             FunctionSpecification("Buffer_Last", self.types.index),
-                            Call(self.types.byte_index, [Name("Last")]),
+                            Call(self.types.byte_index, [Variable("Last")]),
                         ),
                     ],
                     [
                         CallStatement(
-                            f"Initialize_Bounded_{f.name}", [Name("Ctx"), Name("Length")]
+                            f"Initialize_Bounded_{f.name}", [Variable("Ctx"), Variable("Length")]
                         ),
                         CallStatement(
                             f"Process_{f.name}",
                             [
                                 Slice(
-                                    Selected(Selected("Ctx", "Buffer"), "all"),
-                                    Name("Buffer_First"),
-                                    Name("Buffer_Last"),
+                                    Selected(Variable("Ctx.Buffer"), "all"),
+                                    Variable("Buffer_First"),
+                                    Variable("Buffer_Last"),
                                 ),
                             ],
                         ),
@@ -553,7 +564,7 @@ class GeneratorGenerator:
             [
                 SubprogramBody(
                     specification(f),
-                    self.common.field_bit_location_declarations(Name(f.affixed_name)),
+                    self.common.field_bit_location_declarations(Variable(f.affixed_name)),
                     self.common.initialize_field_statements(message, f),
                 )
                 for f, t in message.types.items()
@@ -566,13 +577,13 @@ class GeneratorGenerator:
                         ObjectDeclaration(
                             ["First"],
                             self.types.bit_index,
-                            Call("Field_First", [Name("Ctx"), Name(f.affixed_name)]),
+                            Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
                             True,
                         ),
                         ObjectDeclaration(
                             ["Last"],
                             self.types.bit_index,
-                            Add(Name("First"), Name("Length"), -Number(1)),
+                            Add(Variable("First"), Variable("Length"), -Number(1)),
                             True,
                         ),
                     ],
@@ -586,19 +597,19 @@ class GeneratorGenerator:
     def setter_preconditions(self, field: Field) -> Sequence[Expr]:
         return [
             VALID_CONTEXT,
-            Not(Constrained("Ctx")),
-            Call("Has_Buffer", [Name("Ctx")]),
-            Call("Valid_Next", [Name("Ctx"), Name(field.affixed_name)]),
+            Not(Constrained(Variable("Ctx"))),
+            Call("Has_Buffer", [Variable("Ctx")]),
+            Call("Valid_Next", [Variable("Ctx"), Variable(field.affixed_name)]),
             LessEqual(
-                Call("Field_Last", [Name("Ctx"), Name(field.affixed_name)]),
-                Div(Last(self.types.bit_index), Number(2)),
+                Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]),
+                Div(Last(Variable(self.types.bit_index)), Number(2)),
             ),
         ]
 
     def setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
         return [
             *[
-                Call("Invalid", [Name("Ctx"), Name(p.affixed_name)])
+                Call("Invalid", [Variable("Ctx"), Variable(p.affixed_name)])
                 for p in message.successors(field)
                 if p != FINAL
             ],
@@ -606,14 +617,14 @@ class GeneratorGenerator:
             *[
                 Equal(e, Old(e))
                 for e in [
-                    Selected("Ctx", "Buffer_First"),
-                    Selected("Ctx", "Buffer_Last"),
-                    Selected("Ctx", "First"),
-                    Call("Predecessor", [Name("Ctx"), Name(field.affixed_name)]),
-                    Call("Valid_Next", [Name("Ctx"), Name(field.affixed_name)]),
+                    Variable("Ctx.Buffer_First"),
+                    Variable("Ctx.Buffer_Last"),
+                    Variable("Ctx.First"),
+                    Call("Predecessor", [Variable("Ctx"), Variable(field.affixed_name)]),
+                    Call("Valid_Next", [Variable("Ctx"), Variable(field.affixed_name)]),
                 ]
                 + [
-                    Call(f"Get_{p.name}", [Name("Ctx")])
+                    Call(f"Get_{p.name}", [Variable("Ctx")])
                     for p in message.definite_predecessors(field)
                     if isinstance(message.types[p], Scalar)
                 ]
@@ -623,9 +634,9 @@ class GeneratorGenerator:
     def composite_setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
         return [
             VALID_CONTEXT,
-            Call("Has_Buffer", [Name("Ctx")]),
+            Call("Has_Buffer", [Variable("Ctx")]),
             *self.setter_postconditions(message, field),
-            Call("Structural_Valid", [Name("Ctx"), Name(field.affixed_name)]),
+            Call("Structural_Valid", [Variable("Ctx"), Variable(field.affixed_name)]),
         ]
 
     def unbounded_composite_setter_preconditions(
@@ -634,14 +645,14 @@ class GeneratorGenerator:
         return [
             Call(
                 "Field_Condition",
-                [Name("Ctx"), NamedAggregate(("Fld", Name(field.affixed_name)))]
+                [Variable("Ctx"), NamedAggregate(("Fld", Variable(field.affixed_name)))]
                 + (
-                    [Call("Field_Length", [Name("Ctx"), Name(field.affixed_name)],)]
+                    [Call("Field_Length", [Variable("Ctx"), Variable(field.affixed_name)],)]
                     if length_dependent_condition(message)
                     else []
                 ),
             ),
-            self.common.sufficient_space_for_field_condition(Name(field.affixed_name)),
+            self.common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
         ]
 
     def bounded_composite_setter_preconditions(
@@ -650,42 +661,46 @@ class GeneratorGenerator:
         return [
             Call(
                 "Field_Condition",
-                [Name("Ctx"), NamedAggregate(("Fld", Name(field.affixed_name)))]
-                + ([Name("Length")] if length_dependent_condition(message) else []),
+                [Variable("Ctx"), NamedAggregate(("Fld", Variable(field.affixed_name)))]
+                + ([Variable("Length")] if length_dependent_condition(message) else []),
             ),
             GreaterEqual(
-                Call("Available_Space", [Name("Ctx"), Name(field.affixed_name)]), Name("Length"),
+                Call("Available_Space", [Variable("Ctx"), Variable(field.affixed_name)]),
+                Variable("Length"),
             ),
             LessEqual(
-                Add(Call("Field_First", [Name("Ctx"), Name(field.affixed_name)]), Name("Length"),),
-                Div(Last(self.types.bit_index), Number(2)),
+                Add(
+                    Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]),
+                    Variable("Length"),
+                ),
+                Div(Last(Variable(self.types.bit_index)), Number(2)),
             ),
             Or(
                 *[
                     And(
                         *[
-                            Call("Valid", [Name("Ctx"), Name(field.affixed_name)])
+                            Call("Valid", [Variable("Ctx"), Variable(field.affixed_name)])
                             for field in message.fields
                             if Variable(field.name) in l.condition.variables()
                         ],
                         l.condition.simplified(
                             {
-                                Variable(field.name): Call(f"Get_{field.name}", [Name("Ctx")])
+                                Variable(field.name): Call(f"Get_{field.name}", [Variable("Ctx")])
                                 for field in message.fields
                                 if Variable(field.name) in l.condition.variables()
                             }
                         ),
                     )
                     for l in message.incoming(field)
-                    if Last("Message") in l.length
+                    if Last(Variable("Message")) in l.length
                 ]
             ),
         ]
 
 
 def unbounded_setter_required(message: Message, field: Field) -> bool:
-    return any(True for l in message.incoming(field) if Last("Message") not in l.length)
+    return any(True for l in message.incoming(field) if Last(Variable("Message")) not in l.length)
 
 
 def bounded_setter_required(message: Message, field: Field) -> bool:
-    return any(True for l in message.incoming(field) if Last("Message") in l.length)
+    return any(True for l in message.incoming(field) if Last(Variable("Message")) in l.length)
