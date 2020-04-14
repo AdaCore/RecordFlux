@@ -41,6 +41,7 @@ from rflx.expression import (
     ValueRange,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
@@ -55,8 +56,8 @@ from rflx.model import (
 
 from .types import Types
 
-NULL = Name("null")
-VALID_CONTEXT = Call("Valid_Context", [Name("Ctx")])  # WORKAROUND: Componolit/Workarounds#1
+NULL = Variable("null")
+VALID_CONTEXT = Call("Valid_Context", [Variable("Ctx")])  # WORKAROUND: Componolit/Workarounds#1
 
 
 class GeneratorCommon:
@@ -68,7 +69,7 @@ class GeneratorCommon:
         self, message: Message, prefix: bool = True, public: bool = False
     ) -> Mapping[Name, Expr]:
         def prefixed(name: str) -> Expr:
-            return Selected(Name("Ctx"), name) if prefix else Name(name)
+            return Variable(f"Ctx.{name}") if prefix else Variable(name)
 
         first = prefixed("First")
         last = prefixed("Last")
@@ -76,51 +77,59 @@ class GeneratorCommon:
 
         def field_first(field: Field) -> Expr:
             if public:
-                return Call("Field_First", [Name("Ctx"), Name(field.affixed_name)])
-            return Selected(Indexed(cursors, Name(field.affixed_name)), "First")
+                return Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)])
+            return Selected(Indexed(cursors, Variable(field.affixed_name)), "First")
 
         def field_last(field: Field) -> Expr:
             if public:
-                return Call("Field_Last", [Name("Ctx"), Name(field.affixed_name)])
-            return Selected(Indexed(cursors, Name(field.affixed_name)), "Last")
+                return Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)])
+            return Selected(Indexed(cursors, Variable(field.affixed_name)), "Last")
 
         def field_length(field: Field) -> Expr:
             if public:
-                return Call("Field_Length", [Name("Ctx"), Name(field.affixed_name)])
+                return Call("Field_Length", [Variable("Ctx"), Variable(field.affixed_name)])
             return Add(
                 Sub(
-                    Selected(Indexed(cursors, Name(field.affixed_name)), "Last"),
-                    Selected(Indexed(cursors, Name(field.affixed_name)), "First"),
+                    Selected(Indexed(cursors, Variable(field.affixed_name)), "Last"),
+                    Selected(Indexed(cursors, Variable(field.affixed_name)), "First"),
                 ),
                 Number(1),
             )
 
         def field_value(field: Field) -> Expr:
             if public:
-                return Call(self.types.bit_length, [Call(f"Get_{field.name}", [Name("Ctx")])])
+                return Call(self.types.bit_length, [Call(f"Get_{field.name}", [Variable("Ctx")])])
             return Call(
                 self.types.bit_length,
-                [Selected(Indexed(cursors, Name(field.affixed_name)), f"Value.{field.name}_Value")],
+                [
+                    Selected(
+                        Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
+                    )
+                ],
             )
 
         def enum_field_value(field: Field) -> Expr:
             if public:
                 return Call(
                     self.types.bit_length,
-                    [Call("To_Base", [Call(f"Get_{field.name}", [Name("Ctx")])])],
+                    [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
                 )
             return Call(
                 self.types.bit_length,
-                [Selected(Indexed(cursors, Name(field.affixed_name)), f"Value.{field.name}_Value")],
+                [
+                    Selected(
+                        Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
+                    )
+                ],
             )
 
         return {
-            **{First("Message"): first},
-            **{Last("Message"): last},
-            **{Length("Message"): Add(last, -first, Number(1))},
-            **{First(f.name): field_first(f) for f in message.fields},
-            **{Last(f.name): field_last(f) for f in message.fields},
-            **{Length(f.name): field_length(f) for f in message.fields},
+            **{First(Variable("Message")): first},
+            **{Last(Variable("Message")): last},
+            **{Length(Variable("Message")): Add(last, -first, Number(1))},
+            **{First(Variable(f.name)): field_first(f) for f in message.fields},
+            **{Last(Variable(f.name)): field_last(f) for f in message.fields},
+            **{Length(Variable(f.name)): field_length(f) for f in message.fields},
             **{
                 Variable(f.name): field_value(f)
                 for f, t in message.types.items()
@@ -132,14 +141,14 @@ class GeneratorCommon:
                 if isinstance(t, Enumeration)
             },
             **{
-                Variable(l): Call(self.types.bit_length, [Call("To_Base", [Name(l)])])
+                Variable(l): Call(self.types.bit_length, [Call("To_Base", [Variable(l)])])
                 for t in message.types.values()
                 if isinstance(t, Enumeration)
                 for l in t.literals.keys()
             },
             **{
-                Variable(f"{t.package}.{l}"): Call(
-                    self.types.bit_length, [Call("To_Base", [Name(f"{t.package}.{l}")])]
+                Variable(t.package * l): Call(
+                    self.types.bit_length, [Call("To_Base", [Variable(t.package * l)])]
                 )
                 for t in message.types.values()
                 if isinstance(t, Enumeration)
@@ -151,7 +160,7 @@ class GeneratorCommon:
         self, message: Message, link: Link = None, prefix: bool = True
     ) -> Expr:
         def prefixed(name: str) -> Expr:
-            return Selected(Name("Ctx"), name) if prefix else Name(name)
+            return Selected(Variable("Ctx"), name) if prefix else Variable(name)
 
         if not link:
             return self.message_structure_invariant(message, message.outgoing(INITIAL)[0], prefix)
@@ -165,12 +174,12 @@ class GeneratorCommon:
         field_type = message.types[target]
         condition = link.condition.simplified(self.substitution(message, prefix))
         length = (
-            Size(self.prefix + full_base_type_name(field_type))
+            Size(Variable(self.prefix * full_base_type_name(field_type)))
             if isinstance(field_type, Scalar)
             else link.length.simplified(self.substitution(message, prefix))
         )
         first = (
-            Name(prefixed("First"))
+            prefixed("First")
             if source == INITIAL
             else link.first.simplified(
                 {
@@ -178,7 +187,7 @@ class GeneratorCommon:
                     **{
                         UNDEFINED: Add(
                             Selected(
-                                Indexed(prefixed("Cursors"), Name(source.affixed_name)), "Last"
+                                Indexed(prefixed("Cursors"), Variable(source.affixed_name)), "Last"
                             ),
                             Number(1),
                         )
@@ -193,7 +202,7 @@ class GeneratorCommon:
                     AndThen(
                         Call(
                             "Structural_Valid",
-                            [Indexed(prefixed("Cursors"), Name(target.affixed_name))],
+                            [Indexed(prefixed("Cursors"), Variable(target.affixed_name))],
                         ),
                         condition,
                     ),
@@ -202,11 +211,11 @@ class GeneratorCommon:
                             Add(
                                 Sub(
                                     Selected(
-                                        Indexed(prefixed("Cursors"), Name(target.affixed_name)),
+                                        Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
                                         "Last",
                                     ),
                                     Selected(
-                                        Indexed(prefixed("Cursors"), Name(target.affixed_name)),
+                                        Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
                                         "First",
                                     ),
                                 ),
@@ -216,14 +225,14 @@ class GeneratorCommon:
                         ),
                         Equal(
                             Selected(
-                                Indexed(prefixed("Cursors"), Name(target.affixed_name)),
+                                Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
                                 "Predecessor",
                             ),
-                            Name(source.affixed_name),
+                            Variable(source.affixed_name),
                         ),
                         Equal(
                             Selected(
-                                Indexed(prefixed("Cursors"), Name(target.affixed_name)), "First"
+                                Indexed(prefixed("Cursors"), Variable(target.affixed_name)), "First"
                             ),
                             first,
                         ),
@@ -244,7 +253,8 @@ class GeneratorCommon:
                         [
                             (
                                 Call(
-                                    "Structural_Valid", [Indexed("Cursors", Name(f.affixed_name))]
+                                    "Structural_Valid",
+                                    [Indexed(Variable("Cursors"), Variable(f.affixed_name))],
                                 ),
                                 Or(
                                     *[
@@ -253,14 +263,22 @@ class GeneratorCommon:
                                                 "Structural_Valid"
                                                 if l.source in composite_fields
                                                 else "Valid",
-                                                [Indexed("Cursors", Name(l.source.affixed_name))],
+                                                [
+                                                    Indexed(
+                                                        Variable("Cursors"),
+                                                        Variable(l.source.affixed_name),
+                                                    )
+                                                ],
                                             ),
                                             Equal(
                                                 Selected(
-                                                    Indexed("Cursors", Name(f.affixed_name)),
+                                                    Indexed(
+                                                        Variable("Cursors"),
+                                                        Variable(f.affixed_name),
+                                                    ),
                                                     "Predecessor",
                                                 ),
-                                                Name(l.source.affixed_name),
+                                                Variable(l.source.affixed_name),
                                             ),
                                             l.condition,
                                         ).simplified(self.substitution(message, False))
@@ -283,11 +301,21 @@ class GeneratorCommon:
                             (
                                 AndThen(
                                     *[
-                                        Call("Invalid", [Indexed("Cursors", Name(p.affixed_name))])
+                                        Call(
+                                            "Invalid",
+                                            [
+                                                Indexed(
+                                                    Variable("Cursors"), Variable(p.affixed_name)
+                                                )
+                                            ],
+                                        )
                                         for p in message.direct_predecessors(f)
                                     ]
                                 ),
-                                Call("Invalid", [Indexed("Cursors", Name(f.affixed_name))]),
+                                Call(
+                                    "Invalid",
+                                    [Indexed(Variable("Cursors"), Variable(f.affixed_name))],
+                                ),
                             )
                         ]
                     )
@@ -300,49 +328,53 @@ class GeneratorCommon:
             If(
                 [
                     (
-                        NotEqual(Name(Name("Buffer")), NULL),
+                        NotEqual(Variable("Buffer"), NULL),
                         And(
-                            Equal(First(Name("Buffer")), Name(Name("Buffer_First"))),
-                            Equal(Last(Name("Buffer")), Name(Name("Buffer_Last"))),
+                            Equal(First(Variable("Buffer")), Variable("Buffer_First")),
+                            Equal(Last(Variable("Buffer")), Variable("Buffer_Last")),
                         ),
                     )
                 ]
             ),
             GreaterEqual(
-                Call(self.types.byte_index, [Name(Name("First"))]), Name(Name("Buffer_First"))
+                Call(self.types.byte_index, [Variable("First")]), Variable("Buffer_First")
             ),
-            LessEqual(Call(self.types.byte_index, [Name(Name("Last"))]), Name(Name("Buffer_Last"))),
-            LessEqual(Name(Name("First")), Name(Name("Last"))),
-            LessEqual(Name(Name("Last")), Div(Last(self.types.bit_index), Number(2))),
+            LessEqual(Call(self.types.byte_index, [Variable("Last")]), Variable("Buffer_Last")),
+            LessEqual(Variable("First"), Variable("Last")),
+            LessEqual(Variable("Last"), Div(Last(Variable(self.types.bit_index)), Number(2))),
             ForAllIn(
                 "F",
-                ValueRange(First("Field"), Last("Field")),
+                ValueRange(First(Variable("Field")), Last(Variable("Field"))),
                 If(
                     [
                         (
-                            Call("Structural_Valid", [Indexed(Name("Cursors"), Name("F"))]),
+                            Call("Structural_Valid", [Indexed(Variable("Cursors"), Variable("F"))]),
                             And(
                                 GreaterEqual(
-                                    Selected(Indexed(Name("Cursors"), Name("F")), "First"),
-                                    Name(Name("First")),
+                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
+                                    Variable("First"),
                                 ),
                                 LessEqual(
-                                    Selected(Indexed(Name("Cursors"), Name("F")), "Last"),
-                                    Name(Name("Last")),
+                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
+                                    Variable("Last"),
                                 ),
                                 LessEqual(
-                                    Selected(Indexed(Name("Cursors"), Name("F")), "First"),
+                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
                                     Add(
-                                        Selected(Indexed(Name("Cursors"), Name("F")), "Last"),
+                                        Selected(
+                                            Indexed(Variable("Cursors"), Variable("F")), "Last"
+                                        ),
                                         Number(1),
                                     ),
                                 ),
                                 Equal(
                                     Selected(
-                                        Selected(Indexed(Name("Cursors"), Name("F")), "Value"),
+                                        Selected(
+                                            Indexed(Variable("Cursors"), Variable("F")), "Value"
+                                        ),
                                         "Fld",
                                     ),
-                                    Name("F"),
+                                    Variable("F"),
                                 ),
                             ),
                         )
@@ -362,10 +394,13 @@ class GeneratorCommon:
                         l.condition,
                         And(
                             Equal(
-                                Call("Predecessor", [Name("Ctx"), Name(l.target.affixed_name)],),
-                                Name(field.affixed_name),
+                                Call(
+                                    "Predecessor",
+                                    [Variable("Ctx"), Variable(l.target.affixed_name)],
+                                ),
+                                Variable(field.affixed_name),
                             ),
-                            Call("Valid_Next", [Name("Ctx"), Name(l.target.affixed_name)])
+                            Call("Valid_Next", [Variable("Ctx"), Variable(l.target.affixed_name)])
                             if l.target != FINAL
                             else TRUE,
                         ),
@@ -379,22 +414,24 @@ class GeneratorCommon:
     @staticmethod
     def sufficient_space_for_field_condition(field_name: Name) -> Expr:
         return GreaterEqual(
-            Call("Available_Space", [Name("Ctx"), field_name]),
-            Call("Field_Length", [Name("Ctx"), field_name]),
+            Call("Available_Space", [Variable("Ctx"), field_name]),
+            Call("Field_Length", [Variable("Ctx"), field_name]),
         )
 
     def initialize_field_statements(self, message: Message, field: Field) -> Sequence[Statement]:
         return [
-            CallStatement("Reset_Dependent_Fields", [Name("Ctx"), Name(field.affixed_name)],),
+            CallStatement(
+                "Reset_Dependent_Fields", [Variable("Ctx"), Variable(field.affixed_name)],
+            ),
             Assignment(
                 "Ctx",
                 Aggregate(
-                    Selected("Ctx", "Buffer_First"),
-                    Selected("Ctx", "Buffer_Last"),
-                    Selected("Ctx", "First"),
-                    Name("Last"),
-                    Selected("Ctx", "Buffer"),
-                    Selected("Ctx", "Cursors"),
+                    Variable("Ctx.Buffer_First"),
+                    Variable("Ctx.Buffer_Last"),
+                    Variable("Ctx.First"),
+                    Variable("Last"),
+                    Variable("Ctx.Buffer"),
+                    Variable("Ctx.Cursors"),
                 ),
             ),
             # WORKAROUND:
@@ -405,16 +442,16 @@ class GeneratorCommon:
                 "Assert", [str(self.message_structure_invariant(message, prefix=True))],
             ),
             Assignment(
-                Indexed(Selected("Ctx", "Cursors"), Name(field.affixed_name)),
+                Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
                 NamedAggregate(
-                    ("State", Name("S_Structural_Valid")),
-                    ("First", Name("First")),
-                    ("Last", Name("Last")),
-                    ("Value", NamedAggregate(("Fld", Name(field.affixed_name))),),
+                    ("State", Variable("S_Structural_Valid")),
+                    ("First", Variable("First")),
+                    ("Last", Variable("Last")),
+                    ("Value", NamedAggregate(("Fld", Variable(field.affixed_name))),),
                     (
                         "Predecessor",
                         Selected(
-                            Indexed(Selected("Ctx", "Cursors"), Name(field.affixed_name),),
+                            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name),),
                             "Predecessor",
                         ),
                     ),
@@ -422,11 +459,11 @@ class GeneratorCommon:
             ),
             Assignment(
                 Indexed(
-                    Selected("Ctx", "Cursors"),
-                    Call("Successor", [Name("Ctx"), Name(field.affixed_name)]),
+                    Variable("Ctx.Cursors"),
+                    Call("Successor", [Variable("Ctx"), Variable(field.affixed_name)]),
                 ),
                 NamedAggregate(
-                    ("State", Name("S_Invalid")), ("Predecessor", Name(field.affixed_name)),
+                    ("State", Variable("S_Invalid")), ("Predecessor", Variable(field.affixed_name)),
                 ),
             ),
         ]
@@ -436,11 +473,14 @@ class GeneratorCommon:
             ObjectDeclaration(
                 ["First"],
                 self.types.bit_index,
-                Call("Field_First", [Name("Ctx"), field_name]),
+                Call("Field_First", [Variable("Ctx"), field_name]),
                 True,
             ),
             ObjectDeclaration(
-                ["Last"], self.types.bit_index, Call("Field_Last", [Name("Ctx"), field_name]), True,
+                ["Last"],
+                self.types.bit_index,
+                Call("Field_Last", [Variable("Ctx"), field_name]),
+                True,
             ),
         ]
 
@@ -448,49 +488,49 @@ class GeneratorCommon:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification("Buffer_First", self.types.index),
-                Call(self.types.byte_index, [Name("First")]),
+                Call(self.types.byte_index, [Variable("First")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification("Buffer_Last", self.types.index),
-                Call(self.types.byte_index, [Name("Last")]),
+                Call(self.types.byte_index, [Variable("Last")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification("Offset", self.types.offset),
                 Call(
                     self.types.offset,
-                    [Mod(Sub(Number(8), Mod(Name("Last"), Number(8))), Number(8))],
+                    [Mod(Sub(Number(8), Mod(Variable("Last"), Number(8))), Number(8))],
                 ),
             ),
         ]
 
 
-def base_type_name(scalar_type: Scalar) -> str:
+def base_type_name(scalar_type: Scalar) -> ID:
     if isinstance(scalar_type, ModularInteger):
-        return scalar_type.name
+        return ID(scalar_type.name)
 
-    return f"{scalar_type.name}_Base"
+    return ID(f"{scalar_type.name}_Base")
 
 
-def full_base_type_name(scalar_type: Scalar) -> str:
+def full_base_type_name(scalar_type: Scalar) -> ID:
     if scalar_type.package == BUILTINS_PACKAGE:
-        return f"Builtin_Types.{scalar_type.name}_Base"
+        return ID(f"Builtin_Types.{scalar_type.name}_Base")
 
     if isinstance(scalar_type, ModularInteger):
-        return scalar_type.full_name
+        return scalar_type.identifier
 
-    return f"{scalar_type.full_name}_Base"
-
-
-def enum_name(enum_type: Enumeration) -> str:
-    return f"{enum_type.name}_Enum"
+    return ID(f"{scalar_type.full_name}_Base")
 
 
-def full_enum_name(enum_type: Enumeration) -> str:
-    return f"{enum_type.full_name}_Enum"
+def enum_name(enum_type: Enumeration) -> ID:
+    return ID(f"{enum_type.name}_Enum")
 
 
-def sequence_name(message: Message, field: Field) -> str:
-    return f"{message.types[field].name}_Sequence"
+def full_enum_name(enum_type: Enumeration) -> ID:
+    return ID(f"{enum_type.full_name}_Enum")
+
+
+def sequence_name(message: Message, field: Field) -> ID:
+    return ID(f"{message.types[field].name}_Sequence")
 
 
 def length_dependent_condition(message: Message) -> bool:

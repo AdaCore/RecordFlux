@@ -49,7 +49,7 @@ min-public-methods=0
 [SIMILARITIES]
 
 # Minimum lines number of a similarity.
-min-similarity-lines=11
+min-similarity-lines=12
 
 # Ignore imports when computing similarities.
 ignore-imports=yes

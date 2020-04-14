@@ -86,7 +86,6 @@ from rflx.expression import (
     Last,
     Length,
     LessEqual,
-    Name,
     NamedAggregate,
     Not,
     NotEqual,
@@ -99,6 +98,7 @@ from rflx.expression import (
     Size,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
@@ -151,19 +151,16 @@ LIBRARY_FILES = (
     "types.ads",
 )
 
-REFINEMENT_PACKAGE = "Contains"
+REFINEMENT_PACKAGE = ID("Contains")
 
 
 class Generator:
     # pylint: disable=too-many-instance-attributes
     def __init__(self, prefix: str = "", reproducible: bool = False) -> None:
-        if prefix and "" in prefix.split("."):
-            raise InternalError(f'invalid prefix: "{prefix}"')
-
-        self.prefix = f"{prefix}." if prefix else ""
+        self.prefix = str(ID(prefix)) if prefix else ""
         self.reproducible = reproducible
-        self.units: Dict[str, Unit] = {}
-        self.seen_types: Set[str] = set()
+        self.units: Dict[ID, Unit] = {}
+        self.seen_types: Set[ID] = set()
         self.types = Types(self.prefix)
         self.common = GeneratorCommon(self.prefix)
         self.parser = ParserGenerator(self.prefix)
@@ -200,21 +197,20 @@ class Generator:
         for template_filename in LIBRARY_FILES:
             self.__check_template_file(template_filename)
 
-            filename = self.prefix.replace(".", "-").lower() + template_filename
+            prefix = self.prefix.replace(".", "-").lower()
+            filename = f"{prefix}-{template_filename}"
 
             with open(self.template_dir / Path(template_filename)) as template_file:
                 create_file(
                     Path(directory) / Path(filename),
-                    self.__license_header() + template_file.read().format(prefix=self.prefix),
+                    self.__license_header() + template_file.read().format(prefix=f"{self.prefix}."),
                 )
 
     def write_top_level_package(self, directory: Path) -> None:
         if self.prefix:
-            prefix = self.prefix[:-1]
-
             create_file(
-                Path(directory) / Path(prefix.lower() + ".ads"),
-                self.__license_header() + f"package {prefix} is\n\nend {prefix};",
+                Path(directory) / Path(self.prefix.lower() + ".ads"),
+                self.__license_header() + f"package {self.prefix} is\n\nend {self.prefix};",
             )
 
     def write_units(self, directory: Path) -> None:
@@ -242,11 +238,9 @@ class Generator:
     def __create_derived_message(self, message: DerivedMessage) -> None:
         self.__create_message_unit(message)
 
-    def __create_unit(self, package_name: str, context: List[ContextItem]) -> None:
-        name = f"{self.prefix}{package_name}"
-        self.units[package_name] = PackageUnit(
-            context, PackageDeclaration(name), PackageBody(name),
-        )
+    def __create_unit(self, package: ID, context: List[ContextItem]) -> None:
+        name = self.prefix * package
+        self.units[package] = PackageUnit(context, PackageDeclaration(name), PackageBody(name),)
 
     # pylint: disable=too-many-statements
     def __create_generic_message_unit(self, message: Message) -> None:
@@ -263,7 +257,7 @@ class Generator:
 
         context.append(WithClause(self.types.prefixed_generic_types))
 
-        unit_name = full_generic_name(self.prefix, message.package, message.name)
+        unit_name = generic_name(self.prefix * message.identifier)
         parameters: List[FormalDeclaration] = [
             FormalPackageDeclaration("Types", self.types.prefixed_generic_types),
         ]
@@ -281,21 +275,21 @@ class Generator:
             if isinstance(field_type, Scalar) and field_type.package != message.package:
                 context.extend(
                     [
-                        WithClause(f"{self.prefix}{field_type.package}"),
-                        UsePackageClause(f"{self.prefix}{field_type.package}"),
+                        WithClause(self.prefix * field_type.package),
+                        UsePackageClause(self.prefix * field_type.package),
                     ]
                 )
 
             elif isinstance(field_type, Array):
                 if isinstance(field_type.element_type, Message):
-                    name = "Message_Sequence"
+                    name = ID("Message_Sequence")
                 else:
-                    name = "Scalar_Sequence"
-                context.append(WithClause(f"{self.prefix}{name}"))
+                    name = ID("Scalar_Sequence")
+                context.append(WithClause(self.prefix * name))
                 parameters.append(
                     FormalPackageDeclaration(
                         f"{field_type.name}_Sequence",
-                        f"{self.prefix}{name}",
+                        self.prefix * name,
                         ["Types", "others => <>"],
                     )
                 )
@@ -307,14 +301,14 @@ class Generator:
         context_invariant = [
             Equal(e, Old(e))
             for e in (
-                Name("Ctx.Buffer_First"),
-                Name("Ctx.Buffer_Last"),
-                Name("Ctx.First"),
-                Name("Ctx.Last"),
+                Variable("Ctx.Buffer_First"),
+                Variable("Ctx.Buffer_Last"),
+                Variable("Ctx.First"),
+                Variable("Ctx.Last"),
             )
         ]
 
-        unit += self.__create_specification_pragmas(generic_name(message.name))
+        unit += self.__create_specification_pragmas(generic_name(ID(message.name)))
         unit += self.__create_use_type_clause()
         unit += self.__create_field_type(message)
         unit += self.__create_state_type()
@@ -369,8 +363,8 @@ class Generator:
         unit += self.__create_cursors_function()
 
     @staticmethod
-    def __create_specification_pragmas(package_name: str) -> UnitPart:
-        return UnitPart([Pragma("Annotate", ["GNATprove", "Terminating", package_name])])
+    def __create_specification_pragmas(package: ID) -> UnitPart:
+        return UnitPart([Pragma("Annotate", ["GNATprove", "Terminating", str(package)])])
 
     def __create_use_type_clause(self, additional_types: Sequence[str] = None) -> UnitPart:
         additional_types = additional_types or []
@@ -398,8 +392,8 @@ class Generator:
                 RangeSubtype(
                     "Field",
                     "Virtual_Field",
-                    Name(message.all_fields[1].affixed_name),
-                    Name(message.all_fields[-2].affixed_name),
+                    Variable(message.all_fields[1].affixed_name),
+                    Variable(message.all_fields[-2].affixed_name),
                 ),
             ]
         )
@@ -416,7 +410,7 @@ class Generator:
         )
 
     def __create_cursor_type(self, message: Message) -> UnitPart:
-        discriminants = [Discriminant(["State"], "Cursor_State", Name("S_Invalid"))]
+        discriminants = [Discriminant(["State"], "Cursor_State", Variable("S_Invalid"))]
 
         return UnitPart(
             [
@@ -431,43 +425,52 @@ class Generator:
                         "Valid_Value", "Boolean", [Parameter(["Val"], "Field_Dependent_Value")]
                     ),
                     Case(
-                        Selected("Val", "Fld"),
+                        Variable("Val.Fld"),
                         [
                             (
-                                Name(f.affixed_name),
-                                Call("Valid", [Name(f"Val.{f.name}_Value")])
+                                Variable(f.affixed_name),
+                                Call("Valid", [Variable(f"Val.{f.name}_Value")])
                                 if isinstance(t, Scalar)
                                 else TRUE,
                             )
                             for f, t in message.types.items()
                         ]
-                        + [(Name(INITIAL.affixed_name), FALSE), (Name(FINAL.affixed_name), FALSE)],
+                        + [
+                            (Variable(INITIAL.affixed_name), FALSE),
+                            (Variable(FINAL.affixed_name), FALSE),
+                        ],
                     ),
                 ),
                 RecordType(
                     "Field_Cursor",
-                    [Component("Predecessor", "Virtual_Field", Name(FINAL.affixed_name))],
+                    [Component("Predecessor", "Virtual_Field", Variable(FINAL.affixed_name))],
                     discriminants,
                     VariantPart(
                         "State",
                         [
                             Variant(
-                                [Name("S_Valid"), Name("S_Structural_Valid")],
+                                [Variable("S_Valid"), Variable("S_Structural_Valid")],
                                 [
                                     Component(
-                                        "First", self.types.bit_index, First(self.types.bit_index)
+                                        "First",
+                                        self.types.bit_index,
+                                        First(Variable(self.types.bit_index)),
                                     ),
                                     Component(
-                                        "Last", self.types.bit_length, First(self.types.bit_length)
+                                        "Last",
+                                        self.types.bit_length,
+                                        First(Variable(self.types.bit_length)),
                                     ),
                                     Component(
                                         "Value",
                                         "Field_Dependent_Value",
-                                        NamedAggregate(("Fld", Name(FINAL.affixed_name))),
+                                        NamedAggregate(("Fld", Variable(FINAL.affixed_name))),
                                     ),
                                 ],
                             ),
-                            Variant([Name("S_Invalid"), Name("S_Incomplete")], [NullComponent()]),
+                            Variant(
+                                [Variable("S_Invalid"), Variable("S_Incomplete")], [NullComponent()]
+                            ),
                         ],
                     ),
                     [
@@ -476,10 +479,12 @@ class Generator:
                                 [
                                     (
                                         Or(
-                                            Equal(Name("State"), Name("S_Valid")),
-                                            Equal(Name("State"), Name("S_Structural_Valid")),
+                                            Equal(Variable("State"), Variable("S_Valid")),
+                                            Equal(
+                                                Variable("State"), Variable("S_Structural_Valid")
+                                            ),
                                         ),
-                                        Call("Valid_Value", [Selected("Field_Cursor", "Value")]),
+                                        Call("Valid_Value", [Variable("Field_Cursor.Value")]),
                                     )
                                 ]
                             )
@@ -492,9 +497,11 @@ class Generator:
     def __create_context_type(self) -> UnitPart:
         discriminants = [
             Discriminant(
-                ["Buffer_First", "Buffer_Last"], self.types.index, First(self.types.index)
+                ["Buffer_First", "Buffer_Last"], self.types.index, First(Variable(self.types.index))
             ),
-            Discriminant(["First", "Last"], self.types.bit_index, First(self.types.bit_index)),
+            Discriminant(
+                ["First", "Last"], self.types.bit_index, First(Variable(self.types.bit_index))
+            ),
         ]
 
         return UnitPart(
@@ -512,8 +519,8 @@ class Generator:
                                 (
                                     "others",
                                     NamedAggregate(
-                                        ("State", Name("S_Invalid")),
-                                        ("Predecessor", Name(FINAL.affixed_name)),
+                                        ("State", Variable("S_Invalid")),
+                                        ("Predecessor", Variable(FINAL.affixed_name)),
                                     ),
                                 )
                             ),
@@ -526,12 +533,12 @@ class Generator:
                             Call(
                                 "Valid_Context",
                                 [
-                                    Selected("Context", "Buffer_First"),
-                                    Selected("Context", "Buffer_Last"),
-                                    Selected("Context", "First"),
-                                    Selected("Context", "Last"),
-                                    Selected("Context", "Buffer"),
-                                    Selected("Context", "Cursors"),
+                                    Variable("Context.Buffer_First"),
+                                    Variable("Context.Buffer_Last"),
+                                    Variable("Context.First"),
+                                    Variable("Context.Last"),
+                                    Variable("Context.Buffer"),
+                                    Variable("Context.Cursors"),
                                 ],
                             )
                         )
@@ -545,13 +552,13 @@ class Generator:
     ) -> UnitPart:
         result_variants = [
             Variant(
-                [Name(f.affixed_name) for f in [INITIAL, *composite_fields, FINAL]],
+                [Variable(f.affixed_name) for f in [INITIAL, *composite_fields, FINAL]],
                 [NullComponent()],
             )
         ] + [
             Variant(
-                [Name(f.affixed_name)],
-                [Component(f"{f.name}_Value", self.prefix + full_base_type_name(t))],
+                [Variable(f.affixed_name)],
+                [Component(f"{f.name}_Value", self.prefix * full_base_type_name(t))],
             )
             for f, t in scalar_fields.items()
         ]
@@ -561,7 +568,7 @@ class Generator:
                 RecordType(
                     "Field_Dependent_Value",
                     [],
-                    [Discriminant(["Fld"], "Virtual_Field", Name(INITIAL.affixed_name))],
+                    [Discriminant(["Fld"], "Virtual_Field", Variable(INITIAL.affixed_name))],
                     VariantPart("Fld", result_variants),
                 )
             ]
@@ -576,24 +583,24 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Aggregate(
-                        First(self.types.index),
-                        First(self.types.index),
-                        First(self.types.bit_index),
-                        First(self.types.bit_index),
+                        First(Variable(self.types.index)),
+                        First(Variable(self.types.index)),
+                        First(Variable(self.types.bit_index)),
+                        First(Variable(self.types.bit_index)),
                         NULL,
                         NamedAggregate(
                             (
                                 message.fields[0].affixed_name,
                                 NamedAggregate(
-                                    ("State", Name("S_Invalid")),
-                                    ("Predecessor", Name(INITIAL.affixed_name)),
+                                    ("State", Variable("S_Invalid")),
+                                    ("Predecessor", Variable(INITIAL.affixed_name)),
                                 ),
                             ),
                             (
                                 "others",
                                 NamedAggregate(
-                                    ("State", Name("S_Invalid")),
-                                    ("Predecessor", Name(FINAL.affixed_name)),
+                                    ("State", Variable("S_Invalid")),
+                                    ("Predecessor", Variable(FINAL.affixed_name)),
                                 ),
                             ),
                         ),
@@ -615,35 +622,44 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                Not(Constrained("Ctx")),
-                                NotEqual(Name("Buffer"), NULL),
+                                Not(Constrained(Variable("Ctx"))),
+                                NotEqual(Variable("Buffer"), NULL),
                                 # WORKAROUND: Componolit/Workarounds#10
-                                Greater(Length("Buffer"), Number(0)),
-                                LessEqual(Last("Buffer"), Div(Last(self.types.index), Number(2))),
+                                Greater(Length(Variable("Buffer")), Number(0)),
+                                LessEqual(
+                                    Last(Variable("Buffer")),
+                                    Div(Last(Variable(self.types.index)), Number(2)),
+                                ),
                             )
                         ),
                         Postcondition(
                             And(
                                 VALID_CONTEXT,
-                                Call("Has_Buffer", [Name("Ctx")]),
-                                Equal(Name("Buffer"), NULL),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Equal(Variable("Buffer"), NULL),
                                 # WORKAROUND: Componolit/Workarounds#6
                                 Equal(
-                                    Selected("Ctx", "Buffer_First"),
-                                    Old(Call(f"{self.types.types}.Bytes_First", [Name("Buffer")])),
-                                ),
-                                Equal(
-                                    Selected("Ctx", "Buffer_Last"),
-                                    Old(Call(f"{self.types.types}.Bytes_Last", [Name("Buffer")])),
-                                ),
-                                Equal(
-                                    Selected("Ctx", "First"),
-                                    Call(
-                                        f"{self.types.types}.First_Bit_Index",
-                                        [Selected("Ctx", "Buffer_First")],
+                                    Variable("Ctx.Buffer_First"),
+                                    Old(
+                                        Call(
+                                            f"{self.types.types}.Bytes_First", [Variable("Buffer")]
+                                        )
                                     ),
                                 ),
-                                Call("Initialized", [Name("Ctx")]),
+                                Equal(
+                                    Variable("Ctx.Buffer_Last"),
+                                    Old(
+                                        Call(f"{self.types.types}.Bytes_Last", [Variable("Buffer")])
+                                    ),
+                                ),
+                                Equal(
+                                    Variable("Ctx.First"),
+                                    Call(
+                                        f"{self.types.types}.First_Bit_Index",
+                                        [Variable("Ctx.Buffer_First")],
+                                    ),
+                                ),
+                                Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
                     ],
@@ -657,10 +673,10 @@ class Generator:
                         CallStatement(
                             "Initialize",
                             [
-                                Name("Ctx"),
-                                Name("Buffer"),
-                                Call(self.types.first_bit_index, [First("Buffer")]),
-                                Call(self.types.last_bit_index, [Last("Buffer")]),
+                                Variable("Ctx"),
+                                Variable("Buffer"),
+                                Call(self.types.first_bit_index, [First(Variable("Buffer"))]),
+                                Call(self.types.last_bit_index, [Last(Variable("Buffer"))]),
                             ],
                         )
                     ],
@@ -685,37 +701,48 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                Not(Constrained("Ctx")),
-                                NotEqual(Name("Buffer"), NULL),
+                                Not(Constrained(Variable("Ctx"))),
+                                NotEqual(Variable("Buffer"), NULL),
                                 # WORKAROUND: Componolit/Workarounds#10
-                                Greater(Length("Buffer"), Number(0)),
+                                Greater(Length(Variable("Buffer")), Number(0)),
                                 GreaterEqual(
-                                    Call(self.types.byte_index, [Name("First")]), First("Buffer")
+                                    Call(self.types.byte_index, [Variable("First")]),
+                                    First(Variable("Buffer")),
                                 ),
                                 LessEqual(
-                                    Call(self.types.byte_index, [Name("Last")]), Last("Buffer")
+                                    Call(self.types.byte_index, [Variable("Last")]),
+                                    Last(Variable("Buffer")),
                                 ),
-                                LessEqual(Name("First"), Name("Last")),
-                                LessEqual(Name("Last"), Div(Last(self.types.bit_index), Number(2))),
+                                LessEqual(Variable("First"), Variable("Last")),
+                                LessEqual(
+                                    Variable("Last"),
+                                    Div(Last(Variable(self.types.bit_index)), Number(2)),
+                                ),
                             )
                         ),
                         Postcondition(
                             And(
                                 VALID_CONTEXT,
-                                Equal(Name("Buffer"), NULL),
-                                Call("Has_Buffer", [Name("Ctx")]),
+                                Equal(Variable("Buffer"), NULL),
+                                Call("Has_Buffer", [Variable("Ctx")]),
                                 # WORKAROUND: Componolit/Workarounds#6
                                 Equal(
-                                    Selected("Ctx", "Buffer_First"),
-                                    Old(Call(f"{self.types.types}.Bytes_First", [Name("Buffer")])),
+                                    Variable("Ctx.Buffer_First"),
+                                    Old(
+                                        Call(
+                                            f"{self.types.types}.Bytes_First", [Variable("Buffer")]
+                                        )
+                                    ),
                                 ),
                                 Equal(
-                                    Selected("Ctx", "Buffer_Last"),
-                                    Old(Call(f"{self.types.types}.Bytes_Last", [Name("Buffer")])),
+                                    Variable("Ctx.Buffer_Last"),
+                                    Old(
+                                        Call(f"{self.types.types}.Bytes_Last", [Variable("Buffer")])
+                                    ),
                                 ),
-                                Equal(Name("Ctx.First"), Name("First")),
-                                Equal(Name("Ctx.Last"), Name("Last")),
-                                Call("Initialized", [Name("Ctx")]),
+                                Equal(Variable("Ctx.First"), Variable("First")),
+                                Equal(Variable("Ctx.Last"), Variable("Last")),
+                                Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
                     ],
@@ -726,32 +753,34 @@ class Generator:
                     specification,
                     [
                         ObjectDeclaration(
-                            ["Buffer_First"], self.types.index, First("Buffer"), True
+                            ["Buffer_First"], self.types.index, First(Variable("Buffer")), True
                         ),
-                        ObjectDeclaration(["Buffer_Last"], self.types.index, Last("Buffer"), True),
+                        ObjectDeclaration(
+                            ["Buffer_Last"], self.types.index, Last(Variable("Buffer")), True
+                        ),
                     ],
                     [
                         Assignment(
                             "Ctx",
                             Aggregate(
-                                Name("Buffer_First"),
-                                Name("Buffer_Last"),
-                                Name("First"),
-                                Name("Last"),
-                                Name("Buffer"),
+                                Variable("Buffer_First"),
+                                Variable("Buffer_Last"),
+                                Variable("First"),
+                                Variable("Last"),
+                                Variable("Buffer"),
                                 NamedAggregate(
                                     (
                                         message.fields[0].affixed_name,
                                         NamedAggregate(
-                                            ("State", Name("S_Invalid")),
-                                            ("Predecessor", Name(INITIAL.affixed_name)),
+                                            ("State", Variable("S_Invalid")),
+                                            ("Predecessor", Variable(INITIAL.affixed_name)),
                                         ),
                                     ),
                                     (
                                         "others",
                                         NamedAggregate(
-                                            ("State", Name("S_Invalid")),
-                                            ("Predecessor", Name(FINAL.affixed_name)),
+                                            ("State", Variable("S_Invalid")),
+                                            ("Predecessor", Variable(FINAL.affixed_name)),
                                         ),
                                     ),
                                 ),
@@ -774,23 +803,26 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
-                        Call("Valid_Next", [Name("Ctx"), Name(message.fields[0].affixed_name)]),
+                        Call(
+                            "Valid_Next",
+                            [Variable("Ctx"), Variable(message.fields[0].affixed_name)],
+                        ),
                         Equal(
                             Call(
                                 "Available_Space",
-                                [Name("Ctx"), Name(message.fields[0].affixed_name)],
+                                [Variable("Ctx"), Variable(message.fields[0].affixed_name)],
                             ),
                             Add(
                                 Call(
                                     f"{self.types.types}.Last_Bit_Index",
-                                    [Selected("Ctx", "Buffer_Last")],
+                                    [Variable("Ctx.Buffer_Last")],
                                 ),
-                                -Selected("Ctx", "First"),
+                                -Variable("Ctx.First"),
                                 Number(1),
                             ),
                         ),
                         *[
-                            Call("Invalid", [Name("Ctx"), Name(f.affixed_name)])
+                            Call("Invalid", [Variable("Ctx"), Variable(f.affixed_name)])
                             for f in message.fields
                         ],
                     ),
@@ -809,16 +841,16 @@ class Generator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(And(VALID_CONTEXT, Call("Has_Buffer", [Name("Ctx")]))),
+                        Precondition(And(VALID_CONTEXT, Call("Has_Buffer", [Variable("Ctx")]))),
                         Postcondition(
                             And(
                                 VALID_CONTEXT,
-                                Not(Call("Has_Buffer", [Name("Ctx")])),
-                                NotEqual(Name("Buffer"), NULL),
-                                Equal(Name("Ctx.Buffer_First"), First("Buffer")),
-                                Equal(Name("Ctx.Buffer_Last"), Last("Buffer")),
+                                Not(Call("Has_Buffer", [Variable("Ctx")])),
+                                NotEqual(Variable("Buffer"), NULL),
+                                Equal(Variable("Ctx.Buffer_First"), First(Variable("Buffer"))),
+                                Equal(Variable("Ctx.Buffer_Last"), Last(Variable("Buffer"))),
                                 *context_invariant,
-                                *[Equal(e, Old(e)) for e in [Call("Cursors", [Name("Ctx")])]],
+                                *[Equal(e, Old(e)) for e in [Call("Cursors", [Variable("Ctx")])]],
                             )
                         ),
                     ],
@@ -828,7 +860,7 @@ class Generator:
                 SubprogramBody(
                     specification,
                     [],
-                    [Assignment("Buffer", Name("Ctx.Buffer")), Assignment("Ctx.Buffer", NULL)],
+                    [Assignment("Buffer", Variable("Ctx.Buffer")), Assignment("Ctx.Buffer", NULL)],
                 )
             ],
         )
@@ -839,15 +871,15 @@ class Generator:
                 (target, Or(*[c for _, c in conditions]))
                 for target, conditions in itertools.groupby(
                     [
-                        (Name(l.target.affixed_name), l.condition)
+                        (Variable(l.target.affixed_name), l.condition)
                         for l in message.outgoing(field)
                         if l.target != FINAL
                     ],
                     lambda x: x[0],
                 )
             ]
-            cases.append((Name("others"), FALSE))
-            return Case(Name("Fld"), cases).simplified(self.common.substitution(message))
+            cases.append((Variable("others"), FALSE))
+            return Case(Variable("Fld"), cases).simplified(self.common.substitution(message))
 
         specification = FunctionSpecification(
             "Path_Condition",
@@ -862,7 +894,8 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                VALID_CONTEXT, Call("Valid_Predecessor", [Name("Ctx"), Name("Fld")])
+                                VALID_CONTEXT,
+                                Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
                             )
                         )
                     ],
@@ -872,8 +905,11 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Selected(Indexed(Selected("Ctx", "Cursors"), Name("Fld")), "Predecessor"),
-                        [(Name(f.affixed_name), condition(f, message)) for f in message.all_fields],
+                        Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
+                        [
+                            (Variable(f.affixed_name), condition(f, message))
+                            for f in message.all_fields
+                        ],
                     ),
                 )
             ],
@@ -891,22 +927,22 @@ class Generator:
                 field_type = message.types[target]
                 length: Expr
                 if isinstance(field_type, Scalar):
-                    length = Size(self.prefix + full_base_type_name(field_type))
+                    length = Size(Variable(self.prefix * full_base_type_name(field_type)))
                 else:
                     if len(links) == 1:
                         length = links[0].length
                     elif len(links) > 1:
                         length = If(
                             [(l.condition, l.length) for l in links],
-                            Name(self.types.unreachable_bit_length),
+                            Variable(self.types.unreachable_bit_length),
                         ).simplified(self.common.substitution(message))
-                cases.append((Name(target.affixed_name), length))
+                cases.append((Variable(target.affixed_name), length))
 
             if not cases:
                 return Number(0)
 
-            cases.append((Name("others"), Name(self.types.unreachable_bit_length)))
-            return Case(Name("Fld"), cases).simplified(self.common.substitution(message))
+            cases.append((Variable("others"), Variable(self.types.unreachable_bit_length)))
+            return Case(Variable("Fld"), cases).simplified(self.common.substitution(message))
 
         specification = FunctionSpecification(
             "Field_Length",
@@ -920,7 +956,10 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(VALID_CONTEXT, Call("Valid_Next", [Name("Ctx"), Name("Fld")]),)
+                            And(
+                                VALID_CONTEXT,
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                            )
                         )
                     ],
                 )
@@ -929,8 +968,11 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Selected(Indexed(Selected("Ctx", "Cursors"), Name("Fld")), "Predecessor"),
-                        [(Name(f.affixed_name), length(f, message)) for f in message.all_fields],
+                        Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
+                        [
+                            (Variable(f.affixed_name), length(f, message))
+                            for f in message.all_fields
+                        ],
                     ),
                 )
             ],
@@ -939,13 +981,13 @@ class Generator:
     def __create_field_first_function(self, message: Message) -> UnitPart:
         def first(field: Field, message: Message) -> Expr:
             if field == message.fields[0]:
-                return Selected("Ctx", "First")
+                return Variable("Ctx.First")
 
             contiguous_first = Add(
                 Selected(
                     Indexed(
-                        Selected("Ctx", "Cursors"),
-                        Selected(Indexed(Selected("Ctx", "Cursors"), Name("Fld")), "Predecessor"),
+                        Variable("Ctx.Cursors"),
+                        Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
                     ),
                     "Last",
                 ),
@@ -958,9 +1000,9 @@ class Generator:
                         And(
                             Equal(
                                 Selected(
-                                    Indexed(Selected("Ctx", "Cursors"), Name("Fld")), "Predecessor"
+                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"
                                 ),
-                                Name(l.source.affixed_name),
+                                Variable(l.source.affixed_name),
                             ),
                             l.condition,
                         ),
@@ -968,7 +1010,7 @@ class Generator:
                     )
                     for l in message.incoming(field)
                 ],
-                Name(self.types.unreachable_bit_length),
+                Variable(self.types.unreachable_bit_length),
             ).simplified(self.common.substitution(message))
 
         specification = FunctionSpecification(
@@ -983,7 +1025,10 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(VALID_CONTEXT, Call("Valid_Next", [Name("Ctx"), Name("Fld")]),)
+                            And(
+                                VALID_CONTEXT,
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                            )
                         )
                     ],
                 )
@@ -992,8 +1037,8 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Name("Fld"),
-                        [(Name(f.affixed_name), first(f, message)) for f in message.fields],
+                        Variable("Fld"),
+                        [(Variable(f.affixed_name), first(f, message)) for f in message.fields],
                     ),
                 )
             ],
@@ -1010,15 +1055,15 @@ class Generator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [Precondition(And(Call("Valid_Next", [Name("Ctx"), Name("Fld")]),))],
+                    [Precondition(And(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),))],
                 )
             ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
                     Add(
-                        Call("Field_First", [Name("Ctx"), Name("Fld")]),
-                        Call("Field_Length", [Name("Ctx"), Name("Fld")]),
+                        Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                        Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
                         -Number(1),
                     ),
                 )
@@ -1032,9 +1077,12 @@ class Generator:
                 .simplified(
                     {
                         Variable(field.name): Call(
-                            self.types.bit_length, [Selected("Val", f"{field.name}_Value")]
+                            self.types.bit_length, [Variable(f"Val.{field.name}_Value")]
                         ),
-                        Length(field.name): Name("Length"),
+                        Length(Variable(field.name)): Variable("Length"),
+                        Last(Variable(field.name)): Selected(
+                            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)), "Last",
+                        ),
                     }
                 )
                 .simplified(self.common.substitution(message))
@@ -1055,8 +1103,8 @@ class Generator:
                         Precondition(
                             And(
                                 VALID_CONTEXT,
-                                In(Selected("Val", "Fld"), Range("Field")),
-                                Call("Valid_Predecessor", [Name("Ctx"), Selected("Val", "Fld")]),
+                                In(Variable("Val.Fld"), Range(Variable("Field"))),
+                                Call("Valid_Predecessor", [Variable("Ctx"), Variable("Val.Fld")]),
                             )
                         )
                     ],
@@ -1066,8 +1114,11 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Selected("Val", "Fld"),
-                        [(Name(f.affixed_name), condition(f, message)) for f in message.all_fields],
+                        Variable("Val.Fld"),
+                        [
+                            (Variable(f.affixed_name), condition(f, message))
+                            for f in message.all_fields
+                        ],
                     ),
                 )
             ],
@@ -1087,13 +1138,13 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Name("Fld"),
+                        Variable("Fld"),
                         [
-                            (Name(INITIAL.affixed_name), Name(INITIAL.affixed_name)),
+                            (Variable(INITIAL.affixed_name), Variable(INITIAL.affixed_name)),
                             (
-                                Name("others"),
+                                Variable("others"),
                                 Selected(
-                                    Indexed(Selected("Ctx", "Cursors"), Name("Fld")), "Predecessor"
+                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"
                                 ),
                             ),
                         ],
@@ -1115,16 +1166,16 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Name("Fld"),
+                        Variable("Fld"),
                         [
                             (
-                                Name(f.affixed_name),
+                                Variable(f.affixed_name),
                                 If(
                                     [
-                                        (l.condition, Name(l.target.affixed_name))
+                                        (l.condition, Variable(l.target.affixed_name))
                                         for l in message.outgoing(f)
                                     ],
-                                    Name(INITIAL.affixed_name),
+                                    Variable(INITIAL.affixed_name),
                                 ).simplified(self.common.substitution(message)),
                             )
                             for f in message.fields
@@ -1133,8 +1184,8 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                Call("Structural_Valid", [Name("Ctx"), Name("Fld")]),
-                                Call("Valid_Predecessor", [Name("Ctx"), Name("Fld")]),
+                                Call("Structural_Valid", [Variable("Ctx"), Variable("Fld")]),
+                                Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
                             )
                         )
                     ],
@@ -1159,17 +1210,18 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Name("Fld"),
+                        Variable("Fld"),
                         [
                             (
-                                Name(f.affixed_name),
+                                Variable(f.affixed_name),
                                 And(
                                     *[
                                         Call(
                                             "Invalid",
                                             [
                                                 Indexed(
-                                                    Selected("Ctx", "Cursors"), Name(s.affixed_name)
+                                                    Variable("Ctx.Cursors"),
+                                                    Variable(s.affixed_name),
                                                 )
                                             ],
                                         )
@@ -1198,8 +1250,14 @@ class Generator:
             [
                 str(
                     And(
-                        Equal(Call("Field_First", [Name("Ctx"), Name("Fld")]), Name("First")),
-                        Equal(Call("Field_Length", [Name("Ctx"), Name("Fld")]), Name("Length")),
+                        Equal(
+                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                            Variable("First"),
+                        ),
+                        Equal(
+                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
+                            Variable("Length"),
+                        ),
                     )
                 )
             ],
@@ -1214,14 +1272,14 @@ class Generator:
                         ObjectDeclaration(
                             ["First"],
                             self.types.bit_length,
-                            Call("Field_First", [Name("Ctx"), Name("Fld")]),
+                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                             True,
                             [Ghost()],
                         ),
                         ObjectDeclaration(
                             ["Length"],
                             self.types.bit_length,
-                            Call("Field_Length", [Name("Ctx"), Name("Fld")]),
+                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
                             True,
                             [Ghost()],
                         ),
@@ -1229,31 +1287,33 @@ class Generator:
                     [
                         field_location_invariant,
                         CaseStatement(
-                            Name("Fld"),
+                            Variable("Fld"),
                             [
                                 (
-                                    Name(f.affixed_name),
+                                    Variable(f.affixed_name),
                                     cast(List[Statement], [])
                                     + [
                                         Assignment(
                                             Indexed(
-                                                Selected("Ctx", "Cursors"), Name(s.affixed_name)
+                                                Variable("Ctx.Cursors"), Variable(s.affixed_name)
                                             ),
-                                            Aggregate(Name("S_Invalid"), Name(FINAL.affixed_name)),
+                                            Aggregate(
+                                                Variable("S_Invalid"), Variable(FINAL.affixed_name)
+                                            ),
                                         )
                                         for s in reversed(message.successors(f))
                                     ]
                                     + [
                                         Assignment(
                                             Indexed(
-                                                Selected("Ctx", "Cursors"), Name(f.affixed_name)
+                                                Variable("Ctx.Cursors"), Variable(f.affixed_name)
                                             ),
                                             Aggregate(
-                                                Name("S_Invalid"),
+                                                Variable("S_Invalid"),
                                                 Selected(
                                                     Indexed(
-                                                        Selected("Ctx", "Cursors"),
-                                                        Name(f.affixed_name),
+                                                        Variable("Ctx.Cursors"),
+                                                        Variable(f.affixed_name),
                                                     ),
                                                     "Predecessor",
                                                 ),
@@ -1267,12 +1327,14 @@ class Generator:
                         ),
                     ],
                     [
-                        Precondition(And(Call("Valid_Next", [Name("Ctx"), Name("Fld")]),),),
+                        Precondition(And(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),),),
                         Postcondition(
                             And(
-                                Call("Valid_Next", [Name("Ctx"), Name("Fld")]),
-                                Call("Invalid", [Indexed(Selected("Ctx", "Cursors"), Name("Fld"))]),
-                                Call("Invalid_Successor", [Name("Ctx"), Name("Fld")])
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                                Call(
+                                    "Invalid", [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))]
+                                ),
+                                Call("Invalid_Successor", [Variable("Ctx"), Variable("Fld")])
                                 if len(message.fields) > 1
                                 else TRUE,
                                 *context_invariant,
@@ -1280,30 +1342,30 @@ class Generator:
                                     Equal(e, Old(e))
                                     for e in [
                                         Selected(
-                                            Indexed(Selected("Ctx", "Cursors"), Name("Fld")),
+                                            Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
                                             "Predecessor",
                                         ),
-                                        Call("Has_Buffer", [Name("Ctx")]),
-                                        Call("Field_First", [Name("Ctx"), Name("Fld")]),
-                                        Call("Field_Length", [Name("Ctx"), Name("Fld")]),
+                                        Call("Has_Buffer", [Variable("Ctx")]),
+                                        Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                                        Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
                                     ]
                                 ],
                                 Case(
-                                    Name("Fld"),
+                                    Variable("Fld"),
                                     [
                                         (
-                                            Name(f.affixed_name),
+                                            Variable(f.affixed_name),
                                             And(
                                                 *[
                                                     Equal(
                                                         Indexed(
-                                                            Selected("Ctx", "Cursors"),
-                                                            Name(p.affixed_name),
+                                                            Variable("Ctx.Cursors"),
+                                                            Variable(p.affixed_name),
                                                         ),
                                                         Old(
                                                             Indexed(
-                                                                Selected("Ctx", "Cursors"),
-                                                                Name(p.affixed_name),
+                                                                Variable("Ctx.Cursors"),
+                                                                Variable(p.affixed_name),
                                                             )
                                                         ),
                                                     )
@@ -1312,7 +1374,7 @@ class Generator:
                                                 *[
                                                     Call(
                                                         "Invalid",
-                                                        [Name("Ctx"), Name(s.affixed_name)],
+                                                        [Variable("Ctx"), Variable(s.affixed_name)],
                                                     )
                                                     for s in [f, *message.successors(f)]
                                                 ],
@@ -1336,7 +1398,7 @@ class Generator:
 
         return UnitPart(
             [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
-            [ExpressionFunctionDeclaration(specification, NotEqual(Name("Ctx.Buffer"), NULL))],
+            [ExpressionFunctionDeclaration(specification, NotEqual(Variable("Ctx.Buffer"), NULL))],
         )
 
     @staticmethod
@@ -1356,10 +1418,10 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Name("Fld"),
+                        Variable("Fld"),
                         [
                             (
-                                Name(f.affixed_name),
+                                Variable(f.affixed_name),
                                 Or(
                                     *[
                                         And(
@@ -1369,8 +1431,8 @@ class Generator:
                                                 else "Valid",
                                                 [
                                                     Indexed(
-                                                        Selected("Ctx", "Cursors"),
-                                                        Name(p.affixed_name),
+                                                        Variable("Ctx.Cursors"),
+                                                        Variable(p.affixed_name),
                                                     )
                                                 ],
                                             )
@@ -1379,11 +1441,11 @@ class Generator:
                                             Equal(
                                                 Selected(
                                                     Indexed(
-                                                        Selected("Ctx", "Cursors"), Name("Fld")
+                                                        Variable("Ctx.Cursors"), Variable("Fld")
                                                     ),
                                                     "Predecessor",
                                                 ),
-                                                Name(p.affixed_name),
+                                                Variable(p.affixed_name),
                                             ),
                                         ).simplified()
                                         for p in message.direct_predecessors(f)
@@ -1408,7 +1470,7 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(VALID_CONTEXT, Call("Structural_Valid_Message", [Name("Ctx")]))
+                            And(VALID_CONTEXT, Call("Structural_Valid_Message", [Variable("Ctx")]))
                         )
                     ],
                 )
@@ -1424,8 +1486,8 @@ class Generator:
                                         "Structural_Valid",
                                         [
                                             Indexed(
-                                                Selected("Ctx", "Cursors"),
-                                                Name(l.source.affixed_name),
+                                                Variable("Ctx.Cursors"),
+                                                Variable(l.source.affixed_name),
                                             )
                                         ],
                                     ),
@@ -1433,14 +1495,14 @@ class Generator:
                                 ).simplified(self.common.substitution(message)),
                                 Selected(
                                     Indexed(
-                                        Selected("Ctx", "Cursors"), Name(l.source.affixed_name)
+                                        Variable("Ctx.Cursors"), Variable(l.source.affixed_name)
                                     ),
                                     "Last",
                                 ),
                             )
                             for l in message.incoming(FINAL)
                         ],
-                        Name(self.types.unreachable_bit_length),
+                        Variable(self.types.unreachable_bit_length),
                     ),
                 )
             ],
@@ -1459,7 +1521,10 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(VALID_CONTEXT, Call("Valid_Next", [Name("Ctx"), Name("Fld")]),)
+                            And(
+                                VALID_CONTEXT,
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                            )
                         )
                     ],
                 )
@@ -1468,8 +1533,8 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Add(
-                        Call(self.types.last_bit_index, [Selected("Ctx", "Buffer_Last")]),
-                        -Call("Field_First", [Name("Ctx"), Name("Fld")]),
+                        Call(self.types.last_bit_index, [Variable("Ctx.Buffer_Last")]),
+                        -Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                         Number(1),
                     ),
                 )
@@ -1496,25 +1561,31 @@ class Generator:
                         Precondition(
                             AndThen(
                                 VALID_CONTEXT,
-                                Not(Constrained("Ctx")),
-                                Not(Constrained("Seq_Ctx")),
-                                Call("Has_Buffer", [Name("Ctx")]),
-                                Call("Valid_Next", [Name("Ctx"), Name(f.affixed_name)]),
+                                Not(Constrained(Variable("Ctx"))),
+                                Not(Constrained(Variable("Seq_Ctx"))),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Valid_Next", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 Greater(
-                                    Call("Field_Length", [Name("Ctx"), Name(f.affixed_name)]),
+                                    Call(
+                                        "Field_Length", [Variable("Ctx"), Variable(f.affixed_name)]
+                                    ),
                                     Number(0),
                                 ),
                                 LessEqual(
-                                    Call("Field_Last", [Name("Ctx"), Name(f.affixed_name)]),
-                                    Div(Last(self.types.bit_index), Number(2)),
+                                    Call("Field_Last", [Variable("Ctx"), Variable(f.affixed_name)]),
+                                    Div(Last(Variable(self.types.bit_index)), Number(2)),
                                 ),
                                 Call(
                                     "Field_Condition",
-                                    [Name("Ctx"), NamedAggregate(("Fld", Name(f.affixed_name)))]
+                                    [
+                                        Variable("Ctx"),
+                                        NamedAggregate(("Fld", Variable(f.affixed_name))),
+                                    ]
                                     + (
                                         [
                                             Call(
-                                                "Field_Length", [Name("Ctx"), Name(f.affixed_name)],
+                                                "Field_Length",
+                                                [Variable("Ctx"), Variable(f.affixed_name)],
                                             ),
                                         ]
                                         if length_dependent_condition(message)
@@ -1522,7 +1593,7 @@ class Generator:
                                     ),
                                 ),
                                 self.common.sufficient_space_for_field_condition(
-                                    Name(f.affixed_name)
+                                    Variable(f.affixed_name)
                                 ),
                             )
                         ),
@@ -1531,21 +1602,29 @@ class Generator:
                                 VALID_CONTEXT,
                                 *switch_update_conditions(message, f),
                                 Equal(
-                                    Call(f"{sequence_name(message, f)}.Index", [Name("Seq_Ctx")]),
-                                    Selected("Seq_Ctx", "First"),
+                                    Call(
+                                        f"{sequence_name(message, f)}.Index", [Variable("Seq_Ctx")]
+                                    ),
+                                    Variable("Seq_Ctx.First"),
                                 ),
-                                Call("Present", [Name("Ctx"), Name(f.affixed_name)]),
+                                Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
-                                        Selected("Ctx", "Buffer_First"),
-                                        Selected("Ctx", "Buffer_Last"),
-                                        Selected("Ctx", "First"),
-                                        Call("Predecessor", [Name("Ctx"), Name(f.affixed_name)]),
-                                        Call("Path_Condition", [Name("Ctx"), Name(f.affixed_name)]),
+                                        Variable("Ctx.Buffer_First"),
+                                        Variable("Ctx.Buffer_Last"),
+                                        Variable("Ctx.First"),
+                                        Call(
+                                            "Predecessor",
+                                            [Variable("Ctx"), Variable(f.affixed_name)],
+                                        ),
+                                        Call(
+                                            "Path_Condition",
+                                            [Variable("Ctx"), Variable(f.affixed_name)],
+                                        ),
                                     ]
                                     + [
-                                        Call(f"Cursor", [Name("Ctx"), Name(p.affixed_name)])
+                                        Call(f"Cursor", [Variable("Ctx"), Variable(p.affixed_name)])
                                         for p in message.predecessors(f)
                                     ]
                                 ],
@@ -1553,13 +1632,21 @@ class Generator:
                         ),
                         ContractCases(
                             (
-                                Call("Structural_Valid", [Name("Ctx"), Name(f.affixed_name)]),
+                                Call(
+                                    "Structural_Valid", [Variable("Ctx"), Variable(f.affixed_name)]
+                                ),
                                 And(
                                     *[
                                         Equal(
-                                            Call("Cursor", [Name("Ctx"), Name(s.affixed_name)]),
+                                            Call(
+                                                "Cursor",
+                                                [Variable("Ctx"), Variable(s.affixed_name)],
+                                            ),
                                             Old(
-                                                Call("Cursor", [Name("Ctx"), Name(s.affixed_name)])
+                                                Call(
+                                                    "Cursor",
+                                                    [Variable("Ctx"), Variable(s.affixed_name)],
+                                                )
                                             ),
                                         )
                                         for s in message.successors(f)
@@ -1567,11 +1654,11 @@ class Generator:
                                 ),
                             ),
                             (
-                                Name("others"),
+                                Variable("others"),
                                 And(
                                     *self.common.valid_path_to_next_field_condition(message, f),
                                     *[
-                                        Call("Invalid", [Name("Ctx"), Name(s.affixed_name)])
+                                        Call("Invalid", [Variable("Ctx"), Variable(s.affixed_name)])
                                         for s in message.successors(f)
                                     ],
                                 ),
@@ -1585,29 +1672,29 @@ class Generator:
                 SubprogramBody(
                     specification(f),
                     [
-                        *self.common.field_bit_location_declarations(Name(f.affixed_name)),
+                        *self.common.field_bit_location_declarations(Variable(f.affixed_name)),
                         ObjectDeclaration(["Buffer"], self.types.bytes_ptr),
                     ],
                     [
                         IfStatement(
                             [
                                 (
-                                    Call("Invalid", [Name("Ctx"), Name(f.affixed_name)]),
+                                    Call("Invalid", [Variable("Ctx"), Variable(f.affixed_name)]),
                                     self.common.initialize_field_statements(message, f),
                                 )
                             ]
                         ),
-                        CallStatement("Take_Buffer", [Name("Ctx"), Name("Buffer")]),
+                        CallStatement("Take_Buffer", [Variable("Ctx"), Variable("Buffer")]),
                         PragmaStatement("Warnings", ["Off", '"unused assignment to ""Buffer"""']),
                         CallStatement(
                             f"{sequence_name(message, f)}.Initialize",
                             [
-                                Name("Seq_Ctx"),
-                                Name("Buffer"),
-                                Name("Ctx.Buffer_First"),
-                                Name("Ctx.Buffer_Last"),
-                                Name("First"),
-                                Name("Last"),
+                                Variable("Seq_Ctx"),
+                                Variable("Buffer"),
+                                Variable("Ctx.Buffer_First"),
+                                Variable("Ctx.Buffer_Last"),
+                                Variable("First"),
+                                Variable("Last"),
                             ],
                         ),
                         PragmaStatement("Warnings", ["On", '"unused assignment to ""Buffer"""']),
@@ -1631,17 +1718,17 @@ class Generator:
 
         def take_buffer_arguments(field: Field) -> Sequence[Expr]:
             arguments = [
-                Name("Seq_Ctx"),
-                Name("Buffer"),
-                Name("Ctx.Buffer_First"),
-                Name("Ctx.Buffer_Last"),
+                Variable("Seq_Ctx"),
+                Variable("Buffer"),
+                Variable("Ctx.Buffer_First"),
+                Variable("Ctx.Buffer_Last"),
             ]
 
             field_type = message.types[field]
             assert isinstance(field_type, Array)
 
             if isinstance(field_type.element_type, Message):
-                arguments.extend([Name("Ctx.First"), Name("Ctx.Last")])
+                arguments.extend([Variable("Ctx.First"), Variable("Ctx.Last")])
 
             return arguments
 
@@ -1653,41 +1740,50 @@ class Generator:
                         Precondition(
                             AndThen(
                                 VALID_CONTEXT,
-                                Call("Present", [Name("Ctx"), Name(f.affixed_name)]),
+                                Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 *switch_update_conditions(message, f),
                             )
                         ),
                         Postcondition(
                             And(
                                 VALID_CONTEXT,
-                                Call("Present", [Name("Ctx"), Name(f.affixed_name)]),
-                                Call("Has_Buffer", [Name("Ctx")]),
+                                Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
+                                Call("Has_Buffer", [Variable("Ctx")]),
                                 Not(
                                     Call(
-                                        f"{sequence_name(message, f)}.Has_Buffer", [Name("Seq_Ctx")]
+                                        f"{sequence_name(message, f)}.Has_Buffer",
+                                        [Variable("Seq_Ctx")],
                                     )
                                 ),
                                 Equal(
-                                    Selected("Seq_Ctx", "First"),
-                                    Call("Field_First", [Name("Ctx"), Name(f.affixed_name)]),
+                                    Variable("Seq_Ctx.First"),
+                                    Call(
+                                        "Field_First", [Variable("Ctx"), Variable(f.affixed_name)]
+                                    ),
                                 ),
                                 Equal(
-                                    Selected("Seq_Ctx", "Last"),
-                                    Call("Field_Last", [Name("Ctx"), Name(f.affixed_name)]),
+                                    Variable("Seq_Ctx.Last"),
+                                    Call("Field_Last", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 ),
                                 *[
                                     Equal(e, Old(e))
                                     for e in cast(List[Expr], [])
                                     + [
-                                        Selected("Seq_Ctx", "First"),
-                                        Selected("Seq_Ctx", "Last"),
-                                        Selected("Ctx", "Buffer_First"),
-                                        Selected("Ctx", "Buffer_Last"),
-                                        Call("Field_First", [Name("Ctx"), Name(f.affixed_name)]),
-                                        Call("Field_Length", [Name("Ctx"), Name(f.affixed_name)]),
+                                        Variable("Seq_Ctx.First"),
+                                        Variable("Seq_Ctx.Last"),
+                                        Variable("Ctx.Buffer_First"),
+                                        Variable("Ctx.Buffer_Last"),
+                                        Call(
+                                            "Field_First",
+                                            [Variable("Ctx"), Variable(f.affixed_name)],
+                                        ),
+                                        Call(
+                                            "Field_Length",
+                                            [Variable("Ctx"), Variable(f.affixed_name)],
+                                        ),
                                     ]
                                     + [
-                                        Call(f"Cursor", [Name("Ctx"), Name(o.affixed_name)])
+                                        Call(f"Cursor", [Variable("Ctx"), Variable(o.affixed_name)])
                                         for o in message.fields
                                         if o != f
                                     ]
@@ -1705,7 +1801,7 @@ class Generator:
                         ObjectDeclaration(
                             ["Valid_Sequence"],
                             "Boolean",
-                            Call(f"{sequence_name(message, f)}.Valid", [Name("Seq_Ctx")]),
+                            Call(f"{sequence_name(message, f)}.Valid", [Variable("Seq_Ctx")]),
                             True,
                         ),
                         ObjectDeclaration(["Buffer"], self.types.bytes_ptr),
@@ -1714,22 +1810,25 @@ class Generator:
                         CallStatement(
                             f"{sequence_name(message, f)}.Take_Buffer", take_buffer_arguments(f)
                         ),
-                        Assignment("Ctx.Buffer", Name("Buffer")),
+                        Assignment("Ctx.Buffer", Variable("Buffer")),
                         IfStatement(
                             [
                                 (
-                                    Name("Valid_Sequence"),
+                                    Variable("Valid_Sequence"),
                                     [
                                         Assignment(
-                                            Indexed("Ctx.Cursors", Name(f.affixed_name)),
+                                            Indexed(
+                                                Variable("Ctx.Cursors"), Variable(f.affixed_name)
+                                            ),
                                             NamedAggregate(
-                                                ("State", Name("S_Valid")),
+                                                ("State", Variable("S_Valid")),
                                                 *[
                                                     (
                                                         a,
                                                         Selected(
                                                             Indexed(
-                                                                "Ctx.Cursors", Name(f.affixed_name)
+                                                                Variable("Ctx.Cursors"),
+                                                                Variable(f.affixed_name),
                                                             ),
                                                             a,
                                                         ),
@@ -1764,19 +1863,19 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification("Structural_Valid", "Boolean", parameters),
                     Or(
-                        Equal(Selected("Cursor", "State"), Name("S_Valid")),
-                        Equal(Selected("Cursor", "State"), Name("S_Structural_Valid")),
+                        Equal(Variable("Cursor.State"), Variable("S_Valid")),
+                        Equal(Variable("Cursor.State"), Variable("S_Structural_Valid")),
                     ),
                 ),
                 ExpressionFunctionDeclaration(
                     FunctionSpecification("Valid", "Boolean", parameters),
-                    Equal(Selected("Cursor", "State"), Name("S_Valid")),
+                    Equal(Variable("Cursor.State"), Variable("S_Valid")),
                 ),
                 ExpressionFunctionDeclaration(
                     FunctionSpecification("Invalid", "Boolean", parameters),
                     Or(
-                        Equal(Selected("Cursor", "State"), Name("S_Invalid")),
-                        Equal(Selected("Cursor", "State"), Name("S_Incomplete")),
+                        Equal(Variable("Cursor.State"), Variable("S_Invalid")),
+                        Equal(Variable("Cursor.State"), Variable("S_Incomplete")),
                     ),
                 ),
             ],
@@ -1831,12 +1930,12 @@ class Generator:
                     Call(
                         "Valid_Context",
                         [
-                            Name("Ctx.Buffer_First"),
-                            Name("Ctx.Buffer_Last"),
-                            Name("Ctx.First"),
-                            Name("Ctx.Last"),
-                            Name("Ctx.Buffer"),
-                            Name("Ctx.Cursors"),
+                            Variable("Ctx.Buffer_First"),
+                            Variable("Ctx.Buffer_Last"),
+                            Variable("Ctx.First"),
+                            Variable("Ctx.Last"),
+                            Variable("Ctx.Buffer"),
+                            Variable("Ctx.Cursors"),
                         ],
                     ),
                 )
@@ -1858,7 +1957,7 @@ class Generator:
             [],
             [
                 ExpressionFunctionDeclaration(
-                    specification, Indexed(Selected("Ctx", "Cursors"), Name("Fld"))
+                    specification, Indexed(Variable("Ctx.Cursors"), Variable("Fld"))
                 )
             ],
         )
@@ -1876,14 +1975,14 @@ class Generator:
                 )
             ],
             [],
-            [ExpressionFunctionDeclaration(specification, Selected("Ctx", "Cursors"))],
+            [ExpressionFunctionDeclaration(specification, Variable("Ctx.Cursors"))],
         )
 
     def __create_message_unit(self, message: Message) -> None:
         if isinstance(message, DerivedMessage):
-            name = full_generic_name(self.prefix, message.base.package, message.base.name)
+            name = generic_name(self.prefix * message.base.identifier)
         else:
-            name = full_generic_name(self.prefix, message.package, message.name)
+            name = generic_name(self.prefix * message.identifier)
 
         context: List[ContextItem] = [
             Pragma("SPARK_Mode"),
@@ -1892,17 +1991,17 @@ class Generator:
         ]
 
         arrays = [
-            f"{self.prefix}{t.full_name}" for t in message.types.values() if isinstance(t, Array)
+            self.prefix * t.identifier for t in message.types.values() if isinstance(t, Array)
         ]
         context.extend(WithClause(array) for array in arrays)
         instantiation = GenericPackageInstantiation(
-            f"{self.prefix}{message.full_name}", name, [self.types.prefixed_types] + arrays
+            self.prefix * message.identifier, name, [self.types.prefixed_types] + arrays
         )
 
-        self.units[message.full_name] = InstantiationUnit(context, instantiation)
+        self.units[message.identifier] = InstantiationUnit(context, instantiation)
 
     def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
-        unit_name = full_generic_name(self.prefix, refinement.package, REFINEMENT_PACKAGE)
+        unit_name = generic_name(self.prefix * refinement.package * REFINEMENT_PACKAGE)
 
         if unit_name in self.units:
             unit = self.units[unit_name]
@@ -1936,15 +2035,15 @@ class Generator:
 
             unit.context.extend(
                 [
-                    WithClause(self.prefix + pdu_package),
-                    UsePackageClause(self.prefix + pdu_package),
+                    WithClause(self.prefix * pdu_package),
+                    UsePackageClause(self.prefix * pdu_package),
                 ]
             )
 
-        generic_pdu_name = self.prefix + (
-            generic_name(refinement.pdu.base.full_name)
+        generic_pdu_name = self.prefix * (
+            generic_name(refinement.pdu.base.identifier)
             if isinstance(refinement.pdu, DerivedMessage)
-            else generic_name(refinement.pdu.full_name)
+            else generic_name(refinement.pdu.identifier)
         )
 
         unit.context.append(WithClause(generic_pdu_name))
@@ -1954,10 +2053,10 @@ class Generator:
             )
         )
 
-        generic_sdu_name = self.prefix + (
-            generic_name(refinement.sdu.base.full_name)
+        generic_sdu_name = self.prefix * (
+            generic_name(refinement.sdu.base.identifier)
             if isinstance(refinement.sdu, DerivedMessage)
-            else generic_name(refinement.sdu.full_name)
+            else generic_name(refinement.sdu.identifier)
         )
 
         if not null_sdu:
@@ -1979,8 +2078,8 @@ class Generator:
             unit += self.__create_switch_procedure(refinement, condition_fields)
 
     def __create_refinement_unit(self, refinement: Refinement) -> None:
-        unit_name = f"{refinement.package}.{REFINEMENT_PACKAGE}"
-        generic_unit_name = full_generic_name(self.prefix, refinement.package, REFINEMENT_PACKAGE)
+        unit_name = refinement.package * REFINEMENT_PACKAGE
+        generic_unit_name = generic_name(self.prefix * refinement.package * REFINEMENT_PACKAGE)
 
         if unit_name in self.units:
             unit = self.units[unit_name]
@@ -1991,7 +2090,7 @@ class Generator:
                 WithClause(generic_unit_name),
             ]
             instantiation = GenericPackageInstantiation(
-                f"{self.prefix}{unit_name}", generic_unit_name, [self.types.prefixed_types]
+                self.prefix * unit_name, generic_unit_name, [self.types.prefixed_types]
             )
             unit = InstantiationUnit(context, instantiation)
             self.units[unit_name] = unit
@@ -2000,19 +2099,19 @@ class Generator:
 
         assert isinstance(unit, InstantiationUnit), f"unexpected unit type"
 
-        pdu_name = self.prefix + refinement.pdu.full_name
+        pdu_name = self.prefix * refinement.pdu.identifier
 
         if pdu_name not in unit.declaration.associations:
             unit.context.append(WithClause(pdu_name))
             unit.declaration.associations.append(pdu_name)
 
-        sdu_name = self.prefix + refinement.sdu.full_name
+        sdu_name = self.prefix * refinement.sdu.identifier
 
         if not null_sdu and sdu_name not in unit.declaration.associations:
             unit.context.append(WithClause(sdu_name))
             unit.declaration.associations.append(sdu_name)
 
-    def __create_type(self, field_type: Type, message_package: str) -> None:
+    def __create_type(self, field_type: Type, message_package: ID) -> None:
         unit = self.units[message_package]
 
         if field_type.package == BUILTINS_PACKAGE or self.__is_seen_type(field_type):
@@ -2035,7 +2134,7 @@ class Generator:
         else:
             assert False, f'unexpected type "{type(field_type).__name__}"'
 
-    def __create_array_unit(self, array_type: Array, package_name: str) -> None:
+    def __create_array_unit(self, array_type: Array, package_name: ID) -> None:
         element_type = array_type.element_type
 
         array_context: List[ContextItem] = []
@@ -2043,12 +2142,12 @@ class Generator:
         if isinstance(element_type, Message):
             array_context = [
                 Pragma("SPARK_Mode"),
-                WithClause(f"{self.prefix}Message_Sequence"),
-                WithClause(f"{self.prefix}{element_type.full_name}"),
+                WithClause(self.prefix * ID("Message_Sequence")),
+                WithClause(self.prefix * element_type.identifier),
                 WithClause(self.types.prefixed_types),
             ]
             array_package = GenericPackageInstantiation(
-                f"{self.prefix}{array_type.full_name}",
+                self.prefix * array_type.identifier,
                 "Message_Sequence",
                 [
                     self.types.prefixed_types,
@@ -2065,13 +2164,13 @@ class Generator:
         elif isinstance(element_type, Scalar):
             array_context = [
                 Pragma("SPARK_Mode"),
-                WithClause(f"{self.prefix}Scalar_Sequence"),
-                WithClause(f"{self.prefix}{package_name}"),
+                WithClause(self.prefix * ID("Scalar_Sequence")),
+                WithClause(self.prefix * package_name),
                 WithClause(self.types.prefixed_types),
             ]
             array_package = GenericPackageInstantiation(
-                f"{self.prefix}{package_name}.{array_type.name}",
-                f"{self.prefix}Scalar_Sequence",
+                self.prefix * package_name * array_type.name,
+                self.prefix * ID("Scalar_Sequence"),
                 [
                     self.types.prefixed_types,
                     element_type.name,
@@ -2086,7 +2185,7 @@ class Generator:
         else:
             assert False, 'unexpected element type "{type(element_type)}"'
 
-        self.units[array_package.name] = InstantiationUnit(array_context, array_package)
+        self.units[array_package.identifier] = InstantiationUnit(array_context, array_package)
 
     def __range_functions(self, integer: RangeInteger) -> SubprogramUnitPart:
         specification: List[Subprogram] = []
@@ -2117,15 +2216,15 @@ class Generator:
     def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
         specification: List[Declaration] = []
 
-        enum_value = Name("Val")
+        enum_value = Variable("Val")
 
         validation_expression: Expr
         if enum.always_valid:
             validation_expression = enum.constraints("Val").simplified()
         else:
             validation_cases: List[Tuple[Expr, Expr]] = []
-            validation_cases.extend((value, Name("True")) for value in enum.literals.values())
-            validation_cases.append((Name("others"), Name("False")))
+            validation_cases.extend((value, Variable("True")) for value in enum.literals.values())
+            validation_cases.append((Variable("others"), Variable("False")))
 
             validation_expression = Case(enum_value, validation_cases)
 
@@ -2139,25 +2238,28 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base",
-                    self.prefix + full_base_type_name(enum),
+                    self.prefix * full_base_type_name(enum),
                     [
                         Parameter(
                             ["Enum"],
                             self.prefix
-                            + (full_enum_name(enum) if enum.always_valid else enum.full_name),
+                            * (full_enum_name(enum) if enum.always_valid else enum.identifier),
                         )
                     ],
                 ),
-                Case(Name("Enum"), [(Name(key), value) for key, value in enum.literals.items()]),
+                Case(
+                    Variable("Enum"),
+                    [(Variable(key), value) for key, value in enum.literals.items()],
+                ),
             )
         )
 
         conversion_function = FunctionSpecification(
             "To_Actual",
-            self.prefix + enum.full_name,
-            [Parameter(["Val"], self.prefix + full_base_type_name(enum))],
+            self.prefix * enum.identifier,
+            [Parameter(["Val"], self.prefix * full_base_type_name(enum))],
         )
-        precondition = Precondition(Call("Valid", [Name("Val")]))
+        precondition = Precondition(Call("Valid", [Variable("Val")]))
         conversion_cases: List[Tuple[Expr, Expr]] = []
 
         if enum.always_valid:
@@ -2165,21 +2267,24 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Actual",
-                        self.prefix + enum.full_name,
+                        self.prefix * enum.identifier,
                         [Parameter(["Enum"], enum_name(enum))],
                     ),
-                    Aggregate(TRUE, Name("Enum")),
+                    Aggregate(TRUE, Variable("Enum")),
                 )
             )
 
             conversion_cases.extend(
-                (value, Aggregate(Name("True"), Name(key))) for key, value in enum.literals.items()
+                (value, Aggregate(Variable("True"), Variable(key)))
+                for key, value in enum.literals.items()
             )
-            conversion_cases.append((Name("others"), Aggregate(Name("False"), Name("Val"))))
+            conversion_cases.append(
+                (Variable("others"), Aggregate(Variable("False"), Variable("Val")))
+            )
 
             specification.append(
                 ExpressionFunctionDeclaration(
-                    conversion_function, Case(Name("Val"), conversion_cases), [precondition]
+                    conversion_function, Case(Variable("Val"), conversion_cases), [precondition]
                 )
             )
 
@@ -2187,20 +2292,20 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Base",
-                        self.prefix + full_base_type_name(enum),
-                        [Parameter(["Val"], self.prefix + enum.full_name)],
+                        self.prefix * full_base_type_name(enum),
+                        [Parameter(["Val"], self.prefix * enum.identifier)],
                     ),
                     If(
-                        [(Selected("Val", "Known"), Call("To_Base", [Selected("Val", "Enum")]))],
-                        Selected("Val", "Raw"),
+                        [(Variable("Val.Known"), Call("To_Base", [Variable("Val.Enum")]))],
+                        Variable("Val.Raw"),
                     ),
                 )
             )
 
         else:
-            conversion_cases.extend((value, Name(key)) for key, value in enum.literals.items())
+            conversion_cases.extend((value, Variable(key)) for key, value in enum.literals.items())
             conversion_cases.append(
-                (Name("others"), Call(unreachable_function_name(enum.full_name)))
+                (Variable("others"), Call(unreachable_function_name(enum.full_name)))
             )
 
             specification.append(
@@ -2220,13 +2325,16 @@ class Generator:
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
                 condition = AndThen(
-                    Selected(Call(f"{pdu_name}.Get_{f.name}", [Name("Ctx")]), "Known"), condition,
+                    Selected(Call(f"{pdu_name}.Get_{f.name}", [Variable("Ctx")]), "Known"),
+                    condition,
                 )
         condition = condition.simplified(
             {
-                Variable(f.name): Selected(Call(f"{pdu_name}.Get_{f.name}", [Name("Ctx")]), "Enum")
+                Variable(f.name): Selected(
+                    Call(f"{pdu_name}.Get_{f.name}", [Variable("Ctx")]), "Enum"
+                )
                 if isinstance(t, Enumeration) and t.always_valid
-                else Call(f"{pdu_name}.Get_{f.name}", [Name("Ctx")])
+                else Call(f"{pdu_name}.Get_{f.name}", [Variable("Ctx")])
                 for f, t in condition_fields.items()
             }
         )
@@ -2274,48 +2382,54 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                Not(Constrained(pdu_context)),
-                                Not(Constrained(sdu_context)),
+                                Not(Constrained(Variable(pdu_context))),
+                                Not(Constrained(Variable(sdu_context))),
                                 *refinement_conditions(
                                     refinement, pdu_context, condition_fields, False
                                 ),
-                                Call(contains_function_name(refinement), [Name(pdu_context)]),
+                                Call(contains_function_name(refinement), [Variable(pdu_context)]),
                             )
                         ),
                         Postcondition(
                             And(
-                                Not(Call(f"{pdu_name}.Has_Buffer", [Name(pdu_context)])),
-                                Call(f"{sdu_name}.Has_Buffer", [Name(sdu_context)]),
+                                Not(Call(f"{pdu_name}.Has_Buffer", [Variable(pdu_context)])),
+                                Call(f"{sdu_name}.Has_Buffer", [Variable(sdu_context)]),
                                 Equal(
-                                    Selected(pdu_context, "Buffer_First"),
-                                    Selected(sdu_context, "Buffer_First"),
+                                    Selected(Variable(pdu_context), "Buffer_First"),
+                                    Selected(Variable(sdu_context), "Buffer_First"),
                                 ),
                                 Equal(
-                                    Selected(pdu_context, "Buffer_Last"),
-                                    Selected(sdu_context, "Buffer_Last"),
+                                    Selected(Variable(pdu_context), "Buffer_Last"),
+                                    Selected(Variable(sdu_context), "Buffer_Last"),
                                 ),
                                 Equal(
-                                    Selected(sdu_context, "First"),
+                                    Selected(Variable(sdu_context), "First"),
                                     Call(
                                         f"{pdu_name}.Field_First",
-                                        [Name(pdu_context), Name(refined_field_affixed_name)],
+                                        [
+                                            Variable(pdu_context),
+                                            Variable(refined_field_affixed_name),
+                                        ],
                                     ),
                                 ),
                                 Equal(
-                                    Selected(sdu_context, "Last"),
+                                    Selected(Variable(sdu_context), "Last"),
                                     Call(
                                         f"{pdu_name}.Field_Last",
-                                        [Name(pdu_context), Name(refined_field_affixed_name)],
+                                        [
+                                            Variable(pdu_context),
+                                            Variable(refined_field_affixed_name),
+                                        ],
                                     ),
                                 ),
-                                Call(f"{sdu_name}.Initialized", [Name(sdu_context)]),
+                                Call(f"{sdu_name}.Initialized", [Variable(sdu_context)]),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
-                                        Selected(pdu_context, "Buffer_First"),
-                                        Selected(pdu_context, "Buffer_Last"),
-                                        Selected(pdu_context, "First"),
-                                        Call(f"{pdu_name}.Cursors", [Name(pdu_context)]),
+                                        Selected(Variable(pdu_context), "Buffer_First"),
+                                        Selected(Variable(pdu_context), "Buffer_Last"),
+                                        Selected(Variable(pdu_context), "First"),
+                                        Call(f"{pdu_name}.Cursors", [Variable(pdu_context)]),
                                     ]
                                 ],
                             )
@@ -2332,7 +2446,7 @@ class Generator:
                             self.types.bit_index,
                             Call(
                                 f"{pdu_name}.Field_First",
-                                [Name(pdu_context), Name(refined_field_affixed_name)],
+                                [Variable(pdu_context), Variable(refined_field_affixed_name)],
                             ),
                             True,
                         ),
@@ -2341,7 +2455,7 @@ class Generator:
                             self.types.bit_index,
                             Call(
                                 f"{pdu_name}.Field_Last",
-                                [Name(pdu_context), Name(refined_field_affixed_name)],
+                                [Variable(pdu_context), Variable(refined_field_affixed_name)],
                             ),
                             True,
                         ),
@@ -2349,12 +2463,17 @@ class Generator:
                     ],
                     [
                         CallStatement(
-                            f"{pdu_name}.Take_Buffer", [Name(pdu_context), Name("Buffer")]
+                            f"{pdu_name}.Take_Buffer", [Variable(pdu_context), Variable("Buffer")]
                         ),
                         PragmaStatement("Warnings", ["Off", '"unused assignment to ""Buffer"""']),
                         CallStatement(
                             f"{sdu_name}.Initialize",
-                            [Name(sdu_context), Name("Buffer"), Name("First"), Name("Last")],
+                            [
+                                Variable(sdu_context),
+                                Variable("Buffer"),
+                                Variable("First"),
+                                Variable("Last"),
+                            ],
                         ),
                         PragmaStatement("Warnings", ["On", '"unused assignment to ""Buffer"""']),
                     ],
@@ -2374,8 +2493,8 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
-                        Call("Valid_Predecessor", [Name("Ctx"), Name("Fld")]),
-                        Call("Path_Condition", [Name("Ctx"), Name("Fld")]),
+                        Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
+                        Call("Path_Condition", [Variable("Ctx"), Variable("Fld")]),
                     ),
                 )
             ],
@@ -2402,7 +2521,7 @@ class Generator:
             FunctionSpecification(
                 f"Valid",
                 "Boolean",
-                [Parameter(["Val"], self.prefix + full_base_type_name(scalar_type))],
+                [Parameter(["Val"], self.prefix * full_base_type_name(scalar_type))],
             ),
             validation_expression,
         )
@@ -2410,15 +2529,17 @@ class Generator:
     def __type_dependent_unreachable_function(self, scalar_type: Scalar) -> List[Declaration]:
         base_name = None
         if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
-            base_name = self.prefix + full_base_type_name(scalar_type)
+            base_name = self.prefix * full_base_type_name(scalar_type)
 
-        type_name = self.prefix + scalar_type.full_name
+        type_name = self.prefix * scalar_type.identifier
 
         return [
             Pragma("Warnings", ["Off", '"precondition is statically false"']),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(unreachable_function_name(scalar_type.full_name), type_name),
-                First(type_name) if not base_name else Aggregate(Name("False"), First(base_name)),
+                First(Variable(type_name))
+                if not base_name
+                else Aggregate(Variable("False"), First(Variable(base_name))),
                 [Precondition(FALSE)],
             ),
             Pragma("Warnings", ["On", '"precondition is statically false"']),
@@ -2429,26 +2550,26 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base",
-                    self.prefix + full_base_type_name(integer),
-                    [Parameter(["Val"], self.prefix + integer.full_name)],
+                    self.prefix * full_base_type_name(integer),
+                    [Parameter(["Val"], self.prefix * integer.identifier)],
                 ),
-                Name("Val"),
-                [Precondition(Call(f"Valid", [Name("Val")]))],
+                Variable("Val"),
+                [Precondition(Call(f"Valid", [Variable("Val")]))],
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
-                    self.prefix + integer.full_name,
-                    [Parameter(["Val"], self.prefix + full_base_type_name(integer))],
+                    self.prefix * integer.identifier,
+                    [Parameter(["Val"], self.prefix * full_base_type_name(integer))],
                 ),
-                Name("Val"),
-                [Precondition(Call(f"Valid", [Name("Val")]))],
+                Variable("Val"),
+                [Precondition(Call(f"Valid", [Variable("Val")]))],
             ),
         ]
 
     def __is_seen_type(self, field_type: Type) -> bool:
-        seen = field_type.full_name in self.seen_types
-        self.seen_types.add(field_type.full_name)
+        seen = field_type.identifier in self.seen_types
+        self.seen_types.add(field_type.identifier)
         return seen
 
 
@@ -2502,23 +2623,17 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
     return types
 
 
-def generic_name(full_name: str) -> str:
-    parts = full_name.split(".")
-    parts[-1] = f"Generic_{parts[-1]}"
-    return ".".join(parts)
-
-
-def full_generic_name(prefix: str, package: str, message: str) -> str:
-    return f"{prefix}{package}.{generic_name(message)}"
+def generic_name(identifier: ID) -> ID:
+    return ID([*identifier.parts[:-1], f"Generic_{identifier.parts[-1]}"])
 
 
 def contains_function_name(refinement: Refinement) -> str:
-    sdu_name: str = (
+    sdu_name = str(
         refinement.sdu.name
         if refinement.sdu.package == refinement.package
         else refinement.sdu.full_name
     )
-    pdu_name: str = (
+    pdu_name = str(
         refinement.pdu.name
         if refinement.pdu.package == refinement.package
         else refinement.pdu.full_name
@@ -2532,17 +2647,17 @@ def unreachable_function_name(type_name: str) -> str:
 
 def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
     return [
-        Not(Call("Has_Buffer", [Name("Ctx")])),
-        Call(f"{sequence_name(message, field)}.Has_Buffer", [Name("Seq_Ctx")]),
-        Equal(Selected("Ctx", "Buffer_First"), Selected("Seq_Ctx", "Buffer_First")),
-        Equal(Selected("Ctx", "Buffer_Last"), Selected("Seq_Ctx", "Buffer_Last")),
+        Not(Call("Has_Buffer", [Variable("Ctx")])),
+        Call(f"{sequence_name(message, field)}.Has_Buffer", [Variable("Seq_Ctx")]),
+        Equal(Variable("Ctx.Buffer_First"), Variable("Seq_Ctx.Buffer_First")),
+        Equal(Variable("Ctx.Buffer_Last"), Variable("Seq_Ctx.Buffer_Last")),
         Equal(
-            Selected("Seq_Ctx", "First"),
-            Call("Field_First", [Name("Ctx"), Name(field.affixed_name)]),
+            Variable("Seq_Ctx.First"),
+            Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]),
         ),
         Equal(
-            Selected("Seq_Ctx", "Last"),
-            Call("Field_Last", [Name("Ctx"), Name(field.affixed_name)]),
+            Variable("Seq_Ctx.Last"),
+            Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]),
         ),
     ]
 
@@ -2552,19 +2667,25 @@ def refinement_conditions(
 ) -> Sequence[Expr]:
     pdu_name = flat_name(refinement.pdu.full_name)
 
-    conditions: List[Expr] = [Call(f"{pdu_name}.Has_Buffer", [Name(pdu_context)])]
+    conditions: List[Expr] = [Call(f"{pdu_name}.Has_Buffer", [Variable(pdu_context)])]
 
     if null_sdu:
         conditions.extend(
             [
                 Call(
                     f"{pdu_name}.Structural_Valid",
-                    [Name(pdu_context), Name(f"{pdu_name}.{refinement.field.affixed_name}")],
+                    [
+                        Variable(pdu_context),
+                        Variable(f"{pdu_name}.{refinement.field.affixed_name}"),
+                    ],
                 ),
                 Not(
                     Call(
                         f"{pdu_name}.Present",
-                        [Name(pdu_context), Name(f"{pdu_name}.{refinement.field.affixed_name}")],
+                        [
+                            Variable(pdu_context),
+                            Variable(f"{pdu_name}.{refinement.field.affixed_name}"),
+                        ],
                     )
                 ),
             ]
@@ -2573,13 +2694,16 @@ def refinement_conditions(
         conditions.append(
             Call(
                 f"{pdu_name}.Present",
-                [Name(pdu_context), Name(f"{pdu_name}.{refinement.field.affixed_name}")],
+                [Variable(pdu_context), Variable(f"{pdu_name}.{refinement.field.affixed_name}")],
             )
         )
 
     conditions.extend(
         [
-            Call(f"{pdu_name}.Valid", [Name(pdu_context), Name(f"{pdu_name}.{f.affixed_name}")],)
+            Call(
+                f"{pdu_name}.Valid",
+                [Variable(pdu_context), Variable(f"{pdu_name}.{f.affixed_name}")],
+            )
             for f in condition_fields
         ]
     )

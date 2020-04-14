@@ -14,10 +14,6 @@ def indent_next(string: str, indentation: int) -> str:
     return string.replace("\n", "\n" + indentation * " ")
 
 
-def verify_identifier(name: str) -> None:
-    assert " " not in name, f'whitespace in identifier "{name}"'
-
-
 def flat_name(full_name: str) -> str:
     return full_name.replace(".", "_")
 

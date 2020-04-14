@@ -2,6 +2,7 @@ from typing import List
 
 from rflx.common import flat_name, generic_repr
 from rflx.expression import TRUE, UNDEFINED, Expr
+from rflx.identifier import ID, StrID
 from rflx.model import Type
 
 
@@ -28,7 +29,7 @@ class Then(SyntaxTree):
 class Component(SyntaxTree):
     def __init__(self, name: str, type_name: str, thens: List[Then] = None) -> None:
         self.name = name
-        self.type = type_name
+        self.type_name = ID(type_name)
         self.thens = thens or []
 
 
@@ -44,26 +45,23 @@ class ContextSpec(SyntaxTree):
 
 
 class MessageSpec(Type):
-    def __init__(self, name: str, components: List[Component]) -> None:
-        super().__init__(name)
+    def __init__(self, identifier: StrID, components: List[Component]) -> None:
+        super().__init__(identifier)
         self.components = components
 
 
 class DerivationSpec(Type):
-    def __init__(self, name: str, base: str) -> None:
-        super().__init__(name)
-        self.base = base
+    def __init__(self, identifier: StrID, base: str) -> None:
+        super().__init__(identifier)
+        self.base = ID(base)
 
 
 class RefinementSpec(Type):
-    # pylint: disable=too-many-arguments
-    def __init__(
-        self, package: str, pdu: str, field: str, sdu: str, condition: Expr = TRUE
-    ) -> None:
-        super().__init__(f"{package}.__REFINEMENT__{flat_name(sdu)}__{flat_name(pdu)}__{field}__")
-        self.pdu = pdu
-        self.field = field
-        self.sdu = sdu
+    def __init__(self, pdu: str, field: str, sdu: str, condition: Expr = TRUE) -> None:
+        super().__init__(f"__PACKAGE__.__REFINEMENT__{flat_name(sdu)}__{flat_name(pdu)}__{field}__")
+        self.pdu = ID(pdu)
+        self.field = ID(field)
+        self.sdu = ID(sdu)
         self.condition = condition
 
 
