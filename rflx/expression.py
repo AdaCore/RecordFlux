@@ -772,9 +772,13 @@ class Variable(Name):
 
 
 class Attribute(Name):
-    def __init__(self, prefix: Expr, negative: bool = False) -> None:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
         super().__init__(negative)
-        self.prefix = prefix
+
+        if isinstance(prefix, (str, ID)):
+            prefix = Variable(prefix)
+
+        self.prefix: Expr = prefix
 
     @property
     def representation(self) -> str:
