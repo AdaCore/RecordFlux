@@ -71,9 +71,13 @@ class Type(Base):
 
 
 class Scalar(Type):
+    def __init__(self, identifier: StrID, size: Expr) -> None:
+        super().__init__(identifier)
+        self._size = size
+
     @property
     def size(self) -> Expr:
-        raise NotImplementedError
+        return self._size
 
     @abstractmethod
     def constraints(self, name: str, proof: bool = False) -> Expr:
@@ -92,17 +96,22 @@ class Integer(Scalar):
 
 class ModularInteger(Integer):
     def __init__(self, identifier: StrID, modulus: Expr) -> None:
-        super().__init__(identifier)
+        super().__init__(identifier, UNDEFINED)
+
         modulus_num = modulus.simplified()
+
         if not isinstance(modulus_num, Number):
             raise ModelError(f'modulus of "{self.name}" contains variable')
+
         modulus_int = int(modulus_num)
+
         if modulus_int > 2 ** 64:
             raise ModelError(f'modulus of "{self.name}" exceeds limit (2**64)')
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
             raise ModelError(f'modulus of "{self.name}" not power of two')
+
         self.__modulus = modulus
-        self.__size = Number(int(log(modulus_int) / log(2)))
+        self._size = Number(int(log(modulus_int) / log(2)))
 
     @property
     def modulus(self) -> Expr:
@@ -116,10 +125,6 @@ class ModularInteger(Integer):
     def last(self) -> Expr:
         return Sub(self.modulus, Number(1))
 
-    @property
-    def size(self) -> Expr:
-        return self.__size
-
     def constraints(self, name: str, proof: bool = False) -> Expr:
         if proof:
             return And(
@@ -130,25 +135,31 @@ class ModularInteger(Integer):
 
 class RangeInteger(Integer):
     def __init__(self, identifier: StrID, first: Expr, last: Expr, size: Expr) -> None:
-        super().__init__(identifier)
+        super().__init__(identifier, size)
+
         first_num = first.simplified()
+
         if not isinstance(first_num, Number):
             raise ModelError(f'first of "{self.name}" contains variable')
+
         last_num = last.simplified()
+
         if not isinstance(last_num, Number):
             raise ModelError(f'last of "{self.name}" contains variable')
         if first_num < Number(0):
             raise ModelError(f'first of "{self.name}" negative')
         if first_num > last_num:
             raise ModelError(f'range of "{self.name}" negative')
+
         size_num = size.simplified()
+
         if not isinstance(size_num, Number):
             raise ModelError(f'size of "{self.name}" contains variable')
         if log(int(last_num) + 1) / log(2) > int(size_num):
             raise ModelError(f'size for "{self.name}" too small')
+
         self.__first = first
         self.__last = last
-        self.__size = size
 
     @property
     def first(self) -> Expr:
@@ -157,10 +168,6 @@ class RangeInteger(Integer):
     @property
     def last(self) -> Expr:
         return self.__last
-
-    @property
-    def size(self) -> Expr:
-        return self.__size
 
     def constraints(self, name: str, proof: bool = False) -> Expr:
         if proof:
@@ -186,18 +193,23 @@ class RangeInteger(Integer):
 
 class Enumeration(Scalar):
     def __init__(
-        self, identifier: StrID, literals: Dict[str, Number], size: Number, always_valid: bool
+        self, identifier: StrID, literals: Dict[str, Number], size: Expr, always_valid: bool
     ) -> None:
-        super().__init__(identifier)
-        if log(max(map(int, literals.values())) + 1) / log(2) > int(size):
+        super().__init__(identifier, size)
+
+        size_num = size.simplified()
+
+        if not isinstance(size_num, Number):
+            raise ModelError(f'size of "{self.name}" contains variable')
+        if log(max(map(int, literals.values())) + 1) / log(2) > int(size_num):
             raise ModelError(f'size for "{self.name}" too small')
         if len(set(literals.values())) < len(literals.values()):
             raise ModelError(f'"{self.name}" contains elements with same value')
         for l in literals:
             if " " in l or "." in l:
                 raise ModelError(f'invalid literal name "{l}" in "{self.name}"')
+
         self.literals = literals
-        self.__size = size
         self.always_valid = always_valid
 
     def constraints(self, name: str, proof: bool = False) -> Expr:
@@ -207,10 +219,6 @@ class Enumeration(Scalar):
                 Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()]),
             )
         return TRUE
-
-    @property
-    def size(self) -> Number:
-        return self.__size
 
 
 class Composite(Type):
