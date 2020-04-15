@@ -892,7 +892,9 @@ class Slice(Name):
         return f"{self.prefix} ({self.first} .. {self.last})"
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
-        return Slice(self.prefix, self.first.simplified(facts), self.last.simplified(facts))
+        return Slice(
+            self.prefix.simplified(facts), self.first.simplified(facts), self.last.simplified(facts)
+        )
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
