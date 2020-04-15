@@ -125,26 +125,25 @@ class ParserGenerator:
                     And(
                         NotEqual(Variable("Ctx.Buffer"), NULL),
                         LessEqual(
-                            Variable("Ctx.First"),
-                            Div(Last(Variable(self.types.bit_index)), Number(2)),
+                            Variable("Ctx.First"), Div(Last(self.types.bit_index), Number(2)),
                         ),
                         LessEqual(
                             Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                            Div(Last(Variable(self.types.bit_index)), Number(2)),
+                            Div(Last(self.types.bit_index), Number(2)),
                         ),
                         GreaterEqual(
                             Call("Field_Length", [Variable("Ctx"), Variable("Fld")]), Number(0)
                         ),
                         LessEqual(
                             Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
-                            Div(Last(Variable(self.types.bit_length)), Number(2)),
+                            Div(Last(self.types.bit_length), Number(2)),
                         ),
                         LessEqual(
                             Add(
                                 Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                                 Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
                             ),
-                            Div(Last(Variable(self.types.bit_length)), Number(2)),
+                            Div(Last(self.types.bit_length), Number(2)),
                         ),
                         LessEqual(
                             Variable("Ctx.First"),
@@ -213,10 +212,7 @@ class ParserGenerator:
                             )
                         ),
                         Postcondition(
-                            Equal(
-                                Selected(Result(Variable("Get_Field_Value")), "Fld"),
-                                Variable("Fld"),
-                            )
+                            Equal(Selected(Result("Get_Field_Value"), "Fld"), Variable("Fld"),)
                         ),
                     ],
                 ),
@@ -549,7 +545,7 @@ class ParserGenerator:
                             If(
                                 [
                                     (
-                                        Result(Variable("Valid")),
+                                        Result("Valid"),
                                         And(
                                             Call(
                                                 "Structural_Valid",

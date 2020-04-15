@@ -139,16 +139,16 @@ class GeneratorGenerator:
                     [
                         Precondition(
                             AndThen(
-                                Not(Constrained(Variable("Ctx"))),
+                                Not(Constrained("Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
-                                In(Variable("Val.Fld"), Range(Variable("Field"))),
+                                In(Variable("Val.Fld"), Range("Field")),
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Val.Fld")]),
                                 self.common.sufficient_space_for_field_condition(
                                     Variable("Val.Fld")
                                 ),
                                 ForAllIn(
                                     "F",
-                                    Range(Variable("Field")),
+                                    Range("Field"),
                                     If(
                                         [
                                             (
@@ -197,7 +197,7 @@ class GeneratorGenerator:
                                 ),
                                 ForAllIn(
                                     "F",
-                                    Range(Variable("Field")),
+                                    Range("Field"),
                                     If(
                                         [
                                             (
@@ -597,12 +597,12 @@ class GeneratorGenerator:
     def setter_preconditions(self, field: Field) -> Sequence[Expr]:
         return [
             VALID_CONTEXT,
-            Not(Constrained(Variable("Ctx"))),
+            Not(Constrained("Ctx")),
             Call("Has_Buffer", [Variable("Ctx")]),
             Call("Valid_Next", [Variable("Ctx"), Variable(field.affixed_name)]),
             LessEqual(
                 Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]),
-                Div(Last(Variable(self.types.bit_index)), Number(2)),
+                Div(Last(self.types.bit_index), Number(2)),
             ),
         ]
 
@@ -673,7 +673,7 @@ class GeneratorGenerator:
                     Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]),
                     Variable("Length"),
                 ),
-                Div(Last(Variable(self.types.bit_index)), Number(2)),
+                Div(Last(self.types.bit_index), Number(2)),
             ),
             Or(
                 *[
@@ -692,15 +692,15 @@ class GeneratorGenerator:
                         ),
                     )
                     for l in message.incoming(field)
-                    if Last(Variable("Message")) in l.length
+                    if Last("Message") in l.length
                 ]
             ),
         ]
 
 
 def unbounded_setter_required(message: Message, field: Field) -> bool:
-    return any(True for l in message.incoming(field) if Last(Variable("Message")) not in l.length)
+    return any(True for l in message.incoming(field) if Last("Message") not in l.length)
 
 
 def bounded_setter_required(message: Message, field: Field) -> bool:
-    return any(True for l in message.incoming(field) if Last(Variable("Message")) in l.length)
+    return any(True for l in message.incoming(field) if Last("Message") in l.length)

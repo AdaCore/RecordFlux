@@ -504,11 +504,11 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> str:
 @fatalexceptions
 def parse_attribute(string: str, location: int, tokens: ParseResults) -> Attribute:
     if tokens[2] == "First":
-        return First(Variable(tokens[0]))
+        return First(tokens[0])
     if tokens[2] == "Last":
-        return Last(Variable(tokens[0]))
+        return Last(tokens[0])
     if tokens[2] == "Length":
-        return Length(Variable(tokens[0]))
+        return Length(tokens[0])
 
     raise ParseFatalException(string, location, "unexpected attribute")
 

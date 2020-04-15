@@ -124,12 +124,12 @@ class GeneratorCommon:
             )
 
         return {
-            **{First(Variable("Message")): first},
-            **{Last(Variable("Message")): last},
-            **{Length(Variable("Message")): Add(last, -first, Number(1))},
-            **{First(Variable(f.name)): field_first(f) for f in message.fields},
-            **{Last(Variable(f.name)): field_last(f) for f in message.fields},
-            **{Length(Variable(f.name)): field_length(f) for f in message.fields},
+            **{First("Message"): first},
+            **{Last("Message"): last},
+            **{Length("Message"): Add(last, -first, Number(1))},
+            **{First(f.name): field_first(f) for f in message.fields},
+            **{Last(f.name): field_last(f) for f in message.fields},
+            **{Length(f.name): field_length(f) for f in message.fields},
             **{
                 Variable(f.name): field_value(f)
                 for f, t in message.types.items()
@@ -174,7 +174,7 @@ class GeneratorCommon:
         field_type = message.types[target]
         condition = link.condition.simplified(self.substitution(message, prefix))
         length = (
-            Size(Variable(self.prefix * full_base_type_name(field_type)))
+            Size(self.prefix * full_base_type_name(field_type))
             if isinstance(field_type, Scalar)
             else link.length.simplified(self.substitution(message, prefix))
         )
@@ -330,8 +330,8 @@ class GeneratorCommon:
                     (
                         NotEqual(Variable("Buffer"), NULL),
                         And(
-                            Equal(First(Variable("Buffer")), Variable("Buffer_First")),
-                            Equal(Last(Variable("Buffer")), Variable("Buffer_Last")),
+                            Equal(First("Buffer"), Variable("Buffer_First")),
+                            Equal(Last("Buffer"), Variable("Buffer_Last")),
                         ),
                     )
                 ]
@@ -341,10 +341,10 @@ class GeneratorCommon:
             ),
             LessEqual(Call(self.types.byte_index, [Variable("Last")]), Variable("Buffer_Last")),
             LessEqual(Variable("First"), Variable("Last")),
-            LessEqual(Variable("Last"), Div(Last(Variable(self.types.bit_index)), Number(2))),
+            LessEqual(Variable("Last"), Div(Last(self.types.bit_index), Number(2))),
             ForAllIn(
                 "F",
-                ValueRange(First(Variable("Field")), Last(Variable("Field"))),
+                ValueRange(First("Field"), Last("Field")),
                 If(
                     [
                         (
