@@ -16,6 +16,7 @@ from rflx.expression import (
     Div,
     Equal,
     First,
+    ForAllIn,
     ForAllOf,
     Greater,
     GreaterEqual,
@@ -61,6 +62,9 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_true_variables(self) -> None:
         self.assertEqual(TRUE.variables(), [])
 
+    def test_true_z3expr(self) -> None:
+        self.assertEqual(TRUE.z3expr(), z3.BoolVal(True))
+
     def test_false_neg(self) -> None:
         self.assertEqual(-FALSE, TRUE)
 
@@ -70,8 +74,16 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_false_variables(self) -> None:
         self.assertEqual(FALSE.variables(), [])
 
+    def test_false_z3expr(self) -> None:
+        self.assertEqual(FALSE.z3expr(), z3.BoolVal(False))
+
     def test_not_neg(self) -> None:
         self.assertEqual(-Not(Variable("X")), Variable("X"))
+
+    def test_not_z3expr(self) -> None:
+        self.assertEqual(Not(TRUE).z3expr(), z3.Not(z3.BoolVal(True)))
+        with self.assertRaises(TypeError):
+            Not(Variable("X")).z3expr()
 
     def test_bin_expr_converted(self) -> None:
         self.assertEqual(
@@ -151,6 +163,9 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_undefined_simplified(self) -> None:
         self.assertEqual(UNDEFINED.simplified(), UNDEFINED)
+
+    def test_undefined_str(self) -> None:
+        self.assertEqual(str(UNDEFINED), "__UNDEFINED__")
 
     def test_number_neg(self) -> None:
         self.assertEqual(-Number(42), Number(-42))
@@ -378,6 +393,10 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_variable_simplified(self) -> None:
         self.assertEqual(Variable("X").simplified(), Variable("X"))
         self.assertEqual(Variable("X").simplified({Variable("X"): Number(42)}), Number(42))
+
+    def test_variable_z3expr(self) -> None:
+        self.assertEqual(Variable("X").z3expr(), z3.Int("X"))
+        self.assertEqual(Variable("X", True).z3expr(), -z3.Int("X"))
 
     def test_attribute(self) -> None:
         self.assertTrue(isinstance(Size("X"), Attribute))
@@ -713,6 +732,14 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 "A", Variable("List"), Add(Variable("X"), Add(Variable("Y"), Variable("Z")))
             ).variables(),
             [Variable("List"), Variable("X"), Variable("Y"), Variable("Z")],
+        )
+
+    def test_quantified_expression_str(self) -> None:
+        self.assertEqual(
+            str(ForAllOf("X", Variable("Y"), Variable("X"))), "(for all X of Y =>\n   X)"
+        )
+        self.assertEqual(
+            str(ForAllIn("X", Variable("Y"), Variable("X"))), "(for all X in Y =>\n   X)"
         )
 
     def test_expr_contains(self) -> None:
