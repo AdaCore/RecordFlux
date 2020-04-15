@@ -32,6 +32,7 @@ from rflx.model import (
     ModularInteger,
     Opaque,
     RangeInteger,
+    Refinement,
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
@@ -162,15 +163,15 @@ class TestModel(TestCase):
         self.assertEqual(mod.last.simplified(), Number(2 ** 64 - 1))
 
     def test_modular_invalid_modulus_power_of_two(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^modulus of "T" not power of two$'):
             ModularInteger("P.T", Number(255))
 
     def test_modular_invalid_modulus_variable(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^modulus of "T" contains variable$'):
             ModularInteger("P.T", Pow(Number(2), Variable("X")))
 
     def test_modular_invalid_modulus_limit(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^modulus of "T" exceeds limit \(2\*\*64\)$'):
             ModularInteger("P.T", Pow(Number(2), Number(128)))
 
     def test_range_size(self) -> None:
@@ -182,28 +183,42 @@ class TestModel(TestCase):
         )
 
     def test_range_invalid_first_variable(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^first of "T" contains variable$'):
             RangeInteger("P.T", Add(Number(1), Variable("X")), Number(15), Number(4))
 
     def test_range_invalid_last_variable(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^last of "T" contains variable$'):
             RangeInteger("P.T", Number(1), Add(Number(1), Variable("X")), Number(4))
 
     def test_range_invalid_first_negative(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^first of "T" negative$'):
             RangeInteger("P.T", Number(-1), Number(0), Number(1))
 
     def test_range_invalid_range(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^range of "T" negative$'):
             RangeInteger("P.T", Number(1), Number(0), Number(1))
 
     def test_range_invalid_size_variable(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^size of "T" contains variable$'):
             RangeInteger("P.T", Number(0), Number(256), Add(Number(8), Variable("X")))
 
     def test_range_invalid_size_too_small(self) -> None:
-        with self.assertRaises(ModelError):
+        with self.assertRaisesRegex(ModelError, r'^size for "T" too small$'):
             RangeInteger("P.T", Number(0), Number(256), Number(8))
+
+    def test_enumeration_invalid_size_variable(self) -> None:
+        with self.assertRaisesRegex(ModelError, r'^size of "T" contains variable$'):
+            Enumeration("P.T", {"A": Number(1)}, Add(Number(8), Variable("X")), False)
+
+    def test_enumeration_invalid_size_too_small(self) -> None:
+        with self.assertRaisesRegex(ModelError, r'^size for "T" too small$'):
+            Enumeration("P.T", {"A": Number(256)}, Number(8), False)
+
+    def test_enumeration_invalid_literal(self) -> None:
+        with self.assertRaisesRegex(ModelError, r'^invalid literal name "A B" in "T"$'):
+            Enumeration("P.T", {"A B": Number(1)}, Number(8), False)
+        with self.assertRaisesRegex(ModelError, r'^invalid literal name "A.B" in "T"$'):
+            Enumeration("P.T", {"A.B": Number(1)}, Number(8), False)
 
     def test_message_incorrect_name(self) -> None:
         with self.assertRaisesRegex(ModelError, '^unexpected format of type name "M"$'):
@@ -828,3 +843,7 @@ class TestModel(TestCase):
             f'^name conflict for "F1_F1" in "P.M1" caused by merging message "P.M2" in field "F1"$',
         ):
             m1.merged()
+
+    def test_refinement_invalid_package(self) -> None:
+        with self.assertRaisesRegex(ModelError, r'^unexpected format of package name "A.B"$'):
+            Refinement("A.B", ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
