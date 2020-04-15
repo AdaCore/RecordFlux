@@ -764,11 +764,9 @@ class Variable(Name):
         return [self]
 
     def z3expr(self) -> z3.ArithRef:
-        if isinstance(self.name, str):
-            if self.negative:
-                return -z3.Int(self.name)
-            return z3.Int(self.name)
-        raise TypeError
+        if self.negative:
+            return -z3.Int(self.name)
+        return z3.Int(self.name)
 
 
 class Attribute(Name):
