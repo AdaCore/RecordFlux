@@ -368,7 +368,7 @@ class RangeType(TypeDeclaration):
 
 class EnumerationType(TypeDeclaration):
     def __init__(
-        self, identifier: StrID, literals: Mapping[str, Optional[Number]], size: Number = None,
+        self, identifier: StrID, literals: Mapping[str, Optional[Number]], size: Expr = None,
     ) -> None:
         super().__init__(identifier, aspects=([Size(size)] if size else []))
         self.literals = (
