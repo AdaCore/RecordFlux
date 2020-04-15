@@ -487,7 +487,7 @@ class TestVerification(TestCase):
         foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field("F1")),
-            Link(Field("F1"), Field("F2"), first=Add(First(Variable("Message")), Number(64))),
+            Link(Field("F1"), Field("F2"), first=Add(First("Message"), Number(64))),
             Link(Field("F2"), FINAL),
         ]
 
@@ -506,7 +506,7 @@ class TestVerification(TestCase):
                 Field("F2"),
                 Field("F3"),
                 LessEqual(Variable("F1"), Number(100)),
-                first=Add(Last(Variable("F2")), Number(64)),
+                first=Add(Last("F2"), Number(64)),
             ),
             Link(Field("F3"), Field("F4")),
             Link(Field("F4"), FINAL),
@@ -528,7 +528,7 @@ class TestVerification(TestCase):
         foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field("F1")),
-            Link(Field("F1"), Field("F2"), first=Sub(First(Variable("Message")), Number(1000))),
+            Link(Field("F1"), Field("F2"), first=Sub(First("Message"), Number(1000))),
             Link(Field("F2"), FINAL),
         ]
 

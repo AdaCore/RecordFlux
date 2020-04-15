@@ -452,14 +452,10 @@ class Generator:
                                 [Variable("S_Valid"), Variable("S_Structural_Valid")],
                                 [
                                     Component(
-                                        "First",
-                                        self.types.bit_index,
-                                        First(Variable(self.types.bit_index)),
+                                        "First", self.types.bit_index, First(self.types.bit_index),
                                     ),
                                     Component(
-                                        "Last",
-                                        self.types.bit_length,
-                                        First(Variable(self.types.bit_length)),
+                                        "Last", self.types.bit_length, First(self.types.bit_length),
                                     ),
                                     Component(
                                         "Value",
@@ -497,11 +493,9 @@ class Generator:
     def __create_context_type(self) -> UnitPart:
         discriminants = [
             Discriminant(
-                ["Buffer_First", "Buffer_Last"], self.types.index, First(Variable(self.types.index))
+                ["Buffer_First", "Buffer_Last"], self.types.index, First(self.types.index)
             ),
-            Discriminant(
-                ["First", "Last"], self.types.bit_index, First(Variable(self.types.bit_index))
-            ),
+            Discriminant(["First", "Last"], self.types.bit_index, First(self.types.bit_index)),
         ]
 
         return UnitPart(
@@ -583,10 +577,10 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Aggregate(
-                        First(Variable(self.types.index)),
-                        First(Variable(self.types.index)),
-                        First(Variable(self.types.bit_index)),
-                        First(Variable(self.types.bit_index)),
+                        First(self.types.index),
+                        First(self.types.index),
+                        First(self.types.bit_index),
+                        First(self.types.bit_index),
                         NULL,
                         NamedAggregate(
                             (
@@ -622,14 +616,11 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                Not(Constrained(Variable("Ctx"))),
+                                Not(Constrained("Ctx")),
                                 NotEqual(Variable("Buffer"), NULL),
                                 # WORKAROUND: Componolit/Workarounds#10
-                                Greater(Length(Variable("Buffer")), Number(0)),
-                                LessEqual(
-                                    Last(Variable("Buffer")),
-                                    Div(Last(Variable(self.types.index)), Number(2)),
-                                ),
+                                Greater(Length("Buffer"), Number(0)),
+                                LessEqual(Last("Buffer"), Div(Last(self.types.index), Number(2)),),
                             )
                         ),
                         Postcondition(
@@ -675,8 +666,8 @@ class Generator:
                             [
                                 Variable("Ctx"),
                                 Variable("Buffer"),
-                                Call(self.types.first_bit_index, [First(Variable("Buffer"))]),
-                                Call(self.types.last_bit_index, [Last(Variable("Buffer"))]),
+                                Call(self.types.first_bit_index, [First("Buffer")]),
+                                Call(self.types.last_bit_index, [Last("Buffer")]),
                             ],
                         )
                     ],
@@ -701,22 +692,20 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                Not(Constrained(Variable("Ctx"))),
+                                Not(Constrained("Ctx")),
                                 NotEqual(Variable("Buffer"), NULL),
                                 # WORKAROUND: Componolit/Workarounds#10
-                                Greater(Length(Variable("Buffer")), Number(0)),
+                                Greater(Length("Buffer"), Number(0)),
                                 GreaterEqual(
                                     Call(self.types.byte_index, [Variable("First")]),
-                                    First(Variable("Buffer")),
+                                    First("Buffer"),
                                 ),
                                 LessEqual(
-                                    Call(self.types.byte_index, [Variable("Last")]),
-                                    Last(Variable("Buffer")),
+                                    Call(self.types.byte_index, [Variable("Last")]), Last("Buffer"),
                                 ),
                                 LessEqual(Variable("First"), Variable("Last")),
                                 LessEqual(
-                                    Variable("Last"),
-                                    Div(Last(Variable(self.types.bit_index)), Number(2)),
+                                    Variable("Last"), Div(Last(self.types.bit_index), Number(2)),
                                 ),
                             )
                         ),
@@ -753,11 +742,9 @@ class Generator:
                     specification,
                     [
                         ObjectDeclaration(
-                            ["Buffer_First"], self.types.index, First(Variable("Buffer")), True
+                            ["Buffer_First"], self.types.index, First("Buffer"), True
                         ),
-                        ObjectDeclaration(
-                            ["Buffer_Last"], self.types.index, Last(Variable("Buffer")), True
-                        ),
+                        ObjectDeclaration(["Buffer_Last"], self.types.index, Last("Buffer"), True),
                     ],
                     [
                         Assignment(
@@ -847,8 +834,8 @@ class Generator:
                                 VALID_CONTEXT,
                                 Not(Call("Has_Buffer", [Variable("Ctx")])),
                                 NotEqual(Variable("Buffer"), NULL),
-                                Equal(Variable("Ctx.Buffer_First"), First(Variable("Buffer"))),
-                                Equal(Variable("Ctx.Buffer_Last"), Last(Variable("Buffer"))),
+                                Equal(Variable("Ctx.Buffer_First"), First("Buffer")),
+                                Equal(Variable("Ctx.Buffer_Last"), Last("Buffer")),
                                 *context_invariant,
                                 *[Equal(e, Old(e)) for e in [Call("Cursors", [Variable("Ctx")])]],
                             )
@@ -927,7 +914,7 @@ class Generator:
                 field_type = message.types[target]
                 length: Expr
                 if isinstance(field_type, Scalar):
-                    length = Size(Variable(self.prefix * full_base_type_name(field_type)))
+                    length = Size(self.prefix * full_base_type_name(field_type))
                 else:
                     if len(links) == 1:
                         length = links[0].length
@@ -1079,8 +1066,8 @@ class Generator:
                         Variable(field.name): Call(
                             self.types.bit_length, [Variable(f"Val.{field.name}_Value")]
                         ),
-                        Length(Variable(field.name)): Variable("Length"),
-                        Last(Variable(field.name)): Selected(
+                        Length(field.name): Variable("Length"),
+                        Last(field.name): Selected(
                             Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)), "Last",
                         ),
                     }
@@ -1103,7 +1090,7 @@ class Generator:
                         Precondition(
                             And(
                                 VALID_CONTEXT,
-                                In(Variable("Val.Fld"), Range(Variable("Field"))),
+                                In(Variable("Val.Fld"), Range("Field")),
                                 Call("Valid_Predecessor", [Variable("Ctx"), Variable("Val.Fld")]),
                             )
                         )
@@ -1561,8 +1548,8 @@ class Generator:
                         Precondition(
                             AndThen(
                                 VALID_CONTEXT,
-                                Not(Constrained(Variable("Ctx"))),
-                                Not(Constrained(Variable("Seq_Ctx"))),
+                                Not(Constrained("Ctx")),
+                                Not(Constrained("Seq_Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call("Valid_Next", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 Greater(
@@ -1573,7 +1560,7 @@ class Generator:
                                 ),
                                 LessEqual(
                                     Call("Field_Last", [Variable("Ctx"), Variable(f.affixed_name)]),
-                                    Div(Last(Variable(self.types.bit_index)), Number(2)),
+                                    Div(Last(self.types.bit_index), Number(2)),
                                 ),
                                 Call(
                                     "Field_Condition",
@@ -2382,8 +2369,8 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                Not(Constrained(Variable(pdu_context))),
-                                Not(Constrained(Variable(sdu_context))),
+                                Not(Constrained(pdu_context)),
+                                Not(Constrained(sdu_context)),
                                 *refinement_conditions(
                                     refinement, pdu_context, condition_fields, False
                                 ),
@@ -2537,9 +2524,9 @@ class Generator:
             Pragma("Warnings", ["Off", '"precondition is statically false"']),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(unreachable_function_name(scalar_type.full_name), type_name),
-                First(Variable(type_name))
+                First(type_name)
                 if not base_name
-                else Aggregate(Variable("False"), First(Variable(base_name))),
+                else Aggregate(Variable("False"), First(base_name)),
                 [Precondition(FALSE)],
             ),
             Pragma("Warnings", ["On", '"precondition is statically false"']),

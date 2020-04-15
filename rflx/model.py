@@ -558,10 +558,10 @@ class AbstractMessage(Type):
     @staticmethod
     def __target_first(link: Link) -> Expr:
         if link.source == INITIAL:
-            return First(Variable("Message"))
+            return First("Message")
         if link.first != UNDEFINED:
             return link.first
-        return Add(Last(Variable(link.source.name)), Number(1))
+        return Add(Last(link.source.name), Number(1))
 
     def __target_length(self, link: Link) -> Expr:
         if link.length != UNDEFINED:
@@ -575,16 +575,13 @@ class AbstractMessage(Type):
         name = link.target.name
         return And(
             *[
-                Equal(First(Variable(name)), self.__target_first(link)),
-                Equal(Length(Variable(name)), self.__target_length(link)),
-                Equal(Last(Variable(name)), self.__target_last(link)),
-                GreaterEqual(First(Variable("Message")), Number(0)),
-                GreaterEqual(Last(Variable("Message")), Last(Variable(name))),
-                GreaterEqual(Last(Variable("Message")), First(Variable("Message"))),
-                Equal(
-                    Length(Variable("Message")),
-                    Add(Sub(Last(Variable("Message")), First(Variable("Message"))), Number(1)),
-                ),
+                Equal(First(name), self.__target_first(link)),
+                Equal(Length(name), self.__target_length(link)),
+                Equal(Last(name), self.__target_last(link)),
+                GreaterEqual(First("Message"), Number(0)),
+                GreaterEqual(Last("Message"), Last(name)),
+                GreaterEqual(Last("Message"), First("Message")),
+                Equal(Length("Message"), Add(Sub(Last("Message"), First("Message")), Number(1)),),
                 link.condition,
             ]
         )
@@ -623,7 +620,7 @@ class AbstractMessage(Type):
                                 self.__type_constraints(And(path_expressions, first)),
                                 path_expressions,
                             ),
-                            GreaterEqual(first, First(Variable("Message"))),
+                            GreaterEqual(first, First("Message")),
                         )
                     ],
                     TRUE,
@@ -652,8 +649,8 @@ class AbstractMessage(Type):
         for path in [p[:-1] for p in self.__paths[FINAL] if p]:
             # Calculate (1)
             message_range = And(
-                GreaterEqual(Variable("f"), First(Variable("Message"))),
-                LessEqual(Variable("f"), Last(Variable("Message"))),
+                GreaterEqual(Variable("f"), First("Message")),
+                LessEqual(Variable("f"), Last("Message")),
             )
             # Calculate (2) for all fields
             fields = And(
@@ -668,7 +665,7 @@ class AbstractMessage(Type):
                 ]
             )
             # Define that the end of the last field of a path is the end of the message
-            last_field = Equal(self.__target_last(path[-1]), Last(Variable("Message")))
+            last_field = Equal(self.__target_last(path[-1]), Last("Message"))
             # Constraints for links and types
             path_expressions = self.__with_constraints(
                 And(*[self.__link_expression(l) for l in path])

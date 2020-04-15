@@ -1,5 +1,7 @@
 import unittest
 
+import z3
+
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -7,8 +9,10 @@ from rflx.expression import (
     Add,
     Aggregate,
     And,
+    Attribute,
     Call,
     Case,
+    Constrained,
     Div,
     Equal,
     First,
@@ -28,15 +32,18 @@ from rflx.expression import (
     NotEqual,
     NotIn,
     Number,
+    Old,
     Or,
     Pow,
     Range,
+    Result,
     Size,
     Slice,
     Sub,
     ValueRange,
     Variable,
 )
+from rflx.identifier import ID
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
 
@@ -372,65 +379,51 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(Variable("X").simplified(), Variable("X"))
         self.assertEqual(Variable("X").simplified({Variable("X"): Number(42)}), Number(42))
 
-    def test_length_simplified(self) -> None:
-        self.assertEqual(Length(Variable("X")).simplified(), Length(Variable("X")))
-        self.assertEqual(
-            Length(Variable("X")).simplified({Length(Variable("X")): Number(42)}), Number(42)
-        )
-        self.assertEqual(
-            -Length(Variable("X")).simplified({Length(Variable("X")): Number(42)}), Number(-42)
-        )
-        self.assertEqual(
-            Length(Variable("X")).simplified({Variable("X"): Call("Y")}), Length(Call("Y"))
-        )
+    def test_attribute(self) -> None:
+        self.assertTrue(isinstance(Size("X"), Attribute))
+        self.assertTrue(isinstance(Length("X"), Attribute))
+        self.assertTrue(isinstance(First("X"), Attribute))
+        self.assertTrue(isinstance(Last("X"), Attribute))
+        self.assertTrue(isinstance(Range("X"), Attribute))
+        self.assertTrue(isinstance(Old("X"), Attribute))
+        self.assertTrue(isinstance(Result("X"), Attribute))
+        self.assertTrue(isinstance(Constrained("X"), Attribute))
+        self.assertEqual(First("X"), First(Variable("X")))
+        self.assertEqual(First("X"), First(ID("X")))
+        self.assertEqual(First("X"), First(Variable(ID("X"))))
 
-    def test_first_neg(self) -> None:
-        self.assertEqual(-First(Variable("X")), First(Variable("X"), True))
+    def test_attribute_neg(self) -> None:
+        self.assertEqual(-First("X"), First("X", True))
 
-    def test_first_simplified(self) -> None:
-        self.assertEqual(First(Variable("X")).simplified(), First(Variable("X")))
-        self.assertEqual(
-            First(Variable("X")).simplified({First(Variable("X")): Number(42)}), Number(42)
-        )
-        self.assertEqual(
-            -First(Variable("X")).simplified({First(Variable("X")): Number(42)}), Number(-42)
-        )
-        self.assertEqual(
-            First(Variable("X")).simplified({Variable("X"): Call("Y")}), First(Call("Y"))
-        )
+    def test_attribute_simplified(self) -> None:
+        self.assertEqual(First("X").simplified(), First("X"))
+        self.assertEqual(First("X").simplified({First("X"): Number(42)}), Number(42))
+        self.assertEqual(-First("X").simplified({First("X"): Number(42)}), Number(-42))
+        self.assertEqual(First("X").simplified({Variable("X"): Call("Y")}), First(Call("Y")))
 
-    def test_last_neg(self) -> None:
-        self.assertEqual(-Last(Variable("X")), Last(Variable("X"), True))
+    def test_attribute_str(self) -> None:
+        self.assertEqual(str(First("X")), "X'First")
 
-    def test_last_simplified(self) -> None:
-        self.assertEqual(Last(Variable("X")).simplified(), Last(Variable("X")))
-        self.assertEqual(
-            Last(Variable("X")).simplified({Last(Variable("X")): Number(42)}), Number(42)
-        )
-        self.assertEqual(
-            -Last(Variable("X")).simplified({Last(Variable("X")): Number(42)}), Number(-42)
-        )
-        self.assertEqual(
-            Last(Variable("X")).simplified({Variable("X"): Call("Y")}), Last(Call("Y"))
-        )
+    def test_attribute_variables(self) -> None:
+        self.assertEqual(First("X").variables(), [Variable("X")])
+        self.assertEqual(First("X").variables(proof=True), [Variable("X'First")])
+        self.assertEqual(First(Call("X")).variables(), [])
+        with self.assertRaises(TypeError):
+            First(Call("X")).variables(proof=True)
 
-    def test_range_simplified(self) -> None:
-        self.assertEqual(Range(Variable("X")).simplified(), Range(Variable("X")))
-
-    def test_range_str(self) -> None:
-        self.assertEqual(str(Range(Variable("X"))), "X'Range")
+    def test_attribute_z3expr(self) -> None:
+        self.assertEqual(First("X").z3expr(), z3.Int("X'First"))
+        with self.assertRaises(TypeError):
+            First(Call("X")).z3expr()
 
     def test_aggregate_simplified(self) -> None:
         self.assertEqual(
-            Aggregate(Last(Variable("X"))).simplified({Last(Variable("X")): Number(42)}),
-            Aggregate(Number(42)),
+            Aggregate(Last("X")).simplified({Last("X"): Number(42)}), Aggregate(Number(42)),
         )
 
     def test_named_aggregate_simplified(self) -> None:
         self.assertEqual(
-            NamedAggregate(("Last", Last(Variable("X")))).simplified(
-                {Last(Variable("X")): Number(42)}
-            ),
+            NamedAggregate(("Last", Last("X"))).simplified({Last("X"): Number(42)}),
             NamedAggregate(("Last", Number(42))),
         )
 
@@ -630,14 +623,10 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(
             Slice(
                 Variable("Buffer"),
-                First(Variable("Buffer")),
-                Add(Last(Variable("Buffer")), Add(Number(21), Number(21))),
+                First("Buffer"),
+                Add(Last("Buffer"), Add(Number(21), Number(21))),
             ).simplified(),
-            Slice(
-                Variable("Buffer"),
-                First(Variable("Buffer")),
-                Add(Last(Variable("Buffer")), Number(42)),
-            ),
+            Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42)),),
         )
 
     def test_if_simplified(self) -> None:
@@ -713,9 +702,9 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_quantified_expression_simplified(self) -> None:
         self.assertEqual(
             ForAllOf(
-                "X", Variable("List"), Add(Last(Variable("Y")), Add(Number(21), Number(21)))
+                "X", Variable("List"), Add(Last("Y"), Add(Number(21), Number(21)))
             ).simplified(),
-            ForAllOf("X", Variable("List"), Add(Last(Variable("Y")), Number(42))),
+            ForAllOf("X", Variable("List"), Add(Last("Y"), Number(42))),
         )
 
     def test_quantified_expression_variables(self) -> None:
@@ -797,16 +786,16 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         )
 
     def test_length_z3variables(self) -> None:
-        self.assertEqual(Length(Variable("Z")).variables(True), [Variable("Z'Length")])
+        self.assertEqual(Length("Z").variables(True), [Variable("Z'Length")])
 
     def test_last_z3variables(self) -> None:
-        self.assertEqual(Last(Variable("Z")).variables(True), [Variable("Z'Last")])
+        self.assertEqual(Last("Z").variables(True), [Variable("Z'Last")])
 
     def test_first_z3variables(self) -> None:
-        self.assertEqual(First(Variable("Z")).variables(True), [Variable("Z'First")])
+        self.assertEqual(First("Z").variables(True), [Variable("Z'First")])
 
     def test_size_z3variables(self) -> None:
-        self.assertEqual(Size(Variable("Z")).variables(True), [Variable("Z'Size")])
+        self.assertEqual(Size("Z").variables(True), [Variable("Z'Size")])
 
     def test_not_variables(self) -> None:
         self.assertEqual(Not(Variable("X")).variables(), [Variable("X")])
