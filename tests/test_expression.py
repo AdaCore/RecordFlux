@@ -645,7 +645,13 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 First("Buffer"),
                 Add(Last("Buffer"), Add(Number(21), Number(21))),
             ).simplified(),
-            Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42)),),
+            Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42))),
+        )
+        self.assertEqual(
+            Slice(Variable("X"), First("X"), Add(Last("X"), Number(42))).simplified(
+                {Variable("X"): Variable("Buffer")}
+            ),
+            Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42))),
         )
 
     def test_if_simplified(self) -> None:
