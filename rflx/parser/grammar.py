@@ -51,7 +51,16 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID
-from rflx.model import Array, Enumeration, ModelError, ModularInteger, RangeInteger, Type
+from rflx.model import (
+    Array,
+    Enumeration,
+    ModelError,
+    ModularInteger,
+    RangeInteger,
+    Type,
+    is_builtin_type,
+    qualified_type_name,
+)
 
 from .ast import (
     Component,
@@ -526,8 +535,16 @@ def parse_aspects(string: str, location: int, tokens: ParseResults) -> Dict[str,
 @fatalexceptions
 def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
     try:
+        package = ID("__PACKAGE__")
         name = tokens[1]
-        identifier = ID(f"__PACKAGE__.{name}")
+
+        if is_builtin_type(name):
+            raise ParseFatalException(
+                string, location, f'illegal redefinition of built-in type "{name}"'
+            )
+
+        identifier = package * name
+
         if tokens[3] == "mod":
             return ModularInteger(identifier, *tokens[4:6])
         if tokens[3] == "range":
@@ -548,10 +565,8 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
         if tokens[3] == "new":
             return DerivationSpec(identifier, tokens[4])
         if tokens[3] == "array of":
-            return Array(
-                identifier,
-                ReferenceSpec(tokens[4] if "." in tokens[4] else f"__PACKAGE__.{tokens[4]}"),
-            )
+            return Array(identifier, ReferenceSpec(qualified_type_name(tokens[4], package)))
+
     except ModelError as e:
         raise ParseFatalException(string, location, e)
     raise ParseFatalException(string, location, "unexpected type")

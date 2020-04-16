@@ -315,6 +315,16 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             r" MathematicalExpression}} \(at char 239\), \(line:8, col:38\)$",
         )
 
+    def test_illegal_redefinition(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package Test is
+                   type Boolean is mod 2;
+                end Test;
+            """,
+            r'^illegal redefinition of built-in type "Boolean"',
+        )
+
     def test_invalid_modular_type(self) -> None:
         self.assert_parse_exception_string(
             """
@@ -395,6 +405,14 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                 end Test;
             """,
             r'unsupported size \(4\) of element type "Foo" in "T" \(no multiple of 8\)',
+        )
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is array of Boolean;
+                end Test;
+            """,
+            r'unsupported size \(1\) of element type "Boolean" in "T" \(no multiple of 8\)',
         )
 
     def test_duplicate_message(self) -> None:
