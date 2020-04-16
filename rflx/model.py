@@ -1021,11 +1021,39 @@ def qualified_literals(types: Mapping[Field, Type], package: ID) -> Set[str]:
     return literals
 
 
+def qualified_type_name(name: StrID, package: ID) -> ID:
+    name = ID(name)
+
+    if is_builtin_type(name):
+        return BUILTINS_PACKAGE * name
+
+    if is_internal_type(name):
+        return INTERNAL_PACKAGE * name
+
+    if len(name.parts) == 1:
+        return package * name
+
+    return name
+
+
+INTERNAL_TYPES = {
+    Opaque().identifier: Opaque(),
+}
+
 BOOLEAN = Enumeration(
     BUILTINS_PACKAGE * "Boolean", {"False": Number(0), "True": Number(1)}, Number(1), False
 )
 
 BUILTIN_TYPES = {
-    ID(Opaque().name): Opaque(),
-    ID(BOOLEAN.name): BOOLEAN,
+    BOOLEAN.identifier: BOOLEAN,
 }
+
+
+def is_internal_type(name: StrID) -> bool:
+    return ID(name) in INTERNAL_TYPES or any(
+        ID(name) == ID(t.name) for t in INTERNAL_TYPES.values()
+    )
+
+
+def is_builtin_type(name: StrID) -> bool:
+    return ID(name) in BUILTIN_TYPES or any(ID(name) == ID(t.name) for t in BUILTIN_TYPES.values())

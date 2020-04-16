@@ -1,5 +1,5 @@
 from rflx.identifier import ID
-from rflx.model import BUILTIN_TYPES
+from rflx.model import is_builtin_type
 
 
 class Types:
@@ -7,7 +7,7 @@ class Types:
         self.prefix = prefix
 
     def prefixed(self, type_name: ID) -> ID:
-        if type_name in BUILTIN_TYPES:
+        if is_builtin_type(type_name):
             return type_name
         return self.prefix * type_name
 

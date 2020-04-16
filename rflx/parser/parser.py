@@ -13,6 +13,7 @@ from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
+    INTERNAL_TYPES,
     Array,
     DerivedMessage,
     Enumeration,
@@ -26,6 +27,7 @@ from rflx.model import (
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
+    qualified_type_name,
 )
 
 from . import grammar
@@ -38,7 +40,7 @@ class Parser:
     def __init__(self) -> None:
         self.__specifications: Deque[Specification] = deque()
         self.__evaluated_specifications: Set[str] = set()
-        self.__types: Dict[ID, Type] = dict(BUILTIN_TYPES)
+        self.__types: Dict[ID, Type] = {**BUILTIN_TYPES, **INTERNAL_TYPES}
 
     def parse(self, specfile: Path) -> None:
         self.__parse(specfile)
@@ -187,11 +189,7 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
 
     for component in components:
         if component.name != "null":
-            type_name = (
-                component.type_name
-                if len(component.type_name.parts) == 2 or component.type_name in BUILTIN_TYPES
-                else message.package * component.type_name
-            )
+            type_name = qualified_type_name(component.type_name, message.package)
             if type_name not in types:
                 raise ParserError(
                     f'undefined component type "{type_name}" in message "{message.identifier}"'
@@ -226,9 +224,7 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
 
 
 def create_derived_message(derivation: DerivationSpec, messages: Mapping[ID, Message]) -> Message:
-    base_name = (
-        derivation.base if len(derivation.base.parts) == 2 else derivation.package * derivation.base
-    )
+    base_name = qualified_type_name(derivation.base, derivation.package)
 
     if base_name not in messages:
         raise ParserError(
@@ -248,8 +244,7 @@ def create_derived_message(derivation: DerivationSpec, messages: Mapping[ID, Mes
 def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> Refinement:
     messages = message_types(types)
 
-    if len(refinement.pdu.parts) == 1:
-        refinement.pdu = refinement.package * refinement.pdu
+    refinement.pdu = qualified_type_name(refinement.pdu, refinement.package)
     if refinement.pdu not in messages:
         raise ParserError(f'undefined type "{refinement.pdu}" in refinement')
 
@@ -258,8 +253,7 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
     if Field(refinement.field) not in pdu.fields:
         raise ParserError(f'invalid field "{refinement.field}" in refinement of "{refinement.pdu}"')
 
-    if len(refinement.sdu.parts) == 1:
-        refinement.sdu = refinement.package * refinement.sdu
+    refinement.sdu = qualified_type_name(refinement.sdu, refinement.package)
     if refinement.sdu not in messages:
         raise ParserError(f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"')
 
