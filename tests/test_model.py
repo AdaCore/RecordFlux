@@ -36,24 +36,24 @@ from rflx.model import (
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
-from tests.models import ETHERNET_FRAME, MODULAR_INTEGER, RANGE_INTEGER
+from tests.models import ENUMERATION, ETHERNET_FRAME, MODULAR_INTEGER, RANGE_INTEGER
 
 M_NO_REF = UnprovenMessage(
     "P.No_Ref",
     [
         Link(INITIAL, Field("F1"), length=Number(16)),
         Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),),
+        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2")),
         Link(
             Field("F2"), Field("F4"), GreaterEqual(Variable("F2"), Number(200)), first=First("F2"),
         ),
-        Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
+        Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("ONE"))),
         Link(Field("F4"), FINAL),
     ],
     {
         Field("F1"): Opaque(),
         Field("F2"): MODULAR_INTEGER,
-        Field("F3"): MODULAR_INTEGER,
+        Field("F3"): ENUMERATION,
         Field("F4"): RANGE_INTEGER,
     },
 )
@@ -102,17 +102,17 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
     [
         Link(INITIAL, Field("F1"), length=Number(16)),
         Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2"),),
+        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2")),
         Link(
             Field("F2"), Field("F4"), GreaterEqual(Variable("F2"), Number(200)), first=First("F2"),
         ),
-        Link(Field("F3"), FINAL, LessEqual(Variable("F3"), Number(10))),
+        Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("ONE"))),
         Link(Field("F4"), FINAL),
     ],
     {
         Field("F1"): Opaque(),
         Field("F2"): MODULAR_INTEGER,
-        Field("F3"): MODULAR_INTEGER,
+        Field("F3"): ENUMERATION,
         Field("F4"): RANGE_INTEGER,
     },
 )
@@ -639,7 +639,7 @@ class TestModel(TestCase):
                 "P.Smpl_Ref",
                 [
                     Link(INITIAL, Field("NR_F1"), length=Number(16)),
-                    Link(Field("NR_F3"), FINAL, LessEqual(Variable("NR_F3"), Number(10))),
+                    Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P.ONE"))),
                     Link(Field("NR_F4"), FINAL),
                     Link(Field("NR_F1"), Field("NR_F2")),
                     Link(
@@ -658,7 +658,7 @@ class TestModel(TestCase):
                 {
                     Field("NR_F1"): Opaque(),
                     Field("NR_F2"): deepcopy(MODULAR_INTEGER),
-                    Field("NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F3"): deepcopy(ENUMERATION),
                     Field("NR_F4"): deepcopy(RANGE_INTEGER),
                 },
             ),
@@ -690,7 +690,7 @@ class TestModel(TestCase):
                         Field("F5"),
                         And(
                             LessEqual(Variable("F1"), Number(100)),
-                            LessEqual(Variable("NR_F3"), Number(10)),
+                            Equal(Variable("NR_F3"), Variable("P.ONE")),
                         ),
                     ),
                     Link(Field("NR_F4"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
@@ -699,7 +699,7 @@ class TestModel(TestCase):
                         Field("F6"),
                         And(
                             GreaterEqual(Variable("F1"), Number(200)),
-                            LessEqual(Variable("NR_F3"), Number(10)),
+                            Equal(Variable("NR_F3"), Variable("P.ONE")),
                         ),
                     ),
                     Link(Field("NR_F4"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
@@ -725,7 +725,7 @@ class TestModel(TestCase):
                     Field("F3"): deepcopy(RANGE_INTEGER),
                     Field("NR_F1"): Opaque(),
                     Field("NR_F2"): deepcopy(MODULAR_INTEGER),
-                    Field("NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F3"): deepcopy(ENUMERATION),
                     Field("NR_F4"): deepcopy(RANGE_INTEGER),
                     Field("F5"): deepcopy(MODULAR_INTEGER),
                     Field("F6"): deepcopy(RANGE_INTEGER),
@@ -743,11 +743,11 @@ class TestModel(TestCase):
                     Link(
                         Field("SR_NR_F3"),
                         Field("NR_F1"),
-                        LessEqual(Variable("SR_NR_F3"), Number(10)),
+                        Equal(Variable("SR_NR_F3"), Variable("P.ONE")),
                         length=Number(16),
                     ),
                     Link(Field("SR_NR_F4"), Field("NR_F1"), length=Number(16)),
-                    Link(Field("NR_F3"), FINAL, LessEqual(Variable("NR_F3"), Number(10))),
+                    Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P.ONE"))),
                     Link(Field("NR_F4"), FINAL),
                     Link(Field("SR_NR_F1"), Field("SR_NR_F2")),
                     Link(
@@ -779,11 +779,11 @@ class TestModel(TestCase):
                 {
                     Field("SR_NR_F1"): Opaque(),
                     Field("SR_NR_F2"): deepcopy(MODULAR_INTEGER),
-                    Field("SR_NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("SR_NR_F3"): deepcopy(ENUMERATION),
                     Field("SR_NR_F4"): deepcopy(RANGE_INTEGER),
                     Field("NR_F1"): Opaque(),
                     Field("NR_F2"): deepcopy(MODULAR_INTEGER),
-                    Field("NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F3"): deepcopy(ENUMERATION),
                     Field("NR_F4"): deepcopy(RANGE_INTEGER),
                 },
             ),
@@ -797,7 +797,7 @@ class TestModel(TestCase):
                 M_SMPL_REF,
                 [
                     Link(INITIAL, Field("NR_F1"), length=Number(16)),
-                    Link(Field("NR_F3"), FINAL, LessEqual(Variable("NR_F3"), Number(10))),
+                    Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P.ONE"))),
                     Link(Field("NR_F4"), FINAL),
                     Link(Field("NR_F1"), Field("NR_F2")),
                     Link(
@@ -816,7 +816,7 @@ class TestModel(TestCase):
                 {
                     Field("NR_F1"): Opaque(),
                     Field("NR_F2"): deepcopy(MODULAR_INTEGER),
-                    Field("NR_F3"): deepcopy(MODULAR_INTEGER),
+                    Field("NR_F3"): deepcopy(ENUMERATION),
                     Field("NR_F4"): deepcopy(RANGE_INTEGER),
                 },
             ),

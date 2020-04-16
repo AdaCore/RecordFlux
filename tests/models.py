@@ -214,3 +214,6 @@ DERIVATION_MODEL = Model([*ARRAYS_MODEL.types, DERIVATION_MESSAGE])
 
 MODULAR_INTEGER = ModularInteger("P.Modular", Number(256))
 RANGE_INTEGER = RangeInteger("P.Range", Number(1), Number(100), Number(8))
+ENUMERATION = Enumeration(
+    "P.Enumeration", {"ZERO": Number(0), "ONE": Number(1), "TWO": Number(2)}, Number(8), False,
+)

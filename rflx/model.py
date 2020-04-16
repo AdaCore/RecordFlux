@@ -371,9 +371,25 @@ class AbstractMessage(Type):
         raise NotImplementedError
 
     def prefixed(self, prefix: str) -> "AbstractMessage":
+        fields = {f.identifier for f in self.fields}
+
         def prefixed_expression(expression: Expr) -> Expr:
+            variables = {v.identifier for v in expression.variables()}
+            literals = {l for l in variables - fields if len(l.parts) == 1}
+
             return expression.simplified(
-                {v: v.__class__(f"{prefix}{v.name}") for v in expression.variables()}
+                {
+                    **{
+                        v: v.__class__(f"{prefix}{v.name}")
+                        for v in expression.variables()
+                        if v.identifier in fields
+                    },
+                    **{
+                        v: v.__class__(f"{self.package}.{v.name}")
+                        for v in expression.variables()
+                        if v.identifier in literals
+                    },
+                }
             )
 
         structure = []
@@ -992,12 +1008,17 @@ def check_message_field_types(message: AbstractMessage) -> None:
 
 
 def qualified_literals(types: Mapping[Field, Type], package: ID) -> Set[str]:
-    return {
-        l if t.package == package or t.package == BUILTINS_PACKAGE else f"{t.package}.{l}"
-        for t in types.values()
-        if isinstance(t, Enumeration)
-        for l in t.literals
-    }
+    literals = set()
+
+    for t in types.values():
+        if isinstance(t, Enumeration):
+            for l in t.literals:
+                if t.package == BUILTINS_PACKAGE or t.package == package:
+                    literals.add(l)
+                if t.package != BUILTINS_PACKAGE:
+                    literals.add(f"{t.package}.{l}")
+
+    return literals
 
 
 BOOLEAN = Enumeration(
