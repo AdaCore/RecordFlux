@@ -1,7 +1,7 @@
-with RFLX.Generic_Types;
+with RFLX.RFLX_Generic_Types;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
+   with package Types is new RFLX.RFLX_Generic_Types (<>);
 package RFLX.UDP.Generic_Datagram with
   SPARK_Mode
 is

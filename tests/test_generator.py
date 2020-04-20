@@ -2,9 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from rflx.generator import Generator
-from rflx.generator.common import base_type_name, full_base_type_name
-from rflx.generator.core import LIBRARY_FILES
+from rflx.generator import Generator, common, const
 from rflx.identifier import ID
 from rflx.model import Model, Type
 from tests.models import (
@@ -31,7 +29,7 @@ class TestGenerator(unittest.TestCase):
         with TemporaryDirectory() as directory:
             tmpdir = Path(directory)
             generator.write_library_files(tmpdir)
-            for filename in [f"rflx-{f}" for f in LIBRARY_FILES]:
+            for filename in [f"rflx-{f}" for f in const.LIBRARY_FILES]:
                 with open(tmpdir / filename) as library_file:
                     with open(self.testdir / filename) as expected_file:
                         self.assertEqual(library_file.read(), expected_file.read(), filename)
@@ -148,12 +146,12 @@ class TestGenerator(unittest.TestCase):
         self.assert_body(generator)
 
     def test_base_type_name(self) -> None:
-        self.assertEqual(base_type_name(MODULAR_INTEGER), ID("Modular"))
-        self.assertEqual(base_type_name(RANGE_INTEGER), ID("Range_Base"))
+        self.assertEqual(common.base_type_name(MODULAR_INTEGER), ID("Modular"))
+        self.assertEqual(common.base_type_name(RANGE_INTEGER), ID("Range_Base"))
 
     def test_full_base_type_name(self) -> None:
-        self.assertEqual(full_base_type_name(MODULAR_INTEGER), ID("P.Modular"))
-        self.assertEqual(full_base_type_name(RANGE_INTEGER), ID("P.Range_Base"))
+        self.assertEqual(common.full_base_type_name(MODULAR_INTEGER), ID("P.Modular"))
+        self.assertEqual(common.full_base_type_name(RANGE_INTEGER), ID("P.Range_Base"))
 
 
 def generate(model: Model) -> Generator:

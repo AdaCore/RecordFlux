@@ -581,6 +581,10 @@ def parse_refinement(string: str, location: int, tokens: ParseResults) -> Refine
 
 @fatalexceptions
 def parse_package_declaration(string: str, location: int, tokens: ParseResults) -> PackageSpec:
+    if tokens[1].startswith("RFLX"):
+        raise ParseFatalException(
+            string, location, f'illegal prefix "RFLX" in package identifier "{tokens[1]}"'
+        )
     if tokens[1] != tokens[5]:
         raise ParseFatalException(string, location, "inconsistent package identifiers")
     return PackageSpec(tokens[1], tokens[3].asList())

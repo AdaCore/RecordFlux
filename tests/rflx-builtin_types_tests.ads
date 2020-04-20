@@ -1,7 +1,7 @@
 with AUnit;
 with AUnit.Test_Cases;
 
-package RFLX.Builtin_Types.Tests is
+package RFLX.Builtin_Types_Tests is
    pragma Elaborate_Body;
 
    type Test is new AUnit.Test_Cases.Test_Case with null record;
@@ -10,4 +10,4 @@ package RFLX.Builtin_Types.Tests is
 
    procedure Register_Tests (T : in out Test);
 
-end RFLX.Builtin_Types.Tests;
+end RFLX.Builtin_Types_Tests;

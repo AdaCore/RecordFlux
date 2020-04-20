@@ -1,6 +1,6 @@
 pragma SPARK_Mode;
-with RFLX.Scalar_Sequence;
+with RFLX.RFLX_Scalar_Sequence;
 with RFLX.Arrays;
-with RFLX.Types;
+with RFLX.RFLX_Types;
 
-package RFLX.Arrays.Enumeration_Vector is new RFLX.Scalar_Sequence (RFLX.Types, Enumeration, Enumeration_Base, Valid, To_Actual, To_Base);
+package RFLX.Arrays.Enumeration_Vector is new RFLX.RFLX_Scalar_Sequence (RFLX.RFLX_Types, Enumeration, Enumeration_Base, Valid, To_Actual, To_Base);

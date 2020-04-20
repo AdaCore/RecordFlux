@@ -1,4 +1,4 @@
-package body RFLX.Lemmas with
+package body {prefix}RFLX_Lemmas with
   SPARK_Mode
 is
 
@@ -107,4 +107,4 @@ is
       Exp_Mult (2, J, K);
    end Left_Shift_Limit;
 
-end RFLX.Lemmas;
+end {prefix}RFLX_Lemmas;

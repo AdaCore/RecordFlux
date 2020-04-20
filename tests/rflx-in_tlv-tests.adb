@@ -1,7 +1,7 @@
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.Builtin_Types; use type RFLX.Builtin_Types.Length;
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
 
 with RFLX.TLV.Message;
 with RFLX.In_TLV.Contains;
@@ -22,7 +22,7 @@ package body RFLX.In_TLV.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer              : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(64, 0);
+      Buffer              : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
       TLV_Message_Context : TLV.Message.Context := TLV.Message.Create;
       Valid               : Boolean;
    begin

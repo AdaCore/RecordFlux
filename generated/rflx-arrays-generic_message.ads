@@ -1,12 +1,12 @@
-with RFLX.Generic_Types;
-with RFLX.Scalar_Sequence;
+with RFLX.RFLX_Generic_Types;
+with RFLX.RFLX_Scalar_Sequence;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
-   with package Modular_Vector_Sequence is new RFLX.Scalar_Sequence (Types, others => <>);
-   with package Range_Vector_Sequence is new RFLX.Scalar_Sequence (Types, others => <>);
-   with package Enumeration_Vector_Sequence is new RFLX.Scalar_Sequence (Types, others => <>);
-   with package AV_Enumeration_Vector_Sequence is new RFLX.Scalar_Sequence (Types, others => <>);
+   with package Types is new RFLX.RFLX_Generic_Types (<>);
+   with package Modular_Vector_Sequence is new RFLX.RFLX_Scalar_Sequence (Types, others => <>);
+   with package Range_Vector_Sequence is new RFLX.RFLX_Scalar_Sequence (Types, others => <>);
+   with package Enumeration_Vector_Sequence is new RFLX.RFLX_Scalar_Sequence (Types, others => <>);
+   with package AV_Enumeration_Vector_Sequence is new RFLX.RFLX_Scalar_Sequence (Types, others => <>);
 package RFLX.Arrays.Generic_Message with
   SPARK_Mode
 is

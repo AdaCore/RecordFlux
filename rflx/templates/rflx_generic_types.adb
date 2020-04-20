@@ -1,6 +1,6 @@
-with RFLX.Lemmas;
+with {prefix}RFLX_Lemmas;
 
-package body RFLX.Generic_Types is
+package body {prefix}RFLX_Generic_Types is
 
    function Extract (Data : Bytes;
                      Ofst : Offset) return Value
@@ -66,8 +66,8 @@ package body RFLX.Generic_Types is
             D_Current : constant Byte := D (I);
             D_Next    : constant Byte := D (I + 1);
          begin
-            Lemmas.Mult_Limit (Byte'Pos (D_Next) mod Pow2_LSE_Offset, LSE_Offset, 2**MSE_Offset, MSE_Offset);
-            Lemmas.Mult_Ge_0 (Byte'Pos (D_Next) mod Pow2_LSE_Offset, 2**MSE_Offset);
+            RFLX_Lemmas.Mult_Limit (Byte'Pos (D_Next) mod Pow2_LSE_Offset, LSE_Offset, 2**MSE_Offset, MSE_Offset);
+            RFLX_Lemmas.Mult_Ge_0 (Byte'Pos (D_Next) mod Pow2_LSE_Offset, 2**MSE_Offset);
             declare
                Current : constant Long_Integer := Byte'Pos (D_Current) / Pow2_LSE_Offset;
                Next    : constant Long_Integer := Byte'Pos (D_Next) mod Pow2_LSE_Offset * 2**MSE_Offset;
@@ -165,17 +165,17 @@ package body RFLX.Generic_Types is
             UR_Offset     : constant Natural := LSE_Offset + Value'Size;
             UR_Value      : constant Long_Integer := Byte'Pos (Read (Most_Significant_Index)) / 2**UR_Offset;
          begin
-            Lemmas.Mult_Ge_0 (Element_Value, Pow2_LSE_Offset);
-            Lemmas.Mult_Limit (Element_Value, LSE_Bits, Pow2_LSE_Offset, LSE_Offset);
+            RFLX_Lemmas.Mult_Ge_0 (Element_Value, Pow2_LSE_Offset);
+            RFLX_Lemmas.Mult_Limit (Element_Value, LSE_Bits, Pow2_LSE_Offset, LSE_Offset);
             pragma Assert (Element_Value * Pow2_LSE_Offset <= 2**(LSE_Bits + LSE_Offset));
             --  WORKAROUND: Componolit/Workarounds#15
             pragma Annotate (GNATprove, False_Positive, "assertion",
                              "direct re-expression of lemma postcondition");
             pragma Annotate (GNATprove, False_Positive, "overflow check",
                              "consequence of lemma postcondition");
-            Lemmas.Left_Shift_Limit (Element_Value, Value'Size, LSE_Offset);
-            Lemmas.Right_Shift_Limit (Byte'Pos (Read (Most_Significant_Index)), ES - UR_Offset, UR_Offset);
-            Lemmas.Left_Shift_Limit (UR_Value, ES - UR_Offset, UR_Offset);
+            RFLX_Lemmas.Left_Shift_Limit (Element_Value, Value'Size, LSE_Offset);
+            RFLX_Lemmas.Right_Shift_Limit (Byte'Pos (Read (Most_Significant_Index)), ES - UR_Offset, UR_Offset);
+            RFLX_Lemmas.Left_Shift_Limit (UR_Value, ES - UR_Offset, UR_Offset);
             pragma Assert (LR_Value in 0 .. 2**LSE_Offset - 1);
             pragma Assert (Element_Value * Pow2_LSE_Offset in 0 .. 2**UR_Offset);
             pragma Assert (UR_Value in 0 .. 2**(ES - UR_Offset) - 1);
@@ -190,15 +190,15 @@ package body RFLX.Generic_Types is
             LSE_Value   : constant Long_Integer := (Value'Pos (Val) mod Pow2_LSE_Bits);
             LSE_Current : constant Long_Integer := Byte'Pos (Read (Least_Significant_Index)) mod 2**LSE_Offset;
          begin
-            Lemmas.Mult_Ge_0 (LSE_Value, Pow2_LSE_Offset);
-            Lemmas.Mult_Limit (LSE_Value, LSE_Bits, Pow2_LSE_Offset, LSE_Offset);
+            RFLX_Lemmas.Mult_Ge_0 (LSE_Value, Pow2_LSE_Offset);
+            RFLX_Lemmas.Mult_Limit (LSE_Value, LSE_Bits, Pow2_LSE_Offset, LSE_Offset);
             pragma Assert (LSE_Value * Pow2_LSE_Offset <= 2**(LSE_Bits + LSE_Offset));
             --  WORKAROUND: Componolit/Workarounds#15
             pragma Annotate (GNATprove, False_Positive, "assertion",
                              "direct re-expression of lemma postcondition");
             pragma Annotate (GNATprove, False_Positive, "overflow check",
                              "consequence of lemma postcondition");
-            Lemmas.Left_Shift_Limit (LSE_Value, LSE_Bits, LSE_Offset);
+            RFLX_Lemmas.Left_Shift_Limit (LSE_Value, LSE_Bits, LSE_Offset);
 
             Write (Least_Significant_Index, Byte'Val (LSE_Current + LSE_Value * Pow2_LSE_Offset));
             V := Value'Pos (Val) / 2**LSE_Bits;
@@ -217,9 +217,9 @@ package body RFLX.Generic_Types is
             MSE_Value   : constant Long_Integer := V mod 2**MSE_Bits;
             pragma Assert (MSE_Value < 2**MSE_Bits);
          begin
-            Lemmas.Right_Shift_Limit (Byte'Pos (Read (Most_Significant_Index)), MSE_Offset, MSE_Bits);
+            RFLX_Lemmas.Right_Shift_Limit (Byte'Pos (Read (Most_Significant_Index)), MSE_Offset, MSE_Bits);
             pragma Assert (2**MSE_Offset <= Natural'Last);
-            Lemmas.Left_Shift_Limit (MSE_Current, MSE_Offset, MSE_Bits);
+            RFLX_Lemmas.Left_Shift_Limit (MSE_Current, MSE_Offset, MSE_Bits);
             pragma Assert (MSE_Current >= 0);
             pragma Assert (2**MSE_Bits >= 0);
             pragma Assert (MSE_Current * 2**MSE_Bits in 0 .. 2**ES - 2**MSE_Bits);
@@ -229,4 +229,4 @@ package body RFLX.Generic_Types is
       end if;
    end Insert;
 
-end RFLX.Generic_Types;
+end {prefix}RFLX_Generic_Types;

@@ -1,4 +1,4 @@
-with RFLX.Builtin_Types.Tests;
+with RFLX.Builtin_Types_Tests;
 with RFLX.Custom_Types_Tests;
 with RFLX.Ethernet.Tests;
 with RFLX.IPv4.Tests;
@@ -16,7 +16,7 @@ package body Test_Suite is
    function Suite return Access_Test_Suite is
       Result : constant Access_Test_Suite := new AUnit.Test_Suites.Test_Suite;
    begin
-      Result.Add_Test (new RFLX.Builtin_Types.Tests.Test);
+      Result.Add_Test (new RFLX.Builtin_Types_Tests.Test);
       Result.Add_Test (new RFLX.Custom_Types_Tests.Test);
       Result.Add_Test (new RFLX.Ethernet.Tests.Test);
       Result.Add_Test (new RFLX.IPv4.Tests.Test);

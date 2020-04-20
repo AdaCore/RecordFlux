@@ -62,7 +62,7 @@ from rflx.ada import (
     VariantPart,
     WithClause,
 )
-from rflx.common import flat_name
+from rflx.common import file_name, flat_name
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -119,54 +119,25 @@ from rflx.model import (
     Type,
 )
 
-from .common import (
-    NULL,
-    VALID_CONTEXT,
-    GeneratorCommon,
-    base_type_name,
-    enum_name,
-    full_base_type_name,
-    full_enum_name,
-    length_dependent_condition,
-    sequence_name,
-)
+from . import common, const
 from .generator import GeneratorGenerator
 from .parser import ParserGenerator
-from .types import Types
 
 log = logging.getLogger(__name__)
 
-TEMPLATE_DIR = ("rflx", "templates/")
-LIBRARY_FILES = (
-    "generic_types.ads",
-    "generic_types.adb",
-    "builtin_types.ads",
-    "builtin_types-conversions.ads",
-    "lemmas.adb",
-    "lemmas.ads",
-    "message_sequence.adb",
-    "message_sequence.ads",
-    "scalar_sequence.adb",
-    "scalar_sequence.ads",
-    "types.ads",
-)
-
-REFINEMENT_PACKAGE = ID("Contains")
+NULL = Variable("null")
 
 
 class Generator:
-    # pylint: disable=too-many-instance-attributes
     def __init__(self, prefix: str = "", reproducible: bool = False) -> None:
         self.prefix = str(ID(prefix)) if prefix else ""
         self.reproducible = reproducible
         self.units: Dict[ID, Unit] = {}
         self.seen_types: Set[ID] = set()
-        self.types = Types(self.prefix)
-        self.common = GeneratorCommon(self.prefix)
         self.parser = ParserGenerator(self.prefix)
         self.generator = GeneratorGenerator(self.prefix)
 
-        self.template_dir = Path(pkg_resources.resource_filename(*TEMPLATE_DIR))
+        self.template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
         if not self.template_dir.is_dir():
             raise InternalError("template directory not found")
 
@@ -194,10 +165,10 @@ class Generator:
                 assert False, f'unexpected type "{type(t).__name__}"'
 
     def write_library_files(self, directory: Path) -> None:
-        for template_filename in LIBRARY_FILES:
+        for template_filename in const.LIBRARY_FILES:
             self.__check_template_file(template_filename)
 
-            prefix = self.prefix.replace(".", "-").lower()
+            prefix = file_name(self.prefix)
             filename = f"{prefix}-{template_filename}"
 
             with open(self.template_dir / Path(template_filename)) as template_file:
@@ -209,7 +180,7 @@ class Generator:
     def write_top_level_package(self, directory: Path) -> None:
         if self.prefix:
             create_file(
-                Path(directory) / Path(self.prefix.lower() + ".ads"),
+                Path(directory) / Path(file_name(self.prefix) + ".ads"),
                 self.__license_header() + f"package {self.prefix} is\n\nend {self.prefix};",
             )
 
@@ -249,17 +220,17 @@ class Generator:
         if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
             context.extend(
                 [
-                    WithClause(self.types.prefixed_builtin_types),
-                    WithClause(self.types.prefixed_builtin_conversions),
-                    UsePackageClause(self.types.prefixed_builtin_conversions),
+                    WithClause(self.prefix * const.BUILTIN_TYPES_PACKAGE),
+                    WithClause(self.prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    UsePackageClause(self.prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                 ]
             )
 
-        context.append(WithClause(self.types.prefixed_generic_types))
+        context.append(WithClause(self.prefix * const.GENERIC_TYPES_PACKAGE))
 
         unit_name = generic_name(self.prefix * message.identifier)
         parameters: List[FormalDeclaration] = [
-            FormalPackageDeclaration("Types", self.types.prefixed_generic_types),
+            FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE),
         ]
         unit = PackageUnit(
             context,
@@ -282,9 +253,9 @@ class Generator:
 
             elif isinstance(field_type, Array):
                 if isinstance(field_type.element_type, Message):
-                    name = ID("Message_Sequence")
+                    name = const.MESSAGE_SEQUENCE_PACKAGE
                 else:
-                    name = ID("Scalar_Sequence")
+                    name = const.SCALAR_SEQUENCE_PACKAGE
                 context.append(WithClause(self.prefix * name))
                 parameters.append(
                     FormalPackageDeclaration(
@@ -366,17 +337,18 @@ class Generator:
     def __create_specification_pragmas(package: ID) -> UnitPart:
         return UnitPart([Pragma("Annotate", ["GNATprove", "Terminating", str(package)])])
 
-    def __create_use_type_clause(self, additional_types: Sequence[str] = None) -> UnitPart:
+    @staticmethod
+    def __create_use_type_clause(additional_types: Sequence[str] = None) -> UnitPart:
         additional_types = additional_types or []
         return UnitPart(
             [
                 UseTypeClause(
-                    self.types.bytes,
-                    self.types.bytes_ptr,
-                    self.types.index,
-                    self.types.length,
-                    self.types.bit_index,
-                    self.types.bit_length,
+                    const.TYPES_BYTES,
+                    const.TYPES_BYTES_PTR,
+                    const.TYPES_INDEX,
+                    const.TYPES_LENGTH,
+                    const.TYPES_BIT_INDEX,
+                    const.TYPES_BIT_LENGTH,
                     *additional_types,
                 )
             ]
@@ -409,7 +381,8 @@ class Generator:
             ]
         )
 
-    def __create_cursor_type(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_cursor_type(message: Message) -> UnitPart:
         discriminants = [Discriminant(["State"], "Cursor_State", Variable("S_Invalid"))]
 
         return UnitPart(
@@ -452,10 +425,14 @@ class Generator:
                                 [Variable("S_Valid"), Variable("S_Structural_Valid")],
                                 [
                                     Component(
-                                        "First", self.types.bit_index, First(self.types.bit_index),
+                                        "First",
+                                        const.TYPES_BIT_INDEX,
+                                        First(const.TYPES_BIT_INDEX),
                                     ),
                                     Component(
-                                        "Last", self.types.bit_length, First(self.types.bit_length),
+                                        "Last",
+                                        const.TYPES_BIT_LENGTH,
+                                        First(const.TYPES_BIT_LENGTH),
                                     ),
                                     Component(
                                         "Value",
@@ -490,12 +467,13 @@ class Generator:
             ],
         )
 
-    def __create_context_type(self) -> UnitPart:
+    @staticmethod
+    def __create_context_type() -> UnitPart:
         discriminants = [
             Discriminant(
-                ["Buffer_First", "Buffer_Last"], self.types.index, First(self.types.index)
+                ["Buffer_First", "Buffer_Last"], const.TYPES_INDEX, First(const.TYPES_INDEX)
             ),
-            Discriminant(["First", "Last"], self.types.bit_index, First(self.types.bit_index)),
+            Discriminant(["First", "Last"], const.TYPES_BIT_INDEX, First(const.TYPES_BIT_INDEX)),
         ]
 
         return UnitPart(
@@ -505,7 +483,7 @@ class Generator:
                 RecordType(
                     "Context",
                     [
-                        Component("Buffer", self.types.bytes_ptr, NULL),
+                        Component("Buffer", const.TYPES_BYTES_PTR, NULL),
                         Component(
                             "Cursors",
                             "Field_Cursors",
@@ -552,7 +530,7 @@ class Generator:
         ] + [
             Variant(
                 [Variable(f.affixed_name)],
-                [Component(f"{f.name}_Value", self.prefix * full_base_type_name(t))],
+                [Component(f"{f.name}_Value", self.prefix * common.full_base_type_name(t))],
             )
             for f, t in scalar_fields.items()
         ]
@@ -568,7 +546,8 @@ class Generator:
             ]
         )
 
-    def __create_create_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_create_function(message: Message) -> UnitPart:
         specification = FunctionSpecification("Create", "Context")
 
         return UnitPart(
@@ -577,10 +556,10 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Aggregate(
-                        First(self.types.index),
-                        First(self.types.index),
-                        First(self.types.bit_index),
-                        First(self.types.bit_index),
+                        First(const.TYPES_INDEX),
+                        First(const.TYPES_INDEX),
+                        First(const.TYPES_BIT_INDEX),
+                        First(const.TYPES_BIT_INDEX),
                         NULL,
                         NamedAggregate(
                             (
@@ -603,10 +582,11 @@ class Generator:
             ],
         )
 
-    def __create_initialize_procedure(self) -> UnitPart:
+    @staticmethod
+    def __create_initialize_procedure() -> UnitPart:
         specification = ProcedureSpecification(
             "Initialize",
-            [OutParameter(["Ctx"], "Context"), InOutParameter(["Buffer"], self.types.bytes_ptr)],
+            [OutParameter(["Ctx"], "Context"), InOutParameter(["Buffer"], const.TYPES_BYTES_PTR)],
         )
 
         return UnitPart(
@@ -620,33 +600,27 @@ class Generator:
                                 NotEqual(Variable("Buffer"), NULL),
                                 # WORKAROUND: Componolit/Workarounds#10
                                 Greater(Length("Buffer"), Number(0)),
-                                LessEqual(Last("Buffer"), Div(Last(self.types.index), Number(2)),),
+                                LessEqual(Last("Buffer"), Div(Last(const.TYPES_INDEX), Number(2)),),
                             )
                         ),
                         Postcondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Equal(Variable("Buffer"), NULL),
                                 # WORKAROUND: Componolit/Workarounds#6
                                 Equal(
                                     Variable("Ctx.Buffer_First"),
-                                    Old(
-                                        Call(
-                                            f"{self.types.types}.Bytes_First", [Variable("Buffer")]
-                                        )
-                                    ),
+                                    Old(Call(const.TYPES * "Bytes_First", [Variable("Buffer")])),
                                 ),
                                 Equal(
                                     Variable("Ctx.Buffer_Last"),
-                                    Old(
-                                        Call(f"{self.types.types}.Bytes_Last", [Variable("Buffer")])
-                                    ),
+                                    Old(Call(const.TYPES * "Bytes_Last", [Variable("Buffer")])),
                                 ),
                                 Equal(
                                     Variable("Ctx.First"),
                                     Call(
-                                        f"{self.types.types}.First_Bit_Index",
+                                        const.TYPES * "First_Bit_Index",
                                         [Variable("Ctx.Buffer_First")],
                                     ),
                                 ),
@@ -666,8 +640,8 @@ class Generator:
                             [
                                 Variable("Ctx"),
                                 Variable("Buffer"),
-                                Call(self.types.first_bit_index, [First("Buffer")]),
-                                Call(self.types.last_bit_index, [Last("Buffer")]),
+                                Call(const.TYPES_FIRST_BIT_INDEX, [First("Buffer")]),
+                                Call(const.TYPES_LAST_BIT_INDEX, [Last("Buffer")]),
                             ],
                         )
                     ],
@@ -675,13 +649,14 @@ class Generator:
             ],
         )
 
-    def __create_restricted_initialize_procedure(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_restricted_initialize_procedure(message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             "Initialize",
             [
                 OutParameter(["Ctx"], "Context"),
-                InOutParameter(["Buffer"], self.types.bytes_ptr),
-                Parameter(["First", "Last"], self.types.bit_index),
+                InOutParameter(["Buffer"], const.TYPES_BYTES_PTR),
+                Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
             ],
         )
 
@@ -697,37 +672,32 @@ class Generator:
                                 # WORKAROUND: Componolit/Workarounds#10
                                 Greater(Length("Buffer"), Number(0)),
                                 GreaterEqual(
-                                    Call(self.types.byte_index, [Variable("First")]),
+                                    Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
                                     First("Buffer"),
                                 ),
                                 LessEqual(
-                                    Call(self.types.byte_index, [Variable("Last")]), Last("Buffer"),
+                                    Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
+                                    Last("Buffer"),
                                 ),
                                 LessEqual(Variable("First"), Variable("Last")),
                                 LessEqual(
-                                    Variable("Last"), Div(Last(self.types.bit_index), Number(2)),
+                                    Variable("Last"), Div(Last(const.TYPES_BIT_INDEX), Number(2)),
                                 ),
                             )
                         ),
                         Postcondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Equal(Variable("Buffer"), NULL),
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 # WORKAROUND: Componolit/Workarounds#6
                                 Equal(
                                     Variable("Ctx.Buffer_First"),
-                                    Old(
-                                        Call(
-                                            f"{self.types.types}.Bytes_First", [Variable("Buffer")]
-                                        )
-                                    ),
+                                    Old(Call(const.TYPES * "Bytes_First", [Variable("Buffer")])),
                                 ),
                                 Equal(
                                     Variable("Ctx.Buffer_Last"),
-                                    Old(
-                                        Call(f"{self.types.types}.Bytes_Last", [Variable("Buffer")])
-                                    ),
+                                    Old(Call(const.TYPES * "Bytes_Last", [Variable("Buffer")])),
                                 ),
                                 Equal(Variable("Ctx.First"), Variable("First")),
                                 Equal(Variable("Ctx.Last"), Variable("Last")),
@@ -742,9 +712,9 @@ class Generator:
                     specification,
                     [
                         ObjectDeclaration(
-                            ["Buffer_First"], self.types.index, First("Buffer"), True
+                            ["Buffer_First"], const.TYPES_INDEX, First("Buffer"), True
                         ),
-                        ObjectDeclaration(["Buffer_Last"], self.types.index, Last("Buffer"), True),
+                        ObjectDeclaration(["Buffer_Last"], const.TYPES_INDEX, Last("Buffer"), True),
                     ],
                     [
                         Assignment(
@@ -779,7 +749,8 @@ class Generator:
             ],
         )
 
-    def __create_initialized_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_initialized_function(message: Message) -> UnitPart:
         specification = FunctionSpecification(
             "Initialized", "Boolean", [Parameter(["Ctx"], "Context")]
         )
@@ -801,8 +772,7 @@ class Generator:
                             ),
                             Add(
                                 Call(
-                                    f"{self.types.types}.Last_Bit_Index",
-                                    [Variable("Ctx.Buffer_Last")],
+                                    const.TYPES * "Last_Bit_Index", [Variable("Ctx.Buffer_Last")],
                                 ),
                                 -Variable("Ctx.First"),
                                 Number(1),
@@ -817,10 +787,11 @@ class Generator:
             ],
         )
 
-    def __create_take_buffer_procedure(self, context_invariant: Sequence[Expr]) -> UnitPart:
+    @staticmethod
+    def __create_take_buffer_procedure(context_invariant: Sequence[Expr]) -> UnitPart:
         specification = ProcedureSpecification(
             "Take_Buffer",
-            [InOutParameter(["Ctx"], "Context"), OutParameter(["Buffer"], self.types.bytes_ptr)],
+            [InOutParameter(["Ctx"], "Context"), OutParameter(["Buffer"], const.TYPES_BYTES_PTR)],
         )
 
         return UnitPart(
@@ -828,10 +799,12 @@ class Generator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(And(VALID_CONTEXT, Call("Has_Buffer", [Variable("Ctx")]))),
+                        Precondition(
+                            And(common.VALID_CONTEXT, Call("Has_Buffer", [Variable("Ctx")]))
+                        ),
                         Postcondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Not(Call("Has_Buffer", [Variable("Ctx")])),
                                 NotEqual(Variable("Buffer"), NULL),
                                 Equal(Variable("Ctx.Buffer_First"), First("Buffer")),
@@ -852,7 +825,8 @@ class Generator:
             ],
         )
 
-    def __create_path_condition_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_path_condition_function(message: Message) -> UnitPart:
         def condition(field: Field, message: Message) -> Expr:
             cases: List[Tuple[Expr, Expr]] = [
                 (target, Or(*[c for _, c in conditions]))
@@ -866,7 +840,7 @@ class Generator:
                 )
             ]
             cases.append((Variable("others"), FALSE))
-            return Case(Variable("Fld"), cases).simplified(self.common.substitution(message))
+            return Case(Variable("Fld"), cases).simplified(common.substitution(message))
 
         specification = FunctionSpecification(
             "Path_Condition",
@@ -881,7 +855,7 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
                             )
                         )
@@ -914,26 +888,26 @@ class Generator:
                 field_type = message.types[target]
                 length: Expr
                 if isinstance(field_type, Scalar):
-                    length = Size(self.prefix * full_base_type_name(field_type))
+                    length = Size(self.prefix * common.full_base_type_name(field_type))
                 else:
                     if len(links) == 1:
                         length = links[0].length
                     elif len(links) > 1:
                         length = If(
                             [(l.condition, l.length) for l in links],
-                            Variable(self.types.unreachable_bit_length),
-                        ).simplified(self.common.substitution(message))
+                            Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
+                        ).simplified(common.substitution(message))
                 cases.append((Variable(target.affixed_name), length))
 
             if not cases:
                 return Number(0)
 
-            cases.append((Variable("others"), Variable(self.types.unreachable_bit_length)))
-            return Case(Variable("Fld"), cases).simplified(self.common.substitution(message))
+            cases.append((Variable("others"), Variable(const.TYPES_UNREACHABLE_BIT_LENGTH)))
+            return Case(Variable("Fld"), cases).simplified(common.substitution(message))
 
         specification = FunctionSpecification(
             "Field_Length",
-            self.types.bit_length,
+            const.TYPES_BIT_LENGTH,
             [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
@@ -944,7 +918,7 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                             )
                         )
@@ -965,7 +939,8 @@ class Generator:
             ],
         )
 
-    def __create_field_first_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_field_first_function(message: Message) -> UnitPart:
         def first(field: Field, message: Message) -> Expr:
             if field == message.fields[0]:
                 return Variable("Ctx.First")
@@ -997,12 +972,12 @@ class Generator:
                     )
                     for l in message.incoming(field)
                 ],
-                Variable(self.types.unreachable_bit_length),
-            ).simplified(self.common.substitution(message))
+                Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
+            ).simplified(common.substitution(message))
 
         specification = FunctionSpecification(
             "Field_First",
-            self.types.bit_index,
+            const.TYPES_BIT_INDEX,
             [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
@@ -1013,7 +988,7 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                             )
                         )
@@ -1031,10 +1006,11 @@ class Generator:
             ],
         )
 
-    def __create_field_last_function(self) -> UnitPart:
+    @staticmethod
+    def __create_field_last_function() -> UnitPart:
         specification = FunctionSpecification(
             "Field_Last",
-            self.types.bit_index,
+            const.TYPES_BIT_INDEX,
             [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
@@ -1057,14 +1033,15 @@ class Generator:
             ],
         )
 
-    def __create_field_condition_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_field_condition_function(message: Message) -> UnitPart:
         def condition(field: Field, message: Message) -> Expr:
             return (
                 Or(*[l.condition for l in message.outgoing(field)])
                 .simplified(
                     {
                         Variable(field.name): Call(
-                            self.types.bit_length, [Variable(f"Val.{field.name}_Value")]
+                            const.TYPES_BIT_LENGTH, [Variable(f"Val.{field.name}_Value")]
                         ),
                         Length(field.name): Variable("Length"),
                         Last(field.name): Selected(
@@ -1072,13 +1049,13 @@ class Generator:
                         ),
                     }
                 )
-                .simplified(self.common.substitution(message))
+                .simplified(common.substitution(message))
             )
 
         parameters = [Parameter(["Ctx"], "Context"), Parameter(["Val"], "Field_Dependent_Value")]
 
-        if length_dependent_condition(message):
-            parameters.append(Parameter(["Length"], self.types.bit_length, Number(0)))
+        if common.length_dependent_condition(message):
+            parameters.append(Parameter(["Length"], const.TYPES_BIT_LENGTH, Number(0)))
 
         specification = FunctionSpecification("Field_Condition", "Boolean", parameters)
 
@@ -1089,7 +1066,7 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 In(Variable("Val.Fld"), Range("Field")),
                                 Call("Valid_Predecessor", [Variable("Ctx"), Variable("Val.Fld")]),
                             )
@@ -1120,7 +1097,7 @@ class Generator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -1140,7 +1117,8 @@ class Generator:
             ],
         )
 
-    def __create_successor_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_successor_function(message: Message) -> UnitPart:
         specification = FunctionSpecification(
             "Successor",
             "Virtual_Field",
@@ -1163,7 +1141,7 @@ class Generator:
                                         for l in message.outgoing(f)
                                     ],
                                     Variable(INITIAL.affixed_name),
-                                ).simplified(self.common.substitution(message)),
+                                ).simplified(common.substitution(message)),
                             )
                             for f in message.fields
                         ],
@@ -1224,8 +1202,9 @@ class Generator:
             ],
         )
 
+    @staticmethod
     def __create_reset_dependent_fields_procedure(
-        self, message: Message, context_invariant: Sequence[Expr]
+        message: Message, context_invariant: Sequence[Expr]
     ) -> UnitPart:
         specification = ProcedureSpecification(
             "Reset_Dependent_Fields",
@@ -1258,14 +1237,14 @@ class Generator:
                     [
                         ObjectDeclaration(
                             ["First"],
-                            self.types.bit_length,
+                            const.TYPES_BIT_LENGTH,
                             Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                             True,
                             [Ghost()],
                         ),
                         ObjectDeclaration(
                             ["Length"],
-                            self.types.bit_length,
+                            const.TYPES_BIT_LENGTH,
                             Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
                             True,
                             [Ghost()],
@@ -1384,7 +1363,7 @@ class Generator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [ExpressionFunctionDeclaration(specification, NotEqual(Variable("Ctx.Buffer"), NULL))],
         )
 
@@ -1400,7 +1379,7 @@ class Generator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -1446,9 +1425,10 @@ class Generator:
             ],
         )
 
-    def __create_message_last_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def __create_message_last_function(message: Message) -> UnitPart:
         specification = FunctionSpecification(
-            "Message_Last", self.types.bit_index, [Parameter(["Ctx"], "Context")]
+            "Message_Last", const.TYPES_BIT_INDEX, [Parameter(["Ctx"], "Context")]
         )
 
         return UnitPart(
@@ -1457,7 +1437,10 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(VALID_CONTEXT, Call("Structural_Valid_Message", [Variable("Ctx")]))
+                            And(
+                                common.VALID_CONTEXT,
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
+                            )
                         )
                     ],
                 )
@@ -1479,7 +1462,7 @@ class Generator:
                                         ],
                                     ),
                                     l.condition,
-                                ).simplified(self.common.substitution(message)),
+                                ).simplified(common.substitution(message)),
                                 Selected(
                                     Indexed(
                                         Variable("Ctx.Cursors"), Variable(l.source.affixed_name)
@@ -1489,16 +1472,17 @@ class Generator:
                             )
                             for l in message.incoming(FINAL)
                         ],
-                        Variable(self.types.unreachable_bit_length),
+                        Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
                     ),
                 )
             ],
         )
 
-    def __create_available_space_function(self) -> UnitPart:
+    @staticmethod
+    def __create_available_space_function() -> UnitPart:
         specification = FunctionSpecification(
             "Available_Space",
-            self.types.bit_length,
+            const.TYPES_BIT_LENGTH,
             [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
@@ -1509,7 +1493,7 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                             )
                         )
@@ -1520,7 +1504,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Add(
-                        Call(self.types.last_bit_index, [Variable("Ctx.Buffer_Last")]),
+                        Call(const.TYPES_LAST_BIT_INDEX, [Variable("Ctx.Buffer_Last")]),
                         -Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                         Number(1),
                     ),
@@ -1536,7 +1520,7 @@ class Generator:
                 f"Switch_To_{field.name}",
                 [
                     InOutParameter(["Ctx"], "Context"),
-                    OutParameter(["Seq_Ctx"], f"{sequence_name(message, field)}.Context"),
+                    OutParameter(["Seq_Ctx"], f"{common.sequence_name(message, field)}.Context"),
                 ],
             )
 
@@ -1547,7 +1531,7 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Not(Constrained("Ctx")),
                                 Not(Constrained("Seq_Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
@@ -1560,7 +1544,7 @@ class Generator:
                                 ),
                                 LessEqual(
                                     Call("Field_Last", [Variable("Ctx"), Variable(f.affixed_name)]),
-                                    Div(Last(self.types.bit_index), Number(2)),
+                                    Div(Last(const.TYPES_BIT_INDEX), Number(2)),
                                 ),
                                 Call(
                                     "Field_Condition",
@@ -1575,22 +1559,23 @@ class Generator:
                                                 [Variable("Ctx"), Variable(f.affixed_name)],
                                             ),
                                         ]
-                                        if length_dependent_condition(message)
+                                        if common.length_dependent_condition(message)
                                         else []
                                     ),
                                 ),
-                                self.common.sufficient_space_for_field_condition(
+                                common.sufficient_space_for_field_condition(
                                     Variable(f.affixed_name)
                                 ),
                             )
                         ),
                         Postcondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 *switch_update_conditions(message, f),
                                 Equal(
                                     Call(
-                                        f"{sequence_name(message, f)}.Index", [Variable("Seq_Ctx")]
+                                        f"{common.sequence_name(message, f)}.Index",
+                                        [Variable("Seq_Ctx")],
                                     ),
                                     Variable("Seq_Ctx.First"),
                                 ),
@@ -1643,7 +1628,7 @@ class Generator:
                             (
                                 Variable("others"),
                                 And(
-                                    *self.common.valid_path_to_next_field_condition(message, f),
+                                    *common.valid_path_to_next_field_condition(message, f),
                                     *[
                                         Call("Invalid", [Variable("Ctx"), Variable(s.affixed_name)])
                                         for s in message.successors(f)
@@ -1659,22 +1644,22 @@ class Generator:
                 SubprogramBody(
                     specification(f),
                     [
-                        *self.common.field_bit_location_declarations(Variable(f.affixed_name)),
-                        ObjectDeclaration(["Buffer"], self.types.bytes_ptr),
+                        *common.field_bit_location_declarations(Variable(f.affixed_name)),
+                        ObjectDeclaration(["Buffer"], const.TYPES_BYTES_PTR),
                     ],
                     [
                         IfStatement(
                             [
                                 (
                                     Call("Invalid", [Variable("Ctx"), Variable(f.affixed_name)]),
-                                    self.common.initialize_field_statements(message, f),
+                                    common.initialize_field_statements(message, f, self.prefix),
                                 )
                             ]
                         ),
                         CallStatement("Take_Buffer", [Variable("Ctx"), Variable("Buffer")]),
                         PragmaStatement("Warnings", ["Off", '"unused assignment to ""Buffer"""']),
                         CallStatement(
-                            f"{sequence_name(message, f)}.Initialize",
+                            f"{common.sequence_name(message, f)}.Initialize",
                             [
                                 Variable("Seq_Ctx"),
                                 Variable("Buffer"),
@@ -1691,15 +1676,16 @@ class Generator:
             ],
         )
 
+    @staticmethod
     def __create_update_procedures(
-        self, message: Message, sequence_fields: Mapping[Field, Type]
+        message: Message, sequence_fields: Mapping[Field, Type]
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Update_{field.name}",
                 [
                     InOutParameter(["Ctx"], "Context"),
-                    InOutParameter(["Seq_Ctx"], f"{sequence_name(message, field)}.Context"),
+                    InOutParameter(["Seq_Ctx"], f"{common.sequence_name(message, field)}.Context"),
                 ],
             )
 
@@ -1726,19 +1712,19 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 *switch_update_conditions(message, f),
                             )
                         ),
                         Postcondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Not(
                                     Call(
-                                        f"{sequence_name(message, f)}.Has_Buffer",
+                                        f"{common.sequence_name(message, f)}.Has_Buffer",
                                         [Variable("Seq_Ctx")],
                                     )
                                 ),
@@ -1788,14 +1774,17 @@ class Generator:
                         ObjectDeclaration(
                             ["Valid_Sequence"],
                             "Boolean",
-                            Call(f"{sequence_name(message, f)}.Valid", [Variable("Seq_Ctx")]),
+                            Call(
+                                f"{common.sequence_name(message, f)}.Valid", [Variable("Seq_Ctx")]
+                            ),
                             True,
                         ),
-                        ObjectDeclaration(["Buffer"], self.types.bytes_ptr),
+                        ObjectDeclaration(["Buffer"], const.TYPES_BYTES_PTR),
                     ],
                     [
                         CallStatement(
-                            f"{sequence_name(message, f)}.Take_Buffer", take_buffer_arguments(f)
+                            f"{common.sequence_name(message, f)}.Take_Buffer",
+                            take_buffer_arguments(f),
                         ),
                         Assignment("Ctx.Buffer", Variable("Buffer")),
                         IfStatement(
@@ -1875,10 +1864,10 @@ class Generator:
             "Valid_Context",
             "Boolean",
             [
-                Parameter(["Buffer_First", "Buffer_Last"], self.types.index),
-                Parameter(["First", "Last"], self.types.bit_index),
+                Parameter(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
+                Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
                 # WORKAROUND: Componolit/Workarounds#17
-                Parameter(["Buffer"], self.types.bytes_ptr),
+                Parameter(["Buffer"], const.TYPES_BYTES_PTR),
                 Parameter(["Cursors"], "Field_Cursors"),
             ],
         )
@@ -1893,7 +1882,7 @@ class Generator:
                     ["Off", '"""Buffer"" is not modified, could be of access constant type"'],
                 ),
                 ExpressionFunctionDeclaration(
-                    specification, self.common.context_predicate(message, composite_fields)
+                    specification, common.context_predicate(message, composite_fields, self.prefix)
                 ),
             ],
         )
@@ -1974,7 +1963,7 @@ class Generator:
         context: List[ContextItem] = [
             Pragma("SPARK_Mode"),
             WithClause(name),
-            WithClause(self.types.prefixed_types),
+            WithClause(self.prefix * const.TYPES_PACKAGE),
         ]
 
         arrays = [
@@ -1982,29 +1971,29 @@ class Generator:
         ]
         context.extend(WithClause(array) for array in arrays)
         instantiation = GenericPackageInstantiation(
-            self.prefix * message.identifier, name, [self.types.prefixed_types] + arrays
+            self.prefix * message.identifier, name, [self.prefix * const.TYPES_PACKAGE] + arrays
         )
 
         self.units[message.identifier] = InstantiationUnit(context, instantiation)
 
     def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
-        unit_name = generic_name(self.prefix * refinement.package * REFINEMENT_PACKAGE)
+        unit_name = generic_name(self.prefix * refinement.package * const.REFINEMENT_PACKAGE)
 
         if unit_name in self.units:
             unit = self.units[unit_name]
 
         else:
             unit = PackageUnit(
-                [WithClause(self.types.prefixed_generic_types)],
+                [WithClause(self.prefix * const.GENERIC_TYPES_PACKAGE)],
                 PackageDeclaration(
                     unit_name,
                     formal_parameters=[
-                        FormalPackageDeclaration("Types", self.types.prefixed_generic_types)
+                        FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE)
                     ],
                 ),
                 PackageBody(unit_name),
             )
-            unit += self.__create_specification_pragmas(generic_name(REFINEMENT_PACKAGE))
+            unit += self.__create_specification_pragmas(generic_name(const.REFINEMENT_PACKAGE))
             unit += self.__create_use_type_clause()
             self.units[unit_name] = unit
 
@@ -2065,19 +2054,21 @@ class Generator:
             unit += self.__create_switch_procedure(refinement, condition_fields)
 
     def __create_refinement_unit(self, refinement: Refinement) -> None:
-        unit_name = refinement.package * REFINEMENT_PACKAGE
-        generic_unit_name = generic_name(self.prefix * refinement.package * REFINEMENT_PACKAGE)
+        unit_name = refinement.package * const.REFINEMENT_PACKAGE
+        generic_unit_name = generic_name(
+            self.prefix * refinement.package * const.REFINEMENT_PACKAGE
+        )
 
         if unit_name in self.units:
             unit = self.units[unit_name]
         else:
             context = [
                 Pragma("SPARK_Mode"),
-                WithClause(self.types.prefixed_types),
+                WithClause(self.prefix * const.TYPES_PACKAGE),
                 WithClause(generic_unit_name),
             ]
             instantiation = GenericPackageInstantiation(
-                self.prefix * unit_name, generic_unit_name, [self.types.prefixed_types]
+                self.prefix * unit_name, generic_unit_name, [self.prefix * const.TYPES_PACKAGE]
             )
             unit = InstantiationUnit(context, instantiation)
             self.units[unit_name] = unit
@@ -2129,15 +2120,15 @@ class Generator:
         if isinstance(element_type, Message):
             array_context = [
                 Pragma("SPARK_Mode"),
-                WithClause(self.prefix * ID("Message_Sequence")),
+                WithClause(self.prefix * const.MESSAGE_SEQUENCE_PACKAGE),
                 WithClause(self.prefix * element_type.identifier),
-                WithClause(self.types.prefixed_types),
+                WithClause(self.prefix * const.TYPES_PACKAGE),
             ]
             array_package = GenericPackageInstantiation(
                 self.prefix * array_type.identifier,
-                "Message_Sequence",
+                const.MESSAGE_SEQUENCE_PACKAGE,
                 [
-                    self.types.prefixed_types,
+                    self.prefix * const.TYPES_PACKAGE,
                     f"{element_type.name}.Context",
                     f"{element_type.name}.Initialize",
                     f"{element_type.name}.Take_Buffer",
@@ -2151,17 +2142,17 @@ class Generator:
         elif isinstance(element_type, Scalar):
             array_context = [
                 Pragma("SPARK_Mode"),
-                WithClause(self.prefix * ID("Scalar_Sequence")),
+                WithClause(self.prefix * const.SCALAR_SEQUENCE_PACKAGE),
                 WithClause(self.prefix * package_name),
-                WithClause(self.types.prefixed_types),
+                WithClause(self.prefix * const.TYPES_PACKAGE),
             ]
             array_package = GenericPackageInstantiation(
                 self.prefix * package_name * array_type.name,
-                self.prefix * ID("Scalar_Sequence"),
+                self.prefix * const.SCALAR_SEQUENCE_PACKAGE,
                 [
-                    self.types.prefixed_types,
+                    self.prefix * const.TYPES_PACKAGE,
                     element_type.name,
-                    base_type_name(element_type)
+                    common.base_type_name(element_type)
                     if not isinstance(element_type, ModularInteger)
                     else element_type.name,
                     "Valid",
@@ -2225,12 +2216,16 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base",
-                    self.prefix * full_base_type_name(enum),
+                    self.prefix * common.full_base_type_name(enum),
                     [
                         Parameter(
                             ["Enum"],
                             self.prefix
-                            * (full_enum_name(enum) if enum.always_valid else enum.identifier),
+                            * (
+                                common.full_enum_name(enum)
+                                if enum.always_valid
+                                else enum.identifier
+                            ),
                         )
                     ],
                 ),
@@ -2244,7 +2239,7 @@ class Generator:
         conversion_function = FunctionSpecification(
             "To_Actual",
             self.prefix * enum.identifier,
-            [Parameter(["Val"], self.prefix * full_base_type_name(enum))],
+            [Parameter(["Val"], self.prefix * common.full_base_type_name(enum))],
         )
         precondition = Precondition(Call("Valid", [Variable("Val")]))
         conversion_cases: List[Tuple[Expr, Expr]] = []
@@ -2255,7 +2250,7 @@ class Generator:
                     FunctionSpecification(
                         "To_Actual",
                         self.prefix * enum.identifier,
-                        [Parameter(["Enum"], enum_name(enum))],
+                        [Parameter(["Enum"], common.enum_name(enum))],
                     ),
                     Aggregate(TRUE, Variable("Enum")),
                 )
@@ -2279,7 +2274,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Base",
-                        self.prefix * full_base_type_name(enum),
+                        self.prefix * common.full_base_type_name(enum),
                         [Parameter(["Val"], self.prefix * enum.identifier)],
                     ),
                     If(
@@ -2344,8 +2339,9 @@ class Generator:
             ]
         )
 
+    @staticmethod
     def __create_switch_procedure(
-        self, refinement: Refinement, condition_fields: Mapping[Field, Type]
+        refinement: Refinement, condition_fields: Mapping[Field, Type]
     ) -> UnitPart:
         pdu_name = flat_name(refinement.pdu.full_name)
         sdu_name = flat_name(refinement.sdu.full_name)
@@ -2430,7 +2426,7 @@ class Generator:
                     [
                         ObjectDeclaration(
                             ["First"],
-                            self.types.bit_index,
+                            const.TYPES_BIT_INDEX,
                             Call(
                                 f"{pdu_name}.Field_First",
                                 [Variable(pdu_context), Variable(refined_field_affixed_name)],
@@ -2439,14 +2435,14 @@ class Generator:
                         ),
                         ObjectDeclaration(
                             ["Last"],
-                            self.types.bit_index,
+                            const.TYPES_BIT_INDEX,
                             Call(
                                 f"{pdu_name}.Field_Last",
                                 [Variable(pdu_context), Variable(refined_field_affixed_name)],
                             ),
                             True,
                         ),
-                        ObjectDeclaration(["Buffer"], self.types.bytes_ptr),
+                        ObjectDeclaration(["Buffer"], const.TYPES_BYTES_PTR),
                     ],
                     [
                         CallStatement(
@@ -2475,7 +2471,7 @@ class Generator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -2508,7 +2504,7 @@ class Generator:
             FunctionSpecification(
                 f"Valid",
                 "Boolean",
-                [Parameter(["Val"], self.prefix * full_base_type_name(scalar_type))],
+                [Parameter(["Val"], self.prefix * common.full_base_type_name(scalar_type))],
             ),
             validation_expression,
         )
@@ -2516,7 +2512,7 @@ class Generator:
     def __type_dependent_unreachable_function(self, scalar_type: Scalar) -> List[Declaration]:
         base_name = None
         if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
-            base_name = self.prefix * full_base_type_name(scalar_type)
+            base_name = self.prefix * common.full_base_type_name(scalar_type)
 
         type_name = self.prefix * scalar_type.identifier
 
@@ -2537,7 +2533,7 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base",
-                    self.prefix * full_base_type_name(integer),
+                    self.prefix * common.full_base_type_name(integer),
                     [Parameter(["Val"], self.prefix * integer.identifier)],
                 ),
                 Variable("Val"),
@@ -2547,7 +2543,7 @@ class Generator:
                 FunctionSpecification(
                     "To_Actual",
                     self.prefix * integer.identifier,
-                    [Parameter(["Val"], self.prefix * full_base_type_name(integer))],
+                    [Parameter(["Val"], self.prefix * common.full_base_type_name(integer))],
                 ),
                 Variable("Val"),
                 [Precondition(Call(f"Valid", [Variable("Val")]))],
@@ -2577,18 +2573,20 @@ def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
 
 def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
     return [
-        RangeType(base_type_name(integer), integer.base_first, integer.base_last, integer.size),
-        RangeSubtype(integer.name, base_type_name(integer), integer.first, integer.last),
+        RangeType(
+            common.base_type_name(integer), integer.base_first, integer.base_last, integer.size
+        ),
+        RangeSubtype(integer.name, common.base_type_name(integer), integer.first, integer.last),
     ]
 
 
 def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
     types: List[TypeDeclaration] = []
 
-    types.append(ModularType(base_type_name(enum), Pow(Number(2), enum.size)))
+    types.append(ModularType(common.base_type_name(enum), Pow(Number(2), enum.size)))
     types.append(
         EnumerationType(
-            enum_name(enum) if enum.always_valid else enum.name, enum.literals, enum.size
+            common.enum_name(enum) if enum.always_valid else enum.name, enum.literals, enum.size
         )
     )
     if enum.always_valid:
@@ -2600,8 +2598,8 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
                 VariantPart(
                     "Known",
                     [
-                        Variant([TRUE], [Component("Enum", enum_name(enum))]),
-                        Variant([FALSE], [Component("Raw", base_type_name(enum))]),
+                        Variant([TRUE], [Component("Enum", common.enum_name(enum))]),
+                        Variant([FALSE], [Component("Raw", common.base_type_name(enum))]),
                     ],
                 ),
             )
@@ -2635,7 +2633,7 @@ def unreachable_function_name(type_name: str) -> str:
 def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
     return [
         Not(Call("Has_Buffer", [Variable("Ctx")])),
-        Call(f"{sequence_name(message, field)}.Has_Buffer", [Variable("Seq_Ctx")]),
+        Call(f"{common.sequence_name(message, field)}.Has_Buffer", [Variable("Seq_Ctx")]),
         Equal(Variable("Ctx.Buffer_First"), Variable("Seq_Ctx.Buffer_First")),
         Equal(Variable("Ctx.Buffer_Last"), Variable("Seq_Ctx.Buffer_Last")),
         Equal(

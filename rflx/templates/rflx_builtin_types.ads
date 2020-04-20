@@ -1,4 +1,4 @@
-package RFLX.Builtin_Types with
+package {prefix}RFLX_Builtin_Types with
   SPARK_Mode
 is
 
@@ -16,4 +16,4 @@ is
 
    type Boolean_Base is mod 2;
 
-end RFLX.Builtin_Types;
+end {prefix}RFLX_Builtin_Types;
