@@ -63,6 +63,8 @@ class TestPyRFLX(unittest.TestCase):
                 f"{cls.testdir}/array_type.rflx",
                 f"{cls.specdir}/udp.rflx",
                 f"{cls.specdir}/tlv.rflx",
+                f"{cls.specdir}/in_ethernet.rflx",
+                f"{cls.specdir}/in_ipv4.rflx",
             ]
         )
         cls.package_tlv_checksum = pyrflx["TLV_With_Checksum"]
@@ -78,6 +80,7 @@ class TestPyRFLX(unittest.TestCase):
         cls.package_tlv = pyrflx["TLV"]
 
     def setUp(self) -> None:
+        # pylint: disable=protected-access
         self.tlv_checksum = self.package_tlv_checksum["Message"]
         self.tlv = self.package_tlv["Message"]
         self.frame = self.package_ethernet["Frame"]
@@ -90,6 +93,8 @@ class TestPyRFLX(unittest.TestCase):
         self.array_test_nested_msg = self.package_array_nested_msg["Message"]
         self.array_test_typeval = self.package_array_typevalue["Foo"]
         self.udp = self.package_udp["Datagram"]
+        self.frame_without_refinement = self.frame.__copy__()
+        self.frame_without_refinement._refinements = []
 
     def test_file_not_found(self) -> None:
         with self.assertRaises(FileNotFoundError):
@@ -625,9 +630,9 @@ class TestPyRFLX(unittest.TestCase):
             b"\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d"
             b"\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
         )
-        self.frame.parse(test_bytes)
-        self.assertTrue(self.frame.valid_message)
-        self.assertEqual(self.frame.bytestring, test_bytes)
+        self.frame_without_refinement.parse(test_bytes)
+        self.assertTrue(self.frame_without_refinement.valid_message)
+        self.assertEqual(self.frame_without_refinement.bytestring, test_bytes)
 
     def test_typevalue_parse_from_bitstring(self) -> None:
         # pylint: disable=protected-access
@@ -641,7 +646,7 @@ class TestPyRFLX(unittest.TestCase):
         )
         enumval.parse(b"\x01")
         self.assertEqual(enumval.value, "something")
-        msg_array = ArrayValue(Array("Test.MsgArray", self.tlv._model))
+        msg_array = ArrayValue(Array("Test.MsgArray", self.tlv._type))
         self.tlv.set("Tag", "Msg_Data")
         self.tlv.set("Length", 4)
         self.tlv.set("Value", b"\x00\x00\x00\x00")
@@ -716,7 +721,7 @@ class TestPyRFLX(unittest.TestCase):
     def test_arrayvalue_assign_incorrect_values(self) -> None:
         # pylint: disable=protected-access
         type_array = ArrayValue(Array("Test.Array", ModularInteger("Test.Mod_Int", Number(256))))
-        msg_array = ArrayValue(Array("Test.MsgArray", self.tlv._model))
+        msg_array = ArrayValue(Array("Test.MsgArray", self.tlv._type))
 
         intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
         enumval = EnumValue(
@@ -725,7 +730,6 @@ class TestPyRFLX(unittest.TestCase):
             )
         )
         enumval.assign("something")
-
         with self.assertRaisesRegex(
             ValueError, "cannot assign EnumValue to an array of ModularInteger",
         ):
@@ -758,8 +762,8 @@ class TestPyRFLX(unittest.TestCase):
 
         with self.assertRaisesRegex(
             ValueError,
-            "cannot parse nested messages in array of type TLV.Message: "
-            "'Number 0 is not a valid enum value",
+            "cannot parse nested messages in array of type TLV.Message: Error while setting "
+            "value for field Tag: 'Number 0 is not a valid enum value'",
         ):
             msg_array.parse(Bitstring("0001111"))
 
@@ -804,17 +808,18 @@ class TestPyRFLX(unittest.TestCase):
     def test_ethernet_parsing_ethernet_2_vlan(self) -> None:
         with open("tests/ethernet_vlan_tag.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
-        self.frame.parse(msg_as_bytes)
-        self.assertEqual(self.frame.get("Destination"), int("ffffffffffff", 16))
-        self.assertEqual(self.frame.get("Source"), int("0", 16))
-        self.assertEqual(self.frame.get("Type_Length_TPID"), int("8100", 16))
-        self.assertEqual(self.frame.get("TPID"), int("8100", 16))
-        self.assertEqual(self.frame.get("TCI"), int("1", 16))
-        k = self.frame._fields["Payload"].typeval.size
+        self.frame_without_refinement.parse(msg_as_bytes)
+        self.assertEqual(self.frame_without_refinement.get("Destination"), int("ffffffffffff", 16))
+        self.assertEqual(self.frame_without_refinement.get("Source"), int("0", 16))
+        self.assertEqual(self.frame_without_refinement.get("Type_Length_TPID"), int("8100", 16))
+        self.assertEqual(self.frame_without_refinement.get("TPID"), int("8100", 16))
+        self.assertEqual(self.frame_without_refinement.get("TCI"), int("1", 16))
+        self.assertEqual(self.frame_without_refinement.get("Type_Length"), int("0800", 16))
+        k = self.frame_without_refinement._fields["Payload"].typeval.size
         assert isinstance(k, Number)
         self.assertEqual(k.value // 8, 47)
-        self.assertTrue(self.frame.valid_message)
-        self.assertEqual(self.frame.bytestring, msg_as_bytes)
+        self.assertTrue(self.frame_without_refinement.valid_message)
+        self.assertEqual(self.frame_without_refinement.bytestring, msg_as_bytes)
 
     def test_ethernet_parsing_invalid_ethernet_2_too_short(self) -> None:
         with open("tests/ethernet_invalid_too_short.raw", "rb") as file:
@@ -916,30 +921,41 @@ class TestPyRFLX(unittest.TestCase):
             b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
             b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0a"
         )
-        self.frame.set("Destination", int("FFFFFFFFFFFF", 16))
-        self.frame.set("Source", int("0", 16))
-        self.frame.set("Type_Length_TPID", int("8100", 16))
-        self.frame.set("TPID", int("8100", 16))
-        self.frame.set("TCI", 1)
-        self.frame.set("Type_Length", int("0800", 16))
-        self.frame.set("Payload", payload)
-        self.assertTrue(self.frame.valid_message)
+        self.frame_without_refinement.set("Destination", int("FFFFFFFFFFFF", 16))
+        self.frame_without_refinement.set("Source", int("0", 16))
+        self.frame_without_refinement.set("Type_Length_TPID", int("8100", 16))
+        self.frame_without_refinement.set("TPID", int("8100", 16))
+        self.frame_without_refinement.set("TCI", 1)
+        self.frame_without_refinement.set("Type_Length", int("0800", 16))
+        self.frame_without_refinement.set("Payload", payload)
+        self.assertTrue(self.frame_without_refinement.valid_message)
         with open("tests/ethernet_vlan_tag.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
-        self.assertEqual(self.frame.bytestring, msg_as_bytes)
+        self.assertEqual(self.frame_without_refinement.bytestring, msg_as_bytes)
 
-    # ISSUE: Componolit/RecordFlux#199
-
-    # def test_ethernet_generating_ethernet_2_vlan_dynamic(self) -> None:
-    #    raise NotImplementedError
+    # test is not relevant for the python implementation
+    def test_ethernet_generating_ethernet_2_vlan_dynamic(self) -> None:
+        pass
 
     # rflx in_ipv4-tests.adb
 
-    # def test_ipv4_parsing_udp_in_ipv4(self) -> None:
-    #    raise NotImplementedError
+    def test_ipv4_parsing_udp_in_ipv4(self) -> None:
+        with open("tests/ipv4_udp.raw", "rb") as file:
+            msg_as_bytes: bytes = file.read()
 
-    # def test_ipv4_parsing_udp_in_ipv4_in_ethernet(self) -> None:
-    #    raise NotImplementedError
+        self.ipv4.parse(msg_as_bytes)
+        nested_udp = self.ipv4.get("Payload")
+        self.assertTrue(nested_udp.valid_message)
+
+    def test_ipv4_parsing_udp_in_ipv4_in_ethernet(self) -> None:
+        with open("tests/ethernet_ipv4_udp.raw", "rb") as file:
+            msg_as_bytes: bytes = file.read()
+
+        self.frame.parse(msg_as_bytes)
+        nested_ipv4 = self.frame.get("Payload")
+        self.assertTrue(nested_ipv4.valid_message)
+        nested_udp = nested_ipv4.get("Payload")
+        self.assertTrue(nested_udp.valid_message)
 
     def test_ethernet_generating_udp_in_ipv4_in_ethernet(self) -> None:
         with open("tests/ethernet_ipv4_udp.raw", "rb") as file:
@@ -1017,10 +1033,12 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(self.ipv4_option.get("Option_Length"), 3)
         self.assertEqual(len(self.ipv4_option.get("Option_Data")), 1)
 
-    # ISSUE: Componolit/RecordFlux#199
-
+    # ISSUE: Componolit/RecordFlux#61
     # def test_ipv4_parsing_ipv4_with_options(self) -> None:
-    # raise NotImplementedError
+    # with open("tests/ipv4-options_udp.raw", "rb") as file:
+    #    msg_as_bytes: bytes = file.read()
+    # self.ipv4.parse(msg_as_bytes)
+    # self.assertTrue(self.ipv4.valid_message)
 
     def test_ipv4_generating_ipv4(self) -> None:
         data = (
@@ -1076,7 +1094,10 @@ class TestPyRFLX(unittest.TestCase):
 
     def test_tlv_parsing_invalid_tlv_invalid_tag(self) -> None:
         test_bytes = b"\x00\x00"
-        with self.assertRaisesRegex(KeyError, "Number 0 is not a valid enum value"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "Error while setting value for field Tag: 'Number 0 is not a valid enum value'",
+        ):
             self.tlv.parse(test_bytes)
         self.assertFalse(self.tlv.valid_message)
 
