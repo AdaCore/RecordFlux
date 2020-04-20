@@ -1,17 +1,17 @@
-with RFLX.Generic_Types;
+with {prefix}RFLX_Generic_Types;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
+   with package Types is new {prefix}RFLX_Generic_Types (<>);
    type Element_Type is private;
    type Element_Base_Type is (<>);
    with function Valid (Element : Element_Base_Type) return Boolean;
    with function To_Actual (Element : Element_Base_Type) return Element_Type;
    with function To_Base (Element : Element_Type) return Element_Base_Type;
-package RFLX.Scalar_Sequence with
+package {prefix}RFLX_Scalar_Sequence with
   SPARK_Mode
 is
 
-   pragma Annotate (GNATprove, Terminating, Scalar_Sequence);
+   pragma Annotate (GNATprove, Terminating, RFLX_Scalar_Sequence);
 
    use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
 
@@ -129,4 +129,4 @@ private
    function Available_Space (Ctx : Context) return Types.Bit_Length is
       (Ctx.Last - Ctx.Index + 1);
 
-end RFLX.Scalar_Sequence;
+end {prefix}RFLX_Scalar_Sequence;

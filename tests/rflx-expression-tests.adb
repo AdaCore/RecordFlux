@@ -1,4 +1,4 @@
-with RFLX.Types; use type RFLX.Types.Bytes;
+with RFLX.RFLX_Types; use type RFLX.RFLX_Types.Bytes;
 
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
@@ -13,9 +13,9 @@ package body RFLX.Expression.Tests is
       return AUnit.Format ("Expression");
    end Name;
 
-   Payload_Content : Types.Bytes (Types.Index'First .. Types.Index'First + 1);
+   Payload_Content : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 1);
 
-   procedure Store_Payload (Buffer : Types.Bytes) is
+   procedure Store_Payload (Buffer : RFLX_Types.Bytes) is
    begin
       Payload_Content := Buffer;
    end Store_Payload;
@@ -26,7 +26,7 @@ package body RFLX.Expression.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Types.Bytes_Ptr := new Types.Bytes'(1, 2);
+      Buffer : RFLX_Types.Bytes_Ptr := new RFLX_Types.Bytes'(1, 2);
       Context : Expression.Message.Context := Expression.Message.Create;
    begin
       Expression.Message.Initialize (Context, Buffer);
@@ -46,7 +46,7 @@ package body RFLX.Expression.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Types.Bytes_Ptr := new Types.Bytes'(1, 1);
+      Buffer : RFLX_Types.Bytes_Ptr := new RFLX_Types.Bytes'(1, 1);
       Context : Expression.Message.Context := Expression.Message.Create;
    begin
       Expression.Message.Initialize (Context, Buffer);

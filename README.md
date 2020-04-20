@@ -164,11 +164,11 @@ A simple program to parse a `TLV.Message` could be as follows:
 
 ```Ada
 with Ada.Text_IO;
-with RFLX.Builtin_Types;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.TLV.Message;
 
 procedure Main is
-   Buffer  : RFLX.Builtin_Types.Bytes_Ptr := new RFLX.Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
+   Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
    Context : RFLX.TLV.Message.Context := RFLX.TLV.Message.Create;
 begin
    RFLX.TLV.Message.Initialize (Context, Buffer);
@@ -198,15 +198,15 @@ A `TLV.Message` can be generated as follows:
 
 ```Ada
 with Ada.Text_IO;
-with RFLX.Builtin_Types; use type RFLX.Builtin_Types.Length, RFLX.Builtin_Types.Bytes;
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bytes;
 with RFLX.TLV.Message;
 
 procedure Main is
-   Buffer  : RFLX.Builtin_Types.Bytes_Ptr := new RFLX.Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
+   Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
    Context : RFLX.TLV.Message.Context := RFLX.TLV.Message.Create;
-   Data : RFLX.Builtin_Types.Bytes (RFLX.Builtin_Types.Index'First .. RFLX.Builtin_Types.Index'First + 2**14);
+   Data : RFLX.RFLX_Builtin_Types.Bytes (RFLX.RFLX_Builtin_Types.Index'First .. RFLX.RFLX_Builtin_Types.Index'First + 2**14);
 
-   procedure Write_Data (Buffer : out RFLX.Builtin_Types.Bytes) is
+   procedure Write_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes) is
    begin
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;

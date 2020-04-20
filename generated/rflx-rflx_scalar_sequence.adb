@@ -1,4 +1,4 @@
-package body {prefix}Scalar_Sequence with
+package body RFLX.RFLX_Scalar_Sequence with
   SPARK_Mode
 is
 
@@ -91,4 +91,4 @@ is
    function Index (Ctx : Context) return Types.Bit_Index is
       (Ctx.Index);
 
-end {prefix}Scalar_Sequence;
+end RFLX.RFLX_Scalar_Sequence;

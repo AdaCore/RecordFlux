@@ -1,10 +1,10 @@
-with RFLX.Builtin_Types;
-with RFLX.Builtin_Types.Conversions;
-use RFLX.Builtin_Types.Conversions;
-with RFLX.Generic_Types;
+with RFLX.RFLX_Builtin_Types;
+with RFLX.RFLX_Builtin_Types.Conversions;
+use RFLX.RFLX_Builtin_Types.Conversions;
+with RFLX.RFLX_Generic_Types;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
+   with package Types is new RFLX.RFLX_Generic_Types (<>);
 package RFLX.IPv4.Generic_Option with
   SPARK_Mode
 is
@@ -33,7 +33,7 @@ is
             when F_Initial | F_Option_Data | F_Final =>
                null;
             when F_Copied =>
-               Copied_Value : RFLX.Builtin_Types.Boolean_Base;
+               Copied_Value : RFLX.RFLX_Builtin_Types.Boolean_Base;
             when F_Option_Class =>
                Option_Class_Value : RFLX.IPv4.Option_Class_Base;
             when F_Option_Number =>
@@ -522,7 +522,7 @@ private
         and then (if Invalid (Cursors (F_Option_Length)) then
            Invalid (Cursors (F_Option_Data))))
       and then (if Structural_Valid (Cursors (F_Copied)) then
-         (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+         (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
            and then Cursors (F_Copied).Predecessor = F_Initial
            and then Cursors (F_Copied).First = First
            and then (if Structural_Valid (Cursors (F_Option_Class)) then

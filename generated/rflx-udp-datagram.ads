@@ -1,5 +1,5 @@
 pragma SPARK_Mode;
 with RFLX.UDP.Generic_Datagram;
-with RFLX.Types;
+with RFLX.RFLX_Types;
 
-package RFLX.UDP.Datagram is new RFLX.UDP.Generic_Datagram (RFLX.Types);
+package RFLX.UDP.Datagram is new RFLX.UDP.Generic_Datagram (RFLX.RFLX_Types);

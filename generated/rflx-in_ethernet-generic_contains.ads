@@ -1,11 +1,11 @@
-with RFLX.Generic_Types;
+with RFLX.RFLX_Generic_Types;
 with RFLX.Ethernet;
 use RFLX.Ethernet;
 with RFLX.Ethernet.Generic_Frame;
 with RFLX.IPv4.Generic_Packet;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
+   with package Types is new RFLX.RFLX_Generic_Types (<>);
    with package Ethernet_Frame is new RFLX.Ethernet.Generic_Frame (Types, others => <>);
    with package IPv4_Packet is new RFLX.IPv4.Generic_Packet (Types, others => <>);
 package RFLX.In_Ethernet.Generic_Contains with

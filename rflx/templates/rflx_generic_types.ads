@@ -5,7 +5,7 @@ generic
    type Bytes_Ptr is access Bytes;
    type Length is range <>;
    type Bit_Length is range <>;
-package {prefix}Generic_Types is
+package {prefix}RFLX_Generic_Types is
 
    pragma Compile_Time_Error (Index'First /= 1, "Index'First must be 1");
 
@@ -80,4 +80,4 @@ package {prefix}Generic_Types is
 
    pragma Warnings (On, "precondition is statically false");
 
-end {prefix}Generic_Types;
+end {prefix}RFLX_Generic_Types;

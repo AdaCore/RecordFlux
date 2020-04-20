@@ -1,11 +1,11 @@
-with RFLX.Generic_Types;
+with RFLX.RFLX_Generic_Types;
 with RFLX.IPv4;
 use RFLX.IPv4;
 with RFLX.IPv4.Generic_Packet;
 with RFLX.UDP.Generic_Datagram;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
+   with package Types is new RFLX.RFLX_Generic_Types (<>);
    with package IPv4_Packet is new RFLX.IPv4.Generic_Packet (Types, others => <>);
    with package UDP_Datagram is new RFLX.UDP.Generic_Datagram (Types, others => <>);
 package RFLX.In_IPv4.Generic_Contains with

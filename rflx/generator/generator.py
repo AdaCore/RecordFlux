@@ -53,34 +53,25 @@ from rflx.expression import (
 from rflx.identifier import ID
 from rflx.model import BUILTINS_PACKAGE, FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
-from .common import (
-    VALID_CONTEXT,
-    GeneratorCommon,
-    full_base_type_name,
-    full_enum_name,
-    length_dependent_condition,
-)
-from .types import Types
+from . import common, const
 
 
 class GeneratorGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
-        self.types = Types(prefix)
-        self.common = GeneratorCommon(prefix)
 
     def insert_function(self, type_name: ID) -> Subprogram:
         return GenericProcedureInstantiation(
             "Insert",
             ProcedureSpecification(
-                f"{self.types.types}.Insert",
+                const.TYPES * "Insert",
                 [
                     Parameter(["Val"], type_name),
-                    InOutParameter(["Buffer"], self.types.bytes),
-                    Parameter(["Offset"], self.types.offset),
+                    InOutParameter(["Buffer"], const.TYPES_BYTES),
+                    Parameter(["Offset"], const.TYPES_OFFSET),
                 ],
             ),
-            [self.types.prefixed(type_name)],
+            [common.prefixed_type_name(type_name, self.prefix)],
         )
 
     def create_internal_functions(
@@ -95,14 +86,14 @@ class GeneratorGenerator:
                         [
                             InOutParameter(["Ctx"], "Context"),
                             Parameter(["Val"], "Field_Dependent_Value"),
-                            OutParameter(["Fst", "Lst"], self.types.bit_index),
+                            OutParameter(["Fst", "Lst"], const.TYPES_BIT_INDEX),
                         ],
                     ),
                     [
-                        *self.common.field_bit_location_declarations(Variable("Val.Fld")),
-                        *self.common.field_byte_location_declarations(),
+                        *common.field_bit_location_declarations(Variable("Val.Fld")),
+                        *common.field_byte_location_declarations(),
                         *unique(
-                            self.insert_function(full_base_type_name(t))
+                            self.insert_function(common.full_base_type_name(t))
                             for t in message.types.values()
                             if isinstance(t, Scalar)
                         ),
@@ -143,9 +134,7 @@ class GeneratorGenerator:
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 In(Variable("Val.Fld"), Range("Field")),
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Val.Fld")]),
-                                self.common.sufficient_space_for_field_condition(
-                                    Variable("Val.Fld")
-                                ),
+                                common.sufficient_space_for_field_condition(Variable("Val.Fld")),
                                 ForAllIn(
                                     "F",
                                     Range("Field"),
@@ -192,7 +181,7 @@ class GeneratorGenerator:
                                 GreaterEqual(Variable("Fst"), Variable("Ctx.First")),
                                 LessEqual(Variable("Fst"), Add(Variable("Lst"), Number(1))),
                                 LessEqual(
-                                    Call(self.types.byte_index, [Variable("Lst")]),
+                                    Call(const.TYPES_BYTE_INDEX, [Variable("Lst")]),
                                     Variable("Ctx.Buffer_Last"),
                                 ),
                                 ForAllIn(
@@ -245,9 +234,11 @@ class GeneratorGenerator:
             if field_type.package == BUILTINS_PACKAGE:
                 type_name = ID(field_type.name)
             elif isinstance(field_type, Enumeration) and field_type.always_valid:
-                type_name = self.types.prefixed(full_enum_name(field_type))
+                type_name = common.prefixed_type_name(
+                    common.full_enum_name(field_type), self.prefix
+                )
             else:
-                type_name = self.types.prefixed(field_type.identifier)
+                type_name = common.prefixed_type_name(field_type.identifier, self.prefix)
 
             return ProcedureSpecification(
                 f"Set_{field.name}",
@@ -277,14 +268,14 @@ class GeneratorGenerator:
                                 Call("Valid", [Variable("Val")])
                                 if not isinstance(t, Enumeration)
                                 else TRUE,
-                                self.common.sufficient_space_for_field_condition(
+                                common.sufficient_space_for_field_condition(
                                     Variable(f.affixed_name)
                                 ),
                             )
                         ),
                         Postcondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 Equal(
@@ -327,7 +318,7 @@ class GeneratorGenerator:
                             ),
                             True,
                         ),
-                        ObjectDeclaration(["First", "Last"], self.types.bit_index),
+                        ObjectDeclaration(["First", "Last"], const.TYPES_BIT_INDEX),
                     ],
                     [
                         CallStatement(
@@ -392,14 +383,14 @@ class GeneratorGenerator:
         def specification_bounded(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Set_Bounded_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], self.types.bit_length)],
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], const.TYPES_BIT_LENGTH)],
             )
 
         def formal_parameters(field: Field) -> Sequence[FormalSubprogramDeclaration]:
             return [
                 FormalSubprogramDeclaration(
                     ProcedureSpecification(
-                        f"Process_{field.name}", [OutParameter([field.name], self.types.bytes)],
+                        f"Process_{field.name}", [OutParameter([field.name], const.TYPES_BYTES)],
                     )
                 )
             ]
@@ -443,14 +434,14 @@ class GeneratorGenerator:
                 SubprogramBody(
                     specification(f),
                     [
-                        *self.common.field_bit_location_declarations(Variable(f.affixed_name)),
+                        *common.field_bit_location_declarations(Variable(f.affixed_name)),
                         ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_First", self.types.index),
-                            Call(self.types.byte_index, [Variable("First")]),
+                            FunctionSpecification("Buffer_First", const.TYPES_INDEX),
+                            Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
                         ),
                         ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_Last", self.types.index),
-                            Call(self.types.byte_index, [Variable("Last")]),
+                            FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
+                            Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
                         ),
                     ],
                     [
@@ -476,23 +467,23 @@ class GeneratorGenerator:
                     [
                         ObjectDeclaration(
                             ["First"],
-                            self.types.bit_index,
+                            const.TYPES_BIT_INDEX,
                             Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
                             True,
                         ),
                         ObjectDeclaration(
                             ["Last"],
-                            self.types.bit_index,
+                            const.TYPES_BIT_INDEX,
                             Add(Variable("First"), Variable("Length"), -Number(1)),
                             True,
                         ),
                         ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_First", self.types.index),
-                            Call(self.types.byte_index, [Variable("First")]),
+                            FunctionSpecification("Buffer_First", const.TYPES_INDEX),
+                            Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
                         ),
                         ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_Last", self.types.index),
-                            Call(self.types.byte_index, [Variable("Last")]),
+                            FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
+                            Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
                         ),
                     ],
                     [
@@ -525,7 +516,7 @@ class GeneratorGenerator:
         def specification_bounded(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Initialize_Bounded_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], self.types.bit_length)],
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], const.TYPES_BIT_LENGTH)],
             )
 
         return UnitPart(
@@ -564,8 +555,8 @@ class GeneratorGenerator:
             [
                 SubprogramBody(
                     specification(f),
-                    self.common.field_bit_location_declarations(Variable(f.affixed_name)),
-                    self.common.initialize_field_statements(message, f),
+                    common.field_bit_location_declarations(Variable(f.affixed_name)),
+                    common.initialize_field_statements(message, f, self.prefix),
                 )
                 for f, t in message.types.items()
                 if isinstance(t, Opaque) and unbounded_setter_required(message, f)
@@ -576,44 +567,46 @@ class GeneratorGenerator:
                     [
                         ObjectDeclaration(
                             ["First"],
-                            self.types.bit_index,
+                            const.TYPES_BIT_INDEX,
                             Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
                             True,
                         ),
                         ObjectDeclaration(
                             ["Last"],
-                            self.types.bit_index,
+                            const.TYPES_BIT_INDEX,
                             Add(Variable("First"), Variable("Length"), -Number(1)),
                             True,
                         ),
                     ],
-                    self.common.initialize_field_statements(message, f),
+                    common.initialize_field_statements(message, f, self.prefix),
                 )
                 for f, t in message.types.items()
                 if isinstance(t, Opaque) and bounded_setter_required(message, f)
             ],
         )
 
-    def setter_preconditions(self, field: Field) -> Sequence[Expr]:
+    @staticmethod
+    def setter_preconditions(field: Field) -> Sequence[Expr]:
         return [
-            VALID_CONTEXT,
+            common.VALID_CONTEXT,
             Not(Constrained("Ctx")),
             Call("Has_Buffer", [Variable("Ctx")]),
             Call("Valid_Next", [Variable("Ctx"), Variable(field.affixed_name)]),
             LessEqual(
                 Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]),
-                Div(Last(self.types.bit_index), Number(2)),
+                Div(Last(const.TYPES_BIT_INDEX), Number(2)),
             ),
         ]
 
-    def setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
+    @staticmethod
+    def setter_postconditions(message: Message, field: Field) -> Sequence[Expr]:
         return [
             *[
                 Call("Invalid", [Variable("Ctx"), Variable(p.affixed_name)])
                 for p in message.successors(field)
                 if p != FINAL
             ],
-            *self.common.valid_path_to_next_field_condition(message, field),
+            *common.valid_path_to_next_field_condition(message, field),
             *[
                 Equal(e, Old(e))
                 for e in [
@@ -633,36 +626,34 @@ class GeneratorGenerator:
 
     def composite_setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
         return [
-            VALID_CONTEXT,
+            common.VALID_CONTEXT,
             Call("Has_Buffer", [Variable("Ctx")]),
             *self.setter_postconditions(message, field),
             Call("Structural_Valid", [Variable("Ctx"), Variable(field.affixed_name)]),
         ]
 
-    def unbounded_composite_setter_preconditions(
-        self, message: Message, field: Field
-    ) -> Sequence[Expr]:
+    @staticmethod
+    def unbounded_composite_setter_preconditions(message: Message, field: Field) -> Sequence[Expr]:
         return [
             Call(
                 "Field_Condition",
                 [Variable("Ctx"), NamedAggregate(("Fld", Variable(field.affixed_name)))]
                 + (
                     [Call("Field_Length", [Variable("Ctx"), Variable(field.affixed_name)],)]
-                    if length_dependent_condition(message)
+                    if common.length_dependent_condition(message)
                     else []
                 ),
             ),
-            self.common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
+            common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
         ]
 
-    def bounded_composite_setter_preconditions(
-        self, message: Message, field: Field
-    ) -> Sequence[Expr]:
+    @staticmethod
+    def bounded_composite_setter_preconditions(message: Message, field: Field) -> Sequence[Expr]:
         return [
             Call(
                 "Field_Condition",
                 [Variable("Ctx"), NamedAggregate(("Fld", Variable(field.affixed_name)))]
-                + ([Variable("Length")] if length_dependent_condition(message) else []),
+                + ([Variable("Length")] if common.length_dependent_condition(message) else []),
             ),
             GreaterEqual(
                 Call("Available_Space", [Variable("Ctx"), Variable(field.affixed_name)]),
@@ -673,7 +664,7 @@ class GeneratorGenerator:
                     Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]),
                     Variable("Length"),
                 ),
-                Div(Last(self.types.bit_index), Number(2)),
+                Div(Last(const.TYPES_BIT_INDEX), Number(2)),
             ),
             Or(
                 *[

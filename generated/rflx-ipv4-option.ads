@@ -1,5 +1,5 @@
 pragma SPARK_Mode;
 with RFLX.IPv4.Generic_Option;
-with RFLX.Types;
+with RFLX.RFLX_Types;
 
-package RFLX.IPv4.Option is new RFLX.IPv4.Generic_Option (RFLX.Types);
+package RFLX.IPv4.Option is new RFLX.IPv4.Generic_Option (RFLX.RFLX_Types);

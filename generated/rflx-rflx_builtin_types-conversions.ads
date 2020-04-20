@@ -1,4 +1,4 @@
-package RFLX.Builtin_Types.Conversions is
+package RFLX.RFLX_Builtin_Types.Conversions is
 
    pragma Annotate (GNATprove, Terminating, Conversions);
 
@@ -26,4 +26,4 @@ package RFLX.Builtin_Types.Conversions is
      Pre =>
        Valid (Val);
 
-end RFLX.Builtin_Types.Conversions;
+end RFLX.RFLX_Builtin_Types.Conversions;

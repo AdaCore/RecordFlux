@@ -224,19 +224,19 @@ is
          when F_Identification =>
             (case Fld is
                   when F_Flag_R =>
-                     RFLX.Builtin_Types.Boolean_Base'Size,
+                     RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
                   when others =>
                      Types.Unreachable_Bit_Length),
          when F_Flag_R =>
             (case Fld is
                   when F_Flag_DF =>
-                     RFLX.Builtin_Types.Boolean_Base'Size,
+                     RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
                   when others =>
                      Types.Unreachable_Bit_Length),
          when F_Flag_DF =>
             (case Fld is
                   when F_Flag_MF =>
-                     RFLX.Builtin_Types.Boolean_Base'Size,
+                     RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
                   when others =>
                      Types.Unreachable_Bit_Length),
          when F_Flag_MF =>
@@ -1131,7 +1131,7 @@ is
       function Extract is new Types.Extract (RFLX.IPv4.ECN);
       function Extract is new Types.Extract (RFLX.IPv4.Total_Length_Base);
       function Extract is new Types.Extract (RFLX.IPv4.Identification);
-      function Extract is new Types.Extract (RFLX.Builtin_Types.Boolean_Base);
+      function Extract is new Types.Extract (RFLX.RFLX_Builtin_Types.Boolean_Base);
       function Extract is new Types.Extract (RFLX.IPv4.Fragment_Offset);
       function Extract is new Types.Extract (RFLX.IPv4.TTL);
       function Extract is new Types.Extract (RFLX.IPv4.Protocol_Base);
@@ -1217,16 +1217,16 @@ is
                                               and then Ctx.Cursors (F_Identification).Predecessor = F_Total_Length
                                               and then Ctx.Cursors (F_Identification).First = (Ctx.Cursors (F_Total_Length).Last + 1)
                                               and then (if Structural_Valid (Ctx.Cursors (F_Flag_R)) then
-                                                 (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                                 (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                    and then Ctx.Cursors (F_Flag_R).Predecessor = F_Identification
                                                    and then Ctx.Cursors (F_Flag_R).First = (Ctx.Cursors (F_Identification).Last + 1)
                                                    and then (if Structural_Valid (Ctx.Cursors (F_Flag_DF))
                                                         and then Types.Bit_Length (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (To_Base (False)) then
-                                                      (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                                      (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                         and then Ctx.Cursors (F_Flag_DF).Predecessor = F_Flag_R
                                                         and then Ctx.Cursors (F_Flag_DF).First = (Ctx.Cursors (F_Flag_R).Last + 1)
                                                         and then (if Structural_Valid (Ctx.Cursors (F_Flag_MF)) then
-                                                           (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                                           (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                              and then Ctx.Cursors (F_Flag_MF).Predecessor = F_Flag_DF
                                                              and then Ctx.Cursors (F_Flag_MF).First = (Ctx.Cursors (F_Flag_DF).Last + 1)
                                                              and then (if Structural_Valid (Ctx.Cursors (F_Fragment_Offset)) then
@@ -1516,7 +1516,7 @@ is
       procedure Insert is new Types.Insert (RFLX.IPv4.ECN);
       procedure Insert is new Types.Insert (RFLX.IPv4.Total_Length_Base);
       procedure Insert is new Types.Insert (RFLX.IPv4.Identification);
-      procedure Insert is new Types.Insert (RFLX.Builtin_Types.Boolean_Base);
+      procedure Insert is new Types.Insert (RFLX.RFLX_Builtin_Types.Boolean_Base);
       procedure Insert is new Types.Insert (RFLX.IPv4.Fragment_Offset);
       procedure Insert is new Types.Insert (RFLX.IPv4.TTL);
       procedure Insert is new Types.Insert (RFLX.IPv4.Protocol_Base);
@@ -1772,16 +1772,16 @@ is
                                      and then Ctx.Cursors (F_Identification).Predecessor = F_Total_Length
                                      and then Ctx.Cursors (F_Identification).First = (Ctx.Cursors (F_Total_Length).Last + 1)
                                      and then (if Structural_Valid (Ctx.Cursors (F_Flag_R)) then
-                                        (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                        (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                           and then Ctx.Cursors (F_Flag_R).Predecessor = F_Identification
                                           and then Ctx.Cursors (F_Flag_R).First = (Ctx.Cursors (F_Identification).Last + 1)
                                           and then (if Structural_Valid (Ctx.Cursors (F_Flag_DF))
                                                and then Types.Bit_Length (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (To_Base (False)) then
-                                             (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                             (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                and then Ctx.Cursors (F_Flag_DF).Predecessor = F_Flag_R
                                                and then Ctx.Cursors (F_Flag_DF).First = (Ctx.Cursors (F_Flag_R).Last + 1)
                                                and then (if Structural_Valid (Ctx.Cursors (F_Flag_MF)) then
-                                                  (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                                  (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                     and then Ctx.Cursors (F_Flag_MF).Predecessor = F_Flag_DF
                                                     and then Ctx.Cursors (F_Flag_MF).First = (Ctx.Cursors (F_Flag_DF).Last + 1)
                                                     and then (if Structural_Valid (Ctx.Cursors (F_Fragment_Offset)) then
@@ -1860,16 +1860,16 @@ is
                                         and then Ctx.Cursors (F_Identification).Predecessor = F_Total_Length
                                         and then Ctx.Cursors (F_Identification).First = (Ctx.Cursors (F_Total_Length).Last + 1)
                                         and then (if Structural_Valid (Ctx.Cursors (F_Flag_R)) then
-                                           (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                           (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                              and then Ctx.Cursors (F_Flag_R).Predecessor = F_Identification
                                              and then Ctx.Cursors (F_Flag_R).First = (Ctx.Cursors (F_Identification).Last + 1)
                                              and then (if Structural_Valid (Ctx.Cursors (F_Flag_DF))
                                                   and then Types.Bit_Length (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (To_Base (False)) then
-                                                (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                                (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                   and then Ctx.Cursors (F_Flag_DF).Predecessor = F_Flag_R
                                                   and then Ctx.Cursors (F_Flag_DF).First = (Ctx.Cursors (F_Flag_R).Last + 1)
                                                   and then (if Structural_Valid (Ctx.Cursors (F_Flag_MF)) then
-                                                     (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                                     (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                        and then Ctx.Cursors (F_Flag_MF).Predecessor = F_Flag_DF
                                                        and then Ctx.Cursors (F_Flag_MF).First = (Ctx.Cursors (F_Flag_DF).Last + 1)
                                                        and then (if Structural_Valid (Ctx.Cursors (F_Fragment_Offset)) then

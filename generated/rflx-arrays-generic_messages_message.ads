@@ -1,9 +1,9 @@
-with RFLX.Generic_Types;
-with RFLX.Message_Sequence;
+with RFLX.RFLX_Generic_Types;
+with RFLX.RFLX_Message_Sequence;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
-   with package Inner_Messages_Sequence is new RFLX.Message_Sequence (Types, others => <>);
+   with package Types is new RFLX.RFLX_Generic_Types (<>);
+   with package Inner_Messages_Sequence is new RFLX.RFLX_Message_Sequence (Types, others => <>);
 package RFLX.Arrays.Generic_Messages_Message with
   SPARK_Mode
 is

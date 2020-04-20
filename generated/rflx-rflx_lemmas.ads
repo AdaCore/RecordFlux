@@ -1,4 +1,4 @@
-package {prefix}Lemmas with
+package RFLX.RFLX_Lemmas with
   SPARK_Mode, Ghost
 is
 
@@ -70,4 +70,4 @@ is
      Post => X * 2**K <= 2**(J + K) - 2**K,
      Ghost;
 
-end {prefix}Lemmas;
+end RFLX.RFLX_Lemmas;

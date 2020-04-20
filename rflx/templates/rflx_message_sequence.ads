@@ -1,7 +1,7 @@
-with RFLX.Generic_Types;
+with {prefix}RFLX_Generic_Types;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
+   with package Types is new {prefix}RFLX_Generic_Types (<>);
    type Element_Context (Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index) is private;
    with procedure Element_Initialize (Ctx : out Element_Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index);
    with procedure Element_Take_Buffer (Ctx : in out Element_Context; Buffer : out Types.Bytes_Ptr);
@@ -10,11 +10,11 @@ generic
    with function Element_Initialized (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Message (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Context (Ctx : Element_Context) return Boolean;
-package RFLX.Message_Sequence with
+package {prefix}RFLX_Message_Sequence with
   SPARK_Mode
 is
 
-   pragma Annotate (GNATprove, Terminating, Message_Sequence);
+   pragma Annotate (GNATprove, Terminating, RFLX_Message_Sequence);
 
    use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
 
@@ -148,4 +148,4 @@ private
    function Index (Ctx : Context) return Types.Bit_Index is
       (Ctx.Index);
 
-end RFLX.Message_Sequence;
+end {prefix}RFLX_Message_Sequence;

@@ -1,4 +1,4 @@
-package body {prefix}Message_Sequence with
+package body {prefix}RFLX_Message_Sequence with
   SPARK_Mode
 is
 
@@ -50,4 +50,4 @@ is
       end if;
    end Update;
 
-end {prefix}Message_Sequence;
+end {prefix}RFLX_Message_Sequence;

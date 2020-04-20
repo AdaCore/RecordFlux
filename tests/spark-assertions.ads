@@ -1,4 +1,4 @@
-with RFLX.Builtin_Types;
+with RFLX.RFLX_Builtin_Types;
 
 package SPARK.Assertions
   with SPARK_Mode
@@ -14,8 +14,8 @@ is
                      Expected  : String;
                      Message   : String);
 
-   procedure Assert (Actual   : RFLX.Builtin_Types.Bytes;
-                     Expected : RFLX.Builtin_Types.Bytes;
+   procedure Assert (Actual   : RFLX.RFLX_Builtin_Types.Bytes;
+                     Expected : RFLX.RFLX_Builtin_Types.Bytes;
                      Message  : String);
 
 end SPARK.Assertions;

@@ -1,6 +1,6 @@
 with SPARK.Assertions; use SPARK.Assertions;
 
-with RFLX.Generic_Types;
+with RFLX.RFLX_Generic_Types;
 
 package body RFLX.Custom_Types_Tests is
 
@@ -22,7 +22,7 @@ package body RFLX.Custom_Types_Tests is
       type Length is range 0 .. 2**6 - 1;
       type Bit_Length is range 0 .. Length'Last * 8;
 
-      package Types is new RFLX.Generic_Types (Index, Byte, Bytes, Bytes_Ptr, Length, Bit_Length);
+      package Types is new RFLX.RFLX_Generic_Types (Index, Byte, Bytes, Bytes_Ptr, Length, Bit_Length);
 
       type Value is mod 2**14;
 
@@ -44,7 +44,7 @@ package body RFLX.Custom_Types_Tests is
       type Length is range 0 .. 2**18 - 1;
       type Bit_Length is range 0 .. Length'Last * 8;
 
-      package Types is new RFLX.Generic_Types (Index, Byte, Bytes, Bytes_Ptr, Length, Bit_Length);
+      package Types is new RFLX.RFLX_Generic_Types (Index, Byte, Bytes, Bytes_Ptr, Length, Bit_Length);
 
       type Value is range 0 .. 2**14 - 1;
 
@@ -65,7 +65,7 @@ package body RFLX.Custom_Types_Tests is
       type Length is range 0 .. 2**60 - 1;
       type Bit_Length is range 0 .. Length'Last * 8;
 
-      package Types is new RFLX.Generic_Types (Index, Character, Characters, Characters_Ptr, Length, Bit_Length);
+      package Types is new RFLX.RFLX_Generic_Types (Index, Character, Characters, Characters_Ptr, Length, Bit_Length);
 
       type Value is (A, B, C, D, E, F, G, H);
 
@@ -83,7 +83,7 @@ package body RFLX.Custom_Types_Tests is
       type String_Ptr is access String;
       type Bit_Length is range 0 .. Natural'Last * 8;
 
-      package Types is new RFLX.Generic_Types (Positive, Character, String, String_Ptr, Natural, Bit_Length);
+      package Types is new RFLX.RFLX_Generic_Types (Positive, Character, String, String_Ptr, Natural, Bit_Length);
 
       function Extract is new Types.Extract (Wide_Character);
       procedure Insert is new Types.Insert (Wide_Character);
