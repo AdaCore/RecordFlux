@@ -16,6 +16,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
@@ -27,6 +28,7 @@ from rflx.model import (
     Message,
     Number,
     Opaque,
+    Refinement,
     Scalar,
     Type,
 )
@@ -54,6 +56,18 @@ class TypeValue(ABC):
 
     def equal_type(self, other: Type) -> bool:
         return isinstance(self._type, type(other))
+
+    @property
+    def name(self) -> str:
+        return self._type.name
+
+    @property
+    def identifier(self) -> ID:
+        return self._type.identifier
+
+    @property
+    def package(self) -> ID:
+        return self._type.package
 
     @property
     def initialized(self) -> bool:
@@ -95,7 +109,7 @@ class TypeValue(ABC):
         raise NotImplementedError
 
     @classmethod
-    def construct(cls, vtype: Type) -> "TypeValue":
+    def construct(cls, vtype: Type, refinements: Sequence[Refinement] = None) -> "TypeValue":
         if isinstance(vtype, Integer):
             return IntegerValue(vtype)
         if isinstance(vtype, Enumeration):
@@ -105,7 +119,7 @@ class TypeValue(ABC):
         if isinstance(vtype, Array):
             return ArrayValue(vtype)
         if isinstance(vtype, Message):
-            return MessageValue(vtype)
+            return MessageValue(vtype, refinements)
         raise ValueError("cannot construct unknown type: " + type(vtype).__name__)
 
 
@@ -281,23 +295,49 @@ class CompositeValue(TypeValue):
 class OpaqueValue(CompositeValue):
 
     _value: bytes
+    _nested_message: Optional["MessageValue"] = None
 
     def __init__(self, vtype: Opaque) -> None:
         super().__init__(vtype)
+        self._model_of_refinement_msg: Optional[Message] = None
+        self._all_refinements: Sequence[Refinement] = []
 
     def assign(self, value: bytes, check: bool = True) -> None:
-        self._check_length_of_assigned_value(value)
-        self._value = value
+        self.parse(value)
 
     def parse(self, value: Union[Bitstring, bytes]) -> None:
         self._check_length_of_assigned_value(value)
-        self._value = bytes(value)
+        if self._model_of_refinement_msg is not None:
+            nested_msg = MessageValue(self._model_of_refinement_msg, self._all_refinements)
+            try:
+                nested_msg.parse(value)
+            except (IndexError, ValueError, KeyError) as e:
+                raise ValueError(
+                    f"Error while parsing nested message "
+                    f"{self._model_of_refinement_msg.identifier}: {e}"
+                )
+            assert nested_msg.valid_message
+            self._nested_message = nested_msg
+            self._value = nested_msg.bytestring
+        else:
+            self._value = bytes(value)
+
+    def set_refinement(
+        self, model_of_refinement_msg: Message, all_refinements: Sequence[Refinement]
+    ) -> None:
+        self._model_of_refinement_msg = model_of_refinement_msg
+        self._all_refinements = all_refinements
 
     @property
     def size(self) -> Expr:
         if self._value is None:
             return self._expected_size if self._expected_size is not None else UNDEFINED
         return Number(len(self._value) * 8)
+
+    @property
+    def nested_message(self) -> Optional["MessageValue"]:
+        self._raise_initialized()
+        return self._nested_message
 
     @property
     def value(self) -> bytes:
@@ -330,7 +370,7 @@ class ArrayValue(CompositeValue):
             if self._is_message_array:
                 if isinstance(v, MessageValue):
                     assert isinstance(self._element_type, Message)
-                    if not v.equal_model(self._element_type):
+                    if not v.equal_type(self._element_type):
                         raise ValueError(
                             f'cannot assign "{v.name}" to an array of "{self._element_type.name}"'
                         )
@@ -397,7 +437,7 @@ class ArrayValue(CompositeValue):
         return Number(len(self.bitstring))
 
     @property
-    def value(self) -> List[TypeValue]:
+    def value(self) -> Sequence[TypeValue]:
         self._raise_initialized()
         return self._value
 
@@ -413,16 +453,20 @@ class ArrayValue(CompositeValue):
 
 
 class MessageValue(TypeValue):
-    def __init__(self, message_model: Message) -> None:
+
+    _type: Message
+
+    def __init__(
+        self, message_model: Message, message_refinements: Sequence[Refinement] = None
+    ) -> None:
         super().__init__(message_model)
-        self._model = message_model
+        self._refinements = message_refinements or []
         self._fields: Dict[str, MessageValue.Field] = {
-            f.name: self.Field(TypeValue.construct(self._model.types[f]))
-            for f in self._model.fields
+            f.name: self.Field(TypeValue.construct(self._type.types[f]))
+            for f in self._type.fields
         }
         self.__type_literals: Mapping[Name, Expr] = {}
         self._last_field: str = self._next_field(INITIAL.name)
-
         for t in [
             f.typeval.literals for f in self._fields.values() if isinstance(f.typeval, EnumValue)
         ]:
@@ -434,26 +478,30 @@ class MessageValue(TypeValue):
         self._preset_fields(INITIAL.name)
 
     def __copy__(self) -> "MessageValue":
-        return MessageValue(self._model)
+        assert isinstance(self._type, Message)
+        return MessageValue(self._type, self._refinements)
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return self._fields == other._fields and self._model == other._model
+            return self._fields == other._fields and self._type == other._type
         return NotImplemented
 
-    def equal_model(self, other: Message) -> bool:
+    def equal_type(self, other: Message) -> bool:
         return self.name == other.name
+
+    def _valid_refinement_condition(self, refinement: Refinement) -> bool:
+        return self.__simplified(refinement.condition) == TRUE
 
     def _next_field(self, fld: str) -> str:
         if fld == FINAL.name:
             return ""
         if fld == INITIAL.name:
-            return self._model.outgoing(INITIAL)[0].target.name
+            return self._type.outgoing(INITIAL)[0].target.name
 
-        for l in self._model.outgoing(Field(fld)):
+        for l in self._type.outgoing(Field(fld)):
             if self.__simplified(l.condition) == TRUE:
                 return l.target.name
         return ""
@@ -461,13 +509,13 @@ class MessageValue(TypeValue):
     def _prev_field(self, fld: str) -> str:
         if fld == INITIAL.name:
             return ""
-        for l in self._model.incoming(Field(fld)):
+        for l in self._type.incoming(Field(fld)):
             if self.__simplified(l.condition) == TRUE:
                 return l.source.name
         return ""
 
     def _get_length_unchecked(self, fld: str) -> Expr:
-        for l in self._model.incoming(Field(fld)):
+        for l in self._type.incoming(Field(fld)):
             if self.__simplified(l.condition) == TRUE and l.length != UNDEFINED:
                 return self.__simplified(l.length)
 
@@ -485,7 +533,7 @@ class MessageValue(TypeValue):
         return length
 
     def _get_first_unchecked(self, fld: str) -> Expr:
-        for l in self._model.incoming(Field(fld)):
+        for l in self._type.incoming(Field(fld)):
             if self.__simplified(l.condition) == TRUE and l.first != UNDEFINED:
                 return self.__simplified(l.first)
         prv = self._prev_field(fld)
@@ -500,10 +548,6 @@ class MessageValue(TypeValue):
         first = self._get_first_unchecked(fld)
         assert isinstance(first, Number)
         return first
-
-    @property
-    def name(self) -> str:
-        return self._model.name
 
     @property
     def accepted_type(self) -> type:
@@ -543,21 +587,17 @@ class MessageValue(TypeValue):
             assert isinstance(field.typeval, OpaqueValue)
             field.first = self._get_first(field_name)
             self.set(field_name, value[current_pos_in_bitstring:])
-
             return last_pos_in_bitstr, current_pos_in_bitstring
 
         def set_field_with_length(field_name: str, field_length: int) -> Tuple[int, int]:
             assert isinstance(value, Bitstring)
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
-
             if field_length < 8 or field_length % 8 == 0:
-
                 self.set(
                     field_name,
                     value[current_pos_in_bitstring : current_pos_in_bitstring + field_length],
                 )
                 current_pos_in_bitstring += field_length
-
             else:
                 bytes_used_for_field = field_length // 8 + 1
                 first_pos = current_pos_in_bitstring
@@ -571,7 +611,6 @@ class MessageValue(TypeValue):
                 field_bits += value[current_pos_in_bitstring + 8 - k : first_pos + field_length]
                 current_pos_in_bitstring = first_pos + field_length
                 self.set(field_name, field_bits)
-
             return last_pos_in_bitstr, current_pos_in_bitstring
 
         while current_field_name != FINAL.name:
@@ -599,28 +638,50 @@ class MessageValue(TypeValue):
                     )
             current_field_name = self._next_field(current_field_name)
 
-    def set(self, fld: str, value: Union[bytes, int, str, Sequence[TypeValue], Bitstring]) -> None:
-        if fld in self.accessible_fields:
-            field = self._fields[fld]
-            field.first = self._get_first(fld)
+    def set(
+        self, field_name: str, value: Union[bytes, int, str, Sequence[TypeValue], Bitstring]
+    ) -> None:
+        def set_refinement(fld: MessageValue.Field, fld_name: str) -> None:
+            if isinstance(fld.typeval, OpaqueValue):
+                for ref in self._refinements:
+                    if (
+                        ref.pdu.name == self.name
+                        and ref.field.name == fld_name
+                        and self._valid_refinement_condition(ref)
+                    ):
+                        fld.typeval.set_refinement(ref.sdu, self._refinements)
+
+        if field_name in self.accessible_fields:
+            field = self._fields[field_name]
+            field.first = self._get_first(field_name)
+            if isinstance(field.typeval, CompositeValue) and self._has_length(field_name):
+                field.typeval.set_expected_size(self._get_length(field_name))
+            set_refinement(field, field_name)
             if isinstance(value, Bitstring):
-                if isinstance(field.typeval, CompositeValue) and self._has_length(fld):
-                    field.typeval.set_expected_size(self._get_length(fld))
-                field.typeval.parse(value)
+                try:
+                    field.typeval.parse(value)
+                except (ValueError, KeyError) as e:
+                    raise ValueError(f"Error while setting value for field {field_name}: {e}")
             elif isinstance(value, field.typeval.accepted_type):
-                if isinstance(field.typeval, CompositeValue) and self._has_length(fld):
-                    field.typeval.set_expected_size(self._get_length(fld))
-                field.typeval.assign(value)
+                try:
+                    field.typeval.assign(value)
+                except (ValueError, KeyError) as e:
+                    raise ValueError(f"Error while setting value for field {field_name}: {e}")
             else:
                 raise TypeError(
                     f"cannot assign different types: {field.typeval.accepted_type.__name__}"
                     f" != {type(value).__name__}"
                 )
         else:
-            raise KeyError(f"cannot access field {fld}")
+            raise KeyError(f"cannot access field {field_name}")
 
-        if all([self.__simplified(o.condition) == FALSE for o in self._model.outgoing(Field(fld))]):
-            self._fields[fld].typeval.clear()
+        if all(
+            [
+                self.__simplified(o.condition) == FALSE
+                for o in self._type.outgoing(Field(field_name))
+            ]
+        ):
+            self._fields[field_name].typeval.clear()
             if isinstance(value, bytes):
                 value_repr = "x" + value.hex()
             else:
@@ -628,11 +689,11 @@ class MessageValue(TypeValue):
 
             raise ValueError(
                 f"none of the field conditions "
-                f"{[str(o.condition) for o in self._model.outgoing(Field(fld))]}"
-                f" for field {fld} have been met by the assigned value: {value_repr}"
+                f"{[str(o.condition) for o in self._type.outgoing(Field(field_name))]}"
+                f" for field {field_name} have been met by the assigned value: {value_repr}"
             )
 
-        self._preset_fields(fld)
+        self._preset_fields(field_name)
 
     def _preset_fields(self, fld: str) -> None:
         nxt = self._next_field(fld)
@@ -653,10 +714,13 @@ class MessageValue(TypeValue):
             self._last_field = nxt
             nxt = self._next_field(nxt)
 
-    def get(self, fld: str) -> Any:
-        if fld not in self.valid_fields:
-            raise ValueError(f"field {fld} not valid")
-        return self._fields[fld].typeval.value
+    def get(self, field_name: str) -> Any:
+        if field_name not in self.valid_fields:
+            raise ValueError(f"field {field_name} not valid")
+        field = self._fields[field_name]
+        if isinstance(field.typeval, OpaqueValue) and field.typeval.nested_message is not None:
+            return field.typeval.nested_message
+        return self._fields[field_name].typeval.value
 
     @property
     def bitstring(self) -> Bitstring:
@@ -691,7 +755,7 @@ class MessageValue(TypeValue):
 
     @property
     def fields(self) -> List[str]:
-        return [f.name for f in self._model.fields]
+        return [f.name for f in self._type.fields]
 
     @property
     def accessible_fields(self) -> List[str]:
@@ -700,7 +764,7 @@ class MessageValue(TypeValue):
         while nxt and nxt != FINAL.name:
 
             if (
-                self.__simplified(self._model.field_condition(Field(nxt))) != TRUE
+                self.__simplified(self._type.field_condition(Field(nxt))) != TRUE
                 or not self._has_first(nxt)
                 or (
                     not self._has_length(nxt)
@@ -718,7 +782,7 @@ class MessageValue(TypeValue):
         if self._get_length_unchecked(field) == UNDEFINED:
             return False
 
-        for edge in self._model.incoming(Field(field)):
+        for edge in self._type.incoming(Field(field)):
             if self.__simplified(edge.condition) == TRUE:
                 valid_edge = edge
                 break
@@ -738,13 +802,13 @@ class MessageValue(TypeValue):
             f
             for f in self.accessible_fields
             if (
-                self._fields[f].set
-                and self.__simplified(self._model.field_condition(Field(f))) == TRUE
-                and any(
-                    [self.__simplified(i.condition) == TRUE for i in self._model.incoming(Field(f))]
+                    self._fields[f].set
+                    and self.__simplified(self._type.field_condition(Field(f))) == TRUE
+                    and any(
+                    [self.__simplified(i.condition) == TRUE for i in self._type.incoming(Field(f))]
                 )
-                and any(
-                    [self.__simplified(o.condition) == TRUE for o in self._model.outgoing(Field(f))]
+                    and any(
+                    [self.__simplified(o.condition) == TRUE for o in self._type.outgoing(Field(f))]
                 )
             )
         ]
