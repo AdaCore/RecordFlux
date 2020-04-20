@@ -52,456 +52,439 @@ from rflx.model import (
     Message,
     ModularInteger,
     Scalar,
+    is_builtin_type,
 )
 
-from .types import Types
+from . import const
 
-NULL = Variable("null")
 VALID_CONTEXT = Call("Valid_Context", [Variable("Ctx")])  # WORKAROUND: Componolit/Workarounds#1
 
 
-class GeneratorCommon:
-    def __init__(self, prefix: str = "") -> None:
-        self.prefix = prefix
-        self.types = Types(prefix)
+def substitution(
+    message: Message, embedded: bool = False, public: bool = False
+) -> Mapping[Name, Expr]:
+    def prefixed(name: str) -> Expr:
+        return Variable(f"Ctx.{name}") if not embedded else Variable(name)
 
-    def substitution(
-        self, message: Message, prefix: bool = True, public: bool = False
-    ) -> Mapping[Name, Expr]:
-        def prefixed(name: str) -> Expr:
-            return Variable(f"Ctx.{name}") if prefix else Variable(name)
+    first = prefixed("First")
+    last = prefixed("Last")
+    cursors = prefixed("Cursors")
 
-        first = prefixed("First")
-        last = prefixed("Last")
-        cursors = prefixed("Cursors")
+    def field_first(field: Field) -> Expr:
+        if public:
+            return Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)])
+        return Selected(Indexed(cursors, Variable(field.affixed_name)), "First")
 
-        def field_first(field: Field) -> Expr:
-            if public:
-                return Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)])
-            return Selected(Indexed(cursors, Variable(field.affixed_name)), "First")
+    def field_last(field: Field) -> Expr:
+        if public:
+            return Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)])
+        return Selected(Indexed(cursors, Variable(field.affixed_name)), "Last")
 
-        def field_last(field: Field) -> Expr:
-            if public:
-                return Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)])
-            return Selected(Indexed(cursors, Variable(field.affixed_name)), "Last")
-
-        def field_length(field: Field) -> Expr:
-            if public:
-                return Call("Field_Length", [Variable("Ctx"), Variable(field.affixed_name)])
-            return Add(
-                Sub(
-                    Selected(Indexed(cursors, Variable(field.affixed_name)), "Last"),
-                    Selected(Indexed(cursors, Variable(field.affixed_name)), "First"),
-                ),
-                Number(1),
-            )
-
-        def field_value(field: Field) -> Expr:
-            if public:
-                return Call(self.types.bit_length, [Call(f"Get_{field.name}", [Variable("Ctx")])])
-            return Call(
-                self.types.bit_length,
-                [
-                    Selected(
-                        Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
-                    )
-                ],
-            )
-
-        def enum_field_value(field: Field) -> Expr:
-            if public:
-                return Call(
-                    self.types.bit_length,
-                    [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
-                )
-            return Call(
-                self.types.bit_length,
-                [
-                    Selected(
-                        Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
-                    )
-                ],
-            )
-
-        return {
-            **{First("Message"): first},
-            **{Last("Message"): last},
-            **{Length("Message"): Add(last, -first, Number(1))},
-            **{First(f.name): field_first(f) for f in message.fields},
-            **{Last(f.name): field_last(f) for f in message.fields},
-            **{Length(f.name): field_length(f) for f in message.fields},
-            **{
-                Variable(f.name): field_value(f)
-                for f, t in message.types.items()
-                if not isinstance(t, Enumeration)
-            },
-            **{
-                Variable(f.name): enum_field_value(f)
-                for f, t in message.types.items()
-                if isinstance(t, Enumeration)
-            },
-            **{
-                Variable(l): Call(self.types.bit_length, [Call("To_Base", [Variable(l)])])
-                for t in message.types.values()
-                if isinstance(t, Enumeration)
-                for l in t.literals.keys()
-            },
-            **{
-                Variable(t.package * l): Call(
-                    self.types.bit_length, [Call("To_Base", [Variable(t.package * l)])]
-                )
-                for t in message.types.values()
-                if isinstance(t, Enumeration)
-                for l in t.literals.keys()
-            },
-        }
-
-    def message_structure_invariant(
-        self, message: Message, link: Link = None, prefix: bool = True
-    ) -> Expr:
-        def prefixed(name: str) -> Expr:
-            return Selected(Variable("Ctx"), name) if prefix else Variable(name)
-
-        if not link:
-            return self.message_structure_invariant(message, message.outgoing(INITIAL)[0], prefix)
-
-        source = link.source
-        target = link.target
-
-        if target is FINAL:
-            return TRUE
-
-        field_type = message.types[target]
-        condition = link.condition.simplified(self.substitution(message, prefix))
-        length = (
-            Size(self.prefix * full_base_type_name(field_type))
-            if isinstance(field_type, Scalar)
-            else link.length.simplified(self.substitution(message, prefix))
+    def field_length(field: Field) -> Expr:
+        if public:
+            return Call("Field_Length", [Variable("Ctx"), Variable(field.affixed_name)])
+        return Add(
+            Sub(
+                Selected(Indexed(cursors, Variable(field.affixed_name)), "Last"),
+                Selected(Indexed(cursors, Variable(field.affixed_name)), "First"),
+            ),
+            Number(1),
         )
-        first = (
-            prefixed("First")
-            if source == INITIAL
-            else link.first.simplified(
-                {
-                    **self.substitution(message, prefix),
-                    **{
-                        UNDEFINED: Add(
-                            Selected(
-                                Indexed(prefixed("Cursors"), Variable(source.affixed_name)), "Last"
+
+    def field_value(field: Field) -> Expr:
+        if public:
+            return Call(const.TYPES_BIT_LENGTH, [Call(f"Get_{field.name}", [Variable("Ctx")])])
+        return Call(
+            const.TYPES_BIT_LENGTH,
+            [Selected(Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value")],
+        )
+
+    def enum_field_value(field: Field) -> Expr:
+        if public:
+            return Call(
+                const.TYPES_BIT_LENGTH,
+                [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
+            )
+        return Call(
+            const.TYPES_BIT_LENGTH,
+            [Selected(Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value")],
+        )
+
+    return {
+        **{First("Message"): first},
+        **{Last("Message"): last},
+        **{Length("Message"): Add(last, -first, Number(1))},
+        **{First(f.name): field_first(f) for f in message.fields},
+        **{Last(f.name): field_last(f) for f in message.fields},
+        **{Length(f.name): field_length(f) for f in message.fields},
+        **{
+            Variable(f.name): field_value(f)
+            for f, t in message.types.items()
+            if not isinstance(t, Enumeration)
+        },
+        **{
+            Variable(f.name): enum_field_value(f)
+            for f, t in message.types.items()
+            if isinstance(t, Enumeration)
+        },
+        **{
+            Variable(l): Call(const.TYPES_BIT_LENGTH, [Call("To_Base", [Variable(l)])])
+            for t in message.types.values()
+            if isinstance(t, Enumeration)
+            for l in t.literals.keys()
+        },
+        **{
+            Variable(t.package * l): Call(
+                const.TYPES_BIT_LENGTH, [Call("To_Base", [Variable(t.package * l)])]
+            )
+            for t in message.types.values()
+            if isinstance(t, Enumeration)
+            for l in t.literals.keys()
+        },
+    }
+
+
+def message_structure_invariant(
+    message: Message, prefix: str, link: Link = None, embedded: bool = False
+) -> Expr:
+    def prefixed(name: str) -> Expr:
+        return Selected(Variable("Ctx"), name) if not embedded else Variable(name)
+
+    if not link:
+        return message_structure_invariant(message, prefix, message.outgoing(INITIAL)[0], embedded)
+
+    source = link.source
+    target = link.target
+
+    if target is FINAL:
+        return TRUE
+
+    field_type = message.types[target]
+    condition = link.condition.simplified(substitution(message, embedded))
+    length = (
+        Size(prefix * full_base_type_name(field_type))
+        if isinstance(field_type, Scalar)
+        else link.length.simplified(substitution(message, embedded))
+    )
+    first = (
+        prefixed("First")
+        if source == INITIAL
+        else link.first.simplified(
+            {
+                **substitution(message, embedded),
+                **{
+                    UNDEFINED: Add(
+                        Selected(
+                            Indexed(prefixed("Cursors"), Variable(source.affixed_name)), "Last"
+                        ),
+                        Number(1),
+                    )
+                },
+            }
+        )
+    )
+
+    return If(
+        [
+            (
+                AndThen(
+                    Call(
+                        "Structural_Valid",
+                        [Indexed(prefixed("Cursors"), Variable(target.affixed_name))],
+                    ),
+                    condition,
+                ),
+                AndThen(
+                    Equal(
+                        Add(
+                            Sub(
+                                Selected(
+                                    Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
+                                    "Last",
+                                ),
+                                Selected(
+                                    Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
+                                    "First",
+                                ),
                             ),
                             Number(1),
-                        )
-                    },
-                }
-            )
-        )
-
-        return If(
-            [
-                (
-                    AndThen(
-                        Call(
-                            "Structural_Valid",
-                            [Indexed(prefixed("Cursors"), Variable(target.affixed_name))],
                         ),
-                        condition,
+                        length,
                     ),
-                    AndThen(
-                        Equal(
-                            Add(
-                                Sub(
-                                    Selected(
-                                        Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
-                                        "Last",
-                                    ),
-                                    Selected(
-                                        Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
-                                        "First",
-                                    ),
-                                ),
-                                Number(1),
-                            ),
-                            length,
+                    Equal(
+                        Selected(
+                            Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
+                            "Predecessor",
                         ),
-                        Equal(
-                            Selected(
-                                Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
-                                "Predecessor",
-                            ),
-                            Variable(source.affixed_name),
-                        ),
-                        Equal(
-                            Selected(
-                                Indexed(prefixed("Cursors"), Variable(target.affixed_name)), "First"
-                            ),
-                            first,
-                        ),
-                        *[
-                            self.message_structure_invariant(message, l, prefix)
-                            for l in message.outgoing(target)
-                        ],
+                        Variable(source.affixed_name),
                     ),
-                )
-            ]
-        ).simplified()
-
-    def context_predicate(self, message: Message, composite_fields: Sequence[Field]) -> Expr:
-        def valid_predecessors_invariant() -> Expr:
-            return AndThen(
-                *[
-                    If(
-                        [
-                            (
-                                Call(
-                                    "Structural_Valid",
-                                    [Indexed(Variable("Cursors"), Variable(f.affixed_name))],
-                                ),
-                                Or(
-                                    *[
-                                        AndThen(
-                                            Call(
-                                                "Structural_Valid"
-                                                if l.source in composite_fields
-                                                else "Valid",
-                                                [
-                                                    Indexed(
-                                                        Variable("Cursors"),
-                                                        Variable(l.source.affixed_name),
-                                                    )
-                                                ],
-                                            ),
-                                            Equal(
-                                                Selected(
-                                                    Indexed(
-                                                        Variable("Cursors"),
-                                                        Variable(f.affixed_name),
-                                                    ),
-                                                    "Predecessor",
-                                                ),
-                                                Variable(l.source.affixed_name),
-                                            ),
-                                            l.condition,
-                                        ).simplified(self.substitution(message, False))
-                                        for l in message.incoming(f)
-                                    ]
-                                ),
-                            )
-                        ]
-                    )
-                    for f in message.fields
-                    if f not in message.direct_successors(INITIAL)
-                ]
+                    Equal(
+                        Selected(
+                            Indexed(prefixed("Cursors"), Variable(target.affixed_name)), "First"
+                        ),
+                        first,
+                    ),
+                    *[
+                        message_structure_invariant(message, prefix, l, embedded)
+                        for l in message.outgoing(target)
+                    ],
+                ),
             )
+        ]
+    ).simplified()
 
-        def invalid_successors_invariant() -> Expr:
-            return AndThen(
-                *[
-                    If(
-                        [
-                            (
-                                AndThen(
-                                    *[
-                                        Call(
-                                            "Invalid",
-                                            [
-                                                Indexed(
-                                                    Variable("Cursors"), Variable(p.affixed_name)
-                                                )
-                                            ],
-                                        )
-                                        for p in message.direct_predecessors(f)
-                                    ]
-                                ),
-                                Call(
-                                    "Invalid",
-                                    [Indexed(Variable("Cursors"), Variable(f.affixed_name))],
-                                ),
-                            )
-                        ]
-                    )
-                    for f in message.fields
-                    if f not in message.direct_successors(INITIAL)
-                ]
-            )
 
+def context_predicate(message: Message, composite_fields: Sequence[Field], prefix: str) -> Expr:
+    def valid_predecessors_invariant() -> Expr:
         return AndThen(
-            If(
-                [
-                    (
-                        NotEqual(Variable("Buffer"), NULL),
-                        And(
-                            Equal(First("Buffer"), Variable("Buffer_First")),
-                            Equal(Last("Buffer"), Variable("Buffer_Last")),
-                        ),
-                    )
-                ]
-            ),
-            GreaterEqual(
-                Call(self.types.byte_index, [Variable("First")]), Variable("Buffer_First")
-            ),
-            LessEqual(Call(self.types.byte_index, [Variable("Last")]), Variable("Buffer_Last")),
-            LessEqual(Variable("First"), Variable("Last")),
-            LessEqual(Variable("Last"), Div(Last(self.types.bit_index), Number(2))),
-            ForAllIn(
-                "F",
-                ValueRange(First("Field"), Last("Field")),
+            *[
                 If(
                     [
                         (
-                            Call("Structural_Valid", [Indexed(Variable("Cursors"), Variable("F"))]),
-                            And(
-                                GreaterEqual(
-                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
-                                    Variable("First"),
-                                ),
-                                LessEqual(
-                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
-                                    Variable("Last"),
-                                ),
-                                LessEqual(
-                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
-                                    Add(
-                                        Selected(
-                                            Indexed(Variable("Cursors"), Variable("F")), "Last"
+                            Call(
+                                "Structural_Valid",
+                                [Indexed(Variable("Cursors"), Variable(f.affixed_name))],
+                            ),
+                            Or(
+                                *[
+                                    AndThen(
+                                        Call(
+                                            "Structural_Valid"
+                                            if l.source in composite_fields
+                                            else "Valid",
+                                            [
+                                                Indexed(
+                                                    Variable("Cursors"),
+                                                    Variable(l.source.affixed_name),
+                                                )
+                                            ],
                                         ),
-                                        Number(1),
-                                    ),
-                                ),
-                                Equal(
-                                    Selected(
-                                        Selected(
-                                            Indexed(Variable("Cursors"), Variable("F")), "Value"
+                                        Equal(
+                                            Selected(
+                                                Indexed(
+                                                    Variable("Cursors"), Variable(f.affixed_name),
+                                                ),
+                                                "Predecessor",
+                                            ),
+                                            Variable(l.source.affixed_name),
                                         ),
-                                        "Fld",
-                                    ),
-                                    Variable("F"),
-                                ),
+                                        l.condition,
+                                    ).simplified(substitution(message, embedded=True))
+                                    for l in message.incoming(f)
+                                ]
                             ),
                         )
                     ]
-                ),
-            ),
-            valid_predecessors_invariant(),
-            invalid_successors_invariant(),
-            self.message_structure_invariant(message, prefix=False),
+                )
+                for f in message.fields
+                if f not in message.direct_successors(INITIAL)
+            ]
         )
 
-    def valid_path_to_next_field_condition(self, message: Message, field: Field) -> Sequence[Expr]:
-        return [
+    def invalid_successors_invariant() -> Expr:
+        return AndThen(
+            *[
+                If(
+                    [
+                        (
+                            AndThen(
+                                *[
+                                    Call(
+                                        "Invalid",
+                                        [Indexed(Variable("Cursors"), Variable(p.affixed_name))],
+                                    )
+                                    for p in message.direct_predecessors(f)
+                                ]
+                            ),
+                            Call(
+                                "Invalid", [Indexed(Variable("Cursors"), Variable(f.affixed_name))],
+                            ),
+                        )
+                    ]
+                )
+                for f in message.fields
+                if f not in message.direct_successors(INITIAL)
+            ]
+        )
+
+    return AndThen(
+        If(
+            [
+                (
+                    NotEqual(Variable("Buffer"), Variable("null")),
+                    And(
+                        Equal(First("Buffer"), Variable("Buffer_First")),
+                        Equal(Last("Buffer"), Variable("Buffer_Last")),
+                    ),
+                )
+            ]
+        ),
+        GreaterEqual(Call(const.TYPES_BYTE_INDEX, [Variable("First")]), Variable("Buffer_First")),
+        LessEqual(Call(const.TYPES_BYTE_INDEX, [Variable("Last")]), Variable("Buffer_Last")),
+        LessEqual(Variable("First"), Variable("Last")),
+        LessEqual(Variable("Last"), Div(Last(const.TYPES_BIT_INDEX), Number(2))),
+        ForAllIn(
+            "F",
+            ValueRange(First("Field"), Last("Field")),
             If(
                 [
                     (
-                        l.condition,
+                        Call("Structural_Valid", [Indexed(Variable("Cursors"), Variable("F"))]),
                         And(
-                            Equal(
-                                Call(
-                                    "Predecessor",
-                                    [Variable("Ctx"), Variable(l.target.affixed_name)],
-                                ),
-                                Variable(field.affixed_name),
+                            GreaterEqual(
+                                Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
+                                Variable("First"),
                             ),
-                            Call("Valid_Next", [Variable("Ctx"), Variable(l.target.affixed_name)])
-                            if l.target != FINAL
-                            else TRUE,
+                            LessEqual(
+                                Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
+                                Variable("Last"),
+                            ),
+                            LessEqual(
+                                Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
+                                Add(
+                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
+                                    Number(1),
+                                ),
+                            ),
+                            Equal(
+                                Selected(
+                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "Value"),
+                                    "Fld",
+                                ),
+                                Variable("F"),
+                            ),
                         ),
                     )
                 ]
-            ).simplified(self.substitution(message, public=True))
-            for l in message.outgoing(field)
-            if l.target != FINAL
-        ]
+            ),
+        ),
+        valid_predecessors_invariant(),
+        invalid_successors_invariant(),
+        message_structure_invariant(message, prefix, embedded=True),
+    )
 
-    @staticmethod
-    def sufficient_space_for_field_condition(field_name: Name) -> Expr:
-        return GreaterEqual(
-            Call("Available_Space", [Variable("Ctx"), field_name]),
-            Call("Field_Length", [Variable("Ctx"), field_name]),
-        )
 
-    def initialize_field_statements(self, message: Message, field: Field) -> Sequence[Statement]:
-        return [
-            CallStatement(
-                "Reset_Dependent_Fields", [Variable("Ctx"), Variable(field.affixed_name)],
-            ),
-            Assignment(
-                "Ctx",
-                Aggregate(
-                    Variable("Ctx.Buffer_First"),
-                    Variable("Ctx.Buffer_Last"),
-                    Variable("Ctx.First"),
-                    Variable("Last"),
-                    Variable("Ctx.Buffer"),
-                    Variable("Ctx.Cursors"),
-                ),
-            ),
-            # WORKAROUND:
-            # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-            # Provability of predicate is increased by adding part of
-            # predicate as assert
-            PragmaStatement(
-                "Assert", [str(self.message_structure_invariant(message, prefix=True))],
-            ),
-            Assignment(
-                Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
-                NamedAggregate(
-                    ("State", Variable("S_Structural_Valid")),
-                    ("First", Variable("First")),
-                    ("Last", Variable("Last")),
-                    ("Value", NamedAggregate(("Fld", Variable(field.affixed_name))),),
-                    (
-                        "Predecessor",
-                        Selected(
-                            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name),),
-                            "Predecessor",
+def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequence[Expr]:
+    return [
+        If(
+            [
+                (
+                    l.condition,
+                    And(
+                        Equal(
+                            Call(
+                                "Predecessor", [Variable("Ctx"), Variable(l.target.affixed_name)],
+                            ),
+                            Variable(field.affixed_name),
                         ),
+                        Call("Valid_Next", [Variable("Ctx"), Variable(l.target.affixed_name)])
+                        if l.target != FINAL
+                        else TRUE,
+                    ),
+                )
+            ]
+        ).simplified(substitution(message, public=True))
+        for l in message.outgoing(field)
+        if l.target != FINAL
+    ]
+
+
+def sufficient_space_for_field_condition(field_name: Name) -> Expr:
+    return GreaterEqual(
+        Call("Available_Space", [Variable("Ctx"), field_name]),
+        Call("Field_Length", [Variable("Ctx"), field_name]),
+    )
+
+
+def initialize_field_statements(message: Message, field: Field, prefix: str) -> Sequence[Statement]:
+    return [
+        CallStatement("Reset_Dependent_Fields", [Variable("Ctx"), Variable(field.affixed_name)],),
+        Assignment(
+            "Ctx",
+            Aggregate(
+                Variable("Ctx.Buffer_First"),
+                Variable("Ctx.Buffer_Last"),
+                Variable("Ctx.First"),
+                Variable("Last"),
+                Variable("Ctx.Buffer"),
+                Variable("Ctx.Cursors"),
+            ),
+        ),
+        # WORKAROUND:
+        # Limitation of GNAT Community 2019 / SPARK Pro 20.0
+        # Provability of predicate is increased by adding part of
+        # predicate as assert
+        PragmaStatement("Assert", [str(message_structure_invariant(message, prefix))],),
+        Assignment(
+            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
+            NamedAggregate(
+                ("State", Variable("S_Structural_Valid")),
+                ("First", Variable("First")),
+                ("Last", Variable("Last")),
+                ("Value", NamedAggregate(("Fld", Variable(field.affixed_name))),),
+                (
+                    "Predecessor",
+                    Selected(
+                        Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name),),
+                        "Predecessor",
                     ),
                 ),
             ),
-            Assignment(
-                Indexed(
-                    Variable("Ctx.Cursors"),
-                    Call("Successor", [Variable("Ctx"), Variable(field.affixed_name)]),
-                ),
-                NamedAggregate(
-                    ("State", Variable("S_Invalid")), ("Predecessor", Variable(field.affixed_name)),
-                ),
+        ),
+        Assignment(
+            Indexed(
+                Variable("Ctx.Cursors"),
+                Call("Successor", [Variable("Ctx"), Variable(field.affixed_name)]),
             ),
-        ]
+            NamedAggregate(
+                ("State", Variable("S_Invalid")), ("Predecessor", Variable(field.affixed_name)),
+            ),
+        ),
+    ]
 
-    def field_bit_location_declarations(self, field_name: Name) -> Sequence[Declaration]:
-        return [
-            ObjectDeclaration(
-                ["First"],
-                self.types.bit_index,
-                Call("Field_First", [Variable("Ctx"), field_name]),
-                True,
-            ),
-            ObjectDeclaration(
-                ["Last"],
-                self.types.bit_index,
-                Call("Field_Last", [Variable("Ctx"), field_name]),
-                True,
-            ),
-        ]
 
-    def field_byte_location_declarations(self) -> Sequence[Declaration]:
-        return [
-            ExpressionFunctionDeclaration(
-                FunctionSpecification("Buffer_First", self.types.index),
-                Call(self.types.byte_index, [Variable("First")]),
+def field_bit_location_declarations(field_name: Name) -> Sequence[Declaration]:
+    return [
+        ObjectDeclaration(
+            ["First"],
+            const.TYPES_BIT_INDEX,
+            Call("Field_First", [Variable("Ctx"), field_name]),
+            True,
+        ),
+        ObjectDeclaration(
+            ["Last"],
+            const.TYPES_BIT_INDEX,
+            Call("Field_Last", [Variable("Ctx"), field_name]),
+            True,
+        ),
+    ]
+
+
+def field_byte_location_declarations() -> Sequence[Declaration]:
+    return [
+        ExpressionFunctionDeclaration(
+            FunctionSpecification("Buffer_First", const.TYPES_INDEX),
+            Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
+        ),
+        ExpressionFunctionDeclaration(
+            FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
+            Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
+        ),
+        ExpressionFunctionDeclaration(
+            FunctionSpecification("Offset", const.TYPES_OFFSET),
+            Call(
+                const.TYPES_OFFSET,
+                [Mod(Sub(Number(8), Mod(Variable("Last"), Number(8))), Number(8))],
             ),
-            ExpressionFunctionDeclaration(
-                FunctionSpecification("Buffer_Last", self.types.index),
-                Call(self.types.byte_index, [Variable("Last")]),
-            ),
-            ExpressionFunctionDeclaration(
-                FunctionSpecification("Offset", self.types.offset),
-                Call(
-                    self.types.offset,
-                    [Mod(Sub(Number(8), Mod(Variable("Last"), Number(8))), Number(8))],
-                ),
-            ),
-        ]
+        ),
+    ]
+
+
+def prefixed_type_name(type_name: ID, prefix: str) -> ID:
+    if is_builtin_type(type_name):
+        return type_name
+
+    return prefix * type_name
 
 
 def base_type_name(scalar_type: Scalar) -> ID:
@@ -513,7 +496,7 @@ def base_type_name(scalar_type: Scalar) -> ID:
 
 def full_base_type_name(scalar_type: Scalar) -> ID:
     if scalar_type.package == BUILTINS_PACKAGE:
-        return ID(f"Builtin_Types.{scalar_type.name}_Base")
+        return const.BUILTIN_TYPES_PACKAGE * scalar_type.name + "_Base"
 
     if isinstance(scalar_type, ModularInteger):
         return scalar_type.identifier

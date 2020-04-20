@@ -1,8 +1,8 @@
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.Builtin_Types; use type RFLX.Builtin_Types.Length;
-with RFLX.Types;
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Types;
 
 with RFLX.IPv4.Packet;
 with RFLX.IPv4.Option;
@@ -16,27 +16,27 @@ package body RFLX.IPv4.Tests is
       return AUnit.Format ("IPv4");
    end Name;
 
-   Payload_Length : Builtin_Types.Length;
+   Payload_Length : RFLX_Builtin_Types.Length;
 
-   procedure Store_Payload_Length (Buffer : Builtin_Types.Bytes) is
+   procedure Store_Payload_Length (Buffer : RFLX_Builtin_Types.Bytes) is
    begin
       Payload_Length := Buffer'Length;
    end Store_Payload_Length;
 
    procedure Get_Payload_Length is new IPv4.Packet.Get_Payload (Store_Payload_Length);
 
-   Option_Data_Length : Builtin_Types.Length;
+   Option_Data_Length : RFLX_Builtin_Types.Length;
 
-   procedure Store_Option_Data_Length (Buffer : Builtin_Types.Bytes) is
+   procedure Store_Option_Data_Length (Buffer : RFLX_Builtin_Types.Bytes) is
    begin
       Option_Data_Length := Buffer'Length;
    end Store_Option_Data_Length;
 
    procedure Get_Option_Data_Length is new IPv4.Option.Get_Option_Data (Store_Option_Data_Length);
 
-   Data : Builtin_Types.Bytes (Builtin_Types.Index'First .. Builtin_Types.Index'First + 23) := (others => 0);
+   Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 23) := (others => 0);
 
-   procedure Write_Data (Buffer : out Builtin_Types.Bytes) is
+   procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) is
    begin
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
@@ -48,7 +48,7 @@ package body RFLX.IPv4.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer          : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
+      Buffer          : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
       Context         : IPv4.Packet.Context := IPv4.Packet.Create;
       Valid           : Boolean;
       Version         : IPv4.Version;
@@ -178,7 +178,7 @@ package body RFLX.IPv4.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer        : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(68, 3, 42);
+      Buffer        : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(68, 3, 42);
       Context       : IPv4.Option.Context := IPv4.Option.Create;
       Valid         : Boolean;
       Copied        : Boolean;
@@ -203,12 +203,12 @@ package body RFLX.IPv4.Tests is
             Assert (Valid, "Invalid Option_Number");
             if Valid then
                Option_Number := IPv4.Option.Get_Option_Number (Context);
-               Assert (Option_Number'Image, Builtin_Types.Index'Image (4), "Invalid Option_Number");
+               Assert (Option_Number'Image, RFLX_Builtin_Types.Index'Image (4), "Invalid Option_Number");
                Valid := IPv4.Option.Valid (Context, IPv4.Option.F_Option_Length);
                Assert (Valid, "Invalid Option_Length");
                if Valid then
                   Option_Length := IPv4.Option.Get_Option_Length (Context);
-                  Assert (Option_Length'Image, Builtin_Types.Index'Image (3), "Invalid Option_Length");
+                  Assert (Option_Length'Image, RFLX_Builtin_Types.Index'Image (3), "Invalid Option_Length");
                   Valid := IPv4.Option.Present (Context, IPv4.Option.F_Option_Data);
                   Assert (Valid, "Invalid Option_Data");
                   if Valid then
@@ -228,7 +228,7 @@ package body RFLX.IPv4.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4-options_udp.raw");
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4-options_udp.raw");
       Context          : IPv4.Packet.Context := IPv4.Packet.Create;
       Valid            : Boolean;
       Sequence_Context : IPv4.Options.Context := IPv4.Options.Create;
@@ -268,8 +268,8 @@ package body RFLX.IPv4.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new IPv4.Packet.Set_Payload (Write_Data);
-      Expected        : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
-      Buffer          : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First .. Builtin_Types.Index'First + 2000 => 0);
+      Expected        : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
+      Buffer          : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 => 0);
       Context         : IPv4.Packet.Context := IPv4.Packet.Create;
    begin
       IPv4.Packet.Initialize (Context, Buffer);
@@ -296,8 +296,8 @@ package body RFLX.IPv4.Tests is
 
       IPv4.Packet.Take_Buffer (Context, Buffer);
 
-      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_IPv4;
 
    procedure Test_Generating_IPv4_Option (T : in out Aunit.Test_Cases.Test_Case'Class) with
@@ -305,8 +305,8 @@ package body RFLX.IPv4.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Option_Data is new IPv4.Option.Set_Option_Data (Write_Data);
-      Expected      : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(68, 3, 42);
-      Buffer        : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(0, 0, 0);
+      Expected      : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(68, 3, 42);
+      Buffer        : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0);
       Context       : IPv4.Option.Context := IPv4.Option.Create;
    begin
       IPv4.Option.Initialize (Context, Buffer);
@@ -322,8 +322,8 @@ package body RFLX.IPv4.Tests is
 
       IPv4.Option.Take_Buffer (Context, Buffer);
 
-      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_IPv4_Option;
 
    procedure Register_Tests (T : in out Test) is

@@ -175,6 +175,15 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaisesRegex(ParseFatalException, r"^unexpected type"):
             grammar.parse_type("", 0, ["type", "T", "is", "X"])
 
+    def test_illegal_package_identifiers(self) -> None:
+        self.assert_parse_exception_string(
+            """
+                package RFLX_Types is
+                end RFLX_Types;
+            """,
+            r'^illegal prefix "RFLX" in package identifier "RFLX_Types"',
+        )
+
     def test_inconsistent_package_identifiers(self) -> None:
         self.assert_parse_exception_string(
             """

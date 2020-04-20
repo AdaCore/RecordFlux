@@ -62,31 +62,25 @@ from rflx.model import (
     Type,
 )
 
-from .common import (
-    NULL,
-    VALID_CONTEXT,
-    GeneratorCommon,
-    full_base_type_name,
-    length_dependent_condition,
-)
-from .types import Types
+from . import common, const
 
 
 class ParserGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
-        self.types = Types(prefix)
-        self.common = GeneratorCommon(prefix)
 
     def extract_function(self, type_name: ID) -> Subprogram:
         return GenericFunctionInstantiation(
             "Extract",
             FunctionSpecification(
-                f"{self.types.types}.Extract",
+                const.TYPES * "Extract",
                 type_name,
-                [Parameter(["Buffer"], self.types.bytes), Parameter(["Offset"], self.types.offset)],
+                [
+                    Parameter(["Buffer"], const.TYPES_BYTES),
+                    Parameter(["Offset"], const.TYPES_OFFSET),
+                ],
             ),
-            [self.types.prefixed(type_name)],
+            [common.prefixed_type_name(type_name, self.prefix)],
         )
 
     def create_internal_functions(
@@ -123,27 +117,27 @@ class ParserGenerator:
                         [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
                     ),
                     And(
-                        NotEqual(Variable("Ctx.Buffer"), NULL),
+                        NotEqual(Variable("Ctx.Buffer"), Variable("null")),
                         LessEqual(
-                            Variable("Ctx.First"), Div(Last(self.types.bit_index), Number(2)),
+                            Variable("Ctx.First"), Div(Last(const.TYPES_BIT_INDEX), Number(2)),
                         ),
                         LessEqual(
                             Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                            Div(Last(self.types.bit_index), Number(2)),
+                            Div(Last(const.TYPES_BIT_INDEX), Number(2)),
                         ),
                         GreaterEqual(
                             Call("Field_Length", [Variable("Ctx"), Variable("Fld")]), Number(0)
                         ),
                         LessEqual(
                             Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
-                            Div(Last(self.types.bit_length), Number(2)),
+                            Div(Last(const.TYPES_BIT_LENGTH), Number(2)),
                         ),
                         LessEqual(
                             Add(
                                 Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                                 Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
                             ),
-                            Div(Last(self.types.bit_length), Number(2)),
+                            Div(Last(const.TYPES_BIT_LENGTH), Number(2)),
                         ),
                         LessEqual(
                             Variable("Ctx.First"),
@@ -182,10 +176,10 @@ class ParserGenerator:
                         [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
                     ),
                     [
-                        *self.common.field_bit_location_declarations(Variable("Fld")),
-                        *self.common.field_byte_location_declarations(),
+                        *common.field_bit_location_declarations(Variable("Fld")),
+                        *common.field_byte_location_declarations(),
                         *unique(
-                            self.extract_function(full_base_type_name(t))
+                            self.extract_function(common.full_base_type_name(t))
                             for t in message.types.values()
                             if isinstance(t, Scalar)
                         ),
@@ -235,7 +229,7 @@ class ParserGenerator:
                     Variable("Value"),
                     *(
                         [Call("Field_Length", [Variable("Ctx"), Variable("Fld")])]
-                        if length_dependent_condition(message)
+                        if common.length_dependent_condition(message)
                         else []
                     ),
                 ],
@@ -296,7 +290,7 @@ class ParserGenerator:
             # Provability of predicate is increased by adding part of
             # predicate as assert
             PragmaStatement(
-                "Assert", [str(self.common.message_structure_invariant(message, prefix=True))]
+                "Assert", [str(common.message_structure_invariant(message, self.prefix))]
             ),
             # WORKAROUND:
             # Limitation of GNAT Community 2019 / SPARK Pro 20.0
@@ -329,10 +323,10 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(VALID_CONTEXT),
+                        Precondition(common.VALID_CONTEXT),
                         Postcondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Equal(
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Old(Call("Has_Buffer", [Variable("Ctx")])),
@@ -446,10 +440,10 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(VALID_CONTEXT),
+                        Precondition(common.VALID_CONTEXT),
                         Postcondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Equal(
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Old(Call("Has_Buffer", [Variable("Ctx")])),
@@ -479,7 +473,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -508,7 +502,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -540,7 +534,7 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(VALID_CONTEXT),
+                        Precondition(common.VALID_CONTEXT),
                         Postcondition(
                             If(
                                 [
@@ -587,7 +581,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -606,7 +600,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -624,34 +618,36 @@ class ParserGenerator:
             ],
         )
 
-    def create_structural_valid_message_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def create_structural_valid_message_function(message: Message) -> UnitPart:
         specification = FunctionSpecification(
             "Structural_Valid_Message", "Boolean", [Parameter(["Ctx"], "Context")]
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
                     valid_message_condition(message, structural=True).simplified(
-                        self.common.substitution(message)
+                        common.substitution(message)
                     ),
                 )
             ],
         )
 
-    def create_valid_message_function(self, message: Message) -> UnitPart:
+    @staticmethod
+    def create_valid_message_function(message: Message) -> UnitPart:
         specification = FunctionSpecification(
             "Valid_Message", "Boolean", [Parameter(["Ctx"], "Context")]
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
-                    valid_message_condition(message).simplified(self.common.substitution(message)),
+                    valid_message_condition(message).simplified(common.substitution(message)),
                 )
             ],
         )
@@ -663,7 +659,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -704,7 +700,7 @@ class ParserGenerator:
                     [
                         Precondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
                             )
                         )
@@ -718,7 +714,8 @@ class ParserGenerator:
             ],
         )
 
-    def create_composite_accessor_procedures(self, composite_fields: Sequence[Field]) -> UnitPart:
+    @staticmethod
+    def create_composite_accessor_procedures(composite_fields: Sequence[Field]) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(f"Get_{field.name}", [Parameter(["Ctx"], "Context")])
 
@@ -729,7 +726,7 @@ class ParserGenerator:
                     [
                         Precondition(
                             And(
-                                VALID_CONTEXT,
+                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                             )
@@ -738,7 +735,7 @@ class ParserGenerator:
                     [
                         FormalSubprogramDeclaration(
                             ProcedureSpecification(
-                                f"Process_{f.name}", [Parameter([f.name], self.types.bytes)]
+                                f"Process_{f.name}", [Parameter([f.name], const.TYPES_BYTES)]
                             )
                         )
                     ],
@@ -751,9 +748,9 @@ class ParserGenerator:
                     [
                         ObjectDeclaration(
                             ["First"],
-                            self.types.index,
+                            const.TYPES_INDEX,
                             Call(
-                                self.types.byte_index,
+                                const.TYPES_BYTE_INDEX,
                                 [
                                     Selected(
                                         Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
@@ -765,9 +762,9 @@ class ParserGenerator:
                         ),
                         ObjectDeclaration(
                             ["Last"],
-                            self.types.index,
+                            const.TYPES_INDEX,
                             Call(
-                                self.types.byte_index,
+                                const.TYPES_BYTE_INDEX,
                                 [
                                     Selected(
                                         Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),

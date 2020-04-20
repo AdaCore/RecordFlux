@@ -1,8 +1,8 @@
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.Builtin_Types; use type RFLX.Builtin_Types.Length;
-with RFLX.Types;
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Types;
 
 with RFLX.Enumeration.Message;
 
@@ -21,7 +21,7 @@ package body RFLX.Enumeration.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(32, 0);
+      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(32, 0);
       Context  : Enumeration.Message.Context := Enumeration.Message.Create;
       Priority : Enumeration.Priority;
    begin
@@ -46,7 +46,7 @@ package body RFLX.Enumeration.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(160, 0);
+      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(160, 0);
       Context  : Enumeration.Message.Context := Enumeration.Message.Create;
       Priority : Enumeration.Priority;
    begin
@@ -71,8 +71,8 @@ package body RFLX.Enumeration.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First => 32);
-      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(0, 0);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
+      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context  : Enumeration.Message.Context := Enumeration.Message.Create;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
@@ -84,8 +84,8 @@ package body RFLX.Enumeration.Tests is
 
       Enumeration.Message.Take_Buffer (Context, Buffer);
 
-      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Enumeration;
 
    procedure Register_Tests (T : in out Test) is

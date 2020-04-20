@@ -1,8 +1,9 @@
 with SPARK.Assertions; use SPARK.Assertions;
 
-with RFLX.Types; use RFLX.Types;
+with RFLX.RFLX_Builtin_Types; use RFLX.RFLX_Builtin_Types;
+with RFLX.RFLX_Types; use RFLX.RFLX_Types;
 
-package body RFLX.Builtin_Types.Tests is
+package body RFLX.Builtin_Types_Tests is
 
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
@@ -248,4 +249,4 @@ package body RFLX.Builtin_Types.Tests is
       Register_Routine (T, Test_Insert_Modular_Integer'Access, "Insert modular integer");
    end Register_Tests;
 
-end RFLX.Builtin_Types.Tests;
+end RFLX.Builtin_Types_Tests;

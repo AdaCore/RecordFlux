@@ -1,10 +1,10 @@
-with RFLX.Generic_Types;
+with RFLX.RFLX_Generic_Types;
 with RFLX.TLV;
 use RFLX.TLV;
 with RFLX.TLV.Generic_Message;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
+   with package Types is new RFLX.RFLX_Generic_Types (<>);
    with package TLV_Message is new RFLX.TLV.Generic_Message (Types, others => <>);
 package RFLX.In_TLV.Generic_Contains with
   SPARK_Mode

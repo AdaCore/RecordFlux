@@ -1,8 +1,8 @@
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.Builtin_Types; use type RFLX.Builtin_Types.Length, RFLX.Builtin_Types.Bit_Length;
-with RFLX.Types;
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
+with RFLX.RFLX_Types;
 
 with RFLX.Ethernet.Frame;
 
@@ -14,16 +14,16 @@ package body RFLX.Ethernet.Tests is
       return AUnit.Format ("Ethernet");
    end Name;
 
-   Payload_Length : Builtin_Types.Length;
+   Payload_Length : RFLX_Builtin_Types.Length;
 
-   procedure Store_Payload_Length (Buffer : Builtin_Types.Bytes) is
+   procedure Store_Payload_Length (Buffer : RFLX_Builtin_Types.Bytes) is
    begin
       Payload_Length := Buffer'Length;
    end Store_Payload_Length;
 
-   Data : Builtin_Types.Bytes (Builtin_Types.Index'First .. Builtin_Types.Index'First + 46) := (others => 0);
+   Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 46) := (others => 0);
 
-   procedure Write_Data (Buffer : out Builtin_Types.Bytes) is
+   procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) is
    begin
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
@@ -36,7 +36,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Get_Payload_Length is new Ethernet.Frame.Get_Payload (Store_Payload_Length);
-      Buffer         : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Buffer         : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
       Context        : Ethernet.Frame.Context := Ethernet.Frame.Create;
       Destination    : Ethernet.Address;
       Source         : Ethernet.Address;
@@ -63,7 +63,7 @@ package body RFLX.Ethernet.Tests is
                Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Payload);
                if Ethernet.Frame.Present (Context, Ethernet.Frame.F_Payload) then
                   Get_Payload_Length (Context);
-                  Assert (Payload_Length'Image, Builtin_Types.Length'Image (46), "Invalid Payload length");
+                  Assert (Payload_Length'Image, RFLX_Builtin_Types.Length'Image (46), "Invalid Payload length");
                else
                   Assert (False, "Structural invalid Payload");
                end if;
@@ -86,7 +86,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Get_Payload_Length is new Ethernet.Frame.Get_Payload (Store_Payload_Length);
-      Buffer         : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3.raw");
+      Buffer         : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3.raw");
       Context        : Ethernet.Frame.Context := Ethernet.Frame.Create;
       Destination    : Ethernet.Address;
       Source         : Ethernet.Address;
@@ -113,7 +113,7 @@ package body RFLX.Ethernet.Tests is
                Ethernet.Frame.Verify (Context, Ethernet.Frame.F_Payload);
                if Ethernet.Frame.Present (Context, Ethernet.Frame.F_Payload) then
                   Get_Payload_Length (Context);
-                  Assert (Payload_Length'Image, Builtin_Types.Length'Image (46), "Invalid Payload length");
+                  Assert (Payload_Length'Image, RFLX_Builtin_Types.Length'Image (46), "Invalid Payload length");
                else
                   Assert (False, "Invalid Payload");
                end if;
@@ -136,7 +136,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Get_Payload_Length is new Ethernet.Frame.Get_Payload (Store_Payload_Length);
-      Buffer         : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
+      Buffer         : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
       Context        : Ethernet.Frame.Context := Ethernet.Frame.Create;
       Destination    : Ethernet.Address;
       Source         : Ethernet.Address;
@@ -165,7 +165,7 @@ package body RFLX.Ethernet.Tests is
                      Assert (Type_Length'Image, Ethernet.Type_Length'Image (16#0800#), "Invalid Type_Length");
                      if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Payload) then
                         Get_Payload_Length (Context);
-                        Assert (Payload_Length'Image, Builtin_Types.Length'Image (47), "Invalid Payload length");
+                        Assert (Payload_Length'Image, RFLX_Builtin_Types.Length'Image (47), "Invalid Payload length");
                      end if;
                   end if;
                end if;
@@ -181,7 +181,7 @@ package body RFLX.Ethernet.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_invalid_too_short.raw");
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_invalid_too_short.raw");
       Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
@@ -197,7 +197,7 @@ package body RFLX.Ethernet.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_invalid_too_long.raw");
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_invalid_too_long.raw");
       Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
@@ -213,7 +213,7 @@ package body RFLX.Ethernet.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_undefined.raw");
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_undefined.raw");
       Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
@@ -229,7 +229,7 @@ package body RFLX.Ethernet.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3_invalid_length.raw");
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3_invalid_length.raw");
       Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
@@ -245,7 +245,7 @@ package body RFLX.Ethernet.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2);
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2);
       Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
@@ -267,8 +267,8 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Bounded_Payload is new Ethernet.Frame.Set_Bounded_Payload (Write_Data);
-      Expected : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First .. Builtin_Types.Index'First + 2000 - 1 => 0);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
       Context  : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer, 801, 801);
@@ -285,8 +285,8 @@ package body RFLX.Ethernet.Tests is
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Ethernet_II;
 
    procedure Test_Generating_IEEE_802_3 (T : in out Aunit.Test_Cases.Test_Case'Class) with
@@ -294,8 +294,8 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new Ethernet.Frame.Set_Payload (Write_Data);
-      Expected : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3.raw");
-      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First .. 2000 => 0);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3.raw");
+      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. 2000 => 0);
       Context  : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer);
@@ -312,8 +312,8 @@ package body RFLX.Ethernet.Tests is
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_IEEE_802_3;
 
    procedure Test_Generating_Ethernet_II_VLAN (T : in out Aunit.Test_Cases.Test_Case'Class) with
@@ -321,8 +321,8 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Bounded_Payload is new Ethernet.Frame.Set_Bounded_Payload (Write_Data);
-      Expected : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
-      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First .. Builtin_Types.Index'First + 2000 - 1 => 0);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
+      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
       Context  : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer, 801, 801);
@@ -341,8 +341,8 @@ package body RFLX.Ethernet.Tests is
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Ethernet_II_VLAN;
 
    procedure Test_Generating_Ethernet_II_VLAN_Dynamic (T : in out Aunit.Test_Cases.Test_Case'Class) with
@@ -361,8 +361,8 @@ package body RFLX.Ethernet.Tests is
       function Dynamic_Type_Length is new Identity (Ethernet.Type_Length);
 
       procedure Set_Bounded_Payload is new Ethernet.Frame.Set_Bounded_Payload (Write_Data);
-      Expected : Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
-      Buffer   : Builtin_Types.Bytes_Ptr := new Builtin_Types.Bytes'(Builtin_Types.Index'First .. Builtin_Types.Index'First + 2000 - 1 => 0);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
+      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
       Context  : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
       Ethernet.Frame.Initialize (Context, Buffer, 801, 801);
@@ -383,8 +383,8 @@ package body RFLX.Ethernet.Tests is
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (Builtin_Types.Length'Image (Types.Byte_Index (Context.Last) - Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (Types.Byte_Index (Context.First) .. Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Ethernet_II_VLAN_Dynamic;
 
    procedure Register_Tests (T : in out Test) is

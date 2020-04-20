@@ -1,12 +1,12 @@
-with RFLX.Builtin_Types;
-with RFLX.Builtin_Types.Conversions;
-use RFLX.Builtin_Types.Conversions;
-with RFLX.Generic_Types;
-with RFLX.Message_Sequence;
+with RFLX.RFLX_Builtin_Types;
+with RFLX.RFLX_Builtin_Types.Conversions;
+use RFLX.RFLX_Builtin_Types.Conversions;
+with RFLX.RFLX_Generic_Types;
+with RFLX.RFLX_Message_Sequence;
 
 generic
-   with package Types is new RFLX.Generic_Types (<>);
-   with package Options_Sequence is new RFLX.Message_Sequence (Types, others => <>);
+   with package Types is new RFLX.RFLX_Generic_Types (<>);
+   with package Options_Sequence is new RFLX.RFLX_Message_Sequence (Types, others => <>);
 package RFLX.IPv4.Generic_Packet with
   SPARK_Mode
 is
@@ -47,11 +47,11 @@ is
             when F_Identification =>
                Identification_Value : RFLX.IPv4.Identification;
             when F_Flag_R =>
-               Flag_R_Value : RFLX.Builtin_Types.Boolean_Base;
+               Flag_R_Value : RFLX.RFLX_Builtin_Types.Boolean_Base;
             when F_Flag_DF =>
-               Flag_DF_Value : RFLX.Builtin_Types.Boolean_Base;
+               Flag_DF_Value : RFLX.RFLX_Builtin_Types.Boolean_Base;
             when F_Flag_MF =>
-               Flag_MF_Value : RFLX.Builtin_Types.Boolean_Base;
+               Flag_MF_Value : RFLX.RFLX_Builtin_Types.Boolean_Base;
             when F_Fragment_Offset =>
                Fragment_Offset_Value : RFLX.IPv4.Fragment_Offset;
             when F_TTL =>
@@ -1390,16 +1390,16 @@ private
                                     and then Cursors (F_Identification).Predecessor = F_Total_Length
                                     and then Cursors (F_Identification).First = (Cursors (F_Total_Length).Last + 1)
                                     and then (if Structural_Valid (Cursors (F_Flag_R)) then
-                                       (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                       (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                          and then Cursors (F_Flag_R).Predecessor = F_Identification
                                          and then Cursors (F_Flag_R).First = (Cursors (F_Identification).Last + 1)
                                          and then (if Structural_Valid (Cursors (F_Flag_DF))
                                               and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (To_Base (False)) then
-                                            (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                            (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
                                               and then Cursors (F_Flag_DF).First = (Cursors (F_Flag_R).Last + 1)
                                               and then (if Structural_Valid (Cursors (F_Flag_MF)) then
-                                                 (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = RFLX.Builtin_Types.Boolean_Base'Size
+                                                 (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                    and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF
                                                    and then Cursors (F_Flag_MF).First = (Cursors (F_Flag_DF).Last + 1)
                                                    and then (if Structural_Valid (Cursors (F_Fragment_Offset)) then

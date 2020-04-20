@@ -18,6 +18,10 @@ def flat_name(full_name: str) -> str:
     return full_name.replace(".", "_")
 
 
+def file_name(identifier: str) -> str:
+    return identifier.lower().replace(".", "-")
+
+
 T = TypeVar("T")  # pylint: disable=invalid-name
 
 
