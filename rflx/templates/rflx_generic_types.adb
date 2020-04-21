@@ -146,7 +146,6 @@ package body {prefix}RFLX_Generic_Types is
 
       Pow2_LSE_Offset : constant Long_Integer := 2**LSE_Offset;
       Pow2_LSE_Bits   : constant Long_Integer := 2**LSE_Bits;
-      Pow2_ES         : constant Long_Integer := 2**ES;
 
       pragma Assert (ES < Long_Integer'Size - 2);
       pragma Assert (2**ES = 2**Byte'Size);

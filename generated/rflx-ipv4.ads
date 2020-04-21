@@ -79,8 +79,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.DCSP) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -110,8 +114,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.ECN) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -172,8 +180,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.Identification) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -203,8 +215,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.Fragment_Offset) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -234,8 +250,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.TTL) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -280,8 +300,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.Protocol_Base) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -323,8 +347,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.Header_Checksum) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -354,8 +382,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.Address) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -428,8 +460,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.IPv4.Option_Number) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 

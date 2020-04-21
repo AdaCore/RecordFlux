@@ -699,7 +699,7 @@ is
       Valid_Sequence : constant Boolean := Modular_Vector_Sequence.Valid (Seq_Ctx);
       Buffer : Types.Bytes_Ptr;
    begin
-      Modular_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
+      Modular_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Modular_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Modular_Vector).First, Last => Ctx.Cursors (F_Modular_Vector).Last, Value => Ctx.Cursors (F_Modular_Vector).Value, Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
@@ -710,7 +710,7 @@ is
       Valid_Sequence : constant Boolean := Range_Vector_Sequence.Valid (Seq_Ctx);
       Buffer : Types.Bytes_Ptr;
    begin
-      Range_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
+      Range_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Range_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Range_Vector).First, Last => Ctx.Cursors (F_Range_Vector).Last, Value => Ctx.Cursors (F_Range_Vector).Value, Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
@@ -721,7 +721,7 @@ is
       Valid_Sequence : constant Boolean := Enumeration_Vector_Sequence.Valid (Seq_Ctx);
       Buffer : Types.Bytes_Ptr;
    begin
-      Enumeration_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
+      Enumeration_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Enumeration_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Enumeration_Vector).First, Last => Ctx.Cursors (F_Enumeration_Vector).Last, Value => Ctx.Cursors (F_Enumeration_Vector).Value, Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
@@ -732,7 +732,7 @@ is
       Valid_Sequence : constant Boolean := AV_Enumeration_Vector_Sequence.Valid (Seq_Ctx);
       Buffer : Types.Bytes_Ptr;
    begin
-      AV_Enumeration_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last);
+      AV_Enumeration_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Valid, First => Ctx.Cursors (F_AV_Enumeration_Vector).First, Last => Ctx.Cursors (F_AV_Enumeration_Vector).Last, Value => Ctx.Cursors (F_AV_Enumeration_Vector).Value, Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);

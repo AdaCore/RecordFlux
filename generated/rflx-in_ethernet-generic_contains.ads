@@ -14,7 +14,7 @@ is
 
    pragma Annotate (GNATprove, Terminating, Generic_Contains);
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
+   use type Types.Index, Types.Bit_Index;
 
    function IPv4_Packet_In_Ethernet_Frame_Payload (Ctx : Ethernet_Frame.Context) return Boolean is
      (Ethernet_Frame.Has_Buffer (Ctx)

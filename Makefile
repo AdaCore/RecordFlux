@@ -70,7 +70,7 @@ clean:
 
 remove-prefix = $(VERBOSE) \
 	mkdir -p $(dir $@) && \
-	sed 's/RFLX\.//g' $< > $@.tmp && \
+	sed 's/\(RFLX\.\|rflx-\)//g' $< > $@.tmp && \
 	mv $@.tmp $@
 
 $(noprefix-dir)/generated/%: generated/rflx-%

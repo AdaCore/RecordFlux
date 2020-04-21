@@ -43,9 +43,7 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Priority =>
-                     True,
-                  when others =>
-                     False),
+                     True),
          when F_Priority | F_Final =>
             False));
 
@@ -61,9 +59,7 @@ is
          when F_Initial =>
             (case Fld is
                   when F_Priority =>
-                     RFLX.Enumeration.Priority_Base'Size,
-                  when others =>
-                     Types.Unreachable_Bit_Length),
+                     RFLX.Enumeration.Priority_Base'Size),
          when F_Priority | F_Final =>
             0));
 

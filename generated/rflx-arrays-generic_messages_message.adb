@@ -399,7 +399,7 @@ is
       Valid_Sequence : constant Boolean := Inner_Messages_Sequence.Valid (Seq_Ctx);
       Buffer : Types.Bytes_Ptr;
    begin
-      Inner_Messages_Sequence.Take_Buffer (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last);
+      Inner_Messages_Sequence.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Messages) := (State => S_Valid, First => Ctx.Cursors (F_Messages).First, Last => Ctx.Cursors (F_Messages).Last, Value => Ctx.Cursors (F_Messages).Value, Predecessor => Ctx.Cursors (F_Messages).Predecessor);

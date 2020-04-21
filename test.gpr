@@ -1,4 +1,5 @@
 with "aunit";
+with "switches";
 
 project Test is
    type Flag_Type is ("yes", "no");
@@ -52,7 +53,7 @@ project Test is
          when "yes" =>
             for Default_Switches ("Ada") use ("-O3");
          when "no" =>
-            for Default_Switches ("Ada") use ("-g", "-gnata");
+            for Default_Switches ("Ada") use Switches.Compiler_Switches;
       end case;
    end Builder;
 

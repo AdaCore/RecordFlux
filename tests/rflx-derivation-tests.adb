@@ -1,5 +1,4 @@
 with SPARK.Assertions; use SPARK.Assertions;
-with SPARK.File_IO; use SPARK.File_IO;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
 with RFLX.RFLX_Types;
@@ -663,7 +662,7 @@ package body RFLX.Derivation.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected                      : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+      Expected                      : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
       Buffer                        : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
       Context                       : Derivation.Message.Context := Derivation.Message.Create;
       Modular_Vector_Context        : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;

@@ -1,5 +1,3 @@
-with SPARK.Assertions; use SPARK.Assertions;
-
 with RFLX.RFLX_Generic_Types;
 
 package body RFLX.Custom_Types_Tests is
@@ -26,8 +24,12 @@ package body RFLX.Custom_Types_Tests is
 
       type Value is mod 2**14;
 
+      pragma Warnings (Off, "* ""*"" is not referenced");
+
       function Extract is new Types.Extract (Value);
       procedure Insert is new Types.Insert (Value);
+
+      pragma Warnings (On, "* ""*"" is not referenced");
    begin
       null;
    end Test_Index_6_Modular;
@@ -48,8 +50,12 @@ package body RFLX.Custom_Types_Tests is
 
       type Value is range 0 .. 2**14 - 1;
 
+      pragma Warnings (Off, "* ""*"" is not referenced");
+
       function Extract is new Types.Extract (Value);
       procedure Insert is new Types.Insert (Value);
+
+      pragma Warnings (On, "* ""*"" is not referenced");
    begin
       null;
    end Test_Index_18_Range;
@@ -67,10 +73,14 @@ package body RFLX.Custom_Types_Tests is
 
       package Types is new RFLX.RFLX_Generic_Types (Index, Character, Characters, Characters_Ptr, Length, Bit_Length);
 
+      pragma Warnings (Off, "* ""*"" is not referenced");
+
       type Value is (A, B, C, D, E, F, G, H);
 
       function Extract is new Types.Extract (Value);
       procedure Insert is new Types.Insert (Value);
+
+      pragma Warnings (On, "* ""*"" is not referenced");
    begin
       null;
    end Test_Index_60_Enum;
@@ -85,8 +95,12 @@ package body RFLX.Custom_Types_Tests is
 
       package Types is new RFLX.RFLX_Generic_Types (Positive, Character, String, String_Ptr, Natural, Bit_Length);
 
+      pragma Warnings (Off, "* ""*"" is not referenced");
+
       function Extract is new Types.Extract (Wide_Character);
       procedure Insert is new Types.Insert (Wide_Character);
+
+      pragma Warnings (On, "* ""*"" is not referenced");
    begin
       null;
    end Test_String;

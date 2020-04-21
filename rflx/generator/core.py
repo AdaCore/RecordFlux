@@ -343,12 +343,9 @@ class Generator:
         return UnitPart(
             [
                 UseTypeClause(
-                    const.TYPES_BYTES,
                     const.TYPES_BYTES_PTR,
                     const.TYPES_INDEX,
-                    const.TYPES_LENGTH,
                     const.TYPES_BIT_INDEX,
-                    const.TYPES_BIT_LENGTH,
                     *additional_types,
                 )
             ]
@@ -839,7 +836,8 @@ class Generator:
                     lambda x: x[0],
                 )
             ]
-            cases.append((Variable("others"), FALSE))
+            if set(message.fields) - {l.target for l in message.outgoing(field)}:
+                cases.append((Variable("others"), FALSE))
             return Case(Variable("Fld"), cases).simplified(common.substitution(message))
 
         specification = FunctionSpecification(
@@ -902,7 +900,8 @@ class Generator:
             if not cases:
                 return Number(0)
 
-            cases.append((Variable("others"), Variable(const.TYPES_UNREACHABLE_BIT_LENGTH)))
+            if set(message.fields) - {l.target for l in message.outgoing(field)}:
+                cases.append((Variable("others"), Variable(const.TYPES_UNREACHABLE_BIT_LENGTH)))
             return Case(Variable("Fld"), cases).simplified(common.substitution(message))
 
         specification = FunctionSpecification(
@@ -1693,15 +1692,10 @@ class Generator:
             arguments = [
                 Variable("Seq_Ctx"),
                 Variable("Buffer"),
-                Variable("Ctx.Buffer_First"),
-                Variable("Ctx.Buffer_Last"),
             ]
 
             field_type = message.types[field]
             assert isinstance(field_type, Array)
-
-            if isinstance(field_type.element_type, Message):
-                arguments.extend([Variable("Ctx.First"), Variable("Ctx.Last")])
 
             return arguments
 
@@ -1994,10 +1988,12 @@ class Generator:
                 PackageBody(unit_name),
             )
             unit += self.__create_specification_pragmas(generic_name(const.REFINEMENT_PACKAGE))
-            unit += self.__create_use_type_clause()
             self.units[unit_name] = unit
 
         null_sdu = not refinement.sdu.fields
+
+        if not null_sdu:
+            unit += UnitPart([UseTypeClause(const.TYPES_INDEX, const.TYPES_BIT_INDEX)])
 
         assert isinstance(unit, PackageUnit), "unexpected unit type"
         assert isinstance(unit.declaration.formal_parameters, List), "missing formal parameters"
@@ -2182,12 +2178,16 @@ class Generator:
     def __modular_functions(self, integer: ModularInteger) -> UnitPart:
         specification: List[Declaration] = []
 
-        specification.append(Pragma("Warnings", ["Off", '"unused variable ""Val"""']))
-        specification.append(
-            self.__type_validation_function(integer, integer.constraints("Val").simplified())
+        specification.extend(
+            [
+                Pragma("Warnings", ["Off", '"unused variable ""Val"""']),
+                Pragma("Warnings", ["Off", '"formal parameter ""Val"" is not referenced"']),
+                self.__type_validation_function(integer, integer.constraints("Val").simplified()),
+                Pragma("Warnings", ["On", '"formal parameter ""Val"" is not referenced"']),
+                Pragma("Warnings", ["On", '"unused variable ""Val"""']),
+                *self.__integer_conversion_functions(integer),
+            ]
         )
-        specification.append(Pragma("Warnings", ["On", '"unused variable ""Val"""']))
-        specification.extend(self.__integer_conversion_functions(integer))
 
         return UnitPart(specification)
 
@@ -2207,10 +2207,20 @@ class Generator:
             validation_expression = Case(enum_value, validation_cases)
 
         if enum.always_valid:
-            specification.append(Pragma("Warnings", ["Off", '"unused variable ""Val"""']))
+            specification.extend(
+                [
+                    Pragma("Warnings", ["Off", '"unused variable ""Val"""']),
+                    Pragma("Warnings", ["Off", '"formal parameter ""Val"" is not referenced"']),
+                ]
+            )
         specification.append(self.__type_validation_function(enum, validation_expression))
         if enum.always_valid:
-            specification.append(Pragma("Warnings", ["On", '"unused variable ""Val"""']))
+            specification.extend(
+                [
+                    Pragma("Warnings", ["On", '"formal parameter ""Val"" is not referenced"']),
+                    Pragma("Warnings", ["On", '"unused variable ""Val"""']),
+                ]
+            )
 
         specification.append(
             ExpressionFunctionDeclaration(

@@ -11,7 +11,7 @@ is
 
    pragma Annotate (GNATprove, Terminating, Generic_Option);
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
+   use type Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 
    type Virtual_Field is (F_Initial, F_Copied, F_Option_Class, F_Option_Number, F_Option_Length, F_Option_Data, F_Final);
 
