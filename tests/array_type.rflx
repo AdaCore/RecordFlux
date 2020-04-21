@@ -5,7 +5,9 @@ package Array_Type is
 
    type Foo is
       message
-         Byte : Byte;
+         Length : Byte
+            then Bytes with Length => Length * 8;
+         Bytes : Bytes;
       end message;
 
    type Bar is array of Foo;

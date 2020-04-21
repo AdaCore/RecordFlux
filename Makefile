@@ -1,7 +1,7 @@
 VERBOSE ?= @
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := bin rflx tests tools stubs
+python-packages := bin examples rflx tests tools stubs
 
 build-dir := build
 noprefix-dir := build/noprefix
