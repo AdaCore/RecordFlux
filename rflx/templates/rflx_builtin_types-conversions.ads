@@ -5,9 +5,7 @@ package {prefix}RFLX_Builtin_Types.Conversions is
    function Valid (Val : Boolean_Base) return Boolean is
      (case Val is
          when 0 | 1 =>
-            True,
-         when others =>
-            False);
+            True);
 
    function To_Base (Enum : Boolean) return Boolean_Base is
      (case Enum is

@@ -13,7 +13,7 @@ is
 
    pragma Annotate (GNATprove, Terminating, Generic_Message);
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
+   use type Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 
    type Virtual_Field is (F_Initial, F_Length, F_Modular_Vector, F_Range_Vector, F_Enumeration_Vector, F_AV_Enumeration_Vector, F_Final);
 

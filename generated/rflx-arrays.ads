@@ -16,8 +16,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.Arrays.Length) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -47,8 +51,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.Arrays.Modular_Integer) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -172,8 +180,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.Arrays.AV_Enumeration_Base) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 

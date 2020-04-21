@@ -8,7 +8,7 @@ is
 
    pragma Annotate (GNATprove, Terminating, Generic_Frame);
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
+   use type Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 
    type Virtual_Field is (F_Initial, F_Destination, F_Source, F_Type_Length_TPID, F_TPID, F_TCI, F_Type_Length, F_Payload, F_Final);
 

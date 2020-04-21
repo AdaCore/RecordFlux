@@ -1,5 +1,4 @@
 with SPARK.Assertions; use SPARK.Assertions;
-with SPARK.File_IO; use SPARK.File_IO;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
 with RFLX.RFLX_Types;
@@ -127,7 +126,7 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Value is new TLV.Message.Set_Value (Write_Data);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
    begin
@@ -151,7 +150,7 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Value is new TLV.Message.Set_Value (Write_Data);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
    begin
@@ -174,7 +173,7 @@ package body RFLX.TLV.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 192);
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 192);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
    begin

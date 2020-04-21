@@ -1,5 +1,4 @@
 with SPARK.Assertions; use SPARK.Assertions;
-with SPARK.File_IO; use SPARK.File_IO;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
 with RFLX.RFLX_Types;
@@ -799,7 +798,7 @@ package body RFLX.Arrays.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected                      : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+      Expected                      : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
       Buffer                        : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
       Context                       : Arrays.Message.Context := Arrays.Message.Create;
       Modular_Vector_Context        : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;
@@ -856,7 +855,7 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new Arrays.Inner_Message.Set_Payload (Write_Data);
-      Expected         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 3, 2, 4, 6);
+      Expected         : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 3, 2, 4, 6);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
       Context          : Arrays.Messages_Message.Context := Arrays.Messages_Message.Create;
       Sequence_Context : Arrays.Inner_Messages.Context := Arrays.Inner_Messages.Create;

@@ -48,7 +48,7 @@ package body RFLX.Builtin_Types_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := (255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 0);
 
       type U13 is mod 2**13;
       function Extract_U13 is new Extract (U13);
@@ -97,7 +97,7 @@ package body RFLX.Builtin_Types_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes := (255, 0);
+      Buffer : constant Bytes := (255, 0);
 
       type U13 is range 0 .. 8191 with Size => 13;
       function Extract_U13 is new Extract (U13);

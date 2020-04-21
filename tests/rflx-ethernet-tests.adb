@@ -267,7 +267,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Bounded_Payload is new Ethernet.Frame.Set_Bounded_Payload (Write_Data);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
       Context  : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
@@ -294,7 +294,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new Ethernet.Frame.Set_Payload (Write_Data);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3.raw");
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_802.3.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. 2000 => 0);
       Context  : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
@@ -321,7 +321,7 @@ package body RFLX.Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Bounded_Payload is new Ethernet.Frame.Set_Bounded_Payload (Write_Data);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
       Context  : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin
@@ -361,7 +361,7 @@ package body RFLX.Ethernet.Tests is
       function Dynamic_Type_Length is new Identity (Ethernet.Type_Length);
 
       procedure Set_Bounded_Payload is new Ethernet.Frame.Set_Bounded_Payload (Write_Data);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_vlan_tag.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
       Context  : Ethernet.Frame.Context := Ethernet.Frame.Create;
    begin

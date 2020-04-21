@@ -16,8 +16,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.Ethernet.Address) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
@@ -110,8 +114,12 @@ is
 
    pragma Warnings (Off, "unused variable ""Val""");
 
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
    function Valid (Val : RFLX.Ethernet.TCI) return Boolean is
      (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 

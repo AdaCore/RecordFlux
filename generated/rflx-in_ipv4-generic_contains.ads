@@ -14,7 +14,7 @@ is
 
    pragma Annotate (GNATprove, Terminating, Generic_Contains);
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
+   use type Types.Index, Types.Bit_Index;
 
    function UDP_Datagram_In_IPv4_Packet_Payload (Ctx : IPv4_Packet.Context) return Boolean is
      (IPv4_Packet.Has_Buffer (Ctx)
