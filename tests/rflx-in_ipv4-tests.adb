@@ -96,7 +96,7 @@ package body RFLX.In_IPv4.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new UDP.Datagram.Set_Payload (Write_Data);
-      Expected               : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Expected               : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
       Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
       IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;

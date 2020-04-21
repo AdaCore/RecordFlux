@@ -1,0 +1,22 @@
+abstract project Switches
+is
+
+   Compiler_Switches :=
+   (
+      "-gnatA",    -- Avoid processing gnat.adc. If a gnat.adc file is present, it will be ignored.
+      "-gnatf",    -- Full errors. Multiple errors per line, all undefined references, do not attempt to suppress cascaded errors.
+      "-gnatU",    -- Tag all error messages with the unique string ‘error:’.
+
+      --  Debugging
+      "-fstack-check",  --  Activate stack checking.
+      "-g",             --  Enable generation of debugging information.
+      "-gnata",         --  Enable assertions.
+
+      --  Warnings
+      "-gnatwa",  --  Activate most optional warnings.
+      "-gnatw.d",  --  Activate tagging of warning and info messages.
+
+      ""
+   );
+
+end Switches;

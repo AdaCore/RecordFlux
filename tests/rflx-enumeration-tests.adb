@@ -1,5 +1,4 @@
 with SPARK.Assertions; use SPARK.Assertions;
-with SPARK.File_IO; use SPARK.File_IO;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
 with RFLX.RFLX_Types;
@@ -71,7 +70,7 @@ package body RFLX.Enumeration.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context  : Enumeration.Message.Context := Enumeration.Message.Create;
    begin

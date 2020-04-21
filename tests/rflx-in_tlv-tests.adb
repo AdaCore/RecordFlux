@@ -1,5 +1,4 @@
 with SPARK.Assertions; use SPARK.Assertions;
-with SPARK.File_IO; use SPARK.File_IO;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
 

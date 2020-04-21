@@ -11,7 +11,7 @@ is
    function Read_File_Ptr (Name : String) return Bytes_Ptr is
       package Byte_IO is new Ada.Sequential_IO (Byte);
       Input_File : Byte_IO.File_Type;
-      Buffer : Bytes_Ptr := new Bytes (1 .. Index (Ada.Directories.Size (Name)));
+      Buffer : constant Bytes_Ptr := new Bytes (1 .. Index (Ada.Directories.Size (Name)));
       Value : Byte := 0;
       I : Length := 0;
    begin

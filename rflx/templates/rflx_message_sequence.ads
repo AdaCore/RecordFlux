@@ -16,7 +16,7 @@ is
 
    pragma Annotate (GNATprove, Terminating, RFLX_Message_Sequence);
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index, Types.Bit_Length;
+   use type Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
      Default_Initial_Condition => False;
@@ -42,20 +42,16 @@ is
         and Ctx.Last = Last
         and Index (Ctx) = First);
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) with
      Pre =>
-       (Has_Buffer (Ctx)
-        and then Ctx.Buffer_First = Buffer_First
-        and then Ctx.Buffer_Last = Buffer_Last
-        and then Ctx.Buffer_First <= Types.Byte_Index (First)
-        and then Ctx.Buffer_Last >= Types.Byte_Index (Last)),
+       Has_Buffer (Ctx),
      Post =>
        (not Has_Buffer (Ctx)
         and Buffer /= null
-        and Buffer'First = Buffer_First
-        and Buffer'Last = Buffer_Last
-        and Buffer'First <= Types.Byte_Index (First)
-        and Buffer'Last >= Types.Byte_Index (Last)
+        and Buffer'First = Ctx.Buffer_First
+        and Buffer'Last = Ctx.Buffer_Last
+        and Ctx.Buffer_First = Ctx.Buffer_First'Old
+        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
         and Ctx.First = Ctx.First'Old
         and Ctx.Last = Ctx.Last'Old
         and Index (Ctx) = Index (Ctx)'Old);
