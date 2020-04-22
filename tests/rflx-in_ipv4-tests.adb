@@ -19,7 +19,8 @@ package body RFLX.In_IPv4.Tests is
       return AUnit.Format ("In_IPv4");
    end Name;
 
-   Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 25) := (others => 0);
+   Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 25) :=
+     (others => 0);
 
    procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) is
    begin
@@ -98,7 +99,9 @@ package body RFLX.In_IPv4.Tests is
       pragma Unreferenced (T);
       procedure Set_Payload is new UDP.Datagram.Set_Payload (Write_Data);
       Expected               : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Buffer                 : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
+      Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
+                                      .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
       Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
       IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
       UDP_Datagram_Context   : UDP.Datagram.Context := UDP.Datagram.Create;
@@ -148,8 +151,12 @@ package body RFLX.In_IPv4.Tests is
 
             UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
 
-            Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (UDP_Datagram_Context.Last) - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-            Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) .. RFLX_Types.Byte_Index (Ethernet_Frame_Context.Last)), Expected.all, "Invalid binary representation");
+            Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (UDP_Datagram_Context.Last)
+                    - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
+                    "Invalid buffer length");
+            Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First)
+                    .. RFLX_Types.Byte_Index (Ethernet_Frame_Context.Last)), Expected.all,
+                    "Invalid binary representation");
          end if;
       end if;
    end Test_Generating_UDP_In_IPv4_In_Ethernet;

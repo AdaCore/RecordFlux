@@ -17,7 +17,8 @@ package body RFLX.In_Ethernet.Tests is
       return AUnit.Format ("In_Ethernet");
    end Name;
 
-   Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 25) := (others => 0);
+   Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 25) :=
+     (others => 0);
 
    procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) is
    begin
@@ -59,7 +60,9 @@ package body RFLX.In_Ethernet.Tests is
       pragma Unreferenced (T);
       procedure Set_Payload is new IPv4.Packet.Set_Payload (Write_Data);
       Expected               : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Buffer                 : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
+      Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
+                                      .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
       Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
       IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
    begin
@@ -99,8 +102,12 @@ package body RFLX.In_Ethernet.Tests is
 
          IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
 
-         Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (IPv4_Packet_Context.Last) - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-         Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) .. RFLX_Types.Byte_Index (Ethernet_Frame_Context.Last)), Expected.all, "Invalid binary representation");
+         Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (IPv4_Packet_Context.Last)
+                 - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
+                 "Invalid buffer length");
+         Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First)
+                 .. RFLX_Types.Byte_Index (Ethernet_Frame_Context.Last)), Expected.all,
+                 "Invalid binary representation");
       end if;
    end Test_Generating_IPv4_In_Ethernet;
 
