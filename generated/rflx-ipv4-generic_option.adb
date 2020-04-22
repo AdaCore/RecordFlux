@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body RFLX.IPv4.Generic_Option with
   SPARK_Mode
 is

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import OrderedDict
 from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
-from rflx.common import generic_repr, indent, indent_next, unique
+from rflx.common import file_name, generic_repr, indent, indent_next, unique
 from rflx.expression import Case, Expr, Number, Variable
 from rflx.identifier import ID, StrID
 
@@ -16,10 +16,6 @@ class Ada(ABC):
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
-
-    @abstractmethod
-    def __str__(self) -> str:
-        raise NotImplementedError
 
 
 class Declaration(Ada):
@@ -868,22 +864,16 @@ class Pragma(Declaration, ContextItem):
 
 
 class Unit(Ada):
-    def __init__(self, context: List[ContextItem]) -> None:
-        self.context = context
-
-    def __str__(self) -> str:
-        raise NotImplementedError
-
     @abstractmethod
     def __iadd__(self, other: object) -> "Unit":
         raise NotImplementedError
 
     @abstractproperty
-    def specification(self) -> str:
+    def ads(self) -> str:
         raise NotImplementedError
 
     @abstractproperty
-    def body(self) -> str:
+    def adb(self) -> str:
         raise NotImplementedError
 
     @abstractproperty
@@ -893,16 +883,18 @@ class Unit(Ada):
 
 class PackageUnit(Unit):
     def __init__(
-        self, context: List[ContextItem], declaration: PackageDeclaration, body: PackageBody
+        self,
+        declaration_context: List[ContextItem],
+        declaration: PackageDeclaration,
+        body_context: List[ContextItem],
+        body: PackageBody,
     ) -> None:
-        super().__init__(context)
+        self.declaration_context = declaration_context
         self.declaration = declaration
-        self.__body = body
+        self.body_context = body_context
+        self.body = body
 
         self._check_consistency()
-
-    def __str__(self) -> str:
-        raise NotImplementedError
 
     def __iadd__(self, other: object) -> "PackageUnit":
         if isinstance(other, (UnitPart, SubprogramUnitPart)):
@@ -912,32 +904,28 @@ class PackageUnit(Unit):
             self.declaration.private_declarations = self.declaration.private_declarations + list(
                 other.private
             )
-            self.__body.declarations = self.__body.declarations + list(other.body)
+            self.body.declarations = self.body.declarations + list(other.body)
             return self
         return NotImplemented
 
     @property
-    def specification(self) -> str:
+    def ads(self) -> str:
         self._check_consistency()
-        context_clause = ""
-        if self.context:
-            context_clause = "\n".join(map(str, unique(self.context)))
-            context_clause = f"{context_clause}\n\n"
-        return f"{context_clause}{self.declaration}"
+        return f"{context_clause(self.declaration_context)}{self.declaration}"
 
     @property
-    def body(self) -> str:
+    def adb(self) -> str:
         self._check_consistency()
-        return str(self.__body)
+        return f"{context_clause(self.body_context)}{self.body}" if str(self.body) else ""
 
     @property
     def name(self) -> str:
         self._check_consistency()
-        return str(self.declaration.identifier).lower().replace(".", "-")
+        return file_name(str(self.declaration.identifier))
 
     def _check_consistency(self) -> None:
         assert (
-            self.declaration.identifier == self.__body.identifier
+            self.declaration.identifier == self.body.identifier
         ), "identifier of specification and body differ"
 
 
@@ -945,30 +933,23 @@ class InstantiationUnit(Unit):
     def __init__(
         self, context: List[ContextItem], declaration: GenericPackageInstantiation
     ) -> None:
-        super().__init__(context)
+        self.context = context
         self.declaration = declaration
-
-    def __str__(self) -> str:
-        raise NotImplementedError
 
     def __iadd__(self, other: object) -> Unit:
         return NotImplemented
 
     @property
-    def specification(self) -> str:
-        context_clause = ""
-        if self.context:
-            context_clause = "\n".join(map(str, unique(self.context)))
-            context_clause = f"{context_clause}\n\n"
-        return f"{context_clause}{self.declaration}"
+    def ads(self) -> str:
+        return f"{context_clause(self.context)}{self.declaration}"
 
     @property
-    def body(self) -> str:
+    def adb(self) -> str:
         return ""
 
     @property
     def name(self) -> str:
-        return str(self.declaration.identifier).lower().replace(".", "-")
+        return file_name(str(self.declaration.identifier))
 
 
 class UnitPart(NamedTuple):
@@ -1003,3 +984,7 @@ def aspect_specification(aspects: Sequence[Aspect]) -> str:
     if not aspects:
         return ""
     return " with\n" + ",\n".join(indent(str(aspect), 2) for aspect in aspects)
+
+
+def context_clause(context: Sequence[ContextItem]) -> str:
+    return ("\n".join(map(str, unique(context))) + "\n\n") if context else ""

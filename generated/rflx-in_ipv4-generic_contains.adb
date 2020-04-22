@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body RFLX.In_IPv4.Generic_Contains with
   SPARK_Mode
 is

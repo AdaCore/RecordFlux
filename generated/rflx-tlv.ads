@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package RFLX.TLV with
   SPARK_Mode
 is

@@ -29,11 +29,11 @@ class TestIntegration(unittest.TestCase):
         for unit in generator.units.values():
             filename = f"{self.codedir}/{unit.name}.ads"
             with open(filename, "r") as f:
-                self.assertEqual(unit.specification, f.read(), filename)
-            if unit.body:
+                self.assertEqual(unit.ads, f.read(), filename)
+            if unit.adb:
                 filename = f"{self.codedir}/{unit.name}.adb"
                 with open(filename, "r") as f:
-                    self.assertEqual(unit.body, f.read(), filename)
+                    self.assertEqual(unit.adb, f.read(), filename)
 
     def assert_compilable_code(self, spec_files: List[str]) -> None:
         parser = Parser()

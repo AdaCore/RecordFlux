@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package RFLX.RFLX_Builtin_Types.Conversions is
 
    pragma Annotate (GNATprove, Terminating, Conversions);

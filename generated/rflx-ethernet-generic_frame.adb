@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body RFLX.Ethernet.Generic_Frame with
   SPARK_Mode
 is
