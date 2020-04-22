@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body RFLX.RFLX_Message_Sequence with
   SPARK_Mode
 is

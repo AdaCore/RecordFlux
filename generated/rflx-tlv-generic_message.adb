@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body RFLX.TLV.Generic_Message with
   SPARK_Mode
 is

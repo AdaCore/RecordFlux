@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body RFLX.Arrays.Generic_Inner_Message with
   SPARK_Mode
 is

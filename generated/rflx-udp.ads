@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package RFLX.UDP with
   SPARK_Mode
 is

@@ -1,3 +1,4 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 with {prefix}RFLX_Lemmas;
 
 package body {prefix}RFLX_Generic_Types is

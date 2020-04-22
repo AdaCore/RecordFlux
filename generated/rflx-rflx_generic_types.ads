@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 generic
    type Index is range <>;
    type Byte is (<>);
