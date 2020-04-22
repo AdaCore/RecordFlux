@@ -1,7 +1,8 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
 package RFLX.RFLX_Lemmas with
-  SPARK_Mode, Ghost
+  SPARK_Mode,
+  Ghost
 is
 
    procedure Mult_Limit (Value_1 : Long_Integer;
