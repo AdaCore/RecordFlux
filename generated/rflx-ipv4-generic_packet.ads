@@ -121,7 +121,7 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Last = Ctx.Last'Old
-          and Cursors (Ctx) = Cursors (Ctx)'Old;
+          and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
 
    function Has_Buffer (Ctx : Context) return Boolean with
      Pre =>
@@ -400,7 +400,7 @@ is
           and Predecessor (Ctx, F_IHL) = Predecessor (Ctx, F_IHL)'Old
           and Valid_Next (Ctx, F_IHL) = Valid_Next (Ctx, F_IHL)'Old
           and Get_Version (Ctx) = Get_Version (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old;
 
    procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) with
      Pre =>
@@ -440,8 +440,8 @@ is
           and Valid_Next (Ctx, F_DSCP) = Valid_Next (Ctx, F_DSCP)'Old
           and Get_Version (Ctx) = Get_Version (Ctx)'Old
           and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old;
 
    procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) with
      Pre =>
@@ -481,9 +481,9 @@ is
           and Get_Version (Ctx) = Get_Version (Ctx)'Old
           and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
           and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old;
 
    procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) with
      Pre =>
@@ -524,10 +524,10 @@ is
           and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
           and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
           and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old;
 
    procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) with
      Pre =>
@@ -567,11 +567,11 @@ is
           and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
           and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
           and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old;
 
    procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) with
      Pre =>
@@ -612,12 +612,12 @@ is
           and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
           and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
           and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old;
 
    procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) with
      Pre =>
@@ -657,13 +657,13 @@ is
           and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
           and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
           and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old;
 
    procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) with
      Pre =>
@@ -703,14 +703,14 @@ is
           and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
           and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
           and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old;
 
    procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) with
      Pre =>
@@ -750,15 +750,15 @@ is
           and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
           and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
           and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
-          and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
+          and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old;
 
    procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) with
      Pre =>
@@ -798,16 +798,16 @@ is
           and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
           and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
           and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
-          and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old
-          and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
+          and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
+          and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old;
 
    procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) with
      Pre =>
@@ -847,17 +847,17 @@ is
           and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
           and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
           and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
-          and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old
-          and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old
-          and Cursor (Ctx, F_TTL) = Cursor (Ctx, F_TTL)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
+          and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
+          and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
+          and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old;
 
    procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) with
      Pre =>
@@ -897,18 +897,18 @@ is
           and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
           and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
           and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
-          and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old
-          and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old
-          and Cursor (Ctx, F_TTL) = Cursor (Ctx, F_TTL)'Old
-          and Cursor (Ctx, F_Protocol) = Cursor (Ctx, F_Protocol)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
+          and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
+          and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
+          and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
+          and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) with
      Pre =>
@@ -948,19 +948,19 @@ is
           and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
           and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
           and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
-          and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old
-          and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old
-          and Cursor (Ctx, F_TTL) = Cursor (Ctx, F_TTL)'Old
-          and Cursor (Ctx, F_Protocol) = Cursor (Ctx, F_Protocol)'Old
-          and Cursor (Ctx, F_Header_Checksum) = Cursor (Ctx, F_Header_Checksum)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
+          and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
+          and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
+          and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
+          and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
+          and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old;
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) with
      Pre =>
@@ -1004,20 +1004,20 @@ is
           and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
           and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
           and Get_Source (Ctx) = Get_Source (Ctx)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
-          and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old
-          and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old
-          and Cursor (Ctx, F_TTL) = Cursor (Ctx, F_TTL)'Old
-          and Cursor (Ctx, F_Protocol) = Cursor (Ctx, F_Protocol)'Old
-          and Cursor (Ctx, F_Header_Checksum) = Cursor (Ctx, F_Header_Checksum)'Old
-          and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
+          and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
+          and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
+          and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
+          and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
+          and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old
+          and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old;
 
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
@@ -1115,24 +1115,24 @@ is
           and Ctx.First = Ctx.First'Old
           and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
           and Path_Condition (Ctx, F_Options) = Path_Condition (Ctx, F_Options)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
-          and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old
-          and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old
-          and Cursor (Ctx, F_TTL) = Cursor (Ctx, F_TTL)'Old
-          and Cursor (Ctx, F_Protocol) = Cursor (Ctx, F_Protocol)'Old
-          and Cursor (Ctx, F_Header_Checksum) = Cursor (Ctx, F_Header_Checksum)'Old
-          and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old
-          and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old,
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
+          and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
+          and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
+          and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
+          and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
+          and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old
+          and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old
+          and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old,
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Options) =>
-           Cursor (Ctx, F_Payload) = Cursor (Ctx, F_Payload)'Old,
+           Context_Cursor (Ctx, F_Payload) = Context_Cursor (Ctx, F_Payload)'Old,
         others =>
            (Predecessor (Ctx, F_Payload) = F_Options
                 and Valid_Next (Ctx, F_Payload))
@@ -1161,34 +1161,34 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
           and Field_Length (Ctx, F_Options) = Field_Length (Ctx, F_Options)'Old
-          and Cursor (Ctx, F_Version) = Cursor (Ctx, F_Version)'Old
-          and Cursor (Ctx, F_IHL) = Cursor (Ctx, F_IHL)'Old
-          and Cursor (Ctx, F_DSCP) = Cursor (Ctx, F_DSCP)'Old
-          and Cursor (Ctx, F_ECN) = Cursor (Ctx, F_ECN)'Old
-          and Cursor (Ctx, F_Total_Length) = Cursor (Ctx, F_Total_Length)'Old
-          and Cursor (Ctx, F_Identification) = Cursor (Ctx, F_Identification)'Old
-          and Cursor (Ctx, F_Flag_R) = Cursor (Ctx, F_Flag_R)'Old
-          and Cursor (Ctx, F_Flag_DF) = Cursor (Ctx, F_Flag_DF)'Old
-          and Cursor (Ctx, F_Flag_MF) = Cursor (Ctx, F_Flag_MF)'Old
-          and Cursor (Ctx, F_Fragment_Offset) = Cursor (Ctx, F_Fragment_Offset)'Old
-          and Cursor (Ctx, F_TTL) = Cursor (Ctx, F_TTL)'Old
-          and Cursor (Ctx, F_Protocol) = Cursor (Ctx, F_Protocol)'Old
-          and Cursor (Ctx, F_Header_Checksum) = Cursor (Ctx, F_Header_Checksum)'Old
-          and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old
-          and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old
-          and Cursor (Ctx, F_Payload) = Cursor (Ctx, F_Payload)'Old;
+          and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
+          and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
+          and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
+          and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
+          and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
+          and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
+          and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
+          and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
+          and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
+          and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
+          and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
+          and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
+          and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old
+          and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old
+          and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old
+          and Context_Cursor (Ctx, F_Payload) = Context_Cursor (Ctx, F_Payload)'Old;
 
    function Valid_Context (Ctx : Context) return Boolean with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -1453,10 +1453,10 @@ private
    function Valid_Context (Ctx : Context) return Boolean is
      (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 
-   function Cursors (Ctx : Context) return Field_Cursors is
+   function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
 end RFLX.IPv4.Generic_Packet;

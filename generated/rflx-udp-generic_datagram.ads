@@ -94,7 +94,7 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Last = Ctx.Last'Old
-          and Cursors (Ctx) = Cursors (Ctx)'Old;
+          and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
 
    function Has_Buffer (Ctx : Context) return Boolean with
      Pre =>
@@ -286,7 +286,7 @@ is
           and Predecessor (Ctx, F_Destination_Port) = Predecessor (Ctx, F_Destination_Port)'Old
           and Valid_Next (Ctx, F_Destination_Port) = Valid_Next (Ctx, F_Destination_Port)'Old
           and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
-          and Cursor (Ctx, F_Source_Port) = Cursor (Ctx, F_Source_Port)'Old;
+          and Context_Cursor (Ctx, F_Source_Port) = Context_Cursor (Ctx, F_Source_Port)'Old;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length) with
      Pre =>
@@ -314,8 +314,8 @@ is
           and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
           and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
           and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
-          and Cursor (Ctx, F_Source_Port) = Cursor (Ctx, F_Source_Port)'Old
-          and Cursor (Ctx, F_Destination_Port) = Cursor (Ctx, F_Destination_Port)'Old;
+          and Context_Cursor (Ctx, F_Source_Port) = Context_Cursor (Ctx, F_Source_Port)'Old
+          and Context_Cursor (Ctx, F_Destination_Port) = Context_Cursor (Ctx, F_Destination_Port)'Old;
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum) with
      Pre =>
@@ -343,9 +343,9 @@ is
           and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
           and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
           and Get_Length (Ctx) = Get_Length (Ctx)'Old
-          and Cursor (Ctx, F_Source_Port) = Cursor (Ctx, F_Source_Port)'Old
-          and Cursor (Ctx, F_Destination_Port) = Cursor (Ctx, F_Destination_Port)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old;
+          and Context_Cursor (Ctx, F_Source_Port) = Context_Cursor (Ctx, F_Source_Port)'Old
+          and Context_Cursor (Ctx, F_Destination_Port) = Context_Cursor (Ctx, F_Destination_Port)'Old
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old;
 
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
@@ -400,12 +400,12 @@ is
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -525,10 +525,10 @@ private
    function Valid_Context (Ctx : Context) return Boolean is
      (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 
-   function Cursors (Ctx : Context) return Field_Cursors is
+   function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
 end RFLX.UDP.Generic_Datagram;

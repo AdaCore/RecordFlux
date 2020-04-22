@@ -45,6 +45,6 @@ is
           and IPv4_Packet_Context.Buffer_First = IPv4_Packet_Context.Buffer_First'Old
           and IPv4_Packet_Context.Buffer_Last = IPv4_Packet_Context.Buffer_Last'Old
           and IPv4_Packet_Context.First = IPv4_Packet_Context.First'Old
-          and IPv4_Packet.Cursors (IPv4_Packet_Context) = IPv4_Packet.Cursors (IPv4_Packet_Context)'Old;
+          and IPv4_Packet.Context_Cursors (IPv4_Packet_Context) = IPv4_Packet.Context_Cursors (IPv4_Packet_Context)'Old;
 
 end RFLX.In_IPv4.Generic_Contains;

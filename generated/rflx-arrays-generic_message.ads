@@ -93,7 +93,7 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Last = Ctx.Last'Old
-          and Cursors (Ctx) = Cursors (Ctx)'Old;
+          and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
 
    function Has_Buffer (Ctx : Context) return Boolean with
      Pre =>
@@ -294,12 +294,12 @@ is
           and Ctx.First = Ctx.First'Old
           and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
           and Path_Condition (Ctx, F_Modular_Vector) = Path_Condition (Ctx, F_Modular_Vector)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old,
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old,
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Modular_Vector) =>
-           Cursor (Ctx, F_Range_Vector) = Cursor (Ctx, F_Range_Vector)'Old
-              and Cursor (Ctx, F_Enumeration_Vector) = Cursor (Ctx, F_Enumeration_Vector)'Old
-              and Cursor (Ctx, F_AV_Enumeration_Vector) = Cursor (Ctx, F_AV_Enumeration_Vector)'Old,
+           Context_Cursor (Ctx, F_Range_Vector) = Context_Cursor (Ctx, F_Range_Vector)'Old
+              and Context_Cursor (Ctx, F_Enumeration_Vector) = Context_Cursor (Ctx, F_Enumeration_Vector)'Old
+              and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old,
         others =>
            (Predecessor (Ctx, F_Range_Vector) = F_Modular_Vector
                 and Valid_Next (Ctx, F_Range_Vector))
@@ -333,12 +333,12 @@ is
           and Ctx.First = Ctx.First'Old
           and Predecessor (Ctx, F_Range_Vector) = Predecessor (Ctx, F_Range_Vector)'Old
           and Path_Condition (Ctx, F_Range_Vector) = Path_Condition (Ctx, F_Range_Vector)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old
-          and Cursor (Ctx, F_Modular_Vector) = Cursor (Ctx, F_Modular_Vector)'Old,
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
+          and Context_Cursor (Ctx, F_Modular_Vector) = Context_Cursor (Ctx, F_Modular_Vector)'Old,
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Range_Vector) =>
-           Cursor (Ctx, F_Enumeration_Vector) = Cursor (Ctx, F_Enumeration_Vector)'Old
-              and Cursor (Ctx, F_AV_Enumeration_Vector) = Cursor (Ctx, F_AV_Enumeration_Vector)'Old,
+           Context_Cursor (Ctx, F_Enumeration_Vector) = Context_Cursor (Ctx, F_Enumeration_Vector)'Old
+              and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old,
         others =>
            (Predecessor (Ctx, F_Enumeration_Vector) = F_Range_Vector
                 and Valid_Next (Ctx, F_Enumeration_Vector))
@@ -371,12 +371,12 @@ is
           and Ctx.First = Ctx.First'Old
           and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
           and Path_Condition (Ctx, F_Enumeration_Vector) = Path_Condition (Ctx, F_Enumeration_Vector)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old
-          and Cursor (Ctx, F_Modular_Vector) = Cursor (Ctx, F_Modular_Vector)'Old
-          and Cursor (Ctx, F_Range_Vector) = Cursor (Ctx, F_Range_Vector)'Old,
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
+          and Context_Cursor (Ctx, F_Modular_Vector) = Context_Cursor (Ctx, F_Modular_Vector)'Old
+          and Context_Cursor (Ctx, F_Range_Vector) = Context_Cursor (Ctx, F_Range_Vector)'Old,
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Enumeration_Vector) =>
-           Cursor (Ctx, F_AV_Enumeration_Vector) = Cursor (Ctx, F_AV_Enumeration_Vector)'Old,
+           Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old,
         others =>
            (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
                 and Valid_Next (Ctx, F_AV_Enumeration_Vector))
@@ -408,10 +408,10 @@ is
           and Ctx.First = Ctx.First'Old
           and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
           and Path_Condition (Ctx, F_AV_Enumeration_Vector) = Path_Condition (Ctx, F_AV_Enumeration_Vector)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old
-          and Cursor (Ctx, F_Modular_Vector) = Cursor (Ctx, F_Modular_Vector)'Old
-          and Cursor (Ctx, F_Range_Vector) = Cursor (Ctx, F_Range_Vector)'Old
-          and Cursor (Ctx, F_Enumeration_Vector) = Cursor (Ctx, F_Enumeration_Vector)'Old,
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
+          and Context_Cursor (Ctx, F_Modular_Vector) = Context_Cursor (Ctx, F_Modular_Vector)'Old
+          and Context_Cursor (Ctx, F_Range_Vector) = Context_Cursor (Ctx, F_Range_Vector)'Old
+          and Context_Cursor (Ctx, F_Enumeration_Vector) = Context_Cursor (Ctx, F_Enumeration_Vector)'Old,
      Contract_Cases =>
        (Structural_Valid (Ctx, F_AV_Enumeration_Vector) =>
            True,
@@ -441,10 +441,10 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Field_First (Ctx, F_Modular_Vector) = Field_First (Ctx, F_Modular_Vector)'Old
           and Field_Length (Ctx, F_Modular_Vector) = Field_Length (Ctx, F_Modular_Vector)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old
-          and Cursor (Ctx, F_Range_Vector) = Cursor (Ctx, F_Range_Vector)'Old
-          and Cursor (Ctx, F_Enumeration_Vector) = Cursor (Ctx, F_Enumeration_Vector)'Old
-          and Cursor (Ctx, F_AV_Enumeration_Vector) = Cursor (Ctx, F_AV_Enumeration_Vector)'Old;
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
+          and Context_Cursor (Ctx, F_Range_Vector) = Context_Cursor (Ctx, F_Range_Vector)'Old
+          and Context_Cursor (Ctx, F_Enumeration_Vector) = Context_Cursor (Ctx, F_Enumeration_Vector)'Old
+          and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old;
 
    procedure Update_Range_Vector (Ctx : in out Context; Seq_Ctx : in out Range_Vector_Sequence.Context) with
      Pre =>
@@ -469,10 +469,10 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Field_First (Ctx, F_Range_Vector) = Field_First (Ctx, F_Range_Vector)'Old
           and Field_Length (Ctx, F_Range_Vector) = Field_Length (Ctx, F_Range_Vector)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old
-          and Cursor (Ctx, F_Modular_Vector) = Cursor (Ctx, F_Modular_Vector)'Old
-          and Cursor (Ctx, F_Enumeration_Vector) = Cursor (Ctx, F_Enumeration_Vector)'Old
-          and Cursor (Ctx, F_AV_Enumeration_Vector) = Cursor (Ctx, F_AV_Enumeration_Vector)'Old;
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
+          and Context_Cursor (Ctx, F_Modular_Vector) = Context_Cursor (Ctx, F_Modular_Vector)'Old
+          and Context_Cursor (Ctx, F_Enumeration_Vector) = Context_Cursor (Ctx, F_Enumeration_Vector)'Old
+          and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old;
 
    procedure Update_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out Enumeration_Vector_Sequence.Context) with
      Pre =>
@@ -497,10 +497,10 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
           and Field_Length (Ctx, F_Enumeration_Vector) = Field_Length (Ctx, F_Enumeration_Vector)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old
-          and Cursor (Ctx, F_Modular_Vector) = Cursor (Ctx, F_Modular_Vector)'Old
-          and Cursor (Ctx, F_Range_Vector) = Cursor (Ctx, F_Range_Vector)'Old
-          and Cursor (Ctx, F_AV_Enumeration_Vector) = Cursor (Ctx, F_AV_Enumeration_Vector)'Old;
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
+          and Context_Cursor (Ctx, F_Modular_Vector) = Context_Cursor (Ctx, F_Modular_Vector)'Old
+          and Context_Cursor (Ctx, F_Range_Vector) = Context_Cursor (Ctx, F_Range_Vector)'Old
+          and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old;
 
    procedure Update_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out AV_Enumeration_Vector_Sequence.Context) with
      Pre =>
@@ -525,22 +525,22 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
           and Field_Length (Ctx, F_AV_Enumeration_Vector) = Field_Length (Ctx, F_AV_Enumeration_Vector)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old
-          and Cursor (Ctx, F_Modular_Vector) = Cursor (Ctx, F_Modular_Vector)'Old
-          and Cursor (Ctx, F_Range_Vector) = Cursor (Ctx, F_Range_Vector)'Old
-          and Cursor (Ctx, F_Enumeration_Vector) = Cursor (Ctx, F_Enumeration_Vector)'Old;
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
+          and Context_Cursor (Ctx, F_Modular_Vector) = Context_Cursor (Ctx, F_Modular_Vector)'Old
+          and Context_Cursor (Ctx, F_Range_Vector) = Context_Cursor (Ctx, F_Range_Vector)'Old
+          and Context_Cursor (Ctx, F_Enumeration_Vector) = Context_Cursor (Ctx, F_Enumeration_Vector)'Old;
 
    function Valid_Context (Ctx : Context) return Boolean with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -654,10 +654,10 @@ private
    function Valid_Context (Ctx : Context) return Boolean is
      (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 
-   function Cursors (Ctx : Context) return Field_Cursors is
+   function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
 end RFLX.Arrays.Generic_Message;
