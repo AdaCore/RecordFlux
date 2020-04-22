@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body RFLX.RFLX_Lemmas with
   SPARK_Mode
 is

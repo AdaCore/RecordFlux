@@ -127,6 +127,8 @@ log = logging.getLogger(__name__)
 
 NULL = Variable("null")
 
+CONFIGURATION_PRAGMAS = [Pragma("Style_Checks", ['"N3aAbcdefhiIklnOprStux"'])]
+
 
 class Generator:
     def __init__(self, prefix: str = "", reproducible: bool = False) -> None:
@@ -186,13 +188,11 @@ class Generator:
 
     def write_units(self, directory: Path) -> None:
         for unit in self.units.values():
-            create_file(
-                directory / Path(unit.name + ".ads"), self.__license_header() + unit.specification
-            )
+            create_file(directory / Path(unit.name + ".ads"), self.__license_header() + unit.ads)
 
-            if unit.body:
+            if unit.adb:
                 create_file(
-                    directory / Path(unit.name + ".adb"), self.__license_header() + unit.body
+                    directory / Path(unit.name + ".adb"), self.__license_header() + unit.adb
                 )
 
     def __create_refinement(self, refinement: Refinement) -> None:
@@ -209,9 +209,35 @@ class Generator:
     def __create_derived_message(self, message: DerivedMessage) -> None:
         self.__create_message_unit(message)
 
-    def __create_unit(self, package: ID, context: List[ContextItem]) -> None:
-        name = self.prefix * package
-        self.units[package] = PackageUnit(context, PackageDeclaration(name), PackageBody(name),)
+    def __create_unit(
+        self,
+        name: ID,
+        declaration_context: List[ContextItem],
+        formal_parameters: List[FormalDeclaration] = None,
+    ) -> PackageUnit:
+        for p in reversed(CONFIGURATION_PRAGMAS):
+            declaration_context.insert(0, p)
+
+        unit = PackageUnit(
+            declaration_context,
+            PackageDeclaration(self.prefix * name, formal_parameters=formal_parameters),
+            list(CONFIGURATION_PRAGMAS),
+            PackageBody(self.prefix * name),
+        )
+        self.units[name] = unit
+
+        return unit
+
+    def __create_instantiation_unit(
+        self, name: ID, context: List[ContextItem], instantiation: GenericPackageInstantiation,
+    ) -> InstantiationUnit:
+        for p in reversed(CONFIGURATION_PRAGMAS):
+            context.insert(0, p)
+
+        unit = InstantiationUnit(context, instantiation)
+        self.units[name] = unit
+
+        return unit
 
     # pylint: disable=too-many-statements
     def __create_generic_message_unit(self, message: Message) -> None:
@@ -228,16 +254,11 @@ class Generator:
 
         context.append(WithClause(self.prefix * const.GENERIC_TYPES_PACKAGE))
 
-        unit_name = generic_name(self.prefix * message.identifier)
+        unit_name = generic_name(message.identifier)
         parameters: List[FormalDeclaration] = [
             FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE),
         ]
-        unit = PackageUnit(
-            context,
-            PackageDeclaration(unit_name, formal_parameters=parameters),
-            PackageBody(unit_name),
-        )
-        self.units[unit_name] = unit
+        unit = self.__create_unit(unit_name, context, parameters)
 
         for field_type in message.types.values():
             if field_type.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
@@ -1968,27 +1989,22 @@ class Generator:
             self.prefix * message.identifier, name, [self.prefix * const.TYPES_PACKAGE] + arrays
         )
 
-        self.units[message.identifier] = InstantiationUnit(context, instantiation)
+        self.__create_instantiation_unit(message.identifier, context, instantiation)
 
     def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
-        unit_name = generic_name(self.prefix * refinement.package * const.REFINEMENT_PACKAGE)
+        unit_name = generic_name(refinement.package * const.REFINEMENT_PACKAGE)
 
         if unit_name in self.units:
             unit = self.units[unit_name]
-
         else:
-            unit = PackageUnit(
+            unit = self.__create_unit(
+                unit_name,
                 [WithClause(self.prefix * const.GENERIC_TYPES_PACKAGE)],
-                PackageDeclaration(
-                    unit_name,
-                    formal_parameters=[
-                        FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE)
-                    ],
-                ),
-                PackageBody(unit_name),
+                formal_parameters=[
+                    FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE)
+                ],
             )
             unit += self.__create_specification_pragmas(generic_name(const.REFINEMENT_PACKAGE))
-            self.units[unit_name] = unit
 
         null_sdu = not refinement.sdu.fields
 
@@ -2005,7 +2021,7 @@ class Generator:
                 else refinement.pdu.package
             )
 
-            unit.context.extend(
+            unit.declaration_context.extend(
                 [
                     WithClause(self.prefix * pdu_package),
                     UsePackageClause(self.prefix * pdu_package),
@@ -2018,7 +2034,7 @@ class Generator:
             else generic_name(refinement.pdu.identifier)
         )
 
-        unit.context.append(WithClause(generic_pdu_name))
+        unit.declaration_context.append(WithClause(generic_pdu_name))
         unit.declaration.formal_parameters.append(
             FormalPackageDeclaration(
                 flat_name(refinement.pdu.full_name), generic_pdu_name, ["Types", "others => <>"]
@@ -2032,7 +2048,7 @@ class Generator:
         )
 
         if not null_sdu:
-            unit.context.append(WithClause(generic_sdu_name))
+            unit.declaration_context.append(WithClause(generic_sdu_name))
             unit.declaration.formal_parameters.append(
                 FormalPackageDeclaration(
                     flat_name(refinement.sdu.full_name), generic_sdu_name, ["Types", "others => <>"]
@@ -2066,8 +2082,7 @@ class Generator:
             instantiation = GenericPackageInstantiation(
                 self.prefix * unit_name, generic_unit_name, [self.prefix * const.TYPES_PACKAGE]
             )
-            unit = InstantiationUnit(context, instantiation)
-            self.units[unit_name] = unit
+            unit = self.__create_instantiation_unit(unit_name, context, instantiation)
 
         null_sdu = not refinement.sdu.fields
 
@@ -2159,7 +2174,7 @@ class Generator:
         else:
             assert False, 'unexpected element type "{type(element_type)}"'
 
-        self.units[array_package.identifier] = InstantiationUnit(array_context, array_package)
+        self.__create_instantiation_unit(array_package.identifier, array_context, array_package)
 
     def __range_functions(self, integer: RangeInteger) -> SubprogramUnitPart:
         specification: List[Subprogram] = []

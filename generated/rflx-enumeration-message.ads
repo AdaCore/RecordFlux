@@ -1,3 +1,4 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma SPARK_Mode;
 with RFLX.Enumeration.Generic_Message;
 with RFLX.RFLX_Types;

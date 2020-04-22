@@ -1,3 +1,4 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 with RFLX.RFLX_Generic_Types;
 with RFLX.RFLX_Message_Sequence;
 

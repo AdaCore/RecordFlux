@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body {prefix}RFLX_Scalar_Sequence with
   SPARK_Mode
 is

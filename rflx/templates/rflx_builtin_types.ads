@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package {prefix}RFLX_Builtin_Types with
   SPARK_Mode
 is

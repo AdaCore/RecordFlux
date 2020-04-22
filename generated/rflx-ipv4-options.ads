@@ -1,3 +1,4 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma SPARK_Mode;
 with RFLX.RFLX_Message_Sequence;
 with RFLX.IPv4.Option;

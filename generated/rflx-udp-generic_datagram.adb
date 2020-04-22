@@ -1,3 +1,5 @@
+pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 package body RFLX.UDP.Generic_Datagram with
   SPARK_Mode
 is

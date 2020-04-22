@@ -60,13 +60,13 @@ class TestGenerator(unittest.TestCase):
     def assert_specification(self, generator: Generator) -> None:
         for unit in generator.units.values():
             with open(f"{self.testdir}/{unit.name}.ads", "r") as f:
-                self.assertEqual(unit.specification, f.read(), unit.name)
+                self.assertEqual(unit.ads, f.read(), unit.name)
 
     def assert_body(self, generator: Generator) -> None:
         for unit in generator.units.values():
-            if unit.body:
+            if unit.adb:
                 with open(f"{self.testdir}/{unit.name}.adb", "r") as f:
-                    self.assertEqual(unit.body, f.read(), unit.name)
+                    self.assertEqual(unit.adb, f.read(), unit.name)
 
     def test_invalid_prefix(self) -> None:
         with self.assertRaisesRegex(AssertionError, 'empty part in identifier "A..B"'):
