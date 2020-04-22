@@ -1,6 +1,8 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
-package {prefix}RFLX_Builtin_Types.Conversions is
+package {prefix}RFLX_Builtin_Types.Conversions with
+  SPARK_Mode
+is
 
    pragma Annotate (GNATprove, Terminating, Conversions);
 
