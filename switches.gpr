@@ -16,6 +16,9 @@ is
       "-gnatwa",   --  Activate most optional warnings.
       "-gnatw.d",  --  Activate tagging of warning and info messages.
       "-gnatwe",   --  Treat all run-time exception warnings as errors.
+      "-gnatwd",   --  Activate warnings on implicit dereferencing.
+      "-gnatwh",   --  Activate warnings on hiding.
+      "-gnatwt",   --  Activate warnings for tracking of deleted conditional code.
 
       --  Style Checks
       "-gnaty3",    --  Specify indentation level.

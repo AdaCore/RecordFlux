@@ -1,3 +1,5 @@
+pragma Warnings (Off, "h");
+
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;

@@ -98,7 +98,7 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Last = Ctx.Last'Old
-          and Cursors (Ctx) = Cursors (Ctx)'Old;
+          and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
 
    function Has_Buffer (Ctx : Context) return Boolean with
      Pre =>
@@ -304,7 +304,7 @@ is
           and Predecessor (Ctx, F_Source) = Predecessor (Ctx, F_Source)'Old
           and Valid_Next (Ctx, F_Source) = Valid_Next (Ctx, F_Source)'Old
           and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-          and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old;
+          and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old;
 
    procedure Set_Type_Length_TPID (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) with
      Pre =>
@@ -338,8 +338,8 @@ is
           and Valid_Next (Ctx, F_Type_Length_TPID) = Valid_Next (Ctx, F_Type_Length_TPID)'Old
           and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
           and Get_Source (Ctx) = Get_Source (Ctx)'Old
-          and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old
-          and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old;
+          and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old
+          and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old;
 
    procedure Set_TPID (Ctx : in out Context; Val : RFLX.Ethernet.TPID) with
      Pre =>
@@ -369,9 +369,9 @@ is
           and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
           and Get_Source (Ctx) = Get_Source (Ctx)'Old
           and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
-          and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old
-          and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old
-          and Cursor (Ctx, F_Type_Length_TPID) = Cursor (Ctx, F_Type_Length_TPID)'Old;
+          and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old
+          and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old
+          and Context_Cursor (Ctx, F_Type_Length_TPID) = Context_Cursor (Ctx, F_Type_Length_TPID)'Old;
 
    procedure Set_TCI (Ctx : in out Context; Val : RFLX.Ethernet.TCI) with
      Pre =>
@@ -401,10 +401,10 @@ is
           and Get_Source (Ctx) = Get_Source (Ctx)'Old
           and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
           and Get_TPID (Ctx) = Get_TPID (Ctx)'Old
-          and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old
-          and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old
-          and Cursor (Ctx, F_Type_Length_TPID) = Cursor (Ctx, F_Type_Length_TPID)'Old
-          and Cursor (Ctx, F_TPID) = Cursor (Ctx, F_TPID)'Old;
+          and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old
+          and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old
+          and Context_Cursor (Ctx, F_Type_Length_TPID) = Context_Cursor (Ctx, F_Type_Length_TPID)'Old
+          and Context_Cursor (Ctx, F_TPID) = Context_Cursor (Ctx, F_TPID)'Old;
 
    procedure Set_Type_Length (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) with
      Pre =>
@@ -436,11 +436,11 @@ is
           and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
           and Get_Source (Ctx) = Get_Source (Ctx)'Old
           and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
-          and Cursor (Ctx, F_Destination) = Cursor (Ctx, F_Destination)'Old
-          and Cursor (Ctx, F_Source) = Cursor (Ctx, F_Source)'Old
-          and Cursor (Ctx, F_Type_Length_TPID) = Cursor (Ctx, F_Type_Length_TPID)'Old
-          and Cursor (Ctx, F_TPID) = Cursor (Ctx, F_TPID)'Old
-          and Cursor (Ctx, F_TCI) = Cursor (Ctx, F_TCI)'Old;
+          and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old
+          and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old
+          and Context_Cursor (Ctx, F_Type_Length_TPID) = Context_Cursor (Ctx, F_Type_Length_TPID)'Old
+          and Context_Cursor (Ctx, F_TPID) = Context_Cursor (Ctx, F_TPID)'Old
+          and Context_Cursor (Ctx, F_TCI) = Context_Cursor (Ctx, F_TCI)'Old;
 
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
@@ -549,12 +549,12 @@ is
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -727,10 +727,10 @@ private
    function Valid_Context (Ctx : Context) return Boolean is
      (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 
-   function Cursors (Ctx : Context) return Field_Cursors is
+   function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
 end RFLX.Ethernet.Generic_Frame;

@@ -44,6 +44,6 @@ is
           and Ethernet_Frame_Context.Buffer_First = Ethernet_Frame_Context.Buffer_First'Old
           and Ethernet_Frame_Context.Buffer_Last = Ethernet_Frame_Context.Buffer_Last'Old
           and Ethernet_Frame_Context.First = Ethernet_Frame_Context.First'Old
-          and Ethernet_Frame.Cursors (Ethernet_Frame_Context) = Ethernet_Frame.Cursors (Ethernet_Frame_Context)'Old;
+          and Ethernet_Frame.Context_Cursors (Ethernet_Frame_Context) = Ethernet_Frame.Context_Cursors (Ethernet_Frame_Context)'Old;
 
 end RFLX.In_Ethernet.Generic_Contains;

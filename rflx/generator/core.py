@@ -828,7 +828,10 @@ class Generator:
                                 Equal(Variable("Ctx.Buffer_First"), First("Buffer")),
                                 Equal(Variable("Ctx.Buffer_Last"), Last("Buffer")),
                                 *context_invariant,
-                                *[Equal(e, Old(e)) for e in [Call("Cursors", [Variable("Ctx")])]],
+                                *[
+                                    Equal(e, Old(e))
+                                    for e in [Call("Context_Cursors", [Variable("Ctx")])]
+                                ],
                             )
                         ),
                     ],
@@ -1616,7 +1619,10 @@ class Generator:
                                         ),
                                     ]
                                     + [
-                                        Call("Cursor", [Variable("Ctx"), Variable(p.affixed_name)])
+                                        Call(
+                                            "Context_Cursor",
+                                            [Variable("Ctx"), Variable(p.affixed_name)],
+                                        )
                                         for p in message.predecessors(f)
                                     ]
                                 ],
@@ -1631,12 +1637,12 @@ class Generator:
                                     *[
                                         Equal(
                                             Call(
-                                                "Cursor",
+                                                "Context_Cursor",
                                                 [Variable("Ctx"), Variable(s.affixed_name)],
                                             ),
                                             Old(
                                                 Call(
-                                                    "Cursor",
+                                                    "Context_Cursor",
                                                     [Variable("Ctx"), Variable(s.affixed_name)],
                                                 )
                                             ),
@@ -1771,7 +1777,10 @@ class Generator:
                                         ),
                                     ]
                                     + [
-                                        Call("Cursor", [Variable("Ctx"), Variable(o.affixed_name)])
+                                        Call(
+                                            "Context_Cursor",
+                                            [Variable("Ctx"), Variable(o.affixed_name)],
+                                        )
                                         for o in message.fields
                                         if o != f
                                     ]
@@ -1936,7 +1945,9 @@ class Generator:
     @staticmethod
     def __create_cursor_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Cursor", "Field_Cursor", [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
+            "Context_Cursor",
+            "Field_Cursor",
+            [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
         return UnitPart(
@@ -1956,7 +1967,7 @@ class Generator:
     @staticmethod
     def __create_cursors_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Cursors", "Field_Cursors", [Parameter(["Ctx"], "Context")]
+            "Context_Cursors", "Field_Cursors", [Parameter(["Ctx"], "Context")]
         )
 
         return UnitPart(
@@ -2437,7 +2448,9 @@ class Generator:
                                         Selected(Variable(pdu_context), "Buffer_First"),
                                         Selected(Variable(pdu_context), "Buffer_Last"),
                                         Selected(Variable(pdu_context), "First"),
-                                        Call(f"{pdu_name}.Cursors", [Variable(pdu_context)]),
+                                        Call(
+                                            f"{pdu_name}.Context_Cursors", [Variable(pdu_context)]
+                                        ),
                                     ]
                                 ],
                             )

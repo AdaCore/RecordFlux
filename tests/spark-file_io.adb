@@ -9,7 +9,9 @@ is
      (Read_File_Ptr (Name).all);
 
    function Read_File_Ptr (Name : String) return Bytes_Ptr is
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
       package Byte_IO is new Ada.Sequential_IO (Byte);
+      pragma Warnings (On, "this code can never be executed and has been deleted");
       Input_File : Byte_IO.File_Type;
       Buffer : constant Bytes_Ptr := new Bytes (1 .. Index (Ada.Directories.Size (Name)));
       Value : Byte := 0;
@@ -19,7 +21,7 @@ is
       while not Byte_IO.End_Of_File (Input_File) loop
          I := I + 1;
          Byte_IO.Read (Input_File, Value);
-         Buffer (I) := Value;
+         Buffer.all (I) := Value;
       end loop;
       Byte_IO.Close (Input_File);
       return Buffer;

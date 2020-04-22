@@ -21,18 +21,18 @@ package body RFLX.Enumeration.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(32, 0);
-      Context  : Enumeration.Message.Context := Enumeration.Message.Create;
-      Priority : Enumeration.Priority;
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(32, 0);
+      Context : Enumeration.Message.Context := Enumeration.Message.Create;
+      Prio    : Enumeration.Priority;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
 
       Enumeration.Message.Verify_Message (Context);
 
       if Enumeration.Message.Valid (Context, Enumeration.Message.F_Priority) then
-         Priority := Enumeration.Message.Get_Priority (Context);
-         if Priority.Known then
-            Assert (Priority.Enum'Image, Enumeration.Priority_Enum'Image (Enumeration.LOW), "Unexpected Priority");
+         Prio := Enumeration.Message.Get_Priority (Context);
+         if Prio.Known then
+            Assert (Prio.Enum'Image, Enumeration.Priority_Enum'Image (Enumeration.LOW), "Unexpected Priority");
          else
             Assert (False, "Invalid Priority.Known");
          end if;
@@ -46,20 +46,20 @@ package body RFLX.Enumeration.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(160, 0);
-      Context  : Enumeration.Message.Context := Enumeration.Message.Create;
-      Priority : Enumeration.Priority;
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(160, 0);
+      Context : Enumeration.Message.Context := Enumeration.Message.Create;
+      Prio    : Enumeration.Priority;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
 
       Enumeration.Message.Verify_Message (Context);
 
       if Enumeration.Message.Valid (Context, Enumeration.Message.F_Priority) then
-         Priority := Enumeration.Message.Get_Priority (Context);
-         if Priority.Known then
+         Prio := Enumeration.Message.Get_Priority (Context);
+         if Prio.Known then
             Assert (False, "Invalid Priority.Known");
          else
-            Assert (Priority.Raw'Image, Enumeration.Priority_Base'Image (5), "Unexpected Priority");
+            Assert (Prio.Raw'Image, Enumeration.Priority_Base'Image (5), "Unexpected Priority");
          end if;
       else
          Assert (False, "Invalid Priority");
