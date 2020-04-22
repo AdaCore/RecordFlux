@@ -90,7 +90,7 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Last = Ctx.Last'Old
-          and Cursors (Ctx) = Cursors (Ctx)'Old;
+          and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
 
    function Has_Buffer (Ctx : Context) return Boolean with
      Pre =>
@@ -264,7 +264,7 @@ is
           and Ctx.First = Ctx.First'Old
           and Predecessor (Ctx, F_Messages) = Predecessor (Ctx, F_Messages)'Old
           and Path_Condition (Ctx, F_Messages) = Path_Condition (Ctx, F_Messages)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old,
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old,
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Messages) =>
            True,
@@ -294,19 +294,19 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
           and Field_Length (Ctx, F_Messages) = Field_Length (Ctx, F_Messages)'Old
-          and Cursor (Ctx, F_Length) = Cursor (Ctx, F_Length)'Old;
+          and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old;
 
    function Valid_Context (Ctx : Context) return Boolean with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -393,10 +393,10 @@ private
    function Valid_Context (Ctx : Context) return Boolean is
      (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 
-   function Cursors (Ctx : Context) return Field_Cursors is
+   function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
 end RFLX.Arrays.Generic_Messages_Message;

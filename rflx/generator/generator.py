@@ -287,10 +287,13 @@ class GeneratorGenerator:
                                 *self.setter_postconditions(message, f),
                                 *[
                                     Equal(
-                                        Call("Cursor", [Variable("Ctx"), Variable(p.affixed_name)]),
+                                        Call(
+                                            "Context_Cursor",
+                                            [Variable("Ctx"), Variable(p.affixed_name)],
+                                        ),
                                         Old(
                                             Call(
-                                                "Cursor",
+                                                "Context_Cursor",
                                                 [Variable("Ctx"), Variable(p.affixed_name)],
                                             )
                                         ),

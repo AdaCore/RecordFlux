@@ -90,7 +90,7 @@ is
           and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
           and Ctx.First = Ctx.First'Old
           and Ctx.Last = Ctx.Last'Old
-          and Cursors (Ctx) = Cursors (Ctx)'Old;
+          and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
 
    function Has_Buffer (Ctx : Context) return Boolean with
      Pre =>
@@ -269,7 +269,7 @@ is
           and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
           and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
           and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-          and Cursor (Ctx, F_Tag) = Cursor (Ctx, F_Tag)'Old;
+          and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old;
 
    generic
       with procedure Process_Value (Value : out Types.Bytes);
@@ -320,12 +320,12 @@ is
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -425,10 +425,10 @@ private
    function Valid_Context (Ctx : Context) return Boolean is
      (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));
 
-   function Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 
-   function Cursors (Ctx : Context) return Field_Cursors is
+   function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
 end RFLX.TLV.Generic_Message;
