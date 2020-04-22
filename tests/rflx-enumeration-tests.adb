@@ -71,7 +71,8 @@ package body RFLX.Enumeration.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
+      Expected : constant RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context  : Enumeration.Message.Context := Enumeration.Message.Create;
    begin
@@ -84,8 +85,13 @@ package body RFLX.Enumeration.Tests is
 
       Enumeration.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1),
+              Expected'Length'Img,
+              "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+              Expected.all,
+              "Invalid binary representation");
    end Test_Generating_Enumeration;
 
    overriding

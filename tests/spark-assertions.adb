@@ -32,7 +32,9 @@ is
          Assert (False, Message & ": lengths different");
       end if;
       for I in RFLX.RFLX_Builtin_Types.Length range 1 .. Actual'Length loop
-         Assert (Actual (Actual'First + I - 1)'Image, Expected (Expected'First + I - 1)'Image, Message & ": byte" & I'Image);
+         Assert (Actual (Actual'First + I - 1)'Image,
+                 Expected (Expected'First + I - 1)'Image,
+                 Message & ": byte" & I'Image);
       end loop;
    end Assert;
 

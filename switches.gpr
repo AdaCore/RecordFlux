@@ -31,6 +31,8 @@ is
       "-gnatyI",    --  Check mode IN keywords.
       "-gnatyk",    --  Check keyword casing.
       "-gnatyl",    --  Check layout.
+      "-gnatyL9",   --  Set maximum nesting level.
+      "-gnatyM120", --  Set maximum line length.
       "-gnatyn",    --  Check casing of entities in Standard.
       "-gnatyO",    --  Check that overriding subprograms are explicitly marked as such.
       "-gnatyp",    --  Check pragma casing.

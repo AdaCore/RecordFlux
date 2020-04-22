@@ -1,3 +1,5 @@
+pragma Style_Checks ("L18");
+
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
@@ -34,7 +36,8 @@ package body RFLX.IPv4.Tests is
 
    procedure Get_Option_Data_Length is new IPv4.Option.Get_Option_Data (Store_Option_Data_Length);
 
-   Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 23) := (others => 0);
+   Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 23) :=
+     (others => 0);
 
    procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) is
    begin
@@ -119,7 +122,8 @@ package body RFLX.IPv4.Tests is
                                  Assert (Valid, "Invalid Fragment_Offset");
                                  if Valid then
                                     Fragment_Offset := IPv4.Packet.Get_Fragment_Offset (Context);
-                                    Assert (Fragment_Offset'Image, IPv4.Fragment_Offset'Image (0), "Invalid Fragment_Offset");
+                                    Assert (Fragment_Offset'Image, IPv4.Fragment_Offset'Image (0),
+                                            "Invalid Fragment_Offset");
                                     Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_TTL);
                                     Assert (Valid, "Invalid TTL");
                                     if Valid then
@@ -131,28 +135,33 @@ package body RFLX.IPv4.Tests is
                                           Protocol := IPv4.Packet.Get_Protocol (Context);
                                           Assert (Protocol.Known, "Unknown Protocol");
                                           if Protocol.Known then
-                                             Assert (Protocol.Enum'Image, IPv4.Protocol_Enum'Image (IPv4.PROTOCOL_UDP), "Invalid Protocol");
+                                             Assert (Protocol.Enum'Image, IPv4.Protocol_Enum'Image (IPv4.PROTOCOL_UDP),
+                                                     "Invalid Protocol");
                                           end if;
                                           Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_Header_Checksum);
                                           Assert (Valid, "Invalid Header_Checksum");
                                           if Valid then
                                              Header_Checksum := IPv4.Packet.Get_Header_Checksum (Context);
-                                             Assert (Header_Checksum'Image, IPv4.Header_Checksum'Image (16#7CBE#), "Invalid Header_Checksum");
+                                             Assert (Header_Checksum'Image, IPv4.Header_Checksum'Image (16#7CBE#),
+                                                     "Invalid Header_Checksum");
                                              Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_Source);
                                              Assert (Valid, "Invalid Source");
                                              if Valid then
                                                 Source := IPv4.Packet.Get_Source (Context);
-                                                Assert (Source'Image, IPv4.Address'Image (16#7f000001#), "Invalid Source");
+                                                Assert (Source'Image, IPv4.Address'Image (16#7f000001#),
+                                                        "Invalid Source");
                                                 Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_Destination);
                                                 Assert (Valid, "Invalid Destination");
                                                 if Valid then
                                                    Destination := IPv4.Packet.Get_Destination (Context);
-                                                   Assert (Destination'Image, IPv4.Address'Image (16#7f000001#), "Invalid Destination");
+                                                   Assert (Destination'Image, IPv4.Address'Image (16#7f000001#),
+                                                           "Invalid Destination");
                                                    Valid := IPv4.Packet.Present (Context, IPv4.Packet.F_Payload);
                                                    Assert (Valid, "Invalid Payload");
                                                    if Valid then
                                                       Get_Payload_Length (Context);
-                                                      Assert (Payload_Length'Img, Natural'Image (24), "Invalid Payload length");
+                                                      Assert (Payload_Length'Img, Natural'Image (24),
+                                                              "Invalid Payload length");
                                                    end if;
                                                 end if;
                                              end if;
@@ -252,7 +261,8 @@ package body RFLX.IPv4.Tests is
 --
 --              IPv4.Options.Switch (Sequence_Context, Element_Context);
 --              IPv4.Option.Verify_Message (Element_Context);
---              Assert (IPv4.Option.Structural_Valid_Message (Element_Context), "Structural invalid IPv4 Option " & I'Image);
+--              Assert (IPv4.Option.Structural_Valid_Message (Element_Context),
+--                      "Structural invalid IPv4 Option " & I'Image);
 --              IPv4.Options.Update (Sequence_Context, Element_Context);
 --
 --              I := I + 1;
@@ -271,7 +281,9 @@ package body RFLX.IPv4.Tests is
       pragma Unreferenced (T);
       procedure Set_Payload is new IPv4.Packet.Set_Payload (Write_Data);
       Expected        : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
-      Buffer          : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 => 0);
+      Buffer          : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
+                                      .. RFLX_Builtin_Types.Index'First + 2000 => 0);
       Context         : IPv4.Packet.Context := IPv4.Packet.Create;
    begin
       IPv4.Packet.Initialize (Context, Buffer);
@@ -298,8 +310,11 @@ package body RFLX.IPv4.Tests is
 
       IPv4.Packet.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+              "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+              "Invalid binary representation");
    end Test_Generating_IPv4;
 
    procedure Test_Generating_IPv4_Option (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -324,8 +339,11 @@ package body RFLX.IPv4.Tests is
 
       IPv4.Option.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last) - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+              "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+              "Invalid binary representation");
    end Test_Generating_IPv4_Option;
 
    overriding
@@ -334,7 +352,8 @@ package body RFLX.IPv4.Tests is
    begin
       Register_Routine (T, Test_Parsing_IPv4'Access, "Parsing IPv4");
       Register_Routine (T, Test_Parsing_IPv4_Option'Access, "Parsing IPv4 Option");
-      --  Register_Routine (T, Test_Parsing_IPv4_With_Options'Access, "IPv4 with Options (Loop)");  --  ISSUE: Componolit/RecordFlux#61
+      --  ISSUE: Componolit/RecordFlux#61
+      --  Register_Routine (T, Test_Parsing_IPv4_With_Options'Access, "IPv4 with Options (Loop)");
       Register_Routine (T, Test_Generating_IPv4'Access, "Generating IPv4");
       Register_Routine (T, Test_Generating_IPv4_Option'Access, "Generating IPv4 Option");
    end Register_Tests;
