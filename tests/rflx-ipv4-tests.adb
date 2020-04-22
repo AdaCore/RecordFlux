@@ -9,6 +9,7 @@ with RFLX.IPv4.Option;
 
 package body RFLX.IPv4.Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
@@ -43,7 +44,7 @@ package body RFLX.IPv4.Tests is
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
 
-   procedure Test_Parsing_IPv4 (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_IPv4 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -173,7 +174,7 @@ package body RFLX.IPv4.Tests is
       Assert (Valid, "Invalid packet");
    end Test_Parsing_IPv4;
 
-   procedure Test_Parsing_IPv4_Option (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_IPv4_Option (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -225,7 +226,7 @@ package body RFLX.IPv4.Tests is
 
    --  ISSUE: Componolit/RecordFlux#61
 
---     procedure Test_Parsing_IPv4_With_Options (T : in out Aunit.Test_Cases.Test_Case'Class) with
+--     procedure Test_Parsing_IPv4_With_Options (T : in out AUnit.Test_Cases.Test_Case'Class) with
 --       SPARK_Mode, Pre => True
 --     is
 --        pragma Unreferenced (T);
@@ -264,7 +265,7 @@ package body RFLX.IPv4.Tests is
 --        Assert (Valid, "Invalid packet");
 --     end Test_Parsing_IPv4_With_Options;
 
-   procedure Test_Generating_IPv4 (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_IPv4 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -301,7 +302,7 @@ package body RFLX.IPv4.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_IPv4;
 
-   procedure Test_Generating_IPv4_Option (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_IPv4_Option (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -327,6 +328,7 @@ package body RFLX.IPv4.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_IPv4_Option;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin

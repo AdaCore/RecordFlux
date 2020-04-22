@@ -13,8 +13,32 @@ is
       "-gnata",         --  Enable assertions.
 
       --  Warnings
-      "-gnatwa",  --  Activate most optional warnings.
+      "-gnatwa",   --  Activate most optional warnings.
       "-gnatw.d",  --  Activate tagging of warning and info messages.
+      "-gnatwe",   --  Treat all run-time exception warnings as errors.
+
+      --  Style Checks
+      "-gnaty3",    --  Specify indentation level.
+      "-gnatya",    --  Check attribute casing.
+      "-gnatyA",    --  Use of array index numbers in array attributes.
+      "-gnatyb",    --  Blanks not allowed at statement end.
+      "-gnatyc",    --  Check comments, double space.
+      "-gnatyd",    --  Check no DOS line terminators present.
+      "-gnatye",    --  Check end/exit labels.
+      "-gnatyf",    --  No form feeds or vertical tabs.
+      "-gnatyh",    --  No horizontal tabs.
+      "-gnatyi",    --  Check if-then layout.
+      "-gnatyI",    --  Check mode IN keywords.
+      "-gnatyk",    --  Check keyword casing.
+      "-gnatyl",    --  Check layout.
+      "-gnatyn",    --  Check casing of entities in Standard.
+      "-gnatyO",    --  Check that overriding subprograms are explicitly marked as such.
+      "-gnatyp",    --  Check pragma casing.
+      "-gnatyr",    --  Check references.
+      "-gnatyS",    --  Check no statements after then/else.
+      "-gnatyt",    --  Check token spacing.
+      "-gnatyu",    --  Check unnecessary blank lines.
+      "-gnatyx",    --  Check extra parentheses.
 
       ""
    );

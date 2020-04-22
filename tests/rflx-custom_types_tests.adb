@@ -2,13 +2,14 @@ with RFLX.RFLX_Generic_Types;
 
 package body RFLX.Custom_Types_Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
       return AUnit.Format ("Custom_Types");
    end Name;
 
-   procedure Test_Index_6_Modular (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Index_6_Modular (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -34,7 +35,7 @@ package body RFLX.Custom_Types_Tests is
       null;
    end Test_Index_6_Modular;
 
-   procedure Test_Index_18_Range (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Index_18_Range (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -60,7 +61,7 @@ package body RFLX.Custom_Types_Tests is
       null;
    end Test_Index_18_Range;
 
-   procedure Test_Index_60_Enum (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Index_60_Enum (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -85,7 +86,7 @@ package body RFLX.Custom_Types_Tests is
       null;
    end Test_Index_60_Enum;
 
-   procedure Test_String (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_String (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -105,6 +106,7 @@ package body RFLX.Custom_Types_Tests is
       null;
    end Test_String;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
