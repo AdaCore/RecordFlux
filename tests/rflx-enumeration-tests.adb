@@ -7,6 +7,7 @@ with RFLX.Enumeration.Message;
 
 package body RFLX.Enumeration.Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
@@ -16,7 +17,7 @@ package body RFLX.Enumeration.Tests is
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
 
-   procedure Test_Parsing_Enumeration_Known (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Enumeration_Known (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -41,7 +42,7 @@ package body RFLX.Enumeration.Tests is
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid Message");
    end Test_Parsing_Enumeration_Known;
 
-   procedure Test_Parsing_Enumeration_Unknown (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Enumeration_Unknown (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -66,7 +67,7 @@ package body RFLX.Enumeration.Tests is
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid Message");
    end Test_Parsing_Enumeration_Unknown;
 
-   procedure Test_Generating_Enumeration (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_Enumeration (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -87,6 +88,7 @@ package body RFLX.Enumeration.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Enumeration;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin

@@ -5,13 +5,14 @@ with RFLX.RFLX_Types; use RFLX.RFLX_Types;
 
 package body RFLX.Builtin_Types_Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
       return AUnit.Format ("Builtin_Types");
    end Name;
 
-   procedure Test_Index_Calculations (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Index_Calculations (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -44,7 +45,7 @@ package body RFLX.Builtin_Types_Tests is
    --  which could affect the ability to prove the precondition of the Extract function.
    function Dynamic_Offset is new Identity (Offset);
 
-   procedure Test_Extract_Modular_Integer (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Extract_Modular_Integer (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -93,7 +94,7 @@ package body RFLX.Builtin_Types_Tests is
       Assert (R8'Image, U8'Image (255), "Invalid conversion with offset 0");
    end Test_Extract_Modular_Integer;
 
-   procedure Test_Extract_Range_Integer (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Extract_Range_Integer (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -132,7 +133,7 @@ package body RFLX.Builtin_Types_Tests is
       Assert (R8'Image, U8'Image (255), "Invalid conversion with offset 0");
    end Test_Extract_Range_Integer;
 
-   procedure Test_Insert_Modular_Integer (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Insert_Modular_Integer (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -240,6 +241,7 @@ package body RFLX.Builtin_Types_Tests is
       Assert (Buffer, (250, 170, 255), "Invalid insertion of U13 in filled buffer with offset 7");
    end Test_Insert_Modular_Integer;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin

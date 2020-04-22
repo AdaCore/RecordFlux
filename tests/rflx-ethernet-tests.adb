@@ -8,6 +8,7 @@ with RFLX.Ethernet.Frame;
 
 package body RFLX.Ethernet.Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
@@ -31,7 +32,7 @@ package body RFLX.Ethernet.Tests is
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
 
-   procedure Test_Parsing_Ethernet_II (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Ethernet_II (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -81,7 +82,7 @@ package body RFLX.Ethernet.Tests is
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
    end Test_Parsing_Ethernet_II;
 
-   procedure Test_Parsing_IEEE_802_3 (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_IEEE_802_3 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -131,7 +132,7 @@ package body RFLX.Ethernet.Tests is
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
    end Test_Parsing_IEEE_802_3;
 
-   procedure Test_Parsing_Ethernet_II_VLAN (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Ethernet_II_VLAN (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -155,10 +156,10 @@ package body RFLX.Ethernet.Tests is
             Source := Ethernet.Frame.Get_Source (Context);
             Assert (Source'Image, Ethernet.Address'Image (16#000000000000#), "Invalid Source");
             if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_TPID) then
-               TPID := Ethernet.Frame.Get_Tpid (Context);
+               TPID := Ethernet.Frame.Get_TPID (Context);
                Assert (TPID'Image, Ethernet.TPID'Image (16#8100#), "Invalid TPID");
                if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_TCI) then
-                  TCI := Ethernet.Frame.Get_Tci (Context);
+                  TCI := Ethernet.Frame.Get_TCI (Context);
                   Assert (TCI'Image, Ethernet.TCI'Image (1), "Invalid TCI");
                   if Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Type_Length) then
                      Type_Length := Ethernet.Frame.Get_Type_Length (Context);
@@ -177,7 +178,7 @@ package body RFLX.Ethernet.Tests is
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
    end Test_Parsing_Ethernet_II_VLAN;
 
-   procedure Test_Parsing_Invalid_Ethernet_II_Too_Short (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Invalid_Ethernet_II_Too_Short (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -193,7 +194,7 @@ package body RFLX.Ethernet.Tests is
       Assert (not Ethernet.Frame.Incomplete_Message (Context), "Incomplete frame");
    end Test_Parsing_Invalid_Ethernet_II_Too_Short;
 
-   procedure Test_Parsing_Invalid_Ethernet_II_Too_Long (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Invalid_Ethernet_II_Too_Long (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -209,7 +210,7 @@ package body RFLX.Ethernet.Tests is
       Assert (not Ethernet.Frame.Incomplete_Message (Context), "Incomplete frame");
    end Test_Parsing_Invalid_Ethernet_II_Too_Long;
 
-   procedure Test_Parsing_Invalid_Ethernet_II_Undefined_Type (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Invalid_Ethernet_II_Undefined_Type (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -225,7 +226,7 @@ package body RFLX.Ethernet.Tests is
       Assert (not Ethernet.Frame.Incomplete_Message (Context), "Incomplete frame");
    end Test_Parsing_Invalid_Ethernet_II_Undefined_Type;
 
-   procedure Test_Parsing_Invalid_IEEE_802_3_Invalid_Length (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Invalid_IEEE_802_3_Invalid_Length (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -241,7 +242,7 @@ package body RFLX.Ethernet.Tests is
       Assert (Ethernet.Frame.Incomplete_Message (Context), "Not incomplete frame");
    end Test_Parsing_Invalid_IEEE_802_3_Invalid_Length;
 
-   procedure Test_Parsing_Incomplete (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Incomplete (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -262,7 +263,7 @@ package body RFLX.Ethernet.Tests is
       Assert (Ethernet.Frame.Incomplete_Message (Context), "Not incomplete frame");
    end Test_Parsing_Incomplete;
 
-   procedure Test_Generating_Ethernet_II (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_Ethernet_II (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -289,7 +290,7 @@ package body RFLX.Ethernet.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Ethernet_II;
 
-   procedure Test_Generating_IEEE_802_3 (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_IEEE_802_3 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -316,7 +317,7 @@ package body RFLX.Ethernet.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_IEEE_802_3;
 
-   procedure Test_Generating_Ethernet_II_VLAN (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_Ethernet_II_VLAN (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -345,7 +346,7 @@ package body RFLX.Ethernet.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Ethernet_II_VLAN;
 
-   procedure Test_Generating_Ethernet_II_VLAN_Dynamic (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_Ethernet_II_VLAN_Dynamic (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -387,6 +388,7 @@ package body RFLX.Ethernet.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Ethernet_II_VLAN_Dynamic;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin

@@ -11,6 +11,7 @@ with RFLX.Arrays.AV_Enumeration_Vector;
 
 package body RFLX.Derivation.Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
@@ -26,7 +27,7 @@ package body RFLX.Derivation.Tests is
    pragma Warnings (Off, "unused assignment to ""Enumeration_Vector_Context""");
    pragma Warnings (Off, "unused assignment to ""AV_Enumeration_Vector_Context""");
 
-   procedure Test_Parsing_Derivation_Modular_Sequential (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Derivation_Modular_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -78,7 +79,7 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Modular_Sequential;
 
-   procedure Test_Parsing_Derivation_Modular_Loop (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Derivation_Modular_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -134,7 +135,7 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Modular_Loop;
 
-   procedure Test_Parsing_Derivation_Range_Sequential (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Derivation_Range_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -187,7 +188,7 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Range_Sequential;
 
-   procedure Test_Parsing_Derivation_Range_Loop (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Derivation_Range_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -243,7 +244,7 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Range_Loop;
 
-   procedure Test_Parsing_Derivation_Enumeration_Sequential (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Derivation_Enumeration_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -296,7 +297,7 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Enumeration_Sequential;
 
-   procedure Test_Parsing_Derivation_Enumeration_Loop (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Derivation_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -352,7 +353,7 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Enumeration_Loop;
 
-   procedure Test_Parsing_Arrays_AV_Enumeration_Sequential (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Arrays_AV_Enumeration_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -413,7 +414,7 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
    end Test_Parsing_Arrays_AV_Enumeration_Sequential;
 
-   procedure Test_Parsing_Arrays_AV_Enumeration_Loop (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Arrays_AV_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -473,7 +474,7 @@ package body RFLX.Derivation.Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
    end Test_Parsing_Arrays_AV_Enumeration_Loop;
 
-   procedure Test_Parsing_Derivation_Message (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Derivation_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -658,7 +659,7 @@ package body RFLX.Derivation.Tests is
       Assert (Derivation.Message.Valid_Message (Context), "Invalid Message after complete parsing");
    end Test_Parsing_Derivation_Message;
 
-   procedure Test_Generating_Derivation_Message (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_Derivation_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -714,6 +715,7 @@ package body RFLX.Derivation.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_Derivation_Message;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
