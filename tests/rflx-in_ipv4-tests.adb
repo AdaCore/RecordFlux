@@ -12,6 +12,7 @@ with RFLX.In_IPv4.Contains;
 
 package body RFLX.In_IPv4.Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
@@ -30,7 +31,7 @@ package body RFLX.In_IPv4.Tests is
    pragma Warnings (Off, "unused assignment to ""Ethernet_Frame_Context""");
    pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
 
-   procedure Test_Parsing_UDP_In_IPv4 (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_UDP_In_IPv4 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -55,7 +56,7 @@ package body RFLX.In_IPv4.Tests is
       end if;
    end Test_Parsing_UDP_In_IPv4;
 
-   procedure Test_Parsing_UDP_In_IPv4_In_Ethernet (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_UDP_In_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -91,7 +92,7 @@ package body RFLX.In_IPv4.Tests is
       end if;
    end Test_Parsing_UDP_In_IPv4_In_Ethernet;
 
-   procedure Test_Generating_UDP_In_IPv4_In_Ethernet (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_UDP_In_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -153,6 +154,7 @@ package body RFLX.In_IPv4.Tests is
       end if;
    end Test_Generating_UDP_In_IPv4_In_Ethernet;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin

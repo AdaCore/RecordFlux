@@ -7,6 +7,7 @@ with RFLX.TLV.Message;
 
 package body RFLX.TLV.Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
@@ -32,7 +33,7 @@ package body RFLX.TLV.Tests is
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
 
-   procedure Test_Parsing_TLV_Data (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_TLV_Data (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -63,7 +64,7 @@ package body RFLX.TLV.Tests is
       Assert (not TLV.Message.Valid_Message (Context), "Valid Message");
    end Test_Parsing_TLV_Data;
 
-   procedure Test_Parsing_TLV_Data_Zero (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_TLV_Data_Zero (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -89,7 +90,7 @@ package body RFLX.TLV.Tests is
       Assert (not TLV.Message.Valid_Message (Context), "Valid Message");
    end Test_Parsing_TLV_Data_Zero;
 
-   procedure Test_Parsing_TLV_Error (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_TLV_Error (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -108,7 +109,7 @@ package body RFLX.TLV.Tests is
       Assert (TLV.Message.Valid_Message (Context), "Invalid Message");
    end Test_Parsing_TLV_Error;
 
-   procedure Test_Parsing_Invalid_TLV_Invalid_Tag (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Invalid_TLV_Invalid_Tag (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -121,7 +122,7 @@ package body RFLX.TLV.Tests is
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
    end Test_Parsing_Invalid_TLV_Invalid_Tag;
 
-   procedure Test_Generating_TLV_Data (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_TLV_Data (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -145,7 +146,7 @@ package body RFLX.TLV.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_TLV_Data;
 
-   procedure Test_Generating_TLV_Data_Zero (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_TLV_Data_Zero (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -169,7 +170,7 @@ package body RFLX.TLV.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_TLV_Data_Zero;
 
-   procedure Test_Generating_TLV_Error (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_TLV_Error (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -189,6 +190,7 @@ package body RFLX.TLV.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all, "Invalid binary representation");
    end Test_Generating_TLV_Error;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin

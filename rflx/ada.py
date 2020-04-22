@@ -612,10 +612,15 @@ class IfStatement(Statement):
     def __str__(self) -> str:
         result = ""
         for condition, statements in self.condition_statements:
+            c = (
+                f" {condition} "
+                if str(condition).count("\n") == 0
+                else f"\n{indent(str(condition), 2)}\n"
+            )
             if not result:
-                result = f"if {condition} then\n"
+                result = f"if{c}then\n"
             else:
-                result += f"elsif {condition} then\n"
+                result += f"elsif{c}then\n"
             for statement in statements:
                 result += indent(str(statement), 3) + "\n"
         if self.else_statements:

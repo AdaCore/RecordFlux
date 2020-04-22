@@ -80,7 +80,7 @@ is
          Ctx.State := S_Valid;
          return;
       end if;
-   end;
+   end Append_Element;
 
    function Valid (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid);

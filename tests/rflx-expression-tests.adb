@@ -22,7 +22,7 @@ package body RFLX.Expression.Tests is
 
    procedure Get_Payload_Content is new Expression.Message.Get_Payload (Store_Payload);
 
-   procedure Test_Expression_Valid (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Expression_Valid (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -42,7 +42,7 @@ package body RFLX.Expression.Tests is
       Assert (Expression.Message.Structural_Valid_Message (Context), "Invalid Message");
    end Test_Expression_Valid;
 
-   procedure Test_Expression_Invalid (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Expression_Invalid (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);

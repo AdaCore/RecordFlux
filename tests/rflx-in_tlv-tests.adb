@@ -7,6 +7,7 @@ with RFLX.In_TLV.Contains;
 
 package body RFLX.In_TLV.Tests is
 
+   overriding
    function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
    begin
@@ -17,7 +18,7 @@ package body RFLX.In_TLV.Tests is
    pragma Warnings (Off, "unused assignment to ""Buffer""");
    pragma Warnings (Off, "unused assignment to ""TLV_Message_Context""");
 
-   procedure Test_Null_In_TLV (T : in out Aunit.Test_Cases.Test_Case'Class) with
+   procedure Test_Null_In_TLV (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -36,6 +37,7 @@ package body RFLX.In_TLV.Tests is
       end if;
    end Test_Null_In_TLV;
 
+   overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
