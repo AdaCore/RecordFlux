@@ -106,7 +106,7 @@ jobs:
     - name: Test
       run: |
         export PATH=~/.local/bin:$HOME/bin:$PATH
-        make test_python
+        make test_python_coverage
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1.0.2
