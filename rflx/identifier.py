@@ -25,7 +25,7 @@ class ID:
         return NotImplemented
 
     def __hash__(self) -> int:
-        return hash(repr(self))
+        return hash(tuple(self.parts))
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
