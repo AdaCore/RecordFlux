@@ -35,11 +35,11 @@ class Expr(ABC):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
+    def __hash__(self) -> int:
+        return hash(self.__class__.__name__)
+
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
-
-    def __hash__(self) -> int:
-        return hash(repr(self))
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, Expr):

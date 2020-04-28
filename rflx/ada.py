@@ -14,9 +14,6 @@ class Ada(ABC):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
-    def __hash__(self) -> int:
-        return hash(repr(self))
-
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
 
@@ -34,6 +31,9 @@ class Declaration(Ada):
 class ContextItem(Ada):
     def __init__(self, *names: StrID) -> None:
         self.names = list(map(ID, names))
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.names))
 
     @abstractmethod
     def __str__(self) -> str:
@@ -196,6 +196,9 @@ class FormalSubprogramDeclaration(FormalDeclaration):
     def __init__(self, specification: "SubprogramSpecification") -> None:
         self.specification = specification
 
+    def __hash__(self) -> int:
+        return hash(self.specification)
+
     def __str__(self) -> str:
         return f"with {self.specification};"
 
@@ -208,6 +211,9 @@ class FormalPackageDeclaration(FormalDeclaration):
         self.generic_name = ID(generic_name)
         self.associations = list(map(str, associations or []))
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
     def __str__(self) -> str:
         associations = ", ".join(map(str, self.associations)) if self.associations else "<>"
         return f"with package {self.name} is new {self.generic_name} ({associations});"
@@ -216,6 +222,9 @@ class FormalPackageDeclaration(FormalDeclaration):
 class FormalTypeDeclaration(FormalDeclaration):
     def __init__(self, type_declaration: "TypeDeclaration") -> None:
         self.type_declaration = type_declaration
+
+    def __hash__(self) -> int:
+        return hash(self.type_declaration)
 
     def __str__(self) -> str:
         return str(self.type_declaration)
@@ -324,6 +333,9 @@ class TypeDeclaration(Declaration):
         self.identifier = ID(identifier)
         self.discriminants = discriminants
         self.aspects = aspects or []
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
 
     def __str__(self) -> str:
         return (
@@ -690,6 +702,9 @@ class SubprogramSpecification(Ada):
     def _parameters(self) -> str:
         return (" (" + "; ".join(map(str, self.parameters)) + ")") if self.parameters else ""
 
+    def __hash__(self) -> int:
+        return hash(self.identifier)
+
     @abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError
@@ -714,6 +729,9 @@ class FunctionSpecification(SubprogramSpecification):
 class Subprogram(Declaration):
     def __init__(self, specification: SubprogramSpecification) -> None:
         self.specification = specification
+
+    def __hash__(self) -> int:
+        return hash(self.specification)
 
     @abstractmethod
     def __str__(self) -> str:
@@ -834,7 +852,7 @@ class Pragma(Declaration, ContextItem):
         return NotImplemented
 
     def __hash__(self) -> int:
-        return hash(repr(self))
+        return hash(self.identifier)
 
     def __str__(self) -> str:
         parameters = ""
