@@ -41,9 +41,6 @@ class Base(ABC):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
-    def __hash__(self) -> int:
-        return hash(repr(self))
-
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
 
@@ -239,6 +236,9 @@ class Opaque(Composite):
 class Field(Base):
     def __init__(self, identifier: StrID) -> None:
         self.identifier = ID(identifier)
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
 
     @property
     def name(self) -> str:
