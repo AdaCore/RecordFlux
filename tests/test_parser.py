@@ -7,6 +7,7 @@ from typing import Dict, Sequence
 
 from rflx.expression import (
     UNDEFINED,
+    Aggregate,
     And,
     Div,
     Equal,
@@ -135,25 +136,43 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(grammar.numeric_literal().parseString("16#6664#")[0], Number(26212))
         self.assertEqual(grammar.numeric_literal().parseString("16#66_64#")[0], Number(26212))
 
-    # ISSUE: Componolit/RecordFlux#60
+    def test_mathematical_expression_aggregate(self) -> None:
+        self.assertEqual(
+            grammar.mathematical_expression().parseString("(1, 2)")[0],
+            Aggregate(Number(1), Number(2)),
+        )
+        self.assertEqual(
+            grammar.mathematical_expression().parseString("(1)")[0], Aggregate(Number(1)),
+        )
 
-    def test_unsupported_array_aggregate(self) -> None:
-        with self.assertRaisesRegex(ParseFatalException, r"^unsupported array aggregate"):
-            grammar.mathematical_expression().parseString("(1, 2)")
+    def test_mathematical_expression_aggregate_no_number(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r"^Expected Number"):
+            grammar.mathematical_expression().parseString("(1, Foo)")
 
-    # def test_mathematical_expression_array(self) -> None:
-    #     self.assertEqual(
-    #         grammar.mathematical_expression().parseString('(1, 2)')[0],
-    #         Aggregate(Number(1), Number(2)))
+    def test_mathematical_expression_aggregate_out_of_range(self) -> None:
+        with self.assertRaisesRegex(ParseFatalException, r'^Number "256" is out of range 0 .. 255'):
+            grammar.mathematical_expression().parseString("(1, 2, 256)")
 
-    # def test_mathematical_expression_array_no_number(self) -> None:
-    #     with self.assertRaisesRegex(ParseFatalException, r'^Expected Number'):
-    #         grammar.mathematical_expression().parseString('(1, Foo)')
+    def test_mathematical_expression_string(self) -> None:
+        self.assertEqual(
+            grammar.mathematical_expression().parseString('"PNG"')[0],
+            Aggregate(Number(80), Number(78), Number(71)),
+        )
 
-    # def test_mathematical_expression_array_out_of_range(self) -> None:
-    #     with self.assertRaisesRegex(ParseFatalException,
-    #                                 r'^Number "256" is out of range 0 .. 255'):
-    #         grammar.mathematical_expression().parseString('(1, 2, 256)')
+    def test_mathematical_expression_concatenation(self) -> None:
+        self.assertEqual(
+            grammar.mathematical_expression().parseString('(137) & "PNG" & (13, 10, 26, 10)')[0],
+            Aggregate(
+                Number(137),
+                Number(80),
+                Number(78),
+                Number(71),
+                Number(13),
+                Number(10),
+                Number(26),
+                Number(10),
+            ),
+        )
 
     def test_unexpected_relation_operator(self) -> None:
         with self.assertRaisesRegex(ParseFatalException, r"^unexpected relation operator"):
