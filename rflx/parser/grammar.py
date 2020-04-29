@@ -9,6 +9,7 @@ from pyparsing import (
     Optional,
     ParseFatalException,
     ParseResults,
+    QuotedString,
     Regex,
     StringEnd,
     Suppress,
@@ -29,6 +30,7 @@ from rflx.expression import (
     TRUE,
     UNDEFINED,
     Add,
+    Aggregate,
     And,
     Attribute,
     Div,
@@ -148,12 +150,22 @@ def mathematical_expression() -> Token:
     array_aggregate = (
         Suppress(Literal("("))
         + numeric_literal()
-        + (comma() - numeric_literal()) * (1,)
+        + (comma() - numeric_literal()) * (0,)
         + Suppress(Literal(")"))
     )
     array_aggregate.setParseAction(parse_array_aggregate)
 
-    term = numeric_literal() | attribute_reference() | qualified_identifier() | array_aggregate
+    string = QuotedString('"')
+    string.setParseAction(parse_string)
+
+    concatenation = (
+        infixNotation(
+            array_aggregate | string,
+            [(Suppress(Keyword("&")), 2, opAssoc.LEFT, parse_concatenation)],
+        )
+    ).setName("Concatenation")
+
+    term = numeric_literal() | attribute_reference() | qualified_identifier() | concatenation
     term.setParseAction(parse_term)
 
     return (
@@ -344,8 +356,28 @@ def fatalexceptions(parse_function: Callable) -> Callable:
 
 @fatalexceptions
 def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> Expr:
-    # ISSUE: Componolit/RecordFlux#60
-    raise ParseFatalException(string, location, "unsupported array aggregate")
+    check_aggregate_elements(tokens, string, location)
+    return Aggregate(*tokens)
+
+
+@fatalexceptions
+def parse_string(string: str, location: int, tokens: ParseResults) -> Expr:
+    elements = [Number(ord(c)) for c in tokens[0]]
+    check_aggregate_elements(elements, string, location)
+    return Aggregate(*elements)
+
+
+def check_aggregate_elements(elements: List[Number], string: str, location: int) -> None:
+    for element in elements:
+        if not Number(0) <= element <= Number(255):
+            raise ParseFatalException(
+                string, location, f'Number "{element}" is out of range 0 .. 255'
+            )
+
+
+@fatalexceptions
+def parse_concatenation(string: str, location: int, tokens: ParseResults) -> Expr:
+    return Aggregate(*[e for t in tokens[0] for e in t.elements])
 
 
 @fatalexceptions
