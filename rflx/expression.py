@@ -76,6 +76,9 @@ class Expr(ABC):
     def variables(self, proof: bool = False) -> List["Variable"]:
         return []
 
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [self] if match(self) else []
+
     def converted(self, replace_function: Callable[["Expr"], "Expr"]) -> "Expr":
         return replace_function(self)
 
@@ -200,6 +203,13 @@ class BinExpr(Expr):
     def variables(self, proof: bool = False) -> List["Variable"]:
         return list(unique(self.left.variables(proof) + self.right.variables(proof)))
 
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *self.left.findall(match),
+            *self.right.findall(match),
+        ]
+
     def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
         left = self.left.converted(replace_function)
         right = self.right.converted(replace_function)
@@ -269,6 +279,12 @@ class AssExpr(Expr):
 
     def variables(self, proof: bool = False) -> List["Variable"]:
         return list(unique([v for t in self.terms for v in t.variables(proof)]))
+
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *[m for t in self.terms for m in t.findall(match)],
+        ]
 
     def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
         terms: List[Expr] = []
@@ -1159,6 +1175,16 @@ class If(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.literal
+
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *[
+                m
+                for c, e in self.condition_expressions
+                for m in itertools.chain(c.findall(match), e.findall(match))
+            ],
+        ]
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         simplified_ce = [
