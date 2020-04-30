@@ -94,6 +94,11 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         with self.assertRaises(TypeError):
             Not(Variable("X")).z3expr()
 
+    def test_bin_expr_findall(self) -> None:
+        self.assertEqual(
+            Less(Variable("X"), Number(1)).findall(lambda x: isinstance(x, Number)), [Number(1)],
+        )
+
     def test_bin_expr_converted(self) -> None:
         self.assertEqual(
             Less(Variable("X"), Number(1)).converted(
@@ -106,6 +111,14 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 lambda x: Variable("Y") if x == Sub(Variable("X"), Number(1)) else x
             ),
             Variable("Y"),
+        )
+
+    def test_ass_expr_findall(self) -> None:
+        self.assertEqual(
+            And(Equal(Variable("X"), Number(1)), Variable("Y"), Number(2)).findall(
+                lambda x: isinstance(x, Number)
+            ),
+            [Number(1), Number(2)],
         )
 
     def test_ass_expr_converted(self) -> None:
@@ -681,6 +694,18 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 {Variable("X"): Variable("Buffer")}
             ),
             Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42))),
+        )
+
+    def test_if_expr_findall(self) -> None:
+        self.assertEqual(
+            If(
+                [
+                    (Equal(Variable("X"), Number(42)), Number(21)),
+                    (Variable("Y"), Number(42)),
+                    (Number(42), Variable("Z")),
+                ]
+            ).findall(lambda x: isinstance(x, Number)),
+            [Number(42), Number(21), Number(42), Number(42)],
         )
 
     def test_if_simplified(self) -> None:
