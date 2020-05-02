@@ -58,7 +58,7 @@ def main(argv: List[str]) -> Union[int, str]:
         type=str,
         default="svg",
         choices=["dot", "jpg", "pdf", "png", "raw", "svg"],
-        help=(f"output format (default: svg)"),
+        help=("output format (default: svg)"),
     )
     parser_graph.add_argument(
         "files", metavar="FILE", type=str, nargs="+", help="specification file"
