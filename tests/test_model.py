@@ -840,7 +840,7 @@ class TestModel(TestCase):
 
         with self.assertRaisesRegex(
             ModelError,
-            f'^name conflict for "F1_F1" in "P.M1" caused by merging message "P.M2" in field "F1"$',
+            '^name conflict for "F1_F1" in "P.M1" caused by merging message "P.M2" in field "F1"$',
         ):
             m1.merged()
 

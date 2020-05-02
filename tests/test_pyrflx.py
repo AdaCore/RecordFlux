@@ -786,7 +786,7 @@ class TestPyRFLX(unittest.TestCase):
     # rflx-ethernet-tests.adb
 
     def test_ethernet_parsing_ethernet_2(self) -> None:
-        with open(f"tests/ethernet_ipv4_udp.raw", "rb") as file:
+        with open("tests/ethernet_ipv4_udp.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
         self.frame.parse(msg_as_bytes)
         self.assertEqual(self.frame.get("Destination"), int("ffffffffffff", 16))
@@ -799,14 +799,14 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(self.frame.bytestring, msg_as_bytes)
 
     def test_ethernet_parsing_ieee_802_3(self) -> None:
-        with open(f"tests/ethernet_802.3.raw", "rb") as file:
+        with open("tests/ethernet_802.3.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
         self.frame.parse(msg_as_bytes)
         self.assertTrue(self.frame.valid_message)
         self.assertEqual(self.frame.bytestring, msg_as_bytes)
 
     def test_ethernet_parsing_ethernet_2_vlan(self) -> None:
-        with open(f"tests/ethernet_vlan_tag.raw", "rb") as file:
+        with open("tests/ethernet_vlan_tag.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
         self.frame.parse(msg_as_bytes)
         self.assertEqual(self.frame.get("Destination"), int("ffffffffffff", 16))
@@ -821,7 +821,7 @@ class TestPyRFLX(unittest.TestCase):
         self.assertEqual(self.frame.bytestring, msg_as_bytes)
 
     def test_ethernet_parsing_invalid_ethernet_2_too_short(self) -> None:
-        with open(f"tests/ethernet_invalid_too_short.raw", "rb") as file:
+        with open("tests/ethernet_invalid_too_short.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
         with self.assertRaises(ValueError) as cm:
             self.frame.parse(msg_as_bytes)
@@ -861,7 +861,7 @@ class TestPyRFLX(unittest.TestCase):
         self.assertFalse(self.frame.valid_message)
 
     def test_ethernet_parsing_ieee_802_3_invalid_length(self) -> None:
-        with open(f"tests/ethernet_802.3_invalid_length.raw", "rb") as file:
+        with open("tests/ethernet_802.3_invalid_length.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
         with self.assertRaisesRegex(
             IndexError,

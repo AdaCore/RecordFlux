@@ -15,7 +15,7 @@ class ID:
         else:
             assert False, f'unexpected identifier type "{type(identifier).__name__}"'
 
-        assert str(self) != "", f"empty identifier"
+        assert str(self) != "", "empty identifier"
         assert all(" " not in n for n in self.parts), f'whitespace in identifier "{self}"'
         assert "" not in self.parts, f'empty part in identifier "{self}"'
 

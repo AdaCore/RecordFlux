@@ -1596,7 +1596,7 @@ class Generator:
                                         ),
                                     ]
                                     + [
-                                        Call(f"Cursor", [Variable("Ctx"), Variable(p.affixed_name)])
+                                        Call("Cursor", [Variable("Ctx"), Variable(p.affixed_name)])
                                         for p in message.predecessors(f)
                                     ]
                                 ],
@@ -1756,7 +1756,7 @@ class Generator:
                                         ),
                                     ]
                                     + [
-                                        Call(f"Cursor", [Variable("Ctx"), Variable(o.affixed_name)])
+                                        Call("Cursor", [Variable("Ctx"), Variable(o.affixed_name)])
                                         for o in message.fields
                                         if o != f
                                     ]
@@ -1999,8 +1999,8 @@ class Generator:
 
         null_sdu = not refinement.sdu.fields
 
-        assert isinstance(unit, PackageUnit), f"unexpected unit type"
-        assert isinstance(unit.declaration.formal_parameters, List), f"missing formal parameters"
+        assert isinstance(unit, PackageUnit), "unexpected unit type"
+        assert isinstance(unit.declaration.formal_parameters, List), "missing formal parameters"
 
         if refinement.pdu.package != refinement.package:
             pdu_package = (
@@ -2075,7 +2075,7 @@ class Generator:
 
         null_sdu = not refinement.sdu.fields
 
-        assert isinstance(unit, InstantiationUnit), f"unexpected unit type"
+        assert isinstance(unit, InstantiationUnit), "unexpected unit type"
 
         pdu_name = self.prefix * refinement.pdu.identifier
 
@@ -2502,7 +2502,7 @@ class Generator:
     ) -> Subprogram:
         return ExpressionFunctionDeclaration(
             FunctionSpecification(
-                f"Valid",
+                "Valid",
                 "Boolean",
                 [Parameter(["Val"], self.prefix * common.full_base_type_name(scalar_type))],
             ),
@@ -2537,7 +2537,7 @@ class Generator:
                     [Parameter(["Val"], self.prefix * integer.identifier)],
                 ),
                 Variable("Val"),
-                [Precondition(Call(f"Valid", [Variable("Val")]))],
+                [Precondition(Call("Valid", [Variable("Val")]))],
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
@@ -2546,7 +2546,7 @@ class Generator:
                     [Parameter(["Val"], self.prefix * common.full_base_type_name(integer))],
                 ),
                 Variable("Val"),
-                [Precondition(Call(f"Valid", [Variable("Val")]))],
+                [Precondition(Call("Valid", [Variable("Val")]))],
             ),
         ]
 

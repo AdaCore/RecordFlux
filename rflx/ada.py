@@ -496,7 +496,7 @@ class NullComponent(Component):
         super().__init__("null", "null")
 
     def __str__(self) -> str:
-        return f"null;"
+        return "null;"
 
 
 class Variant(Ada):
