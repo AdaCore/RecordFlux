@@ -426,25 +426,6 @@ class TestVerification(TestCase):
             r'^negative length for field "F2" on path F1 -> F2 in "Foo.Bar"',
         )
 
-    @staticmethod
-    def test_valid_length_from_message_last() -> None:
-        parser = Parser()
-        parser.parse_string(
-            """
-            package Foo is
-                type Element is mod 2**8;
-                type Bar is
-                    message
-                        F1 : Element;
-                        F2 : Element
-                            then null
-                                with Length => Message'Last - F1'Last;
-                    end message;
-            end Foo;
-            """
-        )
-        parser.create_model()
-
     def test_payload_no_length(self) -> None:
         self.assert_model_error(
             """
@@ -629,3 +610,105 @@ class TestVerification(TestCase):
         }
         with self.assertRaisesRegex(ModelError, '^no path to FINAL for field "F4"'):
             Message("P.M", structure, types)
+
+    def test_conditionally_unreachable_field_mod_first(self) -> None:
+        self.assert_model_error(
+            """
+            package Foo is
+               type T is mod 256;
+               type Bar is
+                  message
+                     F1 : T
+                        then F2
+                           if F1'First > Message'First;
+                     F2 : T;
+                  end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
+
+    def test_conditionally_unreachable_field_mod_last(self) -> None:
+        self.assert_model_error(
+            """
+            package Foo is
+               type T is mod 256;
+               type Bar is
+                  message
+                     F1 : T
+                        then F2
+                           if F1'Last = Message'Last;
+                     F2 : T;
+                  end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
+
+    def test_conditionally_unreachable_field_range_first(self) -> None:
+        self.assert_model_error(
+            """
+            package Foo is
+               type T is range 1 .. 100 with Size => 16;
+               type Bar is
+                  message
+                     F1 : T
+                        then F2
+                           if F1'First > Message'First;
+                     F2 : T;
+                  end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
+
+    def test_conditionally_unreachable_field_range_last(self) -> None:
+        self.assert_model_error(
+            """
+            package Foo is
+               type T is range 1 .. 100 with Size => 16;
+               type Bar is
+                  message
+                     F1 : T
+                        then F2
+                           if F1'Last = Message'Last;
+                     F2 : T;
+                  end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
+
+    def test_conditionally_unreachable_field_enum_first(self) -> None:
+        self.assert_model_error(
+            """
+            package Foo is
+               type T is (ONE, TWO) with Size => 4;
+               type Bar is
+                  message
+                     F1 : T
+                        then F2
+                           if F1'First > Message'First;
+                     F2 : T;
+                  end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
+
+    def test_conditionally_unreachable_field_enum_last(self) -> None:
+        self.assert_model_error(
+            """
+            package Foo is
+               type T is (ONE, TWO) with Size => 4;
+               type Bar is
+                  message
+                     F1 : T
+                        then F2
+                           if F1'Last = Message'Last;
+                     F2 : T;
+                  end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
