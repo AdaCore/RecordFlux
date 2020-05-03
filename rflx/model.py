@@ -565,22 +565,19 @@ class AbstractMessage(Type):
 
     def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.__fields):
-            conflict = LessEqual(
-                Add(
-                    *[
-                        If([(self.__with_constraints(c.condition), Number(1))], Number(0))
-                        for c in self.outgoing(f)
-                    ]
-                ),
-                Number(1),
-            )
-            result = conflict.forall()
-            if result != ProofResult.sat:
-                message = str(conflict).replace("\n", "")
-                raise ModelError(
-                    f'conflicting conditions for field "{f.name}"'
-                    f' in "{self.identifier}" ({result}: {message})'
-                )
+            conditions = [
+                If([(self.__with_constraints(c.condition), Number(1))], Number(0))
+                for c in self.outgoing(f)
+            ]
+            if conditions:
+                conflict = LessEqual(Add(*conditions), Number(1))
+                result = conflict.forall()
+                if result != ProofResult.sat:
+                    message = str(conflict).replace("\n", "")
+                    raise ModelError(
+                        f'conflicting conditions for field "{f.name}"'
+                        f' in "{self.identifier}" ({result}: {message})'
+                    )
 
     def __prove_reachability(self) -> None:
         for f in (*self.__fields, FINAL):
