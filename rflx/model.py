@@ -580,6 +580,18 @@ class AbstractMessage(Type):
                     )
 
     def __prove_reachability(self) -> None:
+        def has_final(field: Field) -> bool:
+            if field == FINAL:
+                return True
+            for o in self.outgoing(field):
+                if has_final(o.target):
+                    return True
+            return False
+
+        for f in (INITIAL, *self.__fields):
+            if not has_final(f):
+                raise ModelError(f'no path to FINAL for field "{f.name}"')
+
         for f in (*self.__fields, FINAL):
             reachability = Or(
                 *[
