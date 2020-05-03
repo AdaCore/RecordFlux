@@ -587,3 +587,45 @@ class TestVerification(TestCase):
             """
         )
         parser.create_model()
+
+    def test_no_path_to_final(self) -> None:
+        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
+        structure = [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2")),
+            Link(Field("F2"), Field("F3"), Greater(Variable("F1"), Number(100))),
+            Link(Field("F2"), Field("F4"), LessEqual(Variable("F1"), Number(100))),
+            Link(Field("F3"), FINAL),
+        ]
+
+        types = {
+            Field("F1"): foo_type,
+            Field("F2"): foo_type,
+            Field("F3"): foo_type,
+            Field("F4"): foo_type,
+        }
+        with self.assertRaisesRegex(ModelError, '^no path to FINAL for field "F4"'):
+            Message("P.M", structure, types)
+
+    def test_no_path_to_final_transitive(self) -> None:
+        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
+        structure = [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2")),
+            Link(Field("F2"), Field("F3"), Greater(Variable("F1"), Number(100))),
+            Link(Field("F3"), FINAL),
+            Link(Field("F2"), Field("F4"), LessEqual(Variable("F1"), Number(100))),
+            Link(Field("F4"), Field("F5")),
+            Link(Field("F5"), Field("F6")),
+        ]
+
+        types = {
+            Field("F1"): foo_type,
+            Field("F2"): foo_type,
+            Field("F3"): foo_type,
+            Field("F4"): foo_type,
+            Field("F5"): foo_type,
+            Field("F6"): foo_type,
+        }
+        with self.assertRaisesRegex(ModelError, '^no path to FINAL for field "F4"'):
+            Message("P.M", structure, types)
