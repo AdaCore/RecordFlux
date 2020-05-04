@@ -29,6 +29,30 @@ class ProofResult(Enum):
     unknown = z3.unknown
 
 
+class Proof:
+    def __init__(self, expr: "Expr", forall: bool):
+        self.__expr = expr
+
+        cond = self.__expr.z3expr()
+        variables = self.__expr.variables(True)
+        if variables:
+            if forall:
+                cond = z3.ForAll([v.z3expr() for v in variables], cond)
+            else:
+                cond = z3.Exists([v.z3expr() for v in variables], cond)
+        solver = z3.Solver()
+        solver.add(cond)
+        self.__result = ProofResult(solver.check())
+
+    @property
+    def result(self) -> ProofResult:
+        return self.__result
+
+    @property
+    def error(self) -> str:
+        return str(self.__expr).replace("\n", "")
+
+
 class Expr(ABC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -99,22 +123,13 @@ class Expr(ABC):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def __solve(self, forall: bool = False) -> ProofResult:
-        cond = self.z3expr()
-        variables = self.variables(True)
-        if variables:
-            if forall:
-                cond = z3.ForAll([v.z3expr() for v in variables], cond)
-            else:
-                cond = z3.Exists([v.z3expr() for v in variables], cond)
-        solver = z3.Solver()
-        solver.add(cond)
-        return ProofResult(solver.check())
+    def __solve(self, forall: bool = False) -> Proof:
+        return Proof(self, forall)
 
-    def forall(self) -> ProofResult:
+    def forall(self) -> Proof:
         return self.__solve(True)
 
-    def exists(self) -> ProofResult:
+    def exists(self) -> Proof:
         return self.__solve()
 
 
