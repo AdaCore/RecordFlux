@@ -400,13 +400,12 @@ class TestPyRFLX(unittest.TestCase):
         self.frame.set("Destination", 2 ** 48 - 1)
         self.frame.set("Source", 0)
         self.frame.set("Type_Length_TPID", 1501)
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(
+            ValueError,
+            r"none of the field conditions .* for field Type_Length"
+            " have been met by the assigned value: 1501",
+        ):
             self.frame.set("Type_Length", 1501)
-        self.assertEqual(
-            str(cm.exception),
-            "none of the field conditions ['Type_Length <= 1500', 'Type_Length >= 1536']"
-            " for field Type_Length have been met by the assigned value: 1501",
-        )
 
     def test_tls_fields(self) -> None:
         self.assertEqual(self.record.accessible_fields, ["Tag", "Legacy_Record_Version", "Length"])
@@ -418,15 +417,12 @@ class TestPyRFLX(unittest.TestCase):
 
     def test_tls_invalid_outgoing(self) -> None:
         self.record.set("Tag", "INVALID")
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(
+            ValueError,
+            r"none of the field conditions .* for field Length"
+            " have been met by the assigned value: 16385",
+        ):
             self.record.set("Length", 2 ** 14 + 1)
-
-        self.assertEqual(
-            str(cm.exception),
-            "none of the field conditions ['Tag /= APPLICATION_DATA\\n   and Length <= 2**14',"
-            " 'Tag = APPLICATION_DATA\\n   and Legacy_Record_Version = TLS_1_2'] for field "
-            "Length have been met by the assigned value: 16385",
-        )
 
     def test_tls_invalid_path(self) -> None:
         self.alert.set("Level", "WARNING")
@@ -823,40 +819,34 @@ class TestPyRFLX(unittest.TestCase):
     def test_ethernet_parsing_invalid_ethernet_2_too_short(self) -> None:
         with open("tests/ethernet_invalid_too_short.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(
+            ValueError,
+            r"none of the field conditions .* for field Payload"
+            " have been met by the assigned value: [01]*",
+        ):
             self.frame.parse(msg_as_bytes)
-        self.assertEqual(
-            str(cm.exception)[:200],
-            "none of the field conditions [\"Payload'Length / 8 >= 46\\n   "
-            "and Payload'Length / 8 <= 1500\"] for field Payload have been "
-            "met by the assigned value: 100010111101101011010000100000000111"
-            "1011101111000010",
-        )
         self.assertFalse(self.frame.valid_message)
 
     def test_ethernet_parsing_invalid_ethernet_2_too_long(self) -> None:
         with open("tests/ethernet_invalid_too_long.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(
+            ValueError,
+            r"none of the field conditions .* for field Payload"
+            " have been met by the assigned value: [01]*",
+        ):
             self.frame.parse(msg_as_bytes)
-        self.assertEqual(
-            str(cm.exception)[:200],
-            "none of the field conditions [\"Payload'Length / 8 >= 46\\n   and Payload'Length"
-            ' / 8 <= 1500"] for field Payload have been met by the assigned value: 010100011'
-            "1111100000011000100111001010110111000111010",
-        )
         self.assertFalse(self.frame.valid_message)
 
     def test_ethernet_parsing_invalid_ethernet_2_undefined_type(self) -> None:
         with open("tests/ethernet_undefined.raw", "rb") as file:
             msg_as_bytes: bytes = file.read()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(
+            ValueError,
+            r"none of the field conditions .* for field Type_Length"
+            " have been met by the assigned value: [01]*",
+        ):
             self.frame.parse(msg_as_bytes)
-        self.assertEqual(
-            str(cm.exception),
-            "none of the field conditions ['Type_Length <= 1500', 'Type_Length >= 1536']"
-            " for field Type_Length have been met by the assigned value: 0000010111101011",
-        )
 
         self.assertFalse(self.frame.valid_message)
 

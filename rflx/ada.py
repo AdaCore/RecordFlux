@@ -582,7 +582,7 @@ class PragmaStatement(Statement):
         parameters = ""
         if self.pragma_parameters:
             parameters = ", ".join(self.pragma_parameters)
-            parameters = f" ({parameters})"
+            parameters = " (" + indent_next(str(parameters), len(str(self.identifier)) + 9) + ")"
         return f"pragma {self.identifier}{parameters};"
 
 
@@ -797,7 +797,7 @@ class ExpressionFunctionDeclaration(Subprogram):
 
     def __str__(self) -> str:
         aspects = f"\n{aspect_specification(self.aspects)}" if self.aspects else ""
-        return f"{self.specification} is\n" f"  ({self.expression!s}){aspects};"
+        return f"{self.specification} is\n  ({indent_next(str(self.expression), 3)}){aspects};"
 
 
 class GenericProcedureInstantiation(Subprogram):

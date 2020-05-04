@@ -125,30 +125,30 @@ is
 
    function Valid (Val : RFLX.Arrays.Enumeration_Base) return Boolean is
      ((case Val is
-         when 0 | 1 | 2 =>
-            True,
-         when others =>
-            False));
+          when 0 | 1 | 2 =>
+             True,
+          when others =>
+             False));
 
    function To_Base (Enum : RFLX.Arrays.Enumeration) return RFLX.Arrays.Enumeration_Base is
      ((case Enum is
-         when ZERO =>
-            0,
-         when ONE =>
-            1,
-         when TWO =>
-            2));
+          when ZERO =>
+             0,
+          when ONE =>
+             1,
+          when TWO =>
+             2));
 
    function To_Actual (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration is
      ((case Val is
-         when 0 =>
-            ZERO,
-         when 1 =>
-            ONE,
-         when 2 =>
-            TWO,
-         when others =>
-            Unreachable_Arrays_Enumeration))
+          when 0 =>
+             ZERO,
+          when 1 =>
+             ONE,
+          when 2 =>
+             TWO,
+          when others =>
+             Unreachable_Arrays_Enumeration))
     with
      Pre =>
        Valid (Val);
@@ -193,34 +193,36 @@ is
 
    function To_Base (Enum : RFLX.Arrays.AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration_Base is
      ((case Enum is
-         when AV_ZERO =>
-            0,
-         when AV_ONE =>
-            1,
-         when AV_TWO =>
-            2));
+          when AV_ZERO =>
+             0,
+          when AV_ONE =>
+             1,
+          when AV_TWO =>
+             2));
 
    function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration is
      ((True, Enum));
 
    function To_Actual (Val : RFLX.Arrays.AV_Enumeration_Base) return RFLX.Arrays.AV_Enumeration is
      ((case Val is
-         when 0 =>
-            (True, AV_ZERO),
-         when 1 =>
-            (True, AV_ONE),
-         when 2 =>
-            (True, AV_TWO),
-         when others =>
-            (False, Val)))
+          when 0 =>
+             (True, AV_ZERO),
+          when 1 =>
+             (True, AV_ONE),
+          when 2 =>
+             (True, AV_TWO),
+          when others =>
+             (False, Val)))
     with
      Pre =>
        Valid (Val);
 
    function To_Base (Val : RFLX.Arrays.AV_Enumeration) return RFLX.Arrays.AV_Enumeration_Base is
-     ((if Val.Known then
-       To_Base (Val.Enum)
-    else
-       Val.Raw));
+     ((if
+          Val.Known
+       then
+          To_Base (Val.Enum)
+       else
+          Val.Raw));
 
 end RFLX.Arrays;
