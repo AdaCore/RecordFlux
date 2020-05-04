@@ -79,8 +79,12 @@ class Expr(ABC):
     def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
         return [self] if match(self) else []
 
-    def converted(self, replace_function: Callable[["Expr"], "Expr"]) -> "Expr":
-        return replace_function(self)
+    def substituted(
+        self, func: Callable[["Expr"], "Expr"] = None, mapping: Mapping["Name", "Expr"] = None
+    ) -> "Expr":
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        return func(self)
 
     @abstractmethod
     def simplified(self, facts: Mapping["Name", "Expr"] = None) -> "Expr":
@@ -210,10 +214,15 @@ class BinExpr(Expr):
             *self.right.findall(match),
         ]
 
-    def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
-        left = self.left.converted(replace_function)
-        right = self.right.converted(replace_function)
-        return replace_function(self.__class__(left, right))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, BinExpr):
+            return expr.__class__(expr.left.substituted(func), expr.right.substituted(func))
+        return expr
 
     def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         left = self.left.simplified(facts)
@@ -286,11 +295,15 @@ class AssExpr(Expr):
             *[m for t in self.terms for m in t.findall(match)],
         ]
 
-    def converted(self, replace_function: Callable[[Expr], Expr]) -> Expr:
-        terms: List[Expr] = []
-        for term in self.terms:
-            terms.append(term.converted(replace_function))
-        return replace_function(self.__class__(*terms))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, AssExpr):
+            return expr.__class__(*[t.substituted(func) for t in expr.terms])
+        return expr
 
     def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         terms: List[Expr] = []
@@ -765,6 +778,15 @@ class Name(Expr):
     def representation(self) -> str:
         raise NotImplementedError
 
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        positive_self = copy(self)
+        positive_self.negative = False
+        return -func(positive_self) if self.negative else func(positive_self)
+
     def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         if facts:
             positive_self = copy(self)
@@ -815,11 +837,23 @@ class Attribute(Name):
     def representation(self) -> str:
         return f"{self.prefix}'{self.__class__.__name__}"
 
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        positive_self = copy(self)
+        positive_self.negative = False
+        expr = func(positive_self)
+        if isinstance(expr, Attribute):
+            expr = expr.__class__(expr.prefix.substituted(func))
+        return -expr if self.negative else expr
+
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         simplified_expr = super().simplified(facts)
         if isinstance(simplified_expr, self.__class__):
             prefix = simplified_expr.prefix.simplified(facts)
-            return self.__class__(prefix, simplified_expr.negative)
+            return -self.__class__(prefix) if simplified_expr.negative else self.__class__(prefix)
         return simplified_expr
 
     def variables(self, proof: bool = False) -> List[Variable]:
@@ -924,6 +958,20 @@ class Slice(Name):
     def representation(self) -> str:
         return f"{self.prefix} ({self.first} .. {self.last})"
 
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, self.__class__):
+            return expr.__class__(
+                expr.prefix.substituted(func),
+                expr.first.substituted(func),
+                expr.last.substituted(func),
+            )
+        return expr
+
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         return Slice(
             self.prefix.simplified(facts), self.first.simplified(facts), self.last.simplified(facts)
@@ -959,6 +1007,16 @@ class Aggregate(Expr):
     def precedence(self) -> Precedence:
         return Precedence.literal
 
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, self.__class__):
+            return expr.__class__(*[e.substituted(func) for e in expr.elements])
+        return expr
+
     def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         return self.__class__(*[e.simplified(facts) for e in self.elements])
 
@@ -979,6 +1037,16 @@ class NamedAggregate(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.literal
+
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, self.__class__):
+            return expr.__class__(*[(n, e.substituted(func)) for n, e in expr.elements])
+        return expr
 
     def simplified(self, facts: Mapping["Name", Expr] = None) -> Expr:
         return self.__class__(*[(n, e.simplified(facts)) for n, e in self.elements])
@@ -1186,6 +1254,19 @@ class If(Expr):
             ],
         ]
 
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, self.__class__):
+            return expr.__class__(
+                [(c.substituted(func), e.substituted(func)) for c, e in expr.condition_expressions],
+                expr.else_expression.substituted(func) if expr.else_expression else None,
+            )
+        return expr
+
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         simplified_ce = [
             (c.simplified(facts), e.simplified(facts)) for c, e in self.condition_expressions
@@ -1248,6 +1329,19 @@ class Case(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.literal
+
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, self.__class__):
+            return expr.__class__(
+                expr.control_expression.substituted(func),
+                [(c.substituted(func), e.substituted(func)) for c, e in expr.case_statements],
+            )
+        return expr
 
     def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
         if len(self.case_statements) == 1 and self.case_statements[0][0] == Variable("others"):
@@ -1364,3 +1458,15 @@ class ValueRange(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+
+def substitution(
+    mapping: Mapping[Name, Expr], func: Callable[["Expr"], "Expr"] = None
+) -> Callable[[Expr], Expr]:
+    if func:
+        return func
+    return lambda expression: (
+        mapping[expression]
+        if isinstance(expression, Name) and expression in mapping
+        else expression
+    )

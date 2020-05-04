@@ -82,7 +82,7 @@ class TestZ3(unittest.TestCase):  # pylint: disable=too-many-public-methods
             z3.IntVal(2) * z3.IntVal(4) * z3.IntVal(8),
         )
 
-    def test_sub(self) -> None:
+    def test_substituted(self) -> None:
         self.assertEqual(Sub(Number(6), Number(4)).z3expr(), z3.IntVal(6) - z3.IntVal(4))
         self.assertEqual(Sub(Number(12), Number(20)).z3expr(), z3.IntVal(12) - z3.IntVal(20))
 

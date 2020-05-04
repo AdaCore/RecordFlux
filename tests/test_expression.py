@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import unittest
 
 import z3
@@ -99,18 +101,26 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             Less(Variable("X"), Number(1)).findall(lambda x: isinstance(x, Number)), [Number(1)],
         )
 
-    def test_bin_expr_converted(self) -> None:
+    def test_bin_expr_substituted(self) -> None:
         self.assertEqual(
-            Less(Variable("X"), Number(1)).converted(
-                lambda x: Variable(x.name) if isinstance(x, Variable) else x
+            Less(Variable("X"), Number(1)).substituted(
+                lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
             ),
-            Less(Variable("X"), Number(1)),
+            Less(Variable("P_X"), Number(1)),
         )
         self.assertEqual(
-            Sub(Variable("X"), Number(1)).converted(
+            Sub(Variable("X"), Number(1)).substituted(
                 lambda x: Variable("Y") if x == Sub(Variable("X"), Number(1)) else x
             ),
             Variable("Y"),
+        )
+        self.assertEqual(
+            NotEqual(Variable("X"), Number(1)).substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Equal(x.left, x.right) if isinstance(x, NotEqual) else x)
+            ),
+            Equal(Variable("P_X"), Number(1)),
         )
 
     def test_ass_expr_findall(self) -> None:
@@ -121,18 +131,26 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             [Number(1), Number(2)],
         )
 
-    def test_ass_expr_converted(self) -> None:
+    def test_ass_expr_substituted(self) -> None:
         self.assertEqual(
-            And(Variable("X"), Number(1)).converted(
-                lambda x: Variable(x.name) if isinstance(x, Variable) else x
+            And(Equal(Variable("X"), Number(1)), Variable("Y")).substituted(
+                lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
             ),
-            And(Variable("X"), Number(1)),
+            And(Equal(Variable("P_X"), Number(1)), Variable("P_Y")),
         )
         self.assertEqual(
-            Mul(Variable("X"), Number(1)).converted(
+            Mul(Variable("X"), Number(1)).substituted(
                 lambda x: Variable("Y") if x == Mul(Variable("X"), Number(1)) else x
             ),
             Variable("Y"),
+        )
+        self.assertEqual(
+            And(Equal(Variable("X"), Number(1)), Variable("Y")).substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Or(*x.terms) if isinstance(x, And) else x)
+            ),
+            Or(Equal(Variable("P_X"), Number(1)), Variable("P_Y")),
         )
 
     def test_log_expr_str(self) -> None:
@@ -218,7 +236,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_number_add(self) -> None:
         self.assertEqual(Number(5) + Number(3), Number(8))
 
-    def test_number_sub(self) -> None:
+    def test_number_substituted(self) -> None:
         self.assertEqual(Number(5) - Number(3), Number(2))
 
     def test_number_mul(self) -> None:
@@ -432,6 +450,11 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_variable_neg_variables(self) -> None:
         self.assertEqual((-Variable("X")).variables(), [Variable("X", True)])
 
+    def test_variable_substituted(self) -> None:
+        self.assertEqual(
+            Variable("X").substituted(lambda x: Number(42) if x == Variable("X") else x), Number(42)
+        )
+
     def test_variable_simplified(self) -> None:
         self.assertEqual(Variable("X").simplified(), Variable("X"))
         self.assertEqual(Variable("X").simplified({Variable("X"): Number(42)}), Number(42))
@@ -456,6 +479,30 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_attribute_neg(self) -> None:
         self.assertEqual(-First("X"), First("X", True))
 
+    def test_attribute_substituted(self) -> None:
+        self.assertEqual(
+            First("X").substituted(lambda x: Number(42) if x == First("X") else x), Number(42)
+        )
+        self.assertEqual(
+            -First("X").substituted(lambda x: Number(42) if x == First("X") else x), Number(-42)
+        )
+        self.assertEqual(
+            First("X").substituted(lambda x: Call("Y") if x == Variable("X") else x),
+            First(Call("Y")),
+        )
+        self.assertEqual(
+            -First("X").substituted(lambda x: Call("Y") if x == Variable("X") else x),
+            -First(Call("Y")),
+        )
+        self.assertEqual(
+            -First("X").substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Last(x.prefix) if isinstance(x, First) else x)
+            ),
+            -Last(Variable("P_X")),
+        )
+
     def test_attribute_simplified(self) -> None:
         self.assertEqual(First("X").simplified(), First("X"))
         self.assertEqual(First("X").simplified({First("X"): Number(42)}), Number(42))
@@ -477,15 +524,81 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         with self.assertRaises(TypeError):
             First(Call("X")).z3expr()
 
+    def test_aggregate_substituted(self) -> None:
+        self.assertEqual(
+            Aggregate(First("X")).substituted(
+                lambda x: Number(42) if x == Aggregate(First("X")) else x
+            ),
+            Number(42),
+        )
+        self.assertEqual(
+            Aggregate(First("X")).substituted(lambda x: Number(42) if x == First("X") else x),
+            Aggregate(Number(42)),
+        )
+        self.assertEqual(
+            Aggregate(Variable("X")).substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Aggregate(*(x.elements + [Variable("Y")])) if isinstance(x, Aggregate) else x)
+            ),
+            Aggregate(Variable("P_X"), Variable("P_Y")),
+        )
+
     def test_aggregate_simplified(self) -> None:
         self.assertEqual(
             Aggregate(Last("X")).simplified({Last("X"): Number(42)}), Aggregate(Number(42)),
+        )
+
+    def test_named_aggregate_substituted(self) -> None:
+        self.assertEqual(
+            NamedAggregate(("First", First("X"))).substituted(
+                lambda x: Number(42) if x == NamedAggregate(("First", First("X"))) else x
+            ),
+            Number(42),
+        )
+        self.assertEqual(
+            NamedAggregate(("First", First("X"))).substituted(
+                lambda x: Number(42) if x == First("X") else x
+            ),
+            NamedAggregate(("First", Number(42))),
+        )
+        self.assertEqual(
+            NamedAggregate(("First", First("X"))).substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (
+                    NamedAggregate(*[*x.elements, (ID("Last"), Last("Y"))])
+                    if isinstance(x, NamedAggregate)
+                    else x
+                )
+            ),
+            NamedAggregate(("First", First("P_X")), ("Last", Last("P_Y"))),
         )
 
     def test_named_aggregate_simplified(self) -> None:
         self.assertEqual(
             NamedAggregate(("Last", Last("X"))).simplified({Last("X"): Number(42)}),
             NamedAggregate(("Last", Number(42))),
+        )
+
+    def test_relation_substituted(self) -> None:
+        self.assertEqual(
+            Equal(Variable("X"), Variable("Y")).substituted(
+                lambda x: Number(1) if x == Variable("X") else x
+            ),
+            Equal(Number(1), Variable("Y")),
+        )
+        self.assertEqual(
+            Equal(Variable("X"), Variable("Y")).substituted(
+                lambda x: Number(1) if x == Variable("Y") else x
+            ),
+            Equal(Variable("X"), Number(1)),
+        )
+        self.assertEqual(
+            Equal(Variable("X"), Variable("Y")).substituted(
+                lambda x: Number(1) if x == Equal(Variable("X"), Variable("Y")) else x
+            ),
+            Number(1),
         )
 
     def test_relation_contains(self) -> None:
@@ -680,6 +793,32 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
     def test_not_in_str(self) -> None:
         self.assertEqual(str(NotIn(Variable("X"), Variable("Y"))), "X not in Y")
 
+    def test_slice_substituted(self) -> None:
+        self.assertEqual(
+            Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
+                lambda x: Variable("Z") if x == Variable("X") else x
+            ),
+            Slice(Variable("Z"), Variable("Y"), Variable("Y")),
+        )
+        self.assertEqual(
+            Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
+                lambda x: Variable("Z") if x == Variable("Y") else x
+            ),
+            Slice(Variable("X"), Variable("Z"), Variable("Z")),
+        )
+        self.assertEqual(
+            Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (
+                    Slice(Variable("X"), Variable("Y"), Variable("Z"))
+                    if isinstance(x, Slice)
+                    else x
+                )
+            ),
+            Slice(Variable("P_X"), Variable("P_Y"), Variable("P_Z")),
+        )
+
     def test_slice_simplified(self) -> None:
         self.assertEqual(
             Slice(
@@ -706,6 +845,49 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 ]
             ).findall(lambda x: isinstance(x, Number)),
             [Number(42), Number(21), Number(42), Number(42)],
+        )
+
+    def test_if_expr_substituted(self) -> None:
+        self.assertEqual(
+            If(
+                [
+                    (Equal(Variable("X"), Number(42)), Number(21)),
+                    (Variable("Y"), Number(42)),
+                    (Number(42), Variable("Z")),
+                ]
+            ).substituted(lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x),
+            If(
+                [
+                    (Equal(Variable("P_X"), Number(42)), Number(21)),
+                    (Variable("P_Y"), Number(42)),
+                    (Number(42), Variable("P_Z")),
+                ]
+            ),
+        )
+        self.assertEqual(
+            If(
+                [
+                    (Equal(Variable("X"), Number(42)), Number(21)),
+                    (Variable("Y"), Number(42)),
+                    (Number(42), Variable("Z")),
+                ]
+            ).substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (
+                    If([*x.condition_expressions, (Variable("Z"), Number(1))], x.else_expression)
+                    if isinstance(x, If)
+                    else x
+                )
+            ),
+            If(
+                [
+                    (Equal(Variable("P_X"), Number(42)), Number(21)),
+                    (Variable("P_Y"), Number(42)),
+                    (Number(42), Variable("P_Z")),
+                    (Variable("P_Z"), Number(1)),
+                ]
+            ),
         )
 
     def test_if_simplified(self) -> None:
@@ -754,6 +936,26 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                     else
                        3)"""
             ),
+        )
+
+    def test_case_substituted(self) -> None:
+        self.assertEqual(
+            Case(Variable("X"), [(Variable("Y"), Variable("Z"))]).substituted(
+                lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            ),
+            Case(Variable("P_X"), [(Variable("P_Y"), Variable("P_Z"))]),
+        )
+        self.assertEqual(
+            Case(Variable("X"), [(Variable("Y"), Number(0))]).substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (
+                    Case(x.control_expression, [*x.case_statements, (Variable("Z"), Number(1))])
+                    if isinstance(x, Case)
+                    else x
+                )
+            ),
+            Case(Variable("P_X"), [(Variable("P_Y"), Number(0)), (Variable("P_Z"), Number(1))]),
         )
 
     def test_case_simplified(self) -> None:
