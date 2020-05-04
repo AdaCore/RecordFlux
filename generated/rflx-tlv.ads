@@ -23,26 +23,26 @@ is
 
    function Valid (Val : RFLX.TLV.Tag_Base) return Boolean is
      ((case Val is
-         when 1 | 3 =>
-            True,
-         when others =>
-            False));
+          when 1 | 3 =>
+             True,
+          when others =>
+             False));
 
    function To_Base (Enum : RFLX.TLV.Tag) return RFLX.TLV.Tag_Base is
      ((case Enum is
-         when Msg_Data =>
-            1,
-         when Msg_Error =>
-            3));
+          when Msg_Data =>
+             1,
+          when Msg_Error =>
+             3));
 
    function To_Actual (Val : RFLX.TLV.Tag_Base) return RFLX.TLV.Tag is
      ((case Val is
-         when 1 =>
-            Msg_Data,
-         when 3 =>
-            Msg_Error,
-         when others =>
-            Unreachable_TLV_Tag))
+          when 1 =>
+             Msg_Data,
+          when 3 =>
+             Msg_Error,
+          when others =>
+             Unreachable_TLV_Tag))
     with
      Pre =>
        Valid (Val);

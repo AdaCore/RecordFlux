@@ -29,22 +29,22 @@ is
    procedure Switch_To_Payload (IPv4_Packet_Context : in out IPv4_Packet.Context; UDP_Datagram_Context : out UDP_Datagram.Context) with
      Pre =>
        not IPv4_Packet_Context'Constrained
-          and not UDP_Datagram_Context'Constrained
-          and IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
-          and IPv4_Packet.Present (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-          and IPv4_Packet.Valid (IPv4_Packet_Context, IPv4_Packet.F_Protocol)
-          and UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_Context),
+       and not UDP_Datagram_Context'Constrained
+       and IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
+       and IPv4_Packet.Present (IPv4_Packet_Context, IPv4_Packet.F_Payload)
+       and IPv4_Packet.Valid (IPv4_Packet_Context, IPv4_Packet.F_Protocol)
+       and UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_Context),
      Post =>
        not IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
-          and UDP_Datagram.Has_Buffer (UDP_Datagram_Context)
-          and IPv4_Packet_Context.Buffer_First = UDP_Datagram_Context.Buffer_First
-          and IPv4_Packet_Context.Buffer_Last = UDP_Datagram_Context.Buffer_Last
-          and UDP_Datagram_Context.First = IPv4_Packet.Field_First (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-          and UDP_Datagram_Context.Last = IPv4_Packet.Field_Last (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-          and UDP_Datagram.Initialized (UDP_Datagram_Context)
-          and IPv4_Packet_Context.Buffer_First = IPv4_Packet_Context.Buffer_First'Old
-          and IPv4_Packet_Context.Buffer_Last = IPv4_Packet_Context.Buffer_Last'Old
-          and IPv4_Packet_Context.First = IPv4_Packet_Context.First'Old
-          and IPv4_Packet.Context_Cursors (IPv4_Packet_Context) = IPv4_Packet.Context_Cursors (IPv4_Packet_Context)'Old;
+       and UDP_Datagram.Has_Buffer (UDP_Datagram_Context)
+       and IPv4_Packet_Context.Buffer_First = UDP_Datagram_Context.Buffer_First
+       and IPv4_Packet_Context.Buffer_Last = UDP_Datagram_Context.Buffer_Last
+       and UDP_Datagram_Context.First = IPv4_Packet.Field_First (IPv4_Packet_Context, IPv4_Packet.F_Payload)
+       and UDP_Datagram_Context.Last = IPv4_Packet.Field_Last (IPv4_Packet_Context, IPv4_Packet.F_Payload)
+       and UDP_Datagram.Initialized (UDP_Datagram_Context)
+       and IPv4_Packet_Context.Buffer_First = IPv4_Packet_Context.Buffer_First'Old
+       and IPv4_Packet_Context.Buffer_Last = IPv4_Packet_Context.Buffer_Last'Old
+       and IPv4_Packet_Context.First = IPv4_Packet_Context.First'Old
+       and IPv4_Packet.Context_Cursors (IPv4_Packet_Context) = IPv4_Packet.Context_Cursors (IPv4_Packet_Context)'Old;
 
 end RFLX.In_IPv4.Generic_Contains;

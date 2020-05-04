@@ -28,22 +28,22 @@ is
    procedure Switch_To_Payload (Ethernet_Frame_Context : in out Ethernet_Frame.Context; IPv4_Packet_Context : out IPv4_Packet.Context) with
      Pre =>
        not Ethernet_Frame_Context'Constrained
-          and not IPv4_Packet_Context'Constrained
-          and Ethernet_Frame.Has_Buffer (Ethernet_Frame_Context)
-          and Ethernet_Frame.Present (Ethernet_Frame_Context, Ethernet_Frame.F_Payload)
-          and Ethernet_Frame.Valid (Ethernet_Frame_Context, Ethernet_Frame.F_Type_Length)
-          and IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_Context),
+       and not IPv4_Packet_Context'Constrained
+       and Ethernet_Frame.Has_Buffer (Ethernet_Frame_Context)
+       and Ethernet_Frame.Present (Ethernet_Frame_Context, Ethernet_Frame.F_Payload)
+       and Ethernet_Frame.Valid (Ethernet_Frame_Context, Ethernet_Frame.F_Type_Length)
+       and IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_Context),
      Post =>
        not Ethernet_Frame.Has_Buffer (Ethernet_Frame_Context)
-          and IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
-          and Ethernet_Frame_Context.Buffer_First = IPv4_Packet_Context.Buffer_First
-          and Ethernet_Frame_Context.Buffer_Last = IPv4_Packet_Context.Buffer_Last
-          and IPv4_Packet_Context.First = Ethernet_Frame.Field_First (Ethernet_Frame_Context, Ethernet_Frame.F_Payload)
-          and IPv4_Packet_Context.Last = Ethernet_Frame.Field_Last (Ethernet_Frame_Context, Ethernet_Frame.F_Payload)
-          and IPv4_Packet.Initialized (IPv4_Packet_Context)
-          and Ethernet_Frame_Context.Buffer_First = Ethernet_Frame_Context.Buffer_First'Old
-          and Ethernet_Frame_Context.Buffer_Last = Ethernet_Frame_Context.Buffer_Last'Old
-          and Ethernet_Frame_Context.First = Ethernet_Frame_Context.First'Old
-          and Ethernet_Frame.Context_Cursors (Ethernet_Frame_Context) = Ethernet_Frame.Context_Cursors (Ethernet_Frame_Context)'Old;
+       and IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
+       and Ethernet_Frame_Context.Buffer_First = IPv4_Packet_Context.Buffer_First
+       and Ethernet_Frame_Context.Buffer_Last = IPv4_Packet_Context.Buffer_Last
+       and IPv4_Packet_Context.First = Ethernet_Frame.Field_First (Ethernet_Frame_Context, Ethernet_Frame.F_Payload)
+       and IPv4_Packet_Context.Last = Ethernet_Frame.Field_Last (Ethernet_Frame_Context, Ethernet_Frame.F_Payload)
+       and IPv4_Packet.Initialized (IPv4_Packet_Context)
+       and Ethernet_Frame_Context.Buffer_First = Ethernet_Frame_Context.Buffer_First'Old
+       and Ethernet_Frame_Context.Buffer_Last = Ethernet_Frame_Context.Buffer_Last'Old
+       and Ethernet_Frame_Context.First = Ethernet_Frame_Context.First'Old
+       and Ethernet_Frame.Context_Cursors (Ethernet_Frame_Context) = Ethernet_Frame.Context_Cursors (Ethernet_Frame_Context)'Old;
 
 end RFLX.In_Ethernet.Generic_Contains;

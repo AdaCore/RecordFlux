@@ -9,6 +9,7 @@ from rflx.expression import (
     Add,
     Aggregate,
     And,
+    AndThen,
     Attribute,
     Call,
     Case,
@@ -35,6 +36,7 @@ from rflx.expression import (
     Number,
     Old,
     Or,
+    OrElse,
     Pow,
     Range,
     Result,
@@ -47,6 +49,13 @@ from rflx.expression import (
 from rflx.identifier import ID
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
+
+
+def multilinestr(string: str) -> str:
+    assert all(
+        l.startswith(19 * " ") for l in string.split("\n")[1:]
+    ), "invalid format of multi-line string"
+    return string.replace(19 * " ", "")
 
 
 class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-methods
@@ -113,6 +122,26 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             Variable("Y"),
         )
 
+    def test_log_expr_str(self) -> None:
+        self.assertEqual(
+            str(And(Variable("A"), Or(Variable("B"), Variable("C")), Variable("D"))),
+            multilinestr(
+                """A
+                   and (B
+                        or C)
+                   and D"""
+            ),
+        )
+        self.assertEqual(
+            str(AndThen(Variable("A"), OrElse(Variable("B"), Variable("C")), Variable("D"))),
+            multilinestr(
+                """A
+                   and then (B
+                             or else C)
+                   and then D"""
+            ),
+        )
+
     def test_and_neg(self) -> None:
         self.assertEqual(-And(Variable("X"), Number(1)), And(-Variable("X"), Number(-1)))
 
@@ -134,7 +163,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(And(FALSE, EXPR).simplified(), FALSE)
 
     def test_and_str(self) -> None:
-        self.assertEqual(str(And(Variable("X"), Variable("Y"))), "X\n   and Y")
+        self.assertEqual(str(And(Variable("X"), Variable("Y"))), "X\nand Y")
         self.assertEqual(str(And()), "True")
 
     def test_or_neg(self) -> None:
@@ -155,7 +184,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(Or(EXPR, TRUE).simplified(), TRUE)
 
     def test_or_str(self) -> None:
-        self.assertEqual(str(Or(Variable("X"), Variable("Y"))), "X\n   or Y")
+        self.assertEqual(str(Or(Variable("X"), Variable("Y"))), "X\nor Y")
         self.assertEqual(str(Or()), "True")
 
     def test_undefined_neg(self) -> None:
@@ -685,6 +714,23 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             [Variable("X"), Variable("Y"), Variable("Z")],
         )
 
+    def test_if_str(self) -> None:
+        self.assertEqual(
+            str(If([(Variable("X"), Number(1)), (Variable("Y"), Number(2))], Number(3))),
+            multilinestr(
+                """(if
+                       X
+                    then
+                       1
+                    elsif
+                       Y
+                    then
+                       2
+                    else
+                       3)"""
+            ),
+        )
+
     def test_case_simplified(self) -> None:
         self.assertEqual(
             Case(
@@ -718,6 +764,27 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             [Variable("X"), Variable("Y"), Variable("Z")],
         )
 
+    def test_case_str(self) -> None:
+        self.assertEqual(
+            str(
+                Case(
+                    Variable("X"),
+                    [
+                        (Variable("Y"), Number(1)),
+                        (Variable("Z"), Number(1)),
+                        (Variable("others"), Number(2)),
+                    ],
+                )
+            ),
+            multilinestr(
+                """(case X is
+                       when Y | Z =>
+                          1,
+                       when others =>
+                          2)"""
+            ),
+        )
+
     def test_value_range_simplified(self) -> None:
         self.assertEqual(
             ValueRange(Number(1), Add(Number(21), Number(21))).simplified(),
@@ -742,10 +809,10 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_quantified_expression_str(self) -> None:
         self.assertEqual(
-            str(ForAllOf("X", Variable("Y"), Variable("X"))), "(for all X of Y =>\n   X)"
+            str(ForAllOf("X", Variable("Y"), Variable("X"))), "(for all X of Y =>\n    X)"
         )
         self.assertEqual(
-            str(ForAllIn("X", Variable("Y"), Variable("X"))), "(for all X in Y =>\n   X)"
+            str(ForAllIn("X", Variable("Y"), Variable("X"))), "(for all X in Y =>\n    X)"
         )
 
     def test_expr_contains(self) -> None:
@@ -859,3 +926,53 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_number_str_bin(self) -> None:
         self.assertEqual(str(Number(454, 2)), "2#111000110#")
+
+    def test_expr_str(self) -> None:
+        self.assertEqual(
+            str(
+                And(
+                    If([(Variable("X"), Number(1)), (Variable("Y"), Number(2))], Number(3)),
+                    Variable("A"),
+                    Or(Variable("B"), Variable("C")),
+                    Variable("D"),
+                )
+            ),
+            multilinestr(
+                """(if
+                       X
+                    then
+                       1
+                    elsif
+                       Y
+                    then
+                       2
+                    else
+                       3)
+                   and A
+                   and (B
+                        or C)
+                   and D"""
+            ),
+        )
+        self.assertEqual(
+            str(
+                ForAllOf(
+                    "X",
+                    Variable("Z"),
+                    If([(Variable("X"), Number(1)), (Variable("Y"), Number(2))], Number(3)),
+                )
+            ),
+            multilinestr(
+                """(for all X of Z =>
+                       (if
+                           X
+                        then
+                           1
+                        elsif
+                           Y
+                        then
+                           2
+                        else
+                           3))"""
+            ),
+        )
