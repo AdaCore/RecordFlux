@@ -48,7 +48,6 @@ is
    begin
       pragma Assert (J < 63);
       pragma Assert (2**J <= 2**63 - 1);
-      --  WORKAROUND: Componolit/Workarounds#15
       pragma Annotate (GNATprove, False_Positive, "assertion",
                        "B > 1 and E1 < E2 => B**E1 < B**E2 => B*E1 <= B**E2 - 1");
 
@@ -85,13 +84,11 @@ is
    begin
       pragma Assert (J < 63);
       pragma Assert (2**J <= 2**63 - 1);
-      --  WORKAROUND: Componolit/Workarounds#15
       pragma Annotate (GNATprove, False_Positive, "assertion",
                        "B > 1 and E1 < E2 => B**E1 < B**E2 => B*E1 <= B**E2 - 1");
 
       pragma Assert (K < 63);
       pragma Assert (2**K <= 2**63 - 1);
-      --  WORKAROUND: Componolit/Workarounds#15
       pragma Annotate (GNATprove, False_Positive, "assertion",
                        "B > 1 and E1 < E2 => B**E1 < B**E2 => B*E1 <= B**E2 - 1");
 

@@ -14,6 +14,7 @@ is
       Last_Bit : Types.Bit_Index;
       First    : Types.Index;
       Last     : Types.Index;
+      --  WORKAROUND: Componolit/Workarounds#24 (type `Offset` would be hidden by variable `Offset` because of `use Types` in specification)
       Offst    : Types.Offset;
       function Extract is new Types.Extract (Element_Base_Type);
    begin
