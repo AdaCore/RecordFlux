@@ -44,34 +44,36 @@ is
 
    function To_Base (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.Enumeration.Priority_Base is
      ((case Enum is
-         when LOW =>
-            1,
-         when MEDIUM =>
-            4,
-         when HIGH =>
-            7));
+          when LOW =>
+             1,
+          when MEDIUM =>
+             4,
+          when HIGH =>
+             7));
 
    function To_Actual (Enum : Priority_Enum) return RFLX.Enumeration.Priority is
      ((True, Enum));
 
    function To_Actual (Val : RFLX.Enumeration.Priority_Base) return RFLX.Enumeration.Priority is
      ((case Val is
-         when 1 =>
-            (True, LOW),
-         when 4 =>
-            (True, MEDIUM),
-         when 7 =>
-            (True, HIGH),
-         when others =>
-            (False, Val)))
+          when 1 =>
+             (True, LOW),
+          when 4 =>
+             (True, MEDIUM),
+          when 7 =>
+             (True, HIGH),
+          when others =>
+             (False, Val)))
     with
      Pre =>
        Valid (Val);
 
    function To_Base (Val : RFLX.Enumeration.Priority) return RFLX.Enumeration.Priority_Base is
-     ((if Val.Known then
-       To_Base (Val.Enum)
-    else
-       Val.Raw));
+     ((if
+          Val.Known
+       then
+          To_Base (Val.Enum)
+       else
+          Val.Raw));
 
 end RFLX.Enumeration;

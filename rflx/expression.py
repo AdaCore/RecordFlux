@@ -85,7 +85,7 @@ class Expr(ABC):
 
     def parenthesized(self, expr: "Expr") -> str:
         if expr.precedence.value <= self.precedence.value:
-            return f"({expr})"
+            return "(" + indent_next(str(expr), 1) + ")"
         return str(expr)
 
     @abstractmethod
@@ -323,7 +323,18 @@ class LogExpr(AssExpr):
     def __str__(self) -> str:
         if not self.terms:
             return str(TRUE)
-        return indent_next(f"\n{self.symbol}".join(map(self.parenthesized, self.terms)), 2)
+        result = ""
+        for i, t in reversed(list(enumerate(self.terms))):
+            if i == 0:
+                result = self.parenthesized(t) + result
+            else:
+                result = (
+                    "\n"
+                    + str(self.symbol)[1:]
+                    + indent_next(self.parenthesized(t), len(self.symbol) - 1)
+                    + result
+                )
+        return result
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -409,6 +420,12 @@ class Or(LogExpr):
         if len(z3exprs) != len(boolexprs):
             raise TypeError
         return z3.Or(*boolexprs)
+
+
+class OrElse(And):
+    @property
+    def symbol(self) -> str:
+        return " or else "
 
 
 class Number(Expr):
@@ -1128,11 +1145,11 @@ class If(Expr):
         result = ""
         for c, e in self.condition_expressions:
             if not result:
-                result = f"(if {indent_next(str(c), 3)} then\n {indent(str(e), 3)}"
+                result = f"(if\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
             else:
-                result += f"\n elsif {indent_next(str(c), 6)} then\n {indent(str(e), 3)}"
+                result += f"\n elsif\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
         if self.else_expression:
-            result += f"\n else\n {indent(str(self.else_expression), 3)}"
+            result += f"\n else\n{indent(str(self.else_expression), 4)}"
         result += ")"
         return result
 
@@ -1195,7 +1212,7 @@ class Case(Expr):
             ",".join(
                 [f"\nwhen {choice} =>\n{indent(str(expr), 3)}" for choice, expr in grouped_cases]
             ),
-            6,
+            4,
         )
         return f"(case {self.control_expression} is{cases})"
 
@@ -1247,7 +1264,8 @@ class QuantifiedExpression(Expr):
     def __str__(self) -> str:
         return (
             f"(for {self.quantifier} {self.parameter_name} {self.keyword} {self.iterable} =>\n"
-            f"   {self.predicate})"
+            + indent(str(self.predicate), 4)
+            + ")"
         )
 
     @property

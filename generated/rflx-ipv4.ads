@@ -313,27 +313,29 @@ is
 
    function To_Base (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.IPv4.Protocol_Base is
      ((case Enum is
-         when PROTOCOL_UDP =>
-            17));
+          when PROTOCOL_UDP =>
+             17));
 
    function To_Actual (Enum : Protocol_Enum) return RFLX.IPv4.Protocol is
      ((True, Enum));
 
    function To_Actual (Val : RFLX.IPv4.Protocol_Base) return RFLX.IPv4.Protocol is
      ((case Val is
-         when 17 =>
-            (True, PROTOCOL_UDP),
-         when others =>
-            (False, Val)))
+          when 17 =>
+             (True, PROTOCOL_UDP),
+          when others =>
+             (False, Val)))
     with
      Pre =>
        Valid (Val);
 
    function To_Base (Val : RFLX.IPv4.Protocol) return RFLX.IPv4.Protocol_Base is
-     ((if Val.Known then
-       To_Base (Val.Enum)
-    else
-       Val.Raw));
+     ((if
+          Val.Known
+       then
+          To_Base (Val.Enum)
+       else
+          Val.Raw));
 
    type Header_Checksum is mod 2**16;
 
@@ -424,26 +426,26 @@ is
 
    function Valid (Val : RFLX.IPv4.Option_Class_Base) return Boolean is
      ((case Val is
-         when 0 | 2 =>
-            True,
-         when others =>
-            False));
+          when 0 | 2 =>
+             True,
+          when others =>
+             False));
 
    function To_Base (Enum : RFLX.IPv4.Option_Class) return RFLX.IPv4.Option_Class_Base is
      ((case Enum is
-         when Control =>
-            0,
-         when Debugging_And_Measurement =>
-            2));
+          when Control =>
+             0,
+          when Debugging_And_Measurement =>
+             2));
 
    function To_Actual (Val : RFLX.IPv4.Option_Class_Base) return RFLX.IPv4.Option_Class is
      ((case Val is
-         when 0 =>
-            Control,
-         when 2 =>
-            Debugging_And_Measurement,
-         when others =>
-            Unreachable_IPv4_Option_Class))
+          when 0 =>
+             Control,
+          when 2 =>
+             Debugging_And_Measurement,
+          when others =>
+             Unreachable_IPv4_Option_Class))
     with
      Pre =>
        Valid (Val);
