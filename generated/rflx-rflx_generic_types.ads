@@ -37,7 +37,6 @@ package RFLX.RFLX_Generic_Types is
    function Last_Bit_Index (Idx : Index) return Bit_Index is
      ((Bit_Length (Idx) - 1) * 8 + 8);
 
-   --  WORKAROUND: Componolit/Workarounds#17
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    function Bytes_First (Buffer : Bytes_Ptr) return Index is

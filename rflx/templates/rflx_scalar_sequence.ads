@@ -107,6 +107,7 @@ private
 
    type Context_State is (S_Initial, S_Processing, S_Valid, S_Invalid);
 
+   --  WORKAROUND: Componolit/Workarounds#24
    use Types;
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
