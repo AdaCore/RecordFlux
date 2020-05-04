@@ -571,12 +571,11 @@ class AbstractMessage(Type):
             ]
             if conditions:
                 conflict = LessEqual(Add(*conditions), Number(1))
-                result = conflict.forall()
-                if result != ProofResult.sat:
-                    message = str(conflict).replace("\n", "")
+                proof = conflict.forall()
+                if proof.result != ProofResult.sat:
                     raise ModelError(
                         f'conflicting conditions for field "{f.name}"'
-                        f' in "{self.identifier}" ({result}: {message})'
+                        f' in "{self.identifier}" ({proof.error})'
                     )
 
     def __prove_reachability(self) -> None:
@@ -599,24 +598,22 @@ class AbstractMessage(Type):
                     for path in self.__paths[f]
                 ]
             )
-            result = reachability.exists()
-            if result != ProofResult.sat:
-                message = str(reachability).replace("\n", "")
+            proof = reachability.exists()
+            if proof.result != ProofResult.sat:
                 raise ModelError(
-                    f'unreachable field "{f.name}" in "{self.identifier}"' f" ({result}: {message})"
+                    f'unreachable field "{f.name}" in "{self.identifier}"' f" ({proof.error})"
                 )
 
     def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.__fields):
             for index, c in enumerate(self.outgoing(f)):
                 contradiction = Equal(self.__with_constraints(c.condition), FALSE)
-                result = contradiction.forall()
-                if result == ProofResult.sat:
-                    message = str(contradiction).replace("\n", "")
+                proof = contradiction.forall()
+                if proof.result == ProofResult.sat:
                     raise ModelError(
                         f'contradicting condition {index} from field "{f.name}" to'
                         f' "{c.target.name}" in "{self.identifier}"'
-                        f" ({result}: {message})"
+                        f" ({proof.error})"
                     )
 
     @staticmethod
@@ -667,13 +664,12 @@ class AbstractMessage(Type):
                     ],
                     TRUE,
                 )
-                result = positive.forall()
-                if result != ProofResult.sat:
+                proof = positive.forall()
+                if proof.result != ProofResult.sat:
                     path_message = " -> ".join([l.target.name for l in p])
-                    message = str(positive.simplified()).replace("\n\t", "")
                     raise ModelError(
                         f'negative length for field "{f.name}" on path {path_message}'
-                        f' in "{self.identifier}" ({result}: {message})'
+                        f' in "{self.identifier}" ({proof.error})'
                     )
 
                 first = self.__target_first(l)
@@ -689,13 +685,12 @@ class AbstractMessage(Type):
                     ],
                     TRUE,
                 )
-                result = start.forall()
-                if result != ProofResult.sat:
+                proof = start.forall()
+                if proof.result != ProofResult.sat:
                     path_message = " -> ".join([l.target.name for l in p])
-                    message = str(start.simplified()).replace("\n\t", "")
                     raise ModelError(
                         f'start of field "{f.name}" on path {path_message} before'
-                        f' message start in "{self.identifier} ({result}: {message})'
+                        f' message start in "{self.identifier} ({proof.error})'
                     )
 
     def __prove_coverage(self) -> None:
@@ -737,13 +732,12 @@ class AbstractMessage(Type):
 
             # Coverage expression must be False, i.e. no bits left
             coverage = Not(And(*[fields, last_field, path_expressions, message_range]))
-            result = coverage.forall()
-            if result != ProofResult.sat:
+            proof = coverage.forall()
+            if proof.result != ProofResult.sat:
                 path_message = " -> ".join([l.target.name for l in path])
-                message = str(coverage).replace("\n\t", "")
                 raise ModelError(
                     f"path {path_message} does not cover whole message"
-                    f' in "{self.identifier}" ({result}: {message})'
+                    f' in "{self.identifier}" ({proof.error})'
                 )
 
     def __prove_overlays(self) -> None:
@@ -755,13 +749,12 @@ class AbstractMessage(Type):
                         [(path_expressions, Equal(self.__target_last(l), Last(l.first.prefix)))],
                         TRUE,
                     )
-                    result = overlaid.forall()
-                    if result != ProofResult.sat:
-                        message = str(overlaid).replace("\n", "")
+                    proof = overlaid.forall()
+                    if proof.result != ProofResult.sat:
                         raise ModelError(
                             f'field "{f.name}" not congruent with overlaid field '
                             f'"{l.first.prefix}" in "{self.identifier}"'
-                            f" ({result}: {message})"
+                            f" ({proof.error})"
                         )
 
     def _prove(self) -> None:
