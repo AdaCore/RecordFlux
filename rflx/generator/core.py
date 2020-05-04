@@ -176,7 +176,12 @@ class Generator:
             with open(self.template_dir / Path(template_filename)) as template_file:
                 create_file(
                     Path(directory) / Path(filename),
-                    self.__license_header() + template_file.read().format(prefix=f"{self.prefix}."),
+                    self.__license_header()
+                    + "".join(
+                        l.format(prefix=f"{self.prefix}.")
+                        for l in template_file
+                        if "  --  WORKAROUND" not in l
+                    ),
                 )
 
     def write_top_level_package(self, directory: Path) -> None:
