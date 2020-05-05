@@ -376,22 +376,10 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(Sub(Variable("X"), Number(1)).simplified(), Add(Variable("X"), Number(-1)))
         self.assertEqual(Sub(Number(6), Number(2)).simplified(), Number(4))
         self.assertEqual(
-            Sub(Variable("X"), Variable("Y")).simplified(), Add(Variable("X"), Variable("Y", True))
-        )
-        self.assertEqual(
-            Sub(Variable("X"), Variable("Y")).simplified({Variable("X"): Variable("Z")}),
-            Add(Variable("Z"), -Variable("Y")),
-        )
-        self.assertEqual(
-            Sub(Variable("Z"), Variable("Y")).simplified(
-                {Variable("Z"): Add(Variable("Y"), Variable("Q"))}
-            ),
-            Add(Add(Variable("Y"), Variable("Q")), -Variable("Y")),
+            Sub(Variable("X"), Variable("Y")).simplified(), Add(Variable("X"), -Variable("Y"))
         )
         self.assertTrue(
-            Equal(Variable("Q"), Sub(Add(Variable("Y"), Variable("Q")), Variable("Y")))
-            .simplified()
-            .simplified()
+            Equal(Variable("Q"), Sub(Add(Variable("Y"), Variable("Q")), Variable("Y"))).simplified()
         )
 
     def test_div_neg(self) -> None:
@@ -459,7 +447,6 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_variable_simplified(self) -> None:
         self.assertEqual(Variable("X").simplified(), Variable("X"))
-        self.assertEqual(Variable("X").simplified({Variable("X"): Number(42)}), Number(42))
 
     def test_variable_z3expr(self) -> None:
         self.assertEqual(Variable("X").z3expr(), z3.Int("X"))
@@ -507,9 +494,6 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_attribute_simplified(self) -> None:
         self.assertEqual(First("X").simplified(), First("X"))
-        self.assertEqual(First("X").simplified({First("X"): Number(42)}), Number(42))
-        self.assertEqual(-First("X").simplified({First("X"): Number(42)}), Number(-42))
-        self.assertEqual(First("X").simplified({Variable("X"): Call("Y")}), First(Call("Y")))
 
     def test_attribute_str(self) -> None:
         self.assertEqual(str(First("X")), "X'First")
@@ -584,7 +568,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_aggregate_simplified(self) -> None:
         self.assertEqual(
-            Aggregate(Last("X")).simplified({Last("X"): Number(42)}), Aggregate(Number(42)),
+            Aggregate(Add(Number(1), Number(1))).simplified(), Aggregate(Number(2)),
         )
 
     def test_named_aggregate_substituted(self) -> None:
@@ -615,8 +599,8 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_named_aggregate_simplified(self) -> None:
         self.assertEqual(
-            NamedAggregate(("Last", Last("X"))).simplified({Last("X"): Number(42)}),
-            NamedAggregate(("Last", Number(42))),
+            NamedAggregate(("First", Add(Number(1), Number(1)))).simplified(),
+            NamedAggregate(("First", Number(2))),
         )
 
     def test_relation_substituted(self) -> None:
@@ -639,6 +623,19 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             Number(1),
         )
 
+    def test_relation_simplified(self) -> None:
+        self.assertEqual(
+            Equal(Variable("X"), Add(Number(1), Number(1))).simplified(),
+            Equal(Variable("X"), Number(2)),
+        )
+        self.assertEqual(
+            Equal(Add(Number(1), Number(1)), Variable("X")).simplified(),
+            Equal(Number(2), Variable("X")),
+        )
+        self.assertEqual(
+            Equal(Add(Number(1), Number(1)), Add(Number(1), Number(1))).simplified(), TRUE,
+        )
+
     def test_relation_contains(self) -> None:
         self.assertTrue(Variable("X") in Less(Variable("X"), Number(42)))
 
@@ -653,26 +650,13 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_less_simplified(self) -> None:
         self.assertEqual(
-            Less(Variable("X"), Add(Number(21), Number(21))).simplified(),
-            Less(Variable("X"), Number(42)),
+            Less(Number(0), Number(1)).simplified(), TRUE,
         )
         self.assertEqual(
-            Less(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(10)}
-            ),
-            TRUE,
+            Less(Number(1), Number(1)).simplified(), FALSE,
         )
         self.assertEqual(
-            Less(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(42)}
-            ),
-            FALSE,
-        )
-        self.assertEqual(
-            Less(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(50)}
-            ),
-            FALSE,
+            Less(Number(2), Number(1)).simplified(), FALSE,
         )
 
     def test_less_equal_neg(self) -> None:
@@ -680,31 +664,13 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_less_equal_simplified(self) -> None:
         self.assertEqual(
-            LessEqual(Variable("X"), Add(Number(21), Number(21))).simplified(),
-            LessEqual(Variable("X"), Number(42)),
+            LessEqual(Number(0), Number(1)).simplified(), TRUE,
         )
         self.assertEqual(
-            LessEqual(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(10)}
-            ),
-            TRUE,
+            LessEqual(Number(1), Number(1)).simplified(), TRUE,
         )
         self.assertEqual(
-            LessEqual(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(42)}
-            ),
-            TRUE,
-        )
-        self.assertEqual(
-            LessEqual(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(100)}
-            ),
-            FALSE,
-        )
-        self.assertEqual(LessEqual(Variable("X"), Variable("X")).simplified(), TRUE)
-        self.assertEqual(
-            LessEqual(Variable("X"), Variable("Y")).simplified(),
-            LessEqual(Variable("X"), Variable("Y")),
+            LessEqual(Number(2), Number(1)).simplified(), FALSE,
         )
 
     def test_equal_neg(self) -> None:
@@ -712,24 +678,13 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_equal_simplified(self) -> None:
         self.assertEqual(
-            Equal(Variable("X"), Add(Number(21), Number(21))).simplified(),
-            Equal(Variable("X"), Number(42)),
+            Equal(Number(0), Number(1)).simplified(), FALSE,
         )
         self.assertEqual(
-            Equal(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(42)}
-            ),
-            TRUE,
+            Equal(Number(1), Number(1)).simplified(), TRUE,
         )
         self.assertEqual(
-            Equal(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(41)}
-            ),
-            FALSE,
-        )
-        self.assertEqual(Equal(Variable("X"), Variable("X")).simplified(), TRUE)
-        self.assertEqual(
-            Equal(Variable("X"), Variable("Y")).simplified(), Equal(Variable("X"), Variable("Y"))
+            Equal(Number(2), Number(1)).simplified(), FALSE,
         )
 
     def test_greater_neg(self) -> None:
@@ -737,26 +692,13 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_greater_simplified(self) -> None:
         self.assertEqual(
-            Greater(Variable("X"), Add(Number(21), Number(21))).simplified(),
-            Greater(Variable("X"), Number(42)),
+            Greater(Number(0), Number(1)).simplified(), FALSE,
         )
         self.assertEqual(
-            Greater(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(100)}
-            ),
-            TRUE,
+            Greater(Number(1), Number(1)).simplified(), FALSE,
         )
         self.assertEqual(
-            Greater(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(42)}
-            ),
-            FALSE,
-        )
-        self.assertEqual(
-            Greater(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(1)}
-            ),
-            FALSE,
+            Greater(Number(2), Number(1)).simplified(), TRUE,
         )
 
     def test_greater_equal_neg(self) -> None:
@@ -764,26 +706,13 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_greater_equal_simplified(self) -> None:
         self.assertEqual(
-            GreaterEqual(Variable("X"), Add(Number(21), Number(21))).simplified(),
-            GreaterEqual(Variable("X"), Number(42)),
+            GreaterEqual(Number(0), Number(1)).simplified(), FALSE,
         )
         self.assertEqual(
-            GreaterEqual(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(50)}
-            ),
-            TRUE,
+            GreaterEqual(Number(1), Number(1)).simplified(), TRUE,
         )
         self.assertEqual(
-            GreaterEqual(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(42)}
-            ),
-            TRUE,
-        )
-        self.assertEqual(
-            GreaterEqual(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(10)}
-            ),
-            FALSE,
+            GreaterEqual(Number(2), Number(1)).simplified(), TRUE,
         )
 
     def test_not_equal_neg(self) -> None:
@@ -791,20 +720,13 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
     def test_not_equal_simplified(self) -> None:
         self.assertEqual(
-            NotEqual(Variable("X"), Add(Number(21), Number(21))).simplified(),
-            NotEqual(Variable("X"), Number(42)),
+            NotEqual(Number(0), Number(1)).simplified(), TRUE,
         )
         self.assertEqual(
-            NotEqual(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(10)}
-            ),
-            TRUE,
+            NotEqual(Number(1), Number(1)).simplified(), FALSE,
         )
         self.assertEqual(
-            NotEqual(Variable("X"), Add(Number(21), Number(21))).simplified(
-                {Variable("X"): Number(42)}
-            ),
-            FALSE,
+            NotEqual(Number(2), Number(1)).simplified(), TRUE,
         )
 
     def test_in_neg(self) -> None:
@@ -864,12 +786,6 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 First("Buffer"),
                 Add(Last("Buffer"), Add(Number(21), Number(21))),
             ).simplified(),
-            Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42))),
-        )
-        self.assertEqual(
-            Slice(Variable("X"), First("X"), Add(Last("X"), Number(42))).simplified(
-                {Variable("X"): Variable("Buffer")}
-            ),
             Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42))),
         )
 
