@@ -521,20 +521,20 @@ is
       function Extract is new Types.Extract (RFLX.Ethernet.TCI);
    begin
       return ((case Fld is
-          when F_Destination =>
-             (Fld => F_Destination, Destination_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Source =>
-             (Fld => F_Source, Source_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Type_Length_TPID =>
-             (Fld => F_Type_Length_TPID, Type_Length_TPID_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_TPID =>
-             (Fld => F_TPID, TPID_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_TCI =>
-             (Fld => F_TCI, TCI_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Type_Length =>
-             (Fld => F_Type_Length, Type_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Payload =>
-             (Fld => F_Payload)));
+                  when F_Destination =>
+                     (Fld => F_Destination, Destination_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Source =>
+                     (Fld => F_Source, Source_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Type_Length_TPID =>
+                     (Fld => F_Type_Length_TPID, Type_Length_TPID_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_TPID =>
+                     (Fld => F_TPID, TPID_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_TCI =>
+                     (Fld => F_TCI, TCI_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Type_Length =>
+                     (Fld => F_Type_Length, Type_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Payload =>
+                     (Fld => F_Payload)));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is

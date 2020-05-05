@@ -355,16 +355,16 @@ is
       function Extract is new Types.Extract (RFLX.UDP.Checksum);
    begin
       return ((case Fld is
-          when F_Source_Port =>
-             (Fld => F_Source_Port, Source_Port_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Destination_Port =>
-             (Fld => F_Destination_Port, Destination_Port_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Length =>
-             (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Checksum =>
-             (Fld => F_Checksum, Checksum_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Payload =>
-             (Fld => F_Payload)));
+                  when F_Source_Port =>
+                     (Fld => F_Source_Port, Source_Port_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Destination_Port =>
+                     (Fld => F_Destination_Port, Destination_Port_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Length =>
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Checksum =>
+                     (Fld => F_Checksum, Checksum_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Payload =>
+                     (Fld => F_Payload)));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is

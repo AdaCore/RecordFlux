@@ -289,12 +289,12 @@ is
       function Extract is new Types.Extract (RFLX.TLV.Length);
    begin
       return ((case Fld is
-          when F_Tag =>
-             (Fld => F_Tag, Tag_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Length =>
-             (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Value =>
-             (Fld => F_Value)));
+                  when F_Tag =>
+                     (Fld => F_Tag, Tag_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Length =>
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Value =>
+                     (Fld => F_Value)));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
