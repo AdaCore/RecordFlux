@@ -224,7 +224,9 @@ class GeneratorGenerator:
                         ),
                     ],
                 )
-            ],
+            ]
+            if scalar_fields
+            else [],
         )
 
     def create_scalar_setter_procedures(
@@ -677,8 +679,8 @@ class GeneratorGenerator:
                             for field in message.fields
                             if Variable(field.name) in l.condition.variables()
                         ],
-                        l.condition.simplified(
-                            {
+                        l.condition.substituted(
+                            mapping={
                                 Variable(field.name): Call(f"Get_{field.name}", [Variable("Ctx")])
                                 for field in message.fields
                                 if Variable(field.name) in l.condition.variables()

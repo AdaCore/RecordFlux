@@ -39,12 +39,14 @@ from rflx.expression import (
     Old,
     Or,
     OrElse,
+    Pos,
     Pow,
     Range,
     Result,
     Size,
     Slice,
     Sub,
+    Val,
     ValueRange,
     Variable,
 )
@@ -523,6 +525,42 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
         self.assertEqual(First("X").z3expr(), z3.Int("X'First"))
         with self.assertRaises(TypeError):
             First(Call("X")).z3expr()
+
+    def test_attribute_expression_substituted(self) -> None:
+        self.assertEqual(
+            Val("X", Variable("Y")).substituted(
+                lambda x: Number(42) if x == Val("X", Variable("Y")) else x
+            ),
+            Number(42),
+        )
+        self.assertEqual(
+            -Val("X", Variable("Y")).substituted(
+                lambda x: Number(42) if x == Val("X", Variable("Y")) else x
+            ),
+            Number(-42),
+        )
+        self.assertEqual(
+            Val("X", Variable("Y")).substituted(lambda x: Call("Y") if x == Variable("Y") else x),
+            Val("X", Call("Y")),
+        )
+        self.assertEqual(
+            -Val("X", Variable("Y")).substituted(lambda x: Call("Y") if x == Variable("Y") else x),
+            -Val("X", Call("Y")),
+        )
+        self.assertEqual(
+            -Val("X", Variable("Y")).substituted(
+                lambda x: Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Pos(x.prefix, x.expression) if isinstance(x, Val) else x)
+            ),
+            -Pos("P_X", Variable("P_Y")),
+        )
+
+    def test_attribute_expression_simplified(self) -> None:
+        self.assertEqual(Val("X", Add(Number(1), Number(1))).simplified(), Val("X", Number(2)))
+
+    def test_attribute_expression_str(self) -> None:
+        self.assertEqual(str(Val("X", Number(1))), "X'Val (1)")
 
     def test_aggregate_substituted(self) -> None:
         self.assertEqual(

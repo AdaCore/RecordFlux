@@ -1,11 +1,11 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
-package body RFLX.Arrays.Generic_Inner_Message with
+package body RFLX.Expression.Generic_Message with
   SPARK_Mode
 is
 
    function Create return Context is
-     ((Types.Index'First, Types.Index'First, Types.Bit_Index'First, Types.Bit_Index'First, null, (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final))));
+     ((Types.Index'First, Types.Index'First, Types.Bit_Index'First, Types.Bit_Index'First, null, (F_Payload => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final))));
 
    procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) is
    begin
@@ -16,14 +16,13 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, Buffer, (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, Buffer, (F_Payload => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    function Initialized (Ctx : Context) return Boolean is
-     (Valid_Next (Ctx, F_Length)
-      and then Available_Space (Ctx, F_Length) = (Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1)
-      and then Invalid (Ctx, F_Length)
+     (Valid_Next (Ctx, F_Payload)
+      and then Available_Space (Ctx, F_Payload) = (Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1)
       and then Invalid (Ctx, F_Payload));
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
@@ -38,6 +37,7 @@ is
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if
           Structural_Valid (Ctx.Cursors (F_Payload))
+          and Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2)))
        then
           Ctx.Cursors (F_Payload).Last
        else
@@ -47,23 +47,17 @@ is
      ((case Ctx.Cursors (Fld).Predecessor is
           when F_Initial =>
              (case Fld is
-                 when F_Length =>
-                    True,
-                 when others =>
-                    False),
-          when F_Length =>
-             (case Fld is
                  when F_Payload =>
-                    True,
-                 when others =>
-                    False),
+                    True),
           when F_Payload | F_Final =>
              False));
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is
-          when F_Initial | F_Length | F_Payload =>
+          when F_Initial =>
              True,
+          when F_Payload =>
+             Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2))),
           when F_Final =>
              False));
 
@@ -71,30 +65,15 @@ is
      ((case Ctx.Cursors (Fld).Predecessor is
           when F_Initial =>
              (case Fld is
-                 when F_Length =>
-                    RFLX.Arrays.Length'Size,
-                 when others =>
-                    Types.Unreachable_Bit_Length),
-          when F_Length =>
-             (case Fld is
                  when F_Payload =>
-                    Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
-                 when others =>
-                    Types.Unreachable_Bit_Length),
+                    16),
           when F_Payload | F_Final =>
              0));
 
    function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index is
      ((case Fld is
-          when F_Length =>
-             Ctx.First,
           when F_Payload =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Length
-              then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
-              else
-                 Types.Unreachable_Bit_Length)));
+             Ctx.First));
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
      ((Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1));
@@ -108,10 +87,13 @@ is
 
    function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
      ((case Fld is
-          when F_Length =>
-             F_Payload,
           when F_Payload =>
-             F_Final))
+             (if
+                 Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2)))
+              then
+                 F_Final
+              else
+                 F_Initial)))
     with
      Pre =>
        Has_Buffer (Ctx)
@@ -122,21 +104,11 @@ is
      ((case Fld is
           when F_Initial =>
              True,
-          when F_Length =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
           when F_Payload =>
-             (Valid (Ctx.Cursors (F_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Length),
+             Ctx.Cursors (Fld).Predecessor = F_Initial,
           when F_Final =>
              (Structural_Valid (Ctx.Cursors (F_Payload))
               and Ctx.Cursors (Fld).Predecessor = F_Payload)));
-
-   function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
-          when F_Length =>
-             Invalid (Ctx.Cursors (F_Payload)),
-          when F_Payload =>
-             True));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -163,9 +135,7 @@ is
      (Sufficient_Buffer_Length (Ctx, Fld)
       and then (case Fld is
                    when F_Payload =>
-                      Ctx.Buffer.all (Types.Byte_Index (Field_First (Ctx, Fld)) .. Types.Byte_Index (Field_Last (Ctx, Fld))) = Data,
-                   when others =>
-                      False));
+                      Ctx.Buffer.all (Types.Byte_Index (Field_First (Ctx, Fld)) .. Types.Byte_Index (Field_Last (Ctx, Fld))) = Data));
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
@@ -173,7 +143,6 @@ is
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
-       and Invalid_Successor (Ctx, Fld)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -183,12 +152,8 @@ is
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Length (Ctx, Fld) = Field_Length (Ctx, Fld)'Old
        and (case Fld is
-               when F_Length =>
-                  Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Payload),
                when F_Payload =>
-                  Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Invalid (Ctx, F_Payload))
+                  Invalid (Ctx, F_Payload))
    is
       First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
@@ -198,11 +163,6 @@ is
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Length (Ctx, Fld) = Length);
       case Fld is
-         when F_Length =>
-            Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Length) := (S_Invalid, Ctx.Cursors (F_Length).Predecessor);
-            pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
          when F_Payload =>
             Ctx.Cursors (F_Payload) := (S_Invalid, Ctx.Cursors (F_Payload).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
@@ -212,8 +172,6 @@ is
 
    function Composite_Field (Fld : Field) return Boolean is
      ((case Fld is
-          when F_Length =>
-             False,
           when F_Payload =>
              True));
 
@@ -225,19 +183,8 @@ is
      Post =>
        Get_Field_Value'Result.Fld = Fld
    is
-      First : constant Types.Bit_Index := Field_First (Ctx, Fld);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, Fld);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-      function Offset return Types.Offset is
-        (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (RFLX.Arrays.Length);
    begin
       return ((case Fld is
-                  when F_Length =>
-                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
                   when F_Payload =>
                      (Fld => F_Payload)));
    end Get_Field_Value;
@@ -263,20 +210,12 @@ is
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
                pragma Assert ((if
-                                  Structural_Valid (Ctx.Cursors (F_Length))
+                                  Structural_Valid (Ctx.Cursors (F_Payload))
                                then
-                                  (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
-                                  and then Ctx.Cursors (F_Length).Predecessor = F_Initial
-                                  and then Ctx.Cursors (F_Length).First = Ctx.First
-                                  and then (if
-                                               Structural_Valid (Ctx.Cursors (F_Payload))
-                                            then
-                                               (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
-                                               and then Ctx.Cursors (F_Payload).Predecessor = F_Length
-                                               and then Ctx.Cursors (F_Payload).First = (Ctx.Cursors (F_Length).Last + 1))));
-               if Fld = F_Length then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Payload then
+                                  (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = 16
+                                  and then Ctx.Cursors (F_Payload).Predecessor = F_Initial
+                                  and then Ctx.Cursors (F_Payload).First = Ctx.First));
+               if Fld = F_Payload then
                   Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
                end if;
             else
@@ -290,7 +229,6 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Length);
       Verify (Ctx, F_Payload);
    end Verify_Message;
 
@@ -314,19 +252,15 @@ is
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Length)
-      and then Structural_Valid (Ctx, F_Payload));
+     (Structural_Valid (Ctx, F_Payload)
+      and then Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2))));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Length)
-      and then Valid (Ctx, F_Payload));
+     (Valid (Ctx, F_Payload)
+      and then Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Length)
-      or Incomplete (Ctx, F_Payload));
-
-   function Get_Length (Ctx : Context) return RFLX.Arrays.Length is
-     (Ctx.Cursors (F_Length).Value.Length_Value);
+     (Incomplete (Ctx, F_Payload));
 
    procedure Get_Payload (Ctx : Context) is
       First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Payload).First);
@@ -334,68 +268,6 @@ is
    begin
       Process_Payload (Ctx.Buffer.all (First .. Last));
    end Get_Payload;
-
-   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out Types.Bit_Index) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Val.Fld in Field'Range
-       and then Valid_Next (Ctx, Val.Fld)
-       and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
-       and then (for all F in Field'Range =>
-                    (if
-                        Structural_Valid (Ctx.Cursors (F))
-                     then
-                        Ctx.Cursors (F).Last <= Field_Last (Ctx, Val.Fld))),
-     Post =>
-       Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, Val.Fld)
-       and Lst = Field_Last (Ctx, Val.Fld)
-       and Fst >= Ctx.First
-       and Fst <= (Lst + 1)
-       and Types.Byte_Index (Lst) <= Ctx.Buffer_Last
-       and (for all F in Field'Range =>
-               (if
-                   Structural_Valid (Ctx.Cursors (F))
-                then
-                   Ctx.Cursors (F).Last <= Lst))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Cursors = Ctx.Cursors'Old
-   is
-      First : constant Types.Bit_Index := Field_First (Ctx, Val.Fld);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, Val.Fld);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-      function Offset return Types.Offset is
-        (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (RFLX.Arrays.Length);
-   begin
-      Fst := First;
-      Lst := Last;
-      case Val.Fld is
-         when F_Initial =>
-            null;
-         when F_Length =>
-            Insert (Val.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
-         when F_Payload | F_Final =>
-            null;
-      end case;
-   end Set_Field_Value;
-
-   procedure Set_Length (Ctx : in out Context; Val : RFLX.Arrays.Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Length, Val);
-      First, Last : Types.Bit_Index;
-   begin
-      Reset_Dependent_Fields (Ctx, F_Length);
-      Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
-      Ctx.Cursors (F_Length) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Length).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Length)) := (State => S_Invalid, Predecessor => F_Length);
-   end Set_Length;
 
    procedure Set_Payload (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
@@ -416,19 +288,13 @@ is
       Reset_Dependent_Fields (Ctx, F_Payload);
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
       pragma Assert ((if
-                         Structural_Valid (Ctx.Cursors (F_Length))
+                         Structural_Valid (Ctx.Cursors (F_Payload))
                       then
-                         (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
-                         and then Ctx.Cursors (F_Length).Predecessor = F_Initial
-                         and then Ctx.Cursors (F_Length).First = Ctx.First
-                         and then (if
-                                      Structural_Valid (Ctx.Cursors (F_Payload))
-                                   then
-                                      (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
-                                      and then Ctx.Cursors (F_Payload).Predecessor = F_Length
-                                      and then Ctx.Cursors (F_Payload).First = (Ctx.Cursors (F_Length).Last + 1))));
+                         (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = 16
+                         and then Ctx.Cursors (F_Payload).Predecessor = F_Initial
+                         and then Ctx.Cursors (F_Payload).First = Ctx.First));
       Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload;
 
-end RFLX.Arrays.Generic_Inner_Message;
+end RFLX.Expression.Generic_Message;

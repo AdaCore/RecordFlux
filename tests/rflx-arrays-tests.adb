@@ -90,7 +90,8 @@ package body RFLX.Arrays.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Arrays.Message.Has_Buffer (Context) and then not Arrays.Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
    end Test_Parsing_Arrays_Modular_Sequential;
 
    procedure Test_Parsing_Arrays_Modular_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -204,7 +205,8 @@ package body RFLX.Arrays.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Arrays.Message.Has_Buffer (Context) and then not Arrays.Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
    end Test_Parsing_Arrays_Range_Sequential;
 
    procedure Test_Parsing_Arrays_Range_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -318,7 +320,8 @@ package body RFLX.Arrays.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Arrays.Message.Has_Buffer (Context) and then not Arrays.Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
    end Test_Parsing_Arrays_Enumeration_Sequential;
 
    procedure Test_Parsing_Arrays_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -441,7 +444,8 @@ package body RFLX.Arrays.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Arrays.Message.Has_Buffer (Context) and then not Arrays.Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
    end Test_Parsing_Arrays_AV_Enumeration_Sequential;
 
    procedure Test_Parsing_Arrays_AV_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -718,6 +722,7 @@ package body RFLX.Arrays.Tests is
       Arrays.Messages_Message.Initialize (Context, Buffer);
 
       Arrays.Messages_Message.Verify_Message (Context);
+      pragma Assert (Arrays.Messages_Message.Has_Buffer (Context));
       if Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Length) then
          Length := Arrays.Messages_Message.Get_Length (Context);
          Assert (Length'Image, Arrays.Length'Image (5), "Unexpected Length");
@@ -758,6 +763,8 @@ package body RFLX.Arrays.Tests is
                   Arrays.Messages_Message.Update_Messages (Context, Sequence_Context);
                   Assert (Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Messages),
                           "Invalid Messages after context update");
+
+                  pragma Assert (Arrays.Messages_Message.Has_Buffer (Context));
                else
                   Assert (False, "Invalid element 2");
                end if;
@@ -771,7 +778,8 @@ package body RFLX.Arrays.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (Arrays.Messages_Message.Valid_Message (Context), "Invalid Message after complete parsing");
+      Assert (Arrays.Messages_Message.Has_Buffer (Context) and then Arrays.Messages_Message.Valid_Message (Context),
+              "Invalid Message after complete parsing");
    end Test_Parsing_Arrays_Messages_Message_Sequential;
 
    procedure Test_Parsing_Arrays_Messages_Message_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
