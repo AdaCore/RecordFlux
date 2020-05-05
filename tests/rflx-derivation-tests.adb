@@ -79,7 +79,8 @@ package body RFLX.Derivation.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Derivation.Message.Has_Buffer (Context) and then not Derivation.Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Modular_Sequential;
 
    procedure Test_Parsing_Derivation_Modular_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -193,7 +194,8 @@ package body RFLX.Derivation.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Derivation.Message.Has_Buffer (Context) and then not Derivation.Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Range_Sequential;
 
    procedure Test_Parsing_Derivation_Range_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -307,7 +309,8 @@ package body RFLX.Derivation.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Derivation.Message.Has_Buffer (Context) and then not Derivation.Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
    end Test_Parsing_Derivation_Enumeration_Sequential;
 
    procedure Test_Parsing_Derivation_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -430,7 +433,8 @@ package body RFLX.Derivation.Tests is
          Assert (False, "Invalid Length");
       end if;
 
-      Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Derivation.Message.Has_Buffer (Context) and then not Derivation.Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
    end Test_Parsing_Arrays_AV_Enumeration_Sequential;
 
    procedure Test_Parsing_Arrays_AV_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with

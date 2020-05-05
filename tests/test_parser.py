@@ -762,17 +762,13 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                             "Bar",
                                             UNDEFINED,
                                             UNDEFINED,
-                                            And(
-                                                Equal(Length("Foo"), Number(1)),
-                                                LessEqual(Variable("Foo"), Number(30, 16)),
-                                            ),
+                                            LessEqual(Variable("Foo"), Number(30, 16)),
                                         ),
                                         Then(
                                             "Baz",
-                                            condition=And(
-                                                Equal(Length("Foo"), Number(1)),
-                                                Greater(Variable("Foo"), Number(30, 16)),
-                                            ),
+                                            UNDEFINED,
+                                            UNDEFINED,
+                                            Greater(Variable("Foo"), Number(30, 16)),
                                         ),
                                     ],
                                 ),
@@ -807,16 +803,8 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
 
         structure = [
             Link(INITIAL, Field("Foo")),
-            Link(
-                Field("Foo"),
-                Field("Bar"),
-                And(Equal(Length("Foo"), Number(1)), LessEqual(Variable("Foo"), Number(30, 16)),),
-            ),
-            Link(
-                Field("Foo"),
-                Field("Baz"),
-                And(Equal(Length("Foo"), Number(1)), Greater(Variable("Foo"), Number(30, 16)),),
-            ),
+            Link(Field("Foo"), Field("Bar"), LessEqual(Variable("Foo"), Number(30, 16)),),
+            Link(Field("Foo"), Field("Baz"), Greater(Variable("Foo"), Number(30, 16)),),
             Link(Field("Bar"), Field("Baz")),
             Link(Field("Baz"), FINAL),
         ]
@@ -894,17 +882,13 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                                             "Bar",
                                             UNDEFINED,
                                             UNDEFINED,
-                                            And(
-                                                Equal(Length("Foo"), Number(1)),
-                                                LessEqual(Variable("Foo"), Number(30, 16)),
-                                            ),
+                                            LessEqual(Variable("Foo"), Number(30, 16)),
                                         ),
                                         Then(
                                             "Baz",
-                                            condition=And(
-                                                Equal(Length("Foo"), Number(1)),
-                                                Greater(Variable("Foo"), Number(30, 16)),
-                                            ),
+                                            UNDEFINED,
+                                            UNDEFINED,
+                                            Greater(Variable("Foo"), Number(30, 16)),
                                         ),
                                     ],
                                 ),

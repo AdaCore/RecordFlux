@@ -38,12 +38,17 @@ is
    end Switch;
 
    procedure Update (Ctx : in out Context; Element_Ctx : in out Element_Context) is
-      Buffer        : Types.Bytes_Ptr;
+      Buffer : Types.Bytes_Ptr;
+      Valid_Message : constant Boolean := Element_Valid_Message (Element_Ctx);
+      Last : Types.Bit_Index := Types.Bit_Index'First;
    begin
+      if Valid_Message then
+         Last := Element_Last (Element_Ctx);
+      end if;
       Element_Take_Buffer (Element_Ctx, Buffer);
       Ctx.Buffer := Buffer;
-      if Element_Valid_Message (Element_Ctx) then
-         Ctx.Index := Element_Last (Element_Ctx) + 1;
+      if Valid_Message then
+         Ctx.Index := Last + 1;
          if Ctx.Index = Ctx.Last + 1 then
             Ctx.State := S_Valid;
          end if;

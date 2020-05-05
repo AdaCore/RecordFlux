@@ -149,9 +149,9 @@ class IntegerValue(ScalarValue):
 
     def assign(self, value: int, check: bool = True) -> None:
         if (
-            self._type.constraints("__VALUE__", check).simplified(
-                {Variable("__VALUE__"): Number(value)}
-            )
+            self._type.constraints("__VALUE__", check)
+            .substituted(mapping={Variable("__VALUE__"): Number(value)})
+            .simplified()
             != TRUE
         ):
             raise ValueError(f"value {value} not in type range {self._first} .. {self._last}")
@@ -194,12 +194,14 @@ class EnumValue(ScalarValue):
         if value not in self._type.literals:
             raise KeyError(f"{value} is not a valid enum value")
         assert (
-            self._type.constraints("__VALUE__", check).simplified(
-                {
+            self._type.constraints("__VALUE__", check)
+            .substituted(
+                mapping={
                     **{Variable(k): v for k, v in self._type.literals.items()},
                     **{Variable("__VALUE__"): self._type.literals[value]},
                 }
             )
+            .simplified()
             == TRUE
         )
         self._value = value
@@ -768,7 +770,9 @@ class MessageValue(TypeValue):
             **{Last(k): v.last for k, v in self._fields.items() if v.set},
         }
 
-        return expr.simplified(field_values).simplified(self.__type_literals)
+        mapping = {**field_values, **self.__type_literals}
+
+        return expr.substituted(mapping=mapping).substituted(mapping=mapping).simplified()
 
     class Field:
         def __init__(self, t: TypeValue):

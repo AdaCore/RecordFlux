@@ -901,11 +901,55 @@ class Constrained(Attribute):
     pass
 
 
+class AttributeExpression(Attribute, ABC):
+    def __init__(
+        self, prefix: Union[StrID, Expr], expression: Expr, negative: bool = False
+    ) -> None:
+        super().__init__(prefix)
+        self.expression = expression
+
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        assert (func and not mapping) or (not func and mapping is not None)
+        func = substitution(mapping or {}, func)
+        positive_self = copy(self)
+        positive_self.negative = False
+        expr = func(positive_self)
+        if isinstance(expr, AttributeExpression):
+            expr = expr.__class__(expr.prefix.substituted(func), expr.expression.substituted(func))
+        return -expr if self.negative else expr
+
+    def simplified(self, facts: Mapping[Name, Expr] = None) -> Expr:
+        if isinstance(self, self.__class__):
+            prefix = self.prefix.simplified(facts)
+            return (
+                -self.__class__(prefix, self.expression.simplified(facts))
+                if self.negative
+                else self.__class__(prefix, self.expression.simplified(facts))
+            )
+        return self
+
+    @property
+    def representation(self) -> str:
+        return f"{self.prefix}'{self.__class__.__name__} ({self.expression})"
+
+
+class Val(AttributeExpression):
+    pass
+
+
+class Pos(AttributeExpression):
+    pass
+
+
 class Indexed(Name):
     def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
         super().__init__(negative)
         self.prefix = prefix
         self.elements = list(elements)
+
+        assert len(self.elements) > 0, "illegal indexed component without elements"
 
     @property
     def representation(self) -> str:
