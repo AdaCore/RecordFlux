@@ -105,8 +105,7 @@ is
         and Ctx.Last = Ctx.Last'Old),
      Contract_Cases =>
        (Element_Valid_Message (Element_Ctx) =>
-          (Index (Ctx) = Element_Last (Element_Ctx) + 1
-           and Element_Last (Element_Ctx) = Element_Last (Element_Ctx)'Old),
+          (Index (Ctx) = Element_Last (Element_Ctx)'Old + 1),
         others =>
           True);
 

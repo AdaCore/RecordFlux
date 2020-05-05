@@ -9,7 +9,7 @@ with RFLX.In_TLV.Tests;
 with RFLX.Enumeration.Tests;
 with RFLX.Arrays.Tests;
 with RFLX.Derivation.Tests;
---  with RFLX.Expression.Tests;  --  ISSUE: Componolit/RecordFlux#60
+with RFLX.Expression.Tests;
 
 package body Test_Suite is
 
@@ -29,7 +29,7 @@ package body Test_Suite is
       Result.all.Add_Test (new RFLX.Enumeration.Tests.Test);
       Result.all.Add_Test (new RFLX.Arrays.Tests.Test);
       Result.all.Add_Test (new RFLX.Derivation.Tests.Test);
-      --  Result.Add_Test (new RFLX.Expression.Tests.Test);  --  ISSUE: Componolit/RecordFlux#60
+      Result.all.Add_Test (new RFLX.Expression.Tests.Test);
       return Result;
    end Suite;
 

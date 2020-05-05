@@ -30,17 +30,12 @@ from rflx.expression import (
     And,
     AndThen,
     Call,
-    Div,
     Equal,
     Expr,
-    GreaterEqual,
     If,
     Indexed,
-    Last,
     Less,
-    LessEqual,
     NamedAggregate,
-    NotEqual,
     Number,
     Old,
     Or,
@@ -84,7 +79,10 @@ class ParserGenerator:
         )
 
     def create_internal_functions(
-        self, message: Message, composite_fields: Sequence[Field]
+        self,
+        message: Message,
+        scalar_fields: Mapping[Field, Type],
+        composite_fields: Sequence[Field],
     ) -> UnitPart:
         def result(field: Field, message: Message) -> NamedAggregate:
             aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
@@ -112,53 +110,6 @@ class ParserGenerator:
             [
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "Sufficient_Buffer_Length",
-                        "Boolean",
-                        [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
-                    ),
-                    And(
-                        NotEqual(Variable("Ctx.Buffer"), Variable("null")),
-                        LessEqual(
-                            Variable("Ctx.First"), Div(Last(const.TYPES_BIT_INDEX), Number(2)),
-                        ),
-                        LessEqual(
-                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                            Div(Last(const.TYPES_BIT_INDEX), Number(2)),
-                        ),
-                        GreaterEqual(
-                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]), Number(0)
-                        ),
-                        LessEqual(
-                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
-                            Div(Last(const.TYPES_BIT_LENGTH), Number(2)),
-                        ),
-                        LessEqual(
-                            Add(
-                                Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                                Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
-                            ),
-                            Div(Last(const.TYPES_BIT_LENGTH), Number(2)),
-                        ),
-                        LessEqual(
-                            Variable("Ctx.First"),
-                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                        ),
-                        GreaterEqual(
-                            Variable("Ctx.Last"),
-                            Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
-                        ),
-                    ),
-                    [
-                        Precondition(
-                            And(
-                                Call("Has_Buffer", [Variable("Ctx")]),
-                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
-                            )
-                        )
-                    ],
-                ),
-                ExpressionFunctionDeclaration(
-                    FunctionSpecification(
                         "Composite_Field", "Boolean", [Parameter(["Fld"], "Field")]
                     ),
                     Case(
@@ -183,7 +134,9 @@ class ParserGenerator:
                             for t in message.types.values()
                             if isinstance(t, Scalar)
                         ),
-                    ],
+                    ]
+                    if scalar_fields
+                    else [],
                     [
                         ReturnStatement(
                             Case(
@@ -625,13 +578,22 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(common.VALID_CONTEXT, Call("Has_Buffer", [Variable("Ctx")]),)
+                        )
+                    ],
+                )
+            ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
-                    valid_message_condition(message, structural=True).simplified(
-                        common.substitution(message)
-                    ),
+                    valid_message_condition(message, structural=True)
+                    .substituted(common.substitution(message))
+                    .simplified(),
                 )
             ],
         )
@@ -643,11 +605,22 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(common.VALID_CONTEXT, Call("Has_Buffer", [Variable("Ctx")]),)
+                        )
+                    ],
+                )
+            ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
-                    valid_message_condition(message).simplified(common.substitution(message)),
+                    valid_message_condition(message)
+                    .substituted(common.substitution(message))
+                    .simplified(),
                 )
             ],
         )

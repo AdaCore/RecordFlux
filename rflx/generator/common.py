@@ -1,4 +1,4 @@
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence
 
 from rflx.ada import (
     Assignment,
@@ -38,6 +38,7 @@ from rflx.expression import (
     Selected,
     Size,
     Sub,
+    Val,
     ValueRange,
     Variable,
 )
@@ -46,12 +47,14 @@ from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
+    Composite,
     Enumeration,
     Field,
     Link,
     Message,
     ModularInteger,
     Scalar,
+    Type,
     is_builtin_type,
 )
 
@@ -61,6 +64,70 @@ VALID_CONTEXT = Call("Valid_Context", [Variable("Ctx")])  # WORKAROUND: Componol
 
 
 def substitution(
+    message: Message, embedded: bool = False, public: bool = False
+) -> Callable[[Expr], Expr]:
+    facts = substitution_facts(message, embedded, public)
+
+    def func(expression: Expr) -> Expr:
+        def byte_aggregate(aggregate: Aggregate) -> Aggregate:
+            return Aggregate(*[Val(const.TYPES_BYTE, e) for e in aggregate.elements])
+
+        if isinstance(expression, Name) and expression in facts:
+            return facts[expression]
+
+        if isinstance(expression, (Equal, NotEqual)):
+            field = None
+            aggregate = None
+            if isinstance(expression.left, Variable) and isinstance(expression.right, Aggregate):
+                field = expression.left
+                aggregate = byte_aggregate(expression.right)
+            elif isinstance(expression.left, Aggregate) and isinstance(expression.right, Variable):
+                field = expression.right
+                aggregate = byte_aggregate(expression.left)
+            if field and aggregate:
+                if embedded:
+                    return Equal(
+                        Indexed(
+                            Variable("Buffer"),
+                            ValueRange(
+                                Call(
+                                    const.TYPES_BYTE_INDEX,
+                                    [
+                                        Selected(
+                                            Indexed(
+                                                Variable("Cursors"),
+                                                Variable(Field(field.name).affixed_name),
+                                            ),
+                                            "First",
+                                        )
+                                    ],
+                                ),
+                                Call(
+                                    const.TYPES_BYTE_INDEX,
+                                    [
+                                        Selected(
+                                            Indexed(
+                                                Variable("Cursors"),
+                                                Variable(Field(field.name).affixed_name),
+                                            ),
+                                            "Last",
+                                        )
+                                    ],
+                                ),
+                            ),
+                        ),
+                        aggregate,
+                    )
+                return Call(
+                    "Equal", [Variable("Ctx"), Variable(Field(field.name).affixed_name), aggregate]
+                )
+
+        return expression
+
+    return func
+
+
+def substitution_facts(
     message: Message, embedded: bool = False, public: bool = False
 ) -> Mapping[Name, Expr]:
     def prefixed(name: str) -> Expr:
@@ -91,24 +158,36 @@ def substitution(
             Number(1),
         )
 
-    def field_value(field: Field) -> Expr:
-        if public:
-            return Call(const.TYPES_BIT_LENGTH, [Call(f"Get_{field.name}", [Variable("Ctx")])])
-        return Call(
-            const.TYPES_BIT_LENGTH,
-            [Selected(Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value")],
-        )
-
-    def enum_field_value(field: Field) -> Expr:
-        if public:
+    def field_value(field: Field, field_type: Type) -> Expr:
+        if isinstance(field_type, Enumeration):
+            if public:
+                return Call(
+                    const.TYPES_BIT_LENGTH,
+                    [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
+                )
             return Call(
                 const.TYPES_BIT_LENGTH,
-                [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
+                [
+                    Selected(
+                        Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
+                    )
+                ],
             )
-        return Call(
-            const.TYPES_BIT_LENGTH,
-            [Selected(Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value")],
-        )
+        if isinstance(field_type, Scalar):
+            if public:
+                return Call(const.TYPES_BIT_LENGTH, [Call(f"Get_{field.name}", [Variable("Ctx")])])
+            return Call(
+                const.TYPES_BIT_LENGTH,
+                [
+                    Selected(
+                        Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
+                    )
+                ],
+            )
+        if isinstance(field_type, Composite):
+            return Variable(field.name)
+        assert False, f'unexpected type "{type(field_type).__name__}"'
+        return UNDEFINED
 
     return {
         **{First("Message"): first},
@@ -117,16 +196,7 @@ def substitution(
         **{First(f.name): field_first(f) for f in message.fields},
         **{Last(f.name): field_last(f) for f in message.fields},
         **{Length(f.name): field_length(f) for f in message.fields},
-        **{
-            Variable(f.name): field_value(f)
-            for f, t in message.types.items()
-            if not isinstance(t, Enumeration)
-        },
-        **{
-            Variable(f.name): enum_field_value(f)
-            for f, t in message.types.items()
-            if isinstance(t, Enumeration)
-        },
+        **{Variable(f.name): field_value(f, t) for f, t in message.types.items()},
         **{
             Variable(l): Call(const.TYPES_BIT_LENGTH, [Call("To_Base", [Variable(l)])])
             for t in message.types.values()
@@ -160,28 +230,25 @@ def message_structure_invariant(
         return TRUE
 
     field_type = message.types[target]
-    condition = link.condition.simplified(substitution(message, embedded))
+    condition = link.condition.substituted(substitution(message, embedded)).simplified()
     length = (
         Size(prefix * full_base_type_name(field_type))
         if isinstance(field_type, Scalar)
-        else link.length.simplified(substitution(message, embedded))
+        else link.length.substituted(substitution(message, embedded)).simplified()
     )
     first = (
         prefixed("First")
         if source == INITIAL
-        else link.first.simplified(
-            {
-                **substitution(message, embedded),
-                **{
-                    UNDEFINED: Add(
-                        Selected(
-                            Indexed(prefixed("Cursors"), Variable(source.affixed_name)), "Last"
-                        ),
-                        Number(1),
-                    )
-                },
+        else link.first.substituted(substitution(message, embedded))
+        .substituted(
+            mapping={
+                UNDEFINED: Add(
+                    Selected(Indexed(prefixed("Cursors"), Variable(source.affixed_name)), "Last"),
+                    Number(1),
+                )
             }
         )
+        .simplified()
     )
 
     return If(
@@ -269,7 +336,9 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                                             Variable(l.source.affixed_name),
                                         ),
                                         l.condition,
-                                    ).simplified(substitution(message, embedded=True))
+                                    )
+                                    .substituted(substitution(message, embedded=True))
+                                    .simplified()
                                     for l in message.incoming(f)
                                 ]
                             ),
@@ -383,7 +452,9 @@ def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequen
                     ),
                 )
             ]
-        ).simplified(substitution(message, public=True))
+        )
+        .substituted(substitution(message, public=True))
+        .simplified()
         for l in message.outgoing(field)
         if l.target != FINAL
     ]

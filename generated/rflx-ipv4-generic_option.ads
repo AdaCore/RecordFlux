@@ -12,7 +12,7 @@ is
 
    pragma Annotate (GNATprove, Terminating, Generic_Option);
 
-   use type Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 
    type Virtual_Field is (F_Initial, F_Copied, F_Option_Class, F_Option_Number, F_Option_Length, F_Option_Data, F_Final);
 
@@ -106,7 +106,8 @@ is
    function Message_Last (Ctx : Context) return Types.Bit_Index with
      Pre =>
        Valid_Context (Ctx)
-       and Structural_Valid_Message (Ctx);
+       and then Has_Buffer (Ctx)
+       and then Structural_Valid_Message (Ctx);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
@@ -116,6 +117,7 @@ is
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
      Pre =>
        Valid_Context (Ctx)
+       and Has_Buffer (Ctx)
        and Val.Fld in Field'Range
        and Valid_Predecessor (Ctx, Val.Fld);
 
@@ -148,6 +150,12 @@ is
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
        Valid_Context (Ctx)
+       and Valid_Next (Ctx, Fld);
+
+   function Equal (Ctx : Context; Fld : Field; Data : Types.Bytes) return Boolean with
+     Pre =>
+       Valid_Context (Ctx)
+       and Has_Buffer (Ctx)
        and Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
@@ -200,11 +208,13 @@ is
 
    function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx);
+       Valid_Context (Ctx)
+       and Has_Buffer (Ctx);
 
    function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx);
+       Valid_Context (Ctx)
+       and Has_Buffer (Ctx);
 
    function Incomplete_Message (Ctx : Context) return Boolean with
      Pre =>

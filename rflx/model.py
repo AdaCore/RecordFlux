@@ -377,8 +377,8 @@ class AbstractMessage(Type):
             variables = {v.identifier for v in expression.variables()}
             literals = {l for l in variables - fields if len(l.parts) == 1}
 
-            return expression.simplified(
-                {
+            return expression.substituted(
+                mapping={
                     **{
                         v: v.__class__(f"{prefix}{v.name}")
                         for v in expression.variables()
@@ -390,7 +390,7 @@ class AbstractMessage(Type):
                         if v.identifier in literals
                     },
                 }
-            )
+            ).simplified()
 
         structure = []
 

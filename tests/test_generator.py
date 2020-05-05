@@ -10,6 +10,7 @@ from tests.models import (
     DERIVATION_MODEL,
     ENUMERATION_MODEL,
     ETHERNET_MODEL,
+    EXPRESSION_MODEL,
     MODULAR_INTEGER,
     NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
     NULL_MODEL,
@@ -127,15 +128,13 @@ class TestGenerator(unittest.TestCase):
         generator = generate(ARRAYS_MODEL)
         self.assert_body(generator)
 
-    # ISSUE: Componolit/RecordFlux#60
+    def test_expression_spec(self) -> None:
+        generator = generate(EXPRESSION_MODEL)
+        self.assert_specification(generator)
 
-    # def test_expression_spec(self) -> None:
-    #     generator = generate(EXPRESSION_MODEL)
-    #     self.assert_specification(generator)
-
-    # def test_expression_body(self) -> None:
-    #     generator = generate(EXPRESSION_MODEL)
-    #     self.assert_body(generator)
+    def test_expression_body(self) -> None:
+        generator = generate(EXPRESSION_MODEL)
+        self.assert_body(generator)
 
     def test_derivation_spec(self) -> None:
         generator = generate(DERIVATION_MODEL)

@@ -88,7 +88,8 @@ is
              F_Final))
     with
      Pre =>
-       Structural_Valid (Ctx, Fld)
+       Has_Buffer (Ctx)
+       and Structural_Valid (Ctx, Fld)
        and Valid_Predecessor (Ctx, Fld);
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
@@ -107,6 +108,20 @@ is
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
      ((Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1));
+
+   function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Buffer /= null
+      and Ctx.First <= Types.Bit_Index'Last / 2
+      and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
+      and Field_Length (Ctx, Fld) >= 0
+      and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld)) <= Types.Bit_Length'Last / 2
+      and Ctx.First <= Field_First (Ctx, Fld)
+      and Ctx.Last >= Field_Last (Ctx, Fld))
+    with
+     Pre =>
+       Has_Buffer (Ctx)
+       and Valid_Next (Ctx, Fld);
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
@@ -140,20 +155,6 @@ is
                            and Field_Length (Ctx, Fld) = Length);
       end case;
    end Reset_Dependent_Fields;
-
-   function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
-     (Ctx.Buffer /= null
-      and Ctx.First <= Types.Bit_Index'Last / 2
-      and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
-      and Field_Length (Ctx, Fld) >= 0
-      and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld)) <= Types.Bit_Length'Last / 2
-      and Ctx.First <= Field_First (Ctx, Fld)
-      and Ctx.Last >= Field_Last (Ctx, Fld))
-    with
-     Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
 
    function Composite_Field (Fld : Field) return Boolean is
      ((case Fld is
