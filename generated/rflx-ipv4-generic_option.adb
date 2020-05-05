@@ -433,16 +433,16 @@ is
       function Extract is new Types.Extract (RFLX.IPv4.Option_Length_Base);
    begin
       return ((case Fld is
-          when F_Copied =>
-             (Fld => F_Copied, Copied_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Option_Class =>
-             (Fld => F_Option_Class, Option_Class_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Option_Number =>
-             (Fld => F_Option_Number, Option_Number_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Option_Length =>
-             (Fld => F_Option_Length, Option_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Option_Data =>
-             (Fld => F_Option_Data)));
+                  when F_Copied =>
+                     (Fld => F_Copied, Copied_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Option_Class =>
+                     (Fld => F_Option_Class, Option_Class_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Option_Number =>
+                     (Fld => F_Option_Number, Option_Number_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Option_Length =>
+                     (Fld => F_Option_Length, Option_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Option_Data =>
+                     (Fld => F_Option_Data)));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is

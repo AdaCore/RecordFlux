@@ -179,8 +179,8 @@ is
       function Extract is new Types.Extract (RFLX.Enumeration.Priority_Base);
    begin
       return ((case Fld is
-          when F_Priority =>
-             (Fld => F_Priority, Priority_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset))));
+                  when F_Priority =>
+                     (Fld => F_Priority, Priority_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset))));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
