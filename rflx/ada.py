@@ -592,8 +592,8 @@ class ReturnStatement(Statement):
 
     def __str__(self) -> str:
         if isinstance(self.expression, Case):
-            return f"return ({self.expression});"
-        return f"return {self.expression};"
+            return "return (" + indent_next(str(self.expression), 8) + ");"
+        return "return " + indent_next(str(self.expression), 7) + ";"
 
 
 class IfStatement(Statement):

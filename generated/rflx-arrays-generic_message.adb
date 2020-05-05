@@ -353,16 +353,16 @@ is
       function Extract is new Types.Extract (RFLX.Arrays.Length);
    begin
       return ((case Fld is
-          when F_Length =>
-             (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-          when F_Modular_Vector =>
-             (Fld => F_Modular_Vector),
-          when F_Range_Vector =>
-             (Fld => F_Range_Vector),
-          when F_Enumeration_Vector =>
-             (Fld => F_Enumeration_Vector),
-          when F_AV_Enumeration_Vector =>
-             (Fld => F_AV_Enumeration_Vector)));
+                  when F_Length =>
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Modular_Vector =>
+                     (Fld => F_Modular_Vector),
+                  when F_Range_Vector =>
+                     (Fld => F_Range_Vector),
+                  when F_Enumeration_Vector =>
+                     (Fld => F_Enumeration_Vector),
+                  when F_AV_Enumeration_Vector =>
+                     (Fld => F_AV_Enumeration_Vector)));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
