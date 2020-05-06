@@ -11,7 +11,9 @@ from rflx.expression import (
     TRUE,
     UNDEFINED,
     Add,
+    Aggregate,
     And,
+    Attribute,
     Equal,
     Expr,
     First,
@@ -22,10 +24,12 @@ from rflx.expression import (
     Less,
     LessEqual,
     Not,
+    NotEqual,
     Number,
     Or,
     Pow,
     ProofResult,
+    Relation,
     Sub,
     Variable,
 )
@@ -435,30 +439,6 @@ class AbstractMessage(Type):
 
         check_message_field_types(self)
 
-    @staticmethod
-    def __check_vars(
-        expression: Expr,
-        state: Tuple[Set[str], Set[str], Set[str]],
-        link: Link,
-        index: int,
-        location: Tuple[ID, str],
-    ) -> None:
-        variables, literals, seen = state
-        message, part = location
-        for v in expression.variables(True):
-            if v.name not in literals and v.name not in seen:
-                if v.name in variables:
-                    raise ModelError(
-                        f'subsequent field "{v}" referenced in {part} '
-                        f'{index} from field "{link.source.name}" to '
-                        f'"{link.target.name}" in "{message}"'
-                    )
-                raise ModelError(
-                    f'undefined variable "{v}" referenced in {part} '
-                    f'{index} from field "{link.source.name}" to '
-                    f'"{link.target.name}" in "{message}"'
-                )
-
     def __verify_conditions(self) -> None:
         literals = qualified_literals(self.types, self.package)
         variables = {
@@ -472,48 +452,99 @@ class AbstractMessage(Type):
             for v in [f.name, f"{f.name}'First", f"{f.name}'Last", f"{f.name}'Length"]:
                 seen.add(v)
             for index, l in enumerate(self.outgoing(f)):
-                self.__check_vars(
-                    l.condition,
-                    (variables, literals, seen),
-                    l,
-                    index,
-                    (self.identifier, "condition"),
-                )
-                self.__check_vars(
-                    l.length,
-                    (variables, literals, seen),
-                    l,
-                    index,
-                    (self.identifier, "Length expression"),
-                )
-                self.__check_vars(
-                    l.first,
-                    (variables, literals, seen),
-                    l,
-                    index,
-                    (self.identifier, "First expression"),
-                )
 
-                if l.first != UNDEFINED and not isinstance(l.first, First):
-                    raise ModelError(
-                        f'invalid First for field "{l.target.name}" in First'
-                        f' expression {index} from field "{f.name}" to'
-                        f' "{l.target.name}" in "{self.identifier}"'
+                def location(part: str) -> str:
+                    # pylint: disable=cell-var-from-loop
+                    return (
+                        f' in {part} {index} from field "{l.source.name}" to "{l.target.name}"'
+                        f' in "{self.identifier}"'
                     )
 
-                if l.target != FINAL:
-                    t = self.types[l.target]
-                    unconstrained = isinstance(t, (Opaque, Array))
-                    if not unconstrained and l.length != UNDEFINED:
-                        raise ModelError(
-                            f'fixed size field "{l.target.name}" with length'
-                            f' expression in "{self.identifier}"'
-                        )
-                    if unconstrained and l.length == UNDEFINED:
-                        raise ModelError(
-                            f'unconstrained field "{l.target.name}" without length'
-                            f' expression in "{self.identifier}"'
-                        )
+                state = (variables, literals, seen)
+                self.__check_vars(
+                    l.condition, state, location("condition"),
+                )
+                self.__check_vars(
+                    l.length, state, location("Length expression"),
+                )
+                self.__check_vars(
+                    l.first, state, location("First expression"),
+                )
+                self.__check_attributes(
+                    l.condition, location("condition"),
+                )
+                self.__check_relations(
+                    l.condition, location("condition"),
+                )
+                self.__check_first_expression(l, location("First expression"))
+                self.__check_length_expression(l)
+
+    @staticmethod
+    def __check_vars(
+        expression: Expr, state: Tuple[Set[str], Set[str], Set[str]], location: str,
+    ) -> None:
+        variables, literals, seen = state
+        for v in expression.variables(True):
+            if v.name not in literals and v.name not in seen:
+                if v.name in variables:
+                    raise ModelError(f'subsequent field "{v}" referenced{location}')
+                raise ModelError(f'undefined variable "{v}" referenced{location}')
+
+    def __check_attributes(self, expression: Expr, location: str) -> None:
+        for a in expression.findall(lambda x: isinstance(x, Attribute)):
+            if isinstance(a, Length) and not (
+                isinstance(a.prefix, Variable)
+                and (
+                    a.prefix.name == "Message"
+                    or (
+                        Field(a.prefix.name) in self.fields
+                        and isinstance(self.types[Field(a.prefix.name)], Composite)
+                    )
+                )
+            ):
+                raise ModelError(f'invalid use of length attribute for "{a.prefix}"{location}')
+
+    def __check_relations(self, expression: Expr, location: str) -> None:
+        for r in expression.findall(lambda x: isinstance(x, Relation)):
+            if (
+                isinstance(r, Relation)
+                and not isinstance(r, (Equal, NotEqual))
+                and (isinstance(r.left, Aggregate) or isinstance(r.right, Aggregate))
+            ):
+                raise ModelError(f'invalid relation "{r.symbol}" to aggregate{location}')
+            if isinstance(r, (Equal, NotEqual)) and (
+                isinstance(r.left, Aggregate) or isinstance(r.right, Aggregate)
+            ):
+                if isinstance(r.left, Aggregate):
+                    other = r.right
+                elif isinstance(r.right, Aggregate):
+                    other = r.left
+                if not (
+                    isinstance(other, Variable)
+                    and Field(other.name) in self.fields
+                    and isinstance(self.types[Field(other.name)], Composite)
+                ):
+                    raise ModelError(f'invalid relation between "{other}" and aggregate{location}')
+
+    @staticmethod
+    def __check_first_expression(link: Link, location: str) -> None:
+        if link.first != UNDEFINED and not isinstance(link.first, First):
+            raise ModelError(f'invalid First for field "{link.target.name}"{location}')
+
+    def __check_length_expression(self, link: Link) -> None:
+        if link.target != FINAL:
+            t = self.types[link.target]
+            unconstrained = isinstance(t, (Opaque, Array))
+            if not unconstrained and link.length != UNDEFINED:
+                raise ModelError(
+                    f'fixed size field "{link.target.name}" with length'
+                    f' expression in "{self.identifier}"'
+                )
+            if unconstrained and link.length == UNDEFINED:
+                raise ModelError(
+                    f'unconstrained field "{link.target.name}" without length'
+                    f' expression in "{self.identifier}"'
+                )
 
     def __type_constraints(self, expr: Expr) -> Expr:
         literals = qualified_literals(self.types, self.package)
