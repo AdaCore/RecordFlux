@@ -35,6 +35,7 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
 
     @staticmethod
     def test_exclusive_enum_valid() -> None:
@@ -56,6 +57,7 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
 
     def test_exclusive_conflict(self) -> None:
         self.assert_model_error(
@@ -98,6 +100,7 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
 
     def test_exclusive_with_length_invalid(self) -> None:
         self.assert_model_error(
@@ -289,6 +292,7 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
 
     def test_invalid_fixed_size_field_with_length(self) -> None:
         self.assert_model_error(
@@ -320,6 +324,7 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
 
     def test_invalid_first(self) -> None:
         self.assert_model_error(
@@ -387,6 +392,7 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
 
     def test_invalid_length_forward_reference(self) -> None:
         self.assert_model_error(
@@ -437,6 +443,7 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
 
     def test_payload_no_length(self) -> None:
         self.assert_model_error(
@@ -561,6 +568,7 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
 
     @staticmethod
     def test_valid_use_message_first_last() -> None:
@@ -578,3 +586,4 @@ class TestVerification(TestCase):
             end Foo;
             """
         )
+        parser.create_model()
