@@ -85,7 +85,10 @@ class TestVerification(TestCase):
                 type Element is range 0..2**32-1 with Size => 32;
                 type Bar is
                     message
-                        F1 : Element
+                        null
+                            then F1
+                                with Length => 32;
+                        F1 : Opaque
                             then null
                                 if F1'Length = 32 and F1 < 50,
                             then F2
@@ -103,7 +106,10 @@ class TestVerification(TestCase):
                 type Element is range 0..2**32-1 with Size => 32;
                 type Bar is
                     message
-                        F1 : Element
+                        null
+                            then F1
+                                with Length => 32;
+                        F1 : Opaque
                             then null
                                 if F1'Length = 32,
                             then F2
