@@ -4,6 +4,7 @@ from unittest import TestCase
 from rflx.expression import (
     TRUE,
     Add,
+    Aggregate,
     And,
     Div,
     Equal,
@@ -505,6 +506,45 @@ class TestModel(TestCase):
         types = {Field("F1"): t, Field("F2"): t}
         with self.assertRaisesRegex(
             ModelError, '^subsequent field "F2" referenced in condition 0 from field "F1" to "F2"',
+        ):
+            Message("P.M", structure, types)
+
+    def test_message_invalid_use_of_length_attribute(self) -> None:
+        structure = [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), FINAL, Equal(Length("F1"), Number(32))),
+        ]
+        types = {Field("F1"): MODULAR_INTEGER}
+        with self.assertRaisesRegex(
+            ModelError,
+            r'^invalid use of length attribute for "F1" in condition 0'
+            r' from field "F1" to "Final" in "P.M"$',
+        ):
+            Message("P.M", structure, types)
+
+    def test_message_invalid_relation_to_aggregate(self) -> None:
+        structure = [
+            Link(INITIAL, Field("F1"), length=Number(16)),
+            Link(Field("F1"), FINAL, LessEqual(Variable("F1"), Aggregate(Number(1), Number(2)))),
+        ]
+        types = {Field("F1"): Opaque()}
+        with self.assertRaisesRegex(
+            ModelError,
+            r'^invalid relation " <= " to aggregate in condition 0'
+            r' from field "F1" to "Final" in "P.M"$',
+        ):
+            Message("P.M", structure, types)
+
+    def test_message_invalid_element_in_relation_to_aggregate(self) -> None:
+        structure = [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), FINAL, Equal(Variable("F1"), Aggregate(Number(1), Number(2)))),
+        ]
+        types = {Field("F1"): MODULAR_INTEGER}
+        with self.assertRaisesRegex(
+            ModelError,
+            r'^invalid relation between "F1" and aggregate in condition 0'
+            r' from field "F1" to "Final" in "P.M"$',
         ):
             Message("P.M", structure, types)
 
