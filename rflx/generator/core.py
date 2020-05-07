@@ -2363,7 +2363,7 @@ class Generator:
                 continue
 
         specification.append(
-            self.__type_validation_function(integer, integer.constraints("Val").simplified())
+            self.__type_validation_function(integer, And(*integer.constraints("Val")).simplified())
         )
         specification.extend(self.__integer_conversion_functions(integer))
 
@@ -2376,7 +2376,9 @@ class Generator:
             [
                 Pragma("Warnings", ["Off", '"unused variable ""Val"""']),
                 Pragma("Warnings", ["Off", '"formal parameter ""Val"" is not referenced"']),
-                self.__type_validation_function(integer, integer.constraints("Val").simplified()),
+                self.__type_validation_function(
+                    integer, And(*integer.constraints("Val")).simplified()
+                ),
                 Pragma("Warnings", ["On", '"formal parameter ""Val"" is not referenced"']),
                 Pragma("Warnings", ["On", '"unused variable ""Val"""']),
                 *self.__integer_conversion_functions(integer),
@@ -2392,7 +2394,7 @@ class Generator:
 
         validation_expression: Expr
         if enum.always_valid:
-            validation_expression = enum.constraints("Val").simplified()
+            validation_expression = And(*enum.constraints("Val")).simplified()
         else:
             validation_cases: List[Tuple[Expr, Expr]] = []
             validation_cases.extend((value, Variable("True")) for value in enum.literals.values())

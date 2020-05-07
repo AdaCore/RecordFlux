@@ -75,7 +75,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^conflicting conditions for field "F1" in "Foo.Bar"',
+            r'^conflicting conditions 0 and 1 for field "F1" in "Foo.Bar"',
         )
 
     @staticmethod
@@ -121,7 +121,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^conflicting conditions for field "F1" in "Foo.Bar"',
+            r'^conflicting conditions 0 and 1 for field "F1" in "Foo.Bar"',
         )
 
     def test_no_valid_path(self) -> None:
@@ -159,7 +159,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "Final" in "Foo.Bar"',
+            r'^contradicting condition 0 from field "F1" to "Final" in "Foo.Bar"',
         )
 
     def test_invalid_path_2(self) -> None:
@@ -174,7 +174,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"',
+            r'^contradicting condition 0 from field "F1" to "F2" in "Foo.Bar"',
         )
 
     def test_contradiction(self) -> None:
@@ -207,7 +207,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"',
+            r'^contradicting condition 0 from field "F1" to "F2" in "Foo.Bar"',
         )
 
     def test_invalid_type_condition_range_high(self) -> None:
@@ -222,7 +222,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"',
+            r'^contradicting condition 0 from field "F1" to "F2" in "Foo.Bar"',
         )
 
     def test_invalid_type_condition_modular_upper(self) -> None:
@@ -237,7 +237,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"',
+            r'^contradicting condition 0 from field "F1" to "F2" in "Foo.Bar"',
         )
 
     def test_invalid_type_condition_modular_lower(self) -> None:
@@ -252,7 +252,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"',
+            r'^contradicting condition 0 from field "F1" to "F2" in "Foo.Bar"',
         )
 
     # ISSUE: Componolit/RecordFlux#87

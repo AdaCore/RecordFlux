@@ -30,18 +30,16 @@ class ProofResult(Enum):
 
 
 class Proof:
-    def __init__(self, expr: "Expr", forall: bool):
+    def __init__(self, expr: "Expr", facts: Optional[Sequence["Expr"]] = None):
         self.__expr = expr
+        self.__facts = facts or []
+        self.__result = ProofResult.unsat
 
-        cond = self.__expr.z3expr()
-        variables = self.__expr.variables(True)
-        if variables:
-            if forall:
-                cond = z3.ForAll([v.z3expr() for v in variables], cond)
-            else:
-                cond = z3.Exists([v.z3expr() for v in variables], cond)
         solver = z3.Solver()
-        solver.add(cond)
+        solver.add(self.__expr.z3expr())
+        for f in self.__facts:
+            solver.add(f.z3expr())
+
         self.__result = ProofResult(solver.check())
 
     @property
@@ -50,7 +48,18 @@ class Proof:
 
     @property
     def error(self) -> str:
-        return str(self.__expr).replace("\n", "")
+        assert self.__result == ProofResult.unsat
+        solver = z3.Solver()
+        solver.set(unsat_core=True)
+        facts = {f"H{index}": fact for index, fact in enumerate(self.__facts)}
+        for name, fact in facts.items():
+            solver.assert_and_track(fact.z3expr(), name)
+
+        solver.assert_and_track(self.__expr.z3expr(), "goal")
+        facts["goal"] = self.__expr
+        result = solver.check()
+        assert result == z3.unsat, f"result should be unsat (is {result})"
+        return "\n   ∧ ".join([str(facts[str(fact)]) for fact in solver.unsat_core()])
 
 
 class Expr(ABC):
@@ -123,14 +132,8 @@ class Expr(ABC):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def __solve(self, forall: bool = False) -> Proof:
-        return Proof(self, forall)
-
-    def forall(self) -> Proof:
-        return self.__solve(True)
-
-    def exists(self) -> Proof:
-        return self.__solve()
+    def check(self, facts: Optional[Sequence["Expr"]] = None) -> Proof:
+        return Proof(self, facts)
 
 
 class BooleanLiteral(Expr):

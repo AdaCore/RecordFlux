@@ -3,11 +3,10 @@ import itertools
 from abc import ABC, abstractmethod, abstractproperty
 from copy import copy
 from math import log
-from typing import Dict, Mapping, NamedTuple, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.common import flat_name, generic_repr
 from rflx.expression import (
-    FALSE,
     TRUE,
     UNDEFINED,
     Add,
@@ -18,7 +17,6 @@ from rflx.expression import (
     Expr,
     First,
     GreaterEqual,
-    If,
     Last,
     Length,
     Less,
@@ -81,7 +79,7 @@ class Scalar(Type):
         return self._size
 
     @abstractmethod
-    def constraints(self, name: str, proof: bool = False) -> Expr:
+    def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         raise NotImplementedError
 
 
@@ -126,12 +124,10 @@ class ModularInteger(Integer):
     def last(self) -> Expr:
         return Sub(self.modulus, Number(1))
 
-    def constraints(self, name: str, proof: bool = False) -> Expr:
+    def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
-            return And(
-                Less(Variable(name), self.__modulus), GreaterEqual(Variable(name), Number(0))
-            )
-        return TRUE
+            return [Less(Variable(name), self.__modulus), GreaterEqual(Variable(name), Number(0))]
+        return [TRUE]
 
 
 class RangeInteger(Integer):
@@ -170,18 +166,16 @@ class RangeInteger(Integer):
     def last(self) -> Expr:
         return self.__last
 
-    def constraints(self, name: str, proof: bool = False) -> Expr:
+    def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
-            return And(
-                GreaterEqual(Variable(name), self.first), LessEqual(Variable(name), self.last)
-            )
+            return [GreaterEqual(Variable(name), self.first), LessEqual(Variable(name), self.last)]
 
         c: Expr = TRUE
         if self.first.simplified() != self.base_first.simplified():
             c = GreaterEqual(Variable(name), self.first)
         if self.last.simplified() != self.base_last.simplified():
             c = And(c, LessEqual(Variable(name), self.last))
-        return c.simplified()
+        return [c.simplified()]
 
     @property
     def base_first(self) -> Expr:
@@ -213,13 +207,14 @@ class Enumeration(Scalar):
         self.literals = literals
         self.always_valid = always_valid
 
-    def constraints(self, name: str, proof: bool = False) -> Expr:
+    def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
-            return And(
-                And(*[Equal(Variable(l), v) for l, v in self.literals.items()]),
-                Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()]),
-            )
-        return TRUE
+            result: List[Expr] = [
+                Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()])
+            ]
+            result.extend([Equal(Variable(l), v) for l, v in self.literals.items()])
+            return result
+        return [TRUE]
 
 
 class Composite(Type):
@@ -546,37 +541,32 @@ class AbstractMessage(Type):
                     f' expression in "{self.identifier}"'
                 )
 
-    def __type_constraints(self, expr: Expr) -> Expr:
+    def __type_constraints(self, expr: Expr) -> Sequence[Expr]:
         literals = qualified_literals(self.types, self.package)
-        return And(
-            *[
-                t.constraints(name=n, proof=True)
-                for n, t in [
-                    (v.name, self.types[Field(v.identifier)])
-                    for v in expr.variables()
-                    if v.name not in [*literals, "Message", "Final"]
-                ]
-                if isinstance(t, Scalar)
+        scalar_types = [
+            (n, t)
+            for n, t in [
+                (v.name, self.types[Field(v.identifier)])
+                for v in expr.variables()
+                if v.name not in [*literals, "Message", "Final"]
             ]
-        )
+            if isinstance(t, Scalar)
+        ]
 
-    def __with_constraints(self, expr: Expr) -> Expr:
-        return And(self.__type_constraints(expr), expr)
+        return [c for n, t in scalar_types for c in t.constraints(name=n, proof=True)]
 
     def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.__fields):
-            conditions = [
-                If([(self.__with_constraints(c.condition), Number(1))], Number(0))
-                for c in self.outgoing(f)
-            ]
-            if conditions:
-                conflict = LessEqual(Add(*conditions), Number(1))
-                proof = conflict.forall()
-                if proof.result != ProofResult.sat:
-                    raise ModelError(
-                        f'conflicting conditions for field "{f.name}"'
-                        f' in "{self.identifier}" ({proof.error})'
-                    )
+            for i1, c1 in enumerate(self.outgoing(f)):
+                for i2, c2 in enumerate(self.outgoing(f)):
+                    if i1 != i2:
+                        conflict = And(c1.condition, c2.condition)
+                        proof = conflict.check(self.__type_constraints(conflict))
+                        if proof.result == ProofResult.sat:
+                            raise ModelError(
+                                f'conflicting conditions {i1} and {i2} for field "{f.name}"'
+                                f' in "{self.identifier}"'
+                            )
 
     def __prove_reachability(self) -> None:
         def has_final(field: Field) -> bool:
@@ -592,28 +582,32 @@ class AbstractMessage(Type):
                 raise ModelError(f'no path to FINAL for field "{f.name}"')
 
         for f in (*self.__fields, FINAL):
-            reachability = Or(
-                *[
-                    And(*[self.__with_constraints(self.__link_expression(l)) for l in path])
-                    for path in self.__paths[f]
-                ]
-            )
-            proof = reachability.exists()
-            if proof.result != ProofResult.sat:
+            errors = []
+            found = False
+            for path in self.__paths[f]:
+                facts = [fact for link in path for fact in self.__link_expression(link)]
+                proof = TRUE.check(facts)
+                if proof.result == ProofResult.sat:
+                    found = True
+                else:
+                    path_message = " -> ".join([l.target.name for l in path])
+                    errors.append(f"[{path_message}]:\n   {proof.error}")
+
+            if not found:
+                error_message = "\n   ".join(errors)
                 raise ModelError(
-                    f'unreachable field "{f.name}" in "{self.identifier}"' f" ({proof.error})"
+                    f'unreachable field "{f.name}" in "{self.identifier}"\n{error_message}'
                 )
 
     def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.__fields):
             for index, c in enumerate(self.outgoing(f)):
-                contradiction = Equal(self.__with_constraints(c.condition), FALSE)
-                proof = contradiction.forall()
-                if proof.result == ProofResult.sat:
+                contradiction = c.condition
+                proof = contradiction.check(self.__type_constraints(contradiction))
+                if proof.result == ProofResult.unsat:
                     raise ModelError(
                         f'contradicting condition {index} from field "{f.name}" to'
-                        f' "{c.target.name}" in "{self.identifier}"'
-                        f" ({proof.error})"
+                        f' "{c.target.name}" in "{self.identifier}" ({proof.error})'
                     )
 
     @staticmethod
@@ -632,39 +626,33 @@ class AbstractMessage(Type):
     def __target_last(self, link: Link) -> Expr:
         return Sub(Add(self.__target_first(link), self.__target_length(link)), Number(1))
 
-    def __link_expression(self, link: Link) -> Expr:
+    def __link_expression(self, link: Link) -> Sequence[Expr]:
         name = link.target.name
-        return And(
-            *[
-                Equal(First(name), self.__target_first(link)),
-                Equal(Length(name), self.__target_length(link)),
-                Equal(Last(name), self.__target_last(link)),
-                GreaterEqual(First("Message"), Number(0)),
-                GreaterEqual(Last("Message"), Last(name)),
-                GreaterEqual(Last("Message"), First("Message")),
-                Equal(Length("Message"), Add(Sub(Last("Message"), First("Message")), Number(1)),),
-                link.condition,
-            ]
-        )
+        result: List[Expr] = [
+            Equal(First(name), self.__target_first(link)),
+            Equal(Length(name), self.__target_length(link)),
+            Equal(Last(name), self.__target_last(link)),
+            GreaterEqual(First("Message"), Number(0)),
+            GreaterEqual(Last("Message"), Last(name)),
+            GreaterEqual(Last("Message"), First("Message")),
+            Equal(Length("Message"), Add(Sub(Last("Message"), First("Message")), Number(1)),),
+        ]
+        if isinstance(link.condition, And):
+            # if link.condition is a conjunction, add its parts to the result set to improve
+            # proof error messages
+            result.extend(link.condition.terms)
+        else:
+            result.append(link.condition)
+
+        return result
 
     def __prove_field_positions(self) -> None:
         for f in self.__fields:
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
-                path_expressions = And(*[self.__link_expression(l) for l in p])
-                length = self.__target_length(l)
-                positive = If(
-                    [
-                        (
-                            And(
-                                self.__type_constraints(And(path_expressions, length)),
-                                path_expressions,
-                            ),
-                            GreaterEqual(length, Number(0)),
-                        )
-                    ],
-                    TRUE,
-                )
-                proof = positive.forall()
+                positive = GreaterEqual(self.__target_length(l), Number(0))
+                facts = [f for l in p for f in self.__link_expression(l)]
+                facts.extend(self.__type_constraints(positive))
+                proof = positive.check(facts)
                 if proof.result != ProofResult.sat:
                     path_message = " -> ".join([l.target.name for l in p])
                     raise ModelError(
@@ -672,20 +660,9 @@ class AbstractMessage(Type):
                         f' in "{self.identifier}" ({proof.error})'
                     )
 
-                first = self.__target_first(l)
-                start = If(
-                    [
-                        (
-                            And(
-                                self.__type_constraints(And(path_expressions, first)),
-                                path_expressions,
-                            ),
-                            GreaterEqual(first, First("Message")),
-                        )
-                    ],
-                    TRUE,
-                )
-                proof = start.forall()
+                start = GreaterEqual(self.__target_first(l), First("Message"))
+                facts.extend(self.__type_constraints(start))
+                proof = start.check(facts)
                 if proof.result != ProofResult.sat:
                     path_message = " -> ".join([l.target.name for l in p])
                     raise ModelError(
@@ -706,14 +683,17 @@ class AbstractMessage(Type):
         the overall expression, prove that it is false for all f, i.e. no bits are left.
         """
         for path in [p[:-1] for p in self.__paths[FINAL] if p]:
+
+            facts: Sequence[Expr]
+
             # Calculate (1)
-            message_range = And(
+            facts = [
                 GreaterEqual(Variable("f"), First("Message")),
                 LessEqual(Variable("f"), Last("Message")),
-            )
+            ]
             # Calculate (2) for all fields
-            fields = And(
-                *[
+            facts.extend(
+                [
                     Not(
                         And(
                             GreaterEqual(Variable("f"), self.__target_first(l)),
@@ -723,33 +703,28 @@ class AbstractMessage(Type):
                     for l in path
                 ]
             )
+
             # Define that the end of the last field of a path is the end of the message
-            last_field = Equal(self.__target_last(path[-1]), Last("Message"))
+            facts.append(Equal(self.__target_last(path[-1]), Last("Message")))
+
             # Constraints for links and types
-            path_expressions = self.__with_constraints(
-                And(*[self.__link_expression(l) for l in path])
-            )
+            facts.extend([f for l in path for f in self.__link_expression(l)])
 
             # Coverage expression must be False, i.e. no bits left
-            coverage = Not(And(*[fields, last_field, path_expressions, message_range]))
-            proof = coverage.forall()
-            if proof.result != ProofResult.sat:
+            proof = TRUE.check(facts)
+            if proof.result == ProofResult.sat:
                 path_message = " -> ".join([l.target.name for l in path])
                 raise ModelError(
-                    f"path {path_message} does not cover whole message"
-                    f' in "{self.identifier}" ({proof.error})'
+                    f"path {path_message} does not cover whole message" f' in "{self.identifier}"'
                 )
 
     def __prove_overlays(self) -> None:
         for f in (INITIAL, *self.__fields):
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 if l.first != UNDEFINED and isinstance(l.first, First):
-                    path_expressions = And(*[self.__link_expression(l) for l in p])
-                    overlaid = If(
-                        [(path_expressions, Equal(self.__target_last(l), Last(l.first.prefix)))],
-                        TRUE,
-                    )
-                    proof = overlaid.forall()
+                    facts = [f for l in p for f in self.__link_expression(l)]
+                    overlaid = Equal(self.__target_last(l), Last(l.first.prefix))
+                    proof = overlaid.check(facts)
                     if proof.result != ProofResult.sat:
                         raise ModelError(
                             f'field "{f.name}" not congruent with overlaid field '
@@ -758,10 +733,10 @@ class AbstractMessage(Type):
                         )
 
     def _prove(self) -> None:
+        self.__prove_contradictions()
+        self.__prove_reachability()
         self.__prove_field_positions()
         self.__prove_conflicting_conditions()
-        self.__prove_reachability()
-        self.__prove_contradictions()
         self.__prove_coverage()
         self.__prove_overlays()
 
