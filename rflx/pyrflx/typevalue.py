@@ -7,6 +7,7 @@ from rflx.expression import (
     TRUE,
     UNDEFINED,
     Add,
+    And,
     Expr,
     First,
     Last,
@@ -149,7 +150,7 @@ class IntegerValue(ScalarValue):
 
     def assign(self, value: int, check: bool = True) -> None:
         if (
-            self._type.constraints("__VALUE__", check)
+            And(*self._type.constraints("__VALUE__", check))
             .substituted(mapping={Variable("__VALUE__"): Number(value)})
             .simplified()
             != TRUE
@@ -194,7 +195,7 @@ class EnumValue(ScalarValue):
         if value not in self._type.literals:
             raise KeyError(f"{value} is not a valid enum value")
         assert (
-            self._type.constraints("__VALUE__", check)
+            And(*self._type.constraints("__VALUE__", check))
             .substituted(
                 mapping={
                     **{Variable(k): v for k, v in self._type.literals.items()},
