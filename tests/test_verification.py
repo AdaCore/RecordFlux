@@ -145,7 +145,7 @@ class TestVerification(TestCase):
                     end message;
             end Foo;
             """,
-            r'^unreachable field "Final" in "Foo.Bar"',
+            r'^unreachable field "F2" in "Foo.Bar"',
         )
 
     def test_invalid_path_1(self) -> None:
@@ -625,7 +625,7 @@ class TestVerification(TestCase):
                   end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"',
+            r'^unreachable field "F1" in "Foo.Bar"',
         )
 
     def test_conditionally_unreachable_field_mod_last(self) -> None:
@@ -659,7 +659,7 @@ class TestVerification(TestCase):
                   end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"',
+            r'^unreachable field "F1" in "Foo.Bar"',
         )
 
     def test_conditionally_unreachable_field_range_last(self) -> None:
@@ -693,7 +693,7 @@ class TestVerification(TestCase):
                   end message;
             end Foo;
             """,
-            r'^unreachable field "F2" in "Foo.Bar"',
+            r'^unreachable field "F1" in "Foo.Bar"',
         )
 
     def test_conditionally_unreachable_field_enum_last(self) -> None:
@@ -707,6 +707,51 @@ class TestVerification(TestCase):
                         then F2
                            if F1'Last = Message'Last;
                      F2 : T;
+                  end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
+
+    def test_conditionally_unreachable_field_outgoing(self) -> None:
+        self.assert_model_error(
+            """
+            package Foo is
+               type T is mod 256;
+               type Bar is
+                  message
+                     F1 : T
+                        then F2
+                           if F1 <= 16#20#,
+                        then null
+                            if F1 > 16#20#;
+                     F2 : T
+                        then null
+                           if F1 > 16#20#;
+                  end message;
+            end Foo;
+            """,
+            r'^unreachable field "F2" in "Foo.Bar"',
+        )
+
+    def test_conditionally_unreachable_field_outgoing_multi(self) -> None:
+        self.assert_model_error(
+            """
+            package Foo is
+               type T is mod 256;
+               type Bar is
+                  message
+                     F1 : T
+                        then F2
+                           if F1 <= 16#20#,
+                        then F3
+                            if F1 > 16#20#;
+                     F2 : T
+                        then F3
+                           if F1 > 16#20# and F1 <= 16#30#,
+                        then null
+                           if F1 > 16#30#;
+                     F3 : T;
                   end message;
             end Foo;
             """,

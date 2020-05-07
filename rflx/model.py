@@ -586,6 +586,12 @@ class AbstractMessage(Type):
             found = False
             for path in self.__paths[f]:
                 facts = [fact for link in path for fact in self.__link_expression(link)]
+                if f != FINAL:
+                    facts.extend(
+                        self.__expression_list(
+                            Or(*[o.condition for o in self.outgoing(f)]).simplified()
+                        )
+                    )
                 proof = TRUE.check(facts)
                 if proof.result == ProofResult.sat:
                     found = True
@@ -626,6 +632,13 @@ class AbstractMessage(Type):
     def __target_last(self, link: Link) -> Expr:
         return Sub(Add(self.__target_first(link), self.__target_length(link)), Number(1))
 
+    @classmethod
+    def __expression_list(cls, expr: Expr) -> Sequence[Expr]:
+        # splitting conjunctions helps getting better error messages
+        if isinstance(expr, And):
+            return expr.terms
+        return [expr]
+
     def __link_expression(self, link: Link) -> Sequence[Expr]:
         name = link.target.name
         result: List[Expr] = [
@@ -637,13 +650,7 @@ class AbstractMessage(Type):
             GreaterEqual(Last("Message"), First("Message")),
             Equal(Length("Message"), Add(Sub(Last("Message"), First("Message")), Number(1)),),
         ]
-        if isinstance(link.condition, And):
-            # if link.condition is a conjunction, add its parts to the result set to improve
-            # proof error messages
-            result.extend(link.condition.terms)
-        else:
-            result.append(link.condition)
-
+        result.extend(self.__expression_list(link.condition))
         return result
 
     def __prove_field_positions(self) -> None:
@@ -734,11 +741,11 @@ class AbstractMessage(Type):
 
     def _prove(self) -> None:
         self.__prove_contradictions()
-        self.__prove_reachability()
-        self.__prove_field_positions()
         self.__prove_conflicting_conditions()
+        self.__prove_reachability()
         self.__prove_coverage()
         self.__prove_overlays()
+        self.__prove_field_positions()
 
     def __compute_topological_sorting(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted (Kahn's algorithm)."""
