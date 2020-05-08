@@ -143,9 +143,9 @@ def logical_expression() -> Token:
 
 
 def mathematical_expression() -> Token:
-    mathematical_operator = (
-        Literal("**") | Literal("+") | Literal("-") | Literal("*") | Literal("/")
-    )
+    binary_adding_operator = Literal("+") | Literal("-")
+    multiplying_operator = Literal("*") | Literal("/")
+    highest_precedence_operator = Literal("**")
 
     array_aggregate = (
         Suppress(Literal("("))
@@ -170,7 +170,12 @@ def mathematical_expression() -> Token:
 
     return (
         infixNotation(
-            term, [(mathematical_operator, 2, opAssoc.LEFT, parse_mathematical_expression)]
+            term,
+            [
+                (highest_precedence_operator, 2, opAssoc.LEFT, parse_mathematical_expression),
+                (multiplying_operator, 2, opAssoc.LEFT, parse_mathematical_expression),
+                (binary_adding_operator, 2, opAssoc.LEFT, parse_mathematical_expression),
+            ],
         )
     ).setName("MathematicalExpression")
 
