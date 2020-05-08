@@ -136,6 +136,28 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(grammar.numeric_literal().parseString("16#6664#")[0], Number(26212))
         self.assertEqual(grammar.numeric_literal().parseString("16#66_64#")[0], Number(26212))
 
+    def test_mathematical_expression_precedence(self) -> None:
+        self.assertEqual(
+            grammar.mathematical_expression().parseString("A - B * 2**3 - 1")[0],
+            Sub(Sub(Variable("A"), Mul(Variable("B"), Pow(Number(2), Number(3)))), Number(1)),
+        )
+        self.assertEqual(
+            grammar.mathematical_expression().parseString("(A - B) * 2**3 - 1")[0],
+            Sub(Mul(Sub(Variable("A"), Variable("B")), Pow(Number(2), Number(3))), Number(1)),
+        )
+        self.assertEqual(
+            grammar.mathematical_expression().parseString("A - B * 2**(3 - 1)")[0],
+            Sub(Variable("A"), Mul(Variable("B"), Pow(Number(2), Sub(Number(3), Number(1))))),
+        )
+        self.assertEqual(
+            grammar.mathematical_expression().parseString("A - (B * 2)**3 - 1")[0],
+            Sub(Sub(Variable("A"), Pow(Mul(Variable("B"), Number(2)), Number(3))), Number(1)),
+        )
+        self.assertEqual(
+            grammar.mathematical_expression().parseString("A - (B * 2**3 - 1)")[0],
+            Sub(Variable("A"), Sub(Mul(Variable("B"), Pow(Number(2), Number(3))), Number(1))),
+        )
+
     def test_mathematical_expression_aggregate(self) -> None:
         self.assertEqual(
             grammar.mathematical_expression().parseString("(1, 2)")[0],
