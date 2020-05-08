@@ -46,7 +46,7 @@ format:
 test: check test_python test_spark prove_spark
 
 test_python:
-	python -m unittest -vb
+	python3 -m unittest -vb
 
 test_python_coverage:
 	coverage run --branch --source=rflx -m unittest -vb
