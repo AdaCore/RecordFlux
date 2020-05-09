@@ -346,7 +346,7 @@ package body RFLX.Ethernet.Tests is
       Ethernet.Frame.Set_TPID (Context, 16#8100#);
       Ethernet.Frame.Set_TCI (Context, 1);
       Ethernet.Frame.Set_Type_Length (Context, 16#0800#);
-      Data := (69, 0, 0, 20, 0, 1, 0, 0, 64, 0, 124, 231, 127, 0, 0, 1, 127, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+      Data := (69, 0, 0, 47, 0, 1, 0, 0, 64, 0, 124, 231, 127, 0, 0, 1, 127, 0, 0, 1, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10);
       Set_Bounded_Payload (Context, 47 * 8);
 
@@ -390,7 +390,7 @@ package body RFLX.Ethernet.Tests is
          Ethernet.Frame.Set_TPID (Context, 16#8100#);
          Ethernet.Frame.Set_TCI (Context, 1);
          Ethernet.Frame.Set_Type_Length (Context, 16#0800#);
-         Data := (69, 0, 0, 20, 0, 1, 0, 0, 64, 0, 124, 231, 127, 0, 0, 1, 127, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+         Data := (69, 0, 0, 47, 0, 1, 0, 0, 64, 0, 124, 231, 127, 0, 0, 1, 127, 0, 0, 1, 0, 0, 0, 0, 0, 0,
                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10);
          Set_Bounded_Payload (Context, 47 * 8);
       end if;
