@@ -199,7 +199,7 @@ class IntegerValue(ScalarValue):
 
 class EnumValue(ScalarValue):
 
-    _value: str
+    _value: Tuple[str, Number]
     _type: Enumeration
 
     def __init__(self, vtype: Enumeration) -> None:
@@ -219,34 +219,37 @@ class EnumValue(ScalarValue):
             .simplified()
             == TRUE
         )
-        self._value = value
+        self._value = value, self._type.literals[value]
 
     def parse(self, value: Union[Bitstring, bytes]) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
-        value_as_int: int = int(value)
-        if not Number(value_as_int) in self.literals.values():
-            raise KeyError(f"Number {value_as_int} is not a valid enum value")
-
-        for k, v in self.literals.items():
-            if v == Number(value_as_int):
-                self._value = str(k)
+        value_as_number = Number(int(value))
+        if value_as_number not in self.literals.values():
+            if self._type.always_valid:
+                self._value = "UNKNOWN", value_as_number
+            else:
+                raise KeyError(f"Number {value_as_number.value} is not a valid enum value")
+        else:
+            for k, v in self.literals.items():
+                if v == value_as_number:
+                    assert isinstance(v, Number)
+                    self._value = str(k), v
 
     @property
     def value(self) -> str:
         self._raise_initialized()
-        return self._value
+        return self._value[0]
 
     @property
     def expr(self) -> Variable:
         self._raise_initialized()
-        return Variable(self._value)
+        return Variable(self._value[0])
 
     @property
     def bitstring(self) -> Bitstring:
         self._raise_initialized()
-        assert isinstance(self._type, Enumeration)
-        return Bitstring(format(self._type.literals[self._value].value, f"0{self.size}b"))
+        return Bitstring(format(self._value[1].value, f"0{self.size}b"))
 
     @property
     def accepted_type(self) -> type:
@@ -299,7 +302,7 @@ class OpaqueValue(CompositeValue):
 
     def __init__(self, vtype: Opaque) -> None:
         super().__init__(vtype)
-        self._model_of_refinement_msg: Optional[Message] = None
+        self._refinement_message: Optional[Message] = None
         self._all_refinements: Sequence[Refinement] = []
 
     def assign(self, value: bytes, check: bool = True) -> None:
@@ -307,14 +310,14 @@ class OpaqueValue(CompositeValue):
 
     def parse(self, value: Union[Bitstring, bytes]) -> None:
         self._check_length_of_assigned_value(value)
-        if self._model_of_refinement_msg is not None:
-            nested_msg = MessageValue(self._model_of_refinement_msg, self._all_refinements)
+        if self._refinement_message is not None:
+            nested_msg = MessageValue(self._refinement_message, self._all_refinements)
             try:
                 nested_msg.parse(value)
             except (IndexError, ValueError, KeyError) as e:
                 raise ValueError(
                     f"Error while parsing nested message "
-                    f"{self._model_of_refinement_msg.identifier}: {e}"
+                    f"{self._refinement_message.identifier}: {e}"
                 )
             assert nested_msg.valid_message
             self._nested_message = nested_msg
@@ -325,7 +328,7 @@ class OpaqueValue(CompositeValue):
     def set_refinement(
         self, model_of_refinement_msg: Message, all_refinements: Sequence[Refinement]
     ) -> None:
-        self._model_of_refinement_msg = model_of_refinement_msg
+        self._refinement_message = model_of_refinement_msg
         self._all_refinements = all_refinements
 
     @property
@@ -456,14 +459,11 @@ class MessageValue(TypeValue):
 
     _type: Message
 
-    def __init__(
-        self, message_model: Message, message_refinements: Sequence[Refinement] = None
-    ) -> None:
-        super().__init__(message_model)
-        self._refinements = message_refinements or []
+    def __init__(self, model: Message, refinements: Sequence[Refinement] = None) -> None:
+        super().__init__(model)
+        self._refinements = refinements or []
         self._fields: Dict[str, MessageValue.Field] = {
-            f.name: self.Field(TypeValue.construct(self._type.types[f]))
-            for f in self._type.fields
+            f.name: self.Field(TypeValue.construct(self._type.types[f])) for f in self._type.fields
         }
         self.__type_literals: Mapping[Name, Expr] = {}
         self._last_field: str = self._next_field(INITIAL.name)
@@ -478,7 +478,6 @@ class MessageValue(TypeValue):
         self._preset_fields(INITIAL.name)
 
     def __copy__(self) -> "MessageValue":
-        assert isinstance(self._type, Message)
         return MessageValue(self._type, self._refinements)
 
     def __repr__(self) -> str:
@@ -489,8 +488,8 @@ class MessageValue(TypeValue):
             return self._fields == other._fields and self._type == other._type
         return NotImplemented
 
-    def equal_type(self, other: Message) -> bool:
-        return self.name == other.name
+    def equal_type(self, other: Type) -> bool:
+        return self.identifier == other.identifier
 
     def _valid_refinement_condition(self, refinement: Refinement) -> bool:
         return self.__simplified(refinement.condition) == TRUE
@@ -657,21 +656,18 @@ class MessageValue(TypeValue):
             if isinstance(field.typeval, CompositeValue) and self._has_length(field_name):
                 field.typeval.set_expected_size(self._get_length(field_name))
             set_refinement(field, field_name)
-            if isinstance(value, Bitstring):
-                try:
+            try:
+                if isinstance(value, Bitstring):
                     field.typeval.parse(value)
-                except (ValueError, KeyError) as e:
-                    raise ValueError(f"Error while setting value for field {field_name}: {e}")
-            elif isinstance(value, field.typeval.accepted_type):
-                try:
+                elif isinstance(value, field.typeval.accepted_type):
                     field.typeval.assign(value)
-                except (ValueError, KeyError) as e:
-                    raise ValueError(f"Error while setting value for field {field_name}: {e}")
-            else:
-                raise TypeError(
-                    f"cannot assign different types: {field.typeval.accepted_type.__name__}"
-                    f" != {type(value).__name__}"
-                )
+                else:
+                    raise TypeError(
+                        f"cannot assign different types: {field.typeval.accepted_type.__name__}"
+                        f" != {type(value).__name__}"
+                    )
+            except (ValueError, KeyError, TypeError) as e:
+                raise ValueError(f"Error while setting value for field {field_name}: {e}")
         else:
             raise KeyError(f"cannot access field {field_name}")
 
@@ -714,7 +710,7 @@ class MessageValue(TypeValue):
             self._last_field = nxt
             nxt = self._next_field(nxt)
 
-    def get(self, field_name: str) -> Any:
+    def get(self, field_name: str) -> Union["MessageValue", Sequence[TypeValue], int, str, bytes]:
         if field_name not in self.valid_fields:
             raise ValueError(f"field {field_name} not valid")
         field = self._fields[field_name]
@@ -802,12 +798,12 @@ class MessageValue(TypeValue):
             f
             for f in self.accessible_fields
             if (
-                    self._fields[f].set
-                    and self.__simplified(self._type.field_condition(Field(f))) == TRUE
-                    and any(
+                self._fields[f].set
+                and self.__simplified(self._type.field_condition(Field(f))) == TRUE
+                and any(
                     [self.__simplified(i.condition) == TRUE for i in self._type.incoming(Field(f))]
                 )
-                    and any(
+                and any(
                     [self.__simplified(o.condition) == TRUE for o in self._type.outgoing(Field(f))]
                 )
             )
