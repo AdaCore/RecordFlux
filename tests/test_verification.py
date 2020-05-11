@@ -678,3 +678,17 @@ class TestVerification(TestCase):
             Field("F3"): MODULAR_INTEGER,
         }
         self.assert_message_model_error(structure, types, '^unreachable field "F2" in "P.M"')
+
+    def test_length_attribute_final(self) -> None:
+        structure = [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2")),
+            Link(Field("F2"), FINAL, length=Number(100)),
+        ]
+        types = {
+            Field("F1"): MODULAR_INTEGER,
+            Field("F2"): MODULAR_INTEGER,
+        }
+        self.assert_message_model_error(
+            structure, types, '^length attribute for final field in "P.M"'
+        )
