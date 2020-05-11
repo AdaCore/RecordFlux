@@ -2191,7 +2191,7 @@ class Generator:
             unit += UnitPart([UseTypeClause(const.TYPES_INDEX, const.TYPES_BIT_INDEX)])
 
         assert isinstance(unit, PackageUnit), "unexpected unit type"
-        assert isinstance(unit.declaration.formal_parameters, List), "missing formal parameters"
+        assert isinstance(unit.declaration.formal_parameters, list), "missing formal parameters"
 
         if refinement.pdu.package != refinement.package:
             pdu_package = (
