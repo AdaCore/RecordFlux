@@ -527,6 +527,8 @@ class AbstractMessage(Type):
             raise ModelError(f'invalid First for field "{link.target.name}"{location}')
 
     def __check_length_expression(self, link: Link) -> None:
+        if link.target == FINAL and link.length != UNDEFINED:
+            raise ModelError(f'length attribute for final field in "{self.identifier}"')
         if link.target != FINAL:
             t = self.types[link.target]
             unconstrained = isinstance(t, (Opaque, Array))
