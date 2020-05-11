@@ -583,7 +583,6 @@ class AbstractMessage(Type):
 
         for f in (*self.__fields, FINAL):
             errors = []
-            found = False
             for path in self.__paths[f]:
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 if f != FINAL:
@@ -594,12 +593,11 @@ class AbstractMessage(Type):
                     )
                 proof = TRUE.check(facts)
                 if proof.result == ProofResult.sat:
-                    found = True
-                else:
-                    path_message = " -> ".join([l.target.name for l in path])
-                    errors.append(f"[{path_message}]:\n   {proof.error}")
+                    break
 
-            if not found:
+                path_message = " -> ".join([l.target.name for l in path])
+                errors.append(f"[{path_message}]:\n   {proof.error}")
+            else:
                 error_message = "\n   ".join(errors)
                 raise ModelError(
                     f'unreachable field "{f.name}" in "{self.identifier}"\n{error_message}'
