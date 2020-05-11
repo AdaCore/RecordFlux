@@ -1,8 +1,9 @@
 from unittest import TestCase, mock
 
-from rflx.expression import Add, First, Greater, Last, LessEqual, Number, Pow, Sub, Variable
-from rflx.model import FINAL, INITIAL, Field, Link, Message, ModelError, ModularInteger
+from rflx.expression import Add, First, Greater, Last, LessEqual, Number, Sub, Variable
+from rflx.model import FINAL, INITIAL, Field, Link, Message, ModelError
 from rflx.parser import Parser
+from tests.models import MODULAR_INTEGER
 
 
 # pylint: disable=too-many-public-methods
@@ -478,20 +479,18 @@ class TestVerification(TestCase):
         )
 
     def test_field_coverage_1(self) -> None:
-        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field("F1")),
             Link(Field("F1"), Field("F2"), first=Add(First("Message"), Number(64))),
             Link(Field("F2"), FINAL),
         ]
 
-        types = {Field("F1"): foo_type, Field("F2"): foo_type}
+        types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
         with mock.patch("rflx.model.Message._AbstractMessage__verify_conditions", lambda x: None):
             with self.assertRaisesRegex(ModelError, "^path F1 -> F2 does not cover whole message"):
                 Message("P.M", structure, types)
 
     def test_field_coverage_2(self) -> None:
-        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field("F1")),
             Link(Field("F1"), Field("F2")),
@@ -507,10 +506,10 @@ class TestVerification(TestCase):
         ]
 
         types = {
-            Field("F1"): foo_type,
-            Field("F2"): foo_type,
-            Field("F3"): foo_type,
-            Field("F4"): foo_type,
+            Field("F1"): MODULAR_INTEGER,
+            Field("F2"): MODULAR_INTEGER,
+            Field("F3"): MODULAR_INTEGER,
+            Field("F4"): MODULAR_INTEGER,
         }
         with mock.patch("rflx.model.Message._AbstractMessage__verify_conditions", lambda x: None):
             with self.assertRaisesRegex(
@@ -519,14 +518,13 @@ class TestVerification(TestCase):
                 Message("P.M", structure, types)
 
     def test_field_after_message_start(self) -> None:
-        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field("F1")),
             Link(Field("F1"), Field("F2"), first=Sub(First("Message"), Number(1000))),
             Link(Field("F2"), FINAL),
         ]
 
-        types = {Field("F1"): foo_type, Field("F2"): foo_type}
+        types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
         with mock.patch("rflx.model.Message._AbstractMessage__verify_conditions", lambda x: None):
             with self.assertRaisesRegex(
                 ModelError, '^start of field "F2" on path F1 -> F2 before' " message start"
@@ -570,7 +568,6 @@ class TestVerification(TestCase):
         parser.create_model()
 
     def test_no_path_to_final(self) -> None:
-        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field("F1")),
             Link(Field("F1"), Field("F2")),
@@ -580,16 +577,15 @@ class TestVerification(TestCase):
         ]
 
         types = {
-            Field("F1"): foo_type,
-            Field("F2"): foo_type,
-            Field("F3"): foo_type,
-            Field("F4"): foo_type,
+            Field("F1"): MODULAR_INTEGER,
+            Field("F2"): MODULAR_INTEGER,
+            Field("F3"): MODULAR_INTEGER,
+            Field("F4"): MODULAR_INTEGER,
         }
         with self.assertRaisesRegex(ModelError, '^no path to FINAL for field "F4"'):
             Message("P.M", structure, types)
 
     def test_no_path_to_final_transitive(self) -> None:
-        foo_type = ModularInteger("P.Foo", Pow(Number(2), Number(32)))
         structure = [
             Link(INITIAL, Field("F1")),
             Link(Field("F1"), Field("F2")),
@@ -601,12 +597,12 @@ class TestVerification(TestCase):
         ]
 
         types = {
-            Field("F1"): foo_type,
-            Field("F2"): foo_type,
-            Field("F3"): foo_type,
-            Field("F4"): foo_type,
-            Field("F5"): foo_type,
-            Field("F6"): foo_type,
+            Field("F1"): MODULAR_INTEGER,
+            Field("F2"): MODULAR_INTEGER,
+            Field("F3"): MODULAR_INTEGER,
+            Field("F4"): MODULAR_INTEGER,
+            Field("F5"): MODULAR_INTEGER,
+            Field("F6"): MODULAR_INTEGER,
         }
         with self.assertRaisesRegex(ModelError, '^no path to FINAL for field "F4"'):
             Message("P.M", structure, types)
