@@ -759,7 +759,7 @@ class AbstractMessage(Type):
                     fields.append(e.target)
         if set(self.structure) - visited:
             raise ModelError(f'structure of "{self.identifier}" contains cycle')
-        return tuple(filter(lambda f: f not in [INITIAL, FINAL], result))
+        return tuple(f for f in result if f not in [INITIAL, FINAL])
 
     def __compute_paths(self, final: Field) -> Set[Tuple[Link, ...]]:
         if final == INITIAL:
