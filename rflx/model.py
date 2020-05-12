@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 import itertools
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from copy import copy
 from math import log
 from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
@@ -84,11 +84,13 @@ class Scalar(Type):
 
 
 class Integer(Scalar):
-    @abstractproperty
+    @property
+    @abstractmethod
     def first(self) -> Expr:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def last(self) -> Expr:
         raise NotImplementedError
 
