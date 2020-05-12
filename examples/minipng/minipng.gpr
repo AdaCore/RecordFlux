@@ -1,0 +1,8 @@
+project MiniPNG is
+
+   for Source_Dirs use ("src", "generated", "../../tests");
+   for Object_Dir use "obj";
+   for Create_Missing_Dirs use "True";
+   for Main use ("q1.adb");
+
+end MiniPNG;
