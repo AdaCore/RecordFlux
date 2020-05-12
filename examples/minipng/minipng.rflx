@@ -1,0 +1,45 @@
+package MiniPNG is
+
+   type Magic_Mini is (Mini => 16#4D696E69#) with
+      Size => 32;
+   type Magic_PNG is (PNG => 16#2D504E47#) with
+      Size => 32;
+   type Header_Type is (Header => 16#48#) with
+      Size => 8;
+   type Header_Length is range 9 .. 9 with
+      Size => 32;
+   type Block_Type is (Comment => 16#43#, Data => 16#44#) with
+      Size => 8;
+   type Block_Length is range 0 .. 2 ** 32 - 1 with
+      Size => 32;
+   type Image_Size is range 0 .. 2 ** 32 - 1 with
+      Size => 32;
+   type Pixel_Type is (Black_White => 0, Greyscale => 1, Palette => 2, Truecolor => 3) with
+      Size => 8;
+
+   type CD_Block is
+      message
+         Tag     : Block_Type;
+         Length  : Block_Length
+            then Content
+            with Length => Length * 8;
+         Content : Opaque;
+   end message;
+
+   type CD_Blocks is array of CD_Block;
+
+   type File is
+      message
+         Magic_1      : Magic_Mini;
+         Magic_2      : Magic_PNG;
+         Tag          : Header_Type;
+         Length       : Header_Length;
+         Image_Width  : Image_Size;
+         Image_Height : Image_Size;
+         Pixel        : Pixel_Type
+            then Blocks
+            with Length => Message'Last - Pixel'Last;
+         Blocks       : CD_Blocks;
+   end message;
+
+end MiniPNG;
