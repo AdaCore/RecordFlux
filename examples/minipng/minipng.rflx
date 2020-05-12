@@ -1,11 +1,9 @@
 package MiniPNG is
 
-   type Header_Type is (Header => 16#48#) with
-      Size => 8;
-   type Header_Length is range 9 .. 9 with
-      Size => 32;
-   type Block_Type is (Comment => 16#43#, Data => 16#44#) with
-      Size => 8;
+   type Block_Type is (Comment => 67, -- 'C'
+                       Data    => 68, -- 'D'
+                       Header  => 72) -- 'H'
+     with Size => 8;
    type Block_Length is range 0 .. 2 ** 32 - 1 with
       Size => 32;
    type Image_Size is range 0 .. 2 ** 32 - 1 with
@@ -15,10 +13,12 @@ package MiniPNG is
 
    type CD_Block is
       message
-         Tag     : Block_Type;
+         Tag     : Block_Type
+            then Length
+               if Tag = Comment or Tag = Data;
          Length  : Block_Length
             then Content
-            with Length => Length * 8;
+               with Length => Length * 8;
          Content : Opaque;
    end message;
 
@@ -32,13 +32,14 @@ package MiniPNG is
          Magic        : Opaque
             then Tag
                if Magic = "Mini-PNG";
-         Tag          : Header_Type;
-         Length       : Header_Length;
+         Tag          : Block_Type
+            then Length if Tag = Header;
+         Length       : Block_Length;
          Image_Width  : Image_Size;
          Image_Height : Image_Size;
          Pixel        : Pixel_Type
             then Blocks
-            with Length => Message'Last - Pixel'Last;
+               with Length => Message'Last - Pixel'Last;
          Blocks       : CD_Blocks;
    end message;
 

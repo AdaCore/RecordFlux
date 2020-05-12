@@ -58,7 +58,7 @@ begin
          case RFLX.MiniPNG.CD_Block.Get_Tag (Block) is
             when RFLX.MiniPNG.Comment =>
                Get_Comment (Block);
-            when RFLX.MiniPNG.Data =>
+            when RFLX.MiniPNG.Data | RFLX.MiniPNG.Header =>
                null;
          end case;
       else
