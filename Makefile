@@ -49,10 +49,10 @@ format:
 test: check test_python test_spark prove_spark
 
 test_python:
-	python3 -m unittest -vb
+	python3 -m pytest -vv
 
 test_python_coverage:
-	coverage run --branch --source=rflx -m unittest -vb
+	coverage run --branch --source=rflx -m pytest -vv
 
 test_spark: $(test-files)
 	gprbuild -P$(project)

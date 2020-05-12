@@ -9,6 +9,7 @@ jobs:
   Checks:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: [3.6]
         target: [black, isort, flake8, pylint, mypy, contracts, doc]
@@ -72,8 +73,13 @@ jobs:
     name: Tests Python
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
+        target: ["python"]
         python-version: [3.6, 3.7, 3.8]
+        include:
+          - target: "python_coverage"
+            python-version: 3.8
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
@@ -109,9 +115,15 @@ jobs:
     - name: Test
       run: |
         export PATH=~/.local/bin:$HOME/bin:$PATH
-        make test_python_coverage
+        make test_${{ matrix.target }}
+    - name: Create coverage report
+      if: matrix.target == 'python_coverage'
+      run: |
+        export PATH=~/.local/bin:$PATH
+        coverage report
         coverage xml
     - name: Upload coverage to Codecov
+      if: matrix.target == 'python_coverage'
       uses: codecov/codecov-action@v1.0.2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
