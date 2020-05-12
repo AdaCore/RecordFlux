@@ -8,4 +8,5 @@ pydotplus
 pyicontract-lint >=2.0.0
 pylint
 pyparsing >=2.4.0
+pytest
 z3-solver
