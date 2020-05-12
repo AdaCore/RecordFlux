@@ -1,6 +1,4 @@
-import unittest
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -20,144 +18,156 @@ from tests.models import (
     TLV_MODEL,
 )
 
+TESTDIR = Path("generated")
 
-# pylint: disable=too-many-public-methods
-class TestGenerator(unittest.TestCase):
-    def setUp(self) -> None:
-        self.testdir = Path("generated")
-        self.maxDiff = None  # pylint: disable=invalid-name
 
-    def test_library_files(self) -> None:
-        generator = Generator("RFLX", reproducible=True)
-        with TemporaryDirectory() as directory:
-            tmpdir = Path(directory)
-            generator.write_library_files(tmpdir)
-            for filename in [f"rflx-{f}" for f in const.LIBRARY_FILES]:
-                with open(tmpdir / filename) as library_file:
-                    with open(self.testdir / filename) as expected_file:
-                        self.assertEqual(library_file.read(), expected_file.read(), filename)
+def assert_specification(generator: Generator) -> None:
+    for unit in generator.units.values():
+        with open(f"{TESTDIR}/{unit.name}.ads", "r") as f:
+            assert unit.ads == f.read(), unit.name
 
-    def test_top_level_package(self) -> None:
-        generator = Generator("RFLX", reproducible=True)
-        with TemporaryDirectory() as directory:
-            tmpdir = Path(directory)
-            generator.write_top_level_package(tmpdir)
 
-            created_files = list(tmpdir.glob("*"))
-            self.assertEqual(created_files, [tmpdir / Path("rflx.ads")])
-
-            for created_file in created_files:
-                with open(created_file) as library_file:
-                    with open(self.testdir / created_file.name) as expected_file:
-                        self.assertEqual(
-                            library_file.read(), expected_file.read(), created_file.name
-                        )
-
-    def test_top_level_package_no_prefix(self) -> None:
-        generator = Generator("", reproducible=True)
-        with TemporaryDirectory() as directory:
-            tmpdir = Path(directory)
-            generator.write_top_level_package(tmpdir)
-            self.assertEqual(list(tmpdir.glob("*")), [])
-
-    def assert_specification(self, generator: Generator) -> None:
-        for unit in generator.units.values():
-            with open(f"{self.testdir}/{unit.name}.ads", "r") as f:
-                self.assertEqual(unit.ads, f.read(), unit.name)
-
-    def assert_body(self, generator: Generator) -> None:
-        for unit in generator.units.values():
-            if unit.adb:
-                with open(f"{self.testdir}/{unit.name}.adb", "r") as f:
-                    self.assertEqual(unit.adb, f.read(), unit.name)
-
-    @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-    def test_invalid_prefix(self) -> None:
-        with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
-            Generator("A..B")
-
-    @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-    def test_unexpected_type(self) -> None:
-        class TestType(Type):
-            pass
-
-        with self.assertRaisesRegex(AssertionError, 'unexpected type "TestType"'):
-            Generator().generate(Model([TestType("P.T")]))
-
-    def test_null_spec(self) -> None:
-        generator = generate(NULL_MODEL)
-        self.assert_specification(generator)
-
-    def test_null_body(self) -> None:
-        generator = generate(NULL_MODEL)
-        self.assert_body(generator)
-
-    def test_tlv_spec(self) -> None:
-        generator = generate(TLV_MODEL)
-        self.assert_specification(generator)
-
-    def test_tlv_body(self) -> None:
-        generator = generate(TLV_MODEL)
-        self.assert_body(generator)
-
-    def test_tlv_refinement_to_null_spec(self) -> None:
-        generator = generate(NULL_MESSAGE_IN_TLV_MESSAGE_MODEL)
-        self.assert_specification(generator)
-
-    def test_tlv_refinement_to_null_body(self) -> None:
-        generator = generate(NULL_MESSAGE_IN_TLV_MESSAGE_MODEL)
-        self.assert_body(generator)
-
-    def test_ethernet_spec(self) -> None:
-        generator = generate(ETHERNET_MODEL)
-        self.assert_specification(generator)
-
-    def test_ethernet_body(self) -> None:
-        generator = generate(ETHERNET_MODEL)
-        self.assert_body(generator)
-
-    def test_enumeration_spec(self) -> None:
-        generator = generate(ENUMERATION_MODEL)
-        self.assert_specification(generator)
-
-    def test_enumeration_body(self) -> None:
-        generator = generate(ENUMERATION_MODEL)
-        self.assert_body(generator)
-
-    def test_array_spec(self) -> None:
-        generator = generate(ARRAYS_MODEL)
-        self.assert_specification(generator)
-
-    def test_array_body(self) -> None:
-        generator = generate(ARRAYS_MODEL)
-        self.assert_body(generator)
-
-    def test_expression_spec(self) -> None:
-        generator = generate(EXPRESSION_MODEL)
-        self.assert_specification(generator)
-
-    def test_expression_body(self) -> None:
-        generator = generate(EXPRESSION_MODEL)
-        self.assert_body(generator)
-
-    def test_derivation_spec(self) -> None:
-        generator = generate(DERIVATION_MODEL)
-        self.assert_specification(generator)
-
-    def test_derivation_body(self) -> None:
-        generator = generate(DERIVATION_MODEL)
-        self.assert_body(generator)
-
-    def test_base_type_name(self) -> None:
-        self.assertEqual(common.base_type_name(MODULAR_INTEGER), ID("Modular"))
-        self.assertEqual(common.base_type_name(RANGE_INTEGER), ID("Range_Base"))
-
-    def test_full_base_type_name(self) -> None:
-        self.assertEqual(common.full_base_type_name(MODULAR_INTEGER), ID("P.Modular"))
-        self.assertEqual(common.full_base_type_name(RANGE_INTEGER), ID("P.Range_Base"))
+def assert_body(generator: Generator) -> None:
+    for unit in generator.units.values():
+        if unit.adb:
+            with open(f"{TESTDIR}/{unit.name}.adb", "r") as f:
+                assert unit.adb == f.read(), unit.name
 
 
 def generate(model: Model) -> Generator:
     generator = Generator("RFLX", reproducible=True)
     generator.generate(model)
     return generator
+
+
+def test_library_files(tmp_path: Path) -> None:
+    generator = Generator("RFLX", reproducible=True)
+    generator.write_library_files(tmp_path)
+    for filename in [f"rflx-{f}" for f in const.LIBRARY_FILES]:
+        with open(tmp_path / filename) as library_file:
+            with open(TESTDIR / filename) as expected_file:
+                assert library_file.read() == expected_file.read(), filename
+
+
+def test_top_level_package(tmp_path: Path) -> None:
+    generator = Generator("RFLX", reproducible=True)
+    generator.write_top_level_package(tmp_path)
+
+    created_files = list(tmp_path.glob("*"))
+    assert created_files == [tmp_path / Path("rflx.ads")]
+
+    for created_file in created_files:
+        with open(created_file) as library_file:
+            with open(TESTDIR / created_file.name) as expected_file:
+                assert library_file.read() == expected_file.read(), created_file.name
+
+
+def test_top_level_package_no_prefix(tmp_path: Path) -> None:
+    generator = Generator("", reproducible=True)
+    generator.write_top_level_package(tmp_path)
+    assert list(tmp_path.glob("*")) == []
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_invalid_prefix() -> None:
+    with pytest.raises(AssertionError, match=r"empty part in identifier"):
+        Generator("A..B")
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_unexpected_type() -> None:
+    class TestType(Type):
+        pass
+
+    with pytest.raises(AssertionError, match='unexpected type "TestType"'):
+        Generator().generate(Model([TestType("P.T")]))
+
+
+def test_null_spec() -> None:
+    generator = generate(NULL_MODEL)
+    assert_specification(generator)
+
+
+def test_null_body() -> None:
+    generator = generate(NULL_MODEL)
+    assert_body(generator)
+
+
+def test_tlv_spec() -> None:
+    generator = generate(TLV_MODEL)
+    assert_specification(generator)
+
+
+def test_tlv_body() -> None:
+    generator = generate(TLV_MODEL)
+    assert_body(generator)
+
+
+def test_tlv_refinement_to_null_spec() -> None:
+    generator = generate(NULL_MESSAGE_IN_TLV_MESSAGE_MODEL)
+    assert_specification(generator)
+
+
+def test_tlv_refinement_to_null_body() -> None:
+    generator = generate(NULL_MESSAGE_IN_TLV_MESSAGE_MODEL)
+    assert_body(generator)
+
+
+def test_ethernet_spec() -> None:
+    generator = generate(ETHERNET_MODEL)
+    assert_specification(generator)
+
+
+def test_ethernet_body() -> None:
+    generator = generate(ETHERNET_MODEL)
+    assert_body(generator)
+
+
+def test_enumeration_spec() -> None:
+    generator = generate(ENUMERATION_MODEL)
+    assert_specification(generator)
+
+
+def test_enumeration_body() -> None:
+    generator = generate(ENUMERATION_MODEL)
+    assert_body(generator)
+
+
+def test_array_spec() -> None:
+    generator = generate(ARRAYS_MODEL)
+    assert_specification(generator)
+
+
+def test_array_body() -> None:
+    generator = generate(ARRAYS_MODEL)
+    assert_body(generator)
+
+
+def test_expression_spec() -> None:
+    generator = generate(EXPRESSION_MODEL)
+    assert_specification(generator)
+
+
+def test_expression_body() -> None:
+    generator = generate(EXPRESSION_MODEL)
+    assert_body(generator)
+
+
+def test_derivation_spec() -> None:
+    generator = generate(DERIVATION_MODEL)
+    assert_specification(generator)
+
+
+def test_derivation_body() -> None:
+    generator = generate(DERIVATION_MODEL)
+    assert_body(generator)
+
+
+def test_base_type_name() -> None:
+    assert common.base_type_name(MODULAR_INTEGER) == ID("Modular")
+    assert common.base_type_name(RANGE_INTEGER) == ID("Range_Base")
+
+
+def test_full_base_type_name() -> None:
+    assert common.full_base_type_name(MODULAR_INTEGER) == ID("P.Modular")
+    assert common.full_base_type_name(RANGE_INTEGER) == ID("P.Range_Base")
