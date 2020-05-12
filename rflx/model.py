@@ -2,7 +2,6 @@
 import itertools
 from abc import ABC, abstractmethod
 from copy import copy
-from math import log
 from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.common import flat_name, generic_repr
@@ -112,7 +111,7 @@ class ModularInteger(Integer):
             raise ModelError(f'modulus of "{self.name}" not power of two')
 
         self.__modulus = modulus
-        self._size = Number(int(log(modulus_int) / log(2)))
+        self._size = Number((modulus_int - 1).bit_length())
 
     @property
     def modulus(self) -> Expr:
@@ -154,7 +153,7 @@ class RangeInteger(Integer):
 
         if not isinstance(size_num, Number):
             raise ModelError(f'size of "{self.name}" contains variable')
-        if log(int(last_num) + 1) / log(2) > int(size_num):
+        if int(last_num).bit_length() > int(size_num):
             raise ModelError(f'size for "{self.name}" too small')
 
         self.__first = first
@@ -198,7 +197,7 @@ class Enumeration(Scalar):
 
         if not isinstance(size_num, Number):
             raise ModelError(f'size of "{self.name}" contains variable')
-        if log(max(map(int, literals.values())) + 1) / log(2) > int(size_num):
+        if max(map(int, literals.values())).bit_length() > int(size_num):
             raise ModelError(f'size for "{self.name}" too small')
         if len(set(literals.values())) < len(literals.values()):
             raise ModelError(f'"{self.name}" contains elements with same value')
