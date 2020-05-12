@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,too-many-ancestors
 import itertools
 import operator
 from abc import ABC, abstractmethod
@@ -9,6 +9,7 @@ from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 import z3
 
 from rflx.common import generic_repr, indent, indent_next, unique
+from rflx.contract import DBC, invariant, require
 from rflx.identifier import ID, StrID
 
 
@@ -62,7 +63,7 @@ class Proof:
         return "\n   ∧ ".join([str(facts[str(fact)]) for fact in solver.unsat_core()])
 
 
-class Expr(ABC):
+class Expr(DBC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
@@ -113,10 +114,10 @@ class Expr(ABC):
     def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
         return [self] if match(self) else []
 
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self, func: Callable[["Expr"], "Expr"] = None, mapping: Mapping["Name", "Expr"] = None
     ) -> "Expr":
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         return func(self)
 
@@ -237,7 +238,6 @@ class BinExpr(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, BinExpr):
@@ -318,7 +318,6 @@ class AssExpr(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, AssExpr):
@@ -804,7 +803,6 @@ class Name(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         positive_self = copy(self)
         positive_self.negative = False
@@ -855,7 +853,6 @@ class Attribute(Name):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         positive_self = copy(self)
         positive_self.negative = False
@@ -923,7 +920,6 @@ class AttributeExpression(Attribute, ABC):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         positive_self = copy(self)
         positive_self.negative = False
@@ -955,13 +951,12 @@ class Pos(AttributeExpression):
     pass
 
 
+@invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
     def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
         super().__init__(negative)
         self.prefix = prefix
         self.elements = list(elements)
-
-        assert len(self.elements) > 0, "illegal indexed component without elements"
 
     @property
     def representation(self) -> str:
@@ -1017,7 +1012,6 @@ class Slice(Name):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, self.__class__):
@@ -1066,7 +1060,6 @@ class Aggregate(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, self.__class__):
@@ -1101,7 +1094,6 @@ class NamedAggregate(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, self.__class__):
@@ -1313,7 +1305,6 @@ class If(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, self.__class__):
@@ -1387,7 +1378,6 @@ class Case(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        assert (func and not mapping) or (not func and mapping is not None)
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, self.__class__):

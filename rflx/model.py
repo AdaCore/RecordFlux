@@ -5,6 +5,7 @@ from copy import copy
 from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.common import flat_name, generic_repr
+from rflx.contract import ensure, invariant
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -290,6 +291,14 @@ class Link(NamedTuple):
         return generic_repr(self.__class__.__name__, self._asdict())
 
 
+def valid_message_field_types(message: "AbstractMessage") -> bool:
+    for t in message.types.values():
+        if not isinstance(t, (Scalar, Composite, AbstractMessage)):
+            return False
+    return True
+
+
+@invariant(lambda self: valid_message_field_types(self))
 class AbstractMessage(Type):
     def __init__(
         self, identifier: StrID, structure: Sequence[Link], types: Mapping[Field, Type]
@@ -457,8 +466,6 @@ class AbstractMessage(Type):
                 f'duplicate links in "{self.identifier}": '
                 + ", ".join(f"{l.source.name} -> {l.target.name}" for l in duplicate_links)
             )
-
-        check_message_field_types(self)
 
     def __verify_conditions(self) -> None:
         literals = qualified_literals(self.types, self.package)
@@ -902,6 +909,7 @@ class UnprovenMessage(AbstractMessage):
     def proven(self) -> Message:
         return Message(self.identifier, self.structure, self.types)
 
+    @ensure(lambda result: valid_message_field_types(result))
     def merged(self) -> "UnprovenMessage":
         message = self
 
@@ -965,8 +973,6 @@ class UnprovenMessage(AbstractMessage):
             }
 
             message = message.copy(structure=structure, types=types)
-
-        check_message_field_types(message)
 
         return message
 
@@ -1050,14 +1056,6 @@ class Model(Base):
 
 class ModelError(Exception):
     pass
-
-
-def check_message_field_types(message: AbstractMessage) -> None:
-    for f, t in message.types.items():
-        assert isinstance(t, (Scalar, Composite, AbstractMessage)), (
-            f'field "{f.name}" has invalid type "{t.identifier}" ({type(t).__name__})'
-            f' in "{message.identifier}"'
-        )
 
 
 def qualified_literals(types: Mapping[Field, Type], package: ID) -> Set[str]:

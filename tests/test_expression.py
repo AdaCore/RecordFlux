@@ -1066,6 +1066,16 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             [Variable("X")],
         )
 
+    def test_expr_substituted_pre(self) -> None:
+        with self.assertRaises(AssertionError):
+            Number(1).substituted()
+        with self.assertRaises(AssertionError):
+            Add(Number(1), Number(1)).substituted()
+        with self.assertRaises(AssertionError):
+            Number(1).substituted(lambda x: x, {})
+        with self.assertRaises(AssertionError):
+            Add(Number(1), Number(1)).substituted(lambda x: x, {})
+
     def test_length_z3variables(self) -> None:
         self.assertEqual(Length("Z").variables(True), [Variable("Z'Length")])
 
