@@ -70,7 +70,7 @@ class TestGenerator(unittest.TestCase):
                     self.assertEqual(unit.adb, f.read(), unit.name)
 
     def test_invalid_prefix(self) -> None:
-        with self.assertRaisesRegex(AssertionError, 'empty part in identifier "A..B"'):
+        with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             Generator("A..B")
 
     def test_unexpected_type(self) -> None:

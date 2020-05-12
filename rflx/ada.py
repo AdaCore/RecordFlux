@@ -4,6 +4,7 @@ from collections import OrderedDict
 from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
 from rflx.common import file_name, generic_repr, indent, indent_next, unique
+from rflx.contract import invariant
 from rflx.expression import Case, Expr, Number, Variable
 from rflx.identifier import ID, StrID
 
@@ -887,6 +888,7 @@ class Unit(Ada):
         raise NotImplementedError
 
 
+@invariant(lambda self: self.declaration.identifier == self.body.identifier)
 class PackageUnit(Unit):
     def __init__(
         self,
@@ -899,8 +901,6 @@ class PackageUnit(Unit):
         self.declaration = declaration
         self.body_context = body_context
         self.body = body
-
-        self._check_consistency()
 
     def __iadd__(self, other: object) -> "PackageUnit":
         if isinstance(other, (UnitPart, SubprogramUnitPart)):
@@ -916,23 +916,15 @@ class PackageUnit(Unit):
 
     @property
     def ads(self) -> str:
-        self._check_consistency()
         return f"{context_clause(self.declaration_context)}{self.declaration}"
 
     @property
     def adb(self) -> str:
-        self._check_consistency()
         return f"{context_clause(self.body_context)}{self.body}" if str(self.body) else ""
 
     @property
     def name(self) -> str:
-        self._check_consistency()
         return file_name(str(self.declaration.identifier))
-
-    def _check_consistency(self) -> None:
-        assert (
-            self.declaration.identifier == self.body.identifier
-        ), "identifier of specification and body differ"
 
 
 class InstantiationUnit(Unit):

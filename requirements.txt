@@ -1,9 +1,11 @@
 black
 coverage
 flake8
+icontract >=2.3.2
 isort
 mypy
+pydotplus
+pyicontract-lint >=2.0.0
 pylint
 pyparsing >=2.4.0
 z3-solver
-pydotplus
