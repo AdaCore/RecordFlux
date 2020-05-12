@@ -1,8 +1,11 @@
 from typing import Sequence, Union
 
 from rflx.common import generic_repr
+from rflx.contract import invariant
 
 
+@invariant(lambda self: all(" " not in part for part in self.parts), "no whitespace in identifier")
+@invariant(lambda self: "" not in self.parts, "no empty part in identifier")
 class ID:
     def __init__(self, identifier: Union[str, Sequence[str], "ID"] = None) -> None:
         self.parts: Sequence[str]
@@ -14,10 +17,6 @@ class ID:
             self.parts = list(identifier.parts)
         else:
             assert False, f'unexpected identifier type "{type(identifier).__name__}"'
-
-        assert str(self) != "", "empty identifier"
-        assert all(" " not in n for n in self.parts), f'whitespace in identifier "{self}"'
-        assert "" not in self.parts, f'empty part in identifier "{self}"'
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):

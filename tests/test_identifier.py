@@ -20,23 +20,23 @@ class TestIdentifier(TestCase):
             ID(0)  # type: ignore
 
     def test_id_invalid_empty(self) -> None:
-        with self.assertRaisesRegex(AssertionError, r"^empty identifier$"):
+        with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             ID("")
 
     def test_id_invalid_empty_part(self) -> None:
-        with self.assertRaisesRegex(AssertionError, r'^empty part in identifier "A..B"$'):
+        with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             ID("A..B")
 
     def test_id_invalid_empty_first_part(self) -> None:
-        with self.assertRaisesRegex(AssertionError, r'^empty part in identifier ".A.B"$'):
+        with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             ID(".A.B")
 
     def test_id_invalid_empty_last_part(self) -> None:
-        with self.assertRaisesRegex(AssertionError, r'^empty part in identifier "A.B."$'):
+        with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             ID("A.B.")
 
     def test_id_invalid_whitespace(self) -> None:
-        with self.assertRaisesRegex(AssertionError, r'^whitespace in identifier "A.B C.D"$'):
+        with self.assertRaisesRegex(AssertionError, r"whitespace in identifier"):
             ID("A.B C.D")
 
     def test_id_str(self) -> None:
