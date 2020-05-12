@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import pytest
+
 from rflx.identifier import ID
 
 
@@ -15,26 +17,32 @@ class TestIdentifier(TestCase):
         self.assertEqual(ID(ID("A.B")), ID("A.B"))
         self.assertEqual(ID(ID("A.B.C")), ID("A.B.C"))
 
+    @pytest.mark.skipif(not __debug__, reason="depends on contract")
     def test_id_invalid_type(self) -> None:
         with self.assertRaisesRegex(AssertionError, r'^unexpected identifier type "int"$'):
             ID(0)  # type: ignore
 
+    @pytest.mark.skipif(not __debug__, reason="depends on contract")
     def test_id_invalid_empty(self) -> None:
         with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             ID("")
 
+    @pytest.mark.skipif(not __debug__, reason="depends on contract")
     def test_id_invalid_empty_part(self) -> None:
         with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             ID("A..B")
 
+    @pytest.mark.skipif(not __debug__, reason="depends on contract")
     def test_id_invalid_empty_first_part(self) -> None:
         with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             ID(".A.B")
 
+    @pytest.mark.skipif(not __debug__, reason="depends on contract")
     def test_id_invalid_empty_last_part(self) -> None:
         with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             ID("A.B.")
 
+    @pytest.mark.skipif(not __debug__, reason="depends on contract")
     def test_id_invalid_whitespace(self) -> None:
         with self.assertRaisesRegex(AssertionError, r"whitespace in identifier"):
             ID("A.B C.D")

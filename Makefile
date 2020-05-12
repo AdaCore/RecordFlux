@@ -51,6 +51,9 @@ test: check test_python test_spark prove_spark
 test_python:
 	python3 -m pytest -vv
 
+test_python_optimized:
+	python3 -O -m pytest -vv
+
 test_python_coverage:
 	coverage run --branch --source=rflx -m pytest -vv
 

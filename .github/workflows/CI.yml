@@ -78,6 +78,8 @@ jobs:
         target: ["python"]
         python-version: [3.6, 3.7, 3.8]
         include:
+          - target: "python_optimized"
+            python-version: 3.8
           - target: "python_coverage"
             python-version: 3.8
     steps:

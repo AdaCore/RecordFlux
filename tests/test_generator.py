@@ -2,6 +2,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from rflx.generator import Generator, common, const
 from rflx.identifier import ID
 from rflx.model import Model, Type
@@ -69,10 +71,12 @@ class TestGenerator(unittest.TestCase):
                 with open(f"{self.testdir}/{unit.name}.adb", "r") as f:
                     self.assertEqual(unit.adb, f.read(), unit.name)
 
+    @pytest.mark.skipif(not __debug__, reason="depends on assertion")
     def test_invalid_prefix(self) -> None:
         with self.assertRaisesRegex(AssertionError, r"empty part in identifier"):
             Generator("A..B")
 
+    @pytest.mark.skipif(not __debug__, reason="depends on assertion")
     def test_unexpected_type(self) -> None:
         class TestType(Type):
             pass
