@@ -1,5 +1,5 @@
 import itertools
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
@@ -60,11 +60,13 @@ class Aspect(Ada):
             return f"{self.mark} =>\n{indent(self.definition, 2)}"
         return f"{self.mark}"
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def mark(self) -> str:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def definition(self) -> str:
         raise NotImplementedError
 
@@ -343,7 +345,8 @@ class TypeDeclaration(Declaration):
     def discriminant_part(self) -> str:
         return " (" + "; ".join(map(str, self.discriminants)) + ")" if self.discriminants else ""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def type_definition(self) -> str:
         raise NotImplementedError
 
@@ -868,15 +871,18 @@ class Unit(Ada):
     def __iadd__(self, other: object) -> "Unit":
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def ads(self) -> str:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def adb(self) -> str:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self) -> str:
         raise NotImplementedError
 

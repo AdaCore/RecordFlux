@@ -1,7 +1,7 @@
 # pylint: disable=too-many-lines
 import itertools
 import operator
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from copy import copy
 from enum import Enum
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
@@ -101,7 +101,8 @@ class Expr(ABC):
     def __neg__(self) -> "Expr":
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
@@ -218,7 +219,8 @@ class BinExpr(Expr):
     def __contains__(self, item: Expr) -> bool:
         return item == self or item in (self.left, self.right)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
@@ -245,7 +247,8 @@ class BinExpr(Expr):
     def simplified(self) -> Expr:
         return self.__class__(self.left.simplified(), self.right.simplified())
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def symbol(self) -> str:
         raise NotImplementedError
 
@@ -298,7 +301,8 @@ class AssExpr(Expr):
             return False
         return NotImplemented
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
@@ -359,7 +363,8 @@ class AssExpr(Expr):
     def neutral_element(self) -> int:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def symbol(self) -> str:
         raise NotImplementedError
 
@@ -389,7 +394,8 @@ class LogExpr(AssExpr):
     def neutral_element(self) -> int:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def symbol(self) -> str:
         raise NotImplementedError
 
@@ -790,7 +796,8 @@ class Name(Expr):
     def precedence(self) -> Precedence:
         return Precedence.literal
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def representation(self) -> str:
         raise NotImplementedError
 
@@ -1440,11 +1447,13 @@ class QuantifiedExpression(Expr):
             self.parameter_name, self.iterable.simplified(), self.predicate.simplified()
         )
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def quantifier(self) -> str:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def keyword(self) -> str:
         raise NotImplementedError
 
