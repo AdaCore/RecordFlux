@@ -6,7 +6,12 @@ disable=missing-docstring, bad-continuation, unnecessary-lambda
 
 [BASIC]
 
+# Good variable names which should always be accepted, separated by a comma.
 good-names=log
+
+# Regular expression matching correct argument names. Overrides argument-
+# naming-style.
+argument-rgx=[a-z_][a-z0-9_]{1,30}$
 
 # Regular expression matching correct variable names. Overrides variable-
 # naming-style
