@@ -151,17 +151,17 @@ class TestModel(TestCase):
             ModularInteger("X.Y.Z", Number(256))
 
     def test_modular_size(self) -> None:
-        self.assertEqual(ModularInteger("P.T", Pow(Number(2), Number(64))).size, Number(64))
+        self.assertEqual(ModularInteger("P.T", Pow(Number(2), Number(62))).size, Number(62))
 
     def test_modular_first(self) -> None:
-        mod = ModularInteger("P.T", Pow(Number(2), Number(64)))
+        mod = ModularInteger("P.T", Pow(Number(2), Number(62)))
         self.assertEqual(mod.first, Number(0))
         self.assertEqual(mod.first.simplified(), Number(0))
 
     def test_modular_last(self) -> None:
-        mod = ModularInteger("P.T", Pow(Number(2), Number(64)))
-        self.assertEqual(mod.last, Sub(Pow(Number(2), Number(64)), Number(1)))
-        self.assertEqual(mod.last.simplified(), Number(2 ** 64 - 1))
+        mod = ModularInteger("P.T", Pow(Number(2), Number(62)))
+        self.assertEqual(mod.last, Sub(Pow(Number(2), Number(62)), Number(1)))
+        self.assertEqual(mod.last.simplified(), Number(2 ** 62 - 1))
 
     def test_modular_invalid_modulus_power_of_two(self) -> None:
         with self.assertRaisesRegex(ModelError, r'^modulus of "T" not power of two$'):
@@ -172,7 +172,7 @@ class TestModel(TestCase):
             ModularInteger("P.T", Pow(Number(2), Variable("X")))
 
     def test_modular_invalid_modulus_limit(self) -> None:
-        with self.assertRaisesRegex(ModelError, r'^modulus of "T" exceeds limit \(2\*\*64\)$'):
+        with self.assertRaisesRegex(ModelError, r'^modulus of "T" exceeds limit \(2\*\*62\)$'):
             ModularInteger("P.T", Pow(Number(2), Number(128)))
 
     def test_range_size(self) -> None:
@@ -207,6 +207,10 @@ class TestModel(TestCase):
         with self.assertRaisesRegex(ModelError, r'^size for "T" too small$'):
             RangeInteger("P.T", Number(0), Number(256), Number(8))
 
+    def test_range_invalid_size_exceeds_limit(self) -> None:
+        with self.assertRaisesRegex(ModelError, r'^size of "T" exceeds limit \(2\*\*62\)$'):
+            RangeInteger("P.T", Number(0), Number(256), Number(128))
+
     def test_enumeration_invalid_size_variable(self) -> None:
         with self.assertRaisesRegex(ModelError, r'^size of "T" contains variable$'):
             Enumeration("P.T", {"A": Number(1)}, Add(Number(8), Variable("X")), False)
@@ -214,6 +218,10 @@ class TestModel(TestCase):
     def test_enumeration_invalid_size_too_small(self) -> None:
         with self.assertRaisesRegex(ModelError, r'^size for "T" too small$'):
             Enumeration("P.T", {"A": Number(256)}, Number(8), False)
+
+    def test_enumeration_invalid_size_exceeds_limit(self) -> None:
+        with self.assertRaisesRegex(ModelError, r'^size of "T" exceeds limit \(2\*\*62\)$'):
+            Enumeration("P.T", {"A": Number(256)}, Number(128), False)
 
     def test_enumeration_invalid_literal(self) -> None:
         with self.assertRaisesRegex(ModelError, r'^invalid literal name "A B" in "T"$'):

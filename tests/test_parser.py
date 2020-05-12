@@ -382,7 +382,7 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
                    type T is mod 2**128;
                 end Test;
             """,
-            r'^modulus of "T" exceeds limit \(2\*\*64\)',
+            r'^modulus of "T" exceeds limit \(2\*\*62\)',
         )
 
     def test_invalid_enumeration_type_size(self) -> None:
