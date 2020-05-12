@@ -2,6 +2,7 @@
 
 import unittest
 
+import pytest
 import z3
 
 from rflx.expression import (
@@ -430,6 +431,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             Variable("X"),
         )
 
+    @pytest.mark.skipif(not __debug__, reason="depends on contract")
     def test_variable_invalid_name(self) -> None:
         with self.assertRaises(AssertionError):
             Variable("Foo (Bar)")
@@ -1066,6 +1068,7 @@ class TestExpression(unittest.TestCase):  # pylint: disable=too-many-public-meth
             [Variable("X")],
         )
 
+    @pytest.mark.skipif(not __debug__, reason="depends on contract")
     def test_expr_substituted_pre(self) -> None:
         with self.assertRaises(AssertionError):
             Number(1).substituted()
