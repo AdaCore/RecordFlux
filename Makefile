@@ -62,6 +62,9 @@ test_spark_optimized: $(test-files)
 prove_spark: $(test-files)
 	gnatprove -P$(project) $(GNATPROVE_ARGS)
 
+prove_spark_cvc4: $(test-files)
+	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(GNATPROVE_ARGS)
+
 clean:
 	gprclean -Ptest
 	gnatprove -Ptest --clean
