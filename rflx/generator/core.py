@@ -1085,24 +1085,21 @@ class Generator:
     def __create_field_condition_function(message: Message) -> UnitPart:
         def condition(field: Field, message: Message) -> Expr:
             c: Expr = Or(*[l.condition for l in message.outgoing(field)])
+            c = c.substituted(
+                mapping={
+                    Length(field.name): Variable("Length"),
+                    Last(field.name): Call(
+                        "Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]
+                    ),
+                }
+            )
             if field not in (INITIAL, FINAL) and isinstance(message.types[field], Scalar):
                 c = c.substituted(
                     lambda x: Call(const.TYPES_BIT_LENGTH, [Variable(f"Val.{field.name}_Value")])
                     if x == Variable(field.name)
                     else x
                 )
-            return (
-                c.substituted(
-                    mapping={
-                        Length(field.name): Variable("Length"),
-                        Last(field.name): Selected(
-                            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)), "Last",
-                        ),
-                    }
-                )
-                .substituted(common.substitution(message))
-                .simplified()
-            )
+            return c.substituted(common.substitution(message)).simplified()
 
         parameters = [Parameter(["Ctx"], "Context"), Parameter(["Val"], "Field_Dependent_Value")]
 
