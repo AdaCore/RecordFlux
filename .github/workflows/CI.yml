@@ -1,6 +1,9 @@
 name: CI
 
-on: push
+on:
+  push:
+  schedule:
+    - cron:  '0 2 * * *'
 
 jobs:
   Checks:
@@ -152,14 +155,21 @@ jobs:
       run: |
         docker run -v $PWD:/app -w /app componolit/ci:gnat-community-2019 /bin/sh -c "gprbuild -Ptest --RTS=ada-runtime/obj -Xaunit=no -Xoptimization=yes"
 
-  Verification:
+  verification:
+    name: Verification
+    if: github.event.schedule
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         target: [
           "spark",
-          "spark GNATPROVE_ARGS='--prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests'",
+          "spark_cvc4",
           ]
+        type: ["clean"]
+        include:
+          - target: "spark"
+            type: "cached"
     steps:
     - uses: actions/checkout@v1
     - name: Install SPARK
@@ -167,6 +177,43 @@ jobs:
         wget -q --show-progress ${{ secrets.SPARK_URL }} -O spark.tgz.gpg
         gpg --batch --yes --passphrase ${{ secrets.SPARK_SECRET }} --output spark.tgz -d spark.tgz.gpg
         tar xzf spark.tgz
+    - name: Cache GNATprove results
+      if: matrix.type == 'cached'
+      uses: actions/cache@v1
+      with:
+        path: build/gnatprove
+        key: ${{ runner.os }}-gnatprove-${{ matrix.target }}
+    - name: Test
+      run: |
+        export PATH=spark/bin:$PATH
+        make prove_${{ matrix.target }}
+    - name: Clean up
+      run: |
+        rm -rf spark{,.tgz{,.gpg}}
+
+  verification_cached:
+    name: Verification
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [
+          "spark",
+          "spark_cvc4",
+          ]
+        type: ["cached"]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install SPARK
+      run: |
+        wget -q --show-progress ${{ secrets.SPARK_URL }} -O spark.tgz.gpg
+        gpg --batch --yes --passphrase ${{ secrets.SPARK_SECRET }} --output spark.tgz -d spark.tgz.gpg
+        tar xzf spark.tgz
+    - name: Cache GNATprove results
+      uses: actions/cache@v1
+      with:
+        path: build/gnatprove
+        key: ${{ runner.os }}-gnatprove-${{ matrix.target }}
     - name: Test
       run: |
         export PATH=spark/bin:$PATH
