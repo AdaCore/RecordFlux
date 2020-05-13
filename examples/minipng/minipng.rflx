@@ -33,13 +33,15 @@ package MiniPNG is
             then Tag
                if Magic = "Mini-PNG";
          Tag          : Block_Type
-            then Length if Tag = Header;
+            then Length
+               if Tag = Header;
          Length       : Block_Length;
          Image_Width  : Image_Size;
          Image_Height : Image_Size;
          Pixel        : Pixel_Type
             then Blocks
-               with Length => Message'Last - Pixel'Last;
+               with Length => Message'Last - Pixel'Last
+                  if 8 * Length = Pixel'Last - Length'Last;
          Blocks       : CD_Blocks;
    end message;
 
