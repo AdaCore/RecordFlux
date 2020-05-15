@@ -20,6 +20,7 @@ from rflx.expression import (
     Length,
     Less,
     LessEqual,
+    Mul,
     Not,
     NotEqual,
     Number,
@@ -223,7 +224,10 @@ class Enumeration(Scalar):
 
 
 class Composite(Type):
-    pass
+    @property
+    @abstractmethod
+    def element_size(self) -> Expr:
+        raise NotImplementedError
 
 
 class Array(Composite):
@@ -231,10 +235,18 @@ class Array(Composite):
         super().__init__(identifier)
         self.element_type = element_type
 
+    @property
+    def element_size(self) -> Expr:
+        return Length(self.element_type.name)
+
 
 class Opaque(Composite):
     def __init__(self) -> None:
         super().__init__(INTERNAL_PACKAGE * "Opaque")
+
+    @property
+    def element_size(self) -> Expr:
+        return Number(8)
 
 
 class Field(Base):
@@ -560,14 +572,29 @@ class AbstractMessage(Type):
             if isinstance(t, Scalar)
         ]
 
-        aggregate_size: List[Expr] = [
-            Equal(Length(r.left), Length(r.right))
-            for r in expr.findall(
-                lambda x: isinstance(x, (Equal, NotEqual))
-                and (isinstance(x.left, Aggregate) or isinstance(x.right, Aggregate))
-            )
-            if isinstance(r, (Equal, NotEqual))
-        ]
+        aggregate_size: List[Expr] = []
+        for r in expr.findall(lambda x: isinstance(x, (Equal, NotEqual))):
+            if (
+                isinstance(r, (Equal, NotEqual))
+                and isinstance(r.right, Variable)
+                and isinstance(r.left, Aggregate)
+            ):
+                field_type = self.types[Field(r.right.name)]
+                assert isinstance(field_type, Composite)
+                aggregate_size.append(
+                    Equal(Mul(r.left.length, field_type.element_size), Length(r.right))
+                )
+
+            if (
+                isinstance(r, (Equal, NotEqual))
+                and isinstance(r.left, Variable)
+                and isinstance(r.right, Aggregate)
+            ):
+                field_type = self.types[Field(r.left.name)]
+                assert isinstance(field_type, Composite)
+                aggregate_size.append(
+                    Equal(Mul(r.right.length, field_type.element_size), Length(r.left))
+                )
 
         return aggregate_size + [
             c for n, t in scalar_types for c in t.constraints(name=n, proof=True)
