@@ -3,6 +3,7 @@ from unittest import TestCase, mock
 
 from rflx.expression import (
     Add,
+    Aggregate,
     And,
     Equal,
     First,
@@ -154,9 +155,12 @@ class TestVerification(TestCase):
         types = {
             Field("F1"): RANGE_INTEGER,
         }
-        self.assert_message_model_error(
-            structure, types, r'^contradicting condition 0 from field "F1" to "Final" in "P.M"',
-        )
+        with mock.patch("rflx.model.Message._AbstractMessage__prove_reachability", lambda x: None):
+            self.assert_message_model_error(
+                structure,
+                types,
+                r'^contradicting condition 0 from field "F1" to "Final" on path \[F1\] in "P.M"',
+            )
 
     def test_invalid_path_2(self) -> None:
         structure = [
@@ -168,9 +172,12 @@ class TestVerification(TestCase):
             Field("F1"): RANGE_INTEGER,
             Field("F2"): RANGE_INTEGER,
         }
-        self.assert_message_model_error(
-            structure, types, r'^contradicting condition 0 from field "F1" to "F2" in "P.M"',
-        )
+        with mock.patch("rflx.model.Message._AbstractMessage__prove_reachability", lambda x: None):
+            self.assert_message_model_error(
+                structure,
+                types,
+                r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
+            )
 
     def test_contradiction(self) -> None:
         structure = [
@@ -185,7 +192,9 @@ class TestVerification(TestCase):
             Field("F2"): RANGE_INTEGER,
         }
         self.assert_message_model_error(
-            structure, types, r'^contradicting condition 0 from field "F1" to "F2" in "P.M"',
+            structure,
+            types,
+            r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
         )
 
     def test_invalid_type_condition_range_low(self) -> None:
@@ -199,7 +208,9 @@ class TestVerification(TestCase):
             Field("F2"): RANGE_INTEGER,
         }
         self.assert_message_model_error(
-            structure, types, r'^contradicting condition 0 from field "F1" to "F2" in "P.M"',
+            structure,
+            types,
+            r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
         )
 
     def test_invalid_type_condition_range_high(self) -> None:
@@ -213,7 +224,9 @@ class TestVerification(TestCase):
             Field("F2"): RANGE_INTEGER,
         }
         self.assert_message_model_error(
-            structure, types, r'^contradicting condition 0 from field "F1" to "F2" in "P.M"',
+            structure,
+            types,
+            r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
         )
 
     def test_invalid_type_condition_modular_upper(self) -> None:
@@ -227,7 +240,9 @@ class TestVerification(TestCase):
             Field("F2"): MODULAR_INTEGER,
         }
         self.assert_message_model_error(
-            structure, types, r'^contradicting condition 0 from field "F1" to "F2" in "P.M"',
+            structure,
+            types,
+            r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
         )
 
     def test_invalid_type_condition_modular_lower(self) -> None:
@@ -241,7 +256,9 @@ class TestVerification(TestCase):
             Field("F2"): MODULAR_INTEGER,
         }
         self.assert_message_model_error(
-            structure, types, r'^contradicting condition 0 from field "F1" to "F2" in "P.M"',
+            structure,
+            types,
+            r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
         )
 
     # ISSUE: Componolit/RecordFlux#87
@@ -691,4 +708,40 @@ class TestVerification(TestCase):
         }
         self.assert_message_model_error(
             structure, types, '^length attribute for final field in "P.M"'
+        )
+
+    @staticmethod
+    def test_aggregate_comparison_valid_length() -> None:
+        structure = [
+            Link(INITIAL, Field("Magic"), length=Number(40)),
+            Link(
+                Field("Magic"),
+                Field("Final"),
+                condition=Equal(
+                    Variable("Magic"),
+                    Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
+                ),
+            ),
+        ]
+        types = {
+            Field("Magic"): Opaque(),
+        }
+        Message("P.M", structure, types)
+
+    def test_aggregate_comparison_invalid_length(self) -> None:
+        structure = [
+            Link(INITIAL, Field("Magic"), length=Number(40)),
+            Link(
+                Field("Magic"),
+                Field("Final"),
+                condition=Equal(Variable("Magic"), Aggregate(Number(1), Number(2))),
+            ),
+        ]
+        types = {
+            Field("Magic"): Opaque(),
+        }
+        self.assert_message_model_error(
+            structure,
+            types,
+            r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
         )
