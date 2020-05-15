@@ -560,7 +560,18 @@ class AbstractMessage(Type):
             if isinstance(t, Scalar)
         ]
 
-        return [c for n, t in scalar_types for c in t.constraints(name=n, proof=True)]
+        aggregate_size: List[Expr] = [
+            Equal(Length(r.left), Length(r.right))
+            for r in expr.findall(
+                lambda x: isinstance(x, Equal)
+                and (isinstance(x.left, Aggregate) or isinstance(x.right, Aggregate))
+            )
+            if isinstance(r, Equal)
+        ]
+
+        return aggregate_size + [
+            c for n, t in scalar_types for c in t.constraints(name=n, proof=True)
+        ]
 
     def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.__fields):
@@ -610,14 +621,19 @@ class AbstractMessage(Type):
 
     def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.__fields):
-            for index, c in enumerate(self.outgoing(f)):
-                contradiction = c.condition
-                proof = contradiction.check(self.__type_constraints(contradiction))
-                if proof.result == ProofResult.unsat:
-                    raise ModelError(
-                        f'contradicting condition {index} from field "{f.name}" to'
-                        f' "{c.target.name}" in "{self.identifier}" ({proof.error})'
-                    )
+            for path in self.__paths[f]:
+                facts = [fact for link in path for fact in self.__link_expression(link)]
+                for index, c in enumerate(self.outgoing(f)):
+                    contradiction = c.condition
+                    constraints = self.__type_constraints(contradiction)
+                    proof = contradiction.check([*constraints, *facts])
+                    if proof.result == ProofResult.unsat:
+                        path_message = " -> ".join([l.target.name for l in path])
+                        raise ModelError(
+                            f'contradicting condition {index} from field "{f.name}" to'
+                            f' "{c.target.name}" on path [{path_message}] in "{self.identifier}"'
+                            f" ({proof.error})"
+                        )
 
     @staticmethod
     def __target_first(link: Link) -> Expr:
@@ -735,9 +751,9 @@ class AbstractMessage(Type):
                         )
 
     def _prove(self) -> None:
-        self.__prove_contradictions()
         self.__prove_conflicting_conditions()
         self.__prove_reachability()
+        self.__prove_contradictions()
         self.__prove_coverage()
         self.__prove_overlays()
         self.__prove_field_positions()
