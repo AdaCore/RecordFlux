@@ -886,10 +886,7 @@ class Size(Attribute):
 
 
 class Length(Attribute):
-    def z3expr(self) -> z3.ArithRef:
-        if isinstance(self.prefix, Aggregate):
-            return z3.IntVal(8 * len(self.prefix.elements))
-        return super().z3expr()
+    pass
 
 
 class First(Attribute):
@@ -1078,6 +1075,10 @@ class Aggregate(Expr):
 
     def simplified(self) -> Expr:
         return self.__class__(*[e.simplified() for e in self.elements])
+
+    @property
+    def length(self) -> Expr:
+        return Number(len(self.elements))
 
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
