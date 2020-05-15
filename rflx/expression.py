@@ -886,7 +886,10 @@ class Size(Attribute):
 
 
 class Length(Attribute):
-    pass
+    def z3expr(self) -> z3.ArithRef:
+        if isinstance(self.prefix, Aggregate):
+            return z3.IntVal(8 * len(self.prefix.elements))
+        return super().z3expr()
 
 
 class First(Attribute):
