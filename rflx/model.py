@@ -563,10 +563,10 @@ class AbstractMessage(Type):
         aggregate_size: List[Expr] = [
             Equal(Length(r.left), Length(r.right))
             for r in expr.findall(
-                lambda x: isinstance(x, Equal)
+                lambda x: isinstance(x, (Equal, NotEqual))
                 and (isinstance(x.left, Aggregate) or isinstance(x.right, Aggregate))
             )
-            if isinstance(r, Equal)
+            if isinstance(r, (Equal, NotEqual))
         ]
 
         return aggregate_size + [
