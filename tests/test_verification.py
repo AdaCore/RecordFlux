@@ -711,7 +711,7 @@ class TestVerification(TestCase):
         )
 
     @staticmethod
-    def test_aggregate_comparison_valid_length() -> None:
+    def test_aggregate_equal_valid_length() -> None:
         structure = [
             Link(INITIAL, Field("Magic"), length=Number(40)),
             Link(
@@ -728,13 +728,49 @@ class TestVerification(TestCase):
         }
         Message("P.M", structure, types)
 
-    def test_aggregate_comparison_invalid_length(self) -> None:
+    def test_aggregate_equal_invalid_length(self) -> None:
         structure = [
             Link(INITIAL, Field("Magic"), length=Number(40)),
             Link(
                 Field("Magic"),
                 Field("Final"),
                 condition=Equal(Variable("Magic"), Aggregate(Number(1), Number(2))),
+            ),
+        ]
+        types = {
+            Field("Magic"): Opaque(),
+        }
+        self.assert_message_model_error(
+            structure,
+            types,
+            r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
+        )
+
+    @staticmethod
+    def test_aggregate_inequal_valid_length() -> None:
+        structure = [
+            Link(INITIAL, Field("Magic"), length=Number(40)),
+            Link(
+                Field("Magic"),
+                Field("Final"),
+                condition=NotEqual(
+                    Variable("Magic"),
+                    Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
+                ),
+            ),
+        ]
+        types = {
+            Field("Magic"): Opaque(),
+        }
+        Message("P.M", structure, types)
+
+    def test_aggregate_inequal_invalid_length(self) -> None:
+        structure = [
+            Link(INITIAL, Field("Magic"), length=Number(40)),
+            Link(
+                Field("Magic"),
+                Field("Final"),
+                condition=NotEqual(Variable("Magic"), Aggregate(Number(1), Number(2))),
             ),
         ]
         types = {
