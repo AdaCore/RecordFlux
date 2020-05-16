@@ -583,13 +583,9 @@ class AbstractMessage(Type):
 
         literals = qualified_literals(self.types, self.package)
         scalar_types = [
-            (n, t)
-            for n, t in [
-                (v.name, self.types[Field(v.identifier)])
-                for v in expr.variables()
-                if v.name not in [*literals, "Message", "Final"]
-            ]
-            if isinstance(t, Scalar)
+            (f.name, t)
+            for f, t in self.types.items()
+            if isinstance(t, Scalar) and f.name not in [*literals, "Message", "Final"]
         ]
 
         aggregate_constraints: List[Expr] = []
