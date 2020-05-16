@@ -12,6 +12,7 @@ from rflx.expression import (
     Length,
     Less,
     LessEqual,
+    Mul,
     NotEqual,
     Number,
     Sub,
@@ -28,6 +29,7 @@ from rflx.model import (
     ModelError,
     ModularInteger,
     Opaque,
+    RangeInteger,
     Type,
 )
 from rflx.parser import Parser
@@ -832,4 +834,25 @@ class TestVerification(TestCase):
             structure,
             types,
             r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
+        )
+
+    def test_aggregate_equal_invalid_length_field(self) -> None:
+        structure = [
+            Link(INITIAL, Field("Length")),
+            Link(Field("Length"), Field("Magic"), length=Mul(Number(8), Variable("Length"))),
+            Link(
+                Field("Magic"),
+                Field("Final"),
+                condition=Equal(Variable("Magic"), Aggregate(Number(1), Number(2))),
+            ),
+        ]
+        types = {
+            Field("Length"): RangeInteger("P.Length_Type", Number(10), Number(100), Number(8)),
+            Field("Magic"): Opaque(),
+        }
+        self.assert_message_model_error(
+            structure,
+            types,
+            r'^contradicting condition 0 from field "Magic" to "Final"'
+            r' on path \[Length -> Magic\] in "P.M"',
         )
