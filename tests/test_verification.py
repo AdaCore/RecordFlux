@@ -728,13 +728,31 @@ class TestVerification(TestCase):
         }
         Message("P.M", structure, types)
 
-    def test_aggregate_equal_invalid_length(self) -> None:
+    def test_aggregate_equal_invalid_length1(self) -> None:
         structure = [
             Link(INITIAL, Field("Magic"), length=Number(40)),
             Link(
                 Field("Magic"),
                 Field("Final"),
                 condition=Equal(Variable("Magic"), Aggregate(Number(1), Number(2))),
+            ),
+        ]
+        types = {
+            Field("Magic"): Opaque(),
+        }
+        self.assert_message_model_error(
+            structure,
+            types,
+            r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
+        )
+
+    def test_aggregate_equal_invalid_length2(self) -> None:
+        structure = [
+            Link(INITIAL, Field("Magic"), length=Number(40)),
+            Link(
+                Field("Magic"),
+                Field("Final"),
+                condition=Equal(Aggregate(Number(1), Number(2)), Variable("Magic")),
             ),
         ]
         types = {
