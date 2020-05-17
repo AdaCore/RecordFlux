@@ -20,6 +20,7 @@ from rflx.expression import (
 from rflx.model import (
     FINAL,
     INITIAL,
+    Array,
     Enumeration,
     Field,
     Link,
@@ -793,6 +794,39 @@ class TestVerification(TestCase):
         ]
         types = {
             Field("Magic"): Opaque(),
+        }
+        self.assert_message_model_error(
+            structure,
+            types,
+            r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
+        )
+
+    @staticmethod
+    def test_aggregate_equal_array_valid_length() -> None:
+        structure = [
+            Link(INITIAL, Field("Magic"), length=Number(14)),
+            Link(
+                Field("Magic"),
+                Field("Final"),
+                condition=NotEqual(Variable("Magic"), Aggregate(Number(1), Number(2))),
+            ),
+        ]
+        types = {
+            Field("Magic"): Array("P.Arr", ModularInteger("P.Modular", Number(128))),
+        }
+        Message("P.M", structure, types)
+
+    def test_aggregate_equal_array_invalid_length(self) -> None:
+        structure = [
+            Link(INITIAL, Field("Magic"), length=Number(40)),
+            Link(
+                Field("Magic"),
+                Field("Final"),
+                condition=NotEqual(Variable("Magic"), Aggregate(Number(1), Number(2))),
+            ),
+        ]
+        types = {
+            Field("Magic"): Array("P.Arr", ModularInteger("P.Modular", Number(128))),
         }
         self.assert_message_model_error(
             structure,
