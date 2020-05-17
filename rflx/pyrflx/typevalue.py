@@ -165,7 +165,9 @@ class IntegerValue(ScalarValue):
     def assign(self, value: int, check: bool = True) -> None:
         if (
             And(*self._type.constraints("__VALUE__", check))
-            .substituted(mapping={Variable("__VALUE__"): Number(value)})
+            .substituted(
+                mapping={Variable("__VALUE__"): Number(value), Length("__VALUE__"): self._type.size}
+            )
             .simplified()
             != TRUE
         ):
@@ -208,17 +210,18 @@ class EnumValue(ScalarValue):
     def assign(self, value: str, check: bool = True) -> None:
         if value not in self._type.literals:
             raise KeyError(f"{value} is not a valid enum value")
-        assert (
+        r = (
             And(*self._type.constraints("__VALUE__", check))
             .substituted(
                 mapping={
                     **{Variable(k): v for k, v in self._type.literals.items()},
                     **{Variable("__VALUE__"): self._type.literals[value]},
+                    **{Length("__VALUE__"): self._type.size},
                 }
             )
             .simplified()
-            == TRUE
         )
+        assert r == TRUE
         self._value = value, self._type.literals[value]
 
     def parse(self, value: Union[Bitstring, bytes]) -> None:

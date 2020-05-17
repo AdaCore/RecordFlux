@@ -128,7 +128,11 @@ class ModularInteger(Integer):
 
     def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
-            return [Less(Variable(name), self.__modulus), GreaterEqual(Variable(name), Number(0))]
+            return [
+                Less(Variable(name), self.__modulus),
+                GreaterEqual(Variable(name), Number(0)),
+                Equal(Length(name), self.size),
+            ]
         return [TRUE]
 
 
@@ -172,7 +176,11 @@ class RangeInteger(Integer):
 
     def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
-            return [GreaterEqual(Variable(name), self.first), LessEqual(Variable(name), self.last)]
+            return [
+                GreaterEqual(Variable(name), self.first),
+                LessEqual(Variable(name), self.last),
+                Equal(Length(name), self.size),
+            ]
 
         c: Expr = TRUE
         if self.first.simplified() != self.base_first.simplified():
@@ -219,6 +227,7 @@ class Enumeration(Scalar):
                 Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()])
             ]
             result.extend([Equal(Variable(l), v) for l, v in self.literals.items()])
+            result.append(Equal(Length(name), self.size))
             return result
         return [TRUE]
 
@@ -561,6 +570,17 @@ class AbstractMessage(Type):
                 )
 
     def __type_constraints(self, expr: Expr) -> Sequence[Expr]:
+        def get_constraints(aggregate: Aggregate, field: Variable) -> Sequence[Expr]:
+            comp = self.types[Field(field.name)]
+            assert isinstance(comp, Composite)
+            result = Equal(Mul(aggregate.length, comp.element_size), Length(field))
+            if isinstance(comp, Array) and isinstance(comp.element_type, Scalar):
+                return [
+                    result,
+                    *comp.element_type.constraints(name=comp.element_type.name, proof=True),
+                ]
+            return [result]
+
         literals = qualified_literals(self.types, self.package)
         scalar_types = [
             (n, t)
@@ -572,31 +592,15 @@ class AbstractMessage(Type):
             if isinstance(t, Scalar)
         ]
 
-        aggregate_size: List[Expr] = []
+        aggregate_constraints: List[Expr] = []
         for r in expr.findall(lambda x: isinstance(x, (Equal, NotEqual))):
-            if (
-                isinstance(r, (Equal, NotEqual))
-                and isinstance(r.right, Variable)
-                and isinstance(r.left, Aggregate)
-            ):
-                field_type = self.types[Field(r.right.name)]
-                assert isinstance(field_type, Composite)
-                aggregate_size.append(
-                    Equal(Mul(r.left.length, field_type.element_size), Length(r.right))
-                )
+            if isinstance(r, (Equal, NotEqual)):
+                if isinstance(r.left, Aggregate) and isinstance(r.right, Variable):
+                    aggregate_constraints.extend(get_constraints(r.left, r.right))
+                if isinstance(r.left, Variable) and isinstance(r.right, Aggregate):
+                    aggregate_constraints.extend(get_constraints(r.right, r.left))
 
-            if (
-                isinstance(r, (Equal, NotEqual))
-                and isinstance(r.left, Variable)
-                and isinstance(r.right, Aggregate)
-            ):
-                field_type = self.types[Field(r.left.name)]
-                assert isinstance(field_type, Composite)
-                aggregate_size.append(
-                    Equal(Mul(r.right.length, field_type.element_size), Length(r.left))
-                )
-
-        return aggregate_size + [
+        return aggregate_constraints + [
             c for n, t in scalar_types for c in t.constraints(name=n, proof=True)
         ]
 
