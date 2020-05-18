@@ -590,11 +590,11 @@ class AbstractMessage(Type):
 
         aggregate_constraints: List[Expr] = []
         for r in expr.findall(lambda x: isinstance(x, (Equal, NotEqual))):
-            if isinstance(r, (Equal, NotEqual)):
-                if isinstance(r.left, Aggregate) and isinstance(r.right, Variable):
-                    aggregate_constraints.extend(get_constraints(r.left, r.right))
-                if isinstance(r.left, Variable) and isinstance(r.right, Aggregate):
-                    aggregate_constraints.extend(get_constraints(r.right, r.left))
+            assert isinstance(r, (Equal, NotEqual))
+            if isinstance(r.left, Aggregate) and isinstance(r.right, Variable):
+                aggregate_constraints.extend(get_constraints(r.left, r.right))
+            if isinstance(r.left, Variable) and isinstance(r.right, Aggregate):
+                aggregate_constraints.extend(get_constraints(r.right, r.left))
 
         return aggregate_constraints + [
             c for n, t in scalar_types for c in t.constraints(name=n, proof=True)
