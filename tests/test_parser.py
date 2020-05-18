@@ -436,6 +436,18 @@ class TestParser(unittest.TestCase):  # pylint: disable=too-many-public-methods
             r'"Test.T" contains identical literals as "__BUILTINS__.Boolean": False, True',
         )
 
+    def test_name_conflict_between_literal_and_type(self) -> None:
+        self.assert_parser_error_string(
+            """
+                package Test is
+                   type T is (Foo, Bar) with Size => 1;
+                   type Foo is mod 2**8;
+                   type Bar is mod 2**8;
+                end Test;
+            """,
+            r'literal in enumeration "Test.T" conflicts with type "Bar"',
+        )
+
     def test_array_undefined_type(self) -> None:
         self.assert_parser_error_string(
             """

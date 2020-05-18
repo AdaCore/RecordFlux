@@ -153,6 +153,13 @@ def check_types(types: Mapping[ID, Type]) -> None:
                 + ", ".join(sorted(identical_literals))
             )
 
+    literals = {l: t for t in types.values() if isinstance(t, Enumeration) for l in t.literals}
+    name_conflicts = set(literals) & set(str(t.name) for t in types)
+    for name in sorted(name_conflicts):
+        raise ParserError(
+            f'literal in enumeration "{literals[name].identifier}" conflicts with type "{name}"'
+        )
+
 
 def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
     array.element_type.identifier = ID(
