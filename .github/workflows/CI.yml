@@ -44,10 +44,11 @@ jobs:
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2019 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
+        echo "::add-path::$HOME/.local/bin"
+        echo "::add-path::$HOME/bin"
+        echo "::set-env name=PYTHONPATH::$PWD"
     - name: Check
       run: |
-        export PATH=~/.local/bin:$HOME/bin:$PATH
-        export PYTHONPATH=$PWD
         make check_${{ matrix.target }}
 
   Installation:
@@ -114,14 +115,15 @@ jobs:
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2019 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
+        echo "::add-path::$HOME/.local/bin"
+        echo "::add-path::$HOME/bin"
+        echo "::set-env name=PYTHONPATH::$PWD"
     - name: Test
       run: |
-        export PATH=~/.local/bin:$HOME/bin:$PATH
         make test_${{ matrix.target }}
     - name: Create coverage report
       if: matrix.target == 'python_coverage'
       run: |
-        export PATH=~/.local/bin:$PATH
         coverage report
         coverage xml
     - name: Upload coverage to Codecov
@@ -191,6 +193,7 @@ jobs:
         wget -q --show-progress ${{ secrets.SPARK_URL }} -O spark.tgz.gpg
         gpg --batch --yes --passphrase ${{ secrets.SPARK_SECRET }} --output spark.tgz -d spark.tgz.gpg
         tar xzf spark.tgz
+        echo "::add-path::spark/bin"
     - name: Cache GNATprove results
       if: matrix.type == 'cached'
       uses: actions/cache@v1
@@ -199,7 +202,6 @@ jobs:
         key: ${{ runner.os }}-gnatprove-${{ matrix.target }}
     - name: Test
       run: |
-        export PATH=spark/bin:$PATH
         make prove_${{ matrix.target }}
     - name: Clean up
       run: |
@@ -222,6 +224,7 @@ jobs:
         wget -q --show-progress ${{ secrets.SPARK_URL }} -O spark.tgz.gpg
         gpg --batch --yes --passphrase ${{ secrets.SPARK_SECRET }} --output spark.tgz -d spark.tgz.gpg
         tar xzf spark.tgz
+        echo "::add-path::spark/bin"
     - name: Cache GNATprove results
       uses: actions/cache@v1
       with:
@@ -229,7 +232,6 @@ jobs:
         key: ${{ runner.os }}-gnatprove-${{ matrix.target }}
     - name: Test
       run: |
-        export PATH=spark/bin:$PATH
         make prove_${{ matrix.target }}
     - name: Clean up
       run: |
