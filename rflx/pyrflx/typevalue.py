@@ -501,7 +501,10 @@ class MessageValue(TypeValue):
         if fld == FINAL.name:
             return ""
         if fld == INITIAL.name:
-            return self._type.outgoing(INITIAL)[0].target.name
+            links = self._type.outgoing(INITIAL)
+            if not links:
+                return FINAL.name
+            return links[0].target.name
 
         for l in self._type.outgoing(Field(fld)):
             if self.__simplified(l.condition) == TRUE:

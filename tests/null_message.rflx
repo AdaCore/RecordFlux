@@ -1,0 +1,5 @@
+package Null_Message is
+
+   type Message is null message;
+
+end Null_Message;
