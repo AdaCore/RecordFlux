@@ -110,6 +110,9 @@ class TestIntegration(unittest.TestCase):
             ]
         )
 
+    def test_icmp(self) -> None:
+        self.assert_compilable_code([f"{self.specdir}/icmp.rflx"])
+
     def test_feature_integeration(self) -> None:
         self.assert_compilable_code([f"{self.testdir}/feature_integration.rflx"])
 
