@@ -87,7 +87,7 @@ class TestPyRFLX(unittest.TestCase):
         self.frame = self.package_ethernet["Frame"]
         self.record = self.package_tls_record["TLS_Record"]
         self.alert = self.package_tls_alert["Alert"]
-        self.icmp = self.package_icmp["Echo_Message"]
+        self.icmp = self.package_icmp["Echo_Request_Reply_Message"]
         self.odd_length = self.package_test_odd_length["Test"]
         self.ipv4 = self.package_ipv4["Packet"]
         self.ipv4_option = self.package_ipv4["Option"]
