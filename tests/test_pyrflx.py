@@ -66,6 +66,7 @@ class TestPyRFLX(unittest.TestCase):
                 f"{cls.specdir}/tlv.rflx",
                 f"{cls.specdir}/in_ethernet.rflx",
                 f"{cls.specdir}/in_ipv4.rflx",
+                f"{cls.testdir}/null_message.rflx",
             ]
         )
         cls.package_tlv_checksum = pyrflx["TLV_With_Checksum"]
