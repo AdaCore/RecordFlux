@@ -180,7 +180,6 @@ jobs:
       matrix:
         target: [
           "spark",
-          "spark_cvc4",
           ]
         type: ["clean"]
         include:
