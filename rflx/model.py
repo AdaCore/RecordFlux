@@ -203,7 +203,7 @@ class RangeInteger(Integer):
 
 class Enumeration(Scalar):
     def __init__(
-        self, identifier: StrID, literals: Dict[str, Number], size: Expr, always_valid: bool
+        self, identifier: StrID, literals: Dict[StrID, Number], size: Expr, always_valid: bool
     ) -> None:
         super().__init__(identifier, size)
 
@@ -218,12 +218,12 @@ class Enumeration(Scalar):
         if len(set(literals.values())) < len(literals.values()):
             raise ModelError(f'"{self.name}" contains elements with same value')
         for l in literals:
-            if " " in l or "." in l:
+            if " " in str(l) or "." in str(l):
                 raise ModelError(f'invalid literal name "{l}" in "{self.name}"')
         if always_valid and len(literals) == 2 ** int(size_num):
             raise ModelError(f'unnecessary always-valid aspect on "{self.name}"')
 
-        self.literals = literals
+        self.literals = {ID(k): v for k, v in literals.items()}
         self.always_valid = always_valid
 
     def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
@@ -473,16 +473,10 @@ class AbstractMessage(Type):
 
     def __verify_conditions(self) -> None:
         literals = qualified_literals(self.types, self.package)
-        variables = {
-            v
-            for f in self.fields
-            for v in [f.name, f"{f.name}'First", f"{f.name}'Last", f"{f.name}'Length"]
-        }
-        seen = set({"Message'First", "Message'Last", "Message'Length"})
-        variables.update(seen)
+        variables = {f.identifier for f in self.fields}
+        seen = {ID("Message")}
         for f in (INITIAL, *self.fields):
-            for v in [f.name, f"{f.name}'First", f"{f.name}'Last", f"{f.name}'Length"]:
-                seen.add(v)
+            seen.add(f.identifier)
             for index, l in enumerate(self.outgoing(f)):
 
                 def location(part: str) -> str:
@@ -513,12 +507,12 @@ class AbstractMessage(Type):
 
     @staticmethod
     def __check_vars(
-        expression: Expr, state: Tuple[Set[str], Set[str], Set[str]], location: str,
+        expression: Expr, state: Tuple[Set[ID], Set[ID], Set[ID]], location: str,
     ) -> None:
         variables, literals, seen = state
         for v in expression.variables(True):
-            if v.name not in literals and v.name not in seen:
-                if v.name in variables:
+            if v.identifier not in literals and v.identifier not in seen:
+                if v.identifier in variables:
                     raise ModelError(f'subsequent field "{v}" referenced{location}')
                 raise ModelError(f'undefined variable "{v}" referenced{location}')
 
@@ -1062,7 +1056,7 @@ class ModelError(Exception):
     pass
 
 
-def qualified_literals(types: Mapping[Field, Type], package: ID) -> Set[str]:
+def qualified_literals(types: Mapping[Field, Type], package: ID) -> Set[ID]:
     literals = set()
 
     for t in types.values():
@@ -1071,13 +1065,12 @@ def qualified_literals(types: Mapping[Field, Type], package: ID) -> Set[str]:
                 if t.package == BUILTINS_PACKAGE or t.package == package:
                     literals.add(l)
                 if t.package != BUILTINS_PACKAGE:
-                    literals.add(f"{t.package}.{l}")
+                    literals.add(t.package * l)
 
     return literals
 
 
-def qualified_type_name(name: StrID, package: ID) -> ID:
-    name = ID(name)
+def qualified_type_name(name: ID, package: ID) -> ID:
 
     if is_builtin_type(name):
         return BUILTINS_PACKAGE * name

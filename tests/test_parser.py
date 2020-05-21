@@ -25,6 +25,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
@@ -1167,7 +1168,7 @@ def test_ethernet_spec() -> None:
                                 "Opaque",
                                 [
                                     Then(
-                                        "null",
+                                        ID(),
                                         UNDEFINED,
                                         UNDEFINED,
                                         And(

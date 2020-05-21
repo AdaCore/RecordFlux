@@ -592,10 +592,13 @@ def sequence_name(message: Message, field: Field) -> ID:
 
 
 def length_dependent_condition(message: Message) -> bool:
-    return any(
-        [
-            isinstance(v.name, str) and v.name.endswith("'Length")
-            for l in message.structure
-            for v in l.condition.variables(True)
-        ]
+    return (
+        len(
+            [
+                l
+                for link in message.structure
+                for l in link.condition.findall(lambda x: isinstance(x, Length))
+            ]
+        )
+        > 0
     )
