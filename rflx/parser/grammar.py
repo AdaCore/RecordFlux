@@ -96,7 +96,7 @@ def unqualified_identifier() -> Token:
 def qualified_identifier() -> Token:
     return (
         Optional(unqualified_identifier() + Literal(".")) + unqualified_identifier()
-    ).setParseAction(lambda t: "".join(t.asList()))
+    ).setParseAction(lambda t: ID("".join(map(str, t.asList()))))
 
 
 def attribute_reference() -> Token:
@@ -253,7 +253,7 @@ def message_type_definition() -> Token:
 
     then = (
         Keyword("then")
-        - (Keyword("null") | unqualified_identifier())
+        - (Keyword("null").setParseAction(lambda t: ID()) | unqualified_identifier())
         - Group(Optional(component_aspects))
         - Group(Optional(value_constraint()))
     )
@@ -274,7 +274,7 @@ def message_type_definition() -> Token:
     )
     component_item.setName("Component")
     null_component_item = Keyword("null") - then - semicolon()
-    null_component_item.setParseAction(lambda t: Component("null", "null", [t[1]]))
+    null_component_item.setParseAction(lambda t: Component(ID(), ID(), [t[1]]))
     null_component_item.setName("NullComponent")
     component_list = Group(
         Optional(null_component_item) - component_item - ZeroOrMore(component_item)
@@ -387,7 +387,7 @@ def parse_concatenation(string: str, location: int, tokens: ParseResults) -> Exp
 
 @fatalexceptions
 def parse_term(string: str, location: int, tokens: ParseResults) -> Expr:
-    if isinstance(tokens[0], str):
+    if isinstance(tokens[0], ID):
         return Variable(tokens[0])
     return tokens[0]
 
@@ -462,7 +462,7 @@ def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
 
 
 @fatalexceptions
-def verify_identifier(string: str, location: int, tokens: ParseResults) -> str:
+def verify_identifier(string: str, location: int, tokens: ParseResults) -> ID:
     reserved_words = [
         "abort",
         "abs",
@@ -544,7 +544,7 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> str:
         raise ParseFatalException(
             string, location, f'reserved word "{tokens[0]}" used as identifier'
         )
-    return tokens[0]
+    return ID(tokens[0])
 
 
 @fatalexceptions
@@ -618,7 +618,7 @@ def parse_refinement(string: str, location: int, tokens: ParseResults) -> Refine
 
 @fatalexceptions
 def parse_package_declaration(string: str, location: int, tokens: ParseResults) -> PackageSpec:
-    if tokens[1].startswith("RFLX"):
+    if str(tokens[1]).startswith("RFLX"):
         raise ParseFatalException(
             string, location, f'illegal prefix "RFLX" in package identifier "{tokens[1]}"'
         )

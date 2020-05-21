@@ -866,10 +866,8 @@ class Attribute(Name):
         return -expr if self.negative else expr
 
     def variables(self, proof: bool = False) -> List[Variable]:
-        if proof:
-            if not isinstance(self.prefix, Variable):
-                raise TypeError
-            return [Variable(f"{self.prefix}'{self.__class__.__name__}")]
+        if proof and not isinstance(self.prefix, Variable):
+            raise TypeError
         return self.prefix.variables()
 
     def z3expr(self) -> z3.ArithRef:

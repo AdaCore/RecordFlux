@@ -208,21 +208,21 @@ class EnumValue(ScalarValue):
         super().__init__(vtype)
 
     def assign(self, value: str, check: bool = True) -> None:
-        if value not in self._type.literals:
+        if ID(value) not in self._type.literals:
             raise KeyError(f"{value} is not a valid enum value")
         r = (
             And(*self._type.constraints("__VALUE__", check))
             .substituted(
                 mapping={
                     **{Variable(k): v for k, v in self._type.literals.items()},
-                    **{Variable("__VALUE__"): self._type.literals[value]},
+                    **{Variable("__VALUE__"): self._type.literals[ID(value)]},
                     **{Length("__VALUE__"): self._type.size},
                 }
             )
             .simplified()
         )
         assert r == TRUE
-        self._value = value, self._type.literals[value]
+        self._value = value, self._type.literals[ID(value)]
 
     def parse(self, value: Union[Bitstring, bytes]) -> None:
         if isinstance(value, bytes):

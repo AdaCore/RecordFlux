@@ -389,9 +389,7 @@ def test_invalid_first_forward_reference() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^subsequent field "F3'
-        "'"
-        'First" referenced in First expression 0 from field "F1"'
+        r'^subsequent field "F3" referenced in First expression 0 from field "F1"'
         ' to "F2" in "P.M"',
     )
 
