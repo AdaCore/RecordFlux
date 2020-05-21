@@ -391,7 +391,7 @@ class Generator:
         return UnitPart(
             [
                 EnumerationType(
-                    "Virtual_Field", dict.fromkeys(f.affixed_name for f in message.all_fields)
+                    "Virtual_Field", dict.fromkeys(ID(f.affixed_name) for f in message.all_fields)
                 ),
                 RangeSubtype(
                     "Field",
@@ -408,7 +408,9 @@ class Generator:
             private=[
                 EnumerationType(
                     "Cursor_State",
-                    dict.fromkeys(("S_Valid", "S_Structural_Valid", "S_Invalid", "S_Incomplete")),
+                    dict.fromkeys(
+                        map(ID, ("S_Valid", "S_Structural_Valid", "S_Invalid", "S_Incomplete"))
+                    ),
                 )
             ]
         )

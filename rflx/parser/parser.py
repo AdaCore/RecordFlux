@@ -64,7 +64,7 @@ class Parser:
                                 f' in "{specification.package.identifier}"'
                             )
                         transitions.add(transition)
-                        self.__parse(specfile.parent / f"{item.lower()}.rflx", transitions)
+                        self.__parse(specfile.parent / f"{str(item).lower()}.rflx", transitions)
             except (ParseException, ParseFatalException) as e:
                 raise ParserError("\n" + ParseException.explain(e, 0))
 
@@ -74,15 +74,15 @@ class Parser:
 
     def create_model(self) -> Model:
         for specification in self.__specifications:
-            if specification.package.identifier in self.__evaluated_specifications:
+            if str(specification.package.identifier) in self.__evaluated_specifications:
                 continue
-            self.__evaluated_specifications.add(specification.package.identifier)
+            self.__evaluated_specifications.add(str(specification.package.identifier))
             self.__evaluate_specification(specification)
         return Model(list(self.__types.values()))
 
     @property
     def specifications(self) -> Dict[str, Specification]:
-        return {s.package.identifier: s for s in self.__specifications}
+        return {str(s.package.identifier): s for s in self.__specifications}
 
     def __evaluate_specification(self, specification: Specification) -> None:
         log.info("Processing %s", specification.package.identifier)
@@ -150,11 +150,12 @@ def check_types(types: Mapping[ID, Type]) -> None:
         if identical_literals:
             raise ParserError(
                 f'"{e2.identifier}" contains identical literals as "{e1.identifier}": '
-                + ", ".join(sorted(identical_literals))
+                + ", ".join(map(str, sorted(identical_literals)))
             )
 
     literals = {l: t for t in types.values() if isinstance(t, Enumeration) for l in t.literals}
-    name_conflicts = set(literals) & set(str(t.name) for t in types)
+    type_set = {t.name for t in types.keys() if t.parent != BUILTINS_PACKAGE}
+    name_conflicts = set(literals.keys()) & type_set
     for name in sorted(name_conflicts):
         raise ParserError(
             f'literal in enumeration "{literals[name].identifier}" conflicts with type "{name}"'
@@ -189,13 +190,13 @@ def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
 def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
     components = list(message.components)
 
-    if components and components[0].name != "null":
-        components.insert(0, Component("null", "null"))
+    if components and not components[0].name.null:
+        components.insert(0, Component(ID(), ID()))
 
     field_types: Dict[Field, Type] = {}
 
     for component in components:
-        if component.name != "null":
+        if not component.name.null:
             type_name = qualified_type_name(component.type_name, message.package)
             if type_name not in types:
                 raise ParserError(
@@ -206,19 +207,19 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
     structure: List[Link] = []
 
     for i, component in enumerate(components):
-        if component.name == "null" and any(then.first != UNDEFINED for then in component.thens):
+        if component.name.null and any(then.first != UNDEFINED for then in component.thens):
             raise ParserError(
                 f'invalid first expression in initial node of message "{message.identifier}"'
             )
 
-        source_node = Field(component.name) if component.name != "null" else INITIAL
+        source_node = Field(component.name) if not component.name.null else INITIAL
 
         if not component.thens:
             target_node = Field(components[i + 1].name) if i + 1 < len(components) else FINAL
             structure.append(Link(source_node, target_node))
 
         for then in component.thens:
-            target_node = Field(then.name) if then.name != "null" else FINAL
+            target_node = Field(then.name) if not then.name.null else FINAL
             if target_node not in field_types.keys() | {FINAL}:
                 raise ParserError(
                     f'undefined component "{then.name}" in message "{message.identifier}"'
@@ -270,15 +271,15 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
         literals = [
             l for e in pdu.types.values() if isinstance(e, Enumeration) for l in e.literals.keys()
         ] + [
-            f"{e.package}.{l}"
+            e.package * l
             for e in types.values()
             if isinstance(e, Enumeration)
             for l in e.literals.keys()
         ]
 
-        if Field(str(variable.name)) not in pdu.fields and str(variable.name) not in literals:
+        if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
             raise ParserError(
-                f'unknown field or literal "{variable.name}" in refinement'
+                f'unknown field or literal "{variable.identifier}" in refinement'
                 f' condition of "{refinement.pdu}"'
             )
 
@@ -294,7 +295,7 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
 
 
 def check_naming(filename: str, package_identifier: str) -> None:
-    expected_filename = f"{package_identifier.lower()}.rflx"
+    expected_filename = f"{str(package_identifier).lower()}.rflx"
     if filename != expected_filename:
         raise ParserError(
             f'file name "{filename}" does not match unit name "{package_identifier}",'

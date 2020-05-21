@@ -9,7 +9,9 @@ from rflx.contract import invariant
 class ID:
     def __init__(self, identifier: Union[str, Sequence[str], "ID"] = None) -> None:
         self.parts: Sequence[str]
-        if isinstance(identifier, str):
+        if identifier is None:
+            self.parts = []
+        elif isinstance(identifier, str):
             self.parts = identifier.split(".")
         elif isinstance(identifier, list):
             self.parts = identifier
@@ -21,6 +23,11 @@ class ID:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return str(self) < str(other)
         return NotImplemented
 
     def __hash__(self) -> int:
@@ -55,6 +62,10 @@ class ID:
                 return ID(self)
             return ID(f"{other}.{self}")
         return NotImplemented
+
+    @property
+    def null(self) -> bool:
+        return not self.parts
 
     @property
     def name(self) -> "ID":
