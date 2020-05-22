@@ -42,6 +42,7 @@ class Subsystem(Enum):
     MODEL = auto()
     CLI = auto()
     INTERNAL = auto()
+    GRAPH = auto()
 
     def __str__(self) -> str:
         return str.lower(self.name)
@@ -92,6 +93,13 @@ class RecordFluxError(Exception):
         super().__init__()
         self.__errors: List[RecordFluxError.Entry] = []
 
+    def __str__(self) -> str:
+        return "\n".join(
+            f"{str(e.location) + ': ' if e.location else ''}{e.subsystem}:"
+            f" {e.severity}: {e.message}"
+            for e in self.__errors
+        )
+
     def add(
         self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
     ) -> None:
@@ -100,12 +108,6 @@ class RecordFluxError(Exception):
     def raise_if_above(self, severity: Severity) -> None:
         if any([e.severity > severity for e in self.__errors]):
             raise self
-
-    @property
-    def message(self) -> str:
-        return "\n".join(
-            f"{e.location or e.subsystem}: {e.severity}: {e.message}" for e in self.__errors
-        )
 
 
 class ParserError(RecordFluxError):
