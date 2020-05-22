@@ -1,5 +1,6 @@
 pragma Warnings (Off, "h");
 
+with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
@@ -35,6 +36,7 @@ package body RFLX.TLV.Tests is
 
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
+   pragma Warnings (Off, "unused assignment to ""Context""");
 
    procedure Test_Parsing_TLV_Data (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
@@ -65,6 +67,9 @@ package body RFLX.TLV.Tests is
       end if;
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid Message");
+
+      TLV.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_TLV_Data;
 
    procedure Test_Parsing_TLV_Data_Zero (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -91,6 +96,9 @@ package body RFLX.TLV.Tests is
       end if;
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid Message");
+
+      TLV.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_TLV_Data_Zero;
 
    procedure Test_Parsing_TLV_Error (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -110,6 +118,9 @@ package body RFLX.TLV.Tests is
       end if;
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
       Assert (TLV.Message.Valid_Message (Context), "Invalid Message");
+
+      TLV.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_TLV_Error;
 
    procedure Test_Parsing_Invalid_TLV_Invalid_Tag (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -123,6 +134,9 @@ package body RFLX.TLV.Tests is
       TLV.Message.Verify_Message (Context);
       Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
+
+      TLV.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Invalid_TLV_Invalid_Tag;
 
    procedure Test_Generating_TLV_Data (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -130,7 +144,7 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Value is new TLV.Message.Set_Value (Write_Data);
-      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
    begin
@@ -150,6 +164,9 @@ package body RFLX.TLV.Tests is
               "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
    end Test_Generating_TLV_Data;
 
    procedure Test_Generating_TLV_Data_Zero (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -157,7 +174,7 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Value is new TLV.Message.Set_Value (Write_Data);
-      Expected : constant RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
    begin
@@ -177,13 +194,16 @@ package body RFLX.TLV.Tests is
               "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
    end Test_Generating_TLV_Data_Zero;
 
    procedure Test_Generating_TLV_Error (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : constant RFLX_Builtin_Types.Bytes_Ptr :=
+      Expected : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 192);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 0);
       Context  : TLV.Message.Context := TLV.Message.Create;
@@ -201,6 +221,9 @@ package body RFLX.TLV.Tests is
               "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
    end Test_Generating_TLV_Error;
 
    overriding

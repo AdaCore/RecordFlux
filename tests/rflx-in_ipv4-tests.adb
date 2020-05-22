@@ -1,3 +1,4 @@
+with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
@@ -31,6 +32,7 @@ package body RFLX.In_IPv4.Tests is
    pragma Warnings (Off, "unused assignment to ""Buffer""");
    pragma Warnings (Off, "unused assignment to ""Ethernet_Frame_Context""");
    pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
+   pragma Warnings (Off, "unused assignment to ""UDP_Datagram_Context""");
 
    procedure Test_Parsing_UDP_In_IPv4 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
@@ -55,6 +57,13 @@ package body RFLX.In_IPv4.Tests is
             Assert (Valid, "Structural invalid UDP datagram");
          end if;
       end if;
+
+      if IPv4.Packet.Has_Buffer (IPv4_Packet_Context) then
+         IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
+      else
+         UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_UDP_In_IPv4;
 
    procedure Test_Parsing_UDP_In_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -91,6 +100,15 @@ package body RFLX.In_IPv4.Tests is
             end if;
          end if;
       end if;
+
+      if Ethernet.Frame.Has_Buffer (Ethernet_Frame_Context) then
+         Ethernet.Frame.Take_Buffer (Ethernet_Frame_Context, Buffer);
+      elsif IPv4.Packet.Has_Buffer (IPv4_Packet_Context) then
+         IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
+      else
+         UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_UDP_In_IPv4_In_Ethernet;
 
    procedure Test_Generating_UDP_In_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -98,7 +116,7 @@ package body RFLX.In_IPv4.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new UDP.Datagram.Set_Payload (Write_Data);
-      Expected               : constant RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Expected               : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
                                       .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
@@ -159,6 +177,15 @@ package body RFLX.In_IPv4.Tests is
                     "Invalid binary representation");
          end if;
       end if;
+
+      if Ethernet.Frame.Has_Buffer (Ethernet_Frame_Context) then
+         Ethernet.Frame.Take_Buffer (Ethernet_Frame_Context, Buffer);
+      end if;
+      if IPv4.Packet.Has_Buffer (IPv4_Packet_Context) then
+         IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
    end Test_Generating_UDP_In_IPv4_In_Ethernet;
 
    overriding
