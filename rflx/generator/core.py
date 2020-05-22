@@ -66,6 +66,7 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.common import file_name, flat_name
+from rflx.error import Subsystem, fail
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -145,7 +146,7 @@ class Generator:
 
         self.template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
         if not self.template_dir.is_dir():
-            raise InternalError("template directory not found")
+            fail("template directory not found", Subsystem.INTERNAL)
 
     def generate(self, model: Model) -> None:
         for t in model.types:
@@ -2582,7 +2583,7 @@ class Generator:
 
     def __check_template_file(self, filename: str) -> None:
         if not self.template_dir.joinpath(filename).is_file():
-            raise InternalError(f'template file not found: "{filename}"')
+            fail(f'template file not found: "{filename}"', Subsystem.INTERNAL)
 
     def __license_header(self) -> str:
         if self.reproducible:
@@ -2654,10 +2655,6 @@ class Generator:
         seen = field_type.identifier in self.seen_types
         self.seen_types.add(field_type.identifier)
         return seen
-
-
-class InternalError(Exception):
-    pass
 
 
 def create_file(filename: Path, content: str) -> None:

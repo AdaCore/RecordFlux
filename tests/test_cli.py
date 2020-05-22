@@ -93,14 +93,14 @@ def test_main_generate_non_existent_directory() -> None:
 
 def test_main_generate_missing_template_directory(monkeypatch: Any, tmp_path: Path) -> None:
     monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: "non-existent directory")
-    assert r"internal error: template directory not found" in str(
+    assert r"internal: error: template directory not found" in str(
         cli.main(["rflx", "generate", "-d", str(tmp_path), "specs/tlv.rflx"])
     )
 
 
 def test_main_generate_missing_template_files(monkeypatch: Any, tmp_path: Path) -> None:
     monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: tmp_path)
-    assert "internal error: template file not found" in str(
+    assert "internal: error: template file not found" in str(
         cli.main(["rflx", "generate", "-d", str(tmp_path), "specs/tlv.rflx"])
     )
 
