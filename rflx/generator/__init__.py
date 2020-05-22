@@ -1,1 +1,1 @@
-from .core import Generator, InternalError  # noqa: F401
+from .core import Generator  # noqa: F401

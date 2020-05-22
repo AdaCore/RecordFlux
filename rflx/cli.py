@@ -7,7 +7,7 @@ from typing import List, Union
 from rflx import __version__
 from rflx.common import flat_name
 from rflx.error import RecordFluxError, Severity, Subsystem, fail
-from rflx.generator import Generator, InternalError
+from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Model, ModelError
 from rflx.parser import Parser, ParserError
@@ -87,8 +87,6 @@ def main(argv: List[str]) -> Union[int, str]:
         return f"{parser.prog}: parser error: {e}"
     except ModelError as e:
         return f"{parser.prog}: model error: {e}"
-    except InternalError as e:
-        return f"{parser.prog}: internal error: {e}"
     except OSError as e:
         return f"{parser.prog}: error: {e}"
 
