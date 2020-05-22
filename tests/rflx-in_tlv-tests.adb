@@ -1,3 +1,4 @@
+with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
@@ -33,8 +34,10 @@ package body RFLX.In_TLV.Tests is
       if Valid then
          Valid := In_TLV.Contains.Null_Message_In_TLV_Message_Value (TLV_Message_Context);
          Assert (Valid, "TLV message contains no null message");
-
       end if;
+
+      TLV.Message.Take_Buffer (TLV_Message_Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Null_In_TLV;
 
    overriding

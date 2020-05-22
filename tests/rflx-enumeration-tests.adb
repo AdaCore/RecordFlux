@@ -1,3 +1,4 @@
+with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
@@ -16,6 +17,7 @@ package body RFLX.Enumeration.Tests is
 
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
+   pragma Warnings (Off, "unused assignment to ""Context""");
 
    procedure Test_Parsing_Enumeration_Known (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
@@ -40,6 +42,9 @@ package body RFLX.Enumeration.Tests is
          Assert (False, "Invalid Priority");
       end if;
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid Message");
+
+      Enumeration.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Enumeration_Known;
 
    procedure Test_Parsing_Enumeration_Unknown (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -65,14 +70,16 @@ package body RFLX.Enumeration.Tests is
          Assert (False, "Invalid Priority");
       end if;
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid Message");
+
+      Enumeration.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Enumeration_Unknown;
 
    procedure Test_Generating_Enumeration (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : constant RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context  : Enumeration.Message.Context := Enumeration.Message.Create;
    begin
@@ -92,6 +99,9 @@ package body RFLX.Enumeration.Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
               Expected.all,
               "Invalid binary representation");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
    end Test_Generating_Enumeration;
 
    overriding
