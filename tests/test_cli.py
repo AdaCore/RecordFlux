@@ -76,7 +76,7 @@ def test_main_generate_prefix(tmp_path: Path) -> None:
 
 def test_main_generate_invalid_prefix(tmp_path: Path) -> None:
     for prefix in [".", "A.B.", ".A.B", "A..B"]:
-        assert rf'invalid prefix: "{prefix}"' in str(
+        assert rf'cli: error: invalid prefix: "{prefix}"' in str(
             cli.main(["rflx", "generate", "-d", str(tmp_path), "-p", prefix, "specs/tlv.rflx"])
         )
 
@@ -86,7 +86,7 @@ def test_main_generate_no_output_files(tmp_path: Path) -> None:
 
 
 def test_main_generate_non_existent_directory() -> None:
-    assert 'error: directory not found: "non-existent directory"' in str(
+    assert 'cli: error: directory not found: "non-existent directory"' in str(
         cli.main(["rflx", "generate", "-d", "non-existent directory", "specs/tlv.rflx"])
     )
 
@@ -110,13 +110,25 @@ def test_main_graph(tmp_path: Path) -> None:
 
 
 def test_main_graph_non_existent_file(tmp_path: Path) -> None:
-    assert 'error: file not found: "non-existent file"' in str(
+    assert 'cli: error: file not found: "non-existent file"' in str(
         cli.main(["rflx", "graph", "-d", str(tmp_path), "non-existent file"])
     )
 
 
+def test_main_graph_non_existent_files(tmp_path: Path) -> None:
+    assert (
+        'cli: error: file not found: "non-existent file 1"\n'
+        'cli: error: file not found: "non-existent file 2"'
+        in str(
+            cli.main(
+                ["rflx", "graph", "-d", str(tmp_path), "non-existent file 1", "non-existent file 2"]
+            )
+        )
+    )
+
+
 def test_main_graph_non_existent_directory() -> None:
-    assert 'error: directory not found: "non-existent directory"' in str(
+    assert 'graph: error: directory not found: "non-existent directory"' in str(
         cli.main(["rflx", "graph", "-d", "non-existent directory", "specs/tlv.rflx"])
     )
 

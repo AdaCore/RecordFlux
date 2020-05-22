@@ -6,6 +6,7 @@ from typing import List, Union
 
 from rflx import __version__
 from rflx.common import flat_name
+from rflx.error import RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator, InternalError
 from rflx.graph import Graph
 from rflx.model import Model, ModelError
@@ -14,10 +15,6 @@ from rflx.parser import Parser, ParserError
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 DEFAULT_PREFIX = "RFLX"
-
-
-class Error(Exception):
-    pass
 
 
 def main(argv: List[str]) -> Union[int, str]:
@@ -84,13 +81,15 @@ def main(argv: List[str]) -> Union[int, str]:
 
     try:
         args.func(args)
+    except RecordFluxError as e:
+        return f"{e}"
     except ParserError as e:
         return f"{parser.prog}: parser error: {e}"
     except ModelError as e:
         return f"{parser.prog}: model error: {e}"
     except InternalError as e:
         return f"{parser.prog}: internal error: {e}"
-    except (Error, OSError) as e:
+    except OSError as e:
         return f"{parser.prog}: error: {e}"
 
     return 0
@@ -105,11 +104,11 @@ def generate(args: argparse.Namespace) -> None:
     args.prefix = args.prefix if args.prefix != " " else ""
 
     if args.prefix and "" in args.prefix.split("."):
-        raise Error(f'invalid prefix: "{args.prefix}"')
+        fail(f'invalid prefix: "{args.prefix}"', Subsystem.CLI)
 
     directory = Path(args.directory)
     if not directory.is_dir():
-        raise Error(f'directory not found: "{directory}"')
+        fail(f'directory not found: "{directory}"', Subsystem.CLI)
 
     generator = Generator(args.prefix, reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None)
 
@@ -126,11 +125,15 @@ def generate(args: argparse.Namespace) -> None:
 def parse(files: List) -> Model:
     parser = Parser()
 
+    error = RecordFluxError()
     for f in files:
         if not Path(f).is_file():
-            raise Error(f'file not found: "{f}"')
-
-        parser.parse(Path(f))
+            error.add(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR)
+        else:
+            # pylint: disable=fixme
+            # FIXME: Add test with missing file and parse error
+            parser.parse(Path(f))
+    error.raise_if_above(Severity.NONE)
 
     return parser.create_model()
 
@@ -138,7 +141,7 @@ def parse(files: List) -> Model:
 def graph(args: argparse.Namespace) -> None:
     directory = Path(args.directory)
     if not directory.is_dir():
-        raise Error(f'directory not found: "{directory}"')
+        fail(f'directory not found: "{directory}"', Subsystem.GRAPH)
 
     model = parse(args.files)
 
