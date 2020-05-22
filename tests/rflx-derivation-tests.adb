@@ -1,3 +1,4 @@
+with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
@@ -20,6 +21,7 @@ package body RFLX.Derivation.Tests is
 
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
+   pragma Warnings (Off, "unused assignment to ""Context""");
    pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
    pragma Warnings (Off, "unused assignment to ""Element_Context""");
    pragma Warnings (Off, "unused assignment to ""Modular_Vector_Context""");
@@ -81,6 +83,13 @@ package body RFLX.Derivation.Tests is
 
       Assert (Derivation.Message.Has_Buffer (Context) and then not Derivation.Message.Valid_Message (Context),
               "Valid Message before complete parsing");
+
+      if Derivation.Message.Has_Buffer (Context) then
+         Derivation.Message.Take_Buffer (Context, Buffer);
+      else
+         Arrays.Modular_Vector.Take_Buffer (Sequence_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Derivation_Modular_Sequential;
 
    procedure Test_Parsing_Derivation_Modular_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -139,6 +148,13 @@ package body RFLX.Derivation.Tests is
       end if;
 
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
+
+      if Derivation.Message.Has_Buffer (Context) then
+         Derivation.Message.Take_Buffer (Context, Buffer);
+      else
+         Arrays.Modular_Vector.Take_Buffer (Sequence_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Derivation_Modular_Loop;
 
    procedure Test_Parsing_Derivation_Range_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -196,6 +212,13 @@ package body RFLX.Derivation.Tests is
 
       Assert (Derivation.Message.Has_Buffer (Context) and then not Derivation.Message.Valid_Message (Context),
               "Valid Message before complete parsing");
+
+      if Derivation.Message.Has_Buffer (Context) then
+         Derivation.Message.Take_Buffer (Context, Buffer);
+      else
+         Arrays.Range_Vector.Take_Buffer (Sequence_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Derivation_Range_Sequential;
 
    procedure Test_Parsing_Derivation_Range_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -254,6 +277,13 @@ package body RFLX.Derivation.Tests is
       end if;
 
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
+
+      if Derivation.Message.Has_Buffer (Context) then
+         Derivation.Message.Take_Buffer (Context, Buffer);
+      else
+         Arrays.Range_Vector.Take_Buffer (Sequence_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Derivation_Range_Loop;
 
    procedure Test_Parsing_Derivation_Enumeration_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -311,6 +341,13 @@ package body RFLX.Derivation.Tests is
 
       Assert (Derivation.Message.Has_Buffer (Context) and then not Derivation.Message.Valid_Message (Context),
               "Valid Message before complete parsing");
+
+      if Derivation.Message.Has_Buffer (Context) then
+         Derivation.Message.Take_Buffer (Context, Buffer);
+      else
+         Arrays.Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Derivation_Enumeration_Sequential;
 
    procedure Test_Parsing_Derivation_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -370,6 +407,13 @@ package body RFLX.Derivation.Tests is
       end if;
 
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
+
+      if Derivation.Message.Has_Buffer (Context) then
+         Derivation.Message.Take_Buffer (Context, Buffer);
+      else
+         Arrays.Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Derivation_Enumeration_Loop;
 
    procedure Test_Parsing_Arrays_AV_Enumeration_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -435,6 +479,13 @@ package body RFLX.Derivation.Tests is
 
       Assert (Derivation.Message.Has_Buffer (Context) and then not Derivation.Message.Valid_Message (Context),
               "Valid Message before complete parsing");
+
+      if Derivation.Message.Has_Buffer (Context) then
+         Derivation.Message.Take_Buffer (Context, Buffer);
+      else
+         Arrays.AV_Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Arrays_AV_Enumeration_Sequential;
 
    procedure Test_Parsing_Arrays_AV_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -499,6 +550,13 @@ package body RFLX.Derivation.Tests is
       end if;
 
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message before complete parsing");
+
+      if Derivation.Message.Has_Buffer (Context) then
+         Derivation.Message.Take_Buffer (Context, Buffer);
+      else
+         Arrays.AV_Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Arrays_AV_Enumeration_Loop;
 
    procedure Test_Parsing_Derivation_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -696,13 +754,16 @@ package body RFLX.Derivation.Tests is
       end if;
 
       Assert (Derivation.Message.Valid_Message (Context), "Invalid Message after complete parsing");
+
+      Derivation.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Derivation_Message;
 
    procedure Test_Generating_Derivation_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected                      : constant RFLX_Builtin_Types.Bytes_Ptr :=
+      Expected                      : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
       Buffer                        : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -768,6 +829,9 @@ package body RFLX.Derivation.Tests is
               "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
    end Test_Generating_Derivation_Message;
 
    overriding

@@ -1,6 +1,7 @@
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Bytes, RFLX.RFLX_Builtin_Types.Length;
-
+with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
+
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Bytes, RFLX.RFLX_Builtin_Types.Length;
 
 with RFLX.Expression.Message;
 
@@ -24,6 +25,7 @@ package body RFLX.Expression.Tests is
 
    --  WORKAROUND: Componolit/Workarounds#7
    pragma Warnings (Off, "unused assignment to ""Buffer""");
+   pragma Warnings (Off, "unused assignment to ""Context""");
 
    procedure Test_Expression_Valid (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
@@ -43,6 +45,9 @@ package body RFLX.Expression.Tests is
          Assert (False, "Invalid Payload");
       end if;
       Assert (Expression.Message.Structural_Valid_Message (Context), "Invalid Message");
+
+      Expression.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Expression_Valid;
 
    procedure Test_Expression_Invalid (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -59,6 +64,9 @@ package body RFLX.Expression.Tests is
       Assert (not Expression.Message.Structural_Valid (Context, Expression.Message.F_Payload),
               "Structural Valid Payload");
       Assert (not Expression.Message.Structural_Valid_Message (Context), "Structural Valid Message");
+
+      Expression.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
    end Test_Expression_Invalid;
 
    overriding
