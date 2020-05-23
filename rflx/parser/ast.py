@@ -1,6 +1,8 @@
+from pathlib import Path
 from typing import List
 
 from rflx.common import flat_name, generic_repr
+from rflx.error import Location
 from rflx.expression import TRUE, UNDEFINED, Expr
 from rflx.identifier import ID, StrID
 from rflx.model import Type
@@ -45,14 +47,16 @@ class ContextSpec(SyntaxTree):
 
 
 class MessageSpec(Type):
-    def __init__(self, identifier: StrID, components: List[Component]) -> None:
-        super().__init__(identifier)
+    def __init__(
+        self, identifier: StrID, components: List[Component], location: Location = None
+    ) -> None:
+        super().__init__(identifier, location)
         self.components = components
 
 
 class DerivationSpec(Type):
-    def __init__(self, identifier: StrID, base: StrID) -> None:
-        super().__init__(identifier)
+    def __init__(self, identifier: StrID, base: StrID, location: Location = None) -> None:
+        super().__init__(identifier, location)
         self.base = ID(base)
 
 

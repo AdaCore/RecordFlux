@@ -4,6 +4,8 @@ from typing import List, Optional, Tuple
 
 from pyparsing import col, lineno
 
+from rflx.common import generic_repr
+
 
 class Location:
     def __init__(
@@ -25,6 +27,14 @@ class Location:
         start = f":{linecol_str(self.__start)}" if self.__start else ""
         end = f"-{linecol_str(self.__end)}" if self.__end and self.__verbose else ""
         return f"{self.__filename}{start}{end}"
+
+    def __repr__(self) -> str:
+        return generic_repr(self.__class__.__name__, self.__dict__)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
 
     def set_filename(self, filename: Path) -> None:
         self.__filename = filename

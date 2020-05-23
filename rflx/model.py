@@ -6,6 +6,7 @@ from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.common import flat_name, generic_repr
 from rflx.contract import ensure, invariant
+from rflx.error import Location
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -49,13 +50,21 @@ class Base(ABC):
 
 
 class Type(Base):
-    def __init__(self, identifier: StrID) -> None:
+    def __init__(self, identifier: StrID, location: Location = None) -> None:
         identifier = ID(identifier)
 
         if len(identifier.parts) != 2:
             raise ModelError(f'unexpected format of type name "{identifier}"')
 
         self.identifier = identifier
+        self.location = location
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return {k: v for k, v in self.__dict__.items() if k != "location"} == {
+                k: v for k, v in other.__dict__.items() if k != "location"
+            }
+        return NotImplemented
 
     @property
     def full_name(self) -> str:
@@ -71,8 +80,8 @@ class Type(Base):
 
 
 class Scalar(Type):
-    def __init__(self, identifier: StrID, size: Expr) -> None:
-        super().__init__(identifier)
+    def __init__(self, identifier: StrID, size: Expr, location: Location = None) -> None:
+        super().__init__(identifier, location)
         self._size = size
 
     @property
@@ -97,8 +106,8 @@ class Integer(Scalar):
 
 
 class ModularInteger(Integer):
-    def __init__(self, identifier: StrID, modulus: Expr) -> None:
-        super().__init__(identifier, UNDEFINED)
+    def __init__(self, identifier: StrID, modulus: Expr, location: Location = None) -> None:
+        super().__init__(identifier, UNDEFINED, location)
 
         modulus_num = modulus.simplified()
 
@@ -138,8 +147,11 @@ class ModularInteger(Integer):
 
 
 class RangeInteger(Integer):
-    def __init__(self, identifier: StrID, first: Expr, last: Expr, size: Expr) -> None:
-        super().__init__(identifier, size)
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self, identifier: StrID, first: Expr, last: Expr, size: Expr, location: Location = None
+    ) -> None:
+        super().__init__(identifier, size, location)
 
         first_num = first.simplified()
 
@@ -202,10 +214,16 @@ class RangeInteger(Integer):
 
 
 class Enumeration(Scalar):
+    # pylint: disable=too-many-arguments
     def __init__(
-        self, identifier: StrID, literals: Dict[StrID, Number], size: Expr, always_valid: bool
+        self,
+        identifier: StrID,
+        literals: Dict[StrID, Number],
+        size: Expr,
+        always_valid: bool,
+        location: Location = None,
     ) -> None:
-        super().__init__(identifier, size)
+        super().__init__(identifier, size, location)
 
         size_num = size.simplified()
 
@@ -245,8 +263,8 @@ class Composite(Type):
 
 
 class Array(Composite):
-    def __init__(self, identifier: StrID, element_type: Type) -> None:
-        super().__init__(identifier)
+    def __init__(self, identifier: StrID, element_type: Type, location: Location = None) -> None:
+        super().__init__(identifier, location)
         self.element_type = element_type
 
     @property
@@ -305,9 +323,13 @@ def valid_message_field_types(message: "AbstractMessage") -> bool:
 @invariant(lambda self: valid_message_field_types(self))
 class AbstractMessage(Type):
     def __init__(
-        self, identifier: StrID, structure: Sequence[Link], types: Mapping[Field, Type]
+        self,
+        identifier: StrID,
+        structure: Sequence[Link],
+        types: Mapping[Field, Type],
+        location: Location = None,
     ) -> None:
-        super().__init__(identifier)
+        super().__init__(identifier, location)
 
         self.structure = structure
         self.__types = types
@@ -835,9 +857,13 @@ class AbstractMessage(Type):
 
 class Message(AbstractMessage):
     def __init__(
-        self, identifier: StrID, structure: Sequence[Link], types: Mapping[Field, Type]
+        self,
+        identifier: StrID,
+        structure: Sequence[Link],
+        types: Mapping[Field, Type],
+        location: Location = None,
     ) -> None:
-        super().__init__(identifier, structure, types)
+        super().__init__(identifier, structure, types, location)
 
         if structure or types:
             self._prove()
