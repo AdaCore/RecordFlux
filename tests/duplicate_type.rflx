@@ -1,0 +1,4 @@
+package Duplicate_Type is
+   type T is mod 256;
+   type T is mod 256;
+end Duplicate_Type;
