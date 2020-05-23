@@ -30,6 +30,10 @@ class Location:
         self.__filename = filename
 
     @property
+    def get_filename(self) -> Optional[Path]:
+        return self.__filename
+
+    @property
     def start(self) -> Tuple[int, int]:
         return self.__start
 
@@ -96,10 +100,13 @@ class RecordFluxError(Exception):
         self.__errors: List[RecordFluxError.Entry] = []
 
     def __str__(self) -> str:
+        def locn(entry: RecordFluxError.Entry) -> str:
+            if entry.location and entry.location.get_filename:
+                return f"{entry.location}: "
+            return ""
+
         return "\n".join(
-            f"{str(e.location) + ': ' if e.location else ''}{e.subsystem}:"
-            f" {e.severity}: {e.message}"
-            for e in self.__errors
+            f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self.__errors
         )
 
     def add(

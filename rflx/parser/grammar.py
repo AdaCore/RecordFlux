@@ -27,7 +27,7 @@ from pyparsing import (
     opAssoc,
 )
 
-from rflx.error import parser_location
+from rflx.error import RecordFluxError, Severity, Subsystem, parser_location
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -544,12 +544,19 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> ID:
     ]
     data = tokens[0].asDict()
     tokens = data["value"]
+    locn = parser_location(data["locn_start"], data["locn_end"], string)
 
     if tokens[0].lower() in reserved_words:
-        raise ParseFatalException(
-            string, location, f'reserved word "{tokens[0]}" used as identifier'
+        error = RecordFluxError()
+        error.add(
+            f'reserved word "{tokens[0]}" used as identifier',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            locn,
         )
-    return ID(tokens[0], parser_location(data["locn_start"], data["locn_end"], string))
+        raise ParseFatalException(string, location, error)
+
+    return ID(tokens[0], locn)
 
 
 @fatalexceptions
