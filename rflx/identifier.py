@@ -2,13 +2,18 @@ from typing import Sequence, Union
 
 from rflx.common import generic_repr
 from rflx.contract import invariant
+from rflx.error import Location
 
 
 @invariant(lambda self: all(" " not in part for part in self.parts), "no whitespace in identifier")
 @invariant(lambda self: "" not in self.parts, "no empty part in identifier")
 class ID:
-    def __init__(self, identifier: Union[str, Sequence[str], "ID"] = None) -> None:
+    def __init__(
+        self, identifier: Union[str, Sequence[str], "ID"] = None, location: Location = None
+    ) -> None:
         self.parts: Sequence[str]
+        self.location = location
+
         if identifier is None:
             self.parts = []
         elif isinstance(identifier, str):
@@ -17,12 +22,13 @@ class ID:
             self.parts = identifier
         elif isinstance(identifier, ID):
             self.parts = list(identifier.parts)
+            self.location = identifier.location
         else:
             assert False, f'unexpected identifier type "{type(identifier).__name__}"'
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
+            return self.parts == other.parts
         return NotImplemented
 
     def __lt__(self, other: object) -> bool:

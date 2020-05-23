@@ -6,6 +6,7 @@ from typing import Deque, Dict, List, Mapping, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
+from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.expression import UNDEFINED, Number
 from rflx.identifier import ID
 from rflx.model import (
@@ -45,11 +46,11 @@ class Parser:
     def parse(self, specfile: Path) -> None:
         self.__parse(specfile)
 
-    def __parse(self, specfile: Path, transitions: Set[Tuple[str, str]] = None) -> None:
+    def __parse(self, specfile: Path, transitions: List[Tuple[ID, ID]] = None) -> None:
         log.info("Parsing %s", specfile)
 
         if not transitions:
-            transitions = set()
+            transitions = []
 
         with open(specfile, "r") as filehandle:
             try:
@@ -57,13 +58,25 @@ class Parser:
                     check_naming(specfile.name, specification.package.identifier)
                     self.__specifications.appendleft(specification)
                     for item in specification.context.items:
+                        item.location.set_filename(specfile)
                         transition = (specification.package.identifier, item)
                         if transition in transitions:
-                            raise ParserError(
-                                f'dependency cycle due to context item "{item}"'
-                                f' in "{specification.package.identifier}"'
+                            error = RecordFluxError()
+                            error.add(
+                                f'dependency cycle when including "{transitions[0][1]}"',
+                                Subsystem.PARSER,
+                                Severity.ERROR,
+                                transitions[0][1].location,
                             )
-                        transitions.add(transition)
+                            for _, i in transitions[1:]:
+                                error.add(
+                                    f'when including "{i}"',
+                                    Subsystem.PARSER,
+                                    Severity.INFO,
+                                    i.location,
+                                )
+                            error.raise_if_above(Severity.NONE)
+                        transitions.append(transition)
                         self.__parse(specfile.parent / f"{str(item).lower()}.rflx", transitions)
             except (ParseException, ParseFatalException) as e:
                 raise ParserError("\n" + ParseException.explain(e, 0))
