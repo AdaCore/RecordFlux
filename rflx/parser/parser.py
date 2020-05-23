@@ -79,11 +79,20 @@ class Parser:
                         transitions.append(transition)
                         self.__parse(specfile.parent / f"{str(item).lower()}.rflx", transitions)
             except (ParseException, ParseFatalException) as e:
+                if isinstance(e.msg, RecordFluxError):
+                    # ISSUE: https://www.logilab.org/ticket/3207
+                    raise e.msg  # pylint: disable=raising-bad-type
                 raise ParserError("\n" + ParseException.explain(e, 0))
 
     def parse_string(self, string: str) -> None:
-        for specification in grammar.unit().parseString(string):
-            self.__specifications.appendleft(specification)
+        try:
+            for specification in grammar.unit().parseString(string):
+                self.__specifications.appendleft(specification)
+        except (ParseException, ParseFatalException) as e:
+            if isinstance(e.msg, RecordFluxError):
+                # ISSUE: https://www.logilab.org/ticket/3207
+                raise e.msg  # pylint: disable=raising-bad-type
+            raise e
 
     def create_model(self) -> Model:
         for specification in self.__specifications:
