@@ -116,6 +116,13 @@ def assert_error(filenames: Sequence[str], regex: str) -> None:
         p.create_model()
 
 
+def assert_parse_string_error(string: str, regex: str) -> None:
+    p = Parser()
+    with pytest.raises(RecordFluxError, match=regex):
+        p.parse_string(string)
+        p.create_model()
+
+
 def assert_parser_error(filenames: Sequence[str], regex: str) -> None:
     with pytest.raises(ParserError, match=regex):
         p = Parser()
@@ -725,7 +732,7 @@ def test_multiple_initial_node_edges() -> None:
 
 
 def test_multiple_initial_nodes() -> None:
-    assert_parse_exception_string(
+    assert_parse_string_error(
         """
             package Test is
                type T is mod 256;
@@ -740,18 +747,18 @@ def test_multiple_initial_nodes() -> None:
                   end message;
             end Test;
         """,
-        r'^reserved word "null" used as identifier',
+        r'^parser: error: reserved word "null" used as identifier',
     )
 
 
 def test_reserved_word_in_type_name() -> None:
-    assert_parse_exception_string(
+    assert_parse_string_error(
         """
             package Test is
                type Type is mod 256;
             end Test;
         """,
-        r'^reserved word "Type" used as identifier',
+        r'^parser: error: reserved word "Type" used as identifier',
     )
 
 
