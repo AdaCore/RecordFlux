@@ -2,6 +2,8 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from pyparsing import col, lineno
+
 
 class Location:
     def __init__(
@@ -140,3 +142,10 @@ def fail(
     e = RecordFluxError()
     e.add(message, subsystem, severity, location)
     e.raise_if_above(Severity.NONE)
+
+
+def parser_location(start: int, end: int, string: str) -> Location:
+    return Location(
+        start=(lineno(start, string), col(start, string)),
+        end=(lineno(end, string), col(end, string)),
+    )

@@ -6,6 +6,7 @@ from typing import Any, Dict, Sequence
 
 import pytest
 
+from rflx.error import RecordFluxError
 from rflx.expression import (
     UNDEFINED,
     Aggregate,
@@ -105,6 +106,14 @@ def assert_refinements_string(string: str, refinements: Sequence[Refinement]) ->
     p.parse_string(string)
     model = p.create_model()
     assert model.refinements == refinements
+
+
+def assert_error(filenames: Sequence[str], regex: str) -> None:
+    with pytest.raises(RecordFluxError, match=regex):
+        p = Parser()
+        for filename in filenames:
+            p.parse(Path(filename))
+        p.create_model()
 
 
 def assert_parser_error(filenames: Sequence[str], regex: str) -> None:
@@ -334,9 +343,15 @@ def test_context_message() -> None:
 
 
 def test_context_dependency_cycle() -> None:
-    assert_parser_error(
+    assert_error(
         [f"{TESTDIR}/context_cycle.rflx"],
-        r'^dependency cycle due to context item "Context_Cycle_2" in "Context_Cycle_1"$',
+        f"^"
+        f"{TESTDIR}/context_cycle.rflx:1:6: parser: error: dependency cycle when "
+        f'including "Context_Cycle_1"\n'
+        f'{TESTDIR}/context_cycle_1.rflx:1:6: parser: info: when including "Context_Cycle_2"\n'
+        f'{TESTDIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
+        f'{TESTDIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
+        f"$",
     )
 
 
