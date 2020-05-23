@@ -22,10 +22,12 @@ from pyparsing import (
     alphas,
     delimitedList,
     infixNotation,
+    locatedExpr,
     nums,
     opAssoc,
 )
 
+from rflx.error import parser_location
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -87,7 +89,7 @@ def semicolon() -> Token:
 
 def unqualified_identifier() -> Token:
     return (
-        (WordStart(alphas) + Word(alphanums + "_") + WordEnd(alphanums + "_"))
+        locatedExpr(WordStart(alphas) + Word(alphanums + "_") + WordEnd(alphanums + "_"))
         .setParseAction(verify_identifier)
         .setName("Identifier")
     )
@@ -540,11 +542,14 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> ID:
         "initial",
         "final",
     ]
+    data = tokens[0].asDict()
+    tokens = data["value"]
+
     if tokens[0].lower() in reserved_words:
         raise ParseFatalException(
             string, location, f'reserved word "{tokens[0]}" used as identifier'
         )
-    return ID(tokens[0])
+    return ID(tokens[0], parser_location(data["locn_start"], data["locn_end"], string))
 
 
 @fatalexceptions
