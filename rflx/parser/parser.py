@@ -79,7 +79,7 @@ class Parser:
                                     for _, i in transitions[1:]
                                 ]
                             )
-                            error.raise_if_above(Severity.NONE)
+                            error.propagate()
                         transitions.append(transition)
                         self.__parse(specfile.parent / f"{str(item).lower()}.rflx", transitions)
             except (ParseException, ParseFatalException) as e:
@@ -141,7 +141,7 @@ class Parser:
                     Severity.INFO,
                     self.__types[t.identifier].location,
                 )
-                error.raise_if_above(Severity.NONE)
+                error.propagate()
 
             if isinstance(t, Scalar):
                 self.__types[t.identifier] = t
@@ -203,7 +203,7 @@ def check_types(types: Mapping[ID, Type]) -> None:
                     for l in sorted(identical_literals)
                 ]
             )
-            error.raise_if_above(Severity.NONE)
+            error.propagate()
 
     literals = {l: t for t in types.values() if isinstance(t, Enumeration) for l in t.literals}
     type_set = {t.name for t in types.keys() if t.parent != BUILTINS_PACKAGE}

@@ -131,7 +131,7 @@ def parse(files: List) -> Model:
             # pylint: disable=fixme
             # FIXME: Add test with missing file and parse error
             parser.parse(Path(f))
-    error.raise_if_above(Severity.NONE)
+    error.propagate()
 
     return parser.create_model()
 
