@@ -288,10 +288,10 @@ def test_comment_only_message() -> None:
 
 
 def test_incorrect_name() -> None:
-    assert_parser_error(
+    assert_error_files(
         [f"{TESTDIR}/incorrect_name.rflx"],
-        r'^file name "incorrect_name.rflx" does not match unit name "Test",'
-        r' should be "test.rflx"$',
+        f"^{TESTDIR}/incorrect_name.rflx:1:9: parser: error: file name does not match unit name"
+        r' "Test", should be "test.rflx"$',
     )
 
 
