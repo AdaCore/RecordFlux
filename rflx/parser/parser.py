@@ -357,10 +357,13 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
     return result
 
 
-def check_naming(filename: str, package_identifier: str) -> None:
+def check_naming(filename: str, package_identifier: ID) -> None:
     expected_filename = f"{str(package_identifier).lower()}.rflx"
     if filename != expected_filename:
-        raise ParserError(
-            f'file name "{filename}" does not match unit name "{package_identifier}",'
-            f' should be "{expected_filename}"'
+        fail(
+            f'file name does not match unit name "{package_identifier}",'
+            f' should be "{expected_filename}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            package_identifier.location,
         )
