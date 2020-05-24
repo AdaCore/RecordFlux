@@ -108,7 +108,7 @@ def assert_refinements_string(string: str, refinements: Sequence[Refinement]) ->
     assert model.refinements == refinements
 
 
-def assert_error(filenames: Sequence[str], regex: str) -> None:
+def assert_error_files(filenames: Sequence[str], regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         p = Parser()
         for filename in filenames:
@@ -116,7 +116,7 @@ def assert_error(filenames: Sequence[str], regex: str) -> None:
         p.create_model()
 
 
-def assert_parse_string_error(string: str, regex: str) -> None:
+def assert_error_string(string: str, regex: str) -> None:
     p = Parser()
     with pytest.raises(RecordFluxError, match=regex):
         p.parse_string(string)
@@ -365,7 +365,7 @@ def test_context_message() -> None:
 
 
 def test_context_dependency_cycle() -> None:
-    assert_error(
+    assert_error_files(
         [f"{TESTDIR}/context_cycle.rflx"],
         f"^"
         f"{TESTDIR}/context_cycle.rflx:1:6: parser: error: dependency cycle when "
@@ -378,7 +378,7 @@ def test_context_dependency_cycle() -> None:
 
 
 def test_duplicate_type() -> None:
-    assert_error(
+    assert_error_files(
         [f"{TESTDIR}/duplicate_type.rflx"],
         f'{TESTDIR}/duplicate_type.rflx:3:4: parser: error: duplicate type "Duplicate_Type.T"\n'
         f"{TESTDIR}/duplicate_type.rflx:2:4: parser: info:"
@@ -491,25 +491,36 @@ def test_invalid_enumeration_type_duplicate_values() -> None:
 
 
 def test_invalid_enumeration_type_identical_literals() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T1 is (Foo, Bar) with Size => 1;
                type T2 is (Bar, Baz) with Size => 1;
             end Test;
         """,
-        r'"Test.T2" contains identical literals as "Test.T1": Bar',
+        r"<stdin>:4:16: parser: error: conflicting literals: Bar\n"
+        r'<stdin>:3:33: parser: info: previous occurrence of "Bar"',
+    )
+
+
+def test_invalid_enumeration_type_identical_literals_location() -> None:
+    assert_error_files(
+        [f"{TESTDIR}/identical_literals.rflx"],
+        f"{TESTDIR}/identical_literals.rflx:3:4: parser: error: conflicting literals: Bar\n"
+        f'{TESTDIR}/identical_literals.rflx:2:21: parser: info: previous occurrence of "Bar"',
     )
 
 
 def test_invalid_enumeration_type_builtin_literals() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is (True, False) with Size => 1;
             end Test;
         """,
-        r'"Test.T" contains identical literals as "__BUILTINS__.Boolean": False, True',
+        r"<stdin>:3:16: parser: error: conflicting literals: False, True\n"
+        r'__BUILTINS__:1:18: parser: info: previous occurrence of "False"\n'
+        r'__BUILTINS__:1:24: parser: info: previous occurrence of "True"',
     )
 
 
@@ -558,7 +569,7 @@ def test_array_unsupported_element_type() -> None:
 
 
 def test_duplicate_message() -> None:
-    assert_parse_string_error(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -637,7 +648,7 @@ def test_refinement_invalid_field() -> None:
 
 
 def test_refinement_invalid_condition() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -649,12 +660,13 @@ def test_refinement_invalid_condition() -> None:
                   if X < Y + 1;
             end Test;
         """,
-        r'^unknown field or literal "X" in refinement condition of "Test.PDU"$',
+        r'^<stdin>:9:22: parser: error: unknown field or literal "X"'
+        r' in refinement condition of "Test.PDU"$',
     )
 
 
 def test_derivation_duplicate_type() -> None:
-    assert_parse_string_error(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -666,7 +678,8 @@ def test_derivation_duplicate_type() -> None:
                type Bar is new Foo;
             end Test;
         """,
-        r'^parser: error: duplicate type "Test.Bar"',
+        r'^<stdin>:9:16: parser: error: duplicate type "Test.Bar"\n'
+        r'<stdin>:8:16: parser: info: previous occurrence of "Test.Bar"',
     )
 
 
@@ -744,7 +757,7 @@ def test_multiple_initial_node_edges() -> None:
 
 
 def test_multiple_initial_nodes() -> None:
-    assert_parse_string_error(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -759,18 +772,18 @@ def test_multiple_initial_nodes() -> None:
                   end message;
             end Test;
         """,
-        r'^parser: error: reserved word "null" used as identifier',
+        r'^<stdin>:8:22: parser: error: reserved word "null" used as identifier',
     )
 
 
 def test_reserved_word_in_type_name() -> None:
-    assert_parse_string_error(
+    assert_error_string(
         """
             package Test is
                type Type is mod 256;
             end Test;
         """,
-        r'^parser: error: reserved word "Type" used as identifier',
+        r'^<stdin>:3:21: parser: error: reserved word "Type" used as identifier',
     )
 
 

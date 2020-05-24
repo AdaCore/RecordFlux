@@ -10,6 +10,7 @@ import z3
 
 from rflx.common import generic_repr, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
+from rflx.error import Location
 from rflx.identifier import ID, StrID
 
 
@@ -64,9 +65,14 @@ class Proof:
 
 
 class Expr(DBC):
+    def __init__(self, location: Location = None):
+        self.location = location
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
+            return {k: v for k, v in self.__dict__.items() if k != "location"} == {
+                k: v for k, v in other.__dict__.items() if k != "location"
+            }
         return NotImplemented
 
     def __hash__(self) -> int:
@@ -181,6 +187,7 @@ FALSE = BooleanFalse()
 
 class Not(Expr):
     def __init__(self, expr: Expr) -> None:
+        super().__init__()
         self.expr = expr
 
     def __str__(self) -> str:
@@ -208,6 +215,7 @@ class Not(Expr):
 
 class BinExpr(Expr):
     def __init__(self, left: Expr, right: Expr) -> None:
+        super().__init__()
         self.left = left
         self.right = right
 
@@ -255,6 +263,7 @@ class BinExpr(Expr):
 
 class AssExpr(Expr):
     def __init__(self, *terms: Expr) -> None:
+        super().__init__()
         self.terms = list(terms)
 
     def __str__(self) -> str:
@@ -480,6 +489,7 @@ class OrElse(And):
 
 class Number(Expr):
     def __init__(self, value: int, base: int = 0) -> None:
+        super().__init__()
         self.value = value
         self.base = base
 
@@ -778,7 +788,8 @@ class Mod(BinExpr):
 
 
 class Name(Expr):
-    def __init__(self, negative: bool = False) -> None:
+    def __init__(self, negative: bool = False, location: Location = None) -> None:
+        super().__init__(location)
         self.negative = negative
 
     def __str__(self) -> str:
@@ -816,8 +827,10 @@ class Name(Expr):
 
 
 class Variable(Name):
-    def __init__(self, identifier: StrID, negative: bool = False) -> None:
-        super().__init__(negative)
+    def __init__(
+        self, identifier: StrID, negative: bool = False, location: Location = None
+    ) -> None:
+        super().__init__(negative, location)
         self.identifier = ID(identifier)
 
     @property
@@ -1043,6 +1056,7 @@ UNDEFINED = UndefinedExpr()
 
 class Aggregate(Expr):
     def __init__(self, *elements: Expr) -> None:
+        super().__init__()
         self.elements = list(elements)
 
     def __str__(self) -> str:
@@ -1077,6 +1091,7 @@ class Aggregate(Expr):
 
 class NamedAggregate(Expr):
     def __init__(self, *elements: Tuple[StrID, Expr]) -> None:
+        super().__init__()
         self.elements = [(ID(n), e) for n, e in elements]
 
     def __str__(self) -> str:
@@ -1268,6 +1283,7 @@ class If(Expr):
     def __init__(
         self, condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None
     ) -> None:
+        super().__init__()
         self.condition_expressions = condition_expressions
         self.else_expression = else_expression
 
@@ -1350,6 +1366,7 @@ class Case(Expr):
     def __init__(
         self, control_expression: Expr, case_statements: Sequence[Tuple[Expr, Expr]]
     ) -> None:
+        super().__init__()
         self.control_expression = control_expression
         self.case_statements = case_statements
 
@@ -1419,6 +1436,7 @@ class Case(Expr):
 
 class QuantifiedExpression(Expr):
     def __init__(self, parameter_name: str, iterable: Expr, predicate: Expr) -> None:
+        super().__init__()
         self.parameter_name = parameter_name
         self.iterable = iterable
         self.predicate = predicate
@@ -1484,6 +1502,7 @@ class ForAllIn(QuantifiedExpression):
 
 class ValueRange(Expr):
     def __init__(self, lower: Expr, upper: Expr):
+        super().__init__()
         self.lower = lower
         self.upper = upper
 

@@ -27,7 +27,7 @@ from pyparsing import (
     opAssoc,
 )
 
-from rflx.error import RecordFluxError, Severity, Subsystem, parser_location
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, parser_location
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -98,7 +98,12 @@ def unqualified_identifier() -> Token:
 def qualified_identifier() -> Token:
     return (
         Optional(unqualified_identifier() + Literal(".")) + unqualified_identifier()
-    ).setParseAction(lambda t: ID("".join(map(str, t.asList()))))
+    ).setParseAction(
+        lambda t: ID(
+            "".join(map(str, t.asList())),
+            Location(start=t[0].location.start, end=t[-1].location.end),
+        )
+    )
 
 
 def attribute_reference() -> Token:
@@ -394,7 +399,7 @@ def parse_concatenation(string: str, location: int, tokens: ParseResults) -> Exp
 @fatalexceptions
 def parse_term(string: str, location: int, tokens: ParseResults) -> Expr:
     if isinstance(tokens[0], ID):
-        return Variable(tokens[0])
+        return Variable(tokens[0], negative=False, location=tokens[0].location)
     return tokens[0]
 
 
@@ -552,7 +557,7 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> ID:
 
     if tokens[0].lower() in reserved_words:
         error = RecordFluxError()
-        error.add(
+        error.append(
             f'reserved word "{tokens[0]}" used as identifier',
             Subsystem.PARSER,
             Severity.ERROR,
