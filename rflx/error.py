@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from pyparsing import ParseFatalException, col, lineno
 
@@ -139,8 +139,12 @@ class RecordFluxError(Exception):
         for message, subsystem, severity, location in entries:
             self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
 
-    def raise_if_above(self, severity: Severity, from_parser: bool = False) -> None:
-        if any([e.severity > severity for e in self.__errors]):
+    def propagate(
+        self,
+        func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE,
+        from_parser: bool = False,
+    ) -> None:
+        if any([func(e) for e in self.__errors]):
             if from_parser:
                 raise ParseFatalException(None, None, msg=self)
             raise self
@@ -150,21 +154,21 @@ class ParserError(RecordFluxError):
     def __init__(self, message: str = "parser error") -> None:
         super().__init__()
         self.append(message, Subsystem.PARSER, Severity.ERROR)
-        self.raise_if_above(Severity.NONE)
+        self.propagate()
 
 
 class InternalError(RecordFluxError):
     def __init__(self, message: str = "internal error") -> None:
         super().__init__()
         self.append(message, Subsystem.INTERNAL, Severity.ERROR)
-        self.raise_if_above(Severity.NONE)
+        self.propagate()
 
 
 class ModelError(RecordFluxError):
     def __init__(self, message: str = "model error") -> None:
         super().__init__()
         self.append(message, Subsystem.MODEL, Severity.ERROR)
-        self.raise_if_above(Severity.NONE)
+        self.propagate()
 
 
 def fail(
@@ -175,7 +179,7 @@ def fail(
 ) -> None:
     e = RecordFluxError()
     e.append(message, subsystem, severity, location)
-    e.raise_if_above(Severity.NONE)
+    e.propagate()
 
 
 def parse_fail(
@@ -186,7 +190,7 @@ def parse_fail(
 ) -> None:
     e = RecordFluxError()
     e.append(message, subsystem, severity, location)
-    e.raise_if_above(Severity.NONE, from_parser=True)
+    e.propagate(from_parser=True)
 
 
 def parser_location(start: int, end: int, string: str) -> Location:
