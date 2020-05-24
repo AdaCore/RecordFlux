@@ -2,7 +2,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from pyparsing import col, lineno
+from pyparsing import ParseFatalException, col, lineno
 
 from rflx.common import generic_repr
 
@@ -139,8 +139,10 @@ class RecordFluxError(Exception):
         for message, subsystem, severity, location in entries:
             self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
 
-    def raise_if_above(self, severity: Severity) -> None:
+    def raise_if_above(self, severity: Severity, from_parser: bool = False) -> None:
         if any([e.severity > severity for e in self.__errors]):
+            if from_parser:
+                raise ParseFatalException(None, None, msg=self)
             raise self
 
 
@@ -174,6 +176,17 @@ def fail(
     e = RecordFluxError()
     e.append(message, subsystem, severity, location)
     e.raise_if_above(Severity.NONE)
+
+
+def parse_fail(
+    message: str,
+    subsystem: Subsystem,
+    severity: Severity = Severity.ERROR,
+    location: Location = None,
+) -> None:
+    e = RecordFluxError()
+    e.append(message, subsystem, severity, location)
+    e.raise_if_above(Severity.NONE, from_parser=True)
 
 
 def parser_location(start: int, end: int, string: str) -> Location:
