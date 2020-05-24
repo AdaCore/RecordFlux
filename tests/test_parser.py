@@ -261,12 +261,13 @@ def test_illegal_package_identifiers() -> None:
 
 
 def test_inconsistent_package_identifiers() -> None:
-    assert_parse_exception_string(
+    assert_error_string(
         """
             package A is
             end B;
         """,
-        r"^inconsistent package identifiers",
+        r'^<stdin>:3:17: parser: error: inconsistent package identifier "B"\n'
+        r'<stdin>:2:21: parser: info: previous identifier was "A"',
     )
 
 
