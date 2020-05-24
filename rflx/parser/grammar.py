@@ -649,7 +649,21 @@ def parse_package_declaration(string: str, location: int, tokens: ParseResults) 
             tokens[1].location,
         )
     if tokens[1] != tokens[5]:
-        raise ParseFatalException(string, location, "inconsistent package identifiers")
+        error = RecordFluxError()
+        error.append(
+            f'inconsistent package identifier "{tokens[5]}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            tokens[5].location,
+        )
+        error.append(
+            f'previous identifier was "{tokens[1]}"',
+            Subsystem.PARSER,
+            Severity.INFO,
+            tokens[1].location,
+        )
+        error.propagate(from_parser=True)
+
     return PackageSpec(tokens[1], tokens[3].asList())
 
 
