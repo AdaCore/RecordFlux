@@ -27,7 +27,7 @@ from pyparsing import (
     opAssoc,
 )
 
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, parser_location
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, parse_fail, parser_location
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -642,8 +642,11 @@ def parse_refinement(string: str, location: int, tokens: ParseResults) -> Refine
 @fatalexceptions
 def parse_package_declaration(string: str, location: int, tokens: ParseResults) -> PackageSpec:
     if str(tokens[1]).startswith("RFLX"):
-        raise ParseFatalException(
-            string, location, f'illegal prefix "RFLX" in package identifier "{tokens[1]}"'
+        parse_fail(
+            f'illegal prefix "RFLX" in package identifier "{tokens[1]}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            tokens[1].location,
         )
     if tokens[1] != tokens[5]:
         raise ParseFatalException(string, location, "inconsistent package identifiers")

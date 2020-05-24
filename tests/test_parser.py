@@ -251,12 +251,12 @@ def test_unexpected_type() -> None:
 
 
 def test_illegal_package_identifiers() -> None:
-    assert_parse_exception_string(
+    assert_error_string(
         """
             package RFLX_Types is
             end RFLX_Types;
         """,
-        r'^illegal prefix "RFLX" in package identifier "RFLX_Types"',
+        r'^<stdin>:2:21: parser: error: illegal prefix "RFLX" in package identifier "RFLX_Types"',
     )
 
 
