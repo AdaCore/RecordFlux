@@ -6,7 +6,7 @@ from typing import Deque, Dict, List, Mapping, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
-from rflx.error import RecordFluxError, Severity, Subsystem
+from rflx.error import RecordFluxError, Severity, Subsystem, fail, pop_source, push_source
 from rflx.expression import UNDEFINED, Number
 from rflx.identifier import ID
 from rflx.model import (
@@ -53,28 +53,32 @@ class Parser:
             transitions = []
 
         with open(specfile, "r") as filehandle:
+            push_source(specfile)
             try:
                 for specification in grammar.unit().parseFile(filehandle):
                     check_naming(specfile.name, specification.package.identifier)
                     self.__specifications.appendleft(specification)
                     for item in specification.context.items:
-                        item.location.set_filename(specfile)
                         transition = (specification.package.identifier, item)
                         if transition in transitions:
                             error = RecordFluxError()
-                            error.add(
+                            error.append(
                                 f'dependency cycle when including "{transitions[0][1]}"',
                                 Subsystem.PARSER,
                                 Severity.ERROR,
                                 transitions[0][1].location,
                             )
-                            for _, i in transitions[1:]:
-                                error.add(
-                                    f'when including "{i}"',
-                                    Subsystem.PARSER,
-                                    Severity.INFO,
-                                    i.location,
-                                )
+                            error.extend(
+                                [
+                                    (
+                                        f'when including "{i}"',
+                                        Subsystem.PARSER,
+                                        Severity.INFO,
+                                        i.location,
+                                    )
+                                    for _, i in transitions[1:]
+                                ]
+                            )
                             error.raise_if_above(Severity.NONE)
                         transitions.append(transition)
                         self.__parse(specfile.parent / f"{str(item).lower()}.rflx", transitions)
@@ -83,6 +87,8 @@ class Parser:
                     # ISSUE: https://www.logilab.org/ticket/3207
                     raise e.msg  # pylint: disable=raising-bad-type
                 raise ParserError("\n" + ParseException.explain(e, 0))
+            finally:
+                pop_source()
 
     def parse_string(self, string: str) -> None:
         try:
@@ -119,25 +125,22 @@ class Parser:
 
     def __evaluate_types(self, spec: Specification) -> None:
         for t in spec.package.types:
-            if t.location and spec.source:
-                t.location.set_filename(spec.source)
-            t.identifier = ID(f"{spec.package.identifier}.{t.name}")
+            t.identifier = ID(f"{spec.package.identifier}.{t.name}", t.identifier.location)
 
             if t.identifier in self.__types:
                 error = RecordFluxError()
-                error.add(
+                error.append(
                     f'duplicate type "{t.identifier}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
                     t.location,
                 )
-                if self.__types[t.identifier].location:
-                    error.add(
-                        f'previous occurrence of "{t.identifier}"',
-                        Subsystem.PARSER,
-                        Severity.INFO,
-                        self.__types[t.identifier].location,
-                    )
+                error.append(
+                    f'previous occurrence of "{t.identifier}"',
+                    Subsystem.PARSER,
+                    Severity.INFO,
+                    self.__types[t.identifier].location,
+                )
                 error.raise_if_above(Severity.NONE)
 
             if isinstance(t, Scalar):
@@ -183,13 +186,24 @@ def check_types(types: Mapping[ID, Type]) -> None:
             )
         )
     ]:
-        identical_literals = set(e1.literals) & set(e2.literals)
+        identical_literals = set(e2.literals) & set(e1.literals)
 
         if identical_literals:
-            raise ParserError(
-                f'"{e2.identifier}" contains identical literals as "{e1.identifier}": '
-                + ", ".join(map(str, sorted(identical_literals)))
+            error = RecordFluxError()
+            literals_message = ", ".join([f"{l}" for l in sorted(identical_literals)])
+            error.append(
+                f"conflicting literals: {literals_message}",
+                Subsystem.PARSER,
+                Severity.ERROR,
+                e2.location,
             )
+            error.extend(
+                [
+                    (f'previous occurrence of "{l}"', Subsystem.PARSER, Severity.INFO, l.location)
+                    for l in sorted(identical_literals)
+                ]
+            )
+            error.raise_if_above(Severity.NONE)
 
     literals = {l: t for t in types.values() if isinstance(t, Enumeration) for l in t.literals}
     type_set = {t.name for t in types.keys() if t.parent != BUILTINS_PACKAGE}
@@ -202,7 +216,7 @@ def check_types(types: Mapping[ID, Type]) -> None:
 
 def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
     array.element_type.identifier = ID(
-        array.element_type.full_name.replace("__PACKAGE__", str(array.package))
+        array.element_type.full_name.replace("__PACKAGE__", str(array.package)), array.location
     )
 
     if array.element_type.identifier in types:
@@ -266,7 +280,11 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
                 Link(source_node, target_node, then.condition, then.length, then.first)
             )
 
-    return UnprovenMessage(message.identifier, structure, field_types).merged().proven()
+    return (
+        UnprovenMessage(message.identifier, structure, field_types, message.location)
+        .merged()
+        .proven()
+    )
 
 
 def create_derived_message(derivation: DerivationSpec, messages: Mapping[ID, Message]) -> Message:
@@ -284,7 +302,11 @@ def create_derived_message(derivation: DerivationSpec, messages: Mapping[ID, Mes
             f'illegal derivation "{derivation.identifier}" of derived message "{base_name}"'
         )
 
-    return UnprovenDerivedMessage(derivation.identifier, base).merged().proven()
+    return (
+        UnprovenDerivedMessage(derivation.identifier, base, location=derivation.location)
+        .merged()
+        .proven()
+    )
 
 
 def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> Refinement:
@@ -316,9 +338,12 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
         ]
 
         if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
-            raise ParserError(
+            fail(
                 f'unknown field or literal "{variable.identifier}" in refinement'
-                f' condition of "{refinement.pdu}"'
+                f' condition of "{refinement.pdu}"',
+                Subsystem.PARSER,
+                Severity.ERROR,
+                variable.location,
             )
 
     result = Refinement(refinement.package, pdu, Field(refinement.field), sdu, refinement.condition)

@@ -6,6 +6,14 @@ from pyparsing import col, lineno
 
 from rflx.common import generic_repr
 
+__current_source: List[Path] = []
+
+
+def current_source() -> Optional[Path]:
+    if __current_source:
+        return __current_source[-1]
+    return None
+
 
 class Location:
     def __init__(
@@ -15,7 +23,13 @@ class Location:
         end: Tuple[int, int] = None,
         verbose: bool = False,
     ):
-        self.__filename = filename
+        self.__filename: Optional[Path]
+
+        if filename:
+            self.__filename = filename
+        else:
+            self.__filename = current_source()
+
         self.__start = start
         self.__end = end
         self.__verbose = verbose
@@ -26,7 +40,7 @@ class Location:
 
         start = f":{linecol_str(self.__start)}" if self.__start else ""
         end = f"-{linecol_str(self.__end)}" if self.__end and self.__verbose else ""
-        return f"{self.__filename}{start}{end}"
+        return f"{self.__filename if self.__filename else '<stdin>'}{start}{end}"
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
@@ -36,11 +50,8 @@ class Location:
             return self.__dict__ == other.__dict__
         return NotImplemented
 
-    def set_filename(self, filename: Path) -> None:
-        self.__filename = filename
-
     @property
-    def get_filename(self) -> Optional[Path]:
+    def source(self) -> Optional[Path]:
         return self.__filename
 
     @property
@@ -111,7 +122,7 @@ class RecordFluxError(Exception):
 
     def __str__(self) -> str:
         def locn(entry: RecordFluxError.Entry) -> str:
-            if entry.location and entry.location.get_filename:
+            if entry.location:
                 return f"{entry.location}: "
             return ""
 
@@ -119,10 +130,14 @@ class RecordFluxError(Exception):
             f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self.__errors
         )
 
-    def add(
+    def append(
         self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
     ) -> None:
         self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
+
+    def extend(self, entries: List[Tuple[str, Subsystem, Severity, Optional[Location]]]) -> None:
+        for message, subsystem, severity, location in entries:
+            self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
 
     def raise_if_above(self, severity: Severity) -> None:
         if any([e.severity > severity for e in self.__errors]):
@@ -132,21 +147,21 @@ class RecordFluxError(Exception):
 class ParserError(RecordFluxError):
     def __init__(self, message: str = "parser error") -> None:
         super().__init__()
-        self.add(message, Subsystem.PARSER, Severity.ERROR)
+        self.append(message, Subsystem.PARSER, Severity.ERROR)
         self.raise_if_above(Severity.NONE)
 
 
 class InternalError(RecordFluxError):
     def __init__(self, message: str = "internal error") -> None:
         super().__init__()
-        self.add(message, Subsystem.INTERNAL, Severity.ERROR)
+        self.append(message, Subsystem.INTERNAL, Severity.ERROR)
         self.raise_if_above(Severity.NONE)
 
 
 class ModelError(RecordFluxError):
     def __init__(self, message: str = "model error") -> None:
         super().__init__()
-        self.add(message, Subsystem.MODEL, Severity.ERROR)
+        self.append(message, Subsystem.MODEL, Severity.ERROR)
         self.raise_if_above(Severity.NONE)
 
 
@@ -157,7 +172,7 @@ def fail(
     location: Location = None,
 ) -> None:
     e = RecordFluxError()
-    e.add(message, subsystem, severity, location)
+    e.append(message, subsystem, severity, location)
     e.raise_if_above(Severity.NONE)
 
 
@@ -166,3 +181,11 @@ def parser_location(start: int, end: int, string: str) -> Location:
         start=(lineno(start, string), col(start, string)),
         end=(lineno(end, string), col(end, string)),
     )
+
+
+def push_source(source: Path) -> None:
+    __current_source.append(source)
+
+
+def pop_source() -> None:
+    __current_source.pop()
