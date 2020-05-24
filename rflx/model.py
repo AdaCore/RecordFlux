@@ -2,6 +2,7 @@
 import itertools
 from abc import ABC, abstractmethod
 from copy import copy
+from pathlib import Path
 from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.common import flat_name, generic_repr
@@ -147,7 +148,6 @@ class ModularInteger(Integer):
 
 
 class RangeInteger(Integer):
-    # pylint: disable=too-many-arguments
     def __init__(
         self, identifier: StrID, first: Expr, last: Expr, size: Expr, location: Location = None
     ) -> None:
@@ -214,7 +214,6 @@ class RangeInteger(Integer):
 
 
 class Enumeration(Scalar):
-    # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
@@ -358,6 +357,7 @@ class AbstractMessage(Type):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        location: Location = None,
     ) -> "AbstractMessage":
         raise NotImplementedError
 
@@ -873,11 +873,13 @@ class Message(AbstractMessage):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        location: Location = None,
     ) -> "Message":
         return Message(
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
+            location if location else self.location,
         )
 
     def proven(self) -> "Message":
@@ -891,12 +893,14 @@ class DerivedMessage(Message):
         base: AbstractMessage,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        location: Location = None,
     ) -> None:
 
         super().__init__(
             identifier,
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
+            location if location else base.location,
         )
         self.base = base
 
@@ -905,12 +909,14 @@ class DerivedMessage(Message):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        location: Location = None,
     ) -> "DerivedMessage":
         return DerivedMessage(
             identifier if identifier else self.identifier,
             self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
+            location if location else self.location,
         )
 
     def proven(self) -> "DerivedMessage":
@@ -923,15 +929,17 @@ class UnprovenMessage(AbstractMessage):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        location: Location = None,
     ) -> "UnprovenMessage":
         return UnprovenMessage(
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
+            location if location else self.location,
         )
 
     def proven(self) -> Message:
-        return Message(self.identifier, self.structure, self.types)
+        return Message(self.identifier, self.structure, self.types, self.location)
 
     @ensure(lambda result: valid_message_field_types(result))
     def merged(self) -> "UnprovenMessage":
@@ -1008,12 +1016,14 @@ class UnprovenDerivedMessage(UnprovenMessage):
         base: AbstractMessage,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        location: Location = None,
     ) -> None:
 
         super().__init__(
             identifier,
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
+            location if location else base.location,
         )
         self.base = base
 
@@ -1022,20 +1032,21 @@ class UnprovenDerivedMessage(UnprovenMessage):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        location: Location = None,
     ) -> "UnprovenDerivedMessage":
         return UnprovenDerivedMessage(
             identifier if identifier else self.identifier,
             self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
+            location if location else self.location,
         )
 
     def proven(self) -> DerivedMessage:
-        return DerivedMessage(self.identifier, self.base, self.structure, self.types)
+        return DerivedMessage(self.identifier, self.base, self.structure, self.types, self.location)
 
 
 class Refinement(Type):
-    # pylint: disable=too-many-arguments
     def __init__(
         self, package: StrID, pdu: Message, field: Field, sdu: Message, condition: Expr = TRUE
     ) -> None:
@@ -1115,7 +1126,14 @@ INTERNAL_TYPES = {
 }
 
 BOOLEAN = Enumeration(
-    BUILTINS_PACKAGE * "Boolean", {"False": Number(0), "True": Number(1)}, Number(1), False
+    BUILTINS_PACKAGE * "Boolean",
+    {
+        ID("False", Location((1, 18), Path(str(BUILTINS_PACKAGE)), (1, 21))): Number(0),
+        ID("True", Location((1, 24), Path(str(BUILTINS_PACKAGE)), (1, 28))): Number(1),
+    },
+    Number(1),
+    False,
+    Location((1, 1), Path(str(BUILTINS_PACKAGE)), (1, 30)),
 )
 
 BUILTIN_TYPES = {

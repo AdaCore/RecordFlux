@@ -126,7 +126,7 @@ def parse(files: List) -> Model:
     error = RecordFluxError()
     for f in files:
         if not Path(f).is_file():
-            error.add(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR)
+            error.append(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR)
         else:
             # pylint: disable=fixme
             # FIXME: Add test with missing file and parse error

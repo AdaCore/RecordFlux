@@ -1,4 +1,4 @@
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 from rflx.common import generic_repr
 from rflx.contract import invariant
@@ -47,26 +47,40 @@ class ID:
 
     def __add__(self, other: object) -> "ID":
         if isinstance(other, (str, ID)):
-            return ID(f"{self}{other}")
+            return ID(f"{self}{other}", self.__location(other))
         return NotImplemented
 
     def __radd__(self, other: object) -> "ID":
         if isinstance(other, (str, ID)):
-            return ID(f"{other}{self}")
+            return ID(f"{other}{self}", self.__location(other))
         return NotImplemented
 
     def __mul__(self, other: object) -> "ID":
         if isinstance(other, (str, ID)):
             if str(other) == "":
-                return ID(self)
-            return ID(f"{self}.{other}")
+                return ID(self, self.__location(other))
+            return ID(f"{self}.{other}", self.__location(other))
         return NotImplemented
 
     def __rmul__(self, other: object) -> "ID":
         if isinstance(other, (str, ID)):
             if str(other) == "":
-                return ID(self)
-            return ID(f"{other}.{self}")
+                return ID(self, self.__location(other))
+            return ID(f"{other}.{self}", self.__location(other))
+        return NotImplemented
+
+    def __location(self, other: object) -> Optional[Location]:
+        if isinstance(other, str):
+            return self.location
+        if isinstance(other, ID):
+            if self.location is None and other.location is None:
+                return None
+            if self.location is None:
+                return other.location
+            if other.location is None:
+                return self.location
+            assert self.location.source == other.location.source
+            return Location(self.location.start, self.location.source, other.location.end)
         return NotImplemented
 
     @property
