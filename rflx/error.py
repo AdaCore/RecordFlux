@@ -141,12 +141,9 @@ class RecordFluxError(Exception):
 
     def propagate(
         self,
-        func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE,
-        from_parser: bool = False,
+        func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE
     ) -> None:
         if any([func(e) for e in self.__errors]):
-            if from_parser:
-                raise ParseFatalException(None, None, msg=self)
             raise self
 
 
@@ -180,17 +177,6 @@ def fail(
     e = RecordFluxError()
     e.append(message, subsystem, severity, location)
     e.propagate()
-
-
-def parse_fail(
-    message: str,
-    subsystem: Subsystem,
-    severity: Severity = Severity.ERROR,
-    location: Location = None,
-) -> None:
-    e = RecordFluxError()
-    e.append(message, subsystem, severity, location)
-    e.propagate(from_parser=True)
 
 
 def parser_location(start: int, end: int, string: str, filename: Path = None) -> Location:

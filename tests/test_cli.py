@@ -35,7 +35,7 @@ def test_main_check_quiet() -> None:
 
 
 def test_main_check_parser_error() -> None:
-    assert "parser error: " in str(cli.main(["rflx", "check", "README.md"]))
+    assert "README.md:1:1: parser: error: " in str(cli.main(["rflx", "check", "README.md"]))
 
 
 def test_main_check_model_error(monkeypatch: Any) -> None:
