@@ -7,7 +7,7 @@ from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.common import flat_name, generic_repr
 from rflx.contract import ensure, invariant
-from rflx.error import Location
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -111,6 +111,7 @@ class ModularInteger(Integer):
         super().__init__(identifier, UNDEFINED, location)
 
         modulus_num = modulus.simplified()
+        error = RecordFluxError()
 
         if not isinstance(modulus_num, Number):
             raise ModelError(f'modulus of "{self.name}" contains variable')
@@ -118,10 +119,16 @@ class ModularInteger(Integer):
         modulus_int = int(modulus_num)
 
         if modulus_int > 2 ** 64:
-            raise ModelError(f'modulus of "{self.name}" exceeds limit (2**64)')
+            error.append(
+                f'modulus of "{self.name}" exceeds limit (2**64)',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                modulus.location,
+            )
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
             raise ModelError(f'modulus of "{self.name}" not power of two')
 
+        error.propagate(from_parser=True)
         self.__modulus = modulus
         self._size = Number((modulus_int - 1).bit_length())
 
@@ -225,21 +232,31 @@ class Enumeration(Scalar):
         super().__init__(identifier, size, location)
 
         size_num = size.simplified()
+        error = RecordFluxError()
 
         if not isinstance(size_num, Number):
             raise ModelError(f'size of "{self.name}" contains variable')
         if max(map(int, literals.values())).bit_length() > int(size_num):
-            raise ModelError(f'size for "{self.name}" too small')
+            error.append("size too small", Subsystem.MODEL, Severity.ERROR, size.location)
         if int(size_num) > 64:
             raise ModelError(f'size of "{self.name}" exceeds limit (2**64)')
-        if len(set(literals.values())) < len(literals.values()):
-            raise ModelError(f'"{self.name}" contains elements with same value')
+        for i1, v1 in enumerate(literals.values()):
+            for i2, v2 in enumerate(literals.values()):
+                if i1 < i2 and v1 == v2:
+                    error.append(
+                        f'duplicate enumeration value "{v1}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        v2.location,
+                    )
+                    error.append("previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location)
         for l in literals:
             if " " in str(l) or "." in str(l):
                 raise ModelError(f'invalid literal name "{l}" in "{self.name}"')
         if always_valid and len(literals) == 2 ** int(size_num):
             raise ModelError(f'unnecessary always-valid aspect on "{self.name}"')
 
+        error.propagate(from_parser=True)
         self.literals = {ID(k): v for k, v in literals.items()}
         self.always_valid = always_valid
 

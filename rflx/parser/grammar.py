@@ -127,10 +127,14 @@ def numeric_literal() -> Token:
     based_literal = numeral + Literal("#") - based_numeral - Literal("#")
     based_literal.setParseAction(lambda t: (int(t[2], int(t[0])), int(t[0])))
 
+    numeric_literal = based_literal | decimal_literal
+    numeric_literal.setName("Number")
+
     return (
-        (based_literal | decimal_literal)
-        .setParseAction(lambda t: Number(t[0][0], t[0][1]))
-        .setName("Number")
+        locatedExpr(numeric_literal)
+        .setParseAction(
+            lambda s, l, t: Number(t[0][1][0], t[0][1][1], parser_location(t[0][0], t[0][2], s))
+        )
     )
 
 
@@ -445,17 +449,23 @@ def parse_mathematical_expression(string: str, location: int, tokens: ParseResul
         left = result.pop(0)
         operator = result.pop(0)
         right = result.pop(0)
+        assert left.location, f'expression "{left}" without location'
+        assert right.location, f'expression "{right}" without location'
+        assert left.location.source == right.location.source, f"expression with different source"
+        locn = Location(left.location.start, left.location.source, left.location.end)
         expression: Expr
         if operator == "+":
             expression = Add(left, right)
+            expression.location = locn
         elif operator == "-":
-            expression = Sub(left, right)
+            expression = Sub(left, right, locn)
         elif operator == "*":
             expression = Mul(left, right)
+            expression.location = locn
         elif operator == "/":
-            expression = Div(left, right)
+            expression = Div(left, right, locn)
         elif operator == "**":
-            expression = Pow(left, right)
+            expression = Pow(left, right, locn)
         else:
             raise ParseFatalException(string, location, "unexpected mathematical operator")
         result.insert(0, expression)
@@ -592,6 +602,22 @@ def parse_aspects(string: str, location: int, tokens: ParseResults) -> Dict[str,
 
 @fatalexceptions
 def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
+    def check_conflicts(tokens: ParseResults) -> None:
+        error = RecordFluxError()
+        for i1, e1 in enumerate(tokens):
+            for i2, e2 in enumerate(tokens):
+                if i2 < i1 and e1[0] == e2[0]:
+                    error.append(
+                        f'duplicate element "{e1[0]}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        e1[0].location,
+                    )
+                    error.append(
+                        "previous occurrence", Subsystem.MODEL, Severity.INFO, e2[0].location
+                    )
+        error.propagate(from_parser=True)
+
     try:
         package = ID("__PACKAGE__")
         name = tokens[1]
@@ -616,9 +642,8 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
             return MessageSpec(identifier, [], locn)
         if tokens[3] == "(":
             elements = dict(tokens[4:-3])
+            check_conflicts(tokens[4:-3])
             aspects = tokens[-2]
-            if len(elements) < len(tokens[4:-3]):
-                raise ModelError(f'"{name}" contains duplicate elements')
             if "always_valid" not in aspects:
                 aspects["always_valid"] = False
             return Enumeration(identifier, elements, aspects["size"], aspects["always_valid"], locn)

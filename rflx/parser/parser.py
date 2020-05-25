@@ -6,7 +6,15 @@ from typing import Deque, Dict, List, Mapping, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
-from rflx.error import RecordFluxError, Severity, Subsystem, fail, pop_source, push_source
+from rflx.error import (
+    RecordFluxError,
+    Severity,
+    Subsystem,
+    fail,
+    parser_location,
+    pop_source,
+    push_source,
+)
 from rflx.expression import UNDEFINED, Number
 from rflx.identifier import ID
 from rflx.model import (
@@ -86,7 +94,12 @@ class Parser:
                 if isinstance(e.msg, RecordFluxError):
                     # ISSUE: https://www.logilab.org/ticket/3207
                     raise e.msg  # pylint: disable=raising-bad-type
-                raise ParserError("\n" + ParseException.explain(e, 0))
+                fail(
+                    e.msg,
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    parser_location(e.loc, e.loc, e.pstr, specfile),
+                )
             finally:
                 pop_source()
 
@@ -98,7 +111,9 @@ class Parser:
             if isinstance(e.msg, RecordFluxError):
                 # ISSUE: https://www.logilab.org/ticket/3207
                 raise e.msg  # pylint: disable=raising-bad-type
-            raise e
+            fail(
+                e.msg, Subsystem.PARSER, Severity.ERROR, parser_location(e.loc, e.loc, e.pstr),
+            )
 
     def create_model(self) -> Model:
         for specification in self.__specifications:
