@@ -27,7 +27,7 @@ from pyparsing import (
     opAssoc,
 )
 
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, parse_fail, parser_location
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, parser_location
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -366,7 +366,7 @@ def fatalexceptions(parse_function: Callable) -> Callable:
     def wrapper(string: str, location: int, tokens: ParseResults) -> object:
         try:
             return parse_function(string, location, tokens)
-        except ParseFatalException as e:
+        except (ParseFatalException, RecordFluxError) as e:
             raise e
         except Exception as e:
             raise ParseFatalException(string, location, f"implementation error ({e})")
@@ -566,14 +566,12 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> ID:
     locn = parser_location(data["locn_start"], data["locn_end"], string)
 
     if tokens[0].lower() in reserved_words:
-        error = RecordFluxError()
-        error.append(
+        fail(
             f'reserved word "{tokens[0]}" used as identifier',
             Subsystem.PARSER,
             Severity.ERROR,
             locn,
         )
-        raise ParseFatalException(string, location, error)
 
     return ID(tokens[0], locn)
 
@@ -616,7 +614,7 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
                     error.append(
                         "previous occurrence", Subsystem.MODEL, Severity.INFO, e2[0].location
                     )
-        error.propagate(from_parser=True)
+        error.propagate()
 
     try:
         package = ID("__PACKAGE__")
@@ -667,7 +665,7 @@ def parse_refinement(string: str, location: int, tokens: ParseResults) -> Refine
 @fatalexceptions
 def parse_package_declaration(string: str, location: int, tokens: ParseResults) -> PackageSpec:
     if str(tokens[1]).startswith("RFLX"):
-        parse_fail(
+        fail(
             f'illegal prefix "RFLX" in package identifier "{tokens[1]}"',
             Subsystem.PARSER,
             Severity.ERROR,
@@ -687,7 +685,7 @@ def parse_package_declaration(string: str, location: int, tokens: ParseResults) 
             Severity.INFO,
             tokens[1].location,
         )
-        error.propagate(from_parser=True)
+        error.propagate()
 
     return PackageSpec(tokens[1], tokens[3].asList())
 

@@ -128,7 +128,7 @@ class ModularInteger(Integer):
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
             raise ModelError(f'modulus of "{self.name}" not power of two')
 
-        error.propagate(from_parser=True)
+        error.propagate()
         self.__modulus = modulus
         self._size = Number((modulus_int - 1).bit_length())
 
@@ -256,7 +256,7 @@ class Enumeration(Scalar):
         if always_valid and len(literals) == 2 ** int(size_num):
             raise ModelError(f'unnecessary always-valid aspect on "{self.name}"')
 
-        error.propagate(from_parser=True)
+        error.propagate()
         self.literals = {ID(k): v for k, v in literals.items()}
         self.always_valid = always_valid
 

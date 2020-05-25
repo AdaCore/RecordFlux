@@ -859,7 +859,6 @@ class Attribute(Name):
 
         self.prefix: Expr = prefix
         super().__init__(negative, prefix.location)
-        print(prefix)
 
     @property
     def representation(self) -> str:
