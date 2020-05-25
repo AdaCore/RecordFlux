@@ -214,8 +214,8 @@ class Not(Expr):
 
 
 class BinExpr(Expr):
-    def __init__(self, left: Expr, right: Expr) -> None:
-        super().__init__()
+    def __init__(self, left: Expr, right: Expr, location: Location = None) -> None:
+        super().__init__(location)
         self.left = left
         self.right = right
 
@@ -488,8 +488,8 @@ class OrElse(And):
 
 
 class Number(Expr):
-    def __init__(self, value: int, base: int = 0) -> None:
-        super().__init__()
+    def __init__(self, value: int, base: int = 0, location: Location = None) -> None:
+        super().__init__(location)
         self.value = value
         self.base = base
 
@@ -852,12 +852,14 @@ class Variable(Name):
 
 class Attribute(Name):
     def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(negative)
-
-        if isinstance(prefix, (str, ID)):
+        if isinstance(prefix, ID):
+            prefix = Variable(prefix, location=prefix.location)
+        if isinstance(prefix, str):
             prefix = Variable(prefix)
 
         self.prefix: Expr = prefix
+        super().__init__(negative, prefix.location)
+        print(prefix)
 
     @property
     def representation(self) -> str:
