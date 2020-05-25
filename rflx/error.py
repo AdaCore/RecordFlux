@@ -193,10 +193,11 @@ def parse_fail(
     e.propagate(from_parser=True)
 
 
-def parser_location(start: int, end: int, string: str) -> Location:
+def parser_location(start: int, end: int, string: str, filename: Path = None) -> Location:
     return Location(
         start=(lineno(start, string), col(start, string)),
-        end=(lineno(end, string), col(end, string)),
+        end=(lineno(end - 1, string), col(end - 1, string)),
+        filename=filename,
     )
 
 
