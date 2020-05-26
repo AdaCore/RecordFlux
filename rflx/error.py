@@ -146,13 +146,6 @@ class RecordFluxError(Exception):
             raise self
 
 
-class ParserError(RecordFluxError):
-    def __init__(self, message: str = "parser error") -> None:
-        super().__init__()
-        self.append(message, Subsystem.PARSER, Severity.ERROR)
-        self.propagate()
-
-
 class InternalError(RecordFluxError):
     def __init__(self, message: str = "internal error") -> None:
         super().__init__()
