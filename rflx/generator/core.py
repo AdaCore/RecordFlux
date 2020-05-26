@@ -634,15 +634,8 @@ class Generator:
                             And(
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Equal(Variable("Buffer"), NULL),
-                                # WORKAROUND: Componolit/Workarounds#6
-                                Equal(
-                                    Variable("Ctx.Buffer_First"),
-                                    Old(Call(const.TYPES * "Bytes_First", [Variable("Buffer")])),
-                                ),
-                                Equal(
-                                    Variable("Ctx.Buffer_Last"),
-                                    Old(Call(const.TYPES * "Bytes_Last", [Variable("Buffer")])),
-                                ),
+                                Equal(Variable("Ctx.Buffer_First"), Old(First("Buffer"))),
+                                Equal(Variable("Ctx.Buffer_Last"), Old(Last("Buffer"))),
                                 Equal(
                                     Variable("Ctx.First"),
                                     Call(
@@ -715,15 +708,8 @@ class Generator:
                             And(
                                 Equal(Variable("Buffer"), NULL),
                                 Call("Has_Buffer", [Variable("Ctx")]),
-                                # WORKAROUND: Componolit/Workarounds#6
-                                Equal(
-                                    Variable("Ctx.Buffer_First"),
-                                    Old(Call(const.TYPES * "Bytes_First", [Variable("Buffer")])),
-                                ),
-                                Equal(
-                                    Variable("Ctx.Buffer_Last"),
-                                    Old(Call(const.TYPES * "Bytes_Last", [Variable("Buffer")])),
-                                ),
+                                Equal(Variable("Ctx.Buffer_First"), Old(First("Buffer"))),
+                                Equal(Variable("Ctx.Buffer_Last"), Old(Last("Buffer"))),
                                 Equal(Variable("Ctx.First"), Variable("First")),
                                 Equal(Variable("Ctx.Last"), Variable("Last")),
                                 Call("Initialized", [Variable("Ctx")]),
