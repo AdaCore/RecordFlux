@@ -359,7 +359,6 @@ class Generator:
 
         unit += self.__create_switch_procedures(message, sequence_fields)
         unit += self.__create_update_procedures(message, sequence_fields)
-        unit += self.__create_public_valid_context_function()
         unit += self.__create_cursor_function()
         unit += self.__create_cursors_function()
 
@@ -633,7 +632,6 @@ class Generator:
                         ),
                         Postcondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Equal(Variable("Buffer"), NULL),
                                 # WORKAROUND: Componolit/Workarounds#6
@@ -715,7 +713,6 @@ class Generator:
                         ),
                         Postcondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Equal(Variable("Buffer"), NULL),
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 # WORKAROUND: Componolit/Workarounds#6
@@ -827,12 +824,9 @@ class Generator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(
-                            And(common.VALID_CONTEXT, Call("Has_Buffer", [Variable("Ctx")]))
-                        ),
+                        Precondition(Call("Has_Buffer", [Variable("Ctx")])),
                         Postcondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Not(Call("Has_Buffer", [Variable("Ctx")])),
                                 NotEqual(Variable("Buffer"), NULL),
                                 Equal(Variable("Ctx.Buffer_First"), First("Buffer")),
@@ -888,10 +882,7 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(
-                                common.VALID_CONTEXT,
-                                Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
-                            )
+                            And(Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),)
                         )
                     ],
                 )
@@ -956,14 +947,7 @@ class Generator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [
-                        Precondition(
-                            And(
-                                common.VALID_CONTEXT,
-                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
-                            )
-                        )
-                    ],
+                    [Precondition(And(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),))],
                 )
             ],
             [
@@ -1033,14 +1017,7 @@ class Generator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [
-                        Precondition(
-                            And(
-                                common.VALID_CONTEXT,
-                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
-                            )
-                        )
-                    ],
+                    [Precondition(And(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),))],
                 )
             ],
             [
@@ -1115,7 +1092,6 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 In(Variable("Val.Fld"), Range("Field")),
                                 Call("Valid_Predecessor", [Variable("Ctx"), Variable("Val.Fld")]),
@@ -1147,7 +1123,7 @@ class Generator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -1416,7 +1392,7 @@ class Generator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [ExpressionFunctionDeclaration(specification, NotEqual(Variable("Ctx.Buffer"), NULL))],
         )
 
@@ -1432,7 +1408,7 @@ class Generator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -1491,7 +1467,6 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call("Structural_Valid_Message", [Variable("Ctx")]),
                             )
@@ -1546,14 +1521,7 @@ class Generator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [
-                        Precondition(
-                            And(
-                                common.VALID_CONTEXT,
-                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
-                            )
-                        )
-                    ],
+                    [Precondition(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]))],
                 )
             ],
             [
@@ -1644,7 +1612,6 @@ class Generator:
                     [
                         Precondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                             )
@@ -1719,7 +1686,6 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                common.VALID_CONTEXT,
                                 Not(Constrained("Ctx")),
                                 Not(Constrained("Seq_Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
@@ -1758,7 +1724,6 @@ class Generator:
                         ),
                         Postcondition(
                             And(
-                                common.VALID_CONTEXT,
                                 *switch_update_conditions(message, f),
                                 Equal(
                                     Call(
@@ -1898,14 +1863,12 @@ class Generator:
                     [
                         Precondition(
                             AndThen(
-                                common.VALID_CONTEXT,
                                 Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 *switch_update_conditions(message, f),
                             )
                         ),
                         Postcondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Not(
@@ -2073,37 +2036,6 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification, common.context_predicate(message, composite_fields, self.prefix)
                 ),
-            ],
-        )
-
-    @staticmethod
-    def __create_public_valid_context_function() -> UnitPart:
-        specification = FunctionSpecification(
-            "Valid_Context", "Boolean", [Parameter(["Ctx"], "Context")]
-        )
-
-        return UnitPart(
-            [
-                SubprogramDeclaration(
-                    specification, [Annotate("GNATprove", "Inline_For_Proof"), Ghost()]
-                )
-            ],
-            [],
-            [
-                ExpressionFunctionDeclaration(  # WORKAROUND: Componolit/Workarounds#1
-                    specification,
-                    Call(
-                        "Valid_Context",
-                        [
-                            Variable("Ctx.Buffer_First"),
-                            Variable("Ctx.Buffer_Last"),
-                            Variable("Ctx.First"),
-                            Variable("Ctx.Last"),
-                            Variable("Ctx.Buffer"),
-                            Variable("Ctx.Cursors"),
-                        ],
-                    ),
-                )
             ],
         )
 
@@ -2323,7 +2255,6 @@ class Generator:
                     f"{element_type.name}.Message_Last",
                     f"{element_type.name}.Initialized",
                     f"{element_type.name}.Structural_Valid_Message",
-                    f"{element_type.name}.Valid_Context",
                 ],
             )
         elif isinstance(element_type, Scalar):
@@ -2676,7 +2607,7 @@ class Generator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [
                 ExpressionFunctionDeclaration(
                     specification,

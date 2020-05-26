@@ -277,7 +277,6 @@ class GeneratorGenerator:
                         ),
                         Postcondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
                                 Equal(
@@ -593,7 +592,6 @@ class GeneratorGenerator:
     @staticmethod
     def setter_preconditions(field: Field) -> Sequence[Expr]:
         return [
-            common.VALID_CONTEXT,
             Not(Constrained("Ctx")),
             Call("Has_Buffer", [Variable("Ctx")]),
             Call("Valid_Next", [Variable("Ctx"), Variable(field.affixed_name)]),
@@ -631,7 +629,6 @@ class GeneratorGenerator:
 
     def composite_setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
         return [
-            common.VALID_CONTEXT,
             Call("Has_Buffer", [Variable("Ctx")]),
             *self.setter_postconditions(message, field),
             Call("Structural_Valid", [Variable("Ctx"), Variable(field.affixed_name)]),

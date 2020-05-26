@@ -77,8 +77,7 @@ is
        and then Buffer'Length > 0
        and then Buffer'Last <= Types.Index'Last / 2,
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Buffer = null
        and Ctx.Buffer_First = Types.Bytes_First (Buffer)'Old
        and Ctx.Buffer_Last = Types.Bytes_Last (Buffer)'Old
@@ -95,8 +94,7 @@ is
        and then First <= Last
        and then Last <= Types.Bit_Index'Last / 2,
      Post =>
-       Valid_Context (Ctx)
-       and Buffer = null
+       Buffer = null
        and Has_Buffer (Ctx)
        and Ctx.Buffer_First = Types.Bytes_First (Buffer)'Old
        and Ctx.Buffer_Last = Types.Bytes_Last (Buffer)'Old
@@ -109,11 +107,9 @@ is
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx),
+       Has_Buffer (Ctx),
      Post =>
-       Valid_Context (Ctx)
-       and not Has_Buffer (Ctx)
+       not Has_Buffer (Ctx)
        and Buffer /= null
        and Ctx.Buffer_First = Buffer'First
        and Ctx.Buffer_Last = Buffer'Last
@@ -123,98 +119,71 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
 
-   function Has_Buffer (Ctx : Context) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Has_Buffer (Ctx : Context) return Boolean;
 
    function Message_Last (Ctx : Context) return Types.Bit_Index with
      Pre =>
-       Valid_Context (Ctx)
-       and then Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and then Structural_Valid_Message (Ctx);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid_Predecessor (Ctx, Fld);
+       Valid_Predecessor (Ctx, Fld);
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Val.Fld in Field'Range
        and Valid_Predecessor (Ctx, Val.Fld);
 
    function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld);
 
    function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld);
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index with
      Pre =>
        Valid_Next (Ctx, Fld);
 
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Pre =>
-       Valid_Context (Ctx);
+   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field;
 
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean;
 
-   function Valid_Next (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : Types.Bytes) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
-     Pre =>
-       Valid_Context (Ctx),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
    procedure Verify_Message (Ctx : in out Context) with
-     Pre =>
-       Valid_Context (Ctx),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
-   function Present (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Present (Ctx : Context; Fld : Field) return Boolean;
 
-   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean;
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx),
      Post =>
        (if
            Valid'Result
@@ -222,123 +191,97 @@ is
            Structural_Valid (Ctx, Fld)
            and Present (Ctx, Fld));
 
-   function Incomplete (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
-   function Invalid (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Invalid (Ctx : Context; Fld : Field) return Boolean;
 
    function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx);
+       Has_Buffer (Ctx);
 
    function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx);
+       Has_Buffer (Ctx);
 
-   function Incomplete_Message (Ctx : Context) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Incomplete_Message (Ctx : Context) return Boolean;
 
    function Get_Version (Ctx : Context) return RFLX.IPv4.Version with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Version);
+       Valid (Ctx, F_Version);
 
    function Get_IHL (Ctx : Context) return RFLX.IPv4.IHL with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_IHL);
+       Valid (Ctx, F_IHL);
 
    function Get_DSCP (Ctx : Context) return RFLX.IPv4.DCSP with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_DSCP);
+       Valid (Ctx, F_DSCP);
 
    function Get_ECN (Ctx : Context) return RFLX.IPv4.ECN with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_ECN);
+       Valid (Ctx, F_ECN);
 
    function Get_Total_Length (Ctx : Context) return RFLX.IPv4.Total_Length with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Total_Length);
+       Valid (Ctx, F_Total_Length);
 
    function Get_Identification (Ctx : Context) return RFLX.IPv4.Identification with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Identification);
+       Valid (Ctx, F_Identification);
 
    function Get_Flag_R (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Flag_R);
+       Valid (Ctx, F_Flag_R);
 
    function Get_Flag_DF (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Flag_DF);
+       Valid (Ctx, F_Flag_DF);
 
    function Get_Flag_MF (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Flag_MF);
+       Valid (Ctx, F_Flag_MF);
 
    function Get_Fragment_Offset (Ctx : Context) return RFLX.IPv4.Fragment_Offset with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Fragment_Offset);
+       Valid (Ctx, F_Fragment_Offset);
 
    function Get_TTL (Ctx : Context) return RFLX.IPv4.TTL with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_TTL);
+       Valid (Ctx, F_TTL);
 
    function Get_Protocol (Ctx : Context) return RFLX.IPv4.Protocol with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Protocol);
+       Valid (Ctx, F_Protocol);
 
    function Get_Header_Checksum (Ctx : Context) return RFLX.IPv4.Header_Checksum with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Header_Checksum);
+       Valid (Ctx, F_Header_Checksum);
 
    function Get_Source (Ctx : Context) return RFLX.IPv4.Address with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Source);
+       Valid (Ctx, F_Source);
 
    function Get_Destination (Ctx : Context) return RFLX.IPv4.Address with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Destination);
+       Valid (Ctx, F_Destination);
 
    generic
       with procedure Process_Options (Options : Types.Bytes);
    procedure Get_Options (Ctx : Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Present (Ctx, F_Options);
 
    generic
       with procedure Process_Payload (Payload : Types.Bytes);
    procedure Get_Payload (Ctx : Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Present (Ctx, F_Payload);
 
    procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Version)
        and then Field_Last (Ctx, F_Version) <= Types.Bit_Index'Last / 2
@@ -346,8 +289,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_Version) >= Field_Length (Ctx, F_Version),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Version)
        and Get_Version (Ctx) = Val
        and Invalid (Ctx, F_IHL)
@@ -376,8 +318,7 @@ is
 
    procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_IHL)
        and then Field_Last (Ctx, F_IHL) <= Types.Bit_Index'Last / 2
@@ -385,8 +326,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_IHL) >= Field_Length (Ctx, F_IHL),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_IHL)
        and Get_IHL (Ctx) = Val
        and Invalid (Ctx, F_DSCP)
@@ -416,8 +356,7 @@ is
 
    procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_DSCP)
        and then Field_Last (Ctx, F_DSCP) <= Types.Bit_Index'Last / 2
@@ -425,8 +364,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_DSCP) >= Field_Length (Ctx, F_DSCP),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_DSCP)
        and Get_DSCP (Ctx) = Val
        and Invalid (Ctx, F_ECN)
@@ -457,8 +395,7 @@ is
 
    procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_ECN)
        and then Field_Last (Ctx, F_ECN) <= Types.Bit_Index'Last / 2
@@ -466,8 +403,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_ECN) >= Field_Length (Ctx, F_ECN),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_ECN)
        and Get_ECN (Ctx) = Val
        and Invalid (Ctx, F_Total_Length)
@@ -499,8 +435,7 @@ is
 
    procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Total_Length)
        and then Field_Last (Ctx, F_Total_Length) <= Types.Bit_Index'Last / 2
@@ -508,8 +443,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_Total_Length) >= Field_Length (Ctx, F_Total_Length),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Total_Length)
        and Get_Total_Length (Ctx) = Val
        and Invalid (Ctx, F_Identification)
@@ -545,8 +479,7 @@ is
 
    procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Identification)
        and then Field_Last (Ctx, F_Identification) <= Types.Bit_Index'Last / 2
@@ -554,8 +487,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_Identification) >= Field_Length (Ctx, F_Identification),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Identification)
        and Get_Identification (Ctx) = Val
        and Invalid (Ctx, F_Flag_R)
@@ -589,8 +521,7 @@ is
 
    procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Flag_R)
        and then Field_Last (Ctx, F_Flag_R) <= Types.Bit_Index'Last / 2
@@ -598,8 +529,7 @@ is
        and then True
        and then Available_Space (Ctx, F_Flag_R) >= Field_Length (Ctx, F_Flag_R),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_R)
        and Get_Flag_R (Ctx) = Val
        and Invalid (Ctx, F_Flag_DF)
@@ -637,8 +567,7 @@ is
 
    procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Flag_DF)
        and then Field_Last (Ctx, F_Flag_DF) <= Types.Bit_Index'Last / 2
@@ -646,8 +575,7 @@ is
        and then True
        and then Available_Space (Ctx, F_Flag_DF) >= Field_Length (Ctx, F_Flag_DF),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_DF)
        and Get_Flag_DF (Ctx) = Val
        and Invalid (Ctx, F_Flag_MF)
@@ -683,8 +611,7 @@ is
 
    procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Flag_MF)
        and then Field_Last (Ctx, F_Flag_MF) <= Types.Bit_Index'Last / 2
@@ -692,8 +619,7 @@ is
        and then True
        and then Available_Space (Ctx, F_Flag_MF) >= Field_Length (Ctx, F_Flag_MF),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_MF)
        and Get_Flag_MF (Ctx) = Val
        and Invalid (Ctx, F_Fragment_Offset)
@@ -730,8 +656,7 @@ is
 
    procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Fragment_Offset)
        and then Field_Last (Ctx, F_Fragment_Offset) <= Types.Bit_Index'Last / 2
@@ -739,8 +664,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_Fragment_Offset) >= Field_Length (Ctx, F_Fragment_Offset),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Fragment_Offset)
        and Get_Fragment_Offset (Ctx) = Val
        and Invalid (Ctx, F_TTL)
@@ -778,8 +702,7 @@ is
 
    procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TTL)
        and then Field_Last (Ctx, F_TTL) <= Types.Bit_Index'Last / 2
@@ -787,8 +710,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_TTL) >= Field_Length (Ctx, F_TTL),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_TTL)
        and Get_TTL (Ctx) = Val
        and Invalid (Ctx, F_Protocol)
@@ -827,8 +749,7 @@ is
 
    procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Protocol)
        and then Field_Last (Ctx, F_Protocol) <= Types.Bit_Index'Last / 2
@@ -836,8 +757,7 @@ is
        and then True
        and then Available_Space (Ctx, F_Protocol) >= Field_Length (Ctx, F_Protocol),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Protocol)
        and Get_Protocol (Ctx) = (True, Val)
        and Invalid (Ctx, F_Header_Checksum)
@@ -877,8 +797,7 @@ is
 
    procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Header_Checksum)
        and then Field_Last (Ctx, F_Header_Checksum) <= Types.Bit_Index'Last / 2
@@ -886,8 +805,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_Header_Checksum) >= Field_Length (Ctx, F_Header_Checksum),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Header_Checksum)
        and Get_Header_Checksum (Ctx) = Val
        and Invalid (Ctx, F_Source)
@@ -928,8 +846,7 @@ is
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source)
        and then Field_Last (Ctx, F_Source) <= Types.Bit_Index'Last / 2
@@ -937,8 +854,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_Source) >= Field_Length (Ctx, F_Source),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Source)
        and Get_Source (Ctx) = Val
        and Invalid (Ctx, F_Destination)
@@ -980,8 +896,7 @@ is
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination)
        and then Field_Last (Ctx, F_Destination) <= Types.Bit_Index'Last / 2
@@ -989,8 +904,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_Destination) >= Field_Length (Ctx, F_Destination),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Destination)
        and Get_Destination (Ctx) = Val
        and Invalid (Ctx, F_Options)
@@ -1043,16 +957,14 @@ is
       with procedure Process_Payload (Payload : out Types.Bytes);
    procedure Set_Payload (Ctx : in out Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1077,16 +989,14 @@ is
 
    procedure Initialize_Payload (Ctx : in out Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1111,8 +1021,7 @@ is
 
    procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out Options_Sequence.Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then not Seq_Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Options)
@@ -1121,8 +1030,7 @@ is
        and then Field_Condition (Ctx, (Fld => F_Options))
        and then Available_Space (Ctx, F_Options) >= Field_Length (Ctx, F_Options),
      Post =>
-       Valid_Context (Ctx)
-       and not Has_Buffer (Ctx)
+       not Has_Buffer (Ctx)
        and Options_Sequence.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Seq_Ctx.Buffer_First
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
@@ -1160,8 +1068,7 @@ is
 
    procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out Options_Sequence.Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and then Present (Ctx, F_Options)
+       Present (Ctx, F_Options)
        and then not Has_Buffer (Ctx)
        and then Options_Sequence.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -1169,8 +1076,7 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Options)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Options),
      Post =>
-       Valid_Context (Ctx)
-       and Present (Ctx, F_Options)
+       Present (Ctx, F_Options)
        and Has_Buffer (Ctx)
        and not Options_Sequence.Has_Buffer (Seq_Ctx)
        and Seq_Ctx.First = Field_First (Ctx, F_Options)
@@ -1197,11 +1103,6 @@ is
        and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old
        and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old
        and Context_Cursor (Ctx, F_Payload) = Context_Cursor (Ctx, F_Payload)'Old;
-
-   function Valid_Context (Ctx : Context) return Boolean with
-     Annotate =>
-       (GNATprove, Inline_For_Proof),
-     Ghost;
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
@@ -1575,9 +1476,6 @@ private
       end record with
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Buffer, Context.Cursors);
-
-   function Valid_Context (Ctx : Context) return Boolean is
-     (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

@@ -60,8 +60,6 @@ from rflx.model import (
 
 from . import const
 
-VALID_CONTEXT = Call("Valid_Context", [Variable("Ctx")])  # WORKAROUND: Componolit/Workarounds#1
-
 
 def substitution(
     message: Message, embedded: bool = False, public: bool = False
