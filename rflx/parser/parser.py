@@ -168,7 +168,7 @@ class Parser:
                 self.__types[t.identifier] = create_message(t, self.__types)
 
             elif isinstance(t, DerivationSpec):
-                self.__types[t.identifier] = create_derived_message(t, message_types(self.__types))
+                self.__types[t.identifier] = create_derived_message(t, self.__types)
 
             elif isinstance(t, RefinementSpec):
                 self.__types[t.identifier] = create_refinement(t, self.__types)
@@ -186,6 +186,7 @@ def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
 
 
 def check_types(types: Mapping[ID, Type]) -> None:
+    error = RecordFluxError()
     for e1, e2 in [
         (e1, e2)
         for e1 in types.values()
@@ -204,7 +205,6 @@ def check_types(types: Mapping[ID, Type]) -> None:
         identical_literals = set(e2.literals) & set(e1.literals)
 
         if identical_literals:
-            error = RecordFluxError()
             literals_message = ", ".join([f"{l}" for l in sorted(identical_literals)])
             error.append(
                 f"conflicting literals: {literals_message}",
@@ -218,15 +218,25 @@ def check_types(types: Mapping[ID, Type]) -> None:
                     for l in sorted(identical_literals)
                 ]
             )
-            error.propagate()
 
     literals = {l: t for t in types.values() if isinstance(t, Enumeration) for l in t.literals}
     type_set = {t.name for t in types.keys() if t.parent != BUILTINS_PACKAGE}
-    name_conflicts = set(literals.keys()) & type_set
+    name_conflicts = type_set & set(literals.keys())
     for name in sorted(name_conflicts):
-        raise ParserError(
-            f'literal in enumeration "{literals[name].identifier}" conflicts with type "{name}"'
+        error.append(
+            f'literal conflicts with type "{name}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            name.location,
         )
+        type_location = [
+            v.location for k, v in types.items() if k.parent != BUILTINS_PACKAGE and k.name == name
+        ][0]
+        error.append(
+            "conflicting type declaration", Subsystem.PARSER, Severity.INFO, type_location,
+        )
+
+    error.propagate()
 
 
 def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
@@ -237,19 +247,28 @@ def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
     if array.element_type.identifier in types:
         element_type = types[array.element_type.identifier]
     else:
-        raise ParserError(
-            f'undefined element type "{array.element_type.identifier}"'
-            f' in array "{array.identifier}"'
+        fail(
+            f'undefined element type "{array.element_type.identifier}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            array.element_type.location,
         )
 
     if isinstance(element_type, Scalar):
         element_type_size = element_type.size.simplified()
         if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
-            raise ParserError(
-                f"unsupported size ({element_type_size}) of element type "
-                f'"{array.element_type.name}" in "{array.name}" '
-                "(no multiple of 8)"
+            error = RecordFluxError()
+            error.append(
+                "unsupported element type size", Subsystem.PARSER, Severity.ERROR, array.location
             )
+            error.append(
+                f'type "{element_type.identifier}" has size {element_type_size},'
+                r" must be multiple of 8",
+                Subsystem.PARSER,
+                Severity.INFO,
+                element_type.location,
+            )
+            error.propagate()
 
     return Array(array.identifier, element_type)
 
@@ -262,21 +281,37 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
 
     field_types: Dict[Field, Type] = {}
 
+    error = RecordFluxError()
+
     for component in components:
         if not component.name.null:
             type_name = qualified_type_name(component.type_name, message.package)
             if type_name not in types:
-                raise ParserError(
-                    f'undefined component type "{type_name}" in message "{message.identifier}"'
+                error.append(
+                    "undefined component type",
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    component.type_name.location,
                 )
-            field_types[Field(component.name)] = types[type_name]
+            else:
+                field_types[Field(component.name)] = types[type_name]
 
+    error.propagate()
     structure: List[Link] = []
 
     for i, component in enumerate(components):
-        if component.name.null and any(then.first != UNDEFINED for then in component.thens):
-            raise ParserError(
-                f'invalid first expression in initial node of message "{message.identifier}"'
+        if component.name.null:
+            error.extend(
+                [
+                    (
+                        "invalid first expression",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        then.first.location,
+                    )
+                    for then in component.thens
+                    if then.first != UNDEFINED
+                ]
             )
 
         source_node = Field(component.name) if not component.name.null else INITIAL
@@ -288,12 +323,18 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
         for then in component.thens:
             target_node = Field(then.name) if not then.name.null else FINAL
             if target_node not in field_types.keys() | {FINAL}:
-                raise ParserError(
-                    f'undefined component "{then.name}" in message "{message.identifier}"'
+                error.append(
+                    f'undefined component "{then.name}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    then.name.location,
                 )
-            structure.append(
-                Link(source_node, target_node, then.condition, then.length, then.first)
-            )
+            else:
+                structure.append(
+                    Link(source_node, target_node, then.condition, then.length, then.first)
+                )
+
+    error.propagate()
 
     return (
         UnprovenMessage(message.identifier, structure, field_types, message.location)
@@ -302,20 +343,47 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
     )
 
 
-def create_derived_message(derivation: DerivationSpec, messages: Mapping[ID, Message]) -> Message:
+def create_derived_message(derivation: DerivationSpec, types: Mapping[ID, Type]) -> Message:
     base_name = qualified_type_name(derivation.base, derivation.package)
+    messages = message_types(types)
+    error = RecordFluxError()
+
+    if base_name not in types:
+        fail(
+            f'undefined base message "{base_name}" in derived message',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            derivation.location,
+        )
 
     if base_name not in messages:
-        raise ParserError(
-            f'undefined message "{base_name}" in derived message "{derivation.identifier}"'
+        error.append(
+            f'illegal derivation "{derivation.identifier}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            derivation.location,
         )
+        error.append(
+            f'invalid base message type "{base_name}"',
+            Subsystem.PARSER,
+            Severity.INFO,
+            types[base_name].location,
+        )
+        error.propagate()
 
     base = messages[base_name]
 
     if isinstance(base, DerivedMessage):
-        raise ParserError(
-            f'illegal derivation "{derivation.identifier}" of derived message "{base_name}"'
+        error.append(
+            f'illegal derivation "{derivation.identifier}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            derivation.location,
         )
+        error.append(
+            f'invalid base message "{base_name}"', Subsystem.PARSER, Severity.INFO, base.location
+        )
+        error.propagate()
 
     return (
         UnprovenDerivedMessage(derivation.identifier, base, location=derivation.location)
@@ -329,16 +397,31 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
 
     refinement.pdu = qualified_type_name(refinement.pdu, refinement.package)
     if refinement.pdu not in messages:
-        raise ParserError(f'undefined type "{refinement.pdu}" in refinement')
+        fail(
+            f'undefined type "{refinement.pdu}" in refinement',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            refinement.location,
+        )
 
     pdu = messages[refinement.pdu]
 
     if Field(refinement.field) not in pdu.fields:
-        raise ParserError(f'invalid field "{refinement.field}" in refinement of "{refinement.pdu}"')
+        fail(
+            f'invalid field "{refinement.field}" in refinement',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            refinement.field.location,
+        )
 
     refinement.sdu = qualified_type_name(refinement.sdu, refinement.package)
     if refinement.sdu not in messages:
-        raise ParserError(f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"')
+        fail(
+            f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            refinement.sdu.location,
+        )
 
     sdu = messages[refinement.sdu]
 
@@ -361,13 +444,30 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
                 variable.location,
             )
 
-    result = Refinement(refinement.package, pdu, Field(refinement.field), sdu, refinement.condition)
+    result = Refinement(
+        refinement.package,
+        pdu,
+        Field(refinement.field),
+        sdu,
+        refinement.condition,
+        refinement.location,
+    )
 
     if result in types.values():
-        raise ParserError(
-            f'duplicate refinement of field "{refinement.field}" with "{refinement.sdu}"'
-            f' for "{refinement.pdu}"'
+        error = RecordFluxError()
+        error.append(
+            f'duplicate refinement with "{refinement.sdu}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            refinement.location,
         )
+        error.append(
+            "previous occurrence",
+            Subsystem.PARSER,
+            Severity.INFO,
+            types[result.identifier].location,
+        )
+        error.propagate()
 
     return result
 
