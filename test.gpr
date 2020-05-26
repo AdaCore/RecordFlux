@@ -26,7 +26,7 @@ project Test is
          "--memlimit=1000",
          "--checks-as-errors",
          "--warnings=error",
-         "--no-axiom-guard"  --  WORKAROUND: Componolit/Workarounds#5
+         "--no-axiom-guard"
       );
 
       --  Improving proof time
