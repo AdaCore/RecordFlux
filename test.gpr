@@ -44,7 +44,7 @@ project Test is
             for Proof_Switches ("rflx-derivation-tests.adb") use ("--steps=3000");
             for Proof_Switches ("rflx-ethernet-tests.adb") use ("--steps=2000");
             for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=61000");
-            for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=96000");
+            for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=98000");
             for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=48000");
       end case;
    end Prove;

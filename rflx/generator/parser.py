@@ -276,10 +276,8 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(common.VALID_CONTEXT),
                         Postcondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Equal(
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Old(Call("Has_Buffer", [Variable("Ctx")])),
@@ -393,10 +391,8 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(common.VALID_CONTEXT),
                         Postcondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Equal(
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Old(Call("Has_Buffer", [Variable("Ctx")])),
@@ -426,7 +422,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -455,7 +451,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -487,7 +483,6 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(common.VALID_CONTEXT),
                         Postcondition(
                             If(
                                 [
@@ -534,7 +529,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -553,7 +548,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -580,12 +575,7 @@ class ParserGenerator:
         return UnitPart(
             [
                 SubprogramDeclaration(
-                    specification,
-                    [
-                        Precondition(
-                            And(common.VALID_CONTEXT, Call("Has_Buffer", [Variable("Ctx")]),)
-                        )
-                    ],
+                    specification, [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
                 )
             ],
             [
@@ -607,12 +597,7 @@ class ParserGenerator:
         return UnitPart(
             [
                 SubprogramDeclaration(
-                    specification,
-                    [
-                        Precondition(
-                            And(common.VALID_CONTEXT, Call("Has_Buffer", [Variable("Ctx")]),)
-                        )
-                    ],
+                    specification, [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
                 )
             ],
             [
@@ -632,7 +617,7 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Precondition(common.VALID_CONTEXT)])],
+            [SubprogramDeclaration(specification)],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -670,14 +655,7 @@ class ParserGenerator:
             [
                 SubprogramDeclaration(
                     specification(f, t),
-                    [
-                        Precondition(
-                            And(
-                                common.VALID_CONTEXT,
-                                Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
-                            )
-                        )
-                    ],
+                    [Precondition(Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),)],
                 )
                 for f, t in scalar_fields.items()
             ],
@@ -699,7 +677,6 @@ class ParserGenerator:
                     [
                         Precondition(
                             And(
-                                common.VALID_CONTEXT,
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
                             )

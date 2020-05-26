@@ -10,7 +10,6 @@ generic
    with function Element_Last (Ctx : Element_Context) return Types.Bit_Index;
    with function Element_Initialized (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Message (Ctx : Element_Context) return Boolean;
-   with function Element_Valid_Context (Ctx : Element_Context) return Boolean;
 package {prefix}RFLX_Message_Sequence with
   SPARK_Mode
 is
@@ -70,7 +69,6 @@ is
      Post =>
        (not Has_Buffer (Ctx)
         and Valid_Element (Ctx)
-        and Element_Valid_Context (Element_Ctx)
         and Element_Has_Buffer (Element_Ctx)
         and Ctx.Buffer_First = Element_Ctx.Buffer_First
         and Ctx.Buffer_Last = Element_Ctx.Buffer_Last
@@ -88,7 +86,6 @@ is
    procedure Update (Ctx : in out Context; Element_Ctx : in out Element_Context) with
      Pre =>
        (not Has_Buffer (Ctx)
-        and then Element_Valid_Context (Element_Ctx)
         and then Element_Has_Buffer (Element_Ctx)
         and then Valid_Element (Ctx)
         and then Ctx.Buffer_First = Element_Ctx.Buffer_First
@@ -97,7 +94,6 @@ is
         and then Ctx.Last >= Element_Ctx.Last),
      Post =>
        (Has_Buffer (Ctx)
-        and Element_Valid_Context (Element_Ctx)
         and not Element_Has_Buffer (Element_Ctx)
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
         and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
