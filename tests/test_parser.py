@@ -123,13 +123,6 @@ def assert_error_string(string: str, regex: str) -> None:
         p.create_model()
 
 
-def assert_parser_error_string(string: str, regex: str) -> None:
-    p = Parser()
-    with pytest.raises(ParserError, match=regex):
-        p.parse_string(string)
-        p.create_model()
-
-
 def raise_parser_error() -> None:
     raise ParserError("TEST")
 
@@ -367,7 +360,7 @@ def test_duplicate_type() -> None:
 
 
 def test_message_undefined_type() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type PDU is
@@ -376,12 +369,12 @@ def test_message_undefined_type() -> None:
                   end message;
             end Test;
         """,
-        r'^undefined component type "Test.T" in message "Test.PDU"$',
+        r"^<stdin>:5:28: parser: error: undefined component type$",
     )
 
 
 def test_message_undefined_component() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -392,7 +385,7 @@ def test_message_undefined_component() -> None:
                   end message;
             end Test;
         """,
-        r'^undefined component "Bar" in message "Test.PDU"$',
+        r'^<stdin>:7:30: parser: error: undefined component "Bar"$',
     )
 
 
@@ -535,7 +528,7 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
 
 
 def test_name_conflict_between_literal_and_type() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is (Foo, Bar) with Size => 1;
@@ -543,38 +536,44 @@ def test_name_conflict_between_literal_and_type() -> None:
                type Bar is mod 2**8;
             end Test;
         """,
-        r'literal in enumeration "Test.T" conflicts with type "Bar"',
+        r'<stdin>:3:32: parser: error: literal conflicts with type "Bar"\n'
+        r"<stdin>:5:16: parser: info: conflicting type declaration\n"
+        r'<stdin>:3:27: parser: error: literal conflicts with type "Foo"\n'
+        r"<stdin>:4:16: parser: info: conflicting type declaration",
     )
 
 
 def test_array_undefined_type() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is array of Foo;
             end Test;
         """,
-        r'^undefined element type "Test.Foo" in array "Test.T"$',
+        r'^<stdin>:3:35: parser: error: undefined element type "Test.Foo"$',
     )
 
 
 def test_array_unsupported_element_type() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type Foo is mod 2**4;
                type T is array of Foo;
             end Test;
         """,
-        r'unsupported size \(4\) of element type "Foo" in "T" \(no multiple of 8\)',
+        r"<stdin>:4:16: parser: error: unsupported element type size\n"
+        r'<stdin>:3:16: parser: info: type "Test.Foo" has size 4, must be multiple of 8',
     )
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is array of Boolean;
             end Test;
         """,
-        r'unsupported size \(1\) of element type "Boolean" in "T" \(no multiple of 8\)',
+        r"<stdin>:3:16: parser: error: unsupported element type size\n"
+        r'__BUILTINS__:1:1: parser: info: type "__BUILTINS__.Boolean" has size 1,'
+        r" must be multiple of 8",
     )
 
 
@@ -598,7 +597,7 @@ def test_duplicate_message() -> None:
 
 
 def test_duplicate_refinement() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -610,23 +609,24 @@ def test_duplicate_refinement() -> None:
                for PDU use (Foo => PDU);
             end Test;
         """,
-        r'^duplicate refinement of field "Foo" with "Test.PDU" for "Test.PDU"$',
+        r'^<stdin>:9:16: parser: error: duplicate refinement with "Test.PDU"\n'
+        r"<stdin>:8:16: parser: info: previous occurrence",
     )
 
 
 def test_refinement_undefined_message() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                for PDU use (Foo => Bar);
             end Test;
         """,
-        r'^undefined type "Test.PDU" in refinement$',
+        r'^<stdin>:3:16: parser: error: undefined type "Test.PDU" in refinement$',
     )
 
 
 def test_refinement_undefined_sdu() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -637,12 +637,12 @@ def test_refinement_undefined_sdu() -> None:
                for PDU use (Foo => Bar);
             end Test;
         """,
-        r'^undefined type "Test.Bar" in refinement of "Test.PDU"$',
+        r'^<stdin>:8:36: parser: error: undefined type "Test.Bar" in refinement of "Test.PDU"$',
     )
 
 
 def test_refinement_invalid_field() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -653,7 +653,7 @@ def test_refinement_invalid_field() -> None:
                for PDU use (Bar => PDU);
             end Test;
         """,
-        r'^invalid field "Bar" in refinement of "Test.PDU"$',
+        r'^<stdin>:8:29: parser: error: invalid field "Bar" in refinement',
     )
 
 
@@ -694,30 +694,31 @@ def test_derivation_duplicate_type() -> None:
 
 
 def test_derivation_undefined_type() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type Bar is new Foo;
             end Test;
         """,
-        r'^undefined message "Test.Foo" in derived message "Test.Bar"$',
+        r'^<stdin>:3:16: parser: error: undefined base message "Test.Foo" in derived message$',
     )
 
 
 def test_derivation_unsupported_type() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type Foo is mod 256;
                type Bar is new Foo;
             end Test;
         """,
-        r'^undefined message "Test.Foo" in derived message "Test.Bar"$',
+        r'^<stdin>:4:16: parser: error: illegal derivation "Test.Bar"\n'
+        r'<stdin>:3:16: parser: info: invalid base message type "Test.Foo"',
     )
 
 
 def test_derivation_of_derived_type() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type Foo is null message;
@@ -725,12 +726,13 @@ def test_derivation_of_derived_type() -> None:
                type Baz is new Bar;
             end Test;
         """,
-        r'^illegal derivation "Test.Baz" of derived message "Test.Bar"$',
+        r'^<stdin>:5:16: parser: error: illegal derivation "Test.Baz"\n'
+        r'<stdin>:4:16: parser: info: invalid base message "Test.Bar"$',
     )
 
 
 def test_invalid_first_in_initial_node() -> None:
-    assert_parser_error_string(
+    assert_error_string(
         """
             package Test is
                type T is mod 256;
@@ -743,7 +745,7 @@ def test_invalid_first_in_initial_node() -> None:
                   end message;
             end Test;
         """,
-        r'^invalid first expression in initial node of message "Test.PDU"$',
+        r"^<stdin>:8:42: parser: error: invalid first expression$",
     )
 
 

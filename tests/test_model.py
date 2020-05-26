@@ -217,7 +217,7 @@ def test_range_invalid_size_variable() -> None:
 
 
 def test_range_invalid_size_too_small() -> None:
-    with pytest.raises(ModelError, match=r'^size too small$'):
+    with pytest.raises(ModelError, match=r"^size too small$"):
         RangeInteger("P.T", Number(0), Number(256), Number(8))
 
 
@@ -232,7 +232,7 @@ def test_enumeration_invalid_size_variable() -> None:
 
 
 def test_enumeration_invalid_size_too_small() -> None:
-    with pytest.raises(RecordFluxError, match=r'^model: error: size too small$'):
+    with pytest.raises(RecordFluxError, match=r"^model: error: size too small$"):
         Enumeration("P.T", {"A": Number(256)}, Number(8), False)
 
 
