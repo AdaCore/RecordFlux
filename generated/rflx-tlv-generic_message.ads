@@ -46,8 +46,7 @@ is
        and then Buffer'Length > 0
        and then Buffer'Last <= Types.Index'Last / 2,
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Buffer = null
        and Ctx.Buffer_First = Types.Bytes_First (Buffer)'Old
        and Ctx.Buffer_Last = Types.Bytes_Last (Buffer)'Old
@@ -64,8 +63,7 @@ is
        and then First <= Last
        and then Last <= Types.Bit_Index'Last / 2,
      Post =>
-       Valid_Context (Ctx)
-       and Buffer = null
+       Buffer = null
        and Has_Buffer (Ctx)
        and Ctx.Buffer_First = Types.Bytes_First (Buffer)'Old
        and Ctx.Buffer_Last = Types.Bytes_Last (Buffer)'Old
@@ -78,11 +76,9 @@ is
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx),
+       Has_Buffer (Ctx),
      Post =>
-       Valid_Context (Ctx)
-       and not Has_Buffer (Ctx)
+       not Has_Buffer (Ctx)
        and Buffer /= null
        and Ctx.Buffer_First = Buffer'First
        and Ctx.Buffer_Last = Buffer'Last
@@ -92,98 +88,71 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
 
-   function Has_Buffer (Ctx : Context) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Has_Buffer (Ctx : Context) return Boolean;
 
    function Message_Last (Ctx : Context) return Types.Bit_Index with
      Pre =>
-       Valid_Context (Ctx)
-       and then Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and then Structural_Valid_Message (Ctx);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid_Predecessor (Ctx, Fld);
+       Valid_Predecessor (Ctx, Fld);
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Val.Fld in Field'Range
        and Valid_Predecessor (Ctx, Val.Fld);
 
    function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld);
 
    function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld);
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index with
      Pre =>
        Valid_Next (Ctx, Fld);
 
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Pre =>
-       Valid_Context (Ctx);
+   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field;
 
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean;
 
-   function Valid_Next (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : Types.Bytes) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
-     Pre =>
-       Valid_Context (Ctx),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
    procedure Verify_Message (Ctx : in out Context) with
-     Pre =>
-       Valid_Context (Ctx),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
-   function Present (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Present (Ctx : Context; Fld : Field) return Boolean;
 
-   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean;
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx),
      Post =>
        (if
            Valid'Result
@@ -191,50 +160,38 @@ is
            Structural_Valid (Ctx, Fld)
            and Present (Ctx, Fld));
 
-   function Incomplete (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
-   function Invalid (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Invalid (Ctx : Context; Fld : Field) return Boolean;
 
    function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx);
+       Has_Buffer (Ctx);
 
    function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx);
+       Has_Buffer (Ctx);
 
-   function Incomplete_Message (Ctx : Context) return Boolean with
-     Pre =>
-       Valid_Context (Ctx);
+   function Incomplete_Message (Ctx : Context) return Boolean;
 
    function Get_Tag (Ctx : Context) return RFLX.TLV.Tag with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Tag);
+       Valid (Ctx, F_Tag);
 
    function Get_Length (Ctx : Context) return RFLX.TLV.Length with
      Pre =>
-       Valid_Context (Ctx)
-       and Valid (Ctx, F_Length);
+       Valid (Ctx, F_Length);
 
    generic
       with procedure Process_Value (Value : Types.Bytes);
    procedure Get_Value (Ctx : Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Present (Ctx, F_Value);
 
    procedure Set_Tag (Ctx : in out Context; Val : RFLX.TLV.Tag) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Tag)
        and then Field_Last (Ctx, F_Tag) <= Types.Bit_Index'Last / 2
@@ -242,8 +199,7 @@ is
        and then True
        and then Available_Space (Ctx, F_Tag) >= Field_Length (Ctx, F_Tag),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Tag)
        and Get_Tag (Ctx) = Val
        and Invalid (Ctx, F_Length)
@@ -261,8 +217,7 @@ is
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.TLV.Length) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Length)
        and then Field_Last (Ctx, F_Length) <= Types.Bit_Index'Last / 2
@@ -270,8 +225,7 @@ is
        and then Valid (Val)
        and then Available_Space (Ctx, F_Length) >= Field_Length (Ctx, F_Length),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Valid (Ctx, F_Length)
        and Get_Length (Ctx) = Val
        and Invalid (Ctx, F_Value)
@@ -289,16 +243,14 @@ is
       with procedure Process_Value (Value : out Types.Bytes);
    procedure Set_Value (Ctx : in out Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Value)
        and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Value))
        and then Available_Space (Ctx, F_Value) >= Field_Length (Ctx, F_Value),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -310,16 +262,14 @@ is
 
    procedure Initialize_Value (Ctx : in out Context) with
      Pre =>
-       Valid_Context (Ctx)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Value)
        and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Value))
        and then Available_Space (Ctx, F_Value) >= Field_Length (Ctx, F_Value),
      Post =>
-       Valid_Context (Ctx)
-       and Has_Buffer (Ctx)
+       Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -328,11 +278,6 @@ is
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Structural_Valid (Ctx, F_Value);
-
-   function Valid_Context (Ctx : Context) return Boolean with
-     Annotate =>
-       (GNATprove, Inline_For_Proof),
-     Ghost;
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
@@ -455,9 +400,6 @@ private
       end record with
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Buffer, Context.Cursors);
-
-   function Valid_Context (Ctx : Context) return Boolean is
-     (Valid_Context (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Ctx.Last, Ctx.Buffer, Ctx.Cursors));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
