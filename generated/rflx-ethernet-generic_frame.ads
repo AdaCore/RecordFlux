@@ -56,8 +56,8 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Buffer = null
-       and Ctx.Buffer_First = Types.Bytes_First (Buffer)'Old
-       and Ctx.Buffer_Last = Types.Bytes_Last (Buffer)'Old
+       and Ctx.Buffer_First = Buffer'First'Old
+       and Ctx.Buffer_Last = Buffer'Last'Old
        and Ctx.First = Types.First_Bit_Index (Ctx.Buffer_First)
        and Initialized (Ctx);
 
@@ -73,8 +73,8 @@ is
      Post =>
        Buffer = null
        and Has_Buffer (Ctx)
-       and Ctx.Buffer_First = Types.Bytes_First (Buffer)'Old
-       and Ctx.Buffer_Last = Types.Bytes_Last (Buffer)'Old
+       and Ctx.Buffer_First = Buffer'First'Old
+       and Ctx.Buffer_Last = Buffer'Last'Old
        and Ctx.First = First
        and Ctx.Last = Last
        and Initialized (Ctx);
