@@ -6,7 +6,7 @@ from typing import Any, Dict, Sequence
 
 import pytest
 
-from rflx.error import Location, RecordFluxError
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
     UNDEFINED,
     Aggregate,
@@ -52,7 +52,7 @@ from rflx.parser.ast import (
     Specification,
     Then,
 )
-from rflx.parser.parser import Component, ParseFatalException, Parser, ParserError
+from rflx.parser.parser import Component, ParseFatalException, Parser
 from tests.models import ETHERNET_FRAME
 from tests.utils import assert_equal
 
@@ -124,7 +124,7 @@ def assert_error_string(string: str, regex: str) -> None:
 
 
 def raise_parser_error() -> None:
-    raise ParserError("TEST")
+    fail("TEST", Subsystem.PARSER, Severity.ERROR)
 
 
 def test_unexpected_exception_in_grammar(monkeypatch: Any) -> None:
@@ -290,7 +290,7 @@ def test_incorrect_specification() -> None:
 
 def test_unexpected_exception_in_parser(monkeypatch: Any) -> None:
     p = Parser()
-    with pytest.raises(ParserError, match=r"TEST"):
+    with pytest.raises(RecordFluxError, match=r"parser: error: TEST"):
         monkeypatch.setattr(parser, "check_types", lambda x: raise_parser_error())
         p.parse_string(
             """
