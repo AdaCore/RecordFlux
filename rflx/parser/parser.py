@@ -1,5 +1,4 @@
 import logging
-import traceback
 from collections import deque
 from pathlib import Path
 from typing import Deque, Dict, List, Mapping, Set, Tuple
@@ -30,7 +29,6 @@ from rflx.model import (
     Link,
     Message,
     Model,
-    ModelError,
     Refinement,
     Scalar,
     Type,
@@ -130,13 +128,8 @@ class Parser:
     def __evaluate_specification(self, specification: Specification) -> None:
         log.info("Processing %s", specification.package.identifier)
 
-        try:
-            self.__evaluate_types(specification)
-            check_types(self.__types)
-        except (ParserError, ModelError, RecordFluxError) as e:
-            raise e
-        except Exception:
-            raise ParserError(traceback.format_exc())
+        self.__evaluate_types(specification)
+        check_types(self.__types)
 
     def __evaluate_types(self, spec: Specification) -> None:
         for t in spec.package.types:
@@ -175,10 +168,6 @@ class Parser:
 
             else:
                 raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
-
-
-class ParserError(Exception):
-    pass
 
 
 def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
