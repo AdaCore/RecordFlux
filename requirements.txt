@@ -1,7 +1,7 @@
 black
 coverage
 flake8
-icontract >=2.3.2
+icontract >=2.3.4
 isort
 mypy
 pydotplus
