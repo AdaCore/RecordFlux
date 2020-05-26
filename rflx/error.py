@@ -2,7 +2,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
-from pyparsing import ParseFatalException, col, lineno
+from pyparsing import col, lineno
 
 from rflx.common import generic_repr
 
@@ -140,8 +140,7 @@ class RecordFluxError(Exception):
             self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
 
     def propagate(
-        self,
-        func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE
+        self, func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE
     ) -> None:
         if any([func(e) for e in self.__errors]):
             raise self

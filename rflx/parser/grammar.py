@@ -127,14 +127,11 @@ def numeric_literal() -> Token:
     based_literal = numeral + Literal("#") - based_numeral - Literal("#")
     based_literal.setParseAction(lambda t: (int(t[2], int(t[0])), int(t[0])))
 
-    numeric_literal = based_literal | decimal_literal
-    numeric_literal.setName("Number")
+    num_literal = based_literal | decimal_literal
+    num_literal.setName("Number")
 
-    return (
-        locatedExpr(numeric_literal)
-        .setParseAction(
-            lambda s, l, t: Number(t[0][1][0], t[0][1][1], parser_location(t[0][0], t[0][2], s))
-        )
+    return locatedExpr(num_literal).setParseAction(
+        lambda s, l, t: Number(t[0][1][0], t[0][1][1], parser_location(t[0][0], t[0][2], s))
     )
 
 
@@ -318,7 +315,7 @@ def type_declaration() -> Token:
 def type_refinement() -> Token:
     return (
         (
-            Suppress(Keyword("for"))
+            Suppress(Keyword("for")).setParseAction(lambda s, l, t: l)
             - qualified_identifier()
             - Suppress(Keyword("use"))
             - Suppress(Literal("("))
@@ -327,7 +324,7 @@ def type_refinement() -> Token:
             - qualified_identifier()
             - Suppress(Literal(")"))
             - Optional(value_constraint())("constraint")
-            - semicolon()
+            - semicolon().setParseAction(lambda s, l, t: l)
         )
         .setParseAction(parse_refinement)
         .setName("Refinement")
@@ -451,7 +448,7 @@ def parse_mathematical_expression(string: str, location: int, tokens: ParseResul
         right = result.pop(0)
         assert left.location, f'expression "{left}" without location'
         assert right.location, f'expression "{right}" without location'
-        assert left.location.source == right.location.source, f"expression with different source"
+        assert left.location.source == right.location.source, "expression with different source"
         locn = Location(left.location.start, left.location.source, left.location.end)
         expression: Expr
         if operator == "+":
@@ -648,7 +645,11 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
         if tokens[3] == "new":
             return DerivationSpec(identifier, tokens[4], locn)
         if tokens[3] == "array of":
-            return Array(identifier, ReferenceSpec(qualified_type_name(tokens[4], package)), locn)
+            return Array(
+                identifier,
+                ReferenceSpec(qualified_type_name(tokens[4], package), tokens[4].location),
+                locn,
+            )
 
     except ModelError as e:
         raise ParseFatalException(string, location, e)
@@ -657,9 +658,9 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
 
 @fatalexceptions
 def parse_refinement(string: str, location: int, tokens: ParseResults) -> RefinementSpec:
-    if "constraint" not in tokens:
-        tokens.append(TRUE)
-    return RefinementSpec(tokens[0], tokens[1], tokens[2], tokens[3])
+    constraint = tokens[4] if "constraint" in tokens else TRUE
+    locn = parser_location(tokens[0], tokens[-1], string)
+    return RefinementSpec(tokens[1], tokens[2], tokens[3], constraint, locn)
 
 
 @fatalexceptions

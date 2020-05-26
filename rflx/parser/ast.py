@@ -61,14 +61,22 @@ class DerivationSpec(Type):
 
 
 class RefinementSpec(Type):
-    def __init__(self, pdu: StrID, field: StrID, sdu: StrID, condition: Expr = TRUE) -> None:
+    def __init__(
+        self,
+        pdu: StrID,
+        field: StrID,
+        sdu: StrID,
+        condition: Expr = TRUE,
+        location: Location = None,
+    ) -> None:
         self.pdu = ID(pdu)
         self.field = ID(field)
         self.sdu = ID(sdu)
         self.condition = condition
         super().__init__(
             f"__PACKAGE__.__REFINEMENT__{flat_name(str(self.sdu))}"
-            f"__{flat_name(str(self.pdu))}__{field}__"
+            f"__{flat_name(str(self.pdu))}__{field}__",
+            location,
         )
 
 
