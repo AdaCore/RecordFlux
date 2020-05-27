@@ -598,7 +598,10 @@ class AbstractMessage(Type):
                 if f in (INITIAL, l.target):
                     break
             else:
-                raise ModelError(f'unreachable field "{f.name}" in "{self.identifier}"')
+                print(f.identifier)
+                error.append(
+                    f'unreachable field "{f.name}" in "{self.identifier}"', Subsystem.MODEL, Severity.ERROR, f.identifier.location,
+                )
 
         duplicate_links = defaultdict(list)
         for link in self.structure:
@@ -959,7 +962,12 @@ class AbstractMessage(Type):
                 if set(self.incoming(e.target)) <= visited:
                     fields.append(e.target)
         if set(self.structure) - visited:
-            raise ModelError(f'structure of "{self.identifier}" contains cycle')
+            fail(f'structure of "{self.identifier}" contains cycle',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+            # We do not identify the cycles in the model, c.f. Componolit/RecordFlux#256
         return tuple(f for f in result if f not in [INITIAL, FINAL])
 
     def __compute_paths(self, final: Field) -> Set[Tuple[Link, ...]]:
