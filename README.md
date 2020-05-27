@@ -234,17 +234,9 @@ end Main;
 - [PyParsing](https://github.com/pyparsing/pyparsing/)
 - [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
 - [Z3](https://github.com/Z3Prover/z3)
-- [GNAT Community 2019](https://www.adacore.com/download) / [GNAT FSF 8.3](http://www.getadanow.com/)
-- [SPARK Pro 20.0](https://www.adacore.com/sparkpro) (only required for fully automatic verification of generated code)
+- [GNAT Community 2020](https://www.adacore.com/download) / [GNAT FSF 8.3](http://www.getadanow.com/)
 
 ## Known Issues
-
-### GNAT Community 2019
-
-- GNAT shows an incorrect warning for `Initialize (Context, Buffer)`. It can be suppressed by adding `pragma Assert (Buffer = null)` after calling `Initialize`.
-- GNATprove is unable to prove some parts of the generated code.
-
-These issues should be fixed in the GNAT Community 2020 release.
 
 ### GNAT FSF 8.3
 
