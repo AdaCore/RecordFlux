@@ -14,16 +14,16 @@ is
       Last_Bit : Types.Bit_Index;
       First    : Types.Index;
       Last     : Types.Index;
-      Offst    : Types.Offset;
+      Offset   : Types.Offset;
       function Extract is new Types.Extract (Element_Base_Type);
    begin
       if Ctx.Last - Ctx.Index + 1 >= Element_Base_Type'Size then
          Last_Bit := Ctx.Index + Element_Base_Type'Size - 1;
          First := Types.Byte_Index (Ctx.Index);
          Last := Types.Byte_Index (Last_Bit);
-         Offst := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
+         Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
          if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-            Ctx.Next_Element := Extract (Ctx.Buffer.all (First .. Last), Offst);
+            Ctx.Next_Element := Extract (Ctx.Buffer.all (First .. Last), Offset);
          end if;
       else
          Ctx.State := S_Invalid;
@@ -67,15 +67,15 @@ is
       Last_Bit : Types.Bit_Index;
       First    : Types.Index;
       Last     : Types.Index;
-      Offst    : Types.Offset;
+      Offset   : Types.Offset;
       procedure Insert is new Types.Insert (Element_Base_Type);
    begin
       Last_Bit := Ctx.Index + Element_Base_Type'Size - 1;
       First := Types.Byte_Index (Ctx.Index);
       Last := Types.Byte_Index (Last_Bit);
-      Offst := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
+      Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
       if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-         Insert (To_Base (Value), Ctx.Buffer.all (First .. Last), Offst);
+         Insert (To_Base (Value), Ctx.Buffer.all (First .. Last), Offset);
       end if;
       Ctx.Index := Ctx.Index + Element_Base_Type'Size;
       if Ctx.Index = Ctx.Last + 1 then
