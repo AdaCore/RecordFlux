@@ -307,9 +307,7 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
-   pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
-
-   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index; Buffer : Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
+   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index; Buffer : access constant Types.Bytes; Cursors : Field_Cursors) return Boolean is
      ((if
           Buffer /= null
        then
