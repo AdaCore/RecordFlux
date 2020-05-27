@@ -1,13 +1,14 @@
 # pylint: disable=too-many-lines
 import itertools
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from copy import copy
 from pathlib import Path
 from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
 from rflx.common import flat_name, generic_repr
 from rflx.contract import ensure, invariant
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -55,7 +56,12 @@ class Type(Base):
         identifier = ID(identifier)
 
         if len(identifier.parts) != 2:
-            raise ModelError(f'unexpected format of type name "{identifier}"')
+            fail(
+                f'unexpected format of type name "{identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                location,
+            )
 
         self.identifier = identifier
         self.location = location
@@ -114,9 +120,14 @@ class ModularInteger(Integer):
         error = RecordFluxError()
 
         if not isinstance(modulus_num, Number):
-            raise ModelError(f'modulus of "{self.name}" contains variable')
-
-        modulus_int = int(modulus_num)
+            fail(
+                f'modulus of "{self.name}" contains variable',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+        else:
+            modulus_int = int(modulus_num)
 
         if modulus_int > 2 ** 64:
             error.append(
@@ -126,7 +137,12 @@ class ModularInteger(Integer):
                 modulus.location,
             )
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
-            raise ModelError(f'modulus of "{self.name}" not power of two')
+            error.append(
+                f'modulus of "{self.name}" not power of two',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
 
         error.propagate()
         self.__modulus = modulus
@@ -161,30 +177,70 @@ class RangeInteger(Integer):
         super().__init__(identifier, size, location)
 
         first_num = first.simplified()
+        error = RecordFluxError()
 
         if not isinstance(first_num, Number):
-            raise ModelError(f'first of "{self.name}" contains variable')
+            error.append(
+                f'first of "{self.name}" contains variable',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
 
         last_num = last.simplified()
 
         if not isinstance(last_num, Number):
-            raise ModelError(f'last of "{self.name}" contains variable')
+            error.append(
+                f'last of "{self.name}" contains variable',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+            return
         if int(last_num) >= 2 ** 63:
-            raise ModelError(f'last of "{self.name}" exceeds limit (2**63 - 1)')
+            error.append(
+                f'last of "{self.name}" exceeds limit (2**63 - 1)',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
         if first_num < Number(0):
-            raise ModelError(f'first of "{self.name}" negative')
+            error.append(
+                f'first of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
+            )
         if first_num > last_num:
-            raise ModelError(f'range of "{self.name}" negative')
+            error.append(
+                f'range of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
+            )
 
         size_num = size.simplified()
 
         if not isinstance(size_num, Number):
-            raise ModelError(f'size of "{self.name}" contains variable')
-        if int(last_num).bit_length() > int(size_num):
-            raise ModelError(f'size for "{self.name}" too small')
-        if int(size_num) > 64:
-            raise ModelError(f'size of "{self.name}" exceeds limit (2**64)')
+            fail(
+                f'size of "{self.name}" contains variable',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
 
+        error.propagate()
+
+        assert isinstance(size_num, Number)
+        assert isinstance(last_num, Number)
+
+        if int(last_num).bit_length() > int(size_num):
+            error.append(
+                "size too small", Subsystem.MODEL, Severity.ERROR, self.location,
+            )
+        if int(size_num) > 64:
+            error.append(
+                f'size of "{self.name}" exceeds limit (2**64)',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+
+        error.propagate()
         self.__first = first
         self.__last = last
 
@@ -235,11 +291,26 @@ class Enumeration(Scalar):
         error = RecordFluxError()
 
         if not isinstance(size_num, Number):
-            raise ModelError(f'size of "{self.name}" contains variable')
+            fail(
+                f'size of "{self.name}" contains variable',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+
+        assert isinstance(size_num, Number)
+
         if max(map(int, literals.values())).bit_length() > int(size_num):
-            error.append("size too small", Subsystem.MODEL, Severity.ERROR, size.location)
+            error.append(
+                "size too small", Subsystem.MODEL, Severity.ERROR, self.location,
+            )
         if int(size_num) > 64:
-            raise ModelError(f'size of "{self.name}" exceeds limit (2**64)')
+            error.append(
+                f'size of "{self.name}" exceeds limit (2**64)',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
         for i1, v1 in enumerate(literals.values()):
             for i2, v2 in enumerate(literals.values()):
                 if i1 < i2 and v1 == v2:
@@ -252,9 +323,16 @@ class Enumeration(Scalar):
                     error.append("previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location)
         for l in literals:
             if " " in str(l) or "." in str(l):
-                raise ModelError(f'invalid literal name "{l}" in "{self.name}"')
+                error.append(
+                    f'invalid literal name "{l}"', Subsystem.MODEL, Severity.ERROR, self.location,
+                )
         if always_valid and len(literals) == 2 ** int(size_num):
-            raise ModelError(f'unnecessary always-valid aspect on "{self.name}"')
+            error.append(
+                f'unnecessary always-valid aspect on "{self.name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
 
         error.propagate()
         self.literals = {ID(k): v for k, v in literals.items()}
@@ -486,15 +564,34 @@ class AbstractMessage(Type):
     def __verify(self) -> None:
         type_fields = self.__types.keys() | {INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
+        error = RecordFluxError()
 
         for f in structure_fields - type_fields:
-            raise ModelError(f'missing type for field "{f.name}" of "{self.identifier}"')
+            error.append(
+                f'missing type for field "{f.name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
 
         for f in type_fields - structure_fields:
-            raise ModelError(f'superfluous field "{f.name}" in field types of "{self.identifier}"')
+            error.append(
+                f'unused field "{f.name}"', Subsystem.MODEL, Severity.ERROR, f.identifier.location,
+            )
 
         if len(self.outgoing(INITIAL)) != 1:
-            raise ModelError(f'ambiguous first field in "{self.identifier}"')
+            error.append(
+                "ambiguous first field", Subsystem.MODEL, Severity.ERROR, self.location,
+            )
+            error.extend(
+                [
+                    ("duplicate", Subsystem.MODEL, Severity.INFO, l.target.identifier.location)
+                    for l in self.outgoing(INITIAL)
+                    if l.target.identifier.location
+                ]
+            )
+
+        error.propagate()
 
         for f in structure_fields:
             for l in self.structure:
@@ -503,12 +600,32 @@ class AbstractMessage(Type):
             else:
                 raise ModelError(f'unreachable field "{f.name}" in "{self.identifier}"')
 
-        duplicate_links = set(l for l in self.structure if self.structure.count(l) > 1)
-        if duplicate_links:
-            raise ModelError(
-                f'duplicate links in "{self.identifier}": '
-                + ", ".join(f"{l.source.name} -> {l.target.name}" for l in duplicate_links)
-            )
+        duplicate_links = defaultdict(list)
+        for link in self.structure:
+            duplicate_links[(link.source, link.target, link.condition)].append(link)
+
+        for _, links in duplicate_links.items():
+            if len(links) > 1:
+                error.append(
+                    f'duplicate link from "{links[0].source.identifier}"'
+                    f' to "{links[0].target.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
+                )
+                error.extend(
+                    [
+                        (
+                            "duplicate link",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            l.target.identifier.location,
+                        )
+                        for l in links
+                    ]
+                )
+
+        error.propagate()
 
     def __verify_conditions(self) -> None:
         literals = qualified_literals(self.types, self.package)
@@ -648,7 +765,7 @@ class AbstractMessage(Type):
         for f in (INITIAL, *self.__fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
-                    if i1 != i2:
+                    if i1 < i2:
                         conflict = And(c1.condition, c2.condition)
                         proof = conflict.check(self.__type_constraints(conflict))
                         if proof.result == ProofResult.sat:
