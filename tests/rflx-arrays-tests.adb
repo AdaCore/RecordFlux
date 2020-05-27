@@ -30,24 +30,14 @@ package body RFLX.Arrays.Tests is
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
 
-   --  WORKAROUND: Componolit/Workarounds#7
-   pragma Warnings (Off, "unused assignment to ""Buffer""");
-   pragma Warnings (Off, "unused assignment to ""Context""");
-   pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
-   pragma Warnings (Off, "unused assignment to ""Element_Context""");
-   pragma Warnings (Off, "unused assignment to ""Modular_Vector_Context""");
-   pragma Warnings (Off, "unused assignment to ""Range_Vector_Context""");
-   pragma Warnings (Off, "unused assignment to ""Enumeration_Vector_Context""");
-   pragma Warnings (Off, "unused assignment to ""AV_Enumeration_Vector_Context""");
-
    procedure Test_Parsing_Arrays_Modular_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Context          : Arrays.Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;
+      Sequence_Context : Arrays.Modular_Vector.Context;
       Element          : Arrays.Modular_Integer;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -101,6 +91,9 @@ package body RFLX.Arrays.Tests is
          Arrays.Modular_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Arrays_Modular_Sequential;
 
    procedure Test_Parsing_Arrays_Modular_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -108,9 +101,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Context          : Arrays.Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;
+      Sequence_Context : Arrays.Modular_Vector.Context;
       Element          : Arrays.Modular_Integer;
       I                : Natural := 1;
    begin
@@ -166,6 +159,9 @@ package body RFLX.Arrays.Tests is
          Arrays.Modular_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Arrays_Modular_Loop;
 
    procedure Test_Parsing_Arrays_Range_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -173,9 +169,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Context          : Arrays.Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.Range_Vector.Context := Arrays.Range_Vector.Create;
+      Sequence_Context : Arrays.Range_Vector.Context;
       Element          : Arrays.Range_Integer;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -230,6 +226,9 @@ package body RFLX.Arrays.Tests is
          Arrays.Range_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Arrays_Range_Sequential;
 
    procedure Test_Parsing_Arrays_Range_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -237,9 +236,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Context          : Arrays.Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.Range_Vector.Context := Arrays.Range_Vector.Create;
+      Sequence_Context : Arrays.Range_Vector.Context;
       Element          : Arrays.Range_Integer;
       I                : Natural := 1;
    begin
@@ -295,6 +294,9 @@ package body RFLX.Arrays.Tests is
          Arrays.Range_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Arrays_Range_Loop;
 
    procedure Test_Parsing_Arrays_Enumeration_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -302,9 +304,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
-      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Context          : Arrays.Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.Enumeration_Vector.Context := Arrays.Enumeration_Vector.Create;
+      Sequence_Context : Arrays.Enumeration_Vector.Context;
       Element          : Arrays.Enumeration;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -359,6 +361,9 @@ package body RFLX.Arrays.Tests is
          Arrays.Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Arrays_Enumeration_Sequential;
 
    procedure Test_Parsing_Arrays_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -366,9 +371,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
-      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Context          : Arrays.Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.Enumeration_Vector.Context := Arrays.Enumeration_Vector.Create;
+      Sequence_Context : Arrays.Enumeration_Vector.Context;
       Element          : Arrays.Enumeration;
       I                : Natural := 1;
    begin
@@ -425,6 +430,9 @@ package body RFLX.Arrays.Tests is
          Arrays.Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Arrays_Enumeration_Loop;
 
    procedure Test_Parsing_Arrays_AV_Enumeration_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -432,9 +440,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
-      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Context          : Arrays.Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.AV_Enumeration_Vector.Context := Arrays.AV_Enumeration_Vector.Create;
+      Sequence_Context : Arrays.AV_Enumeration_Vector.Context;
       Element          : Arrays.AV_Enumeration;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -497,6 +505,9 @@ package body RFLX.Arrays.Tests is
          Arrays.AV_Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Arrays_AV_Enumeration_Sequential;
 
    procedure Test_Parsing_Arrays_AV_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -504,9 +515,9 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
-      Context          : Arrays.Message.Context := Arrays.Message.Create;
+      Context          : Arrays.Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.AV_Enumeration_Vector.Context := Arrays.AV_Enumeration_Vector.Create;
+      Sequence_Context : Arrays.AV_Enumeration_Vector.Context;
       Element          : Arrays.AV_Enumeration;
       I                : Natural := 1;
    begin
@@ -568,6 +579,9 @@ package body RFLX.Arrays.Tests is
          Arrays.AV_Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Arrays_AV_Enumeration_Loop;
 
    procedure Test_Parsing_Arrays_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -575,7 +589,7 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
-      Context : Arrays.Message.Context := Arrays.Message.Create;
+      Context : Arrays.Message.Context;
       Length  : Arrays.Length;
    begin
       Arrays.Message.Initialize (Context, Buffer);
@@ -588,7 +602,7 @@ package body RFLX.Arrays.Tests is
          Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;
+            Sequence_Context : Arrays.Modular_Vector.Context;
             Element          : Arrays.Modular_Integer;
             I                : Natural := 1;
          begin
@@ -622,6 +636,9 @@ package body RFLX.Arrays.Tests is
                Arrays.Message.Update_Modular_Vector (Context, Sequence_Context);
                Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
                        "Invalid Modular_Vector after context update");
+
+               Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image,
+                       "Invalid Sequence_Context.Last");
             else
                Assert (False, "Invalid Modular_Vector or Buffer");
             end if;
@@ -630,7 +647,7 @@ package body RFLX.Arrays.Tests is
          Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Arrays.Range_Vector.Context := Arrays.Range_Vector.Create;
+            Sequence_Context : Arrays.Range_Vector.Context;
             Element          : Arrays.Range_Integer;
             I                : Natural := 1;
          begin
@@ -664,6 +681,9 @@ package body RFLX.Arrays.Tests is
                Arrays.Message.Update_Range_Vector (Context, Sequence_Context);
                Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
                        "Invalid Range_Vector after context update");
+
+               Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image,
+                       "Invalid Sequence_Context.Last");
             else
                Assert (False, "Invalid Range_Vector or Buffer");
             end if;
@@ -672,7 +692,7 @@ package body RFLX.Arrays.Tests is
          Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Arrays.Enumeration_Vector.Context := Arrays.Enumeration_Vector.Create;
+            Sequence_Context : Arrays.Enumeration_Vector.Context;
             Element          : Arrays.Enumeration;
             I                : Natural := 1;
          begin
@@ -707,6 +727,9 @@ package body RFLX.Arrays.Tests is
                Arrays.Message.Update_Enumeration_Vector (Context, Sequence_Context);
                Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
                        "Invalid Enumeration_Vector after context update");
+
+               Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image,
+                       "Invalid Sequence_Context.Last");
             else
                Assert (False, "Invalid Enumeration_Vector or Buffer");
             end if;
@@ -715,7 +738,7 @@ package body RFLX.Arrays.Tests is
          Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
 
          declare
-            Sequence_Context : Arrays.AV_Enumeration_Vector.Context := Arrays.AV_Enumeration_Vector.Create;
+            Sequence_Context : Arrays.AV_Enumeration_Vector.Context;
             Element          : Arrays.AV_Enumeration;
             I                : Natural := 1;
          begin
@@ -756,6 +779,9 @@ package body RFLX.Arrays.Tests is
                Arrays.Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
                Assert (Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
                        "Invalid AV_Enumeration_Vector after context update");
+
+               Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image,
+                       "Invalid Sequence_Context.Last");
             else
                Assert (False, "Invalid AV_Enumeration_Vector or Buffer");
             end if;
@@ -768,6 +794,8 @@ package body RFLX.Arrays.Tests is
 
       Arrays.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
    end Test_Parsing_Arrays_Message;
 
    procedure Test_Parsing_Arrays_Messages_Message_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -775,10 +803,10 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 0, 2, 0, 0);
-      Context          : Arrays.Messages_Message.Context := Arrays.Messages_Message.Create;
+      Context          : Arrays.Messages_Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.Inner_Messages.Context := Arrays.Inner_Messages.Create;
-      Element_Context  : Arrays.Inner_Message.Context := Arrays.Inner_Message.Create;
+      Sequence_Context : Arrays.Inner_Messages.Context;
+      Element_Context  : Arrays.Inner_Message.Context;
    begin
       Arrays.Messages_Message.Initialize (Context, Buffer);
 
@@ -850,6 +878,10 @@ package body RFLX.Arrays.Tests is
          Arrays.Inner_Message.Take_Buffer (Element_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Sequence_Context.Last");
+      Assert (Element_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Element_Context.Last");
    end Test_Parsing_Arrays_Messages_Message_Sequential;
 
    procedure Test_Parsing_Arrays_Messages_Message_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -857,10 +889,10 @@ package body RFLX.Arrays.Tests is
    is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 0, 2, 0, 0);
-      Context          : Arrays.Messages_Message.Context := Arrays.Messages_Message.Create;
+      Context          : Arrays.Messages_Message.Context;
       Length           : Arrays.Length;
-      Sequence_Context : Arrays.Inner_Messages.Context := Arrays.Inner_Messages.Create;
-      Element_Context  : Arrays.Inner_Message.Context := Arrays.Inner_Message.Create;
+      Sequence_Context : Arrays.Inner_Messages.Context;
+      Element_Context  : Arrays.Inner_Message.Context;
       I                : Natural := 1;
    begin
       Arrays.Messages_Message.Initialize (Context, Buffer);
@@ -924,6 +956,10 @@ package body RFLX.Arrays.Tests is
          Arrays.Inner_Message.Take_Buffer (Element_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Sequence_Context.Last");
+      Assert (Element_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Element_Context.Last");
    end Test_Parsing_Arrays_Messages_Message_Loop;
 
    procedure Test_Generating_Arrays_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -934,11 +970,11 @@ package body RFLX.Arrays.Tests is
         new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
       Buffer                        : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-      Context                       : Arrays.Message.Context := Arrays.Message.Create;
-      Modular_Vector_Context        : Arrays.Modular_Vector.Context := Arrays.Modular_Vector.Create;
-      Range_Vector_Context          : Arrays.Range_Vector.Context := Arrays.Range_Vector.Create;
-      Enumeration_Vector_Context    : Arrays.Enumeration_Vector.Context := Arrays.Enumeration_Vector.Create;
-      AV_Enumeration_Vector_Context : Arrays.AV_Enumeration_Vector.Context := Arrays.AV_Enumeration_Vector.Create;
+      Context                       : Arrays.Message.Context;
+      Modular_Vector_Context        : Arrays.Modular_Vector.Context;
+      Range_Vector_Context          : Arrays.Range_Vector.Context;
+      Enumeration_Vector_Context    : Arrays.Enumeration_Vector.Context;
+      AV_Enumeration_Vector_Context : Arrays.AV_Enumeration_Vector.Context;
    begin
       Arrays.Message.Initialize (Context, Buffer);
       Arrays.Message.Set_Length (Context, 4);
@@ -999,6 +1035,15 @@ package body RFLX.Arrays.Tests is
 
       Free_Bytes_Ptr (Expected);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Modular_Vector_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image,
+              "Invalid Modular_Vector_Context.Last");
+      Assert (Range_Vector_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image,
+              "Invalid Range_Vector_Context.Last");
+      Assert (Enumeration_Vector_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image,
+              "Invalid Enumeration_Vector_Context.Last");
+      Assert (AV_Enumeration_Vector_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image,
+              "Invalid AV_Enumeration_Vector_Context.Last");
    end Test_Generating_Arrays_Message;
 
    procedure Test_Generating_Arrays_Messages_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -1008,9 +1053,9 @@ package body RFLX.Arrays.Tests is
       procedure Set_Payload is new Arrays.Inner_Message.Set_Payload (Write_Data);
       Expected         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 3, 2, 4, 6);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
-      Context          : Arrays.Messages_Message.Context := Arrays.Messages_Message.Create;
-      Sequence_Context : Arrays.Inner_Messages.Context := Arrays.Inner_Messages.Create;
-      Element_Context  : Arrays.Inner_Message.Context := Arrays.Inner_Message.Create;
+      Context          : Arrays.Messages_Message.Context;
+      Sequence_Context : Arrays.Inner_Messages.Context;
+      Element_Context  : Arrays.Inner_Message.Context;
    begin
       Arrays.Messages_Message.Initialize (Context, Buffer);
       Arrays.Messages_Message.Set_Length (Context, 5);
@@ -1057,6 +1102,10 @@ package body RFLX.Arrays.Tests is
          Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Context.Last");
+      Assert (Element_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Element_Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Sequence_Context.Last");
    end Test_Generating_Arrays_Messages_Message;
 
    overriding

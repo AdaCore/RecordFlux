@@ -28,19 +28,13 @@ package body RFLX.In_IPv4.Tests is
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
 
-   --  WORKAROUND: Componolit/Workarounds#7
-   pragma Warnings (Off, "unused assignment to ""Buffer""");
-   pragma Warnings (Off, "unused assignment to ""Ethernet_Frame_Context""");
-   pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
-   pragma Warnings (Off, "unused assignment to ""UDP_Datagram_Context""");
-
    procedure Test_Parsing_UDP_In_IPv4 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer               : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
-      IPv4_Packet_Context  : IPv4.Packet.Context := IPv4.Packet.Create;
-      UDP_Datagram_Context : UDP.Datagram.Context := UDP.Datagram.Create;
+      IPv4_Packet_Context  : IPv4.Packet.Context;
+      UDP_Datagram_Context : UDP.Datagram.Context;
       Valid                : Boolean;
    begin
       IPv4.Packet.Initialize (IPv4_Packet_Context, Buffer);
@@ -64,6 +58,11 @@ package body RFLX.In_IPv4.Tests is
          UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (IPv4_Packet_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (352)'Image,
+              "Invalid IPv4_Packet_Context.Last");
+      Assert (UDP_Datagram_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (352)'Image,
+              "Invalid UDP_Datagram_Context.Last");
    end Test_Parsing_UDP_In_IPv4;
 
    procedure Test_Parsing_UDP_In_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -71,9 +70,9 @@ package body RFLX.In_IPv4.Tests is
    is
       pragma Unreferenced (T);
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
-      IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
-      UDP_Datagram_Context   : UDP.Datagram.Context := UDP.Datagram.Create;
+      Ethernet_Frame_Context : Ethernet.Frame.Context;
+      IPv4_Packet_Context    : IPv4.Packet.Context;
+      UDP_Datagram_Context   : UDP.Datagram.Context;
       Valid                  : Boolean;
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
@@ -109,6 +108,13 @@ package body RFLX.In_IPv4.Tests is
          UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid Ethernet_Frame_Context.Last");
+      Assert (IPv4_Packet_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid IPv4_Packet_Context.Last");
+      Assert (UDP_Datagram_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid UDP_Datagram_Context.Last");
    end Test_Parsing_UDP_In_IPv4_In_Ethernet;
 
    procedure Test_Generating_UDP_In_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -120,9 +126,9 @@ package body RFLX.In_IPv4.Tests is
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
                                       .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
-      Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
-      IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
-      UDP_Datagram_Context   : UDP.Datagram.Context := UDP.Datagram.Create;
+      Ethernet_Frame_Context : Ethernet.Frame.Context;
+      IPv4_Packet_Context    : IPv4.Packet.Context;
+      UDP_Datagram_Context   : UDP.Datagram.Context;
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
       Ethernet.Frame.Set_Destination (Ethernet_Frame_Context, 16#FFFFFFFFFFFF#);
@@ -186,6 +192,11 @@ package body RFLX.In_IPv4.Tests is
       end if;
       Free_Bytes_Ptr (Expected);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid Ethernet_Frame_Context.Last");
+      Assert (IPv4_Packet_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid IPv4_Packet_Context.Last");
    end Test_Generating_UDP_In_IPv4_In_Ethernet;
 
    overriding

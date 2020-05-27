@@ -15,16 +15,12 @@ package body RFLX.In_TLV.Tests is
       return AUnit.Format ("In_TLV");
    end Name;
 
-   --  WORKAROUND: Componolit/Workarounds#7
-   pragma Warnings (Off, "unused assignment to ""Buffer""");
-   pragma Warnings (Off, "unused assignment to ""TLV_Message_Context""");
-
    procedure Test_Null_In_TLV (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer              : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
-      TLV_Message_Context : TLV.Message.Context := TLV.Message.Create;
+      TLV_Message_Context : TLV.Message.Context;
       Valid               : Boolean;
    begin
       TLV.Message.Initialize (TLV_Message_Context, Buffer);
@@ -38,6 +34,8 @@ package body RFLX.In_TLV.Tests is
 
       TLV.Message.Take_Buffer (TLV_Message_Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (TLV_Message_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Null_In_TLV;
 
    overriding

@@ -115,8 +115,6 @@ All types and subprograms related to `Message` can be found in the package `RFLX
 
 - `type Context`
     - Stores buffer and internal state
-- `function Create return Context`
-    - Return default initialized context
 - `procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr)`
     - Initialize context with buffer
 - `procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index_Type)`
@@ -169,7 +167,7 @@ with RFLX.TLV.Message;
 
 procedure Main is
    Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
-   Context : RFLX.TLV.Message.Context := RFLX.TLV.Message.Create;
+   Context : RFLX.TLV.Message.Context;
 begin
    RFLX.TLV.Message.Initialize (Context, Buffer);
    RFLX.TLV.Message.Verify_Message (Context);
@@ -203,7 +201,7 @@ with RFLX.TLV.Message;
 
 procedure Main is
    Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
-   Context : RFLX.TLV.Message.Context := RFLX.TLV.Message.Create;
+   Context : RFLX.TLV.Message.Context;
    Data : RFLX.RFLX_Builtin_Types.Bytes (RFLX.RFLX_Builtin_Types.Index'First .. RFLX.RFLX_Builtin_Types.Index'First + 2**14);
 
    procedure Write_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes) is

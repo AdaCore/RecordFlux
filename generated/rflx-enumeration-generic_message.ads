@@ -23,7 +23,10 @@ is
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
      Default_Initial_Condition =>
-       False;
+       Types.Byte_Index (First) >= Buffer_First
+       and Types.Byte_Index (Last) <= Buffer_Last
+       and First <= Last
+       and Last <= Types.Bit_Index'Last / 2;
 
    type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
@@ -34,8 +37,6 @@ is
                Priority_Value : RFLX.Enumeration.Priority_Base;
          end case;
       end record;
-
-   function Create return Context;
 
    procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) with
      Pre =>
@@ -49,7 +50,9 @@ is
        and Ctx.Buffer_First = Buffer'First'Old
        and Ctx.Buffer_Last = Buffer'Last'Old
        and Ctx.First = Types.First_Bit_Index (Ctx.Buffer_First)
-       and Initialized (Ctx);
+       and Initialized (Ctx),
+     Depends =>
+       (Ctx => Buffer, Buffer => null);
 
    procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index) with
      Pre =>
@@ -67,7 +70,9 @@ is
        and Ctx.Buffer_Last = Buffer'Last'Old
        and Ctx.First = First
        and Ctx.Last = Last
-       and Initialized (Ctx);
+       and Initialized (Ctx),
+     Depends =>
+       (Ctx => (Buffer, First, Last), Buffer => null);
 
    function Initialized (Ctx : Context) return Boolean with
      Ghost;
@@ -84,7 +89,9 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old;
+       and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old,
+     Depends =>
+       (Ctx => Ctx, Buffer => Ctx);
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
@@ -249,10 +256,10 @@ private
        then
           Buffer'First = Buffer_First
           and Buffer'Last = Buffer_Last)
-      and then Types.Byte_Index (First) >= Buffer_First
-      and then Types.Byte_Index (Last) <= Buffer_Last
-      and then First <= Last
-      and then Last <= Types.Bit_Index'Last / 2
+      and then (Types.Byte_Index (First) >= Buffer_First
+                and Types.Byte_Index (Last) <= Buffer_Last
+                and First <= Last
+                and Last <= Types.Bit_Index'Last / 2)
       and then (for all F in Field'First .. Field'Last =>
                    (if
                        Structural_Valid (Cursors (F))
