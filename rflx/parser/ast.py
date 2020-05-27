@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import List
 
 from rflx.common import flat_name, generic_repr
