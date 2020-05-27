@@ -397,13 +397,15 @@ def test_message_unreachable_field() -> None:
     structure = [
         Link(INITIAL, Field("X")),
         Link(Field("X"), Field("Z")),
-        Link(Field("Y"), Field("Z")),
+        Link(Field(ID("Y", Location((20, 3)))), Field("Z")),
         Link(Field("Z"), FINAL),
     ]
 
     types = {Field("X"): BOOLEAN, Field("Y"): BOOLEAN, Field("Z"): BOOLEAN}
 
-    with pytest.raises(ModelError, match='^unreachable field "Y" in "P.M"$'):
+    with pytest.raises(
+        RecordFluxError, match='^<stdin>:20:3: model: error: unreachable field "Y" in "P.M"$'
+    ):
         Message("P.M", structure, types)
 
 
@@ -412,16 +414,24 @@ def test_message_cycle() -> None:
 
     structure = [
         Link(INITIAL, Field("X")),
-        Link(Field("X"), Field("Y")),
-        Link(Field("Y"), Field("Z")),
-        Link(Field("Z"), Field("X")),
+        Link(Field(ID("X", Location((3, 5)))), Field("Y")),
+        Link(Field(ID("Y", Location((3, 5)))), Field("Z")),
+        Link(Field(ID("Z", Location((3, 5)))), Field("X")),
         Link(Field("X"), FINAL),
     ]
 
     types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
 
-    with pytest.raises(ModelError, match='^structure of "P.M" contains cycle$'):
-        Message("P.M", structure, types)
+    with pytest.raises(
+        RecordFluxError,
+        match='^<stdin>:10:5: model: error: structure of "P.M" contains cycle'
+        # We cannot detect cycles, c.f. Componolit/RecordFlux#256
+        # '\n'
+        # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
+        # '<stdin>:4:5: model: info: field "Y" links to "Z"\n'
+        # '<stdin>:5:5: model: info: field "Z" links to "X"\n',
+    ):
+        Message("P.M", structure, types, Location((10, 5)))
 
 
 def test_message_fields() -> None:
@@ -1023,3 +1033,17 @@ def test_merge_message_error_name_conflict() -> None:
 def test_refinement_invalid_package() -> None:
     with pytest.raises(ModelError, match=r'^unexpected format of package name "A.B"$'):
         Refinement("A.B", ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
+
+
+def test_field_locations() -> None:
+
+    f2 = Field(ID("F2", Location((2, 2))))
+    f3 = Field(ID("F3", Location((3, 2))))
+
+    message = UnprovenMessage(
+        "P.M",
+        [Link(INITIAL, f2), Link(f2, f3), Link(f3, FINAL)],
+        {Field("F2"): MODULAR_INTEGER, Field("F3"): MODULAR_INTEGER},
+        Location((17, 9)),
+    )
+    assert message.fields == (f2, f3)
