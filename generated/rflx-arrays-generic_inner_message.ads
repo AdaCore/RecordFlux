@@ -19,7 +19,9 @@ is
      Default_Initial_Condition =>
        False;
 
-   type Field_Cursors is array (Virtual_Field) of Field_Cursor;
+   type Field_Cursors is private with
+     Default_Initial_Condition =>
+       False;
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
      Default_Initial_Condition =>
@@ -291,6 +293,8 @@ private
            or State = S_Structural_Valid
         then
            Valid_Value (Field_Cursor.Value));
+
+   type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
    function Structural_Valid (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid
