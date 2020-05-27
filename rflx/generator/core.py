@@ -595,7 +595,6 @@ class Generator:
                             AndThen(
                                 Not(Constrained("Ctx")),
                                 NotEqual(Variable("Buffer"), NULL),
-                                # WORKAROUND: Componolit/Workarounds#10
                                 Greater(Length("Buffer"), Number(0)),
                                 LessEqual(Last("Buffer"), Div(Last(const.TYPES_INDEX), Number(2)),),
                             )
@@ -659,7 +658,6 @@ class Generator:
                             AndThen(
                                 Not(Constrained("Ctx")),
                                 NotEqual(Variable("Buffer"), NULL),
-                                # WORKAROUND: Componolit/Workarounds#10
                                 Greater(Length("Buffer"), Number(0)),
                                 GreaterEqual(
                                     Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
