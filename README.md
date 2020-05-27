@@ -234,13 +234,7 @@ end Main;
 - [PyParsing](https://github.com/pyparsing/pyparsing/)
 - [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
 - [Z3](https://github.com/Z3Prover/z3)
-- [GNAT Community 2020](https://www.adacore.com/download) / [GNAT FSF 8.3](http://www.getadanow.com/)
-
-## Known Issues
-
-### GNAT FSF 8.3
-
-- Calling `Valid_Element` in a condition of a while loop leads to a bug box. To circumvent this issue a loop with an exit condition can be used instead. Using the negated condition of the while loop as an exit condition leads to an equivalent loop. For the verification of the loop the original condition must be added as a loop invariant.
+- [GNAT Community 2020](https://www.adacore.com/download)
 
 ## Licence
 
