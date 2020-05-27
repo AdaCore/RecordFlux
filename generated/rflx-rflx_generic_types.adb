@@ -1,7 +1,14 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+
 with RFLX.RFLX_Lemmas;
 
+pragma Warnings (Off, """Ada.Numerics.Big_Numbers.Big_Integers"" is an Ada 202x unit");
+
+with Ada.Numerics.Big_Numbers.Big_Integers; use Ada.Numerics.Big_Numbers.Big_Integers;
+
 package body RFLX.RFLX_Generic_Types is
+
+   package Conversions is new Signed_Conversions (Long_Integer);
 
    function Extract (Data : Bytes;
                      Ofst : Offset) return Value
@@ -66,8 +73,13 @@ package body RFLX.RFLX_Generic_Types is
             D_Current : constant Byte := D (I);
             D_Next    : constant Byte := D (I + 1);
          begin
-            RFLX_Lemmas.Mult_Limit (Byte'Pos (D_Next) mod Pow2_LSE_Offset, LSE_Offset, 2**MSE_Offset, MSE_Offset);
-            RFLX_Lemmas.Mult_Ge_0 (Byte'Pos (D_Next) mod Pow2_LSE_Offset, 2**MSE_Offset);
+            pragma Warnings (Off, "no Global contract available for ""*""");
+            RFLX_Lemmas.Mult_Limit (Conversions.To_Big_Integer (Byte'Pos (D_Next) mod Pow2_LSE_Offset),
+                                    LSE_Offset,
+                                    Conversions.To_Big_Integer (2)**MSE_Offset,
+                                    MSE_Offset);
+            RFLX_Lemmas.Mult_Ge_0 (Conversions.To_Big_Integer (Byte'Pos (D_Next) mod Pow2_LSE_Offset), To_Big_Integer (2)**MSE_Offset);
+            pragma Warnings (On, "no Global contract available for ""*""");
             declare
                Current : constant Long_Integer := Byte'Pos (D_Current) / Pow2_LSE_Offset;
                Next    : constant Long_Integer := Byte'Pos (D_Next) mod Pow2_LSE_Offset * 2**MSE_Offset;
@@ -162,16 +174,19 @@ package body RFLX.RFLX_Generic_Types is
             UR_Offset     : constant Natural := LSE_Offset + Value'Size;
             UR_Value      : constant Long_Integer := Byte'Pos (Read (Most_Significant_Index)) / 2**UR_Offset;
          begin
-            RFLX_Lemmas.Mult_Ge_0 (Element_Value, Pow2_LSE_Offset);
-            RFLX_Lemmas.Mult_Limit (Element_Value, LSE_Bits, Pow2_LSE_Offset, LSE_Offset);
+            pragma Warnings (Off, "no Global contract available for ""*""");
+            RFLX_Lemmas.Mult_Ge_0 (Conversions.To_Big_Integer (Element_Value), Conversions.To_Big_Integer (Pow2_LSE_Offset));
+            RFLX_Lemmas.Mult_Limit (Conversions.To_Big_Integer (Element_Value), LSE_Bits, Conversions.To_Big_Integer (Pow2_LSE_Offset), LSE_Offset);
             pragma Assert (Element_Value * Pow2_LSE_Offset <= 2**(LSE_Bits + LSE_Offset));
             pragma Annotate (GNATprove, False_Positive, "assertion",
                              "direct re-expression of lemma postcondition");
             pragma Annotate (GNATprove, False_Positive, "overflow check",
                              "consequence of lemma postcondition");
-            RFLX_Lemmas.Left_Shift_Limit (Element_Value, Value'Size, LSE_Offset);
-            RFLX_Lemmas.Right_Shift_Limit (Byte'Pos (Read (Most_Significant_Index)), ES - UR_Offset, UR_Offset);
-            RFLX_Lemmas.Left_Shift_Limit (UR_Value, ES - UR_Offset, UR_Offset);
+            RFLX_Lemmas.Left_Shift_Limit (Conversions.To_Big_Integer (Element_Value), Value'Size, LSE_Offset);
+            RFLX_Lemmas.Right_Shift_Limit (Conversions.To_Big_Integer (Byte'Pos (Read (Most_Significant_Index))), ES
+                                           - UR_Offset, UR_Offset);
+            RFLX_Lemmas.Left_Shift_Limit (Conversions.To_Big_Integer (UR_Value), ES - UR_Offset, UR_Offset);
+            pragma Warnings (On, "no Global contract available for ""*""");
             pragma Assert (LR_Value in 0 .. 2**LSE_Offset - 1);
             pragma Assert (Element_Value * Pow2_LSE_Offset in 0 .. 2**UR_Offset);
             pragma Assert (UR_Value in 0 .. 2**(ES - UR_Offset) - 1);
@@ -186,14 +201,16 @@ package body RFLX.RFLX_Generic_Types is
             LSE_Value   : constant Long_Integer := (Value'Pos (Val) mod Pow2_LSE_Bits);
             LSE_Current : constant Long_Integer := Byte'Pos (Read (Least_Significant_Index)) mod 2**LSE_Offset;
          begin
-            RFLX_Lemmas.Mult_Ge_0 (LSE_Value, Pow2_LSE_Offset);
-            RFLX_Lemmas.Mult_Limit (LSE_Value, LSE_Bits, Pow2_LSE_Offset, LSE_Offset);
+            pragma Warnings (Off, "no Global contract available for ""*""");
+            RFLX_Lemmas.Mult_Ge_0 (Conversions.To_Big_Integer (LSE_Value), Conversions.To_Big_Integer (Pow2_LSE_Offset));
+            RFLX_Lemmas.Mult_Limit (Conversions.To_Big_Integer (LSE_Value), LSE_Bits, Conversions.To_Big_Integer (Pow2_LSE_Offset), LSE_Offset);
             pragma Assert (LSE_Value * Pow2_LSE_Offset <= 2**(LSE_Bits + LSE_Offset));
             pragma Annotate (GNATprove, False_Positive, "assertion",
                              "direct re-expression of lemma postcondition");
             pragma Annotate (GNATprove, False_Positive, "overflow check",
                              "consequence of lemma postcondition");
-            RFLX_Lemmas.Left_Shift_Limit (LSE_Value, LSE_Bits, LSE_Offset);
+            RFLX_Lemmas.Left_Shift_Limit (Conversions.To_Big_Integer (LSE_Value), LSE_Bits, LSE_Offset);
+            pragma Warnings (On, "no Global contract available for ""*""");
 
             Write (Least_Significant_Index, Byte'Val (LSE_Current + LSE_Value * Pow2_LSE_Offset));
             V := Value'Pos (Val) / 2**LSE_Bits;
@@ -212,9 +229,11 @@ package body RFLX.RFLX_Generic_Types is
             MSE_Value   : constant Long_Integer := V mod 2**MSE_Bits;
             pragma Assert (MSE_Value < 2**MSE_Bits);
          begin
-            RFLX_Lemmas.Right_Shift_Limit (Byte'Pos (Read (Most_Significant_Index)), MSE_Offset, MSE_Bits);
+            pragma Warnings (Off, "no Global contract available for ""*""");
+            RFLX_Lemmas.Right_Shift_Limit (Conversions.To_Big_Integer (Byte'Pos (Read (Most_Significant_Index))), MSE_Offset, MSE_Bits);
             pragma Assert (2**MSE_Offset <= Natural'Last);
-            RFLX_Lemmas.Left_Shift_Limit (MSE_Current, MSE_Offset, MSE_Bits);
+            RFLX_Lemmas.Left_Shift_Limit (Conversions.To_Big_Integer (MSE_Current), MSE_Offset, MSE_Bits);
+            pragma Warnings (On, "no Global contract available for ""*""");
             pragma Assert (MSE_Current >= 0);
             pragma Assert (2**MSE_Bits >= 0);
             pragma Assert (MSE_Current * 2**MSE_Bits in 0 .. 2**ES - 2**MSE_Bits);

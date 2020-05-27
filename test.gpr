@@ -58,12 +58,6 @@ project Test is
       end case;
    end Builder;
 
-   package Compiler is
-      --  WORKAROUND: Componolit/Workarounds#9
-      for Switches ("rflx-rflx_lemmas.adb") use ("-gnato13");
-      for Switches ("rflx-rflx_lemmas.ads") use ("-gnato13");
-   end Compiler;
-
    package Binder is
       for Default_Switches ("Ada") use ("-Es");
    end Binder;
