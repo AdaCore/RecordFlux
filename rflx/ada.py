@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import itertools
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -110,6 +111,29 @@ class ContractCases(Aspect):
     def definition(self) -> str:
         cases = indent_next(",\n".join(f"{p} =>\n{indent(str(q), 3)}" for p, q in self.cases), 1)
         return f"({cases})"
+
+
+class Depends(Aspect):
+    def __init__(self, dependencies: Mapping[StrID, Sequence[StrID]]) -> None:
+        self.dependencies = dependencies
+
+    @property
+    def mark(self) -> str:
+        return "Depends"
+
+    @property
+    def definition(self) -> str:
+        def input_values(values: Sequence[StrID]) -> str:
+            if len(values) == 0:
+                return "null"
+            if len(values) == 1:
+                return str(values[0])
+            return "(" + ", ".join(str(p) for p in values) + ")"
+
+        dependencies = indent_next(
+            ", ".join(f"{o} => {input_values(i)}" for o, i in self.dependencies.items()), 1
+        )
+        return f"({dependencies})"
 
 
 class DynamicPredicate(Aspect):

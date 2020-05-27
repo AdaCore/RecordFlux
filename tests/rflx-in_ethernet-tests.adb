@@ -26,19 +26,13 @@ package body RFLX.In_Ethernet.Tests is
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
 
-   --  WORKAROUND: Componolit/Workarounds#7
-   pragma Warnings (Off, "unused assignment to ""Buffer""");
-   pragma Warnings (Off, "unused assignment to ""Context""");
-   pragma Warnings (Off, "unused assignment to ""Ethernet_Frame_Context""");
-   pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
-
    procedure Test_Parsing_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
-      Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
-      IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
+      Ethernet_Frame_Context : Ethernet.Frame.Context;
+      IPv4_Packet_Context    : IPv4.Packet.Context;
       Valid                  : Boolean;
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
@@ -62,6 +56,11 @@ package body RFLX.In_Ethernet.Tests is
          IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid Ethernet_Frame_Context.Last");
+      Assert (IPv4_Packet_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid IPv4_Packet_Context.Last");
    end Test_Parsing_IPv4_In_Ethernet;
 
    procedure Test_Generating_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -73,8 +72,8 @@ package body RFLX.In_Ethernet.Tests is
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
                                       .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
-      Ethernet_Frame_Context : Ethernet.Frame.Context := Ethernet.Frame.Create;
-      IPv4_Packet_Context    : IPv4.Packet.Context := IPv4.Packet.Create;
+      Ethernet_Frame_Context : Ethernet.Frame.Context;
+      IPv4_Packet_Context    : IPv4.Packet.Context;
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
       Ethernet.Frame.Set_Destination (Ethernet_Frame_Context, 16#FFFFFFFFFFFF#);
@@ -125,6 +124,9 @@ package body RFLX.In_Ethernet.Tests is
       end if;
       Free_Bytes_Ptr (Expected);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid Ethernet_Frame_Context.Last");
    end Test_Generating_IPv4_In_Ethernet;
 
    overriding

@@ -19,6 +19,7 @@ from rflx.ada import (
     ContractCases,
     Declaration,
     DefaultInitialCondition,
+    Depends,
     Discriminant,
     DynamicPredicate,
     EnumerationType,
@@ -315,7 +316,6 @@ class Generator:
         unit += self.__create_valid_context_function(message, composite_fields)
         unit += self.__create_context_type()
         unit += self.__create_field_dependent_type(scalar_fields, composite_fields)
-        unit += self.__create_create_function(message)
         unit += self.__create_initialize_procedure()
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
@@ -504,7 +504,13 @@ class Generator:
         ]
 
         return UnitPart(
-            [PrivateType("Context", discriminants, [DefaultInitialCondition(FALSE)])],
+            [
+                PrivateType(
+                    "Context",
+                    discriminants,
+                    [DefaultInitialCondition(common.public_context_predicate())],
+                )
+            ],
             [],
             [
                 RecordType(
@@ -574,42 +580,6 @@ class Generator:
         )
 
     @staticmethod
-    def __create_create_function(message: Message) -> UnitPart:
-        specification = FunctionSpecification("Create", "Context")
-
-        return UnitPart(
-            [SubprogramDeclaration(specification)],
-            [
-                ExpressionFunctionDeclaration(
-                    specification,
-                    Aggregate(
-                        First(const.TYPES_INDEX),
-                        First(const.TYPES_INDEX),
-                        First(const.TYPES_BIT_INDEX),
-                        First(const.TYPES_BIT_INDEX),
-                        NULL,
-                        NamedAggregate(
-                            (
-                                message.fields[0].affixed_name,
-                                NamedAggregate(
-                                    ("State", Variable("S_Invalid")),
-                                    ("Predecessor", Variable(INITIAL.affixed_name)),
-                                ),
-                            ),
-                            (
-                                "others",
-                                NamedAggregate(
-                                    ("State", Variable("S_Invalid")),
-                                    ("Predecessor", Variable(FINAL.affixed_name)),
-                                ),
-                            ),
-                        ),
-                    ),
-                )
-            ],
-        )
-
-    @staticmethod
     def __create_initialize_procedure() -> UnitPart:
         specification = ProcedureSpecification(
             "Initialize",
@@ -646,6 +616,7 @@ class Generator:
                                 Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
+                        Depends({"Ctx": ["Buffer"], "Buffer": []}),
                     ],
                 )
             ],
@@ -715,6 +686,7 @@ class Generator:
                                 Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
+                        Depends({"Ctx": ["Buffer", "First", "Last"], "Buffer": []}),
                     ],
                 )
             ],
@@ -824,6 +796,7 @@ class Generator:
                                 ],
                             )
                         ),
+                        Depends({"Ctx": ["Ctx"], "Buffer": ["Ctx"]}),
                     ],
                 )
             ],
@@ -1901,6 +1874,7 @@ class Generator:
                                 ],
                             )
                         ),
+                        Depends({"Ctx": ["Ctx", "Seq_Ctx"], "Seq_Ctx": ["Seq_Ctx"]}),
                     ],
                 )
                 for f, t in sequence_fields.items()

@@ -23,16 +23,12 @@ package body RFLX.Expression.Tests is
 
    procedure Get_Payload_Content is new Expression.Message.Get_Payload (Store_Payload);
 
-   --  WORKAROUND: Componolit/Workarounds#7
-   pragma Warnings (Off, "unused assignment to ""Buffer""");
-   pragma Warnings (Off, "unused assignment to ""Context""");
-
    procedure Test_Expression_Valid (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 2);
-      Context : Expression.Message.Context := Expression.Message.Create;
+      Context : Expression.Message.Context;
    begin
       Expression.Message.Initialize (Context, Buffer);
 
@@ -48,6 +44,8 @@ package body RFLX.Expression.Tests is
 
       Expression.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Expression_Valid;
 
    procedure Test_Expression_Invalid (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -55,7 +53,7 @@ package body RFLX.Expression.Tests is
    is
       pragma Unreferenced (T);
       Buffer : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 1);
-      Context : Expression.Message.Context := Expression.Message.Create;
+      Context : Expression.Message.Context;
    begin
       Expression.Message.Initialize (Context, Buffer);
 
@@ -67,6 +65,8 @@ package body RFLX.Expression.Tests is
 
       Expression.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Expression_Invalid;
 
    overriding

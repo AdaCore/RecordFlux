@@ -1,5 +1,3 @@
-pragma Warnings (Off, "h");
-
 with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
@@ -34,16 +32,12 @@ package body RFLX.TLV.Tests is
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
 
-   --  WORKAROUND: Componolit/Workarounds#7
-   pragma Warnings (Off, "unused assignment to ""Buffer""");
-   pragma Warnings (Off, "unused assignment to ""Context""");
-
    procedure Test_Parsing_TLV_Data (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
-      Context : TLV.Message.Context := TLV.Message.Create;
+      Context : TLV.Message.Context;
       Tag     : TLV.Tag;
       Length  : TLV.Length;
    begin
@@ -70,6 +64,8 @@ package body RFLX.TLV.Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Context.Last");
    end Test_Parsing_TLV_Data;
 
    procedure Test_Parsing_TLV_Data_Zero (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -77,7 +73,7 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
-      Context : TLV.Message.Context := TLV.Message.Create;
+      Context : TLV.Message.Context;
       Tag     : TLV.Tag;
       Length  : TLV.Length;
    begin
@@ -99,6 +95,8 @@ package body RFLX.TLV.Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Parsing_TLV_Data_Zero;
 
    procedure Test_Parsing_TLV_Error (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -106,7 +104,7 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1 => 192);
-      Context : TLV.Message.Context := TLV.Message.Create;
+      Context : TLV.Message.Context;
       Tag     : TLV.Tag;
    begin
       TLV.Message.Initialize (Context, Buffer);
@@ -121,6 +119,8 @@ package body RFLX.TLV.Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (8)'Image, "Invalid Context.Last");
    end Test_Parsing_TLV_Error;
 
    procedure Test_Parsing_Invalid_TLV_Invalid_Tag (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -128,7 +128,7 @@ package body RFLX.TLV.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
-      Context : TLV.Message.Context := TLV.Message.Create;
+      Context : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Verify_Message (Context);
@@ -137,6 +137,8 @@ package body RFLX.TLV.Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Parsing_Invalid_TLV_Invalid_Tag;
 
    procedure Test_Generating_TLV_Data (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -146,7 +148,7 @@ package body RFLX.TLV.Tests is
       procedure Set_Value is new TLV.Message.Set_Value (Write_Data);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
-      Context  : TLV.Message.Context := TLV.Message.Create;
+      Context  : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Set_Tag (Context, TLV.Msg_Data);
@@ -176,7 +178,7 @@ package body RFLX.TLV.Tests is
       procedure Set_Value is new TLV.Message.Set_Value (Write_Data);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
-      Context  : TLV.Message.Context := TLV.Message.Create;
+      Context  : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Set_Tag (Context, TLV.Msg_Data);
@@ -206,7 +208,7 @@ package body RFLX.TLV.Tests is
       Expected : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 192);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 0);
-      Context  : TLV.Message.Context := TLV.Message.Create;
+      Context  : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Set_Tag (Context, TLV.Msg_Error);

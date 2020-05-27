@@ -15,16 +15,12 @@ package body RFLX.Enumeration.Tests is
       return AUnit.Format ("Enumeration");
    end Name;
 
-   --  WORKAROUND: Componolit/Workarounds#7
-   pragma Warnings (Off, "unused assignment to ""Buffer""");
-   pragma Warnings (Off, "unused assignment to ""Context""");
-
    procedure Test_Parsing_Enumeration_Known (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(32, 0);
-      Context : Enumeration.Message.Context := Enumeration.Message.Create;
+      Context : Enumeration.Message.Context;
       Prio    : Enumeration.Priority;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
@@ -45,6 +41,8 @@ package body RFLX.Enumeration.Tests is
 
       Enumeration.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Parsing_Enumeration_Known;
 
    procedure Test_Parsing_Enumeration_Unknown (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -52,7 +50,7 @@ package body RFLX.Enumeration.Tests is
    is
       pragma Unreferenced (T);
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(160, 0);
-      Context : Enumeration.Message.Context := Enumeration.Message.Create;
+      Context : Enumeration.Message.Context;
       Prio    : Enumeration.Priority;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
@@ -73,6 +71,8 @@ package body RFLX.Enumeration.Tests is
 
       Enumeration.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Parsing_Enumeration_Unknown;
 
    procedure Test_Generating_Enumeration (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -81,7 +81,7 @@ package body RFLX.Enumeration.Tests is
       pragma Unreferenced (T);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
-      Context  : Enumeration.Message.Context := Enumeration.Message.Create;
+      Context  : Enumeration.Message.Context;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
 

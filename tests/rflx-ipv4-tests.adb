@@ -1,5 +1,4 @@
 pragma Style_Checks ("L18");
-pragma Warnings (Off, "h");
 
 with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
@@ -46,16 +45,12 @@ package body RFLX.IPv4.Tests is
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
 
-   --  WORKAROUND: Componolit/Workarounds#7
-   pragma Warnings (Off, "unused assignment to ""Buffer""");
-   pragma Warnings (Off, "unused assignment to ""Context""");
-
    procedure Test_Parsing_IPv4 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer          : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
-      Context         : IPv4.Packet.Context := IPv4.Packet.Create;
+      Context         : IPv4.Packet.Context;
       Valid           : Boolean;
       Version         : IPv4.Version;
       IHL             : IPv4.IHL;
@@ -187,6 +182,8 @@ package body RFLX.IPv4.Tests is
 
       IPv4.Packet.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (352)'Image, "Invalid Context.Last");
    end Test_Parsing_IPv4;
 
    procedure Test_Parsing_IPv4_Option (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -194,7 +191,7 @@ package body RFLX.IPv4.Tests is
    is
       pragma Unreferenced (T);
       Buffer        : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(68, 3, 42);
-      Context       : IPv4.Option.Context := IPv4.Option.Create;
+      Context       : IPv4.Option.Context;
       Valid         : Boolean;
       Copied        : Boolean;
       Option_Class  : IPv4.Option_Class;
@@ -240,6 +237,8 @@ package body RFLX.IPv4.Tests is
 
       IPv4.Option.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (24)'Image, "Invalid Context.Last");
    end Test_Parsing_IPv4_Option;
 
    --  ISSUE: Componolit/RecordFlux#61
@@ -249,10 +248,10 @@ package body RFLX.IPv4.Tests is
 --     is
 --        pragma Unreferenced (T);
 --        Buffer           : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4-options_udp.raw");
---        Context          : IPv4.Packet.Context := IPv4.Packet.Create;
+--        Context          : IPv4.Packet.Context;
 --        Valid            : Boolean;
---        Sequence_Context : IPv4.Options.Context := IPv4.Options.Create;
---        Element_Context  : IPv4.Option.Context := IPv4.Option.Create;
+--        Sequence_Context : IPv4.Options.Context;
+--        Element_Context  : IPv4.Option.Context;
 --        I                : Integer := 0;
 --     begin
 --        IPv4.Packet.Initialize (Context, Buffer);
@@ -293,7 +292,7 @@ package body RFLX.IPv4.Tests is
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
                                       .. RFLX_Builtin_Types.Index'First + 2000 => 0);
-      Context  : IPv4.Packet.Context := IPv4.Packet.Create;
+      Context  : IPv4.Packet.Context;
    begin
       IPv4.Packet.Initialize (Context, Buffer);
       IPv4.Packet.Set_Version (Context, 4);
@@ -336,7 +335,7 @@ package body RFLX.IPv4.Tests is
       procedure Set_Option_Data is new IPv4.Option.Set_Option_Data (Write_Data);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(68, 3, 42);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0);
-      Context  : IPv4.Option.Context := IPv4.Option.Create;
+      Context  : IPv4.Option.Context;
    begin
       IPv4.Option.Initialize (Context, Buffer);
       IPv4.Option.Set_Copied (Context, False);
