@@ -386,10 +386,7 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                 )
             ]
         ),
-        GreaterEqual(Call(const.TYPES_BYTE_INDEX, [Variable("First")]), Variable("Buffer_First")),
-        LessEqual(Call(const.TYPES_BYTE_INDEX, [Variable("Last")]), Variable("Buffer_Last")),
-        LessEqual(Variable("First"), Variable("Last")),
-        LessEqual(Variable("Last"), Div(Last(const.TYPES_BIT_INDEX), Number(2))),
+        public_context_predicate(),
         ForAllIn(
             "F",
             ValueRange(First("Field"), Last("Field")),
@@ -428,6 +425,15 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
         valid_predecessors_invariant(),
         invalid_successors_invariant(),
         message_structure_invariant(message, prefix, embedded=True),
+    )
+
+
+def public_context_predicate() -> Expr:
+    return And(
+        GreaterEqual(Call(const.TYPES_BYTE_INDEX, [Variable("First")]), Variable("Buffer_First")),
+        LessEqual(Call(const.TYPES_BYTE_INDEX, [Variable("Last")]), Variable("Buffer_Last")),
+        LessEqual(Variable("First"), Variable("Last")),
+        LessEqual(Variable("Last"), Div(Last(const.TYPES_BIT_INDEX), Number(2))),
     )
 
 

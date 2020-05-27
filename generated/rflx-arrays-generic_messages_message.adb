@@ -4,9 +4,6 @@ package body RFLX.Arrays.Generic_Messages_Message with
   SPARK_Mode
 is
 
-   function Create return Context is
-     ((Types.Index'First, Types.Index'First, Types.Bit_Index'First, Types.Bit_Index'First, null, (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final))));
-
    procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) is
    begin
       Initialize (Ctx, Buffer, Types.First_Bit_Index (Buffer'First), Types.Last_Bit_Index (Buffer'Last));

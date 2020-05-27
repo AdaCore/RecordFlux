@@ -17,7 +17,11 @@ is
    use type Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
-     Default_Initial_Condition => False;
+     Default_Initial_Condition =>
+       Types.Byte_Index (First) >= Buffer_First
+       and Types.Byte_Index (Last) <= Buffer_Last
+       and First <= Last
+       and Last <= Types.Bit_Index'Last / 2;
 
    function Create return Context;
 
@@ -38,7 +42,9 @@ is
         and Ctx.Buffer_Last = Buffer_Last
         and Ctx.First = First
         and Ctx.Last = Last
-        and Index (Ctx) = First);
+        and Index (Ctx) = First),
+     Depends =>
+       (Ctx => (Buffer, Buffer_First, Buffer_Last, First, Last), Buffer => null);
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) with
      Pre =>
@@ -52,7 +58,9 @@ is
         and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
         and Ctx.First = Ctx.First'Old
         and Ctx.Last = Ctx.Last'Old
-        and Index (Ctx) = Index (Ctx)'Old);
+        and Index (Ctx) = Index (Ctx)'Old),
+     Depends =>
+       (Ctx => Ctx, Buffer => Ctx);
 
    procedure Next (Ctx : in out Context) with
      Pre =>
@@ -112,7 +120,7 @@ private
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
       record
          Buffer       : Types.Bytes_Ptr := null;
-         Index        : Types.Bit_Index := Types.Bit_Index'First;
+         Index        : Types.Bit_Index := First;
          State        : Context_State := S_Initial;
          Next_Element : Element_Base_Type := Element_Base_Type'First;
       end record with
