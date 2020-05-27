@@ -143,16 +143,17 @@ jobs:
           - "spark"
           - "spark NOPREFIX=1"
           - "spark_optimized"
-        compiler:
-          - "gnat-community-2020"
-        include:
-          - target: "spark"
-            compiler: "gnat-fsf-8.3"
     steps:
     - uses: actions/checkout@v1
+    - name: Install GNAT
+      run: |
+        mkdir $HOME/bin
+        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        chmod +x $HOME/bin/gprbuild
+        echo "::add-path::$HOME/bin"
     - name: Test
       run: |
-        docker run -v $PWD:/app -w /app componolit/ci:${{ matrix.compiler }} /bin/sh -c "make test_${{ matrix.target }}"
+        make test_${{ matrix.target }}
 
   runtime_compatibility:
     name: Runtime compatibility
