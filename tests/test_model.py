@@ -1,8 +1,9 @@
+# pylint: disable=too-many-lines
 from copy import deepcopy
 
 import pytest
 
-from rflx.error import RecordFluxError
+from rflx.error import Location, RecordFluxError
 from rflx.expression import (
     TRUE,
     Add,
@@ -142,10 +143,15 @@ def test_type_name() -> None:
     t = ModularInteger("Package.Type_Name", Number(256))
     assert t.name == "Type_Name"
     assert t.package == ID("Package")
-    with pytest.raises(ModelError, match=r'^unexpected format of type name "X"$'):
-        ModularInteger("X", Number(256))
-    with pytest.raises(ModelError, match=r'^unexpected format of type name "X.Y.Z"$'):
-        ModularInteger("X.Y.Z", Number(256))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:10:20: model: error: unexpected format of type name "X"$'
+    ):
+        ModularInteger("X", Number(256), Location((10, 20)))
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:10:20: model: error: unexpected format of type name "X.Y.Z"$',
+    ):
+        ModularInteger("X.Y.Z", Number(256), Location((10, 20)))
 
 
 def test_modular_size() -> None:
@@ -165,18 +171,25 @@ def test_modular_last() -> None:
 
 
 def test_modular_invalid_modulus_power_of_two() -> None:
-    with pytest.raises(ModelError, match=r'^modulus of "T" not power of two$'):
-        ModularInteger("P.T", Number(255))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:65:3: model: error: modulus of "T" not power of two$'
+    ):
+        ModularInteger("P.T", Number(255), Location((65, 3)))
 
 
 def test_modular_invalid_modulus_variable() -> None:
-    with pytest.raises(ModelError, match=r'^modulus of "T" contains variable$'):
-        ModularInteger("P.T", Pow(Number(2), Variable("X")))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:3:23: model: error: modulus of "T" contains variable$'
+    ):
+        ModularInteger("P.T", Pow(Number(2), Variable("X")), Location((3, 23)))
 
 
 def test_modular_invalid_modulus_limit() -> None:
-    with pytest.raises(RecordFluxError, match=r'^model: error: modulus of "T" exceeds limit \(2\*\*64\)$'):
-        ModularInteger("P.T", Pow(Number(2), Number(128)))
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:55:3: model: error: modulus of "T" exceeds limit \(2\*\*64\)$',
+    ):
+        ModularInteger("P.T", Pow(Number(2), Number(128), Location((55, 3))))
 
 
 def test_range_size() -> None:
@@ -187,75 +200,103 @@ def test_range_size() -> None:
 
 
 def test_range_invalid_first_variable() -> None:
-    with pytest.raises(ModelError, match=r'^first of "T" contains variable$'):
-        RangeInteger("P.T", Add(Number(1), Variable("X")), Number(15), Number(4))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:5:3: model: error: first of "T" contains variable$'
+    ):
+        RangeInteger("P.T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3)))
 
 
 def test_range_invalid_last_variable() -> None:
-    with pytest.raises(ModelError, match=r'^last of "T" contains variable$'):
-        RangeInteger("P.T", Number(1), Add(Number(1), Variable("X")), Number(4))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:80:6: model: error: last of "T" contains variable$'
+    ):
+        RangeInteger("P.T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6)))
 
 
 def test_range_invalid_last_exceeds_limit() -> None:
-    with pytest.raises(ModelError, match=r'^last of "T" exceeds limit \(2\*\*63 - 1\)$'):
+    with pytest.raises(RecordFluxError, match=r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$'):
         RangeInteger("P.T", Number(1), Pow(Number(2), Number(63)), Number(64))
 
 
 def test_range_invalid_first_negative() -> None:
-    with pytest.raises(ModelError, match=r'^first of "T" negative$'):
-        RangeInteger("P.T", Number(-1), Number(0), Number(1))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:6:4: model: error: first of "T" negative$'
+    ):
+        RangeInteger("P.T", Number(-1), Number(0), Number(1), Location((6, 4)))
 
 
 def test_range_invalid_range() -> None:
-    with pytest.raises(ModelError, match=r'^range of "T" negative$'):
-        RangeInteger("P.T", Number(1), Number(0), Number(1))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:10:5: model: error: range of "T" negative$'
+    ):
+        RangeInteger("P.T", Number(1), Number(0), Number(1), Location((10, 5)))
 
 
 def test_range_invalid_size_variable() -> None:
-    with pytest.raises(ModelError, match=r'^size of "T" contains variable$'):
-        RangeInteger("P.T", Number(0), Number(256), Add(Number(8), Variable("X")))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:22:4: model: error: size of "T" contains variable$'
+    ):
+        RangeInteger(
+            "P.T", Number(0), Number(256), Add(Number(8), Variable("X")), Location((22, 4))
+        )
 
 
 def test_range_invalid_size_too_small() -> None:
-    with pytest.raises(ModelError, match=r"^size too small$"):
-        RangeInteger("P.T", Number(0), Number(256), Number(8))
+    with pytest.raises(RecordFluxError, match=r"^<stdin>:10:4: model: error: size too small$"):
+        RangeInteger("P.T", Number(0), Number(256), Number(8), Location((10, 4)))
 
 
 def test_range_invalid_size_exceeds_limit() -> None:
-    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*64\)$'):
-        RangeInteger("P.T", Number(0), Number(256), Number(128))
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*64\)$',
+    ):
+        RangeInteger("P.T", Number(0), Number(256), Number(128), Location((50, 3)))
 
 
 def test_enumeration_invalid_size_variable() -> None:
-    with pytest.raises(ModelError, match=r'^size of "T" contains variable$'):
-        Enumeration("P.T", {"A": Number(1)}, Add(Number(8), Variable("X")), False)
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:34:3: model: error: size of "T" contains variable$'
+    ):
+        Enumeration(
+            "P.T", {"A": Number(1)}, Add(Number(8), Variable("X")), False, Location((34, 3))
+        )
 
 
 def test_enumeration_invalid_size_too_small() -> None:
-    with pytest.raises(RecordFluxError, match=r"^model: error: size too small$"):
-        Enumeration("P.T", {"A": Number(256)}, Number(8), False)
+    with pytest.raises(RecordFluxError, match=r"^<stdin>:10:5: model: error: size too small$"):
+        Enumeration("P.T", {"A": Number(256)}, Number(8), False, Location((10, 5)))
 
 
 def test_enumeration_invalid_size_exceeds_limit() -> None:
-    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*64\)$'):
-        Enumeration("P.T", {"A": Number(256)}, Number(128), False)
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*64\)$',
+    ):
+        Enumeration("P.T", {"A": Number(256)}, Number(128), False, Location((8, 20)))
 
 
 def test_enumeration_invalid_always_valid_aspect() -> None:
-    with pytest.raises(ModelError, match=r'^unnecessary always-valid aspect on "T"$'):
+    with pytest.raises(RecordFluxError, match=r'^model: error: unnecessary always-valid aspect on "T"$'):
         Enumeration("P.T", {"A": Number(0), "B": Number(1)}, Number(1), True)
 
 
 def test_enumeration_invalid_literal() -> None:
-    with pytest.raises(ModelError, match=r'^invalid literal name "A B" in "T"$'):
-        Enumeration("P.T", {"A B": Number(1)}, Number(8), False)
-    with pytest.raises(ModelError, match=r'^invalid literal name "A.B" in "T"$'):
-        Enumeration("P.T", {"A.B": Number(1)}, Number(8), False)
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:1:2: model: error: invalid literal name "A B"$'
+    ):
+        Enumeration("P.T", {"A B": Number(1)}, Number(8), False, Location(((1, 2))))
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:6:4: model: error: invalid literal name "A.B"$'
+    ):
+        Enumeration("P.T", {"A.B": Number(1)}, Number(8), False, Location((6, 4)))
 
 
 def test_message_incorrect_name() -> None:
-    with pytest.raises(ModelError, match='^unexpected format of type name "M"$'):
-        Message("M", [], {})
+    with pytest.raises(
+        RecordFluxError, match='^<stdin>:10:8: model: error: unexpected format of type name "M"$'
+    ):
+        Message("M", [], {}, Location((10, 8)))
 
 
 def test_message_missing_type() -> None:
@@ -264,11 +305,13 @@ def test_message_missing_type() -> None:
         Link(Field("X"), FINAL),
     ]
 
-    with pytest.raises(ModelError, match='^missing type for field "X" of "P.M"$'):
-        Message("P.M", structure, {})
+    with pytest.raises(
+        RecordFluxError, match='^<stdin>:5:6: model: error: missing type for field "X"$'
+    ):
+        Message("P.M", structure, {}, Location((5, 6)))
 
 
-def test_message_superfluous_type() -> None:
+def test_message_unused_type() -> None:
     t = ModularInteger("P.T", Number(2))
 
     structure = [
@@ -276,9 +319,9 @@ def test_message_superfluous_type() -> None:
         Link(Field("X"), FINAL),
     ]
 
-    types = {Field("X"): t, Field("Y"): t}
+    types = {Field("X"): t, Field(ID("Y", Location((5, 6)))): t}
 
-    with pytest.raises(ModelError, match='^superfluous field "Y" in field types of "P.M"$'):
+    with pytest.raises(RecordFluxError, match='^<stdin>:5:6: model: error: unused field "Y"$'):
         Message("P.M", structure, types)
 
 
@@ -286,8 +329,8 @@ def test_message_ambiguous_first_field() -> None:
     t = ModularInteger("P.T", Number(2))
 
     structure = [
-        Link(INITIAL, Field("X")),
-        Link(INITIAL, Field("Y")),
+        Link(INITIAL, Field(ID("X", Location((2, 6))))),
+        Link(INITIAL, Field(ID("Y", Location((3, 6))))),
         Link(Field("X"), Field("Z")),
         Link(Field("Y"), Field("Z")),
         Link(Field("Z"), FINAL),
@@ -295,8 +338,13 @@ def test_message_ambiguous_first_field() -> None:
 
     types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
 
-    with pytest.raises(ModelError, match='^ambiguous first field in "P.M"$'):
-        Message("P.M", structure, types)
+    with pytest.raises(
+        RecordFluxError,
+        match="^<stdin>:1:5: model: error: ambiguous first field\n"
+        "<stdin>:2:6: model: info: duplicate\n"
+        "<stdin>:3:6: model: info: duplicate",
+    ):
+        Message("P.M", structure, types, location=Location((1, 5)))
 
 
 def test_message_duplicate_link() -> None:
@@ -304,14 +352,45 @@ def test_message_duplicate_link() -> None:
 
     structure = [
         Link(INITIAL, Field("X")),
-        Link(Field("X"), FINAL),
-        Link(Field("X"), FINAL),
+        Link(Field("X"), Field(ID("Final", Location((4, 42))))),
+        Link(Field("X"), Field(ID("Final", Location((5, 42))))),
     ]
 
     types = {Field("X"): t}
 
-    with pytest.raises(ModelError, match=f'^duplicate links in "P.M": X -> {FINAL.name}$'):
-        Message("P.M", structure, types)
+    with pytest.raises(
+        RecordFluxError,
+        match=f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
+        f"<stdin>:4:42: model: info: duplicate link\n"
+        f"<stdin>:5:42: model: info: duplicate link",
+    ):
+        Message("P.M", structure, types, location=Location((1, 5)))
+
+
+def test_message_multiple_duplicate_links() -> None:
+    t = ModularInteger("P.T", Number(2))
+
+    structure = [
+        Link(INITIAL, Field("X")),
+        Link(Field("X"), Field("Y")),
+        Link(Field("X"), Field(ID("Final", Location((3, 16))))),
+        Link(Field("X"), Field(ID("Final", Location((4, 18))))),
+        Link(Field("Y"), Field(ID("Final", Location((5, 20))))),
+        Link(Field("Y"), Field(ID("Final", Location((6, 22))))),
+    ]
+
+    types = {Field("X"): t, Field("Y"): t}
+
+    with pytest.raises(
+        RecordFluxError,
+        match=f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
+        f"<stdin>:3:16: model: info: duplicate link\n"
+        f"<stdin>:4:18: model: info: duplicate link\n"
+        f'<stdin>:1:5: model: error: duplicate link from "Y" to "{FINAL.name}"\n'
+        f"<stdin>:5:20: model: info: duplicate link\n"
+        f"<stdin>:6:22: model: info: duplicate link",
+    ):
+        Message("P.M", structure, types, location=Location((1, 5)))
 
 
 def test_message_unreachable_field() -> None:
@@ -646,7 +725,7 @@ def test_message_proven() -> None:
 
 
 def test_derived_message_incorrect_base_name() -> None:
-    with pytest.raises(ModelError, match='^unexpected format of type name "M"$'):
+    with pytest.raises(RecordFluxError, match='^model: error: unexpected format of type name "M"$'):
         DerivedMessage("P.M", Message("M", [], {}))
 
 

@@ -50,6 +50,9 @@ class Location:
             return self.__dict__ == other.__dict__
         return NotImplemented
 
+    def __hash__(self) -> int:
+        return hash(f"{self.__start}:{self.__filename}:{self.__end}")
+
     @property
     def source(self) -> Optional[Path]:
         return self.__filename

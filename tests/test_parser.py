@@ -437,7 +437,7 @@ def test_invalid_enumeration_type_size() -> None:
                type T is (Foo, Bar, Baz) with Size => 1;
             end Test;
         """,
-        r"<stdin>:3:55: model: error: size too small",
+        r"<stdin>:3:16: model: error: size too small",
     )
 
 
