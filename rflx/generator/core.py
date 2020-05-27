@@ -415,9 +415,7 @@ class Generator:
         return UnitPart(
             [
                 PrivateType("Field_Cursor", aspects=[DefaultInitialCondition(FALSE)]),
-                ArrayType(  # WORKAROUND: Componolit/Workarounds#14
-                    "Field_Cursors", "Virtual_Field", "Field_Cursor"
-                ),
+                PrivateType("Field_Cursors", aspects=[DefaultInitialCondition(FALSE)]),
             ],
             private=[
                 ExpressionFunctionDeclaration(
@@ -491,6 +489,7 @@ class Generator:
                         )
                     ],
                 ),
+                ArrayType("Field_Cursors", "Virtual_Field", "Field_Cursor"),
             ],
         )
 
