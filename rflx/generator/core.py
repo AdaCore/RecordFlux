@@ -9,6 +9,7 @@ import pkg_resources
 
 from rflx import __version__
 from rflx.ada import (
+    AccessParameter,
     Annotate,
     ArrayType,
     Assignment,
@@ -1975,8 +1976,7 @@ class Generator:
             [
                 Parameter(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
                 Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
-                # WORKAROUND: Componolit/Workarounds#17
-                Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+                AccessParameter(["Buffer"], const.TYPES_BYTES, constant=True),
                 Parameter(["Cursors"], "Field_Cursors"),
             ],
         )
@@ -1985,11 +1985,6 @@ class Generator:
             [],
             [],
             [
-                # WORKAROUND: Componolit/Workarounds#17
-                Pragma(
-                    "Warnings",
-                    ["Off", '"""Buffer"" is not modified, could be of access constant type"'],
-                ),
                 ExpressionFunctionDeclaration(
                     specification, common.context_predicate(message, composite_fields, self.prefix)
                 ),
