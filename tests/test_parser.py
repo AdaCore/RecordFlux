@@ -1286,3 +1286,24 @@ def test_feature_integration() -> None:
     p = Parser()
     p.parse(Path(f"{TESTDIR}/feature_integration.rflx"))
     p.create_model()
+
+
+def test_parsed_field_locations() -> None:
+    p = Parser()
+    p.parse_string(
+        """
+           package Test is
+              type T is mod 2**8;
+              type M is
+                 message
+                    F1 : T;
+                    F2 : T;
+                 end message;
+           end Test;
+        """
+    )
+    m = p.create_model()
+    assert m.messages[0].fields == (
+        Field(ID("F1", Location((6, 21), end=(6, 22)))),
+        Field(ID("F2", Location((7, 21), end=(7, 22)))),
+    )
