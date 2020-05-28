@@ -10,10 +10,10 @@ generic
    with package Ethernet_Frame is new RFLX.Ethernet.Generic_Frame (Types, others => <>);
    with package IPv4_Packet is new RFLX.IPv4.Generic_Packet (Types, others => <>);
 package RFLX.In_Ethernet.Generic_Contains with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Terminating)
 is
-
-   pragma Annotate (GNATprove, Terminating, Generic_Contains);
 
    use type Types.Index, Types.Bit_Index;
 

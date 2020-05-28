@@ -4,10 +4,10 @@ with RFLX.RFLX_Generic_Types;
 generic
    with package Types is new RFLX.RFLX_Generic_Types (<>);
 package RFLX.Ethernet.Generic_Frame with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Terminating)
 is
-
-   pragma Annotate (GNATprove, Terminating, Generic_Frame);
 
    use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 

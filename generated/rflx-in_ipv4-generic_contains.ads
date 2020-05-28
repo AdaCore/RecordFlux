@@ -10,10 +10,10 @@ generic
    with package IPv4_Packet is new RFLX.IPv4.Generic_Packet (Types, others => <>);
    with package UDP_Datagram is new RFLX.UDP.Generic_Datagram (Types, others => <>);
 package RFLX.In_IPv4.Generic_Contains with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Terminating)
 is
-
-   pragma Annotate (GNATprove, Terminating, Generic_Contains);
 
    use type Types.Index, Types.Bit_Index;
 

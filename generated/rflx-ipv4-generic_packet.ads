@@ -9,10 +9,10 @@ generic
    with package Types is new RFLX.RFLX_Generic_Types (<>);
    with package Options_Sequence is new RFLX.RFLX_Message_Sequence (Types, others => <>);
 package RFLX.IPv4.Generic_Packet with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Terminating)
 is
-
-   pragma Annotate (GNATprove, Terminating, Generic_Packet);
 
    use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 

@@ -50,6 +50,7 @@ from rflx.ada import (
     RangeSubtype,
     RangeType,
     RecordType,
+    SparkMode,
     Statement,
     Subprogram,
     SubprogramBody,
@@ -152,7 +153,7 @@ class Generator:
                 continue
 
             if t.package not in self.units:
-                self.__create_unit(t.package, [])
+                self.__create_unit(t.package, [], terminating=False)
 
             if isinstance(t, (Scalar, Composite)):
                 self.__create_type(t, t.package)
@@ -222,15 +223,23 @@ class Generator:
         name: ID,
         declaration_context: List[ContextItem],
         formal_parameters: List[FormalDeclaration] = None,
+        terminating: bool = True,
     ) -> PackageUnit:
         for p in reversed(CONFIGURATION_PRAGMAS):
             declaration_context.insert(0, p)
 
         unit = PackageUnit(
             declaration_context,
-            PackageDeclaration(self.prefix * name, formal_parameters=formal_parameters),
+            PackageDeclaration(
+                self.prefix * name,
+                formal_parameters=formal_parameters,
+                aspects=[
+                    SparkMode(),
+                    *([Annotate("GNATprove", "Terminating")] if terminating else []),
+                ],
+            ),
             list(CONFIGURATION_PRAGMAS),
-            PackageBody(self.prefix * name),
+            PackageBody(self.prefix * name, aspects=[SparkMode()]),
         )
         self.units[name] = unit
 
@@ -308,7 +317,6 @@ class Generator:
             )
         ]
 
-        unit += self.__create_specification_pragmas(generic_name(ID(message.name)))
         unit += self.__create_use_type_clause(composite_fields)
         unit += self.__create_field_type(message)
         unit += self.__create_state_type()
@@ -362,10 +370,6 @@ class Generator:
         unit += self.__create_update_procedures(message, sequence_fields)
         unit += self.__create_cursor_function()
         unit += self.__create_cursors_function()
-
-    @staticmethod
-    def __create_specification_pragmas(package: ID) -> UnitPart:
-        return UnitPart([Pragma("Annotate", ["GNATprove", "Terminating", str(package)])])
 
     @staticmethod
     def __create_use_type_clause(composite_fields: Sequence[Field]) -> UnitPart:
@@ -2064,7 +2068,6 @@ class Generator:
                     FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE)
                 ],
             )
-            unit += self.__create_specification_pragmas(generic_name(const.REFINEMENT_PACKAGE))
 
         null_sdu = not refinement.sdu.fields
 
