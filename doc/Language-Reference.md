@@ -1,6 +1,6 @@
 # Language Reference
 
-The RecordFlux DSL describes protocol message formats based on types. For each type of the specification language a description of its syntax and semantics and an example is given. A simple variant of Backus-Naur Form is used to describe the syntax. Reserved keywords and literals are marked in bold. The following basic elements are used to describe the syntax of the language:
+The specification language describes protocol message formats based on types. For each type of the specification language a description of its syntax and semantics and an example is given. A simple variant of Backus-Naur Form is used to describe the syntax. Reserved keywords and literals are marked in bold. The following basic elements are used to describe the syntax of the language:
 
 *name*: A name consists of alphanumeric characters and underscores. By convention a name starts with a capital and after each underscore follows a capital as well (e.g., Mixed_Case_With_Underscores).
 

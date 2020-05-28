@@ -12,9 +12,10 @@ import rflx.parser
 
 
 class CodeBlockType(enum.Enum):
+    UNKNOWN = 0
     RFLX = 1
     ADA = 2
-    UNKNOWN = 3
+    PYTHON = 3
 
 
 def check_code_blocks() -> bool:
@@ -32,6 +33,8 @@ def check_code_blocks() -> bool:
                         block_type = CodeBlockType.RFLX
                     elif l.endswith("Ada\n"):
                         block_type = CodeBlockType.ADA
+                    elif l.endswith("Python\n"):
+                        block_type = CodeBlockType.PYTHON
                     else:
                         block_type = CodeBlockType.UNKNOWN
                     continue
@@ -45,15 +48,25 @@ def check_code_blocks() -> bool:
                     block += l
 
     pathlib.Path("build").mkdir(exist_ok=True)
+    os.symlink("../specs", "build/specs")
     os.chdir("build")
 
     for block_type, block in code_blocks:
-        if block_type is CodeBlockType.RFLX:
-            valid = check_rflx_code(block) and valid
-        if block_type is CodeBlockType.ADA:
-            valid = check_ada_code(block) and valid
+        valid = check_code(block, block_type) and valid
+
+    os.unlink("specs")
 
     return valid
+
+
+def check_code(block: str, block_type: CodeBlockType) -> bool:
+    if block_type is CodeBlockType.RFLX:
+        return check_rflx_code(block)
+    if block_type is CodeBlockType.ADA:
+        return check_ada_code(block)
+    if block_type is CodeBlockType.PYTHON:
+        return check_python_code(block)
+    return True
 
 
 def check_rflx_code(block: str) -> bool:
@@ -85,6 +98,24 @@ def check_ada_code(block: str) -> bool:
         print(f"\naffected code block:\n\n{block}")
 
     os.unlink(f"{unit}.adb")
+
+    return valid
+
+
+def check_python_code(block: str) -> bool:
+    valid = True
+    filename = "test.py"
+
+    with open(filename, "w") as f:
+        f.write(block)
+
+    try:
+        subprocess.run(["python3", filename], check=True)
+    except subprocess.CalledProcessError:
+        valid = False
+        print(f"\naffected code block:\n\n{block}")
+
+    os.unlink(filename)
 
     return valid
 
