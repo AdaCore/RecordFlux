@@ -107,8 +107,8 @@ class ModularInteger(Integer):
 
         modulus_int = int(modulus_num)
 
-        if modulus_int > 2 ** 62:  # ISSUE: Componolit/RecordFlux#182
-            raise ModelError(f'modulus of "{self.name}" exceeds limit (2**62)')
+        if modulus_int > 2 ** 57:  # ISSUE: Componolit/RecordFlux#238
+            raise ModelError(f'modulus of "{self.name}" exceeds limit (2**57)')
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
             raise ModelError(f'modulus of "{self.name}" not power of two')
 
@@ -161,8 +161,8 @@ class RangeInteger(Integer):
             raise ModelError(f'size of "{self.name}" contains variable')
         if int(last_num).bit_length() > int(size_num):
             raise ModelError(f'size for "{self.name}" too small')
-        if int(size_num) > 62:  # ISSUE: Componolit/RecordFlux#182
-            raise ModelError(f'size of "{self.name}" exceeds limit (2**62)')
+        if int(size_num) > 57:  # ISSUE: Componolit/RecordFlux#238
+            raise ModelError(f'size of "{self.name}" exceeds limit (2**57)')
 
         self.__first = first
         self.__last = last
@@ -211,8 +211,8 @@ class Enumeration(Scalar):
             raise ModelError(f'size of "{self.name}" contains variable')
         if max(map(int, literals.values())).bit_length() > int(size_num):
             raise ModelError(f'size for "{self.name}" too small')
-        if int(size_num) > 62:  # ISSUE: Componolit/RecordFlux#182
-            raise ModelError(f'size of "{self.name}" exceeds limit (2**62)')
+        if int(size_num) > 57:  # ISSUE: Componolit/RecordFlux#238
+            raise ModelError(f'size of "{self.name}" exceeds limit (2**57)')
         if len(set(literals.values())) < len(literals.values()):
             raise ModelError(f'"{self.name}" contains elements with same value')
         for l in literals:
