@@ -175,6 +175,16 @@ class DefaultInitialCondition(Aspect):
         return str(self.expr)
 
 
+class SparkMode(Aspect):
+    @property
+    def mark(self) -> str:
+        return "SPARK_Mode"
+
+    @property
+    def definition(self) -> str:
+        return ""
+
+
 class Ghost(Aspect):
     @property
     def mark(self) -> str:
@@ -254,22 +264,25 @@ class FormalTypeDeclaration(FormalDeclaration):
 
 
 class PackageDeclaration(Declaration):
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
         declarations: List[Declaration] = None,
         private_declarations: List[Declaration] = None,
         formal_parameters: List[FormalDeclaration] = None,
+        aspects: List[Aspect] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.declarations = declarations or []
         self.private_declarations = private_declarations or []
         self.formal_parameters = formal_parameters
+        self.aspects = aspects or []
 
     def __str__(self) -> str:
         return (
             f"{generic_formal_part(self.formal_parameters)}"
-            f"package {self.identifier} with\n  SPARK_Mode\nis\n\n"
+            f"package {self.identifier}{aspect_specification(self.aspects)}\nis\n\n"
             f"{declarative_items(self.declarations)}"
             f"{declarative_items(self.private_declarations, True)}"
             f"end {self.identifier};\n"
@@ -277,16 +290,22 @@ class PackageDeclaration(Declaration):
 
 
 class PackageBody(Declaration):
-    def __init__(self, identifier: StrID, declarations: List[Declaration] = None) -> None:
+    def __init__(
+        self,
+        identifier: StrID,
+        declarations: List[Declaration] = None,
+        aspects: List[Aspect] = None,
+    ) -> None:
         self.identifier = ID(identifier)
         self.declarations = declarations or []
+        self.aspects = aspects or []
 
     def __str__(self) -> str:
         if not self.declarations:
             return ""
 
         return (
-            f"package body {self.identifier} with\n  SPARK_Mode\nis\n\n"
+            f"package body {self.identifier}{aspect_specification(self.aspects)}\nis\n\n"
             f"{declarative_items(self.declarations)}end {self.identifier};\n"
         )
 
