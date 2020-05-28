@@ -619,30 +619,33 @@ def test_message_nonexistent_variable() -> None:
     enum_type = Enumeration("P.ET", {"Val1": Number(0), "Val2": Number(1)}, Number(8), True)
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), Equal(Variable("F1"), Variable("Val3"))),
+        Link(
+            Field("F1"), Field("F2"), Equal(Variable("F1"), Variable("Val3"), Location((444, 55)))
+        ),
         Link(Field("F2"), FINAL),
     ]
 
     types = {Field("F1"): enum_type, Field("F2"): mod_type}
     with pytest.raises(
         RecordFluxError,
-        match='^undefined variable "Val3" referenced in condition 0 from field "F1" to "F2"',
+        match='^<stdin>:444:55: model: error: undefined variable "Val3" referenced',
     ):
         Message("P.M", structure, types)
 
 
 def test_message_subsequent_variable() -> None:
+    f1 = Field("F1")
+    f2 = Field("F2")
     t = ModularInteger("P.T", Pow(Number(2), Number(32)))
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), Equal(Variable("F2"), Number(42))),
-        Link(Field("F2"), FINAL),
+        Link(INITIAL, f1),
+        Link(f1, f2, Equal(Variable("F2"), Number(42), Location((1024, 57)))),
+        Link(f2, FINAL),
     ]
 
     types = {Field("F1"): t, Field("F2"): t}
     with pytest.raises(
-        RecordFluxError,
-        match='^subsequent field "F2" referenced in condition 0 from field "F1" to "F2"',
+        RecordFluxError, match='^<stdin>:1024:57: model: error: subsequent field "F2" referenced',
     ):
         Message("P.M", structure, types)
 
@@ -650,13 +653,12 @@ def test_message_subsequent_variable() -> None:
 def test_message_invalid_use_of_length_attribute() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, Equal(Length("F1"), Number(32))),
+        Link(Field("F1"), FINAL, Equal(Length("F1"), Number(32), Location((400, 17)))),
     ]
     types = {Field("F1"): MODULAR_INTEGER}
     with pytest.raises(
         RecordFluxError,
-        match=r'^invalid use of length attribute for "F1" in condition 0'
-        r' from field "F1" to "Final" in "P.M"$',
+        match=r'^<stdin>:400:17: model: error: invalid use of length attribute for "F1"$',
     ):
         Message("P.M", structure, types)
 
@@ -664,13 +666,16 @@ def test_message_invalid_use_of_length_attribute() -> None:
 def test_message_invalid_relation_to_aggregate() -> None:
     structure = [
         Link(INITIAL, Field("F1"), length=Number(16)),
-        Link(Field("F1"), FINAL, LessEqual(Variable("F1"), Aggregate(Number(1), Number(2)))),
+        Link(
+            Field("F1"),
+            FINAL,
+            LessEqual(Variable("F1"), Aggregate(Number(1), Number(2)), Location((100, 20))),
+        ),
     ]
     types = {Field("F1"): Opaque()}
     with pytest.raises(
         RecordFluxError,
-        match=r'^invalid relation " <= " to aggregate in condition 0'
-        r' from field "F1" to "Final" in "P.M"$',
+        match=r'^<stdin>:100:20: model: error: invalid relation " <= " to aggregate$',
     ):
         Message("P.M", structure, types)
 
@@ -678,13 +683,16 @@ def test_message_invalid_relation_to_aggregate() -> None:
 def test_message_invalid_element_in_relation_to_aggregate() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, Equal(Variable("F1"), Aggregate(Number(1), Number(2)))),
+        Link(
+            Field("F1"),
+            FINAL,
+            Equal(Variable("F1"), Aggregate(Number(1), Number(2)), Location((14, 7))),
+        ),
     ]
     types = {Field("F1"): MODULAR_INTEGER}
     with pytest.raises(
         RecordFluxError,
-        match=r'^invalid relation between "F1" and aggregate in condition 0'
-        r' from field "F1" to "Final" in "P.M"$',
+        match=r'^<stdin>:14:7: model: error: invalid relation between "F1" and aggregate$',
     ):
         Message("P.M", structure, types)
 
@@ -1005,17 +1013,17 @@ def test_merge_message_simple_derived() -> None:
 
 def test_merge_message_error_name_conflict() -> None:
 
-    m2_f2 = Field(ID("F2", Location((10,5))))
+    m2_f2 = Field(ID("F2", Location((10, 5))))
 
     m2 = UnprovenMessage(
         "P.M2",
         [Link(INITIAL, m2_f2), Link(m2_f2, FINAL)],
         {Field("F2"): MODULAR_INTEGER},
-        Location((15, 3))
+        Location((15, 3)),
     )
 
-    m1_f1 = Field(ID("F1", Location((20,8))))
-    m1_f1_f2 = Field(ID("F1_F2", Location((30,5))))
+    m1_f1 = Field(ID("F1", Location((20, 8))))
+    m1_f1_f2 = Field(ID("F1_F2", Location((30, 5))))
 
     m1 = UnprovenMessage(
         "P.M1",
@@ -1035,7 +1043,9 @@ def test_merge_message_error_name_conflict() -> None:
 
 
 def test_refinement_invalid_package() -> None:
-    with pytest.raises(RecordFluxError, match=r'^model: error: unexpected format of package name "A.B"$'):
+    with pytest.raises(
+        RecordFluxError, match=r'^model: error: unexpected format of package name "A.B"$'
+    ):
         Refinement("A.B", ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
 
 

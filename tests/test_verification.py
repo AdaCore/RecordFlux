@@ -2,6 +2,7 @@ from typing import Any, Mapping, Sequence
 
 import pytest
 
+from rflx.error import RecordFluxError
 from rflx.expression import (
     Add,
     Aggregate,
@@ -386,12 +387,8 @@ def test_invalid_first_forward_reference() -> None:
         Field("F2"): MODULAR_INTEGER,
         Field("F3"): MODULAR_INTEGER,
     }
-    assert_message_model_error(
-        structure,
-        types,
-        r'^subsequent field "F3" referenced in First expression 0 from field "F1"'
-        ' to "F2" in "P.M"',
-    )
+    with pytest.raises(RecordFluxError, match='^model: error: subsequent field "F3" referenced'):
+        Message("P.M", structure, types)
 
 
 def test_valid_length_reference() -> None:
@@ -415,14 +412,10 @@ def test_invalid_length_forward_reference() -> None:
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F2"): Opaque(),
     }
-    assert_message_model_error(
-        structure,
-        types,
-        r'^subsequent field "F2" referenced in Length expression 0 from field "F1"'
-        r' to "F2" in "P.M"',
-    )
+    with pytest.raises(RecordFluxError, match='model: error: subsequent field "F2" referenced'):
+        Message("P.M", structure, types)
 
 
 def test_invalid_negative_field_length() -> None:
