@@ -699,13 +699,18 @@ def test_message_invalid_element_in_relation_to_aggregate() -> None:
 
 def test_message_field_size() -> None:
     message = Message(
-        "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): MODULAR_INTEGER},
+        "P.M",
+        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+        {Field("F"): MODULAR_INTEGER},
+        Location((30, 10)),
     )
 
     assert message.field_size(FINAL) == Number(0)
     assert message.field_size(Field("F")) == Number(8)
 
-    with pytest.raises(ValueError, match='^field "X" not found$'):
+    with pytest.raises(
+        RecordFluxError, match='^<stdin>:30:10: internal: error: field "X" not found$'
+    ):
         message.field_size(Field("X"))
 
 
