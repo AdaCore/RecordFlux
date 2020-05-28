@@ -1,39 +1,44 @@
 # RecordFlux
 
-[![Build Status](https://github.com/Componolit/RecordFlux/workflows/tests/badge.svg)](https://github.com/Componolit/RecordFlux/actions)
-[![Code Coverage](https://codecov.io/github/Componolit/RecordFlux/coverage.svg?branch=master)](https://codecov.io/github/Componolit/RecordFlux)
-[![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://python.org/)
+[![PyPI](https://img.shields.io/pypi/v/RecordFlux?color=blue)](https://pypi.org/project/RecordFlux/)
+[![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue.svg)](https://python.org/)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![Tests](https://github.com/Componolit/RecordFlux/workflows/tests/badge.svg)](https://github.com/Componolit/RecordFlux/actions)
+[![Code Coverage](https://codecov.io/github/Componolit/RecordFlux/coverage.svg?branch=master)](https://codecov.io/github/Componolit/RecordFlux)
 
 RecordFlux is a toolset for the formal specification of messages and the generation of verifiable binary parsers and message generators.
 
-## Message Specification Language
+## Message Specification
 
-The RecordFlux Message Specification Language is a domain-specific language to formally specify message formats of existing real-world binary protocols. Its syntax is inspired by [Ada](https://www.adacore.com/about-ada). A detailed description of the language elements can be found in the [Language Reference](/doc/Language-Reference.md).
-
-## Model Verification
+The RecordFlux specification language is a domain-specific language to formally specify message formats of existing real-world binary protocols. Its syntax is inspired by [Ada](https://www.adacore.com/about-ada). A detailed description of the language elements can be found in the [Language Reference](/doc/Language-Reference.md).
 
 Message specifications are automatically verified using the [Z3 theorem prover](https://github.com/Z3Prover/z3). The following invariants are proven at the specification level:
 
 * Field conditions are mutually exclusive
 * Field conditions do not contradict each other
+* Field conditions are not statically false
 * Each field is reachable on at least one path from the initial node
+* Each field has at least one path to the final node
 * Message fields are always located after the first message bit
 * Field length is never negative
 * Message fields cover all bits of a message on all paths
 * Overlaid fields are congruent with exactly one other field
 
-## Code Generation
+## SPARK Code Generation
 
-The code generator generates message parsers and generators based on message specifications. The generated parser allows to validate and dissect messages and thereby respects all specified restrictions between message fields and related messages. The generated message generator enables the creation of messages according to the message specification. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a message is validated before accessed).
+Message parsers and generators are generated based on message specifications. The generated parser allows to validate and dissect messages and thereby respects all specified restrictions between message fields and related messages. The generated message generator enables the creation of messages according to the message specification. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a message is validated before accessed).
 
-The code generator creates a number of packages for a specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message a child package is generated which contains validation, accessor and setter functions for every field of the message.
+Multiple packages are generated for a specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message a child package is generated which contains validation, accessor and setter functions for every field of the message.
 
 A user of the generated code has to validate a message field or the whole message before accessing the data of a particular message field. The SPARK verification tools in combination with the generated contracts make it possible to ensure this property, and so prevent incorrect usage.
 
-## Usage
+The `rflx` tool is used to verify a specification and generate SPARK code based on it. It offers the sub-commands `check` and `generate` for this purpose. The sub-command `graph` allows to generate images of the graph representations of messages in a specification.
 
-The `rflx` tool is used to verify a specification and generate code based on it. It offers the two sub-commands `check` and `generate` for this purpose.
+## Python Library
+
+PyRFLX is a Python library for rapid-prototyping and validation. It uses RecordFlux specifications for parsing and generation of messages and validates the formal specification at runtime. It can be used by importing `rflx.pyrflx`.
+
+By default assertions and contracts are executed to ensure correct functionality. For improved performance these additional checks can be disabled by running Python with the [`-O`](https://docs.python.org/3/using/cmdline.html#cmdoption-o) switch.
 
 ## Example
 
@@ -79,31 +84,35 @@ With the sub-command `check` the correctness of the given specification file can
 
 ```Console
 $ rflx check specs/tlv.rflx
-Parsing specs/tlv.rflx... OK
+Parsing specs/tlv.rflx
+Processing TLV
 ```
 
 The sub-command `generate` is used to generate the code based on the specification. The target directory and the specification files have to be given.
 
 ```Console
 $ rflx generate -d generated specs/tlv.rflx
-Parsing specs/tlv.rflx... OK
-Generating... OK
-Created generated/rflx-tlv.ads
-Created generated/rflx-tlv-generic_message.ads
-Created generated/rflx-tlv-generic_message.adb
-Created generated/rflx-tlv-message.ads
-Created generated/rflx.ads
-Created generated/rflx-lemmas.ads
-Created generated/rflx-lemmas.adb
-Created generated/rflx-types.ads
-Created generated/rflx-types.adb
-Created generated/rflx-message_sequence.ads
-Created generated/rflx-message_sequence.adb
-Created generated/rflx-scalar_sequence.ads
-Created generated/rflx-scalar_sequence.adb
+Parsing specs/tlv.rflx
+Processing TLV
+Creating generated/rflx-tlv.ads
+Creating generated/rflx-tlv-generic_message.ads
+Creating generated/rflx-tlv-generic_message.adb
+Creating generated/rflx-tlv-message.ads
+Creating generated/rflx-rflx_builtin_types-conversions.ads
+Creating generated/rflx-rflx_builtin_types.ads
+Creating generated/rflx-rflx_generic_types.ads
+Creating generated/rflx-rflx_lemmas.ads
+Creating generated/rflx-rflx_message_sequence.ads
+Creating generated/rflx-rflx_scalar_sequence.ads
+Creating generated/rflx-rflx_types.ads
+Creating generated/rflx-rflx_generic_types.adb
+Creating generated/rflx-rflx_lemmas.adb
+Creating generated/rflx-rflx_message_sequence.adb
+Creating generated/rflx-rflx_scalar_sequence.adb
+Creating generated/rflx.ads
 ```
 
-### Use of Generated Code
+### Using the Generated Code
 
 All scalar types defined in the specification are represented by a similar Ada type in the generated code. For `TLV` the following types are defined in the package `RFLX.TLV`:
 
@@ -115,11 +124,11 @@ All types and subprograms related to `Message` can be found in the package `RFLX
 
 - `type Context`
     - Stores buffer and internal state
-- `procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr)`
+- `procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr)`
     - Initialize context with buffer
-- `procedure Initialize (Ctx : out Context; Buffer : in out RFLX.Types.Bytes_Ptr; First, Last : RFLX.Types.Bit_Index_Type)`
+- `procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index)`
     - Initialize context with buffer and explicit bounds
-- `procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX.Types.Bytes_Ptr)`
+- `procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr)`
     - Get buffer and remove it from context (note: buffer cannot put back into context, thus further verification of message is not possible after this action)
 - `function Has_Buffer (Ctx : Context) return Boolean`
     - Check if context contains buffer (i.e. non-null pointer)
@@ -145,7 +154,7 @@ All types and subprograms related to `Message` can be found in the package `RFLX
     - Get value of `Tag` field
 - `function Get_Length (Ctx : Context) return Length_Type`
     - Get value of `Length` field
-- `generic with procedure Process_Value (Value : RFLX.Types.Bytes); procedure Get_Value (Ctx : Context)`
+- `generic with procedure Process_Value (Value : Types.Bytes); procedure Get_Value (Ctx : Context)`
     - Access content of `Value` field
 - `function Valid_Next (Ctx : Context; Fld : Field) return Boolean`
     - Check if field is potential next field
@@ -153,7 +162,7 @@ All types and subprograms related to `Message` can be found in the package `RFLX
     - Set value of `Tag` field
 - `procedure Set_Length (Ctx : in out Context; Value : Length)`
     - Set value of `Length` field
-- `generic with procedure Process_Value (Value : out RFLX.Types.Bytes); procedure Set_Value (Ctx : in out Context)`
+- `generic with procedure Process_Value (Value : out Types.Bytes); procedure Set_Value (Ctx : in out Context)`
     - Set content of `Value` field
 - `procedure Initialize_Value (Ctx : in out Context)`
     - Initialize `Value` field (precondition to switch context for generating contained message)
@@ -228,13 +237,64 @@ begin
 end Main;
 ```
 
-## Dependencies
+### Using the Python Library
 
-- [Python >=3.6](https://www.python.org)
+The following code shows how PyRFLX can be used to parse and generate messages in Python:
+
+
+```Python
+import sys
+
+from rflx.pyrflx import MessageValue, PyRFLX
+
+PYRFLX = PyRFLX(["specs/tlv.rflx"])
+TLV = PYRFLX["TLV"]
+
+
+def parse_message(input_bytes: bytes) -> MessageValue:
+    msg = TLV["Message"]
+    msg.parse(input_bytes)
+    return msg
+
+
+def create_message() -> MessageValue:
+    msg = TLV["Message"]
+    msg.set("Tag", "Msg_Data")
+    msg.set("Length", 4)
+    msg.set("Value", b"\x01\x02\x03\x04")
+    return msg
+
+
+if parse_message(b"\x40\x04\x01\x02\x03\x04") != create_message():
+    sys.exit("Error")
+```
+
+## Installation
+
+RecordFlux can be installed from PyPI:
+
+```Console
+$ pip3 install RecordFlux
+```
+
+By default the following dependencies are installed:
+
+- [icontract](https://github.com/Parquery/icontract)
 - [PyParsing](https://github.com/pyparsing/pyparsing/)
 - [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
 - [Z3](https://github.com/Z3Prover/z3)
-- [GNAT Community 2020](https://www.adacore.com/download)
+
+Additionally, [GNAT Community 2020](https://www.adacore.com/download) is needed for compiling and verifying generated SPARK code.
+
+## Limitations
+
+A list of known limitations for version 0.4.0 can be found [here](https://github.com/Componolit/RecordFlux/issues?q=is%3Aissue+label%3Alimitation+label%3Av0.4.0).
+
+## Background
+
+More information about the theoretical background can be found in our paper:
+
+Reiher T., Senier A., Castrillon J., Strufe T. (2020) RecordFlux: Formal Message Specification and Generation of Verifiable Binary Parsers. In: Arbab F., Jongmans SS. (eds) Formal Aspects of Component Software. FACS 2019. Lecture Notes in Computer Science, vol 12018. Springer, Cham ([paper](https://doi.org/10.1007/978-3-030-40914-2_9), [preprint](https://arxiv.org/abs/1910.02146))
 
 ## Licence
 
