@@ -118,6 +118,9 @@ jobs:
         echo "::add-path::$HOME/.local/bin"
         echo "::add-path::$HOME/bin"
         echo "::set-env name=PYTHONPATH::$PWD"
+    - name: Configure kernel parameters
+      run: |
+        sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
     - name: Test
       run: |
         make test_${{ matrix.target }}
