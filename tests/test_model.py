@@ -148,19 +148,19 @@ def test_type_name() -> None:
 
 
 def test_modular_size() -> None:
-    assert ModularInteger("P.T", Pow(Number(2), Number(62))).size == Number(62)
+    assert ModularInteger("P.T", Pow(Number(2), Number(32))).size == Number(32)
 
 
 def test_modular_first() -> None:
-    mod = ModularInteger("P.T", Pow(Number(2), Number(62)))
+    mod = ModularInteger("P.T", Pow(Number(2), Number(32)))
     assert mod.first == Number(0)
     assert mod.first.simplified() == Number(0)
 
 
 def test_modular_last() -> None:
-    mod = ModularInteger("P.T", Pow(Number(2), Number(62)))
-    assert mod.last == Sub(Pow(Number(2), Number(62)), Number(1))
-    assert mod.last.simplified() == Number(2 ** 62 - 1)
+    mod = ModularInteger("P.T", Pow(Number(2), Number(32)))
+    assert mod.last == Sub(Pow(Number(2), Number(32)), Number(1))
+    assert mod.last.simplified() == Number(2 ** 32 - 1)
 
 
 def test_modular_invalid_modulus_power_of_two() -> None:
@@ -174,7 +174,8 @@ def test_modular_invalid_modulus_variable() -> None:
 
 
 def test_modular_invalid_modulus_limit() -> None:
-    with pytest.raises(ModelError, match=r'^modulus of "T" exceeds limit \(2\*\*62\)$'):
+    # ISSUE: Componolit/RecordFlux#238
+    with pytest.raises(ModelError, match=r'^modulus of "T" exceeds limit \(2\*\*57\)$'):
         ModularInteger("P.T", Pow(Number(2), Number(128)))
 
 
@@ -216,7 +217,8 @@ def test_range_invalid_size_too_small() -> None:
 
 
 def test_range_invalid_size_exceeds_limit() -> None:
-    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*62\)$'):
+    # ISSUE: Componolit/RecordFlux#238
+    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*57\)$'):
         RangeInteger("P.T", Number(0), Number(256), Number(128))
 
 
@@ -231,7 +233,8 @@ def test_enumeration_invalid_size_too_small() -> None:
 
 
 def test_enumeration_invalid_size_exceeds_limit() -> None:
-    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*62\)$'):
+    # ISSUE: Componolit/RecordFlux#238
+    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*57\)$'):
         Enumeration("P.T", {"A": Number(256)}, Number(128), False)
 
 
