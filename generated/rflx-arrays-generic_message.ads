@@ -9,10 +9,10 @@ generic
    with package Enumeration_Vector_Sequence is new RFLX.RFLX_Scalar_Sequence (Types, others => <>);
    with package AV_Enumeration_Vector_Sequence is new RFLX.RFLX_Scalar_Sequence (Types, others => <>);
 package RFLX.Arrays.Generic_Message with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Terminating)
 is
-
-   pragma Annotate (GNATprove, Terminating, Generic_Message);
 
    use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 
