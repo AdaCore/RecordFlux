@@ -32,7 +32,6 @@ from rflx.model import (
     Field,
     Link,
     Message,
-    ModelError,
     ModularInteger,
     Opaque,
     RangeInteger,
@@ -626,7 +625,7 @@ def test_message_nonexistent_variable() -> None:
 
     types = {Field("F1"): enum_type, Field("F2"): mod_type}
     with pytest.raises(
-        ModelError,
+        RecordFluxError,
         match='^undefined variable "Val3" referenced in condition 0 from field "F1" to "F2"',
     ):
         Message("P.M", structure, types)
@@ -642,7 +641,7 @@ def test_message_subsequent_variable() -> None:
 
     types = {Field("F1"): t, Field("F2"): t}
     with pytest.raises(
-        ModelError,
+        RecordFluxError,
         match='^subsequent field "F2" referenced in condition 0 from field "F1" to "F2"',
     ):
         Message("P.M", structure, types)
@@ -655,7 +654,7 @@ def test_message_invalid_use_of_length_attribute() -> None:
     ]
     types = {Field("F1"): MODULAR_INTEGER}
     with pytest.raises(
-        ModelError,
+        RecordFluxError,
         match=r'^invalid use of length attribute for "F1" in condition 0'
         r' from field "F1" to "Final" in "P.M"$',
     ):
@@ -669,7 +668,7 @@ def test_message_invalid_relation_to_aggregate() -> None:
     ]
     types = {Field("F1"): Opaque()}
     with pytest.raises(
-        ModelError,
+        RecordFluxError,
         match=r'^invalid relation " <= " to aggregate in condition 0'
         r' from field "F1" to "Final" in "P.M"$',
     ):
@@ -683,7 +682,7 @@ def test_message_invalid_element_in_relation_to_aggregate() -> None:
     ]
     types = {Field("F1"): MODULAR_INTEGER}
     with pytest.raises(
-        ModelError,
+        RecordFluxError,
         match=r'^invalid relation between "F1" and aggregate in condition 0'
         r' from field "F1" to "Final" in "P.M"$',
     ):
@@ -1021,7 +1020,7 @@ def test_merge_message_error_name_conflict() -> None:
     )
 
     with pytest.raises(
-        ModelError,
+        RecordFluxError,
         match=(
             r'^name conflict for "F1_F1" in "P.M1"'
             r' caused by merging message "P.M2" in field "F1"$'
@@ -1031,7 +1030,7 @@ def test_merge_message_error_name_conflict() -> None:
 
 
 def test_refinement_invalid_package() -> None:
-    with pytest.raises(ModelError, match=r'^unexpected format of package name "A.B"$'):
+    with pytest.raises(RecordFluxError, match=r'^unexpected format of package name "A.B"$'):
         Refinement("A.B", ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
 
 
