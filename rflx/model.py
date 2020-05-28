@@ -600,7 +600,10 @@ class AbstractMessage(Type):
             else:
                 print(f.identifier)
                 error.append(
-                    f'unreachable field "{f.name}" in "{self.identifier}"', Subsystem.MODEL, Severity.ERROR, f.identifier.location,
+                    f'unreachable field "{f.name}" in "{self.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    f.identifier.location,
                 )
 
         duplicate_links = defaultdict(list)
@@ -634,6 +637,7 @@ class AbstractMessage(Type):
         literals = qualified_literals(self.types, self.package)
         variables = {f.identifier for f in self.fields}
         seen = {ID("Message")}
+        error = RecordFluxError()
         for f in (INITIAL, *self.fields):
             seen.add(f.identifier)
             for index, l in enumerate(self.outgoing(f)):
@@ -646,36 +650,34 @@ class AbstractMessage(Type):
                     )
 
                 state = (variables, literals, seen)
-                self.__check_vars(
-                    l.condition, state, location("condition"),
-                )
-                self.__check_vars(
-                    l.length, state, location("Length expression"),
-                )
-                self.__check_vars(
-                    l.first, state, location("First expression"),
-                )
-                self.__check_attributes(
-                    l.condition, location("condition"),
-                )
-                self.__check_relations(
-                    l.condition, location("condition"),
-                )
+                self.__check_vars(l.condition, state, error, l.condition.location)
+                self.__check_vars(l.length, state, error, l.length.location)
+                self.__check_vars(l.first, state, error, l.first.location)
+                self.__check_attributes(l.condition, error, l.condition.location)
+                self.__check_relations(l.condition, error, l.condition.location)
                 self.__check_first_expression(l, location("First expression"))
                 self.__check_length_expression(l)
+        error.propagate()
 
     @staticmethod
     def __check_vars(
-        expression: Expr, state: Tuple[Set[ID], Set[ID], Set[ID]], location: str,
+        expression: Expr,
+        state: Tuple[Set[ID], Set[ID], Set[ID]],
+        error: RecordFluxError,
+        location: Location = None,
     ) -> None:
         variables, literals, seen = state
         for v in expression.variables(True):
             if v.identifier not in literals and v.identifier not in seen:
                 if v.identifier in variables:
-                    raise ModelError(f'subsequent field "{v}" referenced{location}')
-                raise ModelError(f'undefined variable "{v}" referenced{location}')
+                    message = f'subsequent field "{v}" referenced'
+                else:
+                    message = f'undefined variable "{v}" referenced'
+                error.append(message, Subsystem.MODEL, Severity.ERROR, location)
 
-    def __check_attributes(self, expression: Expr, location: str) -> None:
+    def __check_attributes(
+        self, expression: Expr, error: RecordFluxError, location: Location = None
+    ) -> None:
         for a in expression.findall(lambda x: isinstance(x, Attribute)):
             if isinstance(a, Length) and not (
                 isinstance(a.prefix, Variable)
@@ -687,16 +689,29 @@ class AbstractMessage(Type):
                     )
                 )
             ):
-                raise ModelError(f'invalid use of length attribute for "{a.prefix}"{location}')
+                error.append(
+                    f'invalid use of length attribute for "{a.prefix}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    location,
+                )
 
-    def __check_relations(self, expression: Expr, location: str) -> None:
+    def __check_relations(
+        self, expression: Expr, error: RecordFluxError, location: Location = None
+    ) -> None:
         for r in expression.findall(lambda x: isinstance(x, Relation)):
             if (
                 isinstance(r, Relation)
                 and not isinstance(r, (Equal, NotEqual))
                 and (isinstance(r.left, Aggregate) or isinstance(r.right, Aggregate))
             ):
-                raise ModelError(f'invalid relation "{r.symbol}" to aggregate{location}')
+                error.append(
+                    f'invalid relation "{r.symbol}" to aggregate',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    location,
+                )
+
             if isinstance(r, (Equal, NotEqual)) and (
                 isinstance(r.left, Aggregate) or isinstance(r.right, Aggregate)
             ):
@@ -709,7 +724,12 @@ class AbstractMessage(Type):
                     and Field(other.name) in self.fields
                     and isinstance(self.types[Field(other.name)], Composite)
                 ):
-                    raise ModelError(f'invalid relation between "{other}" and aggregate{location}')
+                    error.append(
+                        f'invalid relation between "{other}" and aggregate',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        location,
+                    )
 
     @staticmethod
     def __check_first_expression(link: Link, location: str) -> None:
@@ -962,7 +982,8 @@ class AbstractMessage(Type):
                 if set(self.incoming(e.target)) <= visited:
                     fields.append(e.target)
         if set(self.structure) - visited:
-            fail(f'structure of "{self.identifier}" contains cycle',
+            fail(
+                f'structure of "{self.identifier}" contains cycle',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
@@ -1121,7 +1142,7 @@ class UnprovenMessage(AbstractMessage):
                     f'into field "{field.name}"',
                     Subsystem.MODEL,
                     Severity.INFO,
-                    field.identifier.location
+                    field.identifier.location,
                 )
                 error.propagate()
 
