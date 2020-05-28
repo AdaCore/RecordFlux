@@ -517,7 +517,9 @@ class AbstractMessage(Type):
             return Number(0)
 
         if field not in self.fields:
-            raise ValueError(f'field "{field.name}" not found')
+            fail(
+                f'field "{field.name}" not found', Subsystem.INTERNAL, Severity.ERROR, self.location,
+            )
 
         field_type = self.types[field]
         if isinstance(field_type, Scalar):
