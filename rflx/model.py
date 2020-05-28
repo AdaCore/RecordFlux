@@ -163,9 +163,9 @@ class ModularInteger(Integer):
     def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
             return [
-                Less(Variable(name), self.__modulus),
-                GreaterEqual(Variable(name), Number(0)),
-                Equal(Length(name), self.size),
+                Less(Variable(name), self.__modulus, location=self.location),
+                GreaterEqual(Variable(name), Number(0), location=self.location),
+                Equal(Length(name), self.size, location=self.location),
             ]
         return [TRUE]
 
@@ -255,9 +255,9 @@ class RangeInteger(Integer):
     def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
             return [
-                GreaterEqual(Variable(name), self.first),
-                LessEqual(Variable(name), self.last),
-                Equal(Length(name), self.size),
+                GreaterEqual(Variable(name), self.first, location=self.location),
+                LessEqual(Variable(name), self.last, location=self.location),
+                Equal(Length(name), self.size, location=self.location),
             ]
 
         c: Expr = TRUE
@@ -341,10 +341,16 @@ class Enumeration(Scalar):
     def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
             result: List[Expr] = [
-                Or(*[Equal(Variable(name), Variable(l)) for l in self.literals.keys()])
+                Or(
+                    *[
+                        Equal(Variable(name), Variable(l), self.location)
+                        for l in self.literals.keys()
+                    ],
+                    self.location,
+                )
             ]
-            result.extend([Equal(Variable(l), v) for l, v in self.literals.items()])
-            result.append(Equal(Length(name), self.size))
+            result.extend([Equal(Variable(l), v, self.location) for l, v in self.literals.items()])
+            result.append(Equal(Length(name), self.size, self.location))
             return result
         return [TRUE]
 
@@ -518,7 +524,10 @@ class AbstractMessage(Type):
 
         if field not in self.fields:
             fail(
-                f'field "{field.name}" not found', Subsystem.INTERNAL, Severity.ERROR, self.location,
+                f'field "{field.name}" not found',
+                Subsystem.INTERNAL,
+                Severity.ERROR,
+                self.location,
             )
 
         field_type = self.types[field]
@@ -759,7 +768,9 @@ class AbstractMessage(Type):
         def get_constraints(aggregate: Aggregate, field: Variable) -> Sequence[Expr]:
             comp = self.types[Field(field.name)]
             assert isinstance(comp, Composite)
-            result = Equal(Mul(aggregate.length, comp.element_size), Length(field))
+            result = Equal(
+                Mul(aggregate.length, comp.element_size), Length(field), location=expr.location
+            )
             if isinstance(comp, Array) and isinstance(comp.element_type, Scalar):
                 return [
                     result,
@@ -837,17 +848,33 @@ class AbstractMessage(Type):
         for f in (INITIAL, *self.__fields):
             for path in self.__paths[f]:
                 facts = [fact for link in path for fact in self.__link_expression(link)]
-                for index, c in enumerate(self.outgoing(f)):
+                for c in self.outgoing(f):
                     contradiction = c.condition
                     constraints = self.__type_constraints(contradiction)
                     proof = contradiction.check([*constraints, *facts])
                     if proof.result == ProofResult.unsat:
-                        path_message = " -> ".join([l.target.name for l in path])
-                        raise ModelError(
-                            f'contradicting condition {index} from field "{f.name}" to'
-                            f' "{c.target.name}" on path [{path_message}] in "{self.identifier}"'
-                            f" ({proof.error})"
+                        error = RecordFluxError()
+                        error.append(
+                            f'contradicting condition in "{self.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            c.condition.location,
                         )
+                        error.extend(
+                            [
+                                (
+                                    f'on path "{l.target.identifier}"',
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    l.target.identifier.location,
+                                )
+                                for l in path
+                            ]
+                        )
+                        error.extend(
+                            [(m, Subsystem.MODEL, Severity.INFO, l) for m, l in proof.error]
+                        )
+                        error.propagate()
 
     @staticmethod
     def __target_first(link: Link) -> Expr:
@@ -867,14 +894,22 @@ class AbstractMessage(Type):
 
     def __link_expression(self, link: Link) -> Sequence[Expr]:
         name = link.target.name
+        target_first = self.__target_first(link)
+        target_length = self.__target_length(link)
+        target_last = self.__target_last(link)
         return [
-            Equal(First(name), self.__target_first(link)),
-            Equal(Length(name), self.__target_length(link)),
-            Equal(Last(name), self.__target_last(link)),
-            GreaterEqual(First("Message"), Number(0)),
-            GreaterEqual(Last("Message"), Last(name)),
-            GreaterEqual(Last("Message"), First("Message")),
-            Equal(Length("Message"), Add(Sub(Last("Message"), First("Message")), Number(1)),),
+            Equal(First(name), target_first, target_first.location),
+            Equal(Length(name), target_length, target_length.location),
+            Equal(Last(name), target_last, target_last.location),
+            GreaterEqual(First("Message"), Number(0), self.location),
+            GreaterEqual(Last("Message"), Last(name), self.location),
+            GreaterEqual(Last("Message"), First("Message"), self.location),
+            Equal(
+                Length("Message"),
+                Add(Sub(Last("Message"), First("Message")), Number(1)),
+                self.location,
+            ),
+            *expression_list(link.condition),
         ]
 
     def __prove_field_positions(self) -> None:
