@@ -2,7 +2,7 @@ from typing import Any, Mapping, Sequence
 
 import pytest
 
-from rflx.error import RecordFluxError
+from rflx.error import Location, RecordFluxError
 from rflx.expression import (
     Add,
     Aggregate,
@@ -20,6 +20,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
@@ -28,7 +29,6 @@ from rflx.model import (
     Field,
     Link,
     Message,
-    ModelError,
     ModularInteger,
     Opaque,
     RangeInteger,
@@ -40,7 +40,7 @@ from tests.models import ARRAYS_MODULAR_VECTOR, ENUMERATION, MODULAR_INTEGER, RA
 
 def assert_model_error(string: str, regex: str) -> None:
     parser = Parser()
-    with pytest.raises(ModelError, match=regex):
+    with pytest.raises(RecordFluxError, match=regex):
         parser.parse_string(string)
         parser.create_model()
 
@@ -48,7 +48,7 @@ def assert_model_error(string: str, regex: str) -> None:
 def assert_message_model_error(
     structure: Sequence[Link], types: Mapping[Field, Type], regex: str
 ) -> None:
-    with pytest.raises(ModelError, match=regex):
+    with pytest.raises(RecordFluxError, match=regex):
         Message("P.M", structure, types)
 
 
@@ -493,7 +493,7 @@ def test_field_coverage_1(monkeypatch: Any) -> None:
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
     monkeypatch.setattr(Message, "_AbstractMessage__verify_conditions", lambda x: None)
-    with pytest.raises(ModelError, match="^path F1 -> F2 does not cover whole message"):
+    with pytest.raises(RecordFluxError, match="^path F1 -> F2 does not cover whole message"):
         Message("P.M", structure, types)
 
 
@@ -852,24 +852,40 @@ def test_aggregate_equal_array_invalid_length() -> None:
 
 
 def test_aggregate_equal_invalid_length_field() -> None:
+
+    length = Field(ID("Length", Location((2, 5))))
+    magic = Field(ID("Magic", Location((3, 5))))
+
     structure = [
-        Link(INITIAL, Field("Length")),
-        Link(Field("Length"), Field("Magic"), length=Mul(Number(8), Variable("Length"))),
+        Link(INITIAL, length),
+        Link(length, magic, length=Mul(Number(8), Variable("Length"), Location((6, 5)))),
         Link(
-            Field("Magic"),
-            Field("Final"),
-            condition=Equal(Variable("Magic"), Aggregate(Number(1), Number(2))),
+            magic,
+            FINAL,
+            condition=Equal(
+                Variable("Magic"), Aggregate(Number(1), Number(2)), location=Location((10, 5))
+            ),
         ),
     ]
     types = {
-        Field("Length"): RangeInteger("P.Length_Type", Number(10), Number(100), Number(8)),
-        Field("Magic"): Opaque(),
+        Field("Length"): RangeInteger(
+            "P.Length_Type", Number(10), Number(100), Number(8), Location((5, 10))
+        ),
+        Field(ID("Magic", Location((17, 3)))): Opaque(),
     }
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "Magic" to "Final"'
-        r' on path \[Length -> Magic\] in "P.M"',
+        r'^<stdin>:10:5: model: error: contradicting condition in "P.M"\n'
+        r'<stdin>:2:5: model: info: on path "Length"\n'
+        r'<stdin>:3:5: model: info: on path "Magic"\n'
+        r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic'
+        "'"
+        'Length"\n'
+        r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"\n'
+        r'<stdin>:6:5: model: info: unsatisfied "Magic'
+        "'"
+        'Length = 8 [*] Length"',
     )
 
 

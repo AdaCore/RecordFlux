@@ -49,7 +49,7 @@ class Proof:
         return self.__result
 
     @property
-    def error(self) -> str:
+    def error(self) -> List[Tuple[str, Optional[Location]]]:
         assert self.__result == ProofResult.unsat
         solver = z3.Solver()
         solver.set(unsat_core=True)
@@ -61,7 +61,10 @@ class Proof:
         facts["goal"] = self.__expr
         result = solver.check()
         assert result == z3.unsat, f"result should be unsat (is {result})"
-        return "\n   ∧ ".join([str(facts[str(fact)]) for fact in solver.unsat_core()])
+        return [
+            (f'unsatisfied "{facts[str(fact)]}"', facts[fact].location)
+            for fact in sorted([str(h) for h in solver.unsat_core()])
+        ]
 
 
 class Expr(DBC):
@@ -262,9 +265,11 @@ class BinExpr(Expr):
 
 
 class AssExpr(Expr):
-    def __init__(self, *terms: Expr) -> None:
-        super().__init__()
-        self.terms = list(terms)
+    def __init__(self, *terms: Union[Expr, Optional[Location]]) -> None:
+        locations = [t for t in list(terms) if isinstance(t, Location)]
+        assert len(locations) <= 1
+        super().__init__(locations[0] if locations else None)
+        self.terms = [t for t in list(terms) if isinstance(t, Expr)]
 
     def __str__(self) -> str:
         if not self.terms:
