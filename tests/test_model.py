@@ -1004,33 +1004,38 @@ def test_merge_message_simple_derived() -> None:
 
 
 def test_merge_message_error_name_conflict() -> None:
+
+    m2_f2 = Field(ID("F2", Location((10,5))))
+
     m2 = UnprovenMessage(
         "P.M2",
-        [Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
-        {Field("F1"): MODULAR_INTEGER},
+        [Link(INITIAL, m2_f2), Link(m2_f2, FINAL)],
+        {Field("F2"): MODULAR_INTEGER},
+        Location((15, 3))
     )
+
+    m1_f1 = Field(ID("F1", Location((20,8))))
+    m1_f1_f2 = Field(ID("F1_F2", Location((30,5))))
+
     m1 = UnprovenMessage(
         "P.M1",
-        [
-            Link(INITIAL, Field("F1")),
-            Link(Field("F1"), Field("F1_F1")),
-            Link(Field("F1_F1"), FINAL),
-        ],
-        {Field("F1"): m2, Field("F1_F1"): MODULAR_INTEGER},
+        [Link(INITIAL, m1_f1), Link(m1_f1, m1_f1_f2), Link(m1_f1_f2, FINAL)],
+        {Field("F1"): m2, Field("F1_F2"): MODULAR_INTEGER},
     )
 
     with pytest.raises(
         RecordFluxError,
         match=(
-            r'^name conflict for "F1_F1" in "P.M1"'
-            r' caused by merging message "P.M2" in field "F1"$'
+            r'^<stdin>:30:5: model: error: name conflict for "F1_F2" in "P.M1"\n'
+            r'<stdin>:15:3: model: info: when merging message "P.M2"\n'
+            r'<stdin>:20:8: model: info: into field "F1"$'
         ),
     ):
         m1.merged()
 
 
 def test_refinement_invalid_package() -> None:
-    with pytest.raises(RecordFluxError, match=r'^unexpected format of package name "A.B"$'):
+    with pytest.raises(RecordFluxError, match=r'^model: error: unexpected format of package name "A.B"$'):
         Refinement("A.B", ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
 
 
