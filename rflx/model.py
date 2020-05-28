@@ -1099,15 +1099,31 @@ class UnprovenMessage(AbstractMessage):
             inner_message = inner_message.prefixed(f"{field.name}_")
 
             name_conflicts = [
-                f.name for f in message.fields for g in inner_message.fields if f.name == g.name
+                f for f in message.fields for g in inner_message.fields if f.name == g.name
             ]
 
             if name_conflicts:
-                raise ModelError(
-                    f'name conflict for "{name_conflicts.pop(0)}" in "{message.identifier}"'
-                    f' caused by merging message "{inner_message.identifier}"'
-                    f' in field "{field.name}"'
+                conflicting = name_conflicts.pop(0)
+                error = RecordFluxError()
+                error.append(
+                    f'name conflict for "{conflicting.identifier}" in "{message.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    conflicting.identifier.location,
                 )
+                error.append(
+                    f'when merging message "{inner_message.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    inner_message.location,
+                )
+                error.append(
+                    f'into field "{field.name}"',
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    field.identifier.location
+                )
+                error.propagate()
 
             structure = []
 
@@ -1202,7 +1218,12 @@ class Refinement(Type):
         package = ID(package)
 
         if len(package.parts) != 1:
-            raise ModelError(f'unexpected format of package name "{package}"')
+            fail(
+                f'unexpected format of package name "{package}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                package.location,
+            )
 
         super().__init__(
             package * "__REFINEMENT__"
