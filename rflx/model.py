@@ -388,6 +388,9 @@ class Field(Base):
     def __hash__(self) -> int:
         return hash(self.identifier)
 
+    def __lt__(self, other: "Field") -> int:
+        return self.identifier < other.identifier
+
     @property
     def name(self) -> str:
         return str(self.identifier)
@@ -609,7 +612,6 @@ class AbstractMessage(Type):
                 if f in (INITIAL, l.target):
                     break
             else:
-                print(f.identifier)
                 error.append(
                     f'unreachable field "{f.name}" in "{self.identifier}"',
                     Subsystem.MODEL,
@@ -651,22 +653,14 @@ class AbstractMessage(Type):
         error = RecordFluxError()
         for f in (INITIAL, *self.fields):
             seen.add(f.identifier)
-            for index, l in enumerate(self.outgoing(f)):
-
-                def location(part: str) -> str:
-                    # pylint: disable=cell-var-from-loop
-                    return (
-                        f' in {part} {index} from field "{l.source.name}" to "{l.target.name}"'
-                        f' in "{self.identifier}"'
-                    )
-
+            for l in self.outgoing(f):
                 state = (variables, literals, seen)
                 self.__check_vars(l.condition, state, error, l.condition.location)
                 self.__check_vars(l.length, state, error, l.length.location)
                 self.__check_vars(l.first, state, error, l.first.location)
                 self.__check_attributes(l.condition, error, l.condition.location)
                 self.__check_relations(l.condition, error, l.condition.location)
-                self.__check_first_expression(l, location("First expression"))
+                self.__check_first_expression(l, l.first.location)
                 self.__check_length_expression(l)
         error.propagate()
 
@@ -743,26 +737,42 @@ class AbstractMessage(Type):
                     )
 
     @staticmethod
-    def __check_first_expression(link: Link, location: str) -> None:
+    def __check_first_expression(link: Link, location: Location = None) -> None:
         if link.first != UNDEFINED and not isinstance(link.first, First):
-            raise ModelError(f'invalid First for field "{link.target.name}"{location}')
+            fail(
+                f'invalid First for field "{link.target.name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                location,
+            )
 
     def __check_length_expression(self, link: Link) -> None:
+        error = RecordFluxError()
         if link.target == FINAL and link.length != UNDEFINED:
-            raise ModelError(f'length attribute for final field in "{self.identifier}"')
+            error.append(
+                f'length attribute for final field in "{self.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                link.length.location,
+            )
         if link.target != FINAL:
             t = self.types[link.target]
             unconstrained = isinstance(t, (Opaque, Array))
             if not unconstrained and link.length != UNDEFINED:
-                raise ModelError(
-                    f'fixed size field "{link.target.name}" with length'
-                    f' expression in "{self.identifier}"'
+                error.append(
+                    f'fixed size field "{link.target.name}" with length expression',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    link.target.identifier.location,
                 )
             if unconstrained and link.length == UNDEFINED:
-                raise ModelError(
-                    f'unconstrained field "{link.target.name}" without length'
-                    f' expression in "{self.identifier}"'
+                error.append(
+                    f'unconstrained field "{link.target.name}" without length expression',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    link.target.identifier.location,
                 )
+        error.propagate()
 
     def __type_constraints(self, expr: Expr) -> Sequence[Expr]:
         def get_constraints(aggregate: Aggregate, field: Variable) -> Sequence[Expr]:
@@ -798,6 +808,7 @@ class AbstractMessage(Type):
         ]
 
     def __prove_conflicting_conditions(self) -> None:
+        error = RecordFluxError()
         for f in (INITIAL, *self.__fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
@@ -805,10 +816,27 @@ class AbstractMessage(Type):
                         conflict = And(c1.condition, c2.condition)
                         proof = conflict.check(self.__type_constraints(conflict))
                         if proof.result == ProofResult.sat:
-                            raise ModelError(
-                                f'conflicting conditions {i1} and {i2} for field "{f.name}"'
-                                f' in "{self.identifier}"'
+                            error.append(
+                                f'conflicting conditions for field "{f.name}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                self.identifier.location,
                             )
+                            error.append(
+                                f"condition {i1} ({f.identifier} -> {c1.target.identifier}):"
+                                f" {c1.condition}",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                c1.condition.location,
+                            )
+                            error.append(
+                                f"condition {i2} ({f.identifier} -> {c2.target.identifier}):"
+                                f" {c2.condition}",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                c2.condition.location,
+                            )
+        error.propagate()
 
     def __prove_reachability(self) -> None:
         def has_final(field: Field) -> bool:
@@ -819,30 +847,50 @@ class AbstractMessage(Type):
                     return True
             return False
 
+        error = RecordFluxError()
+
         for f in (INITIAL, *self.__fields):
             if not has_final(f):
-                raise ModelError(f'no path to FINAL for field "{f.name}"')
+                error.append(
+                    f'no path to FINAL for field "{f.name}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    f.identifier.location,
+                )
 
         for f in (*self.__fields, FINAL):
-            errors = []
-            for path in self.__paths[f]:
+            paths = []
+            for path in sorted(self.__paths[f]):
                 facts = [fact for link in path for fact in self.__link_expression(link)]
-                conditions = [link.condition for link in path]
-                if f != FINAL:
-                    facts.extend(
-                        expression_list(Or(*[o.condition for o in self.outgoing(f)]).simplified())
-                    )
-                proof = TRUE.check([*facts, *conditions])
+                outgoing = self.outgoing(f)
+                if f != FINAL and outgoing:
+                    facts.append(Or(*[o.condition for o in outgoing], f.identifier.location))
+                proof = TRUE.check(facts)
                 if proof.result == ProofResult.sat:
                     break
 
-                path_message = " -> ".join([l.target.name for l in path])
-                errors.append(f"[{path_message}]:\n   {proof.error}")
+                paths.append((path, proof.error))
             else:
-                error_message = "\n   ".join(errors)
-                raise ModelError(
-                    f'unreachable field "{f.name}" in "{self.identifier}"\n{error_message}'
+                error.append(
+                    f'unreachable field "{f.name}" in "{self.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    f.identifier.location,
                 )
+                for index, (path, errors) in enumerate(paths):
+                    error.append(
+                        f"path {index} (" + " -> ".join([l.target.name for l in path]) + "):",
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        f.identifier.location,
+                    )
+                    error.extend(
+                        [
+                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
+                            for m, l in errors
+                        ]
+                    )
+        error.propagate()
 
     def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.__fields):
@@ -872,7 +920,10 @@ class AbstractMessage(Type):
                             ]
                         )
                         error.extend(
-                            [(m, Subsystem.MODEL, Severity.INFO, l) for m, l in proof.error]
+                            [
+                                (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
+                                for m, l in proof.error
+                            ]
                         )
                         error.propagate()
 
@@ -913,6 +964,7 @@ class AbstractMessage(Type):
         ]
 
     def __prove_field_positions(self) -> None:
+        error = RecordFluxError()
         for f in self.__fields:
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 positive = GreaterEqual(self.__target_length(l), Number(0))
@@ -921,9 +973,17 @@ class AbstractMessage(Type):
                 proof = positive.check(facts)
                 if proof.result != ProofResult.sat:
                     path_message = " -> ".join([l.target.name for l in p])
-                    raise ModelError(
-                        f'negative length for field "{f.name}" on path {path_message}'
-                        f' in "{self.identifier}" ({proof.error})'
+                    error.append(
+                        f'negative length for field "{f.name}" ({path_message})',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.identifier.location,
+                    )
+                    error.extend(
+                        [
+                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
+                            for m, l in proof.error
+                        ]
                     )
 
                 start = GreaterEqual(self.__target_first(l), First("Message"))
@@ -931,10 +991,19 @@ class AbstractMessage(Type):
                 proof = start.check(facts)
                 if proof.result != ProofResult.sat:
                     path_message = " -> ".join([l.target.name for l in p])
-                    raise ModelError(
-                        f'start of field "{f.name}" on path {path_message} before'
-                        f' message start in "{self.identifier} ({proof.error})'
+                    error.append(
+                        f'negative length for field "{f.name}" ({path_message})',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.identifier.location,
                     )
+                    error.extend(
+                        [
+                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
+                            for m, l in proof.error
+                        ]
+                    )
+        error.propagate()
 
     def __prove_coverage(self) -> None:
         """
@@ -979,12 +1048,28 @@ class AbstractMessage(Type):
             # Coverage expression must be False, i.e. no bits left
             proof = TRUE.check(facts)
             if proof.result == ProofResult.sat:
-                path_message = " -> ".join([l.target.name for l in path])
-                raise ModelError(
-                    f'path {path_message} does not cover whole message in "{self.identifier}"'
+                error = RecordFluxError()
+                error.append(
+                    "path does not cover whole message",
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.identifier.location,
                 )
+                error.extend(
+                    [
+                        (
+                            f'on path "{l.target.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            l.target.identifier.location,
+                        )
+                        for l in path
+                    ]
+                )
+                error.propagate()
 
     def __prove_overlays(self) -> None:
+        error = RecordFluxError()
         for f in (INITIAL, *self.__fields):
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 if l.first != UNDEFINED and isinstance(l.first, First):
@@ -992,11 +1077,20 @@ class AbstractMessage(Type):
                     overlaid = Equal(self.__target_last(l), Last(l.first.prefix))
                     proof = overlaid.check(facts)
                     if proof.result != ProofResult.sat:
-                        raise ModelError(
-                            f'field "{f.name}" not congruent with overlaid field '
-                            f'"{l.first.prefix}" in "{self.identifier}"'
-                            f" ({proof.error})"
+                        error.append(
+                            f'field "{f.name}" not congruent with'
+                            f' overlaid field "{l.first.prefix}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.identifier.location,
                         )
+                        error.extend(
+                            [
+                                (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
+                                for m, l in proof.error
+                            ]
+                        )
+        error.propagate()
 
     def _prove(self) -> None:
         self.__prove_conflicting_conditions()
@@ -1051,7 +1145,8 @@ class AbstractMessage(Type):
             *[
                 And(self.__compute_field_condition(l.source), l.condition)
                 for l in self.incoming(final)
-            ]
+            ],
+            final.identifier.location,
         )
 
 
