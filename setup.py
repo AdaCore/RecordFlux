@@ -43,12 +43,13 @@ setup(
     package_data={'rflx': ['templates/*']},
     python_requires='>=3.6',
     install_requires=[
+        'icontract >=2.3.4',
+        'pydotplus',
         'pyparsing >=2.4.0',
         'z3-solver',
-        'pydotplus',
     ],
     extras_require={
-        'test': requirements,
+        'devel': requirements,
     },
     scripts=['bin/rflx']
 )
