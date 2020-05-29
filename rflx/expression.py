@@ -62,7 +62,7 @@ class Proof:
         result = solver.check()
         assert result == z3.unsat, f"result should be unsat (is {result})"
         return [
-            (f'unsatisfied "{facts[str(fact)]}"', facts[fact].location)
+            (" ".join(str(facts[str(fact)]).replace("\n", " ").split()), facts[fact].location)
             for fact in sorted([str(h) for h in solver.unsat_core()])
         ]
 
@@ -366,7 +366,7 @@ class AssExpr(Expr):
                 terms.append(Number(total))
         if len(terms) == 1:
             return terms[0]
-        return self.__class__(*terms)
+        return self.__class__(*terms, self.location)
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -642,7 +642,7 @@ class Add(AssExpr):
                 terms.insert(0, term)
         if len(terms) == 1:
             return terms[0]
-        return Add(*terms)
+        return Add(*terms, self.location)
 
     def neutral_element(self) -> int:
         return 0
