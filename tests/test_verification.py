@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from typing import Any, Mapping, Sequence
 
 import pytest
@@ -92,7 +93,13 @@ def test_exclusive_conflict() -> None:
         Field("F2"): RANGE_INTEGER,
     }
     assert_message_model_error(
-        structure, types, r'^conflicting conditions 0 and 1 for field "F1" in "P.M"',
+        structure,
+        types,
+        r"^"
+        r'model: error: conflicting conditions for field "F1"\n'
+        r"model: info: condition 0 [(]F1 -> Final[)]: F1 > 50\n"
+        r"model: info: condition 1 [(]F1 -> F2[)]: F1 < 80"
+        r"$",
     )
 
 
@@ -130,7 +137,13 @@ def test_exclusive_with_length_invalid() -> None:
         Field("F2"): RANGE_INTEGER,
     }
     assert_message_model_error(
-        structure, types, r'^conflicting conditions 0 and 1 for field "F1" in "P.M"',
+        structure,
+        types,
+        r"^"
+        r'model: error: conflicting conditions for field "F1"\n'
+        r"model: info: condition 0 [(]F1 -> Final[)]: F1\'Length = 32\n"
+        r"model: info: condition 1 [(]F1 -> F2[)]: F1\'Length = 32"
+        r"$",
     )
 
 
@@ -148,7 +161,28 @@ def test_no_valid_path() -> None:
         Field("F3"): RANGE_INTEGER,
     }
     assert_message_model_error(
-        structure, types, r'^unreachable field "F2" in "P.M"',
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F2" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'model: info: unsatisfied "F1 <= 80"\n'
+        r'model: info: unsatisfied "F1 > 80"\n'
+        r'model: error: unreachable field "F3" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2 -> F3[)]:\n"
+        r'model: info: unsatisfied "F1 <= 80"\n'
+        r'model: info: unsatisfied "F1 > 80"\n'
+        r"model: info: path 1 [(]F1 -> F3[)]:\n"
+        r'model: info: unsatisfied "F1 > 80"\n'
+        r'model: info: unsatisfied "F1 <= 80"\n'
+        r'model: error: unreachable field "Final" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2 -> F3 -> Final[)]:\n"
+        r'model: info: unsatisfied "F1 <= 80"\n'
+        r'model: info: unsatisfied "F1 > 80"\n'
+        r"model: info: path 1 [(]F1 -> F3 -> Final[)]:\n"
+        r'model: info: unsatisfied "F1 > 80"\n'
+        r'model: info: unsatisfied "F1 <= 80"'
+        r"$",
     )
 
 
@@ -164,7 +198,11 @@ def test_invalid_path_1(monkeypatch: Any) -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "F1" to "Final" on path \[F1\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "F1"\n'
+        r'model: info: unsatisfied "1 = 2"'
+        r"$",
     )
 
 
@@ -182,7 +220,11 @@ def test_invalid_path_2(monkeypatch: Any) -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "F1"\n'
+        r'model: info: unsatisfied "1 = 2"'
+        r"$",
     )
 
 
@@ -201,7 +243,11 @@ def test_contradiction() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "F1"\n'
+        r'model: info: unsatisfied "1 = 2"'
+        r"$",
     )
 
 
@@ -218,7 +264,12 @@ def test_invalid_type_condition_range_low() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "F1"\n'
+        r'model: info: unsatisfied "F1 >= 1"\n'
+        r'model: info: unsatisfied "F1 < 1"'
+        r"$",
     )
 
 
@@ -235,7 +286,12 @@ def test_invalid_type_condition_range_high() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "F1"\n'
+        r'model: info: unsatisfied "F1 <= 100"\n'
+        r'model: info: unsatisfied "F1 > 200"'
+        r"$",
     )
 
 
@@ -252,7 +308,12 @@ def test_invalid_type_condition_modular_upper() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "F1"\n'
+        r'model: info: unsatisfied "F1 < 256"\n'
+        r'model: info: unsatisfied "F1 > 65537"'
+        r"$",
     )
 
 
@@ -269,7 +330,12 @@ def test_invalid_type_condition_modular_lower() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "F1" to "F2" on path \[F1\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "F1"\n'
+        r'model: info: unsatisfied "F1 >= 0"\n'
+        r'model: info: unsatisfied "F1 < 0"'
+        r"$",
     )
 
 
@@ -324,7 +390,7 @@ def test_invalid_fixed_size_field_with_length() -> None:
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure, types, r'^fixed size field "F2" with length expression in "P.M"',
+        structure, types, r'^model: error: fixed size field "F2" with length expression$',
     )
 
 
@@ -344,7 +410,7 @@ def test_valid_first() -> None:
 def test_invalid_first() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), first=Add(First("F1"), Number(8))),
+        Link(Field("F1"), Field("F2"), first=Add(First("F1"), Number(8), Location((5, 14)))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -352,16 +418,14 @@ def test_invalid_first() -> None:
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure,
-        types,
-        r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"' r' in "P.M"',
+        structure, types, r'^<stdin>:5:14: model: error: invalid First for field "F2"$',
     )
 
 
 def test_invalid_first_is_last() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), first=Last("F1")),
+        Link(Field("F1"), Field("F2"), first=Last(ID("F1", Location((11, 20))))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -369,9 +433,7 @@ def test_invalid_first_is_last() -> None:
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure,
-        types,
-        r'^invalid First for field "F2" in First expression 0 from field "F1" to "F2"' r' in "P.M"',
+        structure, types, r'^<stdin>:11:20: model: error: invalid First for field "F2"$',
     )
 
 
@@ -387,8 +449,7 @@ def test_invalid_first_forward_reference() -> None:
         Field("F2"): MODULAR_INTEGER,
         Field("F3"): MODULAR_INTEGER,
     }
-    with pytest.raises(RecordFluxError, match='^model: error: subsequent field "F3" referenced'):
-        Message("P.M", structure, types)
+    assert_message_model_error(structure, types, '^model: error: subsequent field "F3" referenced$')
 
 
 def test_valid_length_reference() -> None:
@@ -414,8 +475,7 @@ def test_invalid_length_forward_reference() -> None:
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): Opaque(),
     }
-    with pytest.raises(RecordFluxError, match='model: error: subsequent field "F2" referenced'):
-        Message("P.M", structure, types)
+    assert_message_model_error(structure, types, '^model: error: subsequent field "F2" referenced$')
 
 
 def test_invalid_negative_field_length() -> None:
@@ -429,7 +489,13 @@ def test_invalid_negative_field_length() -> None:
         Field("F2"): Opaque(),
     }
     assert_message_model_error(
-        structure, types, r'^negative length for field "F2" on path F1 -> F2 in "P.M"'
+        structure,
+        types,
+        r"^"
+        r'model: error: negative length for field "F2" [(]F1 -> F2[)]\n'
+        r'model: info: unsatisfied "F1 < 256"\n'
+        r'model: info: unsatisfied "F1 - 300 >= 0"'
+        r"$",
     )
 
 
@@ -444,7 +510,7 @@ def test_payload_no_length() -> None:
         Field("F2"): Opaque(),
     }
     assert_message_model_error(
-        structure, types, r'^unconstrained field "F2" without length expression in "P.M"'
+        structure, types, r'^model: error: unconstrained field "F2" without length expression$'
     )
 
 
@@ -459,7 +525,7 @@ def test_array_no_length() -> None:
         Field("F2"): ARRAYS_MODULAR_VECTOR,
     }
     assert_message_model_error(
-        structure, types, '^unconstrained field "F2" without length expression in "P.M"'
+        structure, types, '^model: error: unconstrained field "F2" without length expression$'
     )
 
 
@@ -480,7 +546,14 @@ def test_incongruent_overlay() -> None:
         Field("F4"): u16,
     }
     assert_message_model_error(
-        structure, types, '^field "F3" not congruent with overlaid field "F1" in "P.M"'
+        structure,
+        types,
+        r"^"
+        r'model: error: field "F3" not congruent with overlaid field "F1"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'Last = [(][(]Message\'First [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "[(][(]F1\'First [+] 16[)][)] - 1 = F1\'Last"'
+        r"$",
     )
 
 
@@ -493,8 +566,15 @@ def test_field_coverage_1(monkeypatch: Any) -> None:
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
     monkeypatch.setattr(Message, "_AbstractMessage__verify_conditions", lambda x: None)
-    with pytest.raises(RecordFluxError, match="^path F1 -> F2 does not cover whole message"):
-        Message("P.M", structure, types)
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r"model: error: path does not cover whole message\n"
+        r'model: info: on path "F1"\n'
+        r'model: info: on path "F2"'
+        r"$",
+    )
 
 
 def test_field_coverage_2(monkeypatch: Any) -> None:
@@ -520,7 +600,15 @@ def test_field_coverage_2(monkeypatch: Any) -> None:
     }
     monkeypatch.setattr(Message, "_AbstractMessage__verify_conditions", lambda x: None)
     assert_message_model_error(
-        structure, types, "^path F1 -> F2 -> F3 -> F4 does not cover whole message"
+        structure,
+        types,
+        r"^"
+        r"model: error: path does not cover whole message\n"
+        r'model: info: on path "F1"\n'
+        r'model: info: on path "F2"\n'
+        r'model: info: on path "F3"\n'
+        r'model: info: on path "F4"'
+        r"$",
     )
 
 
@@ -534,7 +622,12 @@ def test_field_after_message_start(monkeypatch: Any) -> None:
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
     monkeypatch.setattr(Message, "_AbstractMessage__verify_conditions", lambda x: None)
     assert_message_model_error(
-        structure, types, '^start of field "F2" on path F1 -> F2 before' " message start"
+        structure,
+        types,
+        r"^"
+        r'model: error: negative length for field "F2" [(]F1 -> F2[)]\n'
+        r'model: info: unsatisfied "Message\'First - 1000 >= Message\'First"'
+        r"$",
     )
 
 
@@ -575,7 +668,7 @@ def test_no_path_to_final() -> None:
         Field("F3"): MODULAR_INTEGER,
         Field("F4"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^no path to FINAL for field "F4"')
+    assert_message_model_error(structure, types, '^model: error: no path to FINAL for field "F4"$')
 
 
 def test_no_path_to_final_transitive() -> None:
@@ -597,7 +690,15 @@ def test_no_path_to_final_transitive() -> None:
         Field("F5"): MODULAR_INTEGER,
         Field("F6"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^no path to FINAL for field "F4"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: no path to FINAL for field "F4"\n'
+        r'model: error: no path to FINAL for field "F5"\n'
+        r'model: error: no path to FINAL for field "F6"'
+        r"$",
+    )
 
 
 def test_conditionally_unreachable_field_mod_first() -> None:
@@ -610,7 +711,24 @@ def test_conditionally_unreachable_field_mod_first() -> None:
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^unreachable field "F1" in "P.M"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F1" in "P.M"\n'
+        r"model: info: path 0 [(]F1[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: unreachable field "F2" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: unreachable field "Final" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"'
+        r"$",
+    )
 
 
 def test_conditionally_unreachable_field_mod_last() -> None:
@@ -623,7 +741,22 @@ def test_conditionally_unreachable_field_mod_last() -> None:
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^unreachable field "F2" in "P.M"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F2" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
+        r'model: error: unreachable field "Final" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
+        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
+        r"$",
+    )
 
 
 def test_conditionally_unreachable_field_range_first() -> None:
@@ -636,7 +769,24 @@ def test_conditionally_unreachable_field_range_first() -> None:
         Field("F1"): RANGE_INTEGER,
         Field("F2"): RANGE_INTEGER,
     }
-    assert_message_model_error(structure, types, '^unreachable field "F1" in "P.M"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F1" in "P.M"\n'
+        r"model: info: path 0 [(]F1[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: unreachable field "F2" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: unreachable field "Final" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"'
+        r"$",
+    )
 
 
 def test_conditionally_unreachable_field_range_last() -> None:
@@ -649,7 +799,22 @@ def test_conditionally_unreachable_field_range_last() -> None:
         Field("F1"): RANGE_INTEGER,
         Field("F2"): RANGE_INTEGER,
     }
-    assert_message_model_error(structure, types, '^unreachable field "F2" in "P.M"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F2" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
+        r'model: error: unreachable field "Final" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
+        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
+        r"$",
+    )
 
 
 def test_conditionally_unreachable_field_enum_first() -> None:
@@ -662,7 +827,24 @@ def test_conditionally_unreachable_field_enum_first() -> None:
         Field("F1"): ENUMERATION,
         Field("F2"): ENUMERATION,
     }
-    assert_message_model_error(structure, types, '^unreachable field "F1" in "P.M"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F1" in "P.M"\n'
+        r"model: info: path 0 [(]F1[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: unreachable field "F2" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: unreachable field "Final" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"'
+        r"$",
+    )
 
 
 def test_conditionally_unreachable_field_enum_last() -> None:
@@ -675,7 +857,22 @@ def test_conditionally_unreachable_field_enum_last() -> None:
         Field("F1"): ENUMERATION,
         Field("F2"): ENUMERATION,
     }
-    assert_message_model_error(structure, types, '^unreachable field "F2" in "P.M"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F2" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
+        r'model: error: unreachable field "Final" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
+        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
+        r"$",
+    )
 
 
 def test_conditionally_unreachable_field_outgoing() -> None:
@@ -689,41 +886,66 @@ def test_conditionally_unreachable_field_outgoing() -> None:
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^unreachable field "F2" in "P.M"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F2" in "P.M"\n'
+        r"model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'model: info: unsatisfied "F1 <= 32"\n'
+        r'model: info: unsatisfied "F1 > 32"'
+        r"$",
+    )
 
 
 def test_conditionally_unreachable_field_outgoing_multi() -> None:
+    f2 = Field(ID("F2", Location((90, 12))))
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(32))),
+        Link(Field("F1"), f2, LessEqual(Variable("F1"), Number(32), Location((66, 3)))),
         Link(Field("F1"), Field("F3"), Greater(Variable("F1"), Number(32))),
         Link(
-            Field("F2"),
+            f2,
             Field("F3"),
-            And(Greater(Variable("F1"), Number(32)), LessEqual(Variable("F1"), Number(48))),
+            And(
+                Greater(Variable("F1"), Number(32)),
+                LessEqual(Variable("F1"), Number(48)),
+                Location((22, 34)),
+            ),
         ),
-        Link(Field("F2"), FINAL, Greater(Variable("F1"), Number(48))),
+        Link(f2, FINAL, Greater(Variable("F1"), Number(48))),
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
+        Field("F1"): ModularInteger("P.Modular", Number(256)),
         Field("F2"): MODULAR_INTEGER,
         Field("F3"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^unreachable field "F2" in "P.M"')
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'<stdin>:90:12: model: error: unreachable field "F2" in "P.M"\n'
+        r"<stdin>:90:12: model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
+        r'<stdin>:90:12: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"'
+        r"$",
+    )
 
 
 def test_length_attribute_final() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), FINAL, length=Number(100)),
+        Link(Field("F2"), FINAL, length=Number(100, location=Location((4, 12)))),
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^length attribute for final field in "P.M"')
+    assert_message_model_error(
+        structure, types, '^<stdin>:4:12: model: error: length attribute for final field in "P.M"$'
+    )
 
 
 def test_aggregate_equal_valid_length() -> None:
@@ -758,7 +980,12 @@ def test_aggregate_equal_invalid_length1() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "Magic"\n'
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
+        r'model: info: unsatisfied "Magic\'Length = 40"'
+        r"$",
     )
 
 
@@ -777,7 +1004,12 @@ def test_aggregate_equal_invalid_length2() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "Magic"\n'
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
+        r'model: info: unsatisfied "Magic\'Length = 40"'
+        r"$",
     )
 
 
@@ -813,7 +1045,12 @@ def test_aggregate_inequal_invalid_length() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
+        r"^"
+        r'model: error: contradicting condition in "P.M"\n'
+        r'model: info: on path "Magic"\n'
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
+        r'model: info: unsatisfied "Magic\'Length = 40"'
+        r"$",
     )
 
 
@@ -833,21 +1070,33 @@ def test_aggregate_equal_array_valid_length() -> None:
 
 
 def test_aggregate_equal_array_invalid_length() -> None:
+    magic = Field(ID("Magic", Location((3, 5))))
+    final = Field(ID("Final", Location((10, 7))))
     structure = [
-        Link(INITIAL, Field("Magic"), length=Number(40)),
+        Link(INITIAL, magic, length=Number(40, location=Location((19, 17)))),
         Link(
-            Field("Magic"),
-            Field("Final"),
-            condition=NotEqual(Variable("Magic"), Aggregate(Number(1), Number(2))),
+            magic,
+            final,
+            condition=NotEqual(
+                Variable("Magic"), Aggregate(Number(1), Number(2)), Location((17, 3))
+            ),
         ),
     ]
     types = {
-        Field("Magic"): Array("P.Arr", ModularInteger("P.Modular", Number(128))),
+        Field("Magic"): Array(
+            "P.Arr", ModularInteger("P.Modular", Number(128), location=Location((66, 3)))
+        ),
     }
     assert_message_model_error(
         structure,
         types,
-        r'^contradicting condition 0 from field "Magic" to "Final" on path \[Magic\] in "P.M"',
+        r"^"
+        r'<stdin>:17:3: model: error: contradicting condition in "P.M"\n'
+        r'<stdin>:3:5: model: info: on path "Magic"\n'
+        r'<stdin>:17:3: model: info: unsatisfied "2 [*] Modular\'Length = Magic\'Length"\n'
+        r'<stdin>:66:3: model: info: unsatisfied "Modular\'Length = 7"\n'
+        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Length = 40"'
+        r"$",
     )
 
 
@@ -876,16 +1125,14 @@ def test_aggregate_equal_invalid_length_field() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:5: model: error: contradicting condition in "P.M"\n'
+        r"^"
+        r'<stdin>:10:5: model: error: contradicting condition in "P.M"\n'
         r'<stdin>:2:5: model: info: on path "Length"\n'
         r'<stdin>:3:5: model: info: on path "Magic"\n'
-        r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic'
-        "'"
-        'Length"\n'
+        r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"\n'
-        r'<stdin>:6:5: model: info: unsatisfied "Magic'
-        "'"
-        'Length = 8 [*] Length"',
+        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Length = 8 [*] Length"'
+        r"$",
     )
 
 
