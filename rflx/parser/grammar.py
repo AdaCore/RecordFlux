@@ -58,7 +58,6 @@ from rflx.identifier import ID
 from rflx.model import (
     Array,
     Enumeration,
-    ModelError,
     ModularInteger,
     RangeInteger,
     Type,
@@ -613,46 +612,43 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
                     )
         error.propagate()
 
-    try:
-        package = ID("__PACKAGE__")
-        name = tokens[1]
+    package = ID("__PACKAGE__")
+    name = tokens[1]
 
-        locn = parser_location(tokens[0], tokens[-1], string)
+    locn = parser_location(tokens[0], tokens[-1], string)
 
-        if is_builtin_type(name):
-            raise ParseFatalException(
-                string, location, f'illegal redefinition of built-in type "{name}"'
-            )
+    if is_builtin_type(name):
+        raise ParseFatalException(
+            string, location, f'illegal redefinition of built-in type "{name}"'
+        )
 
-        identifier = package * name
+    identifier = package * name
 
-        if tokens[3] == "mod":
-            return ModularInteger(identifier, tokens[4], locn)
-        if tokens[3] == "range":
-            tokens[6] = tokens[6]["size"]
-            return RangeInteger(identifier, tokens[4], tokens[5], tokens[6], locn)
-        if tokens[3] == "message":
-            return MessageSpec(identifier, tokens[4], locn)
-        if tokens[3] == "null message":
-            return MessageSpec(identifier, [], locn)
-        if tokens[3] == "(":
-            elements = dict(tokens[4:-3])
-            check_conflicts(tokens[4:-3])
-            aspects = tokens[-2]
-            if "always_valid" not in aspects:
-                aspects["always_valid"] = False
-            return Enumeration(identifier, elements, aspects["size"], aspects["always_valid"], locn)
-        if tokens[3] == "new":
-            return DerivationSpec(identifier, tokens[4], locn)
-        if tokens[3] == "array of":
-            return Array(
-                identifier,
-                ReferenceSpec(qualified_type_name(tokens[4], package), tokens[4].location),
-                locn,
-            )
+    if tokens[3] == "mod":
+        return ModularInteger(identifier, tokens[4], locn)
+    if tokens[3] == "range":
+        tokens[6] = tokens[6]["size"]
+        return RangeInteger(identifier, tokens[4], tokens[5], tokens[6], locn)
+    if tokens[3] == "message":
+        return MessageSpec(identifier, tokens[4], locn)
+    if tokens[3] == "null message":
+        return MessageSpec(identifier, [], locn)
+    if tokens[3] == "(":
+        elements = dict(tokens[4:-3])
+        check_conflicts(tokens[4:-3])
+        aspects = tokens[-2]
+        if "always_valid" not in aspects:
+            aspects["always_valid"] = False
+        return Enumeration(identifier, elements, aspects["size"], aspects["always_valid"], locn)
+    if tokens[3] == "new":
+        return DerivationSpec(identifier, tokens[4], locn)
+    if tokens[3] == "array of":
+        return Array(
+            identifier,
+            ReferenceSpec(qualified_type_name(tokens[4], package), tokens[4].location),
+            locn,
+        )
 
-    except ModelError as e:
-        raise ParseFatalException(string, location, e)
     raise ParseFatalException(string, location, "unexpected type")
 
 

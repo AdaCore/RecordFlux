@@ -5,11 +5,11 @@ import pkg_resources
 import pytest
 
 from rflx import cli
-from rflx.model import ModelError
+from rflx.error import Severity, Subsystem, fail
 
 
 def raise_model_error() -> None:
-    raise ModelError("TEST")
+    fail("TEST", Subsystem.MODEL, Severity.ERROR)
 
 
 def test_main_noarg() -> None:
@@ -40,7 +40,7 @@ def test_main_check_parser_error() -> None:
 
 def test_main_check_model_error(monkeypatch: Any) -> None:
     monkeypatch.setattr(cli, "check", lambda x: raise_model_error())
-    assert "model error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
+    assert "model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
 
 
 def test_main_check_non_existent_file() -> None:
