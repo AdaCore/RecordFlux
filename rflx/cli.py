@@ -9,7 +9,7 @@ from rflx.common import flat_name
 from rflx.error import RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
 from rflx.graph import Graph
-from rflx.model import Model, ModelError
+from rflx.model import Model
 from rflx.parser import Parser
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -83,9 +83,7 @@ def main(argv: List[str]) -> Union[int, str]:
         args.func(args)
     except RecordFluxError as e:
         return f"{e}"
-    except ModelError as e:
-        return f"{parser.prog}: model error: {e}"
-    except OSError as e:
+    except Exception as e:  # pylint: disable=broad-except
         return f"{parser.prog}: error: {e}"
 
     return 0

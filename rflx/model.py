@@ -1413,10 +1413,6 @@ class Model(Base):
         return [m for m in self.types if isinstance(m, Refinement)]
 
 
-class ModelError(Exception):
-    pass
-
-
 def qualified_literals(types: Mapping[Field, Type], package: ID) -> Set[ID]:
     literals = set()
 

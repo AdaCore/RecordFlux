@@ -149,20 +149,6 @@ class RecordFluxError(Exception):
             raise self
 
 
-class InternalError(RecordFluxError):
-    def __init__(self, message: str = "internal error") -> None:
-        super().__init__()
-        self.append(message, Subsystem.INTERNAL, Severity.ERROR)
-        self.propagate()
-
-
-class ModelError(RecordFluxError):
-    def __init__(self, message: str = "model error") -> None:
-        super().__init__()
-        self.append(message, Subsystem.MODEL, Severity.ERROR)
-        self.propagate()
-
-
 def fail(
     message: str,
     subsystem: Subsystem,
