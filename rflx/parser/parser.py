@@ -89,9 +89,6 @@ class Parser:
                         transitions.append(transition)
                         self.__parse(specfile.parent / f"{str(item).lower()}.rflx", transitions)
             except (ParseException, ParseFatalException) as e:
-                if isinstance(e.msg, RecordFluxError):
-                    # ISSUE: https://www.logilab.org/ticket/3207
-                    raise e.msg  # pylint: disable=raising-bad-type
                 fail(
                     e.msg,
                     Subsystem.PARSER,
@@ -106,9 +103,6 @@ class Parser:
             for specification in grammar.unit().parseString(string):
                 self.__specifications.appendleft(specification)
         except (ParseException, ParseFatalException) as e:
-            if isinstance(e.msg, RecordFluxError):
-                # ISSUE: https://www.logilab.org/ticket/3207
-                raise e.msg  # pylint: disable=raising-bad-type
             fail(
                 e.msg, Subsystem.PARSER, Severity.ERROR, parser_location(e.loc, e.loc, e.pstr),
             )
