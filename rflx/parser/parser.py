@@ -38,7 +38,7 @@ from rflx.model import (
 )
 
 from . import grammar
-from .ast import Component, DerivationSpec, MessageSpec, RefinementSpec, Specification
+from .ast import Component, DerivationSpec, MessageSpec, PackageSpec, RefinementSpec, Specification
 
 log = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class Parser:
             push_source(specfile)
             try:
                 for specification in grammar.unit().parseFile(filehandle):
-                    check_naming(specfile.name, specification.package.identifier)
+                    check_naming(specification.package, specfile.name)
                     self.__specifications.appendleft(specification)
                     for item in specification.context.items:
                         transition = (specification.package.identifier, item)
@@ -102,6 +102,7 @@ class Parser:
         try:
             for specification in grammar.unit().parseString(string):
                 self.__specifications.appendleft(specification)
+                check_naming(specification.package)
         except (ParseException, ParseFatalException) as e:
             fail(
                 e.msg, Subsystem.PARSER, Severity.ERROR, parser_location(e.loc, e.loc, e.pstr),
@@ -455,13 +456,36 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
     return result
 
 
-def check_naming(filename: str, package_identifier: ID) -> None:
-    expected_filename = f"{str(package_identifier).lower()}.rflx"
-    if filename != expected_filename:
-        fail(
-            f'file name does not match unit name "{package_identifier}",'
-            f' should be "{expected_filename}"',
+def check_naming(package: PackageSpec, filename: str = None) -> None:
+    error = RecordFluxError()
+    if str(package.identifier).startswith("RFLX"):
+        error.append(
+            f'illegal prefix "RFLX" in package identifier "{package.identifier}"',
             Subsystem.PARSER,
             Severity.ERROR,
-            package_identifier.location,
+            package.identifier.location,
         )
+    if package.identifier != package.end_identifier:
+        error.append(
+            f'inconsistent package identifier "{package.end_identifier}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            package.end_identifier.location,
+        )
+        error.append(
+            f'previous identifier was "{package.identifier}"',
+            Subsystem.PARSER,
+            Severity.INFO,
+            package.identifier.location,
+        )
+    if filename:
+        expected_filename = f"{str(package.identifier).lower()}.rflx"
+        if filename != expected_filename:
+            error.append(
+                f'file name does not match unit name "{package.identifier}",'
+                f' should be "{expected_filename}"',
+                Subsystem.PARSER,
+                Severity.ERROR,
+                package.identifier.location,
+            )
+    error.propagate()
