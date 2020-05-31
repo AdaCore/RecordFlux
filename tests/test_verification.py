@@ -82,10 +82,11 @@ def test_exclusive_enum_valid() -> None:
 
 
 def test_exclusive_conflict() -> None:
+    f1 = Field(ID("F1", Location((8, 4))))
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, condition=Greater(Variable("F1"), Number(50))),
-        Link(Field("F1"), Field("F2"), condition=Less(Variable("F1"), Number(80))),
+        Link(INITIAL, f1),
+        Link(f1, FINAL, condition=Greater(Variable("F1"), Number(50), Location((10, 5)))),
+        Link(f1, Field("F2"), condition=Less(Variable("F1"), Number(80), Location((11, 7)))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -96,9 +97,9 @@ def test_exclusive_conflict() -> None:
         structure,
         types,
         r"^"
-        r'model: error: conflicting conditions for field "F1"\n'
-        r"model: info: condition 0 [(]F1 -> Final[)]: F1 > 50\n"
-        r"model: info: condition 1 [(]F1 -> F2[)]: F1 < 80"
+        r'<stdin>:8:4: model: error: conflicting conditions for field "F1"\n'
+        r"<stdin>:10:5: model: info: condition 0 [(]F1 -> Final[)]: F1 > 50\n"
+        r"<stdin>:11:7: model: info: condition 1 [(]F1 -> F2[)]: F1 < 80"
         r"$",
     )
 
@@ -126,10 +127,11 @@ def test_exclusive_with_length_valid() -> None:
 
 
 def test_exclusive_with_length_invalid() -> None:
+    f1 = Field(ID("F1", Location((98, 10))))
     structure = [
-        Link(INITIAL, Field("F1"), length=Number(32)),
-        Link(Field("F1"), FINAL, condition=Equal(Length("F1"), Number(32))),
-        Link(Field("F1"), Field("F2"), condition=Equal(Length("F1"), Number(32))),
+        Link(INITIAL, f1, length=Number(32)),
+        Link(f1, FINAL, condition=Equal(Length("F1"), Number(32), Location((10, 2)))),
+        Link(f1, Field("F2"), condition=Equal(Length("F1"), Number(32), Location((12, 4)))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -140,20 +142,23 @@ def test_exclusive_with_length_invalid() -> None:
         structure,
         types,
         r"^"
-        r'model: error: conflicting conditions for field "F1"\n'
-        r"model: info: condition 0 [(]F1 -> Final[)]: F1\'Length = 32\n"
-        r"model: info: condition 1 [(]F1 -> F2[)]: F1\'Length = 32"
+        r'<stdin>:98:10: model: error: conflicting conditions for field "F1"\n'
+        r"<stdin>:10:2: model: info: condition 0 [(]F1 -> Final[)]: F1\'Length = 32\n"
+        r"<stdin>:12:4: model: info: condition 1 [(]F1 -> F2[)]: F1\'Length = 32"
         r"$",
     )
 
 
 def test_no_valid_path() -> None:
+    f1 = Field(ID("F1", Location((10, 5))))
+    f2 = Field(ID("F2", Location((11, 6))))
+    f3 = Field(ID("F3", Location((12, 7))))
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), condition=LessEqual(Variable("F1"), Number(80))),
-        Link(Field("F1"), Field("F3"), condition=Greater(Variable("F1"), Number(80))),
-        Link(Field("F2"), Field("F3"), condition=Greater(Variable("F1"), Number(80))),
-        Link(Field("F3"), FINAL, condition=LessEqual(Variable("F1"), Number(80))),
+        Link(INITIAL, f1),
+        Link(f1, f2, condition=LessEqual(Variable("F1"), Number(80), Location((20, 2)))),
+        Link(f1, f3, condition=Greater(Variable("F1"), Number(80), Location((21, 3)))),
+        Link(f2, f3, condition=Greater(Variable("F1"), Number(80), Location((22, 4)))),
+        Link(f3, FINAL, condition=LessEqual(Variable("F1"), Number(80), Location((23, 5)))),
     ]
     types = {
         Field("F1"): RANGE_INTEGER,
@@ -164,32 +169,33 @@ def test_no_valid_path() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F2" in "P.M"\n'
-        r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F1 <= 80"\n'
-        r'model: info: unsatisfied "F1 > 80"\n'
-        r'model: error: unreachable field "F3" in "P.M"\n'
-        r"model: info: path 0 [(]F1 -> F2 -> F3[)]:\n"
-        r'model: info: unsatisfied "F1 <= 80"\n'
-        r'model: info: unsatisfied "F1 > 80"\n'
-        r"model: info: path 1 [(]F1 -> F3[)]:\n"
-        r'model: info: unsatisfied "F1 > 80"\n'
-        r'model: info: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:11:6: model: error: unreachable field "F2" in "P.M"\n'
+        r"<stdin>:11:6: model: info: path 0 [(]F1 -> F2[)]:\n"
+        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:11:6: model: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:12:7: model: error: unreachable field "F3" in "P.M"\n'
+        r"<stdin>:12:7: model: info: path 0 [(]F1 -> F2 -> F3[)]:\n"
+        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
+        r"<stdin>:12:7: model: info: path 1 [(]F1 -> F3[)]:\n"
+        r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:12:7: model: info: unsatisfied "F1 <= 80"\n'
         r'model: error: unreachable field "Final" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> F3 -> Final[)]:\n"
-        r'model: info: unsatisfied "F1 <= 80"\n'
-        r'model: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
         r"model: info: path 1 [(]F1 -> F3 -> Final[)]:\n"
-        r'model: info: unsatisfied "F1 > 80"\n'
-        r'model: info: unsatisfied "F1 <= 80"'
+        r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"'
         r"$",
     )
 
 
 def test_invalid_path_1(monkeypatch: Any) -> None:
+    f1 = Field(ID("F1", Location((20, 10))))
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, condition=Equal(Number(1), Number(2))),
+        Link(INITIAL, f1),
+        Link(f1, FINAL, condition=Equal(Number(1), Number(2), Location((5, 10)))),
     ]
     types = {
         Field("F1"): RANGE_INTEGER,
@@ -199,9 +205,9 @@ def test_invalid_path_1(monkeypatch: Any) -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "F1"\n'
-        r'model: info: unsatisfied "1 = 2"'
+        r'<stdin>:5:10: model: error: contradicting condition in "P.M"\n'
+        r'<stdin>:20:10: model: info: on path "F1"\n'
+        r'<stdin>:5:10: model: info: unsatisfied "1 = 2"'
         r"$",
     )
 
