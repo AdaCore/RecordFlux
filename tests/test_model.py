@@ -747,8 +747,10 @@ def test_message_proven() -> None:
 
 
 def test_derived_message_incorrect_base_name() -> None:
-    with pytest.raises(RecordFluxError, match='^model: error: unexpected format of type name "M"$'):
-        DerivedMessage("P.M", Message("M", [], {}))
+    with pytest.raises(
+        RecordFluxError, match='^<stdin>:40:8: model: error: unexpected format of type name "M"$'
+    ):
+        DerivedMessage("P.M", Message("M", [], {}, location=Location((40, 8))))
 
 
 def test_derived_message_proven() -> None:
@@ -1049,9 +1051,10 @@ def test_merge_message_error_name_conflict() -> None:
 
 def test_refinement_invalid_package() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^model: error: unexpected format of package name "A.B"$'
+        RecordFluxError,
+        match=r'^<stdin>:22:10: model: error: unexpected format of package name "A.B"$',
     ):
-        Refinement("A.B", ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
+        Refinement(ID("A.B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
 
 
 def test_field_locations() -> None:

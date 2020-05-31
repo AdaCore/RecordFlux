@@ -820,7 +820,7 @@ class AbstractMessage(Type):
                                 f'conflicting conditions for field "{f.name}"',
                                 Subsystem.MODEL,
                                 Severity.ERROR,
-                                self.identifier.location,
+                                f.identifier.location,
                             )
                             error.append(
                                 f"condition {i1} ({f.identifier} -> {c1.target.identifier}):"

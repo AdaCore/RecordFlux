@@ -264,7 +264,6 @@ class FormalTypeDeclaration(FormalDeclaration):
 
 
 class PackageDeclaration(Declaration):
-    # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
