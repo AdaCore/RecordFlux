@@ -341,7 +341,7 @@ def package_declaration() -> Token:
         - Keyword("end")
         - unqualified_identifier()
         - semicolon()
-    ).setParseAction(parse_package_declaration)
+    ).setParseAction(lambda tokens: PackageSpec(tokens[1], tokens[3].asList(), tokens[5]))
 
 
 def context_clause() -> Token:
@@ -657,34 +657,6 @@ def parse_refinement(string: str, location: int, tokens: ParseResults) -> Refine
     constraint = tokens[4] if "constraint" in tokens else TRUE
     locn = parser_location(tokens[0], tokens[-1], string)
     return RefinementSpec(tokens[1], tokens[2], tokens[3], constraint, locn)
-
-
-@fatalexceptions
-def parse_package_declaration(string: str, location: int, tokens: ParseResults) -> PackageSpec:
-    if str(tokens[1]).startswith("RFLX"):
-        fail(
-            f'illegal prefix "RFLX" in package identifier "{tokens[1]}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            tokens[1].location,
-        )
-    if tokens[1] != tokens[5]:
-        error = RecordFluxError()
-        error.append(
-            f'inconsistent package identifier "{tokens[5]}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            tokens[5].location,
-        )
-        error.append(
-            f'previous identifier was "{tokens[1]}"',
-            Subsystem.PARSER,
-            Severity.INFO,
-            tokens[1].location,
-        )
-        error.propagate()
-
-    return PackageSpec(tokens[1], tokens[3].asList())
 
 
 def unit() -> Token:
