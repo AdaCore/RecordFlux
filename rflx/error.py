@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 from pyparsing import col, lineno
 
@@ -133,14 +133,26 @@ class RecordFluxError(Exception):
             f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self.__errors
         )
 
+    @property
+    def errors(self) -> List["RecordFluxError.Entry"]:
+        return self.__errors
+
     def append(
         self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
     ) -> None:
         self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
 
-    def extend(self, entries: List[Tuple[str, Subsystem, Severity, Optional[Location]]]) -> None:
-        for message, subsystem, severity, location in entries:
-            self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
+    def extend(
+        self,
+        entries: Union[
+            List[Tuple[str, Subsystem, Severity, Optional[Location]]], "RecordFluxError"
+        ],
+    ) -> None:
+        if isinstance(entries, RecordFluxError):
+            self.__errors.extend(entries.errors)
+        else:
+            for message, subsystem, severity, location in entries:
+                self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
 
     def propagate(
         self, func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE
