@@ -53,6 +53,7 @@ class Parser:
         self.__parse(specfile)
 
     def __parse(self, specfile: Path, transitions: List[Tuple[ID, ID]] = None) -> None:
+        error = RecordFluxError()
         log.info("Parsing %s", specfile)
 
         if not transitions:
@@ -62,12 +63,11 @@ class Parser:
             push_source(specfile)
             try:
                 for specification in grammar.unit().parseFile(filehandle):
-                    check_naming(specification.package, specfile.name)
+                    check_naming(error, specification.package, specfile.name)
                     self.__specifications.appendleft(specification)
                     for item in specification.context.items:
                         transition = (specification.package.identifier, item)
                         if transition in transitions:
-                            error = RecordFluxError()
                             error.append(
                                 f'dependency cycle when including "{transitions[0][1]}"',
                                 Subsystem.PARSER,
@@ -85,11 +85,11 @@ class Parser:
                                     for _, i in transitions[1:]
                                 ]
                             )
-                            error.propagate()
+                            continue
                         transitions.append(transition)
                         self.__parse(specfile.parent / f"{str(item).lower()}.rflx", transitions)
             except (ParseException, ParseFatalException) as e:
-                fail(
+                error.append(
                     e.msg,
                     Subsystem.PARSER,
                     Severity.ERROR,
@@ -98,15 +98,19 @@ class Parser:
             finally:
                 pop_source()
 
+        error.propagate()
+
     def parse_string(self, string: str) -> None:
+        error = RecordFluxError()
         try:
             for specification in grammar.unit().parseString(string):
                 self.__specifications.appendleft(specification)
-                check_naming(specification.package)
+                check_naming(error, specification.package)
         except (ParseException, ParseFatalException) as e:
-            fail(
+            error.append(
                 e.msg, Subsystem.PARSER, Severity.ERROR, parser_location(e.loc, e.loc, e.pstr),
             )
+        error.propagate()
 
     def create_model(self) -> Model:
         for specification in self.__specifications:
@@ -127,11 +131,11 @@ class Parser:
         check_types(self.__types)
 
     def __evaluate_types(self, spec: Specification) -> None:
+        error = RecordFluxError()
         for t in spec.package.types:
             t.identifier = ID(f"{spec.package.identifier}.{t.name}", t.identifier.location)
 
             if t.identifier in self.__types:
-                error = RecordFluxError()
                 error.append(
                     f'duplicate type "{t.identifier}"',
                     Subsystem.PARSER,
@@ -144,7 +148,7 @@ class Parser:
                     Severity.INFO,
                     self.__types[t.identifier].location,
                 )
-                error.propagate()
+                continue
 
             if isinstance(t, Scalar):
                 self.__types[t.identifier] = t
@@ -163,6 +167,7 @@ class Parser:
 
             else:
                 raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
+        error.propagate()
 
 
 def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
@@ -456,8 +461,7 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
     return result
 
 
-def check_naming(package: PackageSpec, filename: str = None) -> None:
-    error = RecordFluxError()
+def check_naming(error: RecordFluxError, package: PackageSpec, filename: str = None) -> None:
     if str(package.identifier).startswith("RFLX"):
         error.append(
             f'illegal prefix "RFLX" in package identifier "{package.identifier}"',
@@ -488,4 +492,3 @@ def check_naming(package: PackageSpec, filename: str = None) -> None:
                 Severity.ERROR,
                 package.identifier.location,
             )
-    error.propagate()

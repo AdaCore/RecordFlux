@@ -126,10 +126,18 @@ def parse(files: List) -> Model:
         else:
             # pylint: disable=fixme
             # FIXME: Add test with missing file and parse error
-            parser.parse(Path(f))
-    error.propagate()
+            try:
+                parser.parse(Path(f))
+            except RecordFluxError as e:
+                error.extend(e)
 
-    return parser.create_model()
+    try:
+        model = parser.create_model()
+    except RecordFluxError as e:
+        error.extend(e)
+
+    error.propagate()
+    return model
 
 
 def graph(args: argparse.Namespace) -> None:
