@@ -27,6 +27,7 @@ from rflx.model import (
     BOOLEAN,
     FINAL,
     INITIAL,
+    Array,
     DerivedMessage,
     Enumeration,
     Field,
@@ -1071,7 +1072,7 @@ def test_field_locations() -> None:
     assert message.fields == (f2, f3)
 
 
-def test_aggregate_out_of_range() -> None:
+def test_opaque_aggregate_out_of_range() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 255"),
@@ -1091,4 +1092,65 @@ def test_aggregate_out_of_range() -> None:
                 ),
             ],
             {Field("F"): Opaque()},
+        )
+
+
+def test_array_aggregate_out_of_range() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 63"),
+    ):
+
+        array_type = Array("P.Array", ModularInteger("P.Element", Number(64)))
+
+        f = Field("F")
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, f, length=Number(18)),
+                Link(
+                    f,
+                    FINAL,
+                    condition=Equal(
+                        Variable("F"),
+                        Aggregate(Number(1), Number(2), Number(64, location=Location((44, 3)))),
+                    ),
+                ),
+            ],
+            {Field("F"): array_type},
+        )
+
+
+def test_array_aggregate_invalid_element_type() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^<stdin>:90:10: model: error: invalid array element type"
+            ' "P.I" for aggregate comparison$'
+        ),
+    ):
+
+        inner = Message(
+            "P.I",
+            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+            {Field("F"): MODULAR_INTEGER},
+        )
+        array_type = Array("P.Array", inner)
+
+        f = Field("F")
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, f, length=Number(18)),
+                Link(
+                    f,
+                    FINAL,
+                    condition=Equal(
+                        Variable("F"),
+                        Aggregate(Number(1), Number(2), Number(64)),
+                        Location((90, 10)),
+                    ),
+                ),
+            ],
+            {Field("F"): array_type},
         )
