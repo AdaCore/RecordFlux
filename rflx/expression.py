@@ -1061,9 +1061,11 @@ UNDEFINED = UndefinedExpr()
 
 
 class Aggregate(Expr):
-    def __init__(self, *elements: Expr) -> None:
-        super().__init__()
-        self.elements = list(elements)
+    def __init__(self, *elements: Union[Expr, Optional[Location]]) -> None:
+        locations = [t for t in list(elements) if isinstance(t, Location)]
+        assert len(locations) <= 1
+        super().__init__(locations[0] if locations else None)
+        self.elements = [t for t in list(elements) if isinstance(t, Expr)]
 
     def __str__(self) -> str:
         return "(" + ", ".join(map(str, self.elements)) + ")"

@@ -155,10 +155,10 @@ def mathematical_expression() -> Token:
     highest_precedence_operator = Literal("**")
 
     array_aggregate = (
-        Suppress(Literal("("))
+        Literal("(").setParseAction(lambda s, l, t: l)
         + numeric_literal()
         + (comma() - numeric_literal()) * (0,)
-        + Suppress(Literal(")"))
+        + Literal(")").setParseAction(lambda s, l, t: l)
     )
     array_aggregate.setParseAction(parse_array_aggregate)
 
@@ -372,8 +372,9 @@ def fatalexceptions(parse_function: Callable) -> Callable:
 
 @fatalexceptions
 def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> Expr:
-    check_aggregate_elements(tokens, string, location)
-    return Aggregate(*tokens)
+    check_aggregate_elements(tokens[1:-1], string, location)
+    locn = parser_location(tokens[0], tokens[-1], string)
+    return Aggregate(*tokens[1:-1], locn)
 
 
 @fatalexceptions
@@ -405,18 +406,21 @@ def parse_term(string: str, location: int, tokens: ParseResults) -> Expr:
 
 @fatalexceptions
 def parse_relation(string: str, location: int, tokens: ParseResults) -> Relation:
+    def locn() -> Location:
+        return Location(tokens[0].location.start, tokens[0].location.source, tokens[2].location.end)
+
     if tokens[1] == "<":
-        return Less(tokens[0], tokens[2])
+        return Less(tokens[0], tokens[2], locn())
     if tokens[1] == "<=":
-        return LessEqual(tokens[0], tokens[2])
+        return LessEqual(tokens[0], tokens[2], locn())
     if tokens[1] == "=":
-        return Equal(tokens[0], tokens[2])
+        return Equal(tokens[0], tokens[2], locn())
     if tokens[1] == ">=":
-        return GreaterEqual(tokens[0], tokens[2])
+        return GreaterEqual(tokens[0], tokens[2], locn())
     if tokens[1] == ">":
-        return Greater(tokens[0], tokens[2])
+        return Greater(tokens[0], tokens[2], locn())
     if tokens[1] == "/=":
-        return NotEqual(tokens[0], tokens[2])
+        return NotEqual(tokens[0], tokens[2], locn())
     raise ParseFatalException(string, location, "unexpected relation operator")
 
 
