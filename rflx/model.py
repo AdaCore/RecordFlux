@@ -737,14 +737,34 @@ class AbstractMessage(Type):
                         Severity.ERROR,
                         location,
                     )
-                for element in aggregate.elements:
-                    if not Number(0) <= element <= Number(255):
-                        error.append(
-                            "aggregate element out of range 0 .. 255",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            element.location,
-                        )
+                else:
+                    othertype = self.types[Field(other.name)]
+                    first: Expr
+                    last: Expr
+                    if isinstance(othertype, Opaque):
+                        first = Number(0)
+                        last = Number(255)
+                    elif isinstance(othertype, Array):
+                        if not isinstance(othertype.element_type, Integer):
+                            error.append(
+                                f'invalid array element type "{othertype.element_type.identifier}"'
+                                " for aggregate comparison",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                r.location,
+                            )
+                            continue
+                        first = othertype.element_type.first.simplified()
+                        last = othertype.element_type.last.simplified()
+
+                    for element in aggregate.elements:
+                        if not first <= element <= last:
+                            error.append(
+                                f"aggregate element out of range {first} .. {last}",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                element.location,
+                            )
 
     @staticmethod
     def __check_first_expression(link: Link, location: Location = None) -> None:
