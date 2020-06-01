@@ -1069,3 +1069,26 @@ def test_field_locations() -> None:
         Location((17, 9)),
     )
     assert message.fields == (f2, f3)
+
+
+def test_aggregate_out_of_range() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 255"),
+    ):
+        f = Field("F")
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, f, length=Number(24)),
+                Link(
+                    f,
+                    FINAL,
+                    condition=Equal(
+                        Variable("F"),
+                        Aggregate(Number(1), Number(2), Number(256, location=Location((44, 3)))),
+                    ),
+                ),
+            ],
+            {Field("F"): Opaque()},
+        )
