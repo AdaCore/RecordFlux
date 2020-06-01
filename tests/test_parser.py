@@ -179,11 +179,6 @@ def test_mathematical_expression_aggregate_no_number() -> None:
         grammar.mathematical_expression().parseString("(1, Foo)")
 
 
-def test_mathematical_expression_aggregate_out_of_range() -> None:
-    with pytest.raises(ParseFatalException, match=r'^Number "256" is out of range 0 .. 255'):
-        grammar.mathematical_expression().parseString("(1, 2, 256)")
-
-
 def test_mathematical_expression_string() -> None:
     assert_equal(
         grammar.mathematical_expression().parseString('"PNG"')[0],

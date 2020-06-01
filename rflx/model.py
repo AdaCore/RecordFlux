@@ -722,8 +722,10 @@ class AbstractMessage(Type):
             ):
                 if isinstance(r.left, Aggregate):
                     other = r.right
+                    aggregate = r.left
                 elif isinstance(r.right, Aggregate):
                     other = r.left
+                    aggregate = r.right
                 if not (
                     isinstance(other, Variable)
                     and Field(other.name) in self.fields
@@ -735,6 +737,14 @@ class AbstractMessage(Type):
                         Severity.ERROR,
                         location,
                     )
+                for element in aggregate.elements:
+                    if not Number(0) <= element <= Number(255):
+                        error.append(
+                            "aggregate element out of range 0 .. 255",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            element.location,
+                        )
 
     @staticmethod
     def __check_first_expression(link: Link, location: Location = None) -> None:

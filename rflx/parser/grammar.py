@@ -372,24 +372,12 @@ def fatalexceptions(parse_function: Callable) -> Callable:
 
 @fatalexceptions
 def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> Expr:
-    check_aggregate_elements(tokens[1:-1], string, location)
-    locn = parser_location(tokens[0], tokens[-1], string)
-    return Aggregate(*tokens[1:-1], locn)
+    return Aggregate(*tokens[1:-1], parser_location(tokens[0], tokens[-1], string))
 
 
 @fatalexceptions
 def parse_string(string: str, location: int, tokens: ParseResults) -> Expr:
-    elements = [Number(ord(c)) for c in tokens[0]]
-    check_aggregate_elements(elements, string, location)
-    return Aggregate(*elements)
-
-
-def check_aggregate_elements(elements: List[Number], string: str, location: int) -> None:
-    for element in elements:
-        if not Number(0) <= element <= Number(255):
-            raise ParseFatalException(
-                string, location, f'Number "{element}" is out of range 0 .. 255'
-            )
+    return Aggregate(*[Number(ord(c)) for c in tokens[0]])
 
 
 @fatalexceptions
