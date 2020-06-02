@@ -8,8 +8,11 @@ package RFLX_Invalid is
    type R is range 5 .. 23 with Size => 16;
    type R_Array is array of R;
 
-   --  error: Type exceeds limit
+   --  error: Modular type exceeds limit
    type S is mod 2**128;
+
+   --  error: Modular type is not base 2
+   type T is mod 1023;
 
    --  error: Duplicate type
    type R is (R_E1, R_E2) with Size => 8;
