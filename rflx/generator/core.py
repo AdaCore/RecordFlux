@@ -174,15 +174,15 @@ class Generator:
         for template_filename in const.LIBRARY_FILES:
             self.__check_template_file(template_filename)
 
-            prefix = file_name(self.prefix)
-            filename = f"{prefix}-{template_filename}"
+            prefix = f"{self.prefix}." if self.prefix else ""
+            filename = f"{file_name(prefix)}{template_filename}"
 
             with open(self.template_dir / Path(template_filename)) as template_file:
                 create_file(
                     Path(directory) / Path(filename),
                     self.__license_header()
                     + "".join(
-                        l.format(prefix=f"{self.prefix}.")
+                        l.format(prefix=prefix)
                         for l in template_file
                         if "  --  WORKAROUND" not in l
                     ),
