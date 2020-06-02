@@ -410,7 +410,7 @@ def test_illegal_redefinition() -> None:
                type Boolean is mod 2;
             end Test;
         """,
-        r'^<stdin>:3:16: parser: error: illegal redefinition of built-in type "Boolean"',
+        r'^<stdin>:3:16: model: error: illegal redefinition of built-in type "Boolean"',
     )
 
 
