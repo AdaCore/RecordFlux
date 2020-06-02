@@ -32,26 +32,26 @@ def assert_equal_code(spec_files: List[str]) -> None:
                 assert unit.adb == f.read(), filename
 
 
-def assert_compilable_code(spec_files: List[str]) -> None:
+def assert_compilable_code(spec_files: List[str], prefix: str = None) -> None:
     parser = Parser()
 
     for spec_file in spec_files:
         parser.parse(Path(spec_file))
 
-    _assert_compilable_code(parser)
+    _assert_compilable_code(parser, prefix)
 
 
-def assert_compilable_code_string(specification: str) -> None:
+def assert_compilable_code_string(specification: str, prefix: str = None) -> None:
     parser = Parser()
     parser.parse_string(specification)
 
-    _assert_compilable_code(parser)
+    _assert_compilable_code(parser, prefix)
 
 
-def _assert_compilable_code(parser: Parser) -> None:
+def _assert_compilable_code(parser: Parser, prefix: str = None) -> None:
     model = parser.create_model()
 
-    generator = Generator("RFLX")
+    generator = Generator(prefix if prefix else "RFLX")
     generator.generate(model)
 
     with TemporaryDirectory() as tmpdir:
@@ -112,6 +112,10 @@ def test_icmp() -> None:
 
 def test_feature_integeration() -> None:
     assert_compilable_code([f"{TESTDIR}/feature_integration.rflx"])
+
+
+def test_no_prefix() -> None:
+    assert_compilable_code([f"{SPECDIR}/tlv.rflx"], prefix="")
 
 
 def test_type_name_equals_package_name() -> None:
