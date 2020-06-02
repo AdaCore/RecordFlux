@@ -123,13 +123,14 @@ def parse(files: List) -> Model:
     for f in files:
         if not Path(f).is_file():
             error.append(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR)
-        else:
-            # pylint: disable=fixme
-            # FIXME: Add test with missing file and parse error
-            try:
-                parser.parse(Path(f))
-            except RecordFluxError as e:
-                error.extend(e)
+            continue
+
+        # pylint: disable=fixme
+        # FIXME: Add test with missing file and parse error
+        try:
+            parser.parse(Path(f))
+        except RecordFluxError as e:
+            error.extend(e)
 
     try:
         model = parser.create_model()

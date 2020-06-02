@@ -35,22 +35,15 @@ from rflx.model import (
     RangeInteger,
     Type,
 )
-from rflx.parser import Parser
 from tests.models import ARRAYS_MODULAR_VECTOR, ENUMERATION, MODULAR_INTEGER, RANGE_INTEGER
-
-
-def assert_model_error(string: str, regex: str) -> None:
-    parser = Parser()
-    with pytest.raises(RecordFluxError, match=regex):
-        parser.parse_string(string)
-        parser.create_model()
 
 
 def assert_message_model_error(
     structure: Sequence[Link], types: Mapping[Field, Type], regex: str
 ) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        Message("P.M", structure, types)
+        message = Message("P.M", structure, types)
+        message.error.propagate()
 
 
 def test_exclusive_valid() -> None:
@@ -186,8 +179,7 @@ def test_no_valid_path() -> None:
         r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
         r"model: info: path 1 [(]F1 -> F3 -> Final[)]:\n"
         r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"'
-        r"$",
+        r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"',
     )
 
 
@@ -207,8 +199,7 @@ def test_invalid_path_1(monkeypatch: Any) -> None:
         r"^"
         r'<stdin>:5:10: model: error: contradicting condition in "P.M"\n'
         r'<stdin>:20:10: model: info: on path "F1"\n'
-        r'<stdin>:5:10: model: info: unsatisfied "1 = 2"'
-        r"$",
+        r'<stdin>:5:10: model: info: unsatisfied "1 = 2"',
     )
 
 
@@ -229,8 +220,7 @@ def test_invalid_path_2(monkeypatch: Any) -> None:
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "F1"\n'
-        r'model: info: unsatisfied "1 = 2"'
-        r"$",
+        r'model: info: unsatisfied "1 = 2"',
     )
 
 
@@ -252,8 +242,7 @@ def test_contradiction() -> None:
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "F1"\n'
-        r'model: info: unsatisfied "1 = 2"'
-        r"$",
+        r'model: info: unsatisfied "1 = 2"',
     )
 
 
@@ -274,8 +263,7 @@ def test_invalid_type_condition_range_low() -> None:
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "F1"\n'
         r'model: info: unsatisfied "F1 >= 1"\n'
-        r'model: info: unsatisfied "F1 < 1"'
-        r"$",
+        r'model: info: unsatisfied "F1 < 1"',
     )
 
 
@@ -296,8 +284,7 @@ def test_invalid_type_condition_range_high() -> None:
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
-        r'model: info: unsatisfied "F1 > 200"'
-        r"$",
+        r'model: info: unsatisfied "F1 > 200"',
     )
 
 
@@ -318,8 +305,7 @@ def test_invalid_type_condition_modular_upper() -> None:
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "F1"\n'
         r'model: info: unsatisfied "F1 < 256"\n'
-        r'model: info: unsatisfied "F1 > 65537"'
-        r"$",
+        r'model: info: unsatisfied "F1 > 65537"',
     )
 
 
@@ -340,8 +326,7 @@ def test_invalid_type_condition_modular_lower() -> None:
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "F1"\n'
         r'model: info: unsatisfied "F1 >= 0"\n'
-        r'model: info: unsatisfied "F1 < 0"'
-        r"$",
+        r'model: info: unsatisfied "F1 < 0"',
     )
 
 
@@ -732,8 +717,7 @@ def test_conditionally_unreachable_field_mod_first() -> None:
         r'model: error: unreachable field "Final" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"'
-        r"$",
+        r'model: info: unsatisfied "F1\'First > Message\'First"',
     )
 
 
@@ -760,8 +744,7 @@ def test_conditionally_unreachable_field_mod_last() -> None:
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
-        r"$",
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"',
     )
 
 
@@ -790,8 +773,7 @@ def test_conditionally_unreachable_field_range_first() -> None:
         r'model: error: unreachable field "Final" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"'
-        r"$",
+        r'model: info: unsatisfied "F1\'First > Message\'First"',
     )
 
 
@@ -818,8 +800,7 @@ def test_conditionally_unreachable_field_range_last() -> None:
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
-        r"$",
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"',
     )
 
 
@@ -848,8 +829,7 @@ def test_conditionally_unreachable_field_enum_first() -> None:
         r'model: error: unreachable field "Final" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"'
-        r"$",
+        r'model: info: unsatisfied "F1\'First > Message\'First"',
     )
 
 
@@ -876,8 +856,7 @@ def test_conditionally_unreachable_field_enum_last() -> None:
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
-        r"$",
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"',
     )
 
 
@@ -899,8 +878,7 @@ def test_conditionally_unreachable_field_outgoing() -> None:
         r'model: error: unreachable field "F2" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F1 <= 32"\n'
-        r'model: info: unsatisfied "F1 > 32"'
-        r"$",
+        r'model: info: unsatisfied "F1 > 32"',
     )
 
 
@@ -934,8 +912,7 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
         r'<stdin>:90:12: model: error: unreachable field "F2" in "P.M"\n'
         r"<stdin>:90:12: model: info: path 0 [(]F1 -> F2[)]:\n"
         r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
-        r'<stdin>:90:12: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"'
-        r"$",
+        r'<stdin>:90:12: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"',
     )
 
 
@@ -990,8 +967,7 @@ def test_aggregate_equal_invalid_length1() -> None:
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
-        r'model: info: unsatisfied "Magic\'Length = 40"'
-        r"$",
+        r'model: info: unsatisfied "Magic\'Length = 40"',
     )
 
 
@@ -1014,8 +990,7 @@ def test_aggregate_equal_invalid_length2() -> None:
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
-        r'model: info: unsatisfied "Magic\'Length = 40"'
-        r"$",
+        r'model: info: unsatisfied "Magic\'Length = 40"',
     )
 
 
@@ -1055,8 +1030,7 @@ def test_aggregate_inequal_invalid_length() -> None:
         r'model: error: contradicting condition in "P.M"\n'
         r'model: info: on path "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
-        r'model: info: unsatisfied "Magic\'Length = 40"'
-        r"$",
+        r'model: info: unsatisfied "Magic\'Length = 40"',
     )
 
 
@@ -1101,8 +1075,7 @@ def test_aggregate_equal_array_invalid_length() -> None:
         r'<stdin>:3:5: model: info: on path "Magic"\n'
         r'<stdin>:17:3: model: info: unsatisfied "2 [*] Modular\'Length = Magic\'Length"\n'
         r'<stdin>:66:3: model: info: unsatisfied "Modular\'Length = 7"\n'
-        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Length = 40"'
-        r"$",
+        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Length = 40"',
     )
 
 
@@ -1137,8 +1110,7 @@ def test_aggregate_equal_invalid_length_field() -> None:
         r'<stdin>:3:5: model: info: on path "Magic"\n'
         r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"\n'
-        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Length = 8 [*] Length"'
-        r"$",
+        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Length = 8 [*] Length"',
     )
 
 

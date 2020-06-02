@@ -119,6 +119,11 @@ class RecordFluxError(Exception):
         def location(self) -> Optional[Location]:
             return self.__location
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
     def __init__(self) -> None:
         super().__init__()
         self.__errors: List[RecordFluxError.Entry] = []
@@ -154,10 +159,15 @@ class RecordFluxError(Exception):
             for message, subsystem, severity, location in entries:
                 self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
 
+    def check(
+        self, func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE
+    ) -> bool:
+        return any([func(e) for e in self.__errors])
+
     def propagate(
         self, func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE
     ) -> None:
-        if any([func(e) for e in self.__errors]):
+        if self.check(func):
             raise self
 
 

@@ -4,11 +4,11 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import copy
 from pathlib import Path
-from typing import Dict, List, Mapping, NamedTuple, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
 
 from rflx.common import flat_name, generic_repr
 from rflx.contract import ensure, invariant
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -52,11 +52,14 @@ class Base(ABC):
 
 
 class Type(Base):
-    def __init__(self, identifier: StrID, location: Location = None) -> None:
+    def __init__(
+        self, identifier: StrID, location: Location = None, error: RecordFluxError = None
+    ) -> None:
         identifier = ID(identifier)
+        self.error = error or RecordFluxError()
 
-        if len(identifier.parts) != 2:
-            fail(
+        if len(identifier.parts) != 2 and not str(identifier.name).startswith("__REFINEMENT__"):
+            self.error.append(
                 f'unexpected format of type name "{identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
@@ -117,34 +120,33 @@ class ModularInteger(Integer):
         super().__init__(identifier, UNDEFINED, location)
 
         modulus_num = modulus.simplified()
-        error = RecordFluxError()
 
         if not isinstance(modulus_num, Number):
-            fail(
+            self.error.append(
                 f'modulus of "{self.name}" contains variable',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
-        else:
-            modulus_int = int(modulus_num)
+            return
+
+        modulus_int = int(modulus_num)
 
         if modulus_int > 2 ** 64:
-            error.append(
+            self.error.append(
                 f'modulus of "{self.name}" exceeds limit (2**64)',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                modulus.location,
+                self.location,
             )
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
-            error.append(
+            self.error.append(
                 f'modulus of "{self.name}" not power of two',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
 
-        error.propagate()
         self.__modulus = modulus
         self._size = Number((modulus_int - 1).bit_length())
 
@@ -177,10 +179,9 @@ class RangeInteger(Integer):
         super().__init__(identifier, size, location)
 
         first_num = first.simplified()
-        error = RecordFluxError()
 
         if not isinstance(first_num, Number):
-            error.append(
+            self.error.append(
                 f'first of "{self.name}" contains variable',
                 Subsystem.MODEL,
                 Severity.ERROR,
@@ -190,7 +191,7 @@ class RangeInteger(Integer):
         last_num = last.simplified()
 
         if not isinstance(last_num, Number):
-            error.append(
+            self.error.append(
                 f'last of "{self.name}" contains variable',
                 Subsystem.MODEL,
                 Severity.ERROR,
@@ -198,49 +199,50 @@ class RangeInteger(Integer):
             )
             return
         if int(last_num) >= 2 ** 63:
-            error.append(
+            self.error.append(
                 f'last of "{self.name}" exceeds limit (2**63 - 1)',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
         if first_num < Number(0):
-            error.append(
+            self.error.append(
                 f'first of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
             )
         if first_num > last_num:
-            error.append(
+            self.error.append(
                 f'range of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
             )
 
         size_num = size.simplified()
 
         if not isinstance(size_num, Number):
-            fail(
+            self.error.append(
                 f'size of "{self.name}" contains variable',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
+            return
 
-        error.propagate()
+        if not isinstance(size_num, Number):
+            return
 
-        assert isinstance(size_num, Number)
-        assert isinstance(last_num, Number)
+        if not isinstance(last_num, Number):
+            return
 
         if int(last_num).bit_length() > int(size_num):
-            error.append(
+            self.error.append(
                 "size too small", Subsystem.MODEL, Severity.ERROR, self.location,
             )
         if int(size_num) > 64:
-            error.append(
+            self.error.append(
                 f'size of "{self.name}" exceeds limit (2**64)',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
 
-        error.propagate()
         self.__first = first
         self.__last = last
 
@@ -288,24 +290,22 @@ class Enumeration(Scalar):
         super().__init__(identifier, size, location)
 
         size_num = size.simplified()
-        error = RecordFluxError()
 
         if not isinstance(size_num, Number):
-            fail(
+            self.error.append(
                 f'size of "{self.name}" contains variable',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
-
-        assert isinstance(size_num, Number)
+            return
 
         if max(map(int, literals.values())).bit_length() > int(size_num):
-            error.append(
+            self.error.append(
                 "size too small", Subsystem.MODEL, Severity.ERROR, self.location,
             )
         if int(size_num) > 64:
-            error.append(
+            self.error.append(
                 f'size of "{self.name}" exceeds limit (2**64)',
                 Subsystem.MODEL,
                 Severity.ERROR,
@@ -314,38 +314,40 @@ class Enumeration(Scalar):
         for i1, v1 in enumerate(literals.values()):
             for i2, v2 in enumerate(literals.values()):
                 if i1 < i2 and v1 == v2:
-                    error.append(
+                    self.error.append(
                         f'duplicate enumeration value "{v1}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         v2.location,
                     )
-                    error.append("previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location)
-        for l in literals:
-            if " " in str(l) or "." in str(l):
-                error.append(
-                    f'invalid literal name "{l}"', Subsystem.MODEL, Severity.ERROR, self.location,
+                    self.error.append(
+                        "previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location
+                    )
+
+        self.literals = {}
+        for k, v in literals.items():
+            if " " in str(k) or "." in str(k):
+                self.error.append(
+                    f'invalid literal name "{k}"', Subsystem.MODEL, Severity.ERROR, self.location,
                 )
-        if always_valid and len(literals) == 2 ** int(size_num):
-            error.append(
+                continue
+            self.literals[ID(k)] = v
+
+        if always_valid and len(self.literals) == 2 ** int(size_num):
+            self.error.append(
                 f'unnecessary always-valid aspect on "{self.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
 
-        error.propagate()
-        self.literals = {ID(k): v for k, v in literals.items()}
         self.always_valid = always_valid
 
     def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
         if proof:
             result: List[Expr] = [
                 Or(
-                    *[
-                        Equal(Variable(name), Variable(l), self.location)
-                        for l in self.literals.keys()
-                    ],
+                    *[Equal(Variable(name), Variable(l), self.location) for l in self.literals],
                     self.location,
                 )
             ]
@@ -431,24 +433,30 @@ class AbstractMessage(Type):
         structure: Sequence[Link],
         types: Mapping[Field, Type],
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> None:
-        super().__init__(identifier, location)
+        super().__init__(identifier, location, error)
 
         self.structure = structure
         self.__types = types
+        self.__has_unreachable = False
 
         if structure or types:
-            self.__verify()
-            self.__fields = self.__compute_topological_sorting()
-            self.__types = {f: self.__types[f] for f in self.__fields}
-            self.__paths = {f: self.__compute_paths(f) for f in self.all_fields}
-            self.__definite_predecessors = {
-                f: self.__compute_definite_predecessors(f) for f in self.all_fields
-            }
-            self.__field_condition = {
-                f: self.__compute_field_condition(f).simplified() for f in self.all_fields
-            }
-            self.__verify_conditions()
+            try:
+                self.__verify()
+                self.__fields = self.__compute_topological_sorting()
+                if self.__fields:
+                    self.__types = {f: self.__types[f] for f in self.__fields}
+                    self.__paths = {f: self.__compute_paths(f) for f in self.all_fields}
+                    self.__definite_predecessors = {
+                        f: self.__compute_definite_predecessors(f) for f in self.all_fields
+                    }
+                    self.__field_condition = {
+                        f: self.__compute_field_condition(f).simplified() for f in self.all_fields
+                    }
+                    self.__verify_conditions()
+            except RecordFluxError:
+                pass
         else:
             self.__fields = ()
             self.__paths = {}
@@ -462,6 +470,7 @@ class AbstractMessage(Type):
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> "AbstractMessage":
         raise NotImplementedError
 
@@ -472,11 +481,11 @@ class AbstractMessage(Type):
     @property
     def fields(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted."""
-        return self.__fields
+        return self.__fields or ()
 
     @property
     def all_fields(self) -> Tuple[Field, ...]:
-        return (INITIAL, *self.__fields, FINAL)
+        return (INITIAL, *self.fields, FINAL)
 
     @property
     def definite_fields(self) -> Tuple[Field, ...]:
@@ -526,12 +535,13 @@ class AbstractMessage(Type):
             return Number(0)
 
         if field not in self.fields:
-            fail(
+            self.error.append(
                 f'field "{field.name}" not found',
                 Subsystem.INTERNAL,
                 Severity.ERROR,
                 self.location,
             )
+            return UNDEFINED
 
         field_type = self.types[field]
         if isinstance(field_type, Scalar):
@@ -578,26 +588,25 @@ class AbstractMessage(Type):
     def __verify(self) -> None:
         type_fields = self.__types.keys() | {INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
-        error = RecordFluxError()
 
         for f in structure_fields - type_fields:
-            error.append(
+            self.error.append(
                 f'missing type for field "{f.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                self.location,
+                f.identifier.location,
             )
 
         for f in type_fields - structure_fields:
-            error.append(
+            self.error.append(
                 f'unused field "{f.name}"', Subsystem.MODEL, Severity.ERROR, f.identifier.location,
             )
 
         if len(self.outgoing(INITIAL)) != 1:
-            error.append(
+            self.error.append(
                 "ambiguous first field", Subsystem.MODEL, Severity.ERROR, self.location,
             )
-            error.extend(
+            self.error.extend(
                 [
                     ("duplicate", Subsystem.MODEL, Severity.INFO, l.target.identifier.location)
                     for l in self.outgoing(INITIAL)
@@ -605,14 +614,15 @@ class AbstractMessage(Type):
                 ]
             )
 
-        error.propagate()
+        self.error.propagate()
 
         for f in structure_fields:
             for l in self.structure:
                 if f in (INITIAL, l.target):
                     break
             else:
-                error.append(
+                self.__has_unreachable = True
+                self.error.append(
                     f'unreachable field "{f.name}" in "{self.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
@@ -625,14 +635,14 @@ class AbstractMessage(Type):
 
         for _, links in duplicate_links.items():
             if len(links) > 1:
-                error.append(
+                self.error.append(
                     f'duplicate link from "{links[0].source.identifier}"'
                     f' to "{links[0].target.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     self.location,
                 )
-                error.extend(
+                self.error.extend(
                     [
                         (
                             "duplicate link",
@@ -644,32 +654,24 @@ class AbstractMessage(Type):
                     ]
                 )
 
-        error.propagate()
-
     def __verify_conditions(self) -> None:
         literals = qualified_literals(self.types, self.package)
         variables = {f.identifier for f in self.fields}
         seen = {ID("Message")}
-        error = RecordFluxError()
         for f in (INITIAL, *self.fields):
             seen.add(f.identifier)
             for l in self.outgoing(f):
                 state = (variables, literals, seen)
-                self.__check_vars(l.condition, state, error, l.condition.location)
-                self.__check_vars(l.length, state, error, l.length.location)
-                self.__check_vars(l.first, state, error, l.first.location)
-                self.__check_attributes(l.condition, error, l.condition.location)
-                self.__check_relations(l.condition, error, l.condition.location)
+                self.__check_vars(l.condition, state, l.condition.location)
+                self.__check_vars(l.length, state, l.length.location)
+                self.__check_vars(l.first, state, l.first.location)
+                self.__check_attributes(l.condition, l.condition.location)
+                self.__check_relations(l.condition, l.condition.location)
                 self.__check_first_expression(l, l.first.location)
                 self.__check_length_expression(l)
-        error.propagate()
 
-    @staticmethod
     def __check_vars(
-        expression: Expr,
-        state: Tuple[Set[ID], Set[ID], Set[ID]],
-        error: RecordFluxError,
-        location: Location = None,
+        self, expression: Expr, state: Tuple[Set[ID], Set[ID], Set[ID]], location: Location = None,
     ) -> None:
         variables, literals, seen = state
         for v in expression.variables(True):
@@ -678,11 +680,9 @@ class AbstractMessage(Type):
                     message = f'subsequent field "{v}" referenced'
                 else:
                     message = f'undefined variable "{v}" referenced'
-                error.append(message, Subsystem.MODEL, Severity.ERROR, location)
+                self.error.append(message, Subsystem.MODEL, Severity.ERROR, location)
 
-    def __check_attributes(
-        self, expression: Expr, error: RecordFluxError, location: Location = None
-    ) -> None:
+    def __check_attributes(self, expression: Expr, location: Location = None) -> None:
         for a in expression.findall(lambda x: isinstance(x, Attribute)):
             if isinstance(a, Length) and not (
                 isinstance(a.prefix, Variable)
@@ -694,23 +694,21 @@ class AbstractMessage(Type):
                     )
                 )
             ):
-                error.append(
+                self.error.append(
                     f'invalid use of length attribute for "{a.prefix}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     location,
                 )
 
-    def __check_relations(
-        self, expression: Expr, error: RecordFluxError, location: Location = None
-    ) -> None:
+    def __check_relations(self, expression: Expr, location: Location = None) -> None:
         for r in expression.findall(lambda x: isinstance(x, Relation)):
             if (
                 isinstance(r, Relation)
                 and not isinstance(r, (Equal, NotEqual))
                 and (isinstance(r.left, Aggregate) or isinstance(r.right, Aggregate))
             ):
-                error.append(
+                self.error.append(
                     f'invalid relation "{r.symbol}" to aggregate',
                     Subsystem.MODEL,
                     Severity.ERROR,
@@ -731,7 +729,7 @@ class AbstractMessage(Type):
                     and Field(other.name) in self.fields
                     and isinstance(self.types[Field(other.name)], Composite)
                 ):
-                    error.append(
+                    self.error.append(
                         f'invalid relation between "{other}" and aggregate',
                         Subsystem.MODEL,
                         Severity.ERROR,
@@ -746,7 +744,7 @@ class AbstractMessage(Type):
                         last = Number(255)
                     elif isinstance(othertype, Array):
                         if not isinstance(othertype.element_type, Integer):
-                            error.append(
+                            self.error.append(
                                 f'invalid array element type "{othertype.element_type.identifier}"'
                                 " for aggregate comparison",
                                 Subsystem.MODEL,
@@ -759,17 +757,16 @@ class AbstractMessage(Type):
 
                     for element in aggregate.elements:
                         if not first <= element <= last:
-                            error.append(
+                            self.error.append(
                                 f"aggregate element out of range {first} .. {last}",
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 element.location,
                             )
 
-    @staticmethod
-    def __check_first_expression(link: Link, location: Location = None) -> None:
+    def __check_first_expression(self, link: Link, location: Location = None) -> None:
         if link.first != UNDEFINED and not isinstance(link.first, First):
-            fail(
+            self.error.append(
                 f'invalid First for field "{link.target.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
@@ -777,32 +774,30 @@ class AbstractMessage(Type):
             )
 
     def __check_length_expression(self, link: Link) -> None:
-        error = RecordFluxError()
         if link.target == FINAL and link.length != UNDEFINED:
-            error.append(
+            self.error.append(
                 f'length attribute for final field in "{self.identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 link.length.location,
             )
-        if link.target != FINAL:
+        if link.target != FINAL and link.target in self.types:
             t = self.types[link.target]
             unconstrained = isinstance(t, (Opaque, Array))
             if not unconstrained and link.length != UNDEFINED:
-                error.append(
+                self.error.append(
                     f'fixed size field "{link.target.name}" with length expression',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     link.target.identifier.location,
                 )
             if unconstrained and link.length == UNDEFINED:
-                error.append(
+                self.error.append(
                     f'unconstrained field "{link.target.name}" without length expression',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     link.target.identifier.location,
                 )
-        error.propagate()
 
     def __type_constraints(self, expr: Expr) -> Sequence[Expr]:
         def get_constraints(aggregate: Aggregate, field: Variable) -> Sequence[Expr]:
@@ -838,35 +833,33 @@ class AbstractMessage(Type):
         ]
 
     def __prove_conflicting_conditions(self) -> None:
-        error = RecordFluxError()
-        for f in (INITIAL, *self.__fields):
+        for f in (INITIAL, *self.fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
                     if i1 < i2:
                         conflict = And(c1.condition, c2.condition)
                         proof = conflict.check(self.__type_constraints(conflict))
                         if proof.result == ProofResult.sat:
-                            error.append(
+                            self.error.append(
                                 f'conflicting conditions for field "{f.name}"',
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 f.identifier.location,
                             )
-                            error.append(
+                            self.error.append(
                                 f"condition {i1} ({f.identifier} -> {c1.target.identifier}):"
                                 f" {c1.condition}",
                                 Subsystem.MODEL,
                                 Severity.INFO,
                                 c1.condition.location,
                             )
-                            error.append(
+                            self.error.append(
                                 f"condition {i2} ({f.identifier} -> {c2.target.identifier}):"
                                 f" {c2.condition}",
                                 Subsystem.MODEL,
                                 Severity.INFO,
                                 c2.condition.location,
                             )
-        error.propagate()
 
     def __prove_reachability(self) -> None:
         def has_final(field: Field) -> bool:
@@ -877,18 +870,16 @@ class AbstractMessage(Type):
                     return True
             return False
 
-        error = RecordFluxError()
-
-        for f in (INITIAL, *self.__fields):
+        for f in (INITIAL, *self.fields):
             if not has_final(f):
-                error.append(
+                self.error.append(
                     f'no path to FINAL for field "{f.name}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     f.identifier.location,
                 )
 
-        for f in (*self.__fields, FINAL):
+        for f in (*self.fields, FINAL):
             paths = []
             for path in sorted(self.__paths[f]):
                 facts = [fact for link in path for fact in self.__link_expression(link)]
@@ -901,29 +892,28 @@ class AbstractMessage(Type):
 
                 paths.append((path, proof.error))
             else:
-                error.append(
+                self.error.append(
                     f'unreachable field "{f.name}" in "{self.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     f.identifier.location,
                 )
                 for index, (path, errors) in enumerate(paths):
-                    error.append(
+                    self.error.append(
                         f"path {index} (" + " -> ".join([l.target.name for l in path]) + "):",
                         Subsystem.MODEL,
                         Severity.INFO,
                         f.identifier.location,
                     )
-                    error.extend(
+                    self.error.extend(
                         [
                             (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
                             for m, l in errors
                         ]
                     )
-        error.propagate()
 
     def __prove_contradictions(self) -> None:
-        for f in (INITIAL, *self.__fields):
+        for f in (INITIAL, *self.fields):
             for path in self.__paths[f]:
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 for c in self.outgoing(f):
@@ -931,14 +921,13 @@ class AbstractMessage(Type):
                     constraints = self.__type_constraints(contradiction)
                     proof = contradiction.check([*constraints, *facts])
                     if proof.result == ProofResult.unsat:
-                        error = RecordFluxError()
-                        error.append(
+                        self.error.append(
                             f'contradicting condition in "{self.identifier}"',
                             Subsystem.MODEL,
                             Severity.ERROR,
                             c.condition.location,
                         )
-                        error.extend(
+                        self.error.extend(
                             [
                                 (
                                     f'on path "{l.target.identifier}"',
@@ -949,13 +938,13 @@ class AbstractMessage(Type):
                                 for l in path
                             ]
                         )
-                        error.extend(
+                        self.error.extend(
                             [
                                 (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
                                 for m, l in proof.error
                             ]
                         )
-                        error.propagate()
+                        return
 
     @staticmethod
     def __target_first(link: Link) -> Expr:
@@ -994,8 +983,7 @@ class AbstractMessage(Type):
         ]
 
     def __prove_field_positions(self) -> None:
-        error = RecordFluxError()
-        for f in self.__fields:
+        for f in self.fields:
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 positive = GreaterEqual(self.__target_length(l), Number(0))
                 facts = [f for l in p for f in self.__link_expression(l)]
@@ -1003,13 +991,13 @@ class AbstractMessage(Type):
                 proof = positive.check(facts)
                 if proof.result != ProofResult.sat:
                     path_message = " -> ".join([l.target.name for l in p])
-                    error.append(
+                    self.error.append(
                         f'negative length for field "{f.name}" ({path_message})',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.identifier.location,
                     )
-                    error.extend(
+                    self.error.extend(
                         [
                             (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
                             for m, l in proof.error
@@ -1021,19 +1009,18 @@ class AbstractMessage(Type):
                 proof = start.check(facts)
                 if proof.result != ProofResult.sat:
                     path_message = " -> ".join([l.target.name for l in p])
-                    error.append(
+                    self.error.append(
                         f'negative length for field "{f.name}" ({path_message})',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.identifier.location,
                     )
-                    error.extend(
+                    self.error.extend(
                         [
                             (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
                             for m, l in proof.error
                         ]
                     )
-        error.propagate()
 
     def __prove_coverage(self) -> None:
         """
@@ -1078,14 +1065,13 @@ class AbstractMessage(Type):
             # Coverage expression must be False, i.e. no bits left
             proof = TRUE.check(facts)
             if proof.result == ProofResult.sat:
-                error = RecordFluxError()
-                error.append(
+                self.error.append(
                     "path does not cover whole message",
                     Subsystem.MODEL,
                     Severity.ERROR,
                     self.identifier.location,
                 )
-                error.extend(
+                self.error.extend(
                     [
                         (
                             f'on path "{l.target.identifier}"',
@@ -1096,31 +1082,29 @@ class AbstractMessage(Type):
                         for l in path
                     ]
                 )
-                error.propagate()
+                return
 
     def __prove_overlays(self) -> None:
-        error = RecordFluxError()
-        for f in (INITIAL, *self.__fields):
+        for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
                 if l.first != UNDEFINED and isinstance(l.first, First):
                     facts = [f for l in p for f in self.__link_expression(l)]
                     overlaid = Equal(self.__target_last(l), Last(l.first.prefix))
                     proof = overlaid.check(facts)
                     if proof.result != ProofResult.sat:
-                        error.append(
+                        self.error.append(
                             f'field "{f.name}" not congruent with'
                             f' overlaid field "{l.first.prefix}"',
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.identifier.location,
                         )
-                        error.extend(
+                        self.error.extend(
                             [
                                 (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
                                 for m, l in proof.error
                             ]
                         )
-        error.propagate()
 
     def _prove(self) -> None:
         self.__prove_conflicting_conditions()
@@ -1130,7 +1114,7 @@ class AbstractMessage(Type):
         self.__prove_overlays()
         self.__prove_field_positions()
 
-    def __compute_topological_sorting(self) -> Tuple[Field, ...]:
+    def __compute_topological_sorting(self) -> Optional[Tuple[Field, ...]]:
         """Return fields topologically sorted (Kahn's algorithm)."""
         result: Tuple[Field, ...] = ()
         fields = [INITIAL]
@@ -1142,14 +1126,15 @@ class AbstractMessage(Type):
                 visited.add(e)
                 if set(self.incoming(e.target)) <= visited:
                     fields.append(e.target)
-        if set(self.structure) - visited:
-            fail(
+        if not self.__has_unreachable and set(self.structure) - visited:
+            self.error.append(
                 f'structure of "{self.identifier}" contains cycle',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
             # We do not identify the cycles in the model, c.f. Componolit/RecordFlux#256
+            return None
         return tuple(f for f in result if f not in [INITIAL, FINAL])
 
     def __compute_paths(self, final: Field) -> Set[Tuple[Link, ...]]:
@@ -1164,7 +1149,7 @@ class AbstractMessage(Type):
     def __compute_definite_predecessors(self, final: Field) -> Tuple[Field, ...]:
         return tuple(
             f
-            for f in self.__fields
+            for f in self.fields
             if all(any(f == pf.source for pf in p) for p in self.__paths[final])
         )
 
@@ -1187,10 +1172,11 @@ class Message(AbstractMessage):
         structure: Sequence[Link],
         types: Mapping[Field, Type],
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> None:
-        super().__init__(identifier, structure, types, location)
+        super().__init__(identifier, structure, types, location, error)
 
-        if structure or types:
+        if not self.error.check() and (structure or types):
             self._prove()
 
     def copy(
@@ -1199,12 +1185,14 @@ class Message(AbstractMessage):
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> "Message":
         return Message(
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
             location if location else self.location,
+            error if error else self.error,
         )
 
     def proven(self) -> "Message":
@@ -1212,6 +1200,7 @@ class Message(AbstractMessage):
 
 
 class DerivedMessage(Message):
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
@@ -1219,6 +1208,7 @@ class DerivedMessage(Message):
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> None:
 
         super().__init__(
@@ -1226,6 +1216,7 @@ class DerivedMessage(Message):
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
             location if location else base.location,
+            error if error else base.error,
         )
         self.base = base
 
@@ -1235,6 +1226,7 @@ class DerivedMessage(Message):
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> "DerivedMessage":
         return DerivedMessage(
             identifier if identifier else self.identifier,
@@ -1242,6 +1234,7 @@ class DerivedMessage(Message):
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
             location if location else self.location,
+            error if error else self.error,
         )
 
     def proven(self) -> "DerivedMessage":
@@ -1255,16 +1248,18 @@ class UnprovenMessage(AbstractMessage):
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> "UnprovenMessage":
         return UnprovenMessage(
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
             location if location else self.location,
+            error if error else self.error,
         )
 
     def proven(self) -> Message:
-        return Message(self.identifier, self.structure, self.types, self.location)
+        return Message(self.identifier, self.structure, self.types, self.location, self.error)
 
     @ensure(lambda result: valid_message_field_types(result))
     def merged(self) -> "UnprovenMessage":
@@ -1287,26 +1282,24 @@ class UnprovenMessage(AbstractMessage):
 
             if name_conflicts:
                 conflicting = name_conflicts.pop(0)
-                error = RecordFluxError()
-                error.append(
+                self.error.append(
                     f'name conflict for "{conflicting.identifier}" in "{message.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     conflicting.identifier.location,
                 )
-                error.append(
+                self.error.append(
                     f'when merging message "{inner_message.identifier}"',
                     Subsystem.MODEL,
                     Severity.INFO,
                     inner_message.location,
                 )
-                error.append(
+                self.error.append(
                     f'into field "{field.name}"',
                     Subsystem.MODEL,
                     Severity.INFO,
                     field.identifier.location,
                 )
-                error.propagate()
 
             structure = []
 
@@ -1351,6 +1344,7 @@ class UnprovenMessage(AbstractMessage):
 
 
 class UnprovenDerivedMessage(UnprovenMessage):
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
@@ -1358,6 +1352,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> None:
 
         super().__init__(
@@ -1365,7 +1360,9 @@ class UnprovenDerivedMessage(UnprovenMessage):
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
             location if location else base.location,
+            error if error else base.error,
         )
+        self.error.extend(base.error)
         self.base = base
 
     def copy(
@@ -1374,6 +1371,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> "UnprovenDerivedMessage":
         return UnprovenDerivedMessage(
             identifier if identifier else self.identifier,
@@ -1381,10 +1379,13 @@ class UnprovenDerivedMessage(UnprovenMessage):
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
             location if location else self.location,
+            error if error else self.error,
         )
 
     def proven(self) -> DerivedMessage:
-        return DerivedMessage(self.identifier, self.base, self.structure, self.types, self.location)
+        return DerivedMessage(
+            self.identifier, self.base, self.structure, self.types, self.location, self.error
+        )
 
 
 class Refinement(Type):
@@ -1397,22 +1398,24 @@ class Refinement(Type):
         sdu: Message,
         condition: Expr = TRUE,
         location: Location = None,
+        error: RecordFluxError = None,
     ) -> None:
         package = ID(package)
-
-        if len(package.parts) != 1:
-            fail(
-                f'unexpected format of package name "{package}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                package.location,
-            )
 
         super().__init__(
             package * "__REFINEMENT__"
             f"{flat_name(sdu.full_name)}__{flat_name(pdu.full_name)}__{field.name}__",
             location,
+            error,
         )
+
+        if len(package.parts) != 1:
+            self.error.append(
+                f'unexpected format of package name "{package}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                package.location,
+            )
 
         self.pdu = pdu
         self.field = field
