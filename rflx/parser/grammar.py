@@ -55,15 +55,7 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID
-from rflx.model import (
-    Array,
-    Enumeration,
-    ModularInteger,
-    RangeInteger,
-    Type,
-    is_builtin_type,
-    qualified_type_name,
-)
+from rflx.model import Array, Enumeration, ModularInteger, RangeInteger, Type, qualified_type_name
 
 from .ast import (
     Component,
@@ -608,11 +600,6 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
     name = tokens[1]
 
     locn = parser_location(tokens[0], tokens[-1], string)
-
-    if is_builtin_type(name):
-        raise ParseFatalException(
-            string, location, f'illegal redefinition of built-in type "{name}"'
-        )
 
     identifier = package * name
 

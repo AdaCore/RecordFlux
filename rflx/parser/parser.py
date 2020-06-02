@@ -34,6 +34,7 @@ from rflx.model import (
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
+    is_builtin_type,
     qualified_type_name,
 )
 
@@ -491,4 +492,12 @@ def check_naming(error: RecordFluxError, package: PackageSpec, filename: str = N
                 Subsystem.PARSER,
                 Severity.ERROR,
                 package.identifier.location,
+            )
+    for t in package.types:
+        if is_builtin_type(t.identifier.name):
+            error.append(
+                f'illegal redefinition of built-in type "{t.identifier.name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                t.location,
             )
