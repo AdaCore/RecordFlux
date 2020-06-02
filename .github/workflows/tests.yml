@@ -193,7 +193,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: build/gnatprove
-        key: ${{ runner.os }}-gnatprove-2020-${{ matrix.target }}
+        key: ${{ runner.os }}-gnatprove2020-${{ matrix.target }}
     - name: Test
       run: |
         make prove_${{ matrix.target }}
@@ -220,7 +220,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: build/gnatprove
-        key: ${{ runner.os }}-gnatprove-2020-${{ matrix.target }}
+        key: ${{ runner.os }}-gnatprove2020-${{ matrix.target }}
     - name: Test
       run: |
         make prove_${{ matrix.target }}
