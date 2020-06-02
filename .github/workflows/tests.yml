@@ -197,9 +197,6 @@ jobs:
     - name: Test
       run: |
         make prove_${{ matrix.target }}
-    - name: Clean up
-      run: |
-        rm -rf spark{,.tgz{,.gpg}}
 
   verification_cached:
     name: Verification
@@ -227,6 +224,3 @@ jobs:
     - name: Test
       run: |
         make prove_${{ matrix.target }}
-    - name: Clean up
-      run: |
-        rm -rf spark{,.tgz{,.gpg}}
