@@ -42,7 +42,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --user -r requirements.txt
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
         echo "::add-path::$HOME/.local/bin"
         echo "::add-path::$HOME/bin"
@@ -113,7 +113,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --user -r requirements.txt
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
         echo "::add-path::$HOME/.local/bin"
         echo "::add-path::$HOME/bin"
@@ -151,7 +151,7 @@ jobs:
     - name: Install GNAT
       run: |
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
         echo "::add-path::$HOME/bin"
     - name: Test
@@ -166,7 +166,7 @@ jobs:
     - name: Install GNAT
       run: |
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
         echo "::add-path::$HOME/bin"
     - name: Build runtime
@@ -175,7 +175,7 @@ jobs:
         cd ada-runtime
         git checkout 280a4867f1d872412aec00f35aa28b35ff295e60
         cd ..
-        docker run -v $PWD:/app -w /app componolit/ci:gnat-community-2020 /bin/sh -c "make -C ada-runtime"
+        docker run -u $(id -u):$(id -g) -v $PWD:/app -w /app componolit/ci:gnat-community-2020 /bin/sh -c "make -C ada-runtime"
     - name: Build
       run: |
         gprbuild -Ptest --RTS=ada-runtime/build/posix/obj -Xaunit=no -Xoptimization=yes
@@ -199,7 +199,7 @@ jobs:
     - name: Install SPARK
       run: |
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
         chmod +x $HOME/bin/gnatprove
         echo "::add-path::$HOME/bin"
     - name: Cache GNATprove results
@@ -230,7 +230,7 @@ jobs:
     - name: Install SPARK
       run: |
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
         chmod +x $HOME/bin/gnatprove
         echo "::add-path::$HOME/bin"
     - name: Cache GNATprove results
