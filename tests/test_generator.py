@@ -49,6 +49,13 @@ def test_library_files(tmp_path: Path) -> None:
                 assert library_file.read() == expected_file.read(), filename
 
 
+def test_library_files_no_prefix(tmp_path: Path) -> None:
+    generator = Generator("", reproducible=True)
+    generator.write_library_files(tmp_path)
+    for filename in const.LIBRARY_FILES:
+        assert (tmp_path / filename).exists()
+
+
 def test_top_level_package(tmp_path: Path) -> None:
     generator = Generator("RFLX", reproducible=True)
     generator.write_top_level_package(tmp_path)
