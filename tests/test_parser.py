@@ -286,7 +286,7 @@ def test_incorrect_specification() -> None:
 def test_unexpected_exception_in_parser(monkeypatch: Any) -> None:
     p = Parser()
     with pytest.raises(RecordFluxError, match=r"parser: error: TEST"):
-        monkeypatch.setattr(parser, "check_types", lambda x: raise_parser_error())
+        monkeypatch.setattr(parser, "check_types", lambda x, e: raise_parser_error())
         p.parse_string(
             """
                 package Test is
@@ -364,7 +364,7 @@ def test_message_undefined_type() -> None:
                   end message;
             end Test;
         """,
-        r"^<stdin>:5:28: parser: error: undefined component type$",
+        r'^<stdin>:5:22: model: error: missing type for field "Foo"$',
     )
 
 

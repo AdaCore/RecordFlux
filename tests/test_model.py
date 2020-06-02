@@ -37,6 +37,7 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
+    Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
@@ -131,6 +132,11 @@ M_SMPL_REF_DERI = UnprovenDerivedMessage(
 )
 
 
+def assert_type(instance: Type, regex: str) -> None:
+    with pytest.raises(RecordFluxError, match=regex):
+        instance.error.propagate()
+
+
 def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
     msg = f"{expected.full_name} - {msg}" if msg else expected.full_name
     assert actual.full_name == expected.full_name, msg
@@ -143,15 +149,14 @@ def test_type_name() -> None:
     t = ModularInteger("Package.Type_Name", Number(256))
     assert t.name == "Type_Name"
     assert t.package == ID("Package")
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:10:20: model: error: unexpected format of type name "X"$'
-    ):
-        ModularInteger("X", Number(256), Location((10, 20)))
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:10:20: model: error: unexpected format of type name "X.Y.Z"$',
-    ):
-        ModularInteger("X.Y.Z", Number(256), Location((10, 20)))
+    assert_type(
+        ModularInteger("X", Number(256), Location((10, 20))),
+        r'^<stdin>:10:20: model: error: unexpected format of type name "X"$',
+    )
+    assert_type(
+        ModularInteger("X.Y.Z", Number(256), Location((10, 20))),
+        '^<stdin>:10:20: model: error: unexpected format of type name "X.Y.Z"$',
+    )
 
 
 def test_modular_size() -> None:
@@ -171,25 +176,24 @@ def test_modular_last() -> None:
 
 
 def test_modular_invalid_modulus_power_of_two() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:65:3: model: error: modulus of "T" not power of two$'
-    ):
-        ModularInteger("P.T", Number(255), Location((65, 3)))
+    assert_type(
+        ModularInteger("P.T", Number(255), Location((65, 3))),
+        r'^<stdin>:65:3: model: error: modulus of "T" not power of two$',
+    )
 
 
 def test_modular_invalid_modulus_variable() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:3:23: model: error: modulus of "T" contains variable$'
-    ):
-        ModularInteger("P.T", Pow(Number(2), Variable("X")), Location((3, 23)))
+    assert_type(
+        ModularInteger("P.T", Pow(Number(2), Variable("X")), Location((3, 23))),
+        r'^<stdin>:3:23: model: error: modulus of "T" contains variable$',
+    )
 
 
 def test_modular_invalid_modulus_limit() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:55:3: model: error: modulus of "T" exceeds limit \(2\*\*64\)$',
-    ):
-        ModularInteger("P.T", Pow(Number(2), Number(128), Location((55, 3))))
+    assert_type(
+        ModularInteger("P.T", Pow(Number(2), Number(128)), Location((55, 3))),
+        r"^<stdin>:55:3: model: error: modulus exceeds limit \(2\*\*64\)$",
+    )
 
 
 def test_range_size() -> None:
@@ -200,115 +204,119 @@ def test_range_size() -> None:
 
 
 def test_range_invalid_first_variable() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:5:3: model: error: first of "T" contains variable$'
-    ):
-        RangeInteger("P.T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3)))
+    assert_type(
+        RangeInteger("P.T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3))),
+        r'^<stdin>:5:3: model: error: first of "T" contains variable$',
+    )
 
 
 def test_range_invalid_last_variable() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:80:6: model: error: last of "T" contains variable$'
-    ):
-        RangeInteger("P.T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6)))
+    assert_type(
+        RangeInteger("P.T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6))),
+        r'^<stdin>:80:6: model: error: last of "T" contains variable$',
+    )
 
 
 def test_range_invalid_last_exceeds_limit() -> None:
-    with pytest.raises(RecordFluxError, match=r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$'):
+    with pytest.raises(
+        RecordFluxError, match=r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$'
+    ):
         RangeInteger("P.T", Number(1), Pow(Number(2), Number(63)), Number(64))
 
 
 def test_range_invalid_first_negative() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:6:4: model: error: first of "T" negative$'
-    ):
-        RangeInteger("P.T", Number(-1), Number(0), Number(1), Location((6, 4)))
+    assert_type(
+        RangeInteger("P.T", Number(-1), Number(0), Number(1), Location((6, 4))),
+        r'^<stdin>:6:4: model: error: first of "T" negative$',
+    )
 
 
 def test_range_invalid_range() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:10:5: model: error: range of "T" negative$'
-    ):
-        RangeInteger("P.T", Number(1), Number(0), Number(1), Location((10, 5)))
+    assert_type(
+        RangeInteger("P.T", Number(1), Number(0), Number(1), Location((10, 5))),
+        r'^<stdin>:10:5: model: error: range of "T" negative$',
+    )
 
 
 def test_range_invalid_size_variable() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:22:4: model: error: size of "T" contains variable$'
-    ):
+    assert_type(
         RangeInteger(
             "P.T", Number(0), Number(256), Add(Number(8), Variable("X")), Location((22, 4))
-        )
+        ),
+        r'^<stdin>:22:4: model: error: size of "T" contains variable$',
+    )
 
 
 def test_range_invalid_size_too_small() -> None:
-    with pytest.raises(RecordFluxError, match=r"^<stdin>:10:4: model: error: size too small$"):
-        RangeInteger("P.T", Number(0), Number(256), Number(8), Location((10, 4)))
+    assert_type(
+        RangeInteger("P.T", Number(0), Number(256), Number(8), Location((10, 4))),
+        r"^<stdin>:10:4: model: error: size too small$",
+    )
 
 
 def test_range_invalid_size_exceeds_limit() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*64\)$',
-    ):
-        RangeInteger("P.T", Number(0), Number(256), Number(128), Location((50, 3)))
+    # ISSUE: Componolit/RecordFlux#238
+    assert_type(
+        RangeInteger("P.T", Number(0), Number(256), Number(128), Location((50, 3))),
+        r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*64\)$',
+    )
 
 
 def test_enumeration_invalid_size_variable() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:34:3: model: error: size of "T" contains variable$'
-    ):
+    assert_type(
         Enumeration(
             "P.T", {"A": Number(1)}, Add(Number(8), Variable("X")), False, Location((34, 3))
-        )
+        ),
+        r'^<stdin>:34:3: model: error: size of "T" contains variable$',
+    )
 
 
 def test_enumeration_invalid_size_too_small() -> None:
-    with pytest.raises(RecordFluxError, match=r"^<stdin>:10:5: model: error: size too small$"):
-        Enumeration("P.T", {"A": Number(256)}, Number(8), False, Location((10, 5)))
+    assert_type(
+        Enumeration("P.T", {"A": Number(256)}, Number(8), False, Location((10, 5))),
+        r"^<stdin>:10:5: model: error: size too small$",
+    )
 
 
 def test_enumeration_invalid_size_exceeds_limit() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*64\)$',
-    ):
-        Enumeration("P.T", {"A": Number(256)}, Number(128), False, Location((8, 20)))
+    assert_type(
+        Enumeration("P.T", {"A": Number(256)}, Number(128), False, Location((8, 20))),
+        r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*64\)$',
+    )
 
 
 def test_enumeration_invalid_always_valid_aspect() -> None:
-    with pytest.raises(RecordFluxError, match=r'^model: error: unnecessary always-valid aspect on "T"$'):
-        Enumeration("P.T", {"A": Number(0), "B": Number(1)}, Number(1), True)
+    with pytest.raises(
+        RecordFluxError, match=r'^model: error: unnecessary always-valid aspect on "T"$'
+    ):
+        Enumeration("P.T", {"A": Number(0), "B": Number(1)}, Number(1), True).error.propagate()
 
 
 def test_enumeration_invalid_literal() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:1:2: model: error: invalid literal name "A B"$'
-    ):
-        Enumeration("P.T", {"A B": Number(1)}, Number(8), False, Location(((1, 2))))
-    with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:6:4: model: error: invalid literal name "A.B"$'
-    ):
-        Enumeration("P.T", {"A.B": Number(1)}, Number(8), False, Location((6, 4)))
+    assert_type(
+        Enumeration("P.T", {"A B": Number(1)}, Number(8), False, Location(((1, 2)))),
+        r'^<stdin>:1:2: model: error: invalid literal name "A B"$',
+    )
+    assert_type(
+        Enumeration("P.T", {"A.B": Number(1)}, Number(8), False, Location((6, 4))),
+        r'^<stdin>:6:4: model: error: invalid literal name "A.B"$',
+    )
 
 
 def test_message_incorrect_name() -> None:
-    with pytest.raises(
-        RecordFluxError, match='^<stdin>:10:8: model: error: unexpected format of type name "M"$'
-    ):
-        Message("M", [], {}, Location((10, 8)))
+    assert_type(
+        Message("M", [], {}, Location((10, 8))),
+        '^<stdin>:10:8: model: error: unexpected format of type name "M"$',
+    )
 
 
 def test_message_missing_type() -> None:
-    structure = [
-        Link(INITIAL, Field("X")),
-        Link(Field("X"), FINAL),
-    ]
+    x = Field(ID("X", Location((5, 6))))
+    structure = [Link(INITIAL, x), Link(x, FINAL)]
 
-    with pytest.raises(
-        RecordFluxError, match='^<stdin>:5:6: model: error: missing type for field "X"$'
-    ):
-        Message("P.M", structure, {}, Location((5, 6)))
+    assert_type(
+        Message("P.M", structure, {}), '^<stdin>:5:6: model: error: missing type for field "X"$',
+    )
 
 
 def test_message_unused_type() -> None:
@@ -321,8 +329,7 @@ def test_message_unused_type() -> None:
 
     types = {Field("X"): t, Field(ID("Y", Location((5, 6)))): t}
 
-    with pytest.raises(RecordFluxError, match='^<stdin>:5:6: model: error: unused field "Y"$'):
-        Message("P.M", structure, types)
+    assert_type(Message("P.M", structure, types), '^<stdin>:5:6: model: error: unused field "Y"$')
 
 
 def test_message_ambiguous_first_field() -> None:
@@ -338,13 +345,12 @@ def test_message_ambiguous_first_field() -> None:
 
     types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
 
-    with pytest.raises(
-        RecordFluxError,
-        match="^<stdin>:1:5: model: error: ambiguous first field\n"
+    assert_type(
+        Message("P.M", structure, types, location=Location((1, 5))),
+        "^<stdin>:1:5: model: error: ambiguous first field\n"
         "<stdin>:2:6: model: info: duplicate\n"
         "<stdin>:3:6: model: info: duplicate",
-    ):
-        Message("P.M", structure, types, location=Location((1, 5)))
+    )
 
 
 def test_message_duplicate_link() -> None:
@@ -358,13 +364,12 @@ def test_message_duplicate_link() -> None:
 
     types = {Field("X"): t}
 
-    with pytest.raises(
-        RecordFluxError,
-        match=f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
+    assert_type(
+        Message("P.M", structure, types, location=Location((1, 5))),
+        f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
         f"<stdin>:4:42: model: info: duplicate link\n"
         f"<stdin>:5:42: model: info: duplicate link",
-    ):
-        Message("P.M", structure, types, location=Location((1, 5)))
+    )
 
 
 def test_message_multiple_duplicate_links() -> None:
@@ -381,16 +386,15 @@ def test_message_multiple_duplicate_links() -> None:
 
     types = {Field("X"): t, Field("Y"): t}
 
-    with pytest.raises(
-        RecordFluxError,
-        match=f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
+    assert_type(
+        Message("P.M", structure, types, location=Location((1, 5))),
+        f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
         f"<stdin>:3:16: model: info: duplicate link\n"
         f"<stdin>:4:18: model: info: duplicate link\n"
         f'<stdin>:1:5: model: error: duplicate link from "Y" to "{FINAL.name}"\n'
         f"<stdin>:5:20: model: info: duplicate link\n"
         f"<stdin>:6:22: model: info: duplicate link",
-    ):
-        Message("P.M", structure, types, location=Location((1, 5)))
+    )
 
 
 def test_message_unreachable_field() -> None:
@@ -403,10 +407,10 @@ def test_message_unreachable_field() -> None:
 
     types = {Field("X"): BOOLEAN, Field("Y"): BOOLEAN, Field("Z"): BOOLEAN}
 
-    with pytest.raises(
-        RecordFluxError, match='^<stdin>:20:3: model: error: unreachable field "Y" in "P.M"$'
-    ):
-        Message("P.M", structure, types)
+    assert_type(
+        Message("P.M", structure, types),
+        '^<stdin>:20:3: model: error: unreachable field "Y" in "P.M"$',
+    )
 
 
 def test_message_cycle() -> None:
@@ -422,16 +426,15 @@ def test_message_cycle() -> None:
 
     types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
 
-    with pytest.raises(
-        RecordFluxError,
-        match='^<stdin>:10:5: model: error: structure of "P.M" contains cycle'
+    assert_type(
+        Message("P.M", structure, types, Location((10, 5))),
+        '^<stdin>:10:5: model: error: structure of "P.M" contains cycle'
         # We cannot detect cycles, c.f. Componolit/RecordFlux#256
         # '\n'
         # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
         # '<stdin>:4:5: model: info: field "Y" links to "Z"\n'
         # '<stdin>:5:5: model: info: field "Z" links to "X"\n',
-    ):
-        Message("P.M", structure, types, Location((10, 5)))
+    )
 
 
 def test_message_fields() -> None:
@@ -627,11 +630,10 @@ def test_message_nonexistent_variable() -> None:
     ]
 
     types = {Field("F1"): enum_type, Field("F2"): mod_type}
-    with pytest.raises(
-        RecordFluxError,
-        match='^<stdin>:444:55: model: error: undefined variable "Val3" referenced',
-    ):
-        Message("P.M", structure, types)
+    assert_type(
+        Message("P.M", structure, types),
+        '^<stdin>:444:55: model: error: undefined variable "Val3" referenced',
+    )
 
 
 def test_message_subsequent_variable() -> None:
@@ -645,10 +647,10 @@ def test_message_subsequent_variable() -> None:
     ]
 
     types = {Field("F1"): t, Field("F2"): t}
-    with pytest.raises(
-        RecordFluxError, match='^<stdin>:1024:57: model: error: subsequent field "F2" referenced',
-    ):
-        Message("P.M", structure, types)
+    assert_type(
+        Message("P.M", structure, types),
+        '^<stdin>:1024:57: model: error: subsequent field "F2" referenced',
+    )
 
 
 def test_message_invalid_use_of_length_attribute() -> None:
@@ -657,11 +659,10 @@ def test_message_invalid_use_of_length_attribute() -> None:
         Link(Field("F1"), FINAL, Equal(Length("F1"), Number(32), Location((400, 17)))),
     ]
     types = {Field("F1"): MODULAR_INTEGER}
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:400:17: model: error: invalid use of length attribute for "F1"$',
-    ):
-        Message("P.M", structure, types)
+    assert_type(
+        Message("P.M", structure, types),
+        r'^<stdin>:400:17: model: error: invalid use of length attribute for "F1"$',
+    )
 
 
 def test_message_invalid_relation_to_aggregate() -> None:
@@ -674,11 +675,10 @@ def test_message_invalid_relation_to_aggregate() -> None:
         ),
     ]
     types = {Field("F1"): Opaque()}
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:100:20: model: error: invalid relation " <= " to aggregate$',
-    ):
-        Message("P.M", structure, types)
+    assert_type(
+        Message("P.M", structure, types),
+        r'^<stdin>:100:20: model: error: invalid relation " <= " to aggregate$',
+    )
 
 
 def test_message_invalid_element_in_relation_to_aggregate() -> None:
@@ -691,11 +691,10 @@ def test_message_invalid_element_in_relation_to_aggregate() -> None:
         ),
     ]
     types = {Field("F1"): MODULAR_INTEGER}
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:14:7: model: error: invalid relation between "F1" and aggregate$',
-    ):
-        Message("P.M", structure, types)
+    assert_type(
+        Message("P.M", structure, types),
+        r'^<stdin>:14:7: model: error: invalid relation between "F1" and aggregate$',
+    )
 
 
 def test_message_field_size() -> None:
@@ -713,6 +712,7 @@ def test_message_field_size() -> None:
         RecordFluxError, match='^<stdin>:30:10: internal: error: field "X" not found$'
     ):
         message.field_size(Field("X"))
+        message.error.propagate()
 
 
 def test_message_copy() -> None:
@@ -748,10 +748,10 @@ def test_message_proven() -> None:
 
 
 def test_derived_message_incorrect_base_name() -> None:
-    with pytest.raises(
-        RecordFluxError, match='^<stdin>:40:8: model: error: unexpected format of type name "M"$'
-    ):
-        DerivedMessage("P.M", Message("M", [], {}, location=Location((40, 8))))
+    assert_type(
+        DerivedMessage("P.M", Message("M", [], {}, location=Location((40, 8)))),
+        '^<stdin>:40:8: model: error: unexpected format of type name "M"$',
+    )
 
 
 def test_derived_message_proven() -> None:
@@ -1037,25 +1037,23 @@ def test_merge_message_error_name_conflict() -> None:
         "P.M1",
         [Link(INITIAL, m1_f1), Link(m1_f1, m1_f1_f2), Link(m1_f1_f2, FINAL)],
         {Field("F1"): m2, Field("F1_F2"): MODULAR_INTEGER},
+        Location((2, 9)),
     )
 
-    with pytest.raises(
-        RecordFluxError,
-        match=(
-            r'^<stdin>:30:5: model: error: name conflict for "F1_F2" in "P.M1"\n'
-            r'<stdin>:15:3: model: info: when merging message "P.M2"\n'
-            r'<stdin>:20:8: model: info: into field "F1"$'
-        ),
-    ):
-        m1.merged()
+    assert_type(
+        m1.merged(),
+        r"^"
+        r'<stdin>:30:5: model: error: name conflict for "F1_F2" in "P.M1"\n'
+        r'<stdin>:15:3: model: info: when merging message "P.M2"\n'
+        r'<stdin>:20:8: model: info: into field "F1"$',
+    )
 
 
 def test_refinement_invalid_package() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:22:10: model: error: unexpected format of package name "A.B"$',
-    ):
-        Refinement(ID("A.B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
+    assert_type(
+        Refinement(ID("A.B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME),
+        r'^<stdin>:22:10: model: error: unexpected format of package name "A.B"$',
+    )
 
 
 def test_field_locations() -> None:
@@ -1073,84 +1071,74 @@ def test_field_locations() -> None:
 
 
 def test_opaque_aggregate_out_of_range() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=(r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 255"),
-    ):
-        f = Field("F")
-        Message(
-            "P.M",
-            [
-                Link(INITIAL, f, length=Number(24)),
-                Link(
-                    f,
-                    FINAL,
-                    condition=Equal(
-                        Variable("F"),
-                        Aggregate(Number(1), Number(2), Number(256, location=Location((44, 3)))),
-                    ),
+    f = Field("F")
+    message = Message(
+        "P.M",
+        [
+            Link(INITIAL, f, length=Number(24)),
+            Link(
+                f,
+                FINAL,
+                condition=Equal(
+                    Variable("F"),
+                    Aggregate(Number(1), Number(2), Number(256, location=Location((44, 3)))),
                 ),
-            ],
-            {Field("F"): Opaque()},
-        )
+            ),
+        ],
+        {Field("F"): Opaque()},
+    )
+
+    assert_type(
+        message, r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 255",
+    )
 
 
 def test_array_aggregate_out_of_range() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=(r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 63"),
-    ):
+    array_type = Array("P.Array", ModularInteger("P.Element", Number(64)))
 
-        array_type = Array("P.Array", ModularInteger("P.Element", Number(64)))
-
-        f = Field("F")
-        Message(
-            "P.M",
-            [
-                Link(INITIAL, f, length=Number(18)),
-                Link(
-                    f,
-                    FINAL,
-                    condition=Equal(
-                        Variable("F"),
-                        Aggregate(Number(1), Number(2), Number(64, location=Location((44, 3)))),
-                    ),
+    f = Field("F")
+    message = Message(
+        "P.M",
+        [
+            Link(INITIAL, f, length=Number(18)),
+            Link(
+                f,
+                FINAL,
+                condition=Equal(
+                    Variable("F"),
+                    Aggregate(Number(1), Number(2), Number(64, location=Location((44, 3)))),
                 ),
-            ],
-            {Field("F"): array_type},
-        )
+            ),
+        ],
+        {Field("F"): array_type},
+    )
+    assert_type(message, r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 63")
 
 
 def test_array_aggregate_invalid_element_type() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=(
-            r"^<stdin>:90:10: model: error: invalid array element type"
-            ' "P.I" for aggregate comparison$'
-        ),
-    ):
+    inner = Message(
+        "P.I", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): MODULAR_INTEGER},
+    )
+    array_type = Array("P.Array", inner)
 
-        inner = Message(
-            "P.I",
-            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): MODULAR_INTEGER},
-        )
-        array_type = Array("P.Array", inner)
-
-        f = Field("F")
-        Message(
-            "P.M",
-            [
-                Link(INITIAL, f, length=Number(18)),
-                Link(
-                    f,
-                    FINAL,
-                    condition=Equal(
-                        Variable("F"),
-                        Aggregate(Number(1), Number(2), Number(64)),
-                        Location((90, 10)),
-                    ),
+    f = Field("F")
+    message = Message(
+        "P.M",
+        [
+            Link(INITIAL, f, length=Number(18)),
+            Link(
+                f,
+                FINAL,
+                condition=Equal(
+                    Variable("F"), Aggregate(Number(1), Number(2), Number(64)), Location((90, 10)),
                 ),
-            ],
-            {Field("F"): array_type},
-        )
+            ),
+        ],
+        {Field("F"): array_type},
+    )
+
+    assert_type(
+        message,
+        r"^<stdin>:90:10: model: error: invalid array element type"
+        ' "P.I" for aggregate comparison$',
+    )

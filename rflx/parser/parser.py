@@ -114,11 +114,16 @@ class Parser:
         error.propagate()
 
     def create_model(self) -> Model:
+        error = RecordFluxError()
         for specification in self.__specifications:
             if str(specification.package.identifier) in self.__evaluated_specifications:
                 continue
             self.__evaluated_specifications.add(str(specification.package.identifier))
-            self.__evaluate_specification(specification)
+            try:
+                self.__evaluate_specification(specification)
+            except RecordFluxError as e:
+                error.extend(e)
+        error.propagate()
         return Model(list(self.__types.values()))
 
     @property
@@ -128,11 +133,12 @@ class Parser:
     def __evaluate_specification(self, specification: Specification) -> None:
         log.info("Processing %s", specification.package.identifier)
 
-        self.__evaluate_types(specification)
-        check_types(self.__types)
-
-    def __evaluate_types(self, spec: Specification) -> None:
         error = RecordFluxError()
+        self.__evaluate_types(specification, error)
+        check_types(self.__types, error)
+        error.propagate()
+
+    def __evaluate_types(self, spec: Specification, error: RecordFluxError) -> None:
         for t in spec.package.types:
             t.identifier = ID(f"{spec.package.identifier}.{t.name}", t.identifier.location)
 
@@ -151,40 +157,43 @@ class Parser:
                 )
                 continue
 
+            new_type: Type
+
             if isinstance(t, Scalar):
-                self.__types[t.identifier] = t
+                new_type = t
 
             elif isinstance(t, Array):
-                self.__types[t.identifier] = create_array(t, self.__types)
+                new_type = create_array(t, self.__types)
 
             elif isinstance(t, MessageSpec):
-                self.__types[t.identifier] = create_message(t, self.__types)
+                new_type = create_message(t, self.__types)
 
             elif isinstance(t, DerivationSpec):
-                self.__types[t.identifier] = create_derived_message(t, self.__types)
+                new_type = create_derived_message(t, self.__types)
 
             elif isinstance(t, RefinementSpec):
-                self.__types[t.identifier] = create_refinement(t, self.__types)
+                new_type = create_refinement(t, self.__types)
 
             else:
                 raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
-        error.propagate()
+
+            self.__types[t.identifier] = new_type
+            error.extend(new_type.error)
 
 
 def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
     return {n: m for n, m in types.items() if isinstance(m, Message)}
 
 
-def check_types(types: Mapping[ID, Type]) -> None:
-    error = RecordFluxError()
+def check_types(types: Mapping[ID, Type], error: RecordFluxError) -> None:
     for e1, e2 in [
         (e1, e2)
-        for e1 in types.values()
-        for e2 in types.values()
+        for i1, e1 in enumerate(types.values())
+        for i2, e2 in enumerate(types.values())
         if (
             isinstance(e1, Enumeration)
             and isinstance(e2, Enumeration)
-            and e1 != e2
+            and i1 < i2
             and (
                 e1.package == e2.package
                 or e1.package == BUILTINS_PACKAGE
@@ -277,16 +286,9 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
         if not component.name.null:
             type_name = qualified_type_name(component.type_name, message.package)
             if type_name not in types:
-                error.append(
-                    "undefined component type",
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    component.type_name.location,
-                )
-            else:
-                field_types[Field(component.name)] = types[type_name]
+                continue
+            field_types[Field(component.name)] = types[type_name]
 
-    error.propagate()
     structure: List[Link] = []
 
     for i, component in enumerate(components):
@@ -319,15 +321,13 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
                     Severity.ERROR,
                     then.name.location,
                 )
-            else:
-                structure.append(
-                    Link(source_node, target_node, then.condition, then.length, then.first)
-                )
-
-    error.propagate()
+                continue
+            structure.append(
+                Link(source_node, target_node, then.condition, then.length, then.first)
+            )
 
     return (
-        UnprovenMessage(message.identifier, structure, field_types, message.location)
+        UnprovenMessage(message.identifier, structure, field_types, message.location, error)
         .merged()
         .proven()
     )
