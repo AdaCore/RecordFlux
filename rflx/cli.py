@@ -44,6 +44,9 @@ def main(argv: List[str]) -> Union[int, str]:
         help=("add prefix to generated packages " f"(default: {DEFAULT_PREFIX})"),
     )
     parser_generate.add_argument(
+        "-n", "--no-library", help="omit generating library files", action="store_true"
+    )
+    parser_generate.add_argument(
         "-d", "--directory", help="output directory", default=".", type=str
     )
     parser_generate.add_argument(
@@ -114,7 +117,8 @@ def generate(args: argparse.Namespace) -> None:
     generator.generate(model)
 
     generator.write_units(directory)
-    generator.write_library_files(directory)
+    if not args.no_library:
+        generator.write_library_files(directory)
     if args.prefix == DEFAULT_PREFIX:
         generator.write_top_level_package(directory)
 
