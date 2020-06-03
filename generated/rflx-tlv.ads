@@ -75,10 +75,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.TLV.Length) return RFLX.TLV.Length is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.TLV.Length) return RFLX.TLV.Length is
      (Val)

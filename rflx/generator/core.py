@@ -2631,8 +2631,9 @@ class Generator:
                     self.prefix * common.full_base_type_name(integer),
                     [Parameter(["Val"], self.prefix * integer.identifier)],
                 ),
-                Variable("Val"),
-                [Precondition(Call("Valid", [Variable("Val")]))],
+                Call(self.prefix * common.full_base_type_name(integer), [Variable("Val")])
+                if isinstance(integer, RangeInteger)
+                else Variable("Val"),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
@@ -2640,7 +2641,9 @@ class Generator:
                     self.prefix * integer.identifier,
                     [Parameter(["Val"], self.prefix * common.full_base_type_name(integer))],
                 ),
-                Variable("Val"),
+                Call(self.prefix * integer.identifier, [Variable("Val")])
+                if isinstance(integer, RangeInteger)
+                else Variable("Val"),
                 [Precondition(Call("Valid", [Variable("Val")]))],
             ),
         ]
@@ -2668,10 +2671,12 @@ def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
 
 def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
     return [
-        RangeType(
-            common.base_type_name(integer), integer.base_first, integer.base_last, integer.size
+        ModularType(
+            common.base_type_name(integer),
+            Pow(Number(2), integer.size),
+            [Annotate("GNATprove", "No_Wrap_Around")],
         ),
-        RangeSubtype(integer.name, common.base_type_name(integer), integer.first, integer.last),
+        RangeType(integer.name, integer.first, integer.last, integer.size),
     ]
 
 

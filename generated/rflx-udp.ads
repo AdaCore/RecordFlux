@@ -28,10 +28,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.UDP.Port) return RFLX.UDP.Port is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.UDP.Port) return RFLX.UDP.Port is
      (Val)
@@ -39,11 +36,13 @@ is
      Pre =>
        Valid (Val);
 
-   type Length_Base is range 0 .. 2**16 - 1 with
+   type Length_Base is mod 2**16 with
+     Annotate =>
+       (GNATprove, No_Wrap_Around);
+
+   type Length is range 8 .. 2**16 - 1 with
      Size =>
        16;
-
-   subtype Length is Length_Base range 8 .. 2**16 - 1;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -59,13 +58,10 @@ is
      (Val >= 8);
 
    function To_Base (Val : RFLX.UDP.Length) return RFLX.UDP.Length_Base is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (RFLX.UDP.Length_Base (Val));
 
    function To_Actual (Val : RFLX.UDP.Length_Base) return RFLX.UDP.Length is
-     (Val)
+     (RFLX.UDP.Length (Val))
     with
      Pre =>
        Valid (Val);
@@ -94,10 +90,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.UDP.Checksum) return RFLX.UDP.Checksum is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.UDP.Checksum) return RFLX.UDP.Checksum is
      (Val)
