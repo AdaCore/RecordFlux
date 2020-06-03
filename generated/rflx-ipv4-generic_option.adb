@@ -620,10 +620,10 @@ is
      (To_Actual (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value));
 
    function Get_Option_Number (Ctx : Context) return RFLX.IPv4.Option_Number is
-     (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value);
+     (To_Actual (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value));
 
    function Get_Option_Length (Ctx : Context) return RFLX.IPv4.Option_Length is
-     (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value);
+     (To_Actual (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value));
 
    procedure Get_Option_Data (Ctx : Context) is
       First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Option_Data).First);
@@ -715,7 +715,7 @@ is
    end Set_Option_Class;
 
    procedure Set_Option_Number (Ctx : in out Context; Val : RFLX.IPv4.Option_Number) is
-      Field_Value : constant Field_Dependent_Value := (F_Option_Number, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Option_Number, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Number);
@@ -726,7 +726,7 @@ is
    end Set_Option_Number;
 
    procedure Set_Option_Length (Ctx : in out Context; Val : RFLX.IPv4.Option_Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Option_Length, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Option_Length, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Length);

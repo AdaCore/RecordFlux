@@ -4,11 +4,13 @@ package RFLX.IPv4 with
   SPARK_Mode
 is
 
-   type Version_Base is range 0 .. 2**4 - 1 with
+   type Version_Base is mod 2**4 with
+     Annotate =>
+       (GNATprove, No_Wrap_Around);
+
+   type Version is range 4 .. 4 with
      Size =>
        4;
-
-   subtype Version is Version_Base range 4 .. 4;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -25,22 +27,21 @@ is
       and Val <= 4);
 
    function To_Base (Val : RFLX.IPv4.Version) return RFLX.IPv4.Version_Base is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (RFLX.IPv4.Version_Base (Val));
 
    function To_Actual (Val : RFLX.IPv4.Version_Base) return RFLX.IPv4.Version is
-     (Val)
+     (RFLX.IPv4.Version (Val))
     with
      Pre =>
        Valid (Val);
 
-   type IHL_Base is range 0 .. 2**4 - 1 with
+   type IHL_Base is mod 2**4 with
+     Annotate =>
+       (GNATprove, No_Wrap_Around);
+
+   type IHL is range 5 .. 15 with
      Size =>
        4;
-
-   subtype IHL is IHL_Base range 5 .. 15;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -56,13 +57,10 @@ is
      (Val >= 5);
 
    function To_Base (Val : RFLX.IPv4.IHL) return RFLX.IPv4.IHL_Base is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (RFLX.IPv4.IHL_Base (Val));
 
    function To_Actual (Val : RFLX.IPv4.IHL_Base) return RFLX.IPv4.IHL is
-     (Val)
+     (RFLX.IPv4.IHL (Val))
     with
      Pre =>
        Valid (Val);
@@ -91,10 +89,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.IPv4.DCSP) return RFLX.IPv4.DCSP is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.IPv4.DCSP) return RFLX.IPv4.DCSP is
      (Val)
@@ -126,10 +121,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.IPv4.ECN) return RFLX.IPv4.ECN is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.IPv4.ECN) return RFLX.IPv4.ECN is
      (Val)
@@ -137,11 +129,13 @@ is
      Pre =>
        Valid (Val);
 
-   type Total_Length_Base is range 0 .. 2**16 - 1 with
+   type Total_Length_Base is mod 2**16 with
+     Annotate =>
+       (GNATprove, No_Wrap_Around);
+
+   type Total_Length is range 20 .. 2**16 - 1 with
      Size =>
        16;
-
-   subtype Total_Length is Total_Length_Base range 20 .. 2**16 - 1;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -157,13 +151,10 @@ is
      (Val >= 20);
 
    function To_Base (Val : RFLX.IPv4.Total_Length) return RFLX.IPv4.Total_Length_Base is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (RFLX.IPv4.Total_Length_Base (Val));
 
    function To_Actual (Val : RFLX.IPv4.Total_Length_Base) return RFLX.IPv4.Total_Length is
-     (Val)
+     (RFLX.IPv4.Total_Length (Val))
     with
      Pre =>
        Valid (Val);
@@ -192,10 +183,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.IPv4.Identification) return RFLX.IPv4.Identification is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.IPv4.Identification) return RFLX.IPv4.Identification is
      (Val)
@@ -227,10 +215,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.IPv4.Fragment_Offset) return RFLX.IPv4.Fragment_Offset is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.IPv4.Fragment_Offset) return RFLX.IPv4.Fragment_Offset is
      (Val)
@@ -262,10 +247,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.IPv4.TTL) return RFLX.IPv4.TTL is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.IPv4.TTL) return RFLX.IPv4.TTL is
      (Val)
@@ -361,10 +343,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.IPv4.Header_Checksum) return RFLX.IPv4.Header_Checksum is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.IPv4.Header_Checksum) return RFLX.IPv4.Header_Checksum is
      (Val)
@@ -396,10 +375,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.IPv4.Address) return RFLX.IPv4.Address is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.IPv4.Address) return RFLX.IPv4.Address is
      (Val)
@@ -478,10 +454,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.IPv4.Option_Number) return RFLX.IPv4.Option_Number is
      (Val)
@@ -489,11 +462,13 @@ is
      Pre =>
        Valid (Val);
 
-   type Option_Length_Base is range 0 .. 2**8 - 1 with
+   type Option_Length_Base is mod 2**8 with
+     Annotate =>
+       (GNATprove, No_Wrap_Around);
+
+   type Option_Length is range 2 .. 2**8 - 1 with
      Size =>
        8;
-
-   subtype Option_Length is Option_Length_Base range 2 .. 2**8 - 1;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -509,13 +484,10 @@ is
      (Val >= 2);
 
    function To_Base (Val : RFLX.IPv4.Option_Length) return RFLX.IPv4.Option_Length_Base is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (RFLX.IPv4.Option_Length_Base (Val));
 
    function To_Actual (Val : RFLX.IPv4.Option_Length_Base) return RFLX.IPv4.Option_Length is
-     (Val)
+     (RFLX.IPv4.Option_Length (Val))
     with
      Pre =>
        Valid (Val);

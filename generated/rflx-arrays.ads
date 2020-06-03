@@ -28,10 +28,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length is
      (Val)
@@ -63,10 +60,7 @@ is
    pragma Warnings (On, "unused variable ""Val""");
 
    function To_Base (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (Val);
 
    function To_Actual (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer is
      (Val)
@@ -74,11 +68,13 @@ is
      Pre =>
        Valid (Val);
 
-   type Range_Integer_Base is range 0 .. 2**8 - 1 with
+   type Range_Integer_Base is mod 2**8 with
+     Annotate =>
+       (GNATprove, No_Wrap_Around);
+
+   type Range_Integer is range 1 .. 100 with
      Size =>
        8;
-
-   subtype Range_Integer is Range_Integer_Base range 1 .. 100;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -95,13 +91,10 @@ is
       and Val <= 100);
 
    function To_Base (Val : RFLX.Arrays.Range_Integer) return RFLX.Arrays.Range_Integer_Base is
-     (Val)
-    with
-     Pre =>
-       Valid (Val);
+     (RFLX.Arrays.Range_Integer_Base (Val));
 
    function To_Actual (Val : RFLX.Arrays.Range_Integer_Base) return RFLX.Arrays.Range_Integer is
-     (Val)
+     (RFLX.Arrays.Range_Integer (Val))
     with
      Pre =>
        Valid (Val);

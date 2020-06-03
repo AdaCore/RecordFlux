@@ -400,8 +400,8 @@ class TypeDeclaration(Declaration):
 
 
 class ModularType(TypeDeclaration):
-    def __init__(self, identifier: StrID, modulus: Expr) -> None:
-        super().__init__(identifier)
+    def __init__(self, identifier: StrID, modulus: Expr, aspects: Sequence[Aspect] = None) -> None:
+        super().__init__(identifier, aspects=aspects or [])
         self.modulus = modulus
 
     @property

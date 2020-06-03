@@ -45,17 +45,7 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID
-from rflx.model import (
-    BUILTINS_PACKAGE,
-    FINAL,
-    INITIAL,
-    Composite,
-    Enumeration,
-    Field,
-    Message,
-    Scalar,
-    Type,
-)
+from rflx.model import BUILTINS_PACKAGE, FINAL, INITIAL, Composite, Field, Message, Scalar, Type
 
 from . import common, const
 
@@ -642,14 +632,16 @@ class ParserGenerator:
                 f"Get_{field.name}", type_name, [Parameter(["Ctx"], "Context")]
             )
 
-        def result(field: Field, field_type: Type) -> Expr:
-            value = Selected(
-                Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
-                f"Value.{field.name}_Value",
+        def result(field: Field) -> Expr:
+            return Call(
+                "To_Actual",
+                [
+                    Selected(
+                        Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
+                        f"Value.{field.name}_Value",
+                    )
+                ],
             )
-            if isinstance(field_type, Enumeration):
-                return Call("To_Actual", [value])
-            return value
 
         return UnitPart(
             [
@@ -660,7 +652,7 @@ class ParserGenerator:
                 for f, t in scalar_fields.items()
             ],
             [
-                ExpressionFunctionDeclaration(specification(f, t), result(f, t))
+                ExpressionFunctionDeclaration(specification(f, t), result(f))
                 for f, t in scalar_fields.items()
             ],
         )
