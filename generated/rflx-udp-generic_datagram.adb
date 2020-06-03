@@ -493,16 +493,16 @@ is
       or Incomplete (Ctx, F_Payload));
 
    function Get_Source_Port (Ctx : Context) return RFLX.UDP.Port is
-     (Ctx.Cursors (F_Source_Port).Value.Source_Port_Value);
+     (To_Actual (Ctx.Cursors (F_Source_Port).Value.Source_Port_Value));
 
    function Get_Destination_Port (Ctx : Context) return RFLX.UDP.Port is
-     (Ctx.Cursors (F_Destination_Port).Value.Destination_Port_Value);
+     (To_Actual (Ctx.Cursors (F_Destination_Port).Value.Destination_Port_Value));
 
    function Get_Length (Ctx : Context) return RFLX.UDP.Length is
-     (Ctx.Cursors (F_Length).Value.Length_Value);
+     (To_Actual (Ctx.Cursors (F_Length).Value.Length_Value));
 
    function Get_Checksum (Ctx : Context) return RFLX.UDP.Checksum is
-     (Ctx.Cursors (F_Checksum).Value.Checksum_Value);
+     (To_Actual (Ctx.Cursors (F_Checksum).Value.Checksum_Value));
 
    procedure Get_Payload (Ctx : Context) is
       First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Payload).First);
@@ -571,7 +571,7 @@ is
    end Set_Field_Value;
 
    procedure Set_Source_Port (Ctx : in out Context; Val : RFLX.UDP.Port) is
-      Field_Value : constant Field_Dependent_Value := (F_Source_Port, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Source_Port, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Source_Port);
@@ -582,7 +582,7 @@ is
    end Set_Source_Port;
 
    procedure Set_Destination_Port (Ctx : in out Context; Val : RFLX.UDP.Port) is
-      Field_Value : constant Field_Dependent_Value := (F_Destination_Port, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Destination_Port, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Destination_Port);
@@ -593,7 +593,7 @@ is
    end Set_Destination_Port;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Length, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Length, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Length);
@@ -604,7 +604,7 @@ is
    end Set_Length;
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum) is
-      Field_Value : constant Field_Dependent_Value := (F_Checksum, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Checksum, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Checksum);

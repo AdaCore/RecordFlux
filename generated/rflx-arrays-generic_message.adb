@@ -491,7 +491,7 @@ is
       or Incomplete (Ctx, F_AV_Enumeration_Vector));
 
    function Get_Length (Ctx : Context) return RFLX.Arrays.Length is
-     (Ctx.Cursors (F_Length).Value.Length_Value);
+     (To_Actual (Ctx.Cursors (F_Length).Value.Length_Value));
 
    procedure Get_Modular_Vector (Ctx : Context) is
       First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Modular_Vector).First);
@@ -573,7 +573,7 @@ is
    end Set_Field_Value;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Arrays.Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Length, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Length, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Length);

@@ -270,8 +270,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Number)
        and then Field_Last (Ctx, F_Option_Number) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (F_Option_Number, Val))
-       and then Valid (Val)
+       and then Field_Condition (Ctx, (F_Option_Number, To_Base (Val)))
+       and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Option_Number) >= Field_Length (Ctx, F_Option_Number),
      Post =>
        Has_Buffer (Ctx)
@@ -300,8 +300,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Length)
        and then Field_Last (Ctx, F_Option_Length) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (F_Option_Length, Val))
-       and then Valid (Val)
+       and then Field_Condition (Ctx, (F_Option_Length, To_Base (Val)))
+       and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Option_Length) >= Field_Length (Ctx, F_Option_Length),
      Post =>
        Has_Buffer (Ctx)

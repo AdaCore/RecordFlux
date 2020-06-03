@@ -407,7 +407,7 @@ is
      (To_Actual (Ctx.Cursors (F_Tag).Value.Tag_Value));
 
    function Get_Length (Ctx : Context) return RFLX.TLV.Length is
-     (Ctx.Cursors (F_Length).Value.Length_Value);
+     (To_Actual (Ctx.Cursors (F_Length).Value.Length_Value));
 
    procedure Get_Value (Ctx : Context) is
       First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Value).First);
@@ -482,7 +482,7 @@ is
    end Set_Tag;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.TLV.Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Length, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Length, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Length);

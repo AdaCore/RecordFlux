@@ -1511,22 +1511,22 @@ is
       or Incomplete (Ctx, F_Payload));
 
    function Get_Version (Ctx : Context) return RFLX.IPv4.Version is
-     (Ctx.Cursors (F_Version).Value.Version_Value);
+     (To_Actual (Ctx.Cursors (F_Version).Value.Version_Value));
 
    function Get_IHL (Ctx : Context) return RFLX.IPv4.IHL is
-     (Ctx.Cursors (F_IHL).Value.IHL_Value);
+     (To_Actual (Ctx.Cursors (F_IHL).Value.IHL_Value));
 
    function Get_DSCP (Ctx : Context) return RFLX.IPv4.DCSP is
-     (Ctx.Cursors (F_DSCP).Value.DSCP_Value);
+     (To_Actual (Ctx.Cursors (F_DSCP).Value.DSCP_Value));
 
    function Get_ECN (Ctx : Context) return RFLX.IPv4.ECN is
-     (Ctx.Cursors (F_ECN).Value.ECN_Value);
+     (To_Actual (Ctx.Cursors (F_ECN).Value.ECN_Value));
 
    function Get_Total_Length (Ctx : Context) return RFLX.IPv4.Total_Length is
-     (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value);
+     (To_Actual (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value));
 
    function Get_Identification (Ctx : Context) return RFLX.IPv4.Identification is
-     (Ctx.Cursors (F_Identification).Value.Identification_Value);
+     (To_Actual (Ctx.Cursors (F_Identification).Value.Identification_Value));
 
    function Get_Flag_R (Ctx : Context) return Boolean is
      (To_Actual (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value));
@@ -1538,22 +1538,22 @@ is
      (To_Actual (Ctx.Cursors (F_Flag_MF).Value.Flag_MF_Value));
 
    function Get_Fragment_Offset (Ctx : Context) return RFLX.IPv4.Fragment_Offset is
-     (Ctx.Cursors (F_Fragment_Offset).Value.Fragment_Offset_Value);
+     (To_Actual (Ctx.Cursors (F_Fragment_Offset).Value.Fragment_Offset_Value));
 
    function Get_TTL (Ctx : Context) return RFLX.IPv4.TTL is
-     (Ctx.Cursors (F_TTL).Value.TTL_Value);
+     (To_Actual (Ctx.Cursors (F_TTL).Value.TTL_Value));
 
    function Get_Protocol (Ctx : Context) return RFLX.IPv4.Protocol is
      (To_Actual (Ctx.Cursors (F_Protocol).Value.Protocol_Value));
 
    function Get_Header_Checksum (Ctx : Context) return RFLX.IPv4.Header_Checksum is
-     (Ctx.Cursors (F_Header_Checksum).Value.Header_Checksum_Value);
+     (To_Actual (Ctx.Cursors (F_Header_Checksum).Value.Header_Checksum_Value));
 
    function Get_Source (Ctx : Context) return RFLX.IPv4.Address is
-     (Ctx.Cursors (F_Source).Value.Source_Value);
+     (To_Actual (Ctx.Cursors (F_Source).Value.Source_Value));
 
    function Get_Destination (Ctx : Context) return RFLX.IPv4.Address is
-     (Ctx.Cursors (F_Destination).Value.Destination_Value);
+     (To_Actual (Ctx.Cursors (F_Destination).Value.Destination_Value));
 
    procedure Get_Options (Ctx : Context) is
       First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Options).First);
@@ -1660,7 +1660,7 @@ is
    end Set_Field_Value;
 
    procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version) is
-      Field_Value : constant Field_Dependent_Value := (F_Version, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Version, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Version);
@@ -1671,7 +1671,7 @@ is
    end Set_Version;
 
    procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL) is
-      Field_Value : constant Field_Dependent_Value := (F_IHL, Val);
+      Field_Value : constant Field_Dependent_Value := (F_IHL, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_IHL);
@@ -1682,7 +1682,7 @@ is
    end Set_IHL;
 
    procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) is
-      Field_Value : constant Field_Dependent_Value := (F_DSCP, Val);
+      Field_Value : constant Field_Dependent_Value := (F_DSCP, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_DSCP);
@@ -1693,7 +1693,7 @@ is
    end Set_DSCP;
 
    procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) is
-      Field_Value : constant Field_Dependent_Value := (F_ECN, Val);
+      Field_Value : constant Field_Dependent_Value := (F_ECN, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_ECN);
@@ -1704,7 +1704,7 @@ is
    end Set_ECN;
 
    procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) is
-      Field_Value : constant Field_Dependent_Value := (F_Total_Length, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Total_Length, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Total_Length);
@@ -1715,7 +1715,7 @@ is
    end Set_Total_Length;
 
    procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) is
-      Field_Value : constant Field_Dependent_Value := (F_Identification, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Identification, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Identification);
@@ -1759,7 +1759,7 @@ is
    end Set_Flag_MF;
 
    procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) is
-      Field_Value : constant Field_Dependent_Value := (F_Fragment_Offset, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Fragment_Offset, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Fragment_Offset);
@@ -1770,7 +1770,7 @@ is
    end Set_Fragment_Offset;
 
    procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) is
-      Field_Value : constant Field_Dependent_Value := (F_TTL, Val);
+      Field_Value : constant Field_Dependent_Value := (F_TTL, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_TTL);
@@ -1792,7 +1792,7 @@ is
    end Set_Protocol;
 
    procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) is
-      Field_Value : constant Field_Dependent_Value := (F_Header_Checksum, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Header_Checksum, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Header_Checksum);
@@ -1803,7 +1803,7 @@ is
    end Set_Header_Checksum;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) is
-      Field_Value : constant Field_Dependent_Value := (F_Source, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Source, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Source);
@@ -1814,7 +1814,7 @@ is
    end Set_Source;
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) is
-      Field_Value : constant Field_Dependent_Value := (F_Destination, Val);
+      Field_Value : constant Field_Dependent_Value := (F_Destination, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Destination);

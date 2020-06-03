@@ -216,8 +216,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source_Port)
        and then Field_Last (Ctx, F_Source_Port) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (F_Source_Port, Val))
-       and then Valid (Val)
+       and then Field_Condition (Ctx, (F_Source_Port, To_Base (Val)))
+       and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Source_Port) >= Field_Length (Ctx, F_Source_Port),
      Post =>
        Has_Buffer (Ctx)
@@ -241,8 +241,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination_Port)
        and then Field_Last (Ctx, F_Destination_Port) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (F_Destination_Port, Val))
-       and then Valid (Val)
+       and then Field_Condition (Ctx, (F_Destination_Port, To_Base (Val)))
+       and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Destination_Port) >= Field_Length (Ctx, F_Destination_Port),
      Post =>
        Has_Buffer (Ctx)
@@ -267,8 +267,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Length)
        and then Field_Last (Ctx, F_Length) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (F_Length, Val))
-       and then Valid (Val)
+       and then Field_Condition (Ctx, (F_Length, To_Base (Val)))
+       and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Length) >= Field_Length (Ctx, F_Length),
      Post =>
        Has_Buffer (Ctx)
@@ -294,8 +294,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Checksum)
        and then Field_Last (Ctx, F_Checksum) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (F_Checksum, Val))
-       and then Valid (Val)
+       and then Field_Condition (Ctx, (F_Checksum, To_Base (Val)))
+       and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Checksum) >= Field_Length (Ctx, F_Checksum),
      Post =>
        Has_Buffer (Ctx)

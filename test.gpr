@@ -31,11 +31,12 @@ project Test is
       );
 
       --  Improving proof time
-      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--steps=7000");
+      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--steps=25000");
       for Proof_Switches ("rflx-ipv4-option.ads") use ("--steps=2000");
-      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--steps=11000");
+      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--steps=14000");
       for Proof_Switches ("rflx-rflx_lemmas.adb") use ("--steps=380");
       for Proof_Switches ("rflx-rflx_lemmas.ads") use ("--steps=380");
+      for Proof_Switches ("rflx-udp-datagram.ads") use ("--steps=4000");
 
       case AUnit is
          when "yes" =>
@@ -43,10 +44,10 @@ project Test is
             for Proof_Switches ("rflx-builtin_types_tests.adb") use ("--steps=380");
             for Proof_Switches ("rflx-custom_types_tests.adb") use ("--steps=2000");
             for Proof_Switches ("rflx-derivation-tests.adb") use ("--steps=4000");
-            for Proof_Switches ("rflx-ethernet-tests.adb") use ("--steps=2000");
-            for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=100000");
-            for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=126000");
-            for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=66000");
+            for Proof_Switches ("rflx-ethernet-tests.adb") use ("--steps=4000");
+            for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=117000");
+            for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=149000");
+            for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=79000");
       end case;
    end Prove;
 
