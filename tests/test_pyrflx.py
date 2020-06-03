@@ -6,6 +6,7 @@ from typing import List
 
 import pytest
 
+from rflx.expression import UNDEFINED, First, Last, Length, Sub, ValueRange
 from rflx.expression import UNDEFINED, Variable
 from rflx.identifier import ID
 from rflx.model import (
@@ -1463,3 +1464,83 @@ def test_tlv_generating_tlv_error(tlv: MessageValue) -> None:
     tlv.set("Tag", "Msg_Error")
     assert tlv.valid_message
     assert tlv.bytestring == b"\xc0"
+
+
+def test_aspect_checksum(echo_request_reply_message: MessageValue) -> None:
+    # pylint: disable=protected-access
+    def checksum_icmp(message: bytes, **kwargs) -> int:
+        def add_ones_complement(num1: int, num2: int) -> int:
+            mod = 1 << 16
+            result = num1 + num2
+            return result if result < mod else (result + 1) % mod
+
+        tag_first, checksum_first_minus_one = kwargs.get(
+            "Tag'First .. Checksum'First - 1"
+        )
+        identifier_first, data_last = kwargs.get("Identifier'First .. Data'Last")
+        checksum_length = kwargs.get("Checksum'Length")
+        assert (
+            isinstance(tag_first, int)
+            and isinstance(checksum_first_minus_one, int)
+            and isinstance(checksum_length, int)
+            and isinstance(identifier_first, int)
+            and isinstance(data_last, int)
+        )
+        checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
+        checksum_bytes += b"\x00" * (checksum_length // 8)
+        checksum_bytes += message[(identifier_first // 8) : (data_last + 1) // 8]
+
+        message_in_sixteen_bit_chunks = [
+            int.from_bytes(checksum_bytes[i : i + 2], "big")
+            for i in range(0, len(checksum_bytes), 2)
+        ]
+        intermediary_result = message_in_sixteen_bit_chunks[0]
+        for i in range(1, len(message_in_sixteen_bit_chunks)):
+            intermediary_result = add_ones_complement(
+                intermediary_result, message_in_sixteen_bit_chunks[i]
+            )
+
+        # Debug
+        print("\n")
+        print(f"Checksum Bytes {checksum_bytes.hex()}")
+        print(f"Length Checksum Bytes {len(checksum_bytes.hex())}")
+        print(f"Result of checksum func {intermediary_result ^ 0xFFFF}")
+        return intermediary_result ^ 0xFFFF
+
+    test_data = (
+        b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
+        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
+        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+
+    icmp_type = echo_request_reply_message._type
+    icmp_type.aspects = {
+        "Checksum": [
+            {
+                "Checksum": [
+                    ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
+                    Length("Checksum"),
+                    ValueRange(First("Identifier"), Last("Data")),
+                ]
+            }
+        ]
+    }
+    icmp_checksum = MessageValue(icmp_type)
+    icmp_checksum.set_checksum_function("Checksum", checksum_icmp)
+
+    icmp_checksum.set("Tag", "Echo_Request")
+    icmp_checksum.set("Code", 0)
+    # 12824 = correct checksum
+    icmp_checksum.set("Checksum", 1234)
+    icmp_checksum.set("Identifier", 5)
+    icmp_checksum.set("Sequence_Number", 1)
+    icmp_checksum.set(
+        "Data", test_data,
+    )
+
+    #Debug
+    print(icmp_checksum.bytestring.hex())
+    print(len(icmp_checksum.bytestring.hex()))
+
+    assert icmp_checksum.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
