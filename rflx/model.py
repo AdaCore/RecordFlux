@@ -638,11 +638,13 @@ class AbstractMessage(Type):
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
+        aspects: Mapping[str, Sequence[Mapping[str, Sequence[Expr]]]] = None,
     ) -> None:
         super().__init__(identifier, location, error)
 
         self.structure = sorted(structure)
         self.__types = types
+        self.aspects = aspects or {}
         self.__has_unreachable = False
         self._state = state or MessageState()
 
