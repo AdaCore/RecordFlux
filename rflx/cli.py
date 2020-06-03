@@ -98,6 +98,9 @@ def check(args: argparse.Namespace) -> None:
 
 
 def generate(args: argparse.Namespace) -> None:
+    # WORKAROUND: Componolit/Workarounds#28
+    args.prefix = args.prefix if args.prefix != " " else ""
+
     if args.prefix and "" in args.prefix.split("."):
         raise Error(f'invalid prefix: "{args.prefix}"')
 
