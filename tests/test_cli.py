@@ -56,7 +56,7 @@ def test_main_generate(tmp_path: Path) -> None:
 
 
 def test_main_generate_prefix(tmp_path: Path) -> None:
-    for prefix in ["", "A", "A.B", "A.B.C"]:
+    for prefix in ["", " ", "A", "A.B", "A.B.C"]:
         assert (
             cli.main(["rflx", "generate", "-d", str(tmp_path), "-p", prefix, "specs/tlv.rflx"]) == 0
         )
