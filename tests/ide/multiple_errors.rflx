@@ -1,0 +1,47 @@
+--  error: dependency cycle
+with Multiple_Errors;
+
+--  error: RFLX prefix not allowed
+--  error: Package identifier inconsistent with file name
+package RFLX_Invalid is
+
+   type R is range 5 .. 23 with Size => 16;
+   type R_Array is array of R;
+
+   --  error: Type exceeds limit
+   type S is mod 2**128;
+
+   --  error: Duplicate type
+   type R is (R_E1, R_E2) with Size => 8;
+
+   --  error: Redefinition of built-in type
+   type Boolean is (Foo, Bar) with Size => 12;
+
+   --  error: Conflicting literals
+   type R2 is (R2_E1, R2_E2, Foo) with Size => 24;
+
+   type M1 is
+      message
+         null
+            then X
+               with Length => 2 * 8;
+         -- error: Aggregate element out of range (2 times)
+         X : Opaque
+            then Y
+               with Length => 5 * 8
+                  if X = (1, 256, 20, 500);
+         -- error: Aggregate element out of range (3 times)
+         Y : R_Array
+            then null if Y = (1, 10, 20, 50, 60);
+      end message;
+
+   type M2 is
+      message
+         -- error: Undefined component type
+         Z : Undef_Type
+            -- error: Undefined component
+            then X;
+      end message;
+
+--  error: End identifier inconsistent with package identifier
+end Inconsistent;

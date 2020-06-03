@@ -1,0 +1,10 @@
+package Parse_Error_Invalid_Location is
+
+   type M is
+      message
+         Y : Boolean
+            then null
+               with Invalid => 5;
+      end message;
+
+end Parse_Error_Invalid_Location;

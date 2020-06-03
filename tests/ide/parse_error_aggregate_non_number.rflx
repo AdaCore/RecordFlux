@@ -1,0 +1,13 @@
+package Parse_Error_Aggregate_Non_Number is
+
+   type M is
+      message
+         null
+            then X
+               with Length => 2 * 8;
+         X : Opaque
+            -- error: Element is no number
+            then null if X = (1, 100, foo);
+      end message;
+
+end  Parse_Error_Aggregate_Non_Number;
