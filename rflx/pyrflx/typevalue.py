@@ -478,6 +478,7 @@ class MessageValue(TypeValue):
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._fields[INITIAL.name] = initial
+        self._simplified_mapping: Mapping[Name, Expr] = {}
         self._preset_fields(INITIAL.name)
 
     def __copy__(self) -> "MessageValue":
@@ -677,6 +678,8 @@ class MessageValue(TypeValue):
         else:
             raise KeyError(f"cannot access field {field_name}")
 
+        self.__update_simplified_mapping()
+
         if all(
             [
                 self.__simplified(o.condition) == FALSE
@@ -825,7 +828,7 @@ class MessageValue(TypeValue):
     def valid_message(self) -> bool:
         return bool(self.valid_fields) and self._next_field(self.valid_fields[-1]) == FINAL.name
 
-    def __simplified(self, expr: Expr) -> Expr:
+    def __update_simplified_mapping(self) -> None:
         field_values: Mapping[Name, Expr] = {
             **{
                 Variable(k): v.typeval.expr
@@ -836,10 +839,16 @@ class MessageValue(TypeValue):
             **{First(k): v.first for k, v in self._fields.items() if v.set},
             **{Last(k): v.last for k, v in self._fields.items() if v.set},
         }
+        self._simplified_mapping = {**field_values, **self.__type_literals}
 
-        mapping = {**field_values, **self.__type_literals}
-
-        return expr.substituted(mapping=mapping).substituted(mapping=mapping).simplified()
+    def __simplified(self, expr: Expr) -> Expr:
+        if not self._simplified_mapping:
+            self.__update_simplified_mapping()
+        return (
+            expr.substituted(mapping=self._simplified_mapping)
+            .substituted(mapping=self._simplified_mapping)
+            .simplified()
+        )
 
     class Field:
         def __init__(self, t: TypeValue):
