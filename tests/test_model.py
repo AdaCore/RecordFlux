@@ -174,8 +174,7 @@ def test_modular_invalid_modulus_variable() -> None:
 
 
 def test_modular_invalid_modulus_limit() -> None:
-    # ISSUE: Componolit/RecordFlux#238
-    with pytest.raises(ModelError, match=r'^modulus of "T" exceeds limit \(2\*\*57\)$'):
+    with pytest.raises(ModelError, match=r'^modulus of "T" exceeds limit \(2\*\*64\)$'):
         ModularInteger("P.T", Pow(Number(2), Number(128)))
 
 
@@ -194,6 +193,11 @@ def test_range_invalid_first_variable() -> None:
 def test_range_invalid_last_variable() -> None:
     with pytest.raises(ModelError, match=r'^last of "T" contains variable$'):
         RangeInteger("P.T", Number(1), Add(Number(1), Variable("X")), Number(4))
+
+
+def test_range_invalid_last_exceeds_limit() -> None:
+    with pytest.raises(ModelError, match=r'^last of "T" exceeds limit \(2\*\*63 - 1\)$'):
+        RangeInteger("P.T", Number(1), Pow(Number(2), Number(63)), Number(64))
 
 
 def test_range_invalid_first_negative() -> None:
@@ -217,8 +221,7 @@ def test_range_invalid_size_too_small() -> None:
 
 
 def test_range_invalid_size_exceeds_limit() -> None:
-    # ISSUE: Componolit/RecordFlux#238
-    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*57\)$'):
+    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*64\)$'):
         RangeInteger("P.T", Number(0), Number(256), Number(128))
 
 
@@ -233,8 +236,7 @@ def test_enumeration_invalid_size_too_small() -> None:
 
 
 def test_enumeration_invalid_size_exceeds_limit() -> None:
-    # ISSUE: Componolit/RecordFlux#238
-    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*57\)$'):
+    with pytest.raises(ModelError, match=r'^size of "T" exceeds limit \(2\*\*64\)$'):
         Enumeration("P.T", {"A": Number(256)}, Number(128), False)
 
 
