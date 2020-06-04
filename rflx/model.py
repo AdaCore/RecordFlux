@@ -425,8 +425,16 @@ def valid_message_field_types(message: "AbstractMessage") -> bool:
     return True
 
 
+class MessageState(Base):
+    fields: Optional[Tuple[Field, ...]] = ()
+    paths: Mapping[Field, Set[Tuple[Link, ...]]] = {}
+    definite_predecessors: Mapping[Field, Tuple[Field, ...]] = {}
+    field_condition: Mapping[Field, Expr] = {}
+
+
 @invariant(lambda self: valid_message_field_types(self))
 class AbstractMessage(Type):
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
@@ -434,34 +442,31 @@ class AbstractMessage(Type):
         types: Mapping[Field, Type],
         location: Location = None,
         error: RecordFluxError = None,
+        state: MessageState = None,
     ) -> None:
         super().__init__(identifier, location, error)
 
         self.structure = structure
         self.__types = types
         self.__has_unreachable = False
+        self._state = state or MessageState()
 
-        if structure or types:
+        if not state and (structure or types):
             try:
                 self.__verify()
-                self.__fields = self.__compute_topological_sorting()
-                if self.__fields:
-                    self.__types = {f: self.__types[f] for f in self.__fields}
-                    self.__paths = {f: self.__compute_paths(f) for f in self.all_fields}
-                    self.__definite_predecessors = {
+                self._state.fields = self.__compute_topological_sorting()
+                if self._state.fields:
+                    self.__types = {f: self.__types[f] for f in self._state.fields}
+                    self._state.paths = {f: self.__compute_paths(f) for f in self.all_fields}
+                    self._state.definite_predecessors = {
                         f: self.__compute_definite_predecessors(f) for f in self.all_fields
                     }
-                    self.__field_condition = {
+                    self._state.field_condition = {
                         f: self.__compute_field_condition(f).simplified() for f in self.all_fields
                     }
                     self.__verify_conditions()
             except RecordFluxError:
                 pass
-        else:
-            self.__fields = ()
-            self.__paths = {}
-            self.__definite_predecessors = {}
-            self.__field_condition = {}
 
     @abstractmethod
     def copy(
@@ -481,7 +486,7 @@ class AbstractMessage(Type):
     @property
     def fields(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted."""
-        return self.__fields or ()
+        return self._state.fields or ()
 
     @property
     def all_fields(self) -> Tuple[Field, ...]:
@@ -490,7 +495,7 @@ class AbstractMessage(Type):
     @property
     def definite_fields(self) -> Tuple[Field, ...]:
         """Return all fields which are part of all possible paths."""
-        return self.__definite_predecessors[FINAL]
+        return self._state.definite_predecessors[FINAL]
 
     @property
     def types(self) -> Mapping[Field, Type]:
@@ -525,10 +530,10 @@ class AbstractMessage(Type):
 
     def definite_predecessors(self, field: Field) -> Tuple[Field, ...]:
         """Return preceding fields which are part of all possible paths."""
-        return self.__definite_predecessors[field]
+        return self._state.definite_predecessors[field]
 
     def field_condition(self, field: Field) -> Expr:
-        return self.__field_condition[field]
+        return self._state.field_condition[field]
 
     def field_size(self, field: Field) -> Expr:
         if field == FINAL:
@@ -597,7 +602,7 @@ class AbstractMessage(Type):
                 f.identifier.location,
             )
 
-        for f in type_fields - structure_fields:
+        for f in type_fields - structure_fields - {FINAL}:
             self.error.append(
                 f'unused field "{f.name}"', Subsystem.MODEL, Severity.ERROR, f.identifier.location,
             )
@@ -881,7 +886,7 @@ class AbstractMessage(Type):
 
         for f in (*self.fields, FINAL):
             paths = []
-            for path in sorted(self.__paths[f]):
+            for path in sorted(self._state.paths[f]):
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 outgoing = self.outgoing(f)
                 if f != FINAL and outgoing:
@@ -914,7 +919,7 @@ class AbstractMessage(Type):
 
     def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.fields):
-            for path in self.__paths[f]:
+            for path in self._state.paths[f]:
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 for c in self.outgoing(f):
                     contradiction = c.condition
@@ -984,7 +989,7 @@ class AbstractMessage(Type):
 
     def __prove_field_positions(self) -> None:
         for f in self.fields:
-            for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
+            for p, l in [(p, p[-1]) for p in self._state.paths[f] if p]:
                 positive = GreaterEqual(self.__target_length(l), Number(0))
                 facts = [f for l in p for f in self.__link_expression(l)]
                 facts.extend(self.__type_constraints(positive))
@@ -1034,7 +1039,7 @@ class AbstractMessage(Type):
         effectively pruning the range that this field covers from the bit range of the message. For
         the overall expression, prove that it is false for all f, i.e. no bits are left.
         """
-        for path in [p[:-1] for p in self.__paths[FINAL] if p]:
+        for path in [p[:-1] for p in self._state.paths[FINAL] if p]:
 
             facts: Sequence[Expr]
 
@@ -1086,7 +1091,7 @@ class AbstractMessage(Type):
 
     def __prove_overlays(self) -> None:
         for f in (INITIAL, *self.fields):
-            for p, l in [(p, p[-1]) for p in self.__paths[f] if p]:
+            for p, l in [(p, p[-1]) for p in self._state.paths[f] if p]:
                 if l.first != UNDEFINED and isinstance(l.first, First):
                     facts = [f for l in p for f in self.__link_expression(l)]
                     overlaid = Equal(self.__target_last(l), Last(l.first.prefix))
@@ -1150,7 +1155,7 @@ class AbstractMessage(Type):
         return tuple(
             f
             for f in self.fields
-            if all(any(f == pf.source for pf in p) for p in self.__paths[final])
+            if all(any(f == pf.source for pf in p) for p in self._state.paths[final])
         )
 
     def __compute_field_condition(self, final: Field) -> Expr:
@@ -1166,6 +1171,7 @@ class AbstractMessage(Type):
 
 
 class Message(AbstractMessage):
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
@@ -1173,8 +1179,9 @@ class Message(AbstractMessage):
         types: Mapping[Field, Type],
         location: Location = None,
         error: RecordFluxError = None,
+        state: MessageState = None,
     ) -> None:
-        super().__init__(identifier, structure, types, location, error)
+        super().__init__(identifier, structure, types, location, error, state)
 
         if not self.error.check() and (structure or types):
             self._prove()
@@ -1259,7 +1266,14 @@ class UnprovenMessage(AbstractMessage):
         )
 
     def proven(self) -> Message:
-        return Message(self.identifier, self.structure, self.types, self.location, self.error)
+        return Message(
+            identifier=self.identifier,
+            structure=self.structure,
+            types=self.types,
+            location=self.location,
+            error=self.error,
+            state=self._state,
+        )
 
     @ensure(lambda result: valid_message_field_types(result))
     def merged(self) -> "UnprovenMessage":
