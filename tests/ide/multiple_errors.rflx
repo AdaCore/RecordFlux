@@ -23,6 +23,9 @@ package RFLX_Invalid is
    --  error: Conflicting literals
    type R2 is (R2_E1, R2_E2, Foo) with Size => 24;
 
+   --  error: Size too small
+   type E2 is (E2_1, E2_2, E2_2) with Size => 1;
+
    type M1 is
       message
          null
