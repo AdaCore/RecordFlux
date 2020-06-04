@@ -580,8 +580,7 @@ def parse_aspects(string: str, location: int, tokens: ParseResults) -> Dict[str,
 
 @fatalexceptions
 def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
-    def check_conflicts(tokens: ParseResults) -> None:
-        error = RecordFluxError()
+    def check_conflicts(tokens: ParseResults, error: RecordFluxError) -> None:
         for i1, e1 in enumerate(tokens):
             for i2, e2 in enumerate(tokens):
                 if i2 < i1 and e1[0] == e2[0]:
@@ -594,7 +593,6 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
                     error.append(
                         "previous occurrence", Subsystem.MODEL, Severity.INFO, e2[0].location
                     )
-        error.propagate()
 
     package = ID("__PACKAGE__")
     name = tokens[1]
@@ -614,11 +612,12 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
         return MessageSpec(identifier, [], locn)
     if tokens[3] == "(":
         elements = dict(tokens[4:-3])
-        check_conflicts(tokens[4:-3])
         aspects = tokens[-2]
         if "always_valid" not in aspects:
             aspects["always_valid"] = False
-        return Enumeration(identifier, elements, aspects["size"], aspects["always_valid"], locn)
+        enumeration = Enumeration(identifier, elements, aspects["size"], aspects["always_valid"], locn)
+        check_conflicts(tokens[4:-3], enumeration.error)
+        return enumeration
     if tokens[3] == "new":
         return DerivationSpec(identifier, tokens[4], locn)
     if tokens[3] == "array of":
