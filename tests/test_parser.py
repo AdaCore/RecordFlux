@@ -412,14 +412,13 @@ def test_illegal_redefinition() -> None:
 
 
 def test_invalid_modular_type() -> None:
-    # ISSUE: Componolit/RecordFlux#238
     assert_parse_exception_string(
         """
             package Test is
                type T is mod 2**128;
             end Test;
         """,
-        r'^modulus of "T" exceeds limit \(2\*\*57\)',
+        r'^modulus of "T" exceeds limit \(2\*\*64\)',
     )
 
 
