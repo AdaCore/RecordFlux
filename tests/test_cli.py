@@ -58,12 +58,11 @@ def test_main_generate(tmp_path: Path) -> None:
 def test_main_generate_no_library_files(tmp_path: Path) -> None:
     assert (
         cli.main(
-            ["rflx", "generate", "-d", str(tmp_path), "-p", "", "-n", "tests/null_message.rflx"]
+            ["rflx", "generate", "-d", str(tmp_path), "-p", "", "-n", "tests/empty_package.rflx"]
         )
         == 0
     )
-    type_package = Path(tmp_path) / "rflx_types.ads"
-    assert not type_package.exists()
+    assert len(list(tmp_path.glob("*"))) == 0
 
 
 def test_main_generate_prefix(tmp_path: Path) -> None:
