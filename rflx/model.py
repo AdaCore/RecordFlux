@@ -637,11 +637,12 @@ class AbstractMessage(Type):
             errors = []
             for path in self.__paths[f]:
                 facts = [fact for link in path for fact in self.__link_expression(link)]
+                conditions = [link.condition for link in path]
                 if f != FINAL:
                     facts.extend(
                         expression_list(Or(*[o.condition for o in self.outgoing(f)]).simplified())
                     )
-                proof = TRUE.check(facts)
+                proof = TRUE.check([*facts, *conditions])
                 if proof.result == ProofResult.sat:
                     break
 
@@ -695,7 +696,6 @@ class AbstractMessage(Type):
             GreaterEqual(Last("Message"), Last(name)),
             GreaterEqual(Last("Message"), First("Message")),
             Equal(Length("Message"), Add(Sub(Last("Message"), First("Message")), Number(1)),),
-            *expression_list(link.condition),
         ]
 
     def __prove_field_positions(self) -> None:

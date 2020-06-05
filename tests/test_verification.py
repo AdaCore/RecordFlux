@@ -880,3 +880,26 @@ def test_aggregate_equal_invalid_length_field() -> None:
         r'^contradicting condition 0 from field "Magic" to "Final"'
         r' on path \[Length -> Magic\] in "P.M"',
     )
+
+
+def test_no_contradiction_multi() -> None:
+    structure = [
+        Link(INITIAL, Field("F0")),
+        Link(Field("F0"), Field("F1"), condition=Equal(Variable("F0"), Number(1))),
+        Link(Field("F0"), Field("F2"), condition=Equal(Variable("F0"), Number(2))),
+        Link(Field("F1"), Field("F3")),
+        Link(Field("F2"), Field("F3")),
+        Link(Field("F3"), Field("F4"), condition=Equal(Variable("F0"), Number(1))),
+        Link(Field("F3"), Field("F5"), condition=Equal(Variable("F0"), Number(2))),
+        Link(Field("F4"), FINAL),
+        Link(Field("F5"), FINAL),
+    ]
+    types = {
+        Field("F0"): RANGE_INTEGER,
+        Field("F1"): RANGE_INTEGER,
+        Field("F2"): RANGE_INTEGER,
+        Field("F3"): RANGE_INTEGER,
+        Field("F4"): RANGE_INTEGER,
+        Field("F5"): RANGE_INTEGER,
+    }
+    Message("P.M", structure, types)
