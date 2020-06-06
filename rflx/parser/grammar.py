@@ -615,7 +615,9 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
         aspects = tokens[-2]
         if "always_valid" not in aspects:
             aspects["always_valid"] = False
-        enumeration = Enumeration(identifier, elements, aspects["size"], aspects["always_valid"], locn)
+        enumeration = Enumeration(
+            identifier, elements, aspects["size"], aspects["always_valid"], locn
+        )
         check_conflicts(tokens[4:-3], enumeration.error)
         return enumeration
     if tokens[3] == "new":

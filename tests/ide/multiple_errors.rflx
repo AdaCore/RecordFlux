@@ -8,6 +8,9 @@ package RFLX_Invalid is
    type R is range 5 .. 23 with Size => 16;
    type R_Array is array of R;
 
+   --  error: undefined element type
+   type A2 is array of Undef;
+
    --  error: Modular type exceeds limit
    type S is mod 2**128;
 
@@ -24,7 +27,17 @@ package RFLX_Invalid is
    type R2 is (R2_E1, R2_E2, Foo) with Size => 24;
 
    --  error: Size too small
+   --  error: Duplicate element
    type E2 is (E2_1, E2_2, E2_2) with Size => 1;
+
+   -- error: duplicate enumeration value
+   type E3 is (E3_1 => 1, E3_2 => 2, E3_3 => 2) with Size => 8;
+
+   -- error: conflicting literals
+   type E4 is (True, False) with Size => 1;
+
+   -- error: conflict between type and literals
+   type E5 is (Foo, E4, Bar) with Size => 8;
 
    type M1 is
       message
@@ -48,6 +61,31 @@ package RFLX_Invalid is
             -- error: Undefined component
             then X;
       end message;
+
+   -- error: unsupported element type size
+   type E6 is mod 2**4;
+   type A3 is array of E6;
+
+   type SDU1 is
+      message
+         Field : Boolean;
+      end message;
+
+   type SDU2 is
+      message
+         Field : Boolean;
+      end message;
+
+   type PDU1 is
+      message
+         Length : R then Data with Length => Length;
+         Data : Opaque;
+      end message;
+   for RFLX_Invalid.PDU1 use (Data => RFLX_Invalid.SDU1);
+
+   -- FIXME: Not detected
+   -- error: duplicate refinement
+   for PDU1 use (Data => SDU2);
 
 --  error: End identifier inconsistent with package identifier
 end Inconsistent;
