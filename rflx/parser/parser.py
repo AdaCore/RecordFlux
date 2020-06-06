@@ -159,26 +159,30 @@ class Parser:
 
             new_type: Type
 
-            if isinstance(t, Scalar):
-                new_type = t
+            try:
+                if isinstance(t, Scalar):
+                    new_type = t
 
-            elif isinstance(t, Array):
-                new_type = create_array(t, self.__types)
+                elif isinstance(t, Array):
+                    new_type = create_array(t, self.__types)
 
-            elif isinstance(t, MessageSpec):
-                new_type = create_message(t, self.__types)
+                elif isinstance(t, MessageSpec):
+                    new_type = create_message(t, self.__types)
 
-            elif isinstance(t, DerivationSpec):
-                new_type = create_derived_message(t, self.__types)
+                elif isinstance(t, DerivationSpec):
+                    new_type = create_derived_message(t, self.__types)
 
-            elif isinstance(t, RefinementSpec):
-                new_type = create_refinement(t, self.__types)
+                elif isinstance(t, RefinementSpec):
+                    new_type = create_refinement(t, self.__types)
 
-            else:
-                raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
+                else:
+                    raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
 
-            self.__types[t.identifier] = new_type
-            error.extend(new_type.error)
+                self.__types[t.identifier] = new_type
+                error.extend(new_type.error)
+
+            except RecordFluxError as e:
+                error.extend(e)
 
 
 def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
@@ -444,20 +448,18 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
     )
 
     if result in types.values():
-        error = RecordFluxError()
-        error.append(
+        result.error.append(
             f'duplicate refinement with "{refinement.sdu}"',
             Subsystem.PARSER,
             Severity.ERROR,
             refinement.location,
         )
-        error.append(
+        result.error.append(
             "previous occurrence",
             Subsystem.PARSER,
             Severity.INFO,
-            types[result.identifier].location,
+            types[result.identifier].location
         )
-        error.propagate()
 
     return result
 
