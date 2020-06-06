@@ -8,6 +8,19 @@ package RFLX_Invalid is
    type R is range 5 .. 23 with Size => 16;
    type R_Array is array of R;
 
+   --  error: first contains variable
+   --  error: last contains variable
+   type Range2 is range X + 2 .. X + 55 with Size => 24;
+
+   --  error: range negative
+   type Range3 is range 100 .. 50 with Size => 24;
+
+   --  error: size contains variable negative
+   type Range4 is range 1 .. 50 with Size => 24 + T;
+
+   --  error: size too small
+   type Range5 is range 0 .. 255 with Size => 7;
+
    --  error: undefined element type
    type A2 is array of Undef;
 
@@ -16,6 +29,9 @@ package RFLX_Invalid is
 
    --  error: Modular type is not base 2
    type T is mod 1023;
+
+   --  error: Modulus contains variable
+   type Mod3 is mod 2**Value;
 
    --  error: Duplicate type
    type R is (R_E1, R_E2) with Size => 8;
