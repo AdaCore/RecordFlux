@@ -400,25 +400,7 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
 
     pdu = messages[refinement.pdu]
 
-    if Field(refinement.field) not in pdu.fields:
-        fail(
-            f'invalid field "{refinement.field}" in refinement',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            refinement.field.location,
-        )
-
-    refinement.sdu = qualified_type_name(refinement.sdu, refinement.package)
-    if refinement.sdu not in messages:
-        fail(
-            f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            refinement.sdu.location,
-        )
-
-    sdu = messages[refinement.sdu]
-
+    error = RecordFluxError()
     for variable in refinement.condition.variables():
         literals = [
             l for e in pdu.types.values() if isinstance(e, Enumeration) for l in e.literals.keys()
@@ -430,13 +412,34 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
         ]
 
         if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
-            fail(
+            error.append(
                 f'unknown field or literal "{variable.identifier}" in refinement'
                 f' condition of "{refinement.pdu}"',
                 Subsystem.PARSER,
                 Severity.ERROR,
                 variable.location,
             )
+
+    if Field(refinement.field) not in pdu.fields:
+        error.append(
+            f'invalid field "{refinement.field}" in refinement',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            refinement.field.location,
+        )
+        error.propagate()
+
+    refinement.sdu = qualified_type_name(refinement.sdu, refinement.package)
+    if refinement.sdu not in messages:
+        error.append(
+            f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            refinement.sdu.location,
+        )
+        error.propagate()
+
+    sdu = messages[refinement.sdu]
 
     result = Refinement(
         refinement.package,
@@ -447,6 +450,7 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
         refinement.location,
     )
 
+    result.error.extend(error)
     if result in types.values():
         result.error.append(
             f'duplicate refinement with "{refinement.sdu}"',
@@ -458,7 +462,7 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
             "previous occurrence",
             Subsystem.PARSER,
             Severity.INFO,
-            types[result.identifier].location
+            types[result.identifier].location,
         )
 
     return result
