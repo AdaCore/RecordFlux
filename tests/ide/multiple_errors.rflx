@@ -68,7 +68,10 @@ package RFLX_Invalid is
 
    type SDU1 is
       message
-         Field : Boolean;
+         Field : Boolean
+            then null
+               --  error: invalid first expression
+               with First => 0;
       end message;
 
    type SDU2 is
@@ -98,6 +101,19 @@ package RFLX_Invalid is
    -- error: unknown field or literal X in condition
    -- error: unknown field or literal Y in condition
       if X < Y + 1;
+
+   -- error: duplicate refinement
+   type Ref1 is new PDU1;
+   type Ref1 is new PDU1;
+
+   -- error: undefined base message
+   type Ref2 is new Undef_Type;
+
+   -- error: illegal derivation non-message type
+   type Ref3 is new R;
+
+   -- error: illegal derivation of derived type
+   type Ref4 is new Ref1;
 
 --  error: End identifier inconsistent with package identifier
 end Inconsistent;
