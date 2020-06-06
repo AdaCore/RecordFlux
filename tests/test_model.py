@@ -355,17 +355,18 @@ def test_message_ambiguous_first_field() -> None:
 
 def test_message_duplicate_link() -> None:
     t = ModularInteger("P.T", Number(2))
+    x = Field(ID("X", location=Location((1, 5))))
 
     structure = [
-        Link(INITIAL, Field("X")),
-        Link(Field("X"), Field(ID("Final", Location((4, 42))))),
-        Link(Field("X"), Field(ID("Final", Location((5, 42))))),
+        Link(INITIAL, x),
+        Link(x, Field(ID("Final", Location((4, 42))))),
+        Link(x, Field(ID("Final", Location((5, 42))))),
     ]
 
     types = {Field("X"): t}
 
     assert_type(
-        Message("P.M", structure, types, location=Location((1, 5))),
+        Message("P.M", structure, types),
         f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
         f"<stdin>:4:42: model: info: duplicate link\n"
         f"<stdin>:5:42: model: info: duplicate link",
@@ -374,24 +375,26 @@ def test_message_duplicate_link() -> None:
 
 def test_message_multiple_duplicate_links() -> None:
     t = ModularInteger("P.T", Number(2))
+    x = Field(ID("X", location=Location((1, 5))))
+    y = Field(ID("Y", location=Location((2, 5))))
 
     structure = [
-        Link(INITIAL, Field("X")),
-        Link(Field("X"), Field("Y")),
-        Link(Field("X"), Field(ID("Final", Location((3, 16))))),
-        Link(Field("X"), Field(ID("Final", Location((4, 18))))),
-        Link(Field("Y"), Field(ID("Final", Location((5, 20))))),
-        Link(Field("Y"), Field(ID("Final", Location((6, 22))))),
+        Link(INITIAL, x),
+        Link(x, y),
+        Link(x, Field(ID("Final", Location((3, 16))))),
+        Link(x, Field(ID("Final", Location((4, 18))))),
+        Link(y, Field(ID("Final", Location((5, 20))))),
+        Link(y, Field(ID("Final", Location((6, 22))))),
     ]
 
     types = {Field("X"): t, Field("Y"): t}
 
     assert_type(
-        Message("P.M", structure, types, location=Location((1, 5))),
+        Message("P.M", structure, types),
         f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
         f"<stdin>:3:16: model: info: duplicate link\n"
         f"<stdin>:4:18: model: info: duplicate link\n"
-        f'<stdin>:1:5: model: error: duplicate link from "Y" to "{FINAL.name}"\n'
+        f'<stdin>:2:5: model: error: duplicate link from "Y" to "{FINAL.name}"\n'
         f"<stdin>:5:20: model: info: duplicate link\n"
         f"<stdin>:6:22: model: info: duplicate link",
     )
