@@ -87,5 +87,17 @@ package RFLX_Invalid is
    -- error: duplicate refinement
    for PDU1 use (Data => SDU2);
 
+   -- error: undefined message
+   for Undef_PDU use (Data => R);
+
+   -- error: undefined type in refinement
+   for PDU1 use (Data => Undef_Type);
+
+   -- error: invalid field
+   for PDU1 use (Undef_Field => R)
+   -- error: unknown field or literal X in condition
+   -- error: unknown field or literal Y in condition
+      if X < Y + 1;
+
 --  error: End identifier inconsistent with package identifier
 end Inconsistent;
