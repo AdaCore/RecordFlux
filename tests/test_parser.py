@@ -665,8 +665,12 @@ def test_refinement_invalid_condition() -> None:
                   if X < Y + 1;
             end Test;
         """,
-        r'^<stdin>:9:22: parser: error: unknown field or literal "X"'
-        r' in refinement condition of "Test.PDU"$',
+        r"^"
+        r'<stdin>:9:22: parser: error: unknown field or literal "X"'
+        r' in refinement condition of "Test.PDU"\n'
+        r'<stdin>:9:26: parser: error: unknown field or literal "Y"'
+        r' in refinement condition of "Test.PDU"'
+        r"$",
     )
 
 
