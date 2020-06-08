@@ -327,7 +327,9 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
                 )
                 continue
             structure.append(
-                Link(source_node, target_node, then.condition, then.length, then.first)
+                Link(
+                    source_node, target_node, then.condition, then.length, then.first, then.location
+                )
             )
 
     return (

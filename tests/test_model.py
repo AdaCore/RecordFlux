@@ -359,8 +359,8 @@ def test_message_duplicate_link() -> None:
 
     structure = [
         Link(INITIAL, x),
-        Link(x, Field(ID("Final", Location((4, 42))))),
-        Link(x, Field(ID("Final", Location((5, 42))))),
+        Link(x, FINAL, location=Location((4, 42))),
+        Link(x, FINAL, location=Location((5, 42))),
     ]
 
     types = {Field("X"): t}
@@ -381,10 +381,10 @@ def test_message_multiple_duplicate_links() -> None:
     structure = [
         Link(INITIAL, x),
         Link(x, y),
-        Link(x, Field(ID("Final", Location((3, 16))))),
-        Link(x, Field(ID("Final", Location((4, 18))))),
-        Link(y, Field(ID("Final", Location((5, 20))))),
-        Link(y, Field(ID("Final", Location((6, 22))))),
+        Link(x, FINAL, location=Location((3, 16))),
+        Link(x, FINAL, location=Location((4, 18))),
+        Link(y, FINAL, location=Location((5, 20))),
+        Link(y, FINAL, location=Location((6, 22))),
     ]
 
     types = {Field("X"): t, Field("Y"): t}

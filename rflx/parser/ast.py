@@ -19,12 +19,28 @@ class SyntaxTree:
 
 class Then(SyntaxTree):
     def __init__(
-        self, name: StrID, first: Expr = UNDEFINED, length: Expr = UNDEFINED, condition: Expr = TRUE
+        self,
+        name: StrID,
+        first: Expr = UNDEFINED,
+        length: Expr = UNDEFINED,
+        condition: Expr = TRUE,
+        location: Location = None,
     ) -> None:
         self.name = ID(name)
         self.first = first
         self.length = length
         self.condition = condition
+        self.location = location
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return (
+                self.name == other.name
+                and self.first == other.first
+                and self.length == other.length
+                and self.condition == other.condition
+            )
+        return NotImplemented
 
 
 class Component(SyntaxTree):
