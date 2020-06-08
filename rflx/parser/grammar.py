@@ -250,7 +250,7 @@ def message_type_definition() -> Token:
     component_aspects = Keyword("with") - delimitedList(first_aspect | length_aspect)
     component_aspects.setParseAction(parse_aspects)
 
-    then = (
+    then = locatedExpr(
         Keyword("then")
         - (Keyword("null").setParseAction(lambda t: ID()) | unqualified_identifier())
         - Group(Optional(component_aspects))
@@ -454,11 +454,14 @@ def parse_mathematical_expression(string: str, location: int, tokens: ParseResul
 
 @fatalexceptions
 def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
+    tokens = tokens[0]
+    start = tokens.pop(0)
     return Then(
         tokens[1],
         tokens[2][0]["first"] if tokens[2] and "first" in tokens[2][0] else UNDEFINED,
         tokens[2][0]["length"] if tokens[2] and "length" in tokens[2][0] else UNDEFINED,
         tokens[3][0] if tokens[3] else TRUE,
+        parser_location(start, tokens[-1], string),
     )
 
 
