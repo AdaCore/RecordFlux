@@ -412,10 +412,25 @@ class Link(NamedTuple):
     condition: Expr = TRUE
     length: Expr = UNDEFINED
     first: Expr = UNDEFINED
+    location: Optional[Location] = None
 
     def __repr__(self) -> str:
         # pylint: disable=no-member
         return generic_repr(self.__class__.__name__, self._asdict())
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return (
+                self.source == other.source
+                and self.target == other.target
+                and self.condition == other.condition
+                and self.length == other.length
+                and self.first == other.first
+            )
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return 0
 
 
 def valid_message_field_types(message: "AbstractMessage") -> bool:
@@ -584,7 +599,7 @@ class AbstractMessage(Type):
             condition = prefixed_expression(l.condition)
             length = prefixed_expression(l.length)
             first = prefixed_expression(l.first)
-            structure.append(Link(source, target, condition, length, first))
+            structure.append(Link(source, target, condition, length, first, l.location))
 
         types = {Field(prefix + f.identifier): t for f, t in self.types.items()}
 
@@ -648,15 +663,7 @@ class AbstractMessage(Type):
                     links[0].source.identifier.location,
                 )
                 self.error.extend(
-                    [
-                        (
-                            "duplicate link",
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            l.target.identifier.location,
-                        )
-                        for l in links
-                    ]
+                    [("duplicate link", Subsystem.MODEL, Severity.INFO, l.location,) for l in links]
                 )
 
     def __verify_conditions(self) -> None:
@@ -1327,6 +1334,7 @@ class UnprovenMessage(AbstractMessage):
                             link.condition,
                             initial_link.length,
                             link.first,
+                            link.location,
                         )
                     )
                 elif link.source == field:
@@ -1338,6 +1346,7 @@ class UnprovenMessage(AbstractMessage):
                                 And(link.condition, final_link.condition).simplified(),
                                 link.length,
                                 link.first,
+                                link.location,
                             )
                         )
                 else:

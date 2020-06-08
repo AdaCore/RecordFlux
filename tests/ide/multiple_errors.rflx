@@ -68,6 +68,9 @@ package RFLX_Invalid is
          -- error: Aggregate element out of range (3 times)
          Y : R_Array
             then null if Y = (1, 10, 20, 50, 60);
+
+         -- error: duplicate link
+         Z : R then null, then null;
       end message;
 
    type M2 is
