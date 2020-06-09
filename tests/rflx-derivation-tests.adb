@@ -140,8 +140,6 @@ package body RFLX.Derivation.Tests is
 
       if Derivation.Message.Has_Buffer (Context) then
          Derivation.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Modular_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -271,8 +269,6 @@ package body RFLX.Derivation.Tests is
 
       if Derivation.Message.Has_Buffer (Context) then
          Derivation.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Range_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -403,8 +399,6 @@ package body RFLX.Derivation.Tests is
 
       if Derivation.Message.Has_Buffer (Context) then
          Derivation.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -548,8 +542,6 @@ package body RFLX.Derivation.Tests is
 
       if Derivation.Message.Has_Buffer (Context) then
          Derivation.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.AV_Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 

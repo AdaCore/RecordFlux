@@ -2379,10 +2379,14 @@ class Generator:
                 (Variable("others"), Call(unreachable_function_name(enum.full_name)))
             )
 
-            specification.append(
-                ExpressionFunctionDeclaration(
-                    conversion_function, Case(enum_value, conversion_cases), [precondition]
-                )
+            specification.extend(
+                [
+                    Pragma("Warnings", ["Off", '"unreachable branch"']),
+                    ExpressionFunctionDeclaration(
+                        conversion_function, Case(enum_value, conversion_cases), [precondition]
+                    ),
+                    Pragma("Warnings", ["On", '"unreachable branch"']),
+                ]
             )
 
         return UnitPart(specification)
@@ -2608,7 +2612,7 @@ class Generator:
         type_name = self.prefix * scalar_type.identifier
 
         return [
-            Pragma("Warnings", ["Off", '"precondition is statically false"']),
+            Pragma("Warnings", ["Off", '"precondition is * false"']),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(unreachable_function_name(scalar_type.full_name), type_name),
                 First(type_name)
@@ -2616,7 +2620,7 @@ class Generator:
                 else Aggregate(Variable("False"), First(base_name)),
                 [Precondition(FALSE)],
             ),
-            Pragma("Warnings", ["On", '"precondition is statically false"']),
+            Pragma("Warnings", ["On", '"precondition is * false"']),
         ]
 
     def __integer_conversion_functions(self, integer: Integer) -> Sequence[Subprogram]:

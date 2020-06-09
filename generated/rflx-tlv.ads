@@ -11,7 +11,7 @@ is
        2;
    for Tag use (Msg_Data => 1, Msg_Error => 3);
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_TLV_Tag return RFLX.TLV.Tag is
      (RFLX.TLV.Tag'First)
@@ -19,7 +19,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.TLV.Tag_Base) return Boolean is
      ((case Val is
@@ -35,6 +35,8 @@ is
           when Msg_Error =>
              3));
 
+   pragma Warnings (Off, "unreachable branch");
+
    function To_Actual (Val : RFLX.TLV.Tag_Base) return RFLX.TLV.Tag is
      ((case Val is
           when 1 =>
@@ -47,9 +49,11 @@ is
      Pre =>
        Valid (Val);
 
+   pragma Warnings (On, "unreachable branch");
+
    type Length is mod 2**14;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_TLV_Length return RFLX.TLV.Length is
      (RFLX.TLV.Length'First)
@@ -57,7 +61,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
