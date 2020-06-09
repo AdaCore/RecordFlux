@@ -218,6 +218,8 @@ class Enumeration(Scalar):
         for l in literals:
             if " " in l or "." in l:
                 raise ModelError(f'invalid literal name "{l}" in "{self.name}"')
+        if always_valid and len(literals) == 2 ** int(size_num):
+            raise ModelError(f'unnecessary always-valid aspect on "{self.name}"')
 
         self.literals = literals
         self.always_valid = always_valid
