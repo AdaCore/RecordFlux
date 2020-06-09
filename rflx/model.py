@@ -886,7 +886,7 @@ class AbstractMessage(Type):
 
         for f in (*self.fields, FINAL):
             paths = []
-            for path in sorted(self._state.paths[f]):
+            for path in self._state.paths[f]:
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 outgoing = self.outgoing(f)
                 if f != FINAL and outgoing:
@@ -903,7 +903,7 @@ class AbstractMessage(Type):
                     Severity.ERROR,
                     f.identifier.location,
                 )
-                for index, (path, errors) in enumerate(paths):
+                for index, (path, errors) in enumerate(sorted(paths)):
                     self.error.append(
                         f"path {index} (" + " -> ".join([l.target.name for l in path]) + "):",
                         Subsystem.MODEL,
