@@ -10,7 +10,7 @@ is
 
    subtype Version is Version_Base range 4 .. 4;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Version return RFLX.IPv4.Version is
      (RFLX.IPv4.Version'First)
@@ -18,7 +18,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.IPv4.Version_Base) return Boolean is
      (Val >= 4
@@ -42,7 +42,7 @@ is
 
    subtype IHL is IHL_Base range 5 .. 15;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_IHL return RFLX.IPv4.IHL is
      (RFLX.IPv4.IHL'First)
@@ -50,7 +50,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.IPv4.IHL_Base) return Boolean is
      (Val >= 5);
@@ -69,7 +69,7 @@ is
 
    type DCSP is mod 2**6;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_DCSP return RFLX.IPv4.DCSP is
      (RFLX.IPv4.DCSP'First)
@@ -77,7 +77,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -104,7 +104,7 @@ is
 
    type ECN is mod 2**2;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_ECN return RFLX.IPv4.ECN is
      (RFLX.IPv4.ECN'First)
@@ -112,7 +112,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -143,7 +143,7 @@ is
 
    subtype Total_Length is Total_Length_Base range 20 .. 2**16 - 1;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Total_Length return RFLX.IPv4.Total_Length is
      (RFLX.IPv4.Total_Length'First)
@@ -151,7 +151,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.IPv4.Total_Length_Base) return Boolean is
      (Val >= 20);
@@ -170,7 +170,7 @@ is
 
    type Identification is mod 2**16;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Identification return RFLX.IPv4.Identification is
      (RFLX.IPv4.Identification'First)
@@ -178,7 +178,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -205,7 +205,7 @@ is
 
    type Fragment_Offset is mod 2**13;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Fragment_Offset return RFLX.IPv4.Fragment_Offset is
      (RFLX.IPv4.Fragment_Offset'First)
@@ -213,7 +213,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -240,7 +240,7 @@ is
 
    type TTL is mod 2**8;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_TTL return RFLX.IPv4.TTL is
      (RFLX.IPv4.TTL'First)
@@ -248,7 +248,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -290,7 +290,7 @@ is
          end case;
       end record;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Protocol return RFLX.IPv4.Protocol is
      ((False, RFLX.IPv4.Protocol_Base'First))
@@ -298,7 +298,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -339,7 +339,7 @@ is
 
    type Header_Checksum is mod 2**16;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Header_Checksum return RFLX.IPv4.Header_Checksum is
      (RFLX.IPv4.Header_Checksum'First)
@@ -347,7 +347,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -374,7 +374,7 @@ is
 
    type Address is mod 2**32;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Address return RFLX.IPv4.Address is
      (RFLX.IPv4.Address'First)
@@ -382,7 +382,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -414,7 +414,7 @@ is
        2;
    for Option_Class use (Control => 0, Debugging_And_Measurement => 2);
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Option_Class return RFLX.IPv4.Option_Class is
      (RFLX.IPv4.Option_Class'First)
@@ -422,7 +422,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.IPv4.Option_Class_Base) return Boolean is
      ((case Val is
@@ -438,6 +438,8 @@ is
           when Debugging_And_Measurement =>
              2));
 
+   pragma Warnings (Off, "unreachable branch");
+
    function To_Actual (Val : RFLX.IPv4.Option_Class_Base) return RFLX.IPv4.Option_Class is
      ((case Val is
           when 0 =>
@@ -450,9 +452,11 @@ is
      Pre =>
        Valid (Val);
 
+   pragma Warnings (On, "unreachable branch");
+
    type Option_Number is mod 2**5;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Option_Number return RFLX.IPv4.Option_Number is
      (RFLX.IPv4.Option_Number'First)
@@ -460,7 +464,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -491,7 +495,7 @@ is
 
    subtype Option_Length is Option_Length_Base range 2 .. 2**8 - 1;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_IPv4_Option_Length return RFLX.IPv4.Option_Length is
      (RFLX.IPv4.Option_Length'First)
@@ -499,7 +503,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.IPv4.Option_Length_Base) return Boolean is
      (Val >= 2);
