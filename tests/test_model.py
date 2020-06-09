@@ -238,6 +238,11 @@ def test_enumeration_invalid_size_exceeds_limit() -> None:
         Enumeration("P.T", {"A": Number(256)}, Number(128), False)
 
 
+def test_enumeration_invalid_always_valid_aspect() -> None:
+    with pytest.raises(ModelError, match=r'^unnecessary always-valid aspect on "T"$'):
+        Enumeration("P.T", {"A": Number(0), "B": Number(1)}, Number(1), True)
+
+
 def test_enumeration_invalid_literal() -> None:
     with pytest.raises(ModelError, match=r'^invalid literal name "A B" in "T"$'):
         Enumeration("P.T", {"A B": Number(1)}, Number(8), False)
