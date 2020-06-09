@@ -151,8 +151,6 @@ package body RFLX.Arrays.Tests is
 
       if Arrays.Message.Has_Buffer (Context) then
          Arrays.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Modular_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -282,8 +280,6 @@ package body RFLX.Arrays.Tests is
 
       if Arrays.Message.Has_Buffer (Context) then
          Arrays.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Range_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -414,8 +410,6 @@ package body RFLX.Arrays.Tests is
 
       if Arrays.Message.Has_Buffer (Context) then
          Arrays.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -559,8 +553,6 @@ package body RFLX.Arrays.Tests is
 
       if Arrays.Message.Has_Buffer (Context) then
          Arrays.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.AV_Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -841,8 +833,6 @@ package body RFLX.Arrays.Tests is
          Arrays.Messages_Message.Take_Buffer (Context, Buffer);
       elsif Arrays.Inner_Messages.Has_Buffer (Sequence_Context) then
          Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Buffer);
-      else
-         Arrays.Inner_Message.Take_Buffer (Element_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -913,10 +903,6 @@ package body RFLX.Arrays.Tests is
 
       if Arrays.Messages_Message.Has_Buffer (Context) then
          Arrays.Messages_Message.Take_Buffer (Context, Buffer);
-      elsif Arrays.Inner_Messages.Has_Buffer (Sequence_Context) then
-         Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Buffer);
-      else
-         Arrays.Inner_Message.Take_Buffer (Element_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);
 
@@ -1059,9 +1045,7 @@ package body RFLX.Arrays.Tests is
       end if;
 
       Free_Bytes_Ptr (Expected);
-      if Arrays.Messages_Message.Has_Buffer (Context) then
-         Arrays.Messages_Message.Take_Buffer (Context, Buffer);
-      elsif Arrays.Inner_Messages.Has_Buffer (Sequence_Context) then
+      if Arrays.Inner_Messages.Has_Buffer (Sequence_Context) then
          Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Buffer);
       end if;
       Free_Bytes_Ptr (Buffer);

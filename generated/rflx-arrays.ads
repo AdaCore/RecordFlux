@@ -6,7 +6,7 @@ is
 
    type Length is mod 2**8;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Arrays_Length return RFLX.Arrays.Length is
      (RFLX.Arrays.Length'First)
@@ -14,7 +14,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -41,7 +41,7 @@ is
 
    type Modular_Integer is mod 2**16;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Arrays_Modular_Integer return RFLX.Arrays.Modular_Integer is
      (RFLX.Arrays.Modular_Integer'First)
@@ -49,7 +49,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -80,7 +80,7 @@ is
 
    subtype Range_Integer is Range_Integer_Base range 1 .. 100;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Arrays_Range_Integer return RFLX.Arrays.Range_Integer is
      (RFLX.Arrays.Range_Integer'First)
@@ -88,7 +88,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.Arrays.Range_Integer_Base) return Boolean is
      (Val >= 1
@@ -113,7 +113,7 @@ is
        8;
    for Enumeration use (ZERO => 0, ONE => 1, TWO => 2);
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Arrays_Enumeration return RFLX.Arrays.Enumeration is
      (RFLX.Arrays.Enumeration'First)
@@ -121,7 +121,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.Arrays.Enumeration_Base) return Boolean is
      ((case Val is
@@ -139,6 +139,8 @@ is
           when TWO =>
              2));
 
+   pragma Warnings (Off, "unreachable branch");
+
    function To_Actual (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration is
      ((case Val is
           when 0 =>
@@ -152,6 +154,8 @@ is
     with
      Pre =>
        Valid (Val);
+
+   pragma Warnings (On, "unreachable branch");
 
    type AV_Enumeration_Base is mod 2**8;
 
@@ -170,7 +174,7 @@ is
          end case;
       end record;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Arrays_AV_Enumeration return RFLX.Arrays.AV_Enumeration is
      ((False, RFLX.Arrays.AV_Enumeration_Base'First))
@@ -178,7 +182,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 

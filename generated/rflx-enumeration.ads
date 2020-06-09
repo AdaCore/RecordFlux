@@ -21,7 +21,7 @@ is
          end case;
       end record;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Enumeration_Priority return RFLX.Enumeration.Priority is
      ((False, RFLX.Enumeration.Priority_Base'First))
@@ -29,7 +29,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 

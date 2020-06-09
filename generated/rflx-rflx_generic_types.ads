@@ -59,7 +59,7 @@ package RFLX.RFLX_Generic_Types is
      Pre =>
        (Offset'Pos (Ofst) + Value'Size - 1) / Byte'Size < Data'Length;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Bit_Length return Bit_Length is
      (Bit_Length'First)
@@ -67,6 +67,6 @@ package RFLX.RFLX_Generic_Types is
        Pre =>
          False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
 end RFLX.RFLX_Generic_Types;

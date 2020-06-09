@@ -6,7 +6,7 @@ is
 
    type Address is mod 2**48;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Ethernet_Address return RFLX.Ethernet.Address is
      (RFLX.Ethernet.Address'First)
@@ -14,7 +14,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -45,7 +45,7 @@ is
 
    subtype Type_Length is Type_Length_Base range 46 .. 2**16 - 1;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Ethernet_Type_Length return RFLX.Ethernet.Type_Length is
      (RFLX.Ethernet.Type_Length'First)
@@ -53,7 +53,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.Ethernet.Type_Length_Base) return Boolean is
      (Val >= 46);
@@ -76,7 +76,7 @@ is
 
    subtype TPID is TPID_Base range 16#8100# .. 16#8100#;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Ethernet_TPID return RFLX.Ethernet.TPID is
      (RFLX.Ethernet.TPID'First)
@@ -84,7 +84,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.Ethernet.TPID_Base) return Boolean is
      (Val >= 16#8100#
@@ -104,7 +104,7 @@ is
 
    type TCI is mod 2**16;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_Ethernet_TCI return RFLX.Ethernet.TCI is
      (RFLX.Ethernet.TCI'First)
@@ -112,7 +112,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 

@@ -6,7 +6,7 @@ is
 
    type Port is mod 2**16;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_UDP_Port return RFLX.UDP.Port is
      (RFLX.UDP.Port'First)
@@ -14,7 +14,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -45,7 +45,7 @@ is
 
    subtype Length is Length_Base range 8 .. 2**16 - 1;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_UDP_Length return RFLX.UDP.Length is
      (RFLX.UDP.Length'First)
@@ -53,7 +53,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.UDP.Length_Base) return Boolean is
      (Val >= 8);
@@ -72,7 +72,7 @@ is
 
    type Checksum is mod 2**16;
 
-   pragma Warnings (Off, "precondition is statically false");
+   pragma Warnings (Off, "precondition is * false");
 
    function Unreachable_UDP_Checksum return RFLX.UDP.Checksum is
      (RFLX.UDP.Checksum'First)
@@ -80,7 +80,7 @@ is
      Pre =>
        False;
 
-   pragma Warnings (On, "precondition is statically false");
+   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
