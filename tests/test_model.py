@@ -627,7 +627,9 @@ def test_message_nonexistent_variable() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(
-            Field("F1"), Field("F2"), Equal(Variable("F1"), Variable("Val3"), Location((444, 55)))
+            Field("F1"),
+            Field("F2"),
+            Equal(Variable("F1"), Variable("Val3", location=Location((444, 55)))),
         ),
         Link(Field("F2"), FINAL),
     ]
@@ -645,7 +647,7 @@ def test_message_subsequent_variable() -> None:
     t = ModularInteger("P.T", Pow(Number(2), Number(32)))
     structure = [
         Link(INITIAL, f1),
-        Link(f1, f2, Equal(Variable("F2"), Number(42), Location((1024, 57)))),
+        Link(f1, f2, Equal(Variable("F2", location=Location((1024, 57))), Number(42))),
         Link(f2, FINAL),
     ]
 
