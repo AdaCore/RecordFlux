@@ -134,5 +134,159 @@ package RFLX_Invalid is
    -- error: illegal derivation of derived type
    type Ref4 is new Ref1;
 
+   type M3 is
+      message
+         Length : R
+            then Data
+               with Length => Length
+                  -- error: Undefined variable
+                  if Undef_Var > 5
+                     -- error: Subsequent field F1 referenced
+                     and F1 > 1000;
+         Data  : Opaque
+            then F1
+               -- error: invalid relation to aggregate
+               if F1 <= (5, 20);
+         F1 : R
+            then F2
+               -- error: invalid use of length attribute
+               if F1'Length = 42;
+         F2 : R
+            then null
+               -- error: invalid relation between F2 and aggregate
+               if F1 = (1, 100);
+      end message;
+
+   type M4 is
+      message
+         F1 : R;
+      end message;
+
+   type M5 is
+      message
+         F2 : M4;
+         --  error: name conflict
+         F2_F1 : R;
+      end message;
+
+   type M6 is
+      message
+         Length : R
+            then Data1
+               with Length => Length;
+         Data1  : R_Array
+            then Data2
+               with Length => Length
+                  -- error: aggregate element out of range, 2 times
+                  if Data1 = (1, 7, 1000);
+         Data2  : Opaque
+            then null
+               -- error: aggregate element out of range
+               if Data2 = (1, 1000);
+      end message;
+
+   type M5_Array is array of M5;
+   type M7 is
+      message
+         Length : R
+            then Data
+               with Length => Length;
+         Data : M5_Array
+            then null
+                  -- error: invalid array element type
+                  if Data = (1, 7, 1000);
+      end message;
+
+   type Modular_32 is mod 2**32;
+
+   -- error: conflicting condition
+   type M8 is
+      message
+         F1 : Modular_32
+            then null
+               if F1 > 50,
+            then F2
+               if F1 < 80;
+         F2 : Modular_32;
+      end message;
+
+   type M9 is
+      message
+         F1 : Modular_32 then null;
+         -- error: unreachable field
+         F2 : Modular_32;
+      end message;
+
+   type M10 is
+      message
+         F1 : Modular_32
+            -- error: contradicting condition
+            then null if 1 = 2,
+            then null if F1 > 50;
+      end message;
+
+   type M11 is
+      message
+         null
+            -- error: fixed size field with length expression
+            then F1
+               with Length => 24;
+         F1 : Modular_32;
+      end message;
+
+   type M12 is
+      message
+         null
+            then F1
+               -- error: invalid first
+               with First => 7;
+         F1 : Modular_32;
+      end message;
+
+   type M13 is
+      message
+         null
+            then F1
+               --  error: subsequent field referenced
+               if F1 > 42;
+         F1 : Modular_32;
+      end message;
+
+   type M14 is
+      message
+         F1 : Modular_32
+            then F2
+               -- error: negative length
+               with Length => F1 - 2**33;
+         F2 : Opaque;
+      end message;
+
+   type M15 is
+      message
+         -- error: unconstrainted field without length expression
+         F1 : Opaque;
+      end message;
+
+   type U8 is mod 2**8;
+   type U16 is mod 2**16;
+   type M16 is
+      message
+         F1 : U8;
+         F2 : U8
+            then F3
+               -- error: not congruent with overlayed field
+               with First => F1'First;
+         F3 : U16;
+         F4 : U16;
+      end message;
+
+   type M17 is
+      message
+         F1 : Modular_32
+            then null
+               --  error: Length attribute for final field
+               with Length => 32;
+      end message;
+
 --  error: End identifier inconsistent with package identifier
 end Inconsistent;
