@@ -288,5 +288,10 @@ package RFLX_Invalid is
                with Length => 32;
       end message;
 
+   type Unnecessary_Always_Valid_Enum is (UAVE1, UAVE2, UAVE3, UAVE4) with
+      Size => 2,
+      -- error: unnecessary Always_Valid
+      Always_Valid;
+
 --  error: End identifier inconsistent with package identifier
 end Inconsistent;
