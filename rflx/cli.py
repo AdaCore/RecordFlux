@@ -83,8 +83,6 @@ def main(argv: List[str]) -> Union[int, str]:
         args.func(args)
     except RecordFluxError as e:
         return f"{e}"
-    except Exception as e:  # pylint: disable=broad-except
-        return f"{parser.prog}: error: {e}"
 
     return 0
 
@@ -124,9 +122,6 @@ def parse(files: List) -> Model:
         if not Path(f).is_file():
             error.append(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR)
             continue
-
-        # pylint: disable=fixme
-        # FIXME: Add test with missing file and parse error
         try:
             parser.parse(Path(f))
         except RecordFluxError as e:
