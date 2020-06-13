@@ -153,6 +153,7 @@ string_literal = hl.region(r'"', r'"', matchall=False, tag=hl.tag_string)
 hl.register_highlighter(
     language="recordflux",
     spec=(
+        hl.simple(r"--[^\n]*", tag=hl.tag_comment),
         type_region,
         hl.simple(r"\b'First", tag=tag_aspect),
         hl.simple(r"\b'Last", tag=tag_aspect),
