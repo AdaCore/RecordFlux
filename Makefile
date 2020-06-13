@@ -71,6 +71,9 @@ prove_spark: $(test-files)
 prove_spark_cvc4: $(test-files)
 	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(GNATPROVE_ARGS)
 
+install_gnatstudio:
+	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
+
 clean:
 	gprclean -Ptest
 	gnatprove -Ptest --clean
