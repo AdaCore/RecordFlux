@@ -2,6 +2,7 @@
 from copy import deepcopy
 
 import pytest
+from icontract import ViolationError
 
 from rflx.error import Location, RecordFluxError
 from rflx.expression import (
@@ -1147,3 +1148,15 @@ def test_array_aggregate_invalid_element_type() -> None:
         r"^<stdin>:90:10: model: error: invalid array element type"
         ' "P.I" for aggregate comparison$',
     )
+
+
+class NewType(Type):
+    pass
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on contract")
+def test_invalid_message_field_type() -> None:
+    with pytest.raises(ViolationError, match=r"rflx/model.py, line 436"):
+        Message(
+            "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): NewType("T")},
+        )
