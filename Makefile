@@ -22,13 +22,13 @@ endif
 check: check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc
 
 check_black:
-	black -l 100 --check $(python-packages)
+	black -l 100 --check $(python-packages) ide/gnatstudio
 
 check_isort:
-	isort -rc -c $(python-packages)
+	isort -rc -c $(python-packages) ide/gnatstudio
 
 check_flake8:
-	flake8 $(python-packages)
+	flake8 $(python-packages) ide/gnatstudio
 
 check_pylint:
 	pylint $(python-packages)
@@ -43,8 +43,8 @@ check_doc:
 	tools/check_doc.py
 
 format:
-	black -l 100 $(python-packages)
-	isort -rc $(python-packages)
+	black -l 100 $(python-packages) ide/gnatstudio
+	isort -rc $(python-packages) ide/gnatstudio
 
 test: check test_python test_spark prove_spark
 
