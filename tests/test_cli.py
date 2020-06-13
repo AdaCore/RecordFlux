@@ -5,11 +5,6 @@ import pkg_resources
 import pytest
 
 from rflx import cli
-from rflx.error import Location, Severity, Subsystem, fail
-
-
-def raise_model_error() -> None:
-    fail("TEST", Subsystem.MODEL, Severity.ERROR, Location((8, 22)))
 
 
 def test_main_noarg() -> None:
@@ -38,9 +33,12 @@ def test_main_check_parser_error() -> None:
     assert "README.md:1:1: parser: error: " in str(cli.main(["rflx", "check", "README.md"]))
 
 
-def test_main_check_model_error(monkeypatch: Any) -> None:
-    monkeypatch.setattr(cli, "check", lambda x: raise_model_error())
-    assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
+def test_main_check_model_error() -> None:
+    assert (
+        "tests/identical_literals.rflx:3:4: parser: error: conflicting literals: Bar\n"
+        'tests/identical_literals.rflx:2:21: parser: info: previous occurrence of "Bar"'
+        in str(cli.main(["rflx", "check", "tests/identical_literals.rflx"]))
+    )
 
 
 def test_main_check_non_existent_file() -> None:
