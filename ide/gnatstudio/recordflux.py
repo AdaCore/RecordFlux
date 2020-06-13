@@ -13,7 +13,10 @@ XML = r"""<?xml version="1.0"?>
 <GNAT_Studio>
    <Language>
       <Name>RecordFlux</Name>
-      <Body_Suffix>.rflx</Body_Suffix>
+      <Spec_Suffix>.rflx</Spec_Suffix>
+
+      <!-- Dummy body suffix as file templates don't work when its missing -->
+      <Body_Suffix>.workaround_rflx</Body_Suffix>
 
       <Categories>
          <Category>
@@ -87,7 +90,6 @@ XML = r"""<?xml version="1.0"?>
    <alias name="rflx_package">
       <param name="name" description="The name of the RecordFlux package"/>
       <text>package %(name) is
-begin
    %_
 end %(name);</text>
    </alias>
@@ -179,7 +181,7 @@ def __on_gps_started():
         alias_name="rflx_package",
         label="RecordFlux specification",
         unit_param="name",
-        language="RecordFlux",
+        language="recordflux",
         is_impl=False,
     )
 
