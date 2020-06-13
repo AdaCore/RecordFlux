@@ -291,6 +291,12 @@ By default the following dependencies are installed:
 
 Additionally, [GNAT Community 2020](https://www.adacore.com/download) is needed for compiling and verifying generated SPARK code.
 
+Optionally, the GNAT Studio IDE integration for RecordFlux can be installed. It enables syntax highlighting for RecordFlux specifications and allows for running RecordFlux from within GNAT Studio. In the RecordFlux source directory do:
+
+```Console
+$ make install_gnatstudio
+```
+
 ## Limitations
 
 A list of known limitations for version 0.4.0 can be found [here](https://github.com/Componolit/RecordFlux/issues?q=is%3Aissue+label%3Alimitation+label%3Av0.4.0).
