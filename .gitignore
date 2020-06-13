@@ -9,3 +9,5 @@ dist
 htmlcov
 *.pyc
 \.*.swp
+*-loc.xml
+gnatinspect.db
