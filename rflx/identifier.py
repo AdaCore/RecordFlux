@@ -77,10 +77,6 @@ class ID:
                 return None
             if self.location is None:
                 return other.location
-            if other.location is None:
-                return self.location
-            assert self.location.source == other.location.source
-            return Location(self.location.start, self.location.source, other.location.end)
         return NotImplemented
 
     @property
