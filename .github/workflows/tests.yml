@@ -177,9 +177,6 @@ jobs:
           - "spark"
         type:
           - "clean"
-        include:
-          - target: "spark"
-            type: "cached"
     steps:
     - uses: actions/checkout@v2
     - name: Install SPARK
@@ -188,12 +185,6 @@ jobs:
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
         chmod +x $HOME/bin/gnatprove
         echo "::add-path::$HOME/bin"
-    - name: Cache GNATprove results
-      if: matrix.type == 'cached'
-      uses: actions/cache@v2
-      with:
-        path: build/gnatprove
-        key: ${{ runner.os }}-gnatprove2020-${{ matrix.target }}
     - name: Test
       run: |
         make prove_${{ matrix.target }}
