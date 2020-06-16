@@ -1,143 +1,192 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
-with RFLX.RFLX_Lemmas;
+with RFLX.RFLX_Utils; use RFLX.RFLX_Utils;
 
-pragma Warnings (Off, """Ada.Numerics.Big_Numbers.Big_Integers"" is an Ada 202x unit");
+package body RFLX.RFLX_Generic_Types with
+  SPARK_Mode
+is
 
-with Ada.Numerics.Big_Numbers.Big_Integers; use Ada.Numerics.Big_Numbers.Big_Integers;
+   --
+   --  Terminology
+   --
+   --  -----XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX----    Data
+   --
+   --     |-------|-------|-------|-------|-------|       Value Bytes
+   --     3  MSB  11      19      27      35 LSB  43
+   --
+   --  |----|                                     |----|
+   --  MSE_Offset                               LSE_Offset
+   --
+   --       |--|                               |--|
+   --     MSE_Size                          LSE_Size
+   --
+   --  |-------|-------|-------|-------|-------|-------|  Data Bytes
+   --  0       8       16      24      32      40
+   --     MSE                                     LSE
+   --
+   --  LSE: Least Significant Element of Data
+   --  MSE: Most Significant Element of Data
+   --
+   --  LSB: Least Significant Byte of Value
+   --  MSB: Most Significant Byte of Value
+   --
+   --  LSE_Offset: Bits the LSE is shifted left relative to last of LSE
+   --  MSE_Offset: Bits the MSE is shifted right relative to first of MSE
+   --
+   --  LSE_Size: Number of bits of LSE contained in LSB
+   --  MSE_Size: Number of bits of MSE contained in MSB
+   --
+   --  LSE_Index: Index pointing to LSE
+   --  MSE_Index: Index pointing to MSE
+   --
 
-package body RFLX.RFLX_Generic_Types is
-
-   package Conversions is new Signed_Conversions (Long_Integer);
-
-   function Extract (Data : Bytes;
-                     Ofst : Offset) return Value
+   function U64_Extract_Intermediate (Data_Current : U64;
+                                      Data_Next    : U64;
+                                      LSE_Size     : Natural;
+                                      LSE_Offset   : Natural;
+                                      Shift_Length : Natural) return U64 with
+     Pre =>
+       Data_Current < 2**Byte'Size
+       and then Data_Next < 2**Byte'Size
+       and then LSE_Size in 0 .. Byte'Size
+       and then LSE_Offset in 0 .. Byte'Size - 1
+       and then Shift_Length <= U64'Size - Byte'Size
+       and then LSE_Size + LSE_Offset = Byte'Size,
+     Post =>
+       (if Byte'Size + Shift_Length < U64'Size
+        then U64_Extract_Intermediate'Result <= U64 (2)**(Byte'Size + Shift_Length) - U64 (2)**Shift_Length
+        else U64_Extract_Intermediate'Result <= U64'Last - U64 (2)**Shift_Length + 1)
    is
-      pragma Compile_Time_Error (Value'Pos (Value'Last) - Value'Pos (Value'First) + 1 /= 2**Value'Size,
-                                 "Value must cover entire value range");
+      Current : constant U64 := Right_Shift (Data_Current, Byte'Size, LSE_Offset);
+      Next    : constant U64 := (if LSE_Offset > 0
+                                 then Left_Shift (Data_Next mod U64 (2)**LSE_Offset, LSE_Offset, LSE_Size)
+                                 else Data_Next mod U64 (2)**LSE_Offset);
+   begin
+      return Left_Shift (Current + Next, Byte'Size, Shift_Length);
+   end U64_Extract_Intermediate;
 
-      pragma Assert (Byte'Pos (Byte'First) = 0);
-      pragma Assert (Byte'Pos (Byte'Last) = 2**Byte'Size - 1);
+   function U64_Extract_Remaining (Data          : U64;
+                                   Element_Count : Natural;
+                                   MSE_Size      : Natural;
+                                   LSE_Offset    : Natural) return U64 with
+     Pre =>
+       MSE_Size in 0 .. Byte'Size
+       and LSE_Offset in 0 .. Byte'Size - 1
+       and MSE_Size - LSE_Offset in 1 .. Byte'Size
+       and Element_Count <= 7,
+     Post =>
+       (if
+          MSE_Size - LSE_Offset + (Byte'Size * Element_Count) < U64'Size
+        then
+          U64_Extract_Remaining'Result <= U64 (2)**(MSE_Size - LSE_Offset + (Byte'Size * Element_Count))
+                                          - U64 (2)**(Byte'Size * Element_Count)
+          and U64 (2)**(MSE_Size - LSE_Offset + (Byte'Size * Element_Count)) >= U64 (2)**(Byte'Size * Element_Count)
+        else
+          U64_Extract_Remaining'Result <= U64'Last - U64 (2)**(Byte'Size * Element_Count) + 1)
+   is
+      Remaining_Bits : constant U64 := Right_Shift (Data mod U64 (2)**MSE_Size, MSE_Size, LSE_Offset);
+   begin
+      return Left_Shift (Remaining_Bits, MSE_Size - LSE_Offset, Byte'Size * Element_Count);
+   end U64_Extract_Remaining;
 
-      LSB_Offset : constant Long_Integer := Offset'Pos (Ofst);
+   function U64_Extract (Data       : Bytes;
+                         Ofst       : Offset;
+                         Value_Size : Positive) return U64 with
+     Pre =>
+       (Value_Size in 1 .. U64'Size
+        and then Long_Integer ((Natural (Ofst) + Value_Size - 1) / Byte'Size) < Data'Length
+        and then (Natural (Ofst) + Value_Size - 1) / Byte'Size <= Natural'Size
+        and then (Byte'Size - Natural (Ofst) mod Byte'Size) < Long_Integer'Size - 1),
+     Post =>
+       (if Value_Size < U64'Size then U64_Extract'Result < 2**Value_Size)
+   is
+      LSE_Index : constant Long_Integer := Long_Integer (Ofst) / Byte'Size;
+      MSE_Index : constant Long_Integer := Long_Integer (Natural (Ofst) + Value_Size - 1) / Byte'Size;
 
-      --  Index pointing to least significant element
-      Least_Significant_Index : constant Long_Integer := LSB_Offset / Byte'Size;
+      LSE_Offset : constant Natural := Natural (Natural (Ofst) mod Byte'Size);
+      LSE_Size   : constant Natural := Byte'Size - LSE_Offset;
 
-      --  Bits the least significant element (LSE) is shifted left relative to a single element
-      LSE_Offset : constant Natural := Natural (LSB_Offset mod Byte'Size);
-
-      --  Index pointing to most significant index
-      Most_Significant_Index : constant Long_Integer :=
-        (LSB_Offset + Long_Integer (Value'Size) - 1) / Byte'Size;
-
-      --  Bits the most significant element (MSE) is shifted right relative to a single element
-      MSE_Offset : constant Natural := Byte'Size - LSE_Offset;
+      MSE_Size   : constant Natural := (LSE_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
 
       function D (Idx : Long_Integer) return Byte with
         Pre =>
-          Idx >= 0 and then Idx < Data'Length;
-
-      function D (Idx : Long_Integer) return Byte
+          Idx >= 0 and then Idx < Data'Length and then Value_Size in 1 .. 64
       is
          function ES return Natural is (Byte'Size) with Post => ES'Result = Byte'Size;
-         E : constant Natural := (LSE_Offset + Value'Size + Byte'Size - 1) mod ES + 1;
+         E : constant Natural := (LSE_Offset + Value_Size + Byte'Size - 1) mod ES + 1;
          pragma Assert (2**Byte'Size = 2**ES);
       begin
          declare
-            Mask : constant Long_Integer := (if Idx < Most_Significant_Index then 2**ES else 2**E);
-            Val  : constant Byte := Data (Index'Val ((Index'Pos (Data'Last) - Idx)));
+            Mask : constant Natural := (if Idx < MSE_Index then 2**ES else 2**E);
+            Val  : constant Byte := Data (Index (Long_Integer (Data'Last) - Idx));
          begin
             return Byte'Val (Byte'Pos (Val) mod Mask);
          end;
       end D;
 
-      type Result_Type is mod 2**Long_Integer'Size;
-      Result : Result_Type := 0;
-
-      function LIS return Natural is (Long_Integer'Size) with Post => LIS'Result = Long_Integer'Size;
-      pragma Assert (2**(LIS - 2) - 1 = 2**(Long_Integer'Size - 2) - 1);
-      pragma Annotate (GNATprove, False_Positive, "assertion",
-                       "solvers cannot show correspondence between integers and exponentiation abstraction");
-      pragma Annotate (GNATprove, False_Positive, "overflow",
-                       "solvers cannot show that overflow does not occur for 2**62");
-      Pow2_LSE_Offset : constant Long_Integer := 2**LSE_Offset;
-
+      Result : U64 := 0;
    begin
-      pragma Assert (Value'Size - Value'Size mod Byte'Size
-                     = Byte'Size * (Value'Size / Byte'Size));
-
-      for I in Least_Significant_Index .. Most_Significant_Index - 1
+      for I in LSE_Index .. MSE_Index - 1
       loop
-         declare
-            D_Current : constant Byte := D (I);
-            D_Next    : constant Byte := D (I + 1);
-         begin
-            pragma Warnings (Off, "no Global contract available for ""*""");
-            RFLX_Lemmas.Mult_Limit (Conversions.To_Big_Integer (Byte'Pos (D_Next) mod Pow2_LSE_Offset),
-                                    LSE_Offset,
-                                    Conversions.To_Big_Integer (2)**MSE_Offset,
-                                    MSE_Offset);
-            RFLX_Lemmas.Mult_Ge_0 (Conversions.To_Big_Integer (Byte'Pos (D_Next) mod Pow2_LSE_Offset), To_Big_Integer (2)**MSE_Offset);
-            pragma Warnings (On, "no Global contract available for ""*""");
-            declare
-               Current : constant Long_Integer := Byte'Pos (D_Current) / Pow2_LSE_Offset;
-               Next    : constant Long_Integer := Byte'Pos (D_Next) mod Pow2_LSE_Offset * 2**MSE_Offset;
-            begin
-               Result := Result
-                 + (Result_Type (Current) + Result_Type (Next))
-                 * 2**(Byte'Size * Natural (I - Least_Significant_Index));
-            end;
-         end;
+         Result := Result + U64_Extract_Intermediate (Byte'Pos (D (I)),
+                                                      Byte'Pos (D (I + 1)),
+                                                      LSE_Size,
+                                                      LSE_Offset,
+                                                      Byte'Size * Natural (I - LSE_Index));
+         pragma Loop_Invariant (I - LSE_Index <= 7);
+         pragma Loop_Invariant (if Byte'Size + Byte'Size * (I - LSE_Index) = U64'Size
+                                then Result <= U64'Last
+                                else Result < 2**(Byte'Size + Byte'Size * Natural (I - LSE_Index)));
       end loop;
 
-      Result := Result
-        + 2**(Byte'Size * Natural (Most_Significant_Index - Least_Significant_Index))
-        * Result_Type (Byte'Pos (D (Most_Significant_Index)) / Pow2_LSE_Offset);
-      return Value'Val (Result mod 2**Value'Size);
+      if MSE_Size > LSE_Offset then
+         declare
+            Element_Count : constant Natural := Natural (MSE_Index - LSE_Index);
+            Val : constant U64 := U64_Extract_Remaining (Byte'Pos (D (MSE_Index)), Element_Count, MSE_Size, LSE_Offset);
+         begin
+            Result := Result + Val;
+         end;
+      end if;
+
+      return (if Value_Size < U64'Size then Result mod U64 (2)**Value_Size else Result);
+   end U64_Extract;
+
+   function Extract (Data : Bytes;
+                     Ofst : Offset) return Value
+   is
+      pragma Compile_Time_Error ((if Value'Size = 64 then
+                                    U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
+                                 else
+                                    U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
+                                 "Value must cover entire value range");
+   begin
+      return Value (U64_Extract (Data, Ofst, Value'Size));
    end Extract;
 
-   procedure Insert (Val  :        Value;
-                     Data : in out Bytes;
-                     Ofst :        Offset)
+   procedure U64_Insert (Val        :        U64;
+                         Data       : in out Bytes;
+                         Ofst       :        Offset;
+                         Value_Size : Positive) with
+     Pre =>
+       Value_Size <= U64'Size
+       and then (if Value_Size < U64'Size then Val < 2**Value_Size)
+       and then Long_Integer (Natural (Ofst) + Value_Size - 1) / Byte'Size < Data'Length
    is
-      pragma Compile_Time_Error (Value'Pos (Value'Last) - Value'Pos (Value'First) + 1 /= 2**Value'Size,
-                                 "Value must cover entire value range");
+      LSE_Index : constant Long_Integer := Long_Integer (Ofst) / Byte'Size;
+      MSE_Index : constant Long_Integer := Long_Integer (Natural (Ofst) + Natural (Value_Size) - 1) / Byte'Size;
 
-      pragma Assert (Byte'Pos (Byte'First) = 0);
-      pragma Assert (Byte'Pos (Byte'Last) = 2**Byte'Size - 1);
+      LSE_Offset : constant Natural := Natural (Natural (Ofst) mod Byte'Size);
+      LSE_Size   : constant Natural := Byte'Size - LSE_Offset;
 
-      LSB_Offset : constant Long_Integer := Offset'Pos (Ofst);
-
-      --  Index pointing to least significant element
-      Least_Significant_Index : constant Long_Integer := LSB_Offset / Byte'Size;
-
-      pragma Assert (Least_Significant_Index >= 0 and then Least_Significant_Index < Data'Length);
-
-      --  Bits the least significant element (LSE) is shifted left relative to a single element
-      LSE_Offset : constant Natural := Natural (LSB_Offset mod Byte'Size);
-
-      --  Index pointing to most significant index
-      Most_Significant_Index : constant Long_Integer :=
-        (LSB_Offset + Long_Integer (Value'Size) - 1) / Byte'Size;
-
-      function ES return Natural is (Byte'Size) with Post => ES'Result = Byte'Size;
-
-      --  Bits of least significant element (LSE)
-      LSE_Bits   : constant Natural := Byte'Size - LSE_Offset;
-
-      --  Bits of most significant element (MSE)
-      MSE_Bits   : constant Natural := (LSE_Offset + Value'Size + Byte'Size - 1) mod ES + 1;
-
-      --  Bits the most significant element (MSE) is shifted right relative to a single element
-      MSE_Offset : constant Natural := Byte'Size - MSE_Bits;
+      MSE_Size   : constant Natural := (LSE_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
+      MSE_Offset : constant Natural := Byte'Size - MSE_Size;
 
       function Read (Idx : Long_Integer) return Byte with
         Pre =>
           Idx >= 0 and then Idx < Data'Length
       is
       begin
-         return Data (Index'Val ((Index'Pos (Data'Last) - Idx)));
+         return Data (Index (Long_Integer (Data'Last) - Idx));
       end Read;
 
       procedure Write (Idx : Long_Integer; Element : Byte) with
@@ -145,102 +194,107 @@ package body RFLX.RFLX_Generic_Types is
           Idx >= 0 and then Idx < Data'Length
       is
       begin
-         Data (Index'Val ((Index'Pos (Data'Last) - Idx))) := Element;
+         Data (Index (Long_Integer (Data'Last) - Idx)) := Element;
       end Write;
 
-      function LIS return Natural is (Long_Integer'Size) with Post => LIS'Result = Long_Integer'Size;
-      pragma Assert (2**(LIS - 2) - 1 = 2**(Long_Integer'Size - 2) - 1);
-      pragma Annotate (GNATprove, False_Positive, "assertion",
-                       "solvers cannot show correspondence between integers and exponentiation abstraction");
-      pragma Annotate (GNATprove, False_Positive, "overflow",
-                       "solvers cannot show that overflow does not occur for 2**62");
-
-      Pow2_LSE_Offset : constant Long_Integer := 2**LSE_Offset;
-      Pow2_LSE_Bits   : constant Long_Integer := 2**LSE_Bits;
-
-      pragma Assert (ES < Long_Integer'Size - 2);
-      pragma Assert (2**ES = 2**Byte'Size);
-      pragma Annotate (GNATprove, False_Positive, "assertion",
-                       "solvers cannot show correspondence between integers and exponentiation abstraction");
-      pragma Annotate (GNATprove, False_Positive, "overflow",
-                       "solvers cannot show that overflow does not occur when exponent is lower than (Long_Integer'Size - 2)");
-
-      V : Long_Integer;
+      RV : U64;
    begin
-      if Least_Significant_Index = Most_Significant_Index then
+      if LSE_Index = MSE_Index then
+         --
+         --  LSE/MSE
+         --
+         --  ---XX---
+         --
+         --  |--|-|--|
+         --  0 U V L 8
+         --
+         --  U: Unchanged upper bits
+         --  V: Bits to set
+         --  L: Unchanged lower bits
+         --
          declare
-            LR_Value      : constant Long_Integer := Byte'Pos (Read (Least_Significant_Index)) mod 2**LSE_Offset;
-            Element_Value : constant Long_Integer := (Value'Pos (Val) mod 2**Value'Size);
-            UR_Offset     : constant Natural := LSE_Offset + Value'Size;
-            UR_Value      : constant Long_Integer := Byte'Pos (Read (Most_Significant_Index)) / 2**UR_Offset;
+            L_Size   : constant Natural := LSE_Offset;
+            V_Size   : constant Natural := Value_Size;
+
+            L_Bits  : constant U64 := Mod_Pow2 (Byte'Pos (Read (LSE_Index)), L_Size);
+            V_Bits  : constant U64 := Val;
+            U_Bits  : constant U64 := Right_Shift (Byte'Pos (Read (MSE_Index)), Byte'Size, L_Size + V_Size);
+
+            L_Value : constant U64 := L_Bits;
+            V_Value : constant U64 := Left_Shift (V_Bits, V_Size, L_Size);
+            U_Value : constant U64 := (if L_Size + V_Size < Byte'Size
+                                       then Left_Shift (U_Bits, Byte'Size - L_Size - V_Size, L_Size + V_Size)
+                                       else U_Bits);
          begin
-            pragma Warnings (Off, "no Global contract available for ""*""");
-            RFLX_Lemmas.Mult_Ge_0 (Conversions.To_Big_Integer (Element_Value), Conversions.To_Big_Integer (Pow2_LSE_Offset));
-            RFLX_Lemmas.Mult_Limit (Conversions.To_Big_Integer (Element_Value), LSE_Bits, Conversions.To_Big_Integer (Pow2_LSE_Offset), LSE_Offset);
-            pragma Assert (Element_Value * Pow2_LSE_Offset <= 2**(LSE_Bits + LSE_Offset));
-            pragma Annotate (GNATprove, False_Positive, "assertion",
-                             "direct re-expression of lemma postcondition");
-            pragma Annotate (GNATprove, False_Positive, "overflow check",
-                             "consequence of lemma postcondition");
-            RFLX_Lemmas.Left_Shift_Limit (Conversions.To_Big_Integer (Element_Value), Value'Size, LSE_Offset);
-            RFLX_Lemmas.Right_Shift_Limit (Conversions.To_Big_Integer (Byte'Pos (Read (Most_Significant_Index))), ES
-                                           - UR_Offset, UR_Offset);
-            RFLX_Lemmas.Left_Shift_Limit (Conversions.To_Big_Integer (UR_Value), ES - UR_Offset, UR_Offset);
-            pragma Warnings (On, "no Global contract available for ""*""");
-            pragma Assert (LR_Value in 0 .. 2**LSE_Offset - 1);
-            pragma Assert (Element_Value * Pow2_LSE_Offset in 0 .. 2**UR_Offset);
-            pragma Assert (UR_Value in 0 .. 2**(ES - UR_Offset) - 1);
-            pragma Assert (UR_Value * 2**UR_Offset in 0 .. 2**ES - 1);
-            pragma Assert (LR_Value + Element_Value * Pow2_LSE_Offset + UR_Value * 2**UR_Offset in 0 .. 2**ES - 1);
-            Write (Least_Significant_Index, Byte'Val (LR_Value + Element_Value * Pow2_LSE_Offset + UR_Value * 2**UR_Offset));
+            Write (LSE_Index, Byte'Val (L_Value + V_Value + U_Value));
          end;
 
       else
+         --
          --  LSE
+         --
+         --  XXXX----
+         --
+         --  |---|---|
+         --  0 V   L 8
+         --
+         --  V: Bits to set
+         --  L: Unchanged lower bits
+         --
          declare
-            LSE_Value   : constant Long_Integer := (Value'Pos (Val) mod Pow2_LSE_Bits);
-            LSE_Current : constant Long_Integer := Byte'Pos (Read (Least_Significant_Index)) mod 2**LSE_Offset;
-         begin
-            pragma Warnings (Off, "no Global contract available for ""*""");
-            RFLX_Lemmas.Mult_Ge_0 (Conversions.To_Big_Integer (LSE_Value), Conversions.To_Big_Integer (Pow2_LSE_Offset));
-            RFLX_Lemmas.Mult_Limit (Conversions.To_Big_Integer (LSE_Value), LSE_Bits, Conversions.To_Big_Integer (Pow2_LSE_Offset), LSE_Offset);
-            pragma Assert (LSE_Value * Pow2_LSE_Offset <= 2**(LSE_Bits + LSE_Offset));
-            pragma Annotate (GNATprove, False_Positive, "assertion",
-                             "direct re-expression of lemma postcondition");
-            pragma Annotate (GNATprove, False_Positive, "overflow check",
-                             "consequence of lemma postcondition");
-            RFLX_Lemmas.Left_Shift_Limit (Conversions.To_Big_Integer (LSE_Value), LSE_Bits, LSE_Offset);
-            pragma Warnings (On, "no Global contract available for ""*""");
+            L_Bits : constant U64 := Mod_Pow2 (Byte'Pos (Read (LSE_Index)), LSE_Offset);
+            V_Bits : constant U64 := Mod_Pow2 (Val, LSE_Size);
 
-            Write (Least_Significant_Index, Byte'Val (LSE_Current + LSE_Value * Pow2_LSE_Offset));
-            V := Value'Pos (Val) / 2**LSE_Bits;
+            V_Value : constant U64 := Left_Shift (V_Bits, LSE_Size, LSE_Offset);
+         begin
+            Write (LSE_Index, Byte'Val (L_Bits + V_Value));
+            RV := Right_Shift (Val, Value_Size, LSE_Size);
          end;
 
          --  LSE + 1 .. MSE - 1
-         for I in Least_Significant_Index + 1 .. Most_Significant_Index - 1
+         for I in LSE_Index + 1 .. MSE_Index - 1
          loop
-            Write (I, Byte'Val (V mod 2**Byte'Size));
-            V := V / 2**Byte'Size;
+            pragma Loop_Invariant (RV < 2**(Value_Size - LSE_Size - Natural (I - LSE_Index - 1) * Byte'Size));
+            Write (I, Byte'Val (RV mod 2**Byte'Size));
+            RV := Right_Shift (RV, Value_Size - LSE_Size - Natural (I - LSE_Index - 1) * Byte'Size, Byte'Size);
          end loop;
 
+         --
          --  MSE
+         --
+         --  ----XXXX
+         --
+         --  |---|---|
+         --  0 U   V 8
+         --
+         --  U: Unchanged upper bits
+         --  V: Bits to set
+         --
          declare
-            MSE_Current : constant Long_Integer := Byte'Pos (Read (Most_Significant_Index)) / 2**MSE_Bits;
-            MSE_Value   : constant Long_Integer := V mod 2**MSE_Bits;
-            pragma Assert (MSE_Value < 2**MSE_Bits);
+            V_Size : constant Natural := MSE_Size;
+            U_Size : constant Natural := MSE_Offset;
+
+            V_Bits : constant U64 := Mod_Pow2 (RV, V_Size);
+            U_Bits : constant U64 := Right_Shift (Byte'Pos (Read (MSE_Index)), Byte'Size, V_Size);
+
+            U_Value : constant U64 := (if U_Size > 0 then Left_Shift (U_Bits, U_Size, V_Size) else U_Bits);
          begin
-            pragma Warnings (Off, "no Global contract available for ""*""");
-            RFLX_Lemmas.Right_Shift_Limit (Conversions.To_Big_Integer (Byte'Pos (Read (Most_Significant_Index))), MSE_Offset, MSE_Bits);
-            pragma Assert (2**MSE_Offset <= Natural'Last);
-            RFLX_Lemmas.Left_Shift_Limit (Conversions.To_Big_Integer (MSE_Current), MSE_Offset, MSE_Bits);
-            pragma Warnings (On, "no Global contract available for ""*""");
-            pragma Assert (MSE_Current >= 0);
-            pragma Assert (2**MSE_Bits >= 0);
-            pragma Assert (MSE_Current * 2**MSE_Bits in 0 .. 2**ES - 2**MSE_Bits);
-            pragma Assert (MSE_Value in 0 .. 2**MSE_Bits - 1);
-            Write (Most_Significant_Index, Byte'Val (MSE_Current * 2**MSE_Bits + MSE_Value));
+            Write (MSE_Index, Byte'Val (V_Bits + U_Value));
          end;
       end if;
+   end U64_Insert;
+
+   procedure Insert (Val  :        Value;
+                     Data : in out Bytes;
+                     Ofst :        Offset)
+   is
+      pragma Compile_Time_Error ((if Value'Size = 64 then
+                                    U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
+                                 else
+                                    U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
+                                 "Value must cover entire value range");
+   begin
+      U64_Insert (U64 (Val), Data, Ofst, Value'Size);
    end Insert;
 
 end RFLX.RFLX_Generic_Types;
