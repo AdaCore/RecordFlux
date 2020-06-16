@@ -10,6 +10,7 @@ LEMMAS_PACKAGE = ID("RFLX_Lemmas")
 MESSAGE_SEQUENCE_PACKAGE = ID("RFLX_Message_Sequence")
 SCALAR_SEQUENCE_PACKAGE = ID("RFLX_Scalar_Sequence")
 TYPES_PACKAGE = ID("RFLX_Types")
+UTILS_PACKAGE = ID("RFLX_Utils")
 
 LIBRARY_FILES = [
     file_name(str(p)) + ".ads"
@@ -21,6 +22,7 @@ LIBRARY_FILES = [
         MESSAGE_SEQUENCE_PACKAGE,
         SCALAR_SEQUENCE_PACKAGE,
         TYPES_PACKAGE,
+        UTILS_PACKAGE,
     ]
 ] + [
     file_name(str(p)) + ".adb"
@@ -29,6 +31,7 @@ LIBRARY_FILES = [
         LEMMAS_PACKAGE,
         MESSAGE_SEQUENCE_PACKAGE,
         SCALAR_SEQUENCE_PACKAGE,
+        UTILS_PACKAGE,
     ]
 ]
 

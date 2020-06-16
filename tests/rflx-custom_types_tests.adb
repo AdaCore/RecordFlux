@@ -49,7 +49,7 @@ package body RFLX.Custom_Types_Tests is
 
       package Types is new RFLX.RFLX_Generic_Types (Index, Byte, Bytes, Bytes_Ptr, Length, Bit_Length);
 
-      type Value is range 0 .. 2**14 - 1;
+      type Value is mod 2**14;
 
       pragma Warnings (Off, "* ""*"" is not referenced");
 
@@ -76,7 +76,7 @@ package body RFLX.Custom_Types_Tests is
 
       pragma Warnings (Off, "* ""*"" is not referenced");
 
-      type Value is (A, B, C, D, E, F, G, H);
+      type Value is mod 2**14;
 
       function Extract is new Types.Extract (Value);
       procedure Insert is new Types.Insert (Value);
@@ -86,34 +86,13 @@ package body RFLX.Custom_Types_Tests is
       null;
    end Test_Index_60_Enum;
 
-   procedure Test_String (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-
-      type String_Ptr is access String;
-      type Bit_Length is range 0 .. Natural'Last * 8;
-
-      package Types is new RFLX.RFLX_Generic_Types (Positive, Character, String, String_Ptr, Natural, Bit_Length);
-
-      pragma Warnings (Off, "* ""*"" is not referenced");
-
-      function Extract is new Types.Extract (Wide_Character);
-      procedure Insert is new Types.Insert (Wide_Character);
-
-      pragma Warnings (On, "* ""*"" is not referenced");
-   begin
-      null;
-   end Test_String;
-
    overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
-      Register_Routine (T, Test_Index_6_Modular'Access, "6-bit Index + Modular");
-      Register_Routine (T, Test_Index_18_Range'Access, "18-bit Index + Range");
-      Register_Routine (T, Test_Index_60_Enum'Access, "60-bit Index + Enum");
-      Register_Routine (T, Test_String'Access, "String");
+      Register_Routine (T, Test_Index_6_Modular'Access, "6-bit Index, Modular Byte");
+      Register_Routine (T, Test_Index_18_Range'Access, "18-bit Index, Range Byte");
+      Register_Routine (T, Test_Index_60_Enum'Access, "60-bit Index, Enum Byte");
    end Register_Tests;
 
 end RFLX.Custom_Types_Tests;
