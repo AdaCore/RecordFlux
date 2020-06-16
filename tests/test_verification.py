@@ -329,21 +329,42 @@ def test_invalid_type_condition_modular_lower() -> None:
     )
 
 
-@pytest.mark.skip(reason="ISSUE: Componolit/RecordFlux#87")
 def test_invalid_type_condition_enum() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), condition=Equal(Variable("F1"), Variable("E4"))),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            condition=Equal(Variable("F1"), Variable("E4"), location=Location((22, 10))),
+        ),
         Link(Field("F2"), FINAL),
     ]
-    e1 = Enumeration("P.E1", {"E1": Number(1), "E2": Number(2), "E3": Number(3)}, Number(8), False)
-    e2 = Enumeration("P.E2", {"E4": Number(1), "E5": Number(2), "E6": Number(3)}, Number(8), False)
+    e1 = Enumeration(
+        "P.E1",
+        {"E1": Number(1), "E2": Number(2), "E3": Number(3)},
+        Number(8),
+        False,
+        location=Location((10, 4)),
+    )
+    e2 = Enumeration(
+        "P.E2",
+        {"E4": Number(1), "E5": Number(2), "E6": Number(3)},
+        Number(8),
+        False,
+        location=Location((11, 4)),
+    )
     types = {
         Field("F1"): e1,
         Field("F2"): e2,
     }
     assert_message_model_error(
-        structure, types, r'^invalid type of "E4" in condition 0 from field "F1" to "F2" in "P.M"',
+        structure,
+        types,
+        r"^"
+        r"<stdin>:22:10: model: error: comparison of incompatible enumeration literals\n"
+        r'<stdin>:10:4: model: info: of type "P.E1"\n'
+        r'<stdin>:11:4: model: info: and type "P.E2"'
+        r"$",
     )
 
 
@@ -1138,3 +1159,18 @@ def test_no_contradiction_multi() -> None:
         Field("F5"): RANGE_INTEGER,
     }
     Message("P.M", structure, types)
+
+
+def test_opaque_equal_scalar() -> None:
+    final = Field(ID("Final", Location((10, 7))))
+    structure = [
+        Link(INITIAL, Field("Length")),
+        Link(Field("Length"), Field("Data"), length=Variable("Length")),
+        Link(Field("Data"), final, condition=Equal(Variable("Data"), Number(42))),
+    ]
+    types = {Field("Length"): RANGE_INTEGER, Field("Data"): Opaque()}
+    assert_message_model_error(
+        structure,
+        types,
+        r"^" r'model: error: invalid relation " = " between Opaque and Number' r"$",
+    )
