@@ -40,6 +40,7 @@ from rflx.expression import (
     Indexed,
     Last,
     LessEqual,
+    Mod,
     NamedAggregate,
     Not,
     Number,
@@ -396,7 +397,14 @@ class GeneratorGenerator:
                     ProcedureSpecification(
                         f"Process_{field.name}", [OutParameter([field.name], const.TYPES_BYTES)],
                     )
-                )
+                ),
+                FormalSubprogramDeclaration(
+                    FunctionSpecification(
+                        f"Check_Length_{field.name}",
+                        "Boolean",
+                        [Parameter(["Length"], const.TYPES_LENGTH)],
+                    )
+                ),
             ]
 
         return UnitPart(
@@ -408,6 +416,23 @@ class GeneratorGenerator:
                             AndThen(
                                 *self.setter_preconditions(f),
                                 *self.unbounded_composite_setter_preconditions(message, f),
+                                Call(
+                                    f"Check_Length_{f.name}",
+                                    [
+                                        Call(
+                                            const.TYPES_LENGTH,
+                                            [
+                                                Div(
+                                                    Call(
+                                                        "Field_Length",
+                                                        [Variable("Ctx"), Variable(f.affixed_name)],
+                                                    ),
+                                                    Number(8),
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                ),
                             )
                         ),
                         Postcondition(And(*self.composite_setter_postconditions(message, f),)),
@@ -425,6 +450,15 @@ class GeneratorGenerator:
                             AndThen(
                                 *self.setter_preconditions(f),
                                 *self.bounded_composite_setter_preconditions(message, f),
+                                Call(
+                                    f"Check_Length_{f.name}",
+                                    [
+                                        Call(
+                                            const.TYPES_LENGTH,
+                                            [Div(Variable("Length"), Number(8))],
+                                        )
+                                    ],
+                                ),
                             )
                         ),
                         Postcondition(And(*self.composite_setter_postconditions(message, f),)),
@@ -647,6 +681,19 @@ class GeneratorGenerator:
                 ),
             ),
             common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
+            Equal(
+                Mod(
+                    Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]), Number(8)
+                ),
+                Number(1),
+            ),
+            Equal(
+                Mod(
+                    Call("Field_Length", [Variable("Ctx"), Variable(field.affixed_name)]),
+                    Number(8),
+                ),
+                Number(0),
+            ),
         ]
 
     @staticmethod
@@ -688,6 +735,13 @@ class GeneratorGenerator:
                     if Last("Message") in l.length
                 ]
             ),
+            Equal(
+                Mod(
+                    Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]), Number(8)
+                ),
+                Number(1),
+            ),
+            Equal(Mod(Variable("Length"), Number(8)), Number(0),),
         ]
 
 

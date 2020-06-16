@@ -23,7 +23,13 @@ package body RFLX.In_IPv4.Tests is
    Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 25) :=
      (others => 0);
 
-   procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) is
+   function Data_Length (L : RFLX_Builtin_Types.Length) return Boolean is
+      (L <= Data'Length);
+
+   procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) with
+      SPARK_Mode,
+      Pre => Data_Length (Buffer'Length)
+   is
    begin
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
@@ -121,7 +127,7 @@ package body RFLX.In_IPv4.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Payload is new UDP.Datagram.Set_Payload (Write_Data);
+      procedure Set_Payload is new UDP.Datagram.Set_Payload (Write_Data, Data_Length);
       Expected               : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First

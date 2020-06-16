@@ -216,6 +216,7 @@ is
 
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
+      with function Check_Length_Payload (Length : Types.Length) return Boolean;
    procedure Set_Payload (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
@@ -223,7 +224,10 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload),
+       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Field_First (Ctx, F_Payload) mod 8 = 1
+       and then Field_Length (Ctx, F_Payload) mod 8 = 0
+       and then Check_Length_Payload (Types.Length (Field_Length (Ctx, F_Payload) / 8)),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -241,7 +245,9 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload),
+       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Field_First (Ctx, F_Payload) mod 8 = 1
+       and then Field_Length (Ctx, F_Payload) mod 8 = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
