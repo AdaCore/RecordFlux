@@ -693,7 +693,9 @@ def test_message_invalid_relation_to_aggregate() -> None:
     ]
     types = {Field("F1"): Opaque()}
     assert_message_model_error(
-        structure, types, r'^<stdin>:100:20: model: error: invalid relation " <= " to aggregate$',
+        structure,
+        types,
+        r'^<stdin>:100:20: model: error: invalid relation " <= " between Opaque and Aggregate$',
     )
 
 
@@ -710,7 +712,8 @@ def test_message_invalid_element_in_relation_to_aggregate() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:14:7: model: error: invalid relation between "F1" and aggregate$',
+        r'^<stdin>:14:7: model: error: invalid relation " = " '
+        r"between Aggregate and ModularInteger$",
     )
 
 
