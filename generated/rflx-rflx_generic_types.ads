@@ -9,7 +9,9 @@ generic
    type Bytes_Ptr is access Bytes;
    type Length is range <>;
    type Bit_Length is range <>;
-package RFLX.RFLX_Generic_Types is
+package RFLX.RFLX_Generic_Types with
+  SPARK_Mode
+is
 
    pragma Compile_Time_Error (Index'First /= 1, "Index'First must be 1");
 
@@ -42,17 +44,16 @@ package RFLX.RFLX_Generic_Types is
    type Offset is mod 8;
 
    generic
-      type Value is (<>);
+      type Value is mod <>;
    function Extract (Data : Bytes;
                      Ofst : Offset) return Value with
      Pre =>
        ((Offset'Pos (Ofst) + Value'Size - 1) / Byte'Size < Data'Length
         and then (Offset'Pos (Ofst) + Value'Size - 1) / Byte'Size <= Natural'Size
-        and then Natural (((Offset'Pos (Ofst) + Value'Size - 1) / Byte'Size) * Byte'Size) < Long_Integer'Size - 1
         and then (Byte'Size - Natural (Offset'Pos (Ofst) mod Byte'Size)) < Long_Integer'Size - 1);
 
    generic
-      type Value is (<>);
+      type Value is mod <>;
    procedure Insert (Val  :        Value;
                      Data : in out Bytes;
                      Ofst :        Offset) with

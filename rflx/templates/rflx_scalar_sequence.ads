@@ -4,7 +4,7 @@ with {prefix}RFLX_Generic_Types;
 generic
    with package Types is new {prefix}RFLX_Generic_Types (<>);
    type Element_Type is private;
-   type Element_Base_Type is (<>);
+   type Element_Base_Type is mod <>;
    with function Valid (Element : Element_Base_Type) return Boolean;
    with function To_Actual (Element : Element_Base_Type) return Element_Type;
    with function To_Base (Element : Element_Type) return Element_Base_Type;
