@@ -138,9 +138,9 @@ def fixture_alert(tls_alert_package: Package) -> MessageValue:
     return tls_alert_package["Alert"]
 
 
-@pytest.fixture(name="echo_request_reply_message")
+@pytest.fixture(name="icmp")
 def fixture_echo_request_reply_message(icmp_package: Package) -> MessageValue:
-    return icmp_package["Echo_Request_Reply_Message"]
+    return icmp_package["Message"]
 
 
 @pytest.fixture(name="message_odd_length")
@@ -583,23 +583,23 @@ def test_tls_length_unchecked(tls_record: MessageValue) -> None:
     assert not isinstance(tls_record._get_length_unchecked("Fragment"), Number)
 
 
-def test_icmp_echo_request(echo_request_reply_message: MessageValue) -> None:
+def test_icmp_echo_request(icmp: MessageValue) -> None:
     test_data = (
         b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
         b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
         b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
     )
 
-    echo_request_reply_message.set("Tag", "Echo_Request")
-    echo_request_reply_message.set("Code", 0)
-    echo_request_reply_message.set("Checksum", 12824)
-    echo_request_reply_message.set("Identifier", 5)
-    echo_request_reply_message.set("Sequence_Number", 1)
-    echo_request_reply_message.set(
+    icmp.set("Tag", "Echo_Request")
+    icmp.set("Code_Zero", 0)
+    icmp.set("Checksum", 12824)
+    icmp.set("Identifier", 5)
+    icmp.set("Sequence_Number", 1)
+    icmp.set(
         "Data", test_data,
     )
-    assert echo_request_reply_message.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
-    assert echo_request_reply_message.valid_message
+    assert icmp.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
+    assert icmp.valid_message
 
 
 def test_value_mod() -> None:
@@ -753,18 +753,18 @@ def test_check_nodes_opaque(tlv_checksum: MessageValue, frame: MessageValue) -> 
     assert not frame._is_valid_opaque_field("Payload")
 
 
-def test_icmp_parse_binary(echo_request_reply_message: MessageValue) -> None:
+def test_icmp_parse_binary(icmp: MessageValue) -> None:
     test_bytes = (
         b"\x08\x00\xe1\x1e\x00\x11\x00\x01\x4a\xfc\x0d\x00\x00\x00\x00\x00"
         b"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
         b"\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f"
         b"\x30\x31\x32\x33\x34\x35\x36\x37"
     )
-    echo_request_reply_message.parse(test_bytes)
-    assert echo_request_reply_message.valid_message
-    assert echo_request_reply_message.bytestring == test_bytes
-    assert echo_request_reply_message.accepted_type == bytes
-    assert echo_request_reply_message.size == Number(448)
+    icmp.parse(test_bytes)
+    assert icmp.valid_message
+    assert icmp.bytestring == test_bytes
+    assert icmp.accepted_type == bytes
+    assert icmp.size == Number(448)
 
 
 def test_ethernet_parse_binary(frame: MessageValue) -> None:
@@ -898,8 +898,8 @@ def test_array_assign_incorrect_values(
     tlv.set("Length", 4)
     tlv.set("Value", b"\x00\x00\x00\x00")
 
-    frame.set("Source", 0)
     frame.set("Destination", 0)
+    frame.set("Source", 0)
     frame.set("Type_Length_TPID", 47)
     frame.set("Type_Length", 1537)
     frame.set("Payload", bytes(46))
