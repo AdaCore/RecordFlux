@@ -480,6 +480,8 @@ class MessageValue(TypeValue):
         self._fields[INITIAL.name] = initial
         self._simplified_mapping: Mapping[Name, Expr] = {}
         self._preset_fields(INITIAL.name)
+        self.accessible_fields: List[str]
+        self._update_accessible_fields()
 
     def __copy__(self) -> "MessageValue":
         return MessageValue(self._type, self._refinements)
@@ -515,17 +517,28 @@ class MessageValue(TypeValue):
     def _prev_field(self, fld: str) -> str:
         if fld == INITIAL.name:
             return ""
+        prev: List[str] = []
         for l in self._type.incoming(Field(fld)):
             if self.__simplified(l.condition) == TRUE:
-                return l.source.name
+                prev.append(l.source.name)
+
+        if len(prev) == 1:
+            return prev[0]
+        for field in prev:
+            if field in self.accessible_fields:
+                return field
         return ""
 
     def _get_length_unchecked(self, fld: str) -> Expr:
-        for l in self._type.incoming(Field(fld)):
-            if self.__simplified(l.condition) == TRUE and l.length != UNDEFINED:
-                return self.__simplified(l.length)
-
         typeval = self._fields[fld].typeval
+        if isinstance(typeval, CompositeValue):
+            for l in self._type.incoming(Field(fld)):
+                if (
+                    self.__simplified(l.condition) == TRUE
+                    and l.length != UNDEFINED
+                    and self._fields[l.source.name].set
+                ):
+                    return self.__simplified(l.length)
         if isinstance(typeval, ScalarValue):
             return typeval.size
         return UNDEFINED
@@ -699,6 +712,7 @@ class MessageValue(TypeValue):
             )
 
         self._preset_fields(field_name)
+        self._update_accessible_fields()
 
     def _preset_fields(self, fld: str) -> None:
         nxt = self._next_field(fld)
@@ -762,8 +776,7 @@ class MessageValue(TypeValue):
     def fields(self) -> List[str]:
         return [f.name for f in self._type.fields]
 
-    @property
-    def accessible_fields(self) -> List[str]:
+    def _update_accessible_fields(self) -> None:
         nxt = self._next_field(INITIAL.name)
         fields: List[str] = []
         while nxt and nxt != FINAL.name:
@@ -781,7 +794,7 @@ class MessageValue(TypeValue):
 
             fields.append(nxt)
             nxt = self._next_field(nxt)
-        return fields
+        self.accessible_fields = fields
 
     def _is_valid_opaque_field(self, field: str) -> bool:
         if self._get_length_unchecked(field) == UNDEFINED:
