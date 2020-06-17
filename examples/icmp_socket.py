@@ -34,9 +34,9 @@ class ICMPSocket:
             print("ICMP data is equal")
 
     def __create_msg(self) -> MessageValue:
-        icmp = self.package_icmp["Echo_Request_Reply_Message"]
+        icmp = self.package_icmp["Message"]
         icmp.set("Tag", "Echo_Request")
-        icmp.set("Code", 0)
+        icmp.set("Code_Zero", 0)
         icmp.set("Checksum", 12824)
         icmp.set("Identifier", 5)
         icmp.set("Sequence_Number", 1)

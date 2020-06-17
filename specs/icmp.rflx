@@ -41,97 +41,75 @@ package ICMP is
    type Sequence_Number is mod 2**16;
    type Pointer is mod 2**8;
    type Timestamp is mod 2**32;
-   type Gateway_Inet_Addr is mod 2**32;
-   type Uint_32_Unused is range 0 .. 0 with Size => 32;
-   type Uint_24_Unused is range 0 .. 0 with Size => 24;
+   type Gateway_Internet_Address is mod 2**32;
+   type Unused_32 is range 0 .. 0 with Size => 32;
+   type Unused_24 is range 0 .. 0 with Size => 24;
 
-   type Echo_Request_Reply_Message is
+   type Message is
       message
-         Tag : Tag;
-         Code : Code_Zero;
-         Checksum : Checksum;
+         Tag : Tag
+            then Code_Destination_Unreachable
+               if Tag = Destination_Unreachable,
+            then Code_Time_Exceeded
+               if Tag = Time_Exceeded,
+            then Code_Redirect
+               if Tag = Redirect,
+            then Code_Zero
+               if (Tag = Echo_Reply
+                   or Tag = Echo_Request
+                   or Tag = Source_Quench
+                   or Tag = Parameter_Problem
+                   or Tag = Timestamp_Msg
+                   or Tag = Timestamp_Reply
+                   or Tag = Information_Request
+                   or Tag = Information_Reply);
+         Code_Destination_Unreachable : Code_Destination_Unreachable
+            then Checksum;
+         Code_Time_Exceeded : Code_Time_Exceeded
+            then Checksum;
+         Code_Redirect : Code_Redirect
+            then Checksum;
+         Code_Zero : Code_Zero;
+         Checksum : Checksum
+            then Unused_32
+               if (Tag = Destination_Unreachable
+                   or Tag = Source_Quench
+                   or Tag = Time_Exceeded),
+            then Identifier
+               if (Tag = Echo_Request
+                   or Tag = Echo_Reply
+                   or Tag = Timestamp_Msg
+                   or Tag = Timestamp_Reply
+                   or Tag = Information_Request
+                   or Tag = Information_Reply),
+            then Pointer
+               if Tag = Parameter_Problem,
+            then Gateway_Internet_Address
+               if Tag = Redirect;
+         Gateway_Internet_Address : Gateway_Internet_Address
+            then Data
+               with Length => 224;
+         Pointer : Pointer;
+         Unused_24 : Unused_24
+            then Data
+               with Length => 224;
+         Unused_32 : Unused_32
+            then Data
+               with Length => 224;
          Identifier : Identifier;
          Sequence_Number : Sequence_Number
+            then Originate_Timestamp
+               if Tag = Timestamp_Msg or Tag = Timestamp_Reply,
+            then null
+               if Tag = Information_Request or Tag = Information_Reply,
             then Data
-               with Length => Message'Last - Sequence_Number'Last;
-         Data : Opaque;
-      end message;
-
-   type Destination_Unreachable_Message is
-      message
-         Tag : Tag;
-         Code : Code_Destination_Unreachable;
-         Checksum : Checksum;
-         Unused : Uint_32_Unused
-            then Data
-               with Length => 224;
-         Data : Opaque;
-      end message;
-
-   type Time_Exceeded_Message is
-      message
-         Tag : Tag;
-         Code : Code_Time_Exceeded;
-         Checksum : Checksum;
-         Unused : Uint_32_Unused
-            then Data
-               with Length => 224;
-         Data : Opaque;
-      end message;
-
-   type Parameter_Problem_Message is
-      message
-         Tag : Tag;
-         Code : Code_Zero;
-         Checksum : Checksum;
-         Pointer : Pointer;
-         Unused : Uint_24_Unused
-            then Data
-               with Length => 224;
-            Data : Opaque;
-      end message;
-
-   type Source_Quench_Message is
-      message
-         Tag : Tag;
-         Code : Code_Zero;
-         Checksum : Checksum;
-         Unused : Uint_32_Unused
-            then Data
-               with Length => 224;
-         Data : Opaque;
-      end message;
-
-   type Redirect_Message is
-      message
-         Tag : Tag;
-         Code : Code_Redirect;
-         Checksum : Checksum;
-         Gateway_Inet_Addr : Gateway_Inet_Addr
-            then Data
-               with Length => 224;
-         Data : Opaque;
-      end message;
-
-   type Timestamp_Request_Reply_Message is
-      message
-         Tag : Tag;
-         Code : Code_Zero;
-         Checksum : Checksum;
-         Identifier : Identifier;
-         Sequence_Number : Sequence_Number;
+               with Length => Message'Last - Sequence_Number'Last
+               if Tag = Echo_Reply or Tag = Echo_Request;
          Originate_Timestamp : Timestamp;
          Receive_Timestamp : Timestamp;
-         Transmit_Timestamp : Timestamp;
-      end message;
-
-   type Information_Request_Reply_Message is
-      message
-         Tag : Tag;
-         Code : Code_Zero;
-         Checksum : Checksum;
-         Identifier : Identifier;
-         Sequence_Number : Sequence_Number;
+         Transmit_Timestamp : Timestamp
+            then null;
+         Data : Opaque;
       end message;
 
 end ICMP;
