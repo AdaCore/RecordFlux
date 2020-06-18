@@ -51,6 +51,7 @@ project Test is
    end Prove;
 
    package Builder is
+      for Switches ("Ada") use ("-j0");
       case Optimization is
          when "yes" =>
             for Default_Switches ("Ada") use ("-O3");
