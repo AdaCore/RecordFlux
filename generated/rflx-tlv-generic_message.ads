@@ -250,7 +250,7 @@ is
 
    generic
       with procedure Process_Value (Value : out Types.Bytes);
-      with function Check_Length_Value (Length : Types.Length) return Boolean;
+      with function Valid_Length (Length : Types.Length) return Boolean;
    procedure Set_Value (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
@@ -259,9 +259,9 @@ is
        and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Value))
        and then Available_Space (Ctx, F_Value) >= Field_Length (Ctx, F_Value)
-       and then Field_First (Ctx, F_Value) mod 8 = 1
-       and then Field_Length (Ctx, F_Value) mod 8 = 0
-       and then Check_Length_Value (Types.Length (Field_Length (Ctx, F_Value) / 8)),
+       and then Field_First (Ctx, F_Value) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Value) mod Types.Byte'Size = 0
+       and then Valid_Length (Types.Length (Field_Length (Ctx, F_Value) / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -281,8 +281,8 @@ is
        and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Value))
        and then Available_Space (Ctx, F_Value) >= Field_Length (Ctx, F_Value)
-       and then Field_First (Ctx, F_Value) mod 8 = 1
-       and then Field_Length (Ctx, F_Value) mod 8 = 0,
+       and then Field_First (Ctx, F_Value) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Value) mod Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

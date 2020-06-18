@@ -48,6 +48,7 @@ from rflx.expression import (
     Or,
     Range,
     Selected,
+    Size,
     Slice,
     Variable,
 )
@@ -400,9 +401,7 @@ class GeneratorGenerator:
                 ),
                 FormalSubprogramDeclaration(
                     FunctionSpecification(
-                        f"Check_Length_{field.name}",
-                        "Boolean",
-                        [Parameter(["Length"], const.TYPES_LENGTH)],
+                        "Valid_Length", "Boolean", [Parameter(["Length"], const.TYPES_LENGTH)],
                     )
                 ),
             ]
@@ -417,7 +416,7 @@ class GeneratorGenerator:
                                 *self.setter_preconditions(f),
                                 *self.unbounded_composite_setter_preconditions(message, f),
                                 Call(
-                                    f"Check_Length_{f.name}",
+                                    "Valid_Length",
                                     [
                                         Call(
                                             const.TYPES_LENGTH,
@@ -427,7 +426,7 @@ class GeneratorGenerator:
                                                         "Field_Length",
                                                         [Variable("Ctx"), Variable(f.affixed_name)],
                                                     ),
-                                                    Number(8),
+                                                    Size(const.TYPES_BYTE),
                                                 ),
                                             ],
                                         ),
@@ -451,11 +450,11 @@ class GeneratorGenerator:
                                 *self.setter_preconditions(f),
                                 *self.bounded_composite_setter_preconditions(message, f),
                                 Call(
-                                    f"Check_Length_{f.name}",
+                                    "Valid_Length",
                                     [
                                         Call(
                                             const.TYPES_LENGTH,
-                                            [Div(Variable("Length"), Number(8))],
+                                            [Div(Variable("Length"), Size(const.TYPES_BYTE))],
                                         )
                                     ],
                                 ),
@@ -683,14 +682,15 @@ class GeneratorGenerator:
             common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
             Equal(
                 Mod(
-                    Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]), Number(8)
+                    Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]),
+                    Size(const.TYPES_BYTE),
                 ),
                 Number(1),
             ),
             Equal(
                 Mod(
                     Call("Field_Length", [Variable("Ctx"), Variable(field.affixed_name)]),
-                    Number(8),
+                    Size(const.TYPES_BYTE),
                 ),
                 Number(0),
             ),
@@ -737,11 +737,12 @@ class GeneratorGenerator:
             ),
             Equal(
                 Mod(
-                    Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]), Number(8)
+                    Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)]),
+                    Size(const.TYPES_BYTE),
                 ),
                 Number(1),
             ),
-            Equal(Mod(Variable("Length"), Number(8)), Number(0),),
+            Equal(Mod(Variable("Length"), Size(const.TYPES_BYTE)), Number(0),),
         ]
 
 
