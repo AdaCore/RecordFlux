@@ -338,7 +338,7 @@ is
 
    generic
       with procedure Process_Option_Data (Option_Data : out Types.Bytes);
-      with function Check_Length_Option_Data (Length : Types.Length) return Boolean;
+      with function Valid_Length (Length : Types.Length) return Boolean;
    procedure Set_Option_Data (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
@@ -347,9 +347,9 @@ is
        and then Field_Last (Ctx, F_Option_Data) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Option_Data))
        and then Available_Space (Ctx, F_Option_Data) >= Field_Length (Ctx, F_Option_Data)
-       and then Field_First (Ctx, F_Option_Data) mod 8 = 1
-       and then Field_Length (Ctx, F_Option_Data) mod 8 = 0
-       and then Check_Length_Option_Data (Types.Length (Field_Length (Ctx, F_Option_Data) / 8)),
+       and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Option_Data) mod Types.Byte'Size = 0
+       and then Valid_Length (Types.Length (Field_Length (Ctx, F_Option_Data) / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -371,8 +371,8 @@ is
        and then Field_Last (Ctx, F_Option_Data) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Option_Data))
        and then Available_Space (Ctx, F_Option_Data) >= Field_Length (Ctx, F_Option_Data)
-       and then Field_First (Ctx, F_Option_Data) mod 8 = 1
-       and then Field_Length (Ctx, F_Option_Data) mod 8 = 0,
+       and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Option_Data) mod Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
