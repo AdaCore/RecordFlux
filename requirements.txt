@@ -9,4 +9,5 @@ pyicontract-lint >=2.0.0
 pylint
 pyparsing >=2.4.0
 pytest
+pytest-xdist
 z3-solver
