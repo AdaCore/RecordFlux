@@ -213,17 +213,17 @@ procedure Main is
    Context : RFLX.TLV.Message.Context;
    Data : RFLX.RFLX_Builtin_Types.Bytes (RFLX.RFLX_Builtin_Types.Index'First .. RFLX.RFLX_Builtin_Types.Index'First + 2**14);
 
-   function Data_Length (Length : RFLX.RFLX_Builtin_Types.Length) return Boolean is
+   function Valid_Data_Length (Length : RFLX.RFLX_Builtin_Types.Length) return Boolean is
       (Length <= Data'Length);
 
    procedure Write_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes) with
-      Pre => Data_Length (Buffer'Length)
+      Pre => Valid_Data_Length (Buffer'Length)
    is
    begin
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
 
-   procedure Set_Value is new RFLX.TLV.Message.Set_Value (Write_Data, Data_Length);
+   procedure Set_Value is new RFLX.TLV.Message.Set_Value (Write_Data, Valid_Data_Length);
 begin
    --  Generating message
    RFLX.TLV.Message.Initialize (Context, Buffer);
