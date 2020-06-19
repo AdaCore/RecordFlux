@@ -46,19 +46,19 @@ is
    generic
       type Value is mod <>;
    function Extract (Data : Bytes;
-                     Ofst : Offset) return Value with
+                     Off  : Offset) return Value with
      Pre =>
-       ((Offset'Pos (Ofst) + Value'Size - 1) / Byte'Size < Data'Length
-        and then (Offset'Pos (Ofst) + Value'Size - 1) / Byte'Size <= Natural'Size
-        and then (Byte'Size - Natural (Offset'Pos (Ofst) mod Byte'Size)) < Long_Integer'Size - 1);
+       ((Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length
+        and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size <= Natural'Size
+        and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1);
 
    generic
       type Value is mod <>;
    procedure Insert (Val  :        Value;
                      Data : in out Bytes;
-                     Ofst :        Offset) with
+                     Off  :        Offset) with
      Pre =>
-       (Offset'Pos (Ofst) + Value'Size - 1) / Byte'Size < Data'Length;
+       (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length;
 
    pragma Warnings (Off, "precondition is * false");
 
