@@ -90,20 +90,20 @@ is
    end U64_Extract_Remaining;
 
    function U64_Extract (Data       : Bytes;
-                         Ofst       : Offset;
+                         Off        : Offset;
                          Value_Size : Positive) return U64 with
      Pre =>
        (Value_Size in 1 .. U64'Size
-        and then Long_Integer ((Natural (Ofst) + Value_Size - 1) / Byte'Size) < Data'Length
-        and then (Natural (Ofst) + Value_Size - 1) / Byte'Size <= Natural'Size
-        and then (Byte'Size - Natural (Ofst) mod Byte'Size) < Long_Integer'Size - 1),
+        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Data'Length
+        and then (Natural (Off) + Value_Size - 1) / Byte'Size <= Natural'Size
+        and then (Byte'Size - Natural (Off) mod Byte'Size) < Long_Integer'Size - 1),
      Post =>
        (if Value_Size < U64'Size then U64_Extract'Result < 2**Value_Size)
    is
-      LSE_Index : constant Long_Integer := Long_Integer (Ofst) / Byte'Size;
-      MSE_Index : constant Long_Integer := Long_Integer (Natural (Ofst) + Value_Size - 1) / Byte'Size;
+      LSE_Index : constant Long_Integer := Long_Integer (Off) / Byte'Size;
+      MSE_Index : constant Long_Integer := Long_Integer (Natural (Off) + Value_Size - 1) / Byte'Size;
 
-      LSE_Offset : constant Natural := Natural (Natural (Ofst) mod Byte'Size);
+      LSE_Offset : constant Natural := Natural (Natural (Off) mod Byte'Size);
       LSE_Size   : constant Natural := Byte'Size - LSE_Offset;
 
       MSE_Size   : constant Natural := (LSE_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
@@ -152,7 +152,7 @@ is
    end U64_Extract;
 
    function Extract (Data : Bytes;
-                     Ofst : Offset) return Value
+                     Off  : Offset) return Value
    is
       pragma Compile_Time_Error ((if Value'Size = 64 then
                                     U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
@@ -160,22 +160,22 @@ is
                                     U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
                                  "Value must cover entire value range");
    begin
-      return Value (U64_Extract (Data, Ofst, Value'Size));
+      return Value (U64_Extract (Data, Off, Value'Size));
    end Extract;
 
    procedure U64_Insert (Val        :        U64;
                          Data       : in out Bytes;
-                         Ofst       :        Offset;
+                         Off        :        Offset;
                          Value_Size : Positive) with
      Pre =>
        Value_Size <= U64'Size
        and then (if Value_Size < U64'Size then Val < 2**Value_Size)
-       and then Long_Integer (Natural (Ofst) + Value_Size - 1) / Byte'Size < Data'Length
+       and then Long_Integer (Natural (Off) + Value_Size - 1) / Byte'Size < Data'Length
    is
-      LSE_Index : constant Long_Integer := Long_Integer (Ofst) / Byte'Size;
-      MSE_Index : constant Long_Integer := Long_Integer (Natural (Ofst) + Natural (Value_Size) - 1) / Byte'Size;
+      LSE_Index : constant Long_Integer := Long_Integer (Off) / Byte'Size;
+      MSE_Index : constant Long_Integer := Long_Integer (Natural (Off) + Natural (Value_Size) - 1) / Byte'Size;
 
-      LSE_Offset : constant Natural := Natural (Natural (Ofst) mod Byte'Size);
+      LSE_Offset : constant Natural := Natural (Natural (Off) mod Byte'Size);
       LSE_Size   : constant Natural := Byte'Size - LSE_Offset;
 
       MSE_Size   : constant Natural := (LSE_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
@@ -286,7 +286,7 @@ is
 
    procedure Insert (Val  :        Value;
                      Data : in out Bytes;
-                     Ofst :        Offset)
+                     Off  :        Offset)
    is
       pragma Compile_Time_Error ((if Value'Size = 64 then
                                     U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
@@ -294,7 +294,7 @@ is
                                     U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
                                  "Value must cover entire value range");
    begin
-      U64_Insert (U64 (Val), Data, Ofst, Value'Size);
+      U64_Insert (U64 (Val), Data, Off, Value'Size);
    end Insert;
 
 end {prefix}RFLX_Generic_Types;
