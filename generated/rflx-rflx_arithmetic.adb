@@ -1,6 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
-package body RFLX.RFLX_Utils with
+package body RFLX.RFLX_Arithmetic with
   SPARK_Mode
 is
 
@@ -60,4 +60,4 @@ is
       return Result;
    end Mod_Pow2;
 
-end RFLX.RFLX_Utils;
+end RFLX.RFLX_Arithmetic;

@@ -3,32 +3,32 @@ from rflx.identifier import ID
 
 REFINEMENT_PACKAGE = ID("Contains")
 
+ARITHMETIC_PACKAGE = ID("RFLX_Arithmetic")
 BUILTIN_TYPES_CONVERSIONS_PACKAGE = ID("RFLX_Builtin_Types.Conversions")
 BUILTIN_TYPES_PACKAGE = ID("RFLX_Builtin_Types")
 GENERIC_TYPES_PACKAGE = ID("RFLX_Generic_Types")
 MESSAGE_SEQUENCE_PACKAGE = ID("RFLX_Message_Sequence")
 SCALAR_SEQUENCE_PACKAGE = ID("RFLX_Scalar_Sequence")
 TYPES_PACKAGE = ID("RFLX_Types")
-UTILS_PACKAGE = ID("RFLX_Utils")
 
 LIBRARY_FILES = [
     file_name(str(p)) + ".ads"
     for p in [
+        ARITHMETIC_PACKAGE,
         BUILTIN_TYPES_CONVERSIONS_PACKAGE,
         BUILTIN_TYPES_PACKAGE,
         GENERIC_TYPES_PACKAGE,
         MESSAGE_SEQUENCE_PACKAGE,
         SCALAR_SEQUENCE_PACKAGE,
         TYPES_PACKAGE,
-        UTILS_PACKAGE,
     ]
 ] + [
     file_name(str(p)) + ".adb"
     for p in [
+        ARITHMETIC_PACKAGE,
         GENERIC_TYPES_PACKAGE,
         MESSAGE_SEQUENCE_PACKAGE,
         SCALAR_SEQUENCE_PACKAGE,
-        UTILS_PACKAGE,
     ]
 ]
 
