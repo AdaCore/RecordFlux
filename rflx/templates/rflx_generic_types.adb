@@ -1,6 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
-with {prefix}RFLX_Arithmetic; use {prefix}RFLX_Arithmetic;
+with {prefix}RFLX_Arithmetic;
 
 package body {prefix}RFLX_Generic_Types with
   SPARK_Mode
@@ -39,6 +39,16 @@ is
    --  LSE_Index: Index pointing to LSE
    --  MSE_Index: Index pointing to MSE
    --
+
+   use type {prefix}RFLX_Arithmetic.U64;
+
+   subtype U64 is {prefix}RFLX_Arithmetic.U64;
+
+   function Left_Shift (Value : U64; Value_Size : Positive; Length : Natural) return U64 renames {prefix}RFLX_Arithmetic.Left_Shift;
+
+   function Right_Shift (Value : U64; Value_Size : Positive; Length : Natural) return U64 renames {prefix}RFLX_Arithmetic.Right_Shift;
+
+   function Mod_Pow2 (Value : U64; Exp : Natural) return U64 renames {prefix}RFLX_Arithmetic.Mod_Pow2;
 
    function U64_Extract_Intermediate (Data_Current : U64;
                                       Data_Next    : U64;
