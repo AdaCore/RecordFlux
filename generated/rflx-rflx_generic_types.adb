@@ -1,6 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
-with RFLX.RFLX_Utils; use RFLX.RFLX_Utils;
+with RFLX.RFLX_Arithmetic; use RFLX.RFLX_Arithmetic;
 
 package body RFLX.RFLX_Generic_Types with
   SPARK_Mode

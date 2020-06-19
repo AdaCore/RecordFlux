@@ -1,6 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
-package {prefix}RFLX_Utils with
+package RFLX.RFLX_Arithmetic with
   SPARK_Mode
 is
 
@@ -38,4 +38,4 @@ is
      Post =>
        Mod_Pow2'Result < 2**Exp;
 
-end {prefix}RFLX_Utils;
+end RFLX.RFLX_Arithmetic;
