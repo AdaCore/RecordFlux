@@ -50,6 +50,8 @@ is
 
    function Mod_Pow2 (Value : U64; Exp : Natural) return U64 renames {prefix}RFLX_Arithmetic.Mod_Pow2;
 
+   function Pow2 (Exp : Natural) return U64 renames {prefix}RFLX_Arithmetic.Pow2;
+
    function U64_Extract_Intermediate (Data_Current : U64;
                                       Data_Next    : U64;
                                       LSE_Size     : Natural;
@@ -64,13 +66,13 @@ is
        and then LSE_Size + LSE_Offset = Byte'Size,
      Post =>
        (if Byte'Size + Shift_Length < U64'Size
-        then U64_Extract_Intermediate'Result <= U64 (2)**(Byte'Size + Shift_Length) - U64 (2)**Shift_Length
-        else U64_Extract_Intermediate'Result <= U64'Last - U64 (2)**Shift_Length + 1)
+        then U64_Extract_Intermediate'Result <= Pow2 (Byte'Size + Shift_Length) - Pow2 (Shift_Length)
+        else U64_Extract_Intermediate'Result <= U64'Last - Pow2 (Shift_Length) + 1)
    is
       Current : constant U64 := Right_Shift (Data_Current, Byte'Size, LSE_Offset);
       Next    : constant U64 := (if LSE_Offset > 0
-                                 then Left_Shift (Data_Next mod U64 (2)**LSE_Offset, LSE_Offset, LSE_Size)
-                                 else Data_Next mod U64 (2)**LSE_Offset);
+                                 then Left_Shift (Data_Next mod Pow2 (LSE_Offset), LSE_Offset, LSE_Size)
+                                 else Data_Next mod Pow2 (LSE_Offset));
    begin
       return Left_Shift (Current + Next, Byte'Size, Shift_Length);
    end U64_Extract_Intermediate;
@@ -88,13 +90,13 @@ is
        (if
           MSE_Size - LSE_Offset + (Byte'Size * Element_Count) < U64'Size
         then
-          U64_Extract_Remaining'Result <= U64 (2)**(MSE_Size - LSE_Offset + (Byte'Size * Element_Count))
-                                          - U64 (2)**(Byte'Size * Element_Count)
-          and U64 (2)**(MSE_Size - LSE_Offset + (Byte'Size * Element_Count)) >= U64 (2)**(Byte'Size * Element_Count)
+          U64_Extract_Remaining'Result <= Pow2 (MSE_Size - LSE_Offset + (Byte'Size * Element_Count))
+                                          - Pow2 (Byte'Size * Element_Count)
+          and Pow2 (MSE_Size - LSE_Offset + (Byte'Size * Element_Count)) >= Pow2 (Byte'Size * Element_Count)
         else
-          U64_Extract_Remaining'Result <= U64'Last - U64 (2)**(Byte'Size * Element_Count) + 1)
+          U64_Extract_Remaining'Result <= U64'Last - Pow2 (Byte'Size * Element_Count) + 1)
    is
-      Remaining_Bits : constant U64 := Right_Shift (Data mod U64 (2)**MSE_Size, MSE_Size, LSE_Offset);
+      Remaining_Bits : constant U64 := Right_Shift (Data mod Pow2 (MSE_Size), MSE_Size, LSE_Offset);
    begin
       return Left_Shift (Remaining_Bits, MSE_Size - LSE_Offset, Byte'Size * Element_Count);
    end U64_Extract_Remaining;
@@ -158,7 +160,7 @@ is
          end;
       end if;
 
-      return (if Value_Size < U64'Size then Result mod U64 (2)**Value_Size else Result);
+      return (if Value_Size < U64'Size then Result mod Pow2 (Value_Size) else Result);
    end U64_Extract;
 
    function Extract (Data : Bytes;
@@ -235,6 +237,8 @@ is
             U_Value : constant U64 := (if L_Size + V_Size < Byte'Size
                                        then Left_Shift (U_Bits, Byte'Size - L_Size - V_Size, L_Size + V_Size)
                                        else U_Bits);
+
+            pragma Assert (L_Value + V_Value + U_Value < Pow2 (Byte'Size));
          begin
             Write (LSE_Index, Byte'Val (L_Value + V_Value + U_Value));
          end;
