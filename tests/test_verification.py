@@ -401,7 +401,9 @@ def test_valid_first() -> None:
 def test_invalid_first() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), first=Add(First("F1"), Number(8), Location((5, 14)))),
+        Link(
+            Field("F1"), Field("F2"), first=Add(First("F1"), Number(8), location=Location((5, 14)))
+        ),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -894,7 +896,7 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
             And(
                 Greater(Variable("F1"), Number(32)),
                 LessEqual(Variable("F1"), Number(48)),
-                Location((22, 34)),
+                location=Location((22, 34)),
             ),
         ),
         Link(f2, FINAL, Greater(Variable("F1"), Number(48))),
@@ -1086,7 +1088,7 @@ def test_aggregate_equal_invalid_length_field() -> None:
 
     structure = [
         Link(INITIAL, length),
-        Link(length, magic, length=Mul(Number(8), Variable("Length"), Location((6, 5)))),
+        Link(length, magic, length=Mul(Number(8), Variable("Length"), location=Location((6, 5)))),
         Link(
             magic,
             FINAL,
