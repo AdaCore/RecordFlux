@@ -714,9 +714,7 @@ def test_message_field_size() -> None:
     assert message.field_size(FINAL) == Number(0)
     assert message.field_size(Field("F")) == Number(8)
 
-    with pytest.raises(
-        RecordFluxError, match='^<stdin>:30:10: internal: error: field "X" not found$'
-    ):
+    with pytest.raises(AssertionError, match='^field "X" not found$'):
         message.field_size(Field("X"))
         message.error.propagate()
 
