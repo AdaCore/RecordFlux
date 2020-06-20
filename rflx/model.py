@@ -551,14 +551,7 @@ class AbstractMessage(Type):
         if field == FINAL:
             return Number(0)
 
-        if field not in self.fields:
-            self.error.append(
-                f'field "{field.name}" not found',
-                Subsystem.INTERNAL,
-                Severity.ERROR,
-                self.location,
-            )
-            return UNDEFINED
+        assert field in self.fields, f'field "{field.name}" not found'
 
         field_type = self.types[field]
         if isinstance(field_type, Scalar):
