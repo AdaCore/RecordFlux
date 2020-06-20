@@ -19,16 +19,16 @@ class Location:
     def __init__(
         self,
         start: Tuple[int, int],
-        filename: Path = None,
+        source: Path = None,
         end: Tuple[int, int] = None,
         verbose: bool = False,
     ):
-        self.__filename: Optional[Path]
+        self.__source: Optional[Path]
 
-        if filename:
-            self.__filename = filename
+        if source:
+            self.__source = source
         else:
-            self.__filename = current_source()
+            self.__source = current_source()
 
         self.__start = start
         self.__end = end
@@ -40,7 +40,7 @@ class Location:
 
         start = f":{linecol_str(self.__start)}" if self.__start else ""
         end = f"-{linecol_str(self.__end)}" if self.__end and self.__verbose else ""
-        return f"{self.__filename if self.__filename else '<stdin>'}{start}{end}"
+        return f"{self.__source if self.__source else '<stdin>'}{start}{end}"
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
@@ -51,11 +51,11 @@ class Location:
         return NotImplemented
 
     def __hash__(self) -> int:
-        return hash(f"{self.__start}:{self.__filename}:{self.__end}")
+        return hash(f"{self.__start}:{self.__source}:{self.__end}")
 
     @property
     def source(self) -> Optional[Path]:
-        return self.__filename
+        return self.__source
 
     @property
     def start(self) -> Tuple[int, int]:
@@ -182,11 +182,11 @@ def fail(
     e.propagate()
 
 
-def parser_location(start: int, end: int, string: str, filename: Path = None) -> Location:
+def parser_location(start: int, end: int, string: str, source: Path = None) -> Location:
     return Location(
         start=(lineno(start, string), col(start, string)),
         end=(lineno(end - 1, string), col(end - 1, string)),
-        filename=filename,
+        source=source,
     )
 
 
