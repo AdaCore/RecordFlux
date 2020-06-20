@@ -364,7 +364,7 @@ def fatalexceptions(parse_function: Callable) -> Callable:
 
 @fatalexceptions
 def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> Expr:
-    return Aggregate(*tokens[1:-1], parser_location(tokens[0], tokens[-1], string))
+    return Aggregate(*tokens[1:-1], location=parser_location(tokens[0], tokens[-1], string))
 
 
 @fatalexceptions
