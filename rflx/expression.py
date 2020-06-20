@@ -265,10 +265,8 @@ class BinExpr(Expr):
 
 
 class AssExpr(Expr):
-    def __init__(self, *terms: Union[Expr, Optional[Location]]) -> None:
-        locations = [t for t in list(terms) if isinstance(t, Location)]
-        assert len(locations) <= 1
-        super().__init__(locations[0] if locations else None)
+    def __init__(self, *terms: Expr, location: Location = None) -> None:
+        super().__init__(location)
         self.terms = [t for t in list(terms) if isinstance(t, Expr)]
 
     def __str__(self) -> str:
@@ -366,7 +364,7 @@ class AssExpr(Expr):
                 terms.append(Number(total))
         if len(terms) == 1:
             return terms[0]
-        return self.__class__(*terms, self.location)
+        return self.__class__(*terms, location=self.location)
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -642,7 +640,7 @@ class Add(AssExpr):
                 terms.insert(0, term)
         if len(terms) == 1:
             return terms[0]
-        return Add(*terms, self.location)
+        return Add(*terms, location=self.location)
 
     def neutral_element(self) -> int:
         return 0
@@ -1061,10 +1059,8 @@ UNDEFINED = UndefinedExpr()
 
 
 class Aggregate(Expr):
-    def __init__(self, *elements: Union[Expr, Optional[Location]]) -> None:
-        locations = [t for t in list(elements) if isinstance(t, Location)]
-        assert len(locations) <= 1
-        super().__init__(locations[0] if locations else None)
+    def __init__(self, *elements: Expr, location: Location = None) -> None:
+        super().__init__(location)
         self.elements = [t for t in list(elements) if isinstance(t, Expr)]
 
     def __str__(self) -> str:

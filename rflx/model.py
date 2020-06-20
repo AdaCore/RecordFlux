@@ -345,7 +345,7 @@ class Enumeration(Scalar):
             result: List[Expr] = [
                 Or(
                     *[Equal(Variable(name), Variable(l), self.location) for l in self.literals],
-                    self.location,
+                    location=self.location,
                 )
             ]
             result.extend([Equal(Variable(l), v, self.location) for l, v in self.literals.items()])
@@ -894,7 +894,9 @@ class AbstractMessage(Type):
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 outgoing = self.outgoing(f)
                 if f != FINAL and outgoing:
-                    facts.append(Or(*[o.condition for o in outgoing], f.identifier.location))
+                    facts.append(
+                        Or(*[o.condition for o in outgoing], location=f.identifier.location)
+                    )
                 proof = TRUE.check(facts)
                 if proof.result == ProofResult.sat:
                     break
@@ -961,7 +963,7 @@ class AbstractMessage(Type):
             return First("Message")
         if link.first != UNDEFINED:
             return link.first
-        return Add(Last(link.source.name), Number(1), link.location)
+        return Add(Last(link.source.name), Number(1), location=link.location)
 
     def __target_length(self, link: Link) -> Expr:
         if link.length != UNDEFINED:
@@ -1063,7 +1065,7 @@ class AbstractMessage(Type):
                         And(
                             GreaterEqual(Variable("f"), self.__target_first(l)),
                             LessEqual(Variable("f"), self.__target_last(l)),
-                            l.location,
+                            location=l.location,
                         )
                     )
                     for l in path
@@ -1175,7 +1177,7 @@ class AbstractMessage(Type):
                 And(self.__compute_field_condition(l.source), l.condition)
                 for l in self.incoming(final)
             ],
-            final.identifier.location,
+            location=final.identifier.location,
         )
 
 
