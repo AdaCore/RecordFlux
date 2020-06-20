@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from pyparsing import col, lineno
 
@@ -158,15 +158,11 @@ class RecordFluxError(Exception):
             for message, subsystem, severity, location in entries:
                 self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
 
-    def check(
-        self, func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE
-    ) -> bool:
-        return any([func(e) for e in self.__errors])
+    def check(self) -> bool:
+        return len(self.__errors) > 0
 
-    def propagate(
-        self, func: Callable[["RecordFluxError.Entry"], bool] = lambda e: e.severity > Severity.NONE
-    ) -> None:
-        if self.check(func):
+    def propagate(self) -> None:
+        if self.check():
             raise self
 
 
