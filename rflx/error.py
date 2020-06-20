@@ -67,7 +67,6 @@ class Location:
 
 
 class Subsystem(Enum):
-    CORE = auto()
     PARSER = auto()
     MODEL = auto()
     CLI = auto()
