@@ -70,7 +70,6 @@ class Subsystem(Enum):
     PARSER = auto()
     MODEL = auto()
     CLI = auto()
-    INTERNAL = auto()
     GRAPH = auto()
 
     def __str__(self) -> str:
