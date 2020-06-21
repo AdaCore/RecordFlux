@@ -20,7 +20,7 @@ class ID:
             self.parts = identifier
         elif isinstance(identifier, ID):
             self.parts = list(identifier.parts)
-            self.location = identifier.location
+            self.location = location or identifier.location
         else:
             assert False, f'unexpected identifier type "{type(identifier).__name__}"'
 
