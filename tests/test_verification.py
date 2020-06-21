@@ -661,7 +661,9 @@ def test_no_path_to_final() -> None:
         Field("F3"): MODULAR_INTEGER,
         Field("F4"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^model: error: no path to FINAL for field "F4"$')
+    assert_message_model_error(
+        structure, types, '^model: error: no path to FINAL for field "F4" in "P.M"$'
+    )
 
 
 def test_no_path_to_final_transitive() -> None:
@@ -687,9 +689,9 @@ def test_no_path_to_final_transitive() -> None:
         structure,
         types,
         r"^"
-        r'model: error: no path to FINAL for field "F4"\n'
-        r'model: error: no path to FINAL for field "F5"\n'
-        r'model: error: no path to FINAL for field "F6"'
+        r'model: error: no path to FINAL for field "F4" in "P.M"\n'
+        r'model: error: no path to FINAL for field "F5" in "P.M"\n'
+        r'model: error: no path to FINAL for field "F6" in "P.M"'
         r"$",
     )
 
