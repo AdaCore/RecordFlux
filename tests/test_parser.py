@@ -517,8 +517,8 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
             end Test;
         """,
         r"<stdin>:3:16: parser: error: conflicting literals: False, True\n"
-        r'__BUILTINS__:1:18: parser: info: previous occurrence of "False"\n'
-        r'__BUILTINS__:1:24: parser: info: previous occurrence of "True"',
+        r'__BUILTINS__:0:0: parser: info: previous occurrence of "False"\n'
+        r'__BUILTINS__:0:0: parser: info: previous occurrence of "True"',
     )
 
 
@@ -567,7 +567,7 @@ def test_array_unsupported_element_type() -> None:
             end Test;
         """,
         r"<stdin>:3:16: parser: error: unsupported element type size\n"
-        r'__BUILTINS__:1:1: parser: info: type "__BUILTINS__.Boolean" has size 1,'
+        r'__BUILTINS__:0:0: parser: info: type "__BUILTINS__.Boolean" has size 1,'
         r" must be multiple of 8",
     )
 
