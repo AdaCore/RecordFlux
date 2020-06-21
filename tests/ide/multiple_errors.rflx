@@ -64,7 +64,7 @@ package RFLX_Invalid is
          X : Opaque
             then Y
                with Length => 5 * 8
-                  if X = (1, 256, 20, 500);
+               if X = (1, 256, 20, 500);
          -- error: Aggregate element out of range (3 times)
          Y : R_Array
             then null if Y = (1, 10, 20, 50, 60);
@@ -139,10 +139,10 @@ package RFLX_Invalid is
          Length : R
             then Data
                with Length => Length
-                  -- error: Undefined variable
-                  if Undef_Var > 5
-                     -- error: Subsequent field F1 referenced
-                     and F1 > 1000;
+               -- error: Undefined variable
+               if Undef_Var > 5
+                  -- error: Subsequent field F1 referenced
+                  and F1 > 1000;
          Data  : Opaque
             then F1
                -- error: invalid relation to aggregate
@@ -177,8 +177,8 @@ package RFLX_Invalid is
          Data1  : R_Array
             then Data2
                with Length => Length
-                  -- error: aggregate element out of range, 2 times
-                  if Data1 = (1, 7, 1000);
+               -- error: aggregate element out of range, 2 times
+               if Data1 = (1, 7, 1000);
          Data2  : Opaque
             then null
                -- error: aggregate element out of range
@@ -193,8 +193,8 @@ package RFLX_Invalid is
                with Length => Length;
          Data : M5_Array
             then null
-                  -- error: invalid array element type
-                  if Data = (1, 7, 1000);
+               -- error: invalid array element type
+               if Data = (1, 7, 1000);
       end message;
 
    type Modular_32 is mod 2**32;

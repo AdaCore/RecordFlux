@@ -300,7 +300,7 @@ def test_unexpected_exception_in_parser(monkeypatch: Any) -> None:
 def test_package_spec() -> None:
     assert_specifications_files(
         [f"{TESTDIR}/empty_package.rflx"],
-        {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []),)},
+        {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []))},
     )
 
 
@@ -311,7 +311,7 @@ def test_package_message() -> None:
 def test_duplicate_specifications() -> None:
     files = [f"{TESTDIR}/empty_package.rflx", f"{TESTDIR}/empty_package.rflx"]
     assert_specifications_files(
-        files, {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []),)},
+        files, {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []))},
     )
     assert_messages_files(files, [])
 
@@ -323,7 +323,7 @@ def test_context_spec() -> None:
             "Context": Specification(
                 ContextSpec(["Empty_File", "Empty_Package"]), PackageSpec("Context", []),
             ),
-            "Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []),),
+            "Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [])),
         },
     )
 
@@ -820,10 +820,10 @@ def test_integer_type_spec() -> None:
             PackageSpec(
                 "Integer_Type",
                 [
-                    RangeInteger("__PACKAGE__.Page_Num", Number(1), Number(2000), Number(16),),
-                    RangeInteger("__PACKAGE__.Line_Size", Number(0), Number(255), Number(8),),
-                    ModularInteger("__PACKAGE__.Byte", Number(256),),
-                    ModularInteger("__PACKAGE__.Hash_Index", Number(64),),
+                    RangeInteger("__PACKAGE__.Page_Num", Number(1), Number(2000), Number(16)),
+                    RangeInteger("__PACKAGE__.Line_Size", Number(0), Number(255), Number(8)),
+                    ModularInteger("__PACKAGE__.Byte", Number(256)),
+                    ModularInteger("__PACKAGE__.Hash_Index", Number(64)),
                 ],
             ),
         )
@@ -875,8 +875,8 @@ def test_array_type_spec() -> None:
             PackageSpec(
                 "Array_Type",
                 [
-                    ModularInteger("__PACKAGE__.Byte", Number(256),),
-                    Array("__PACKAGE__.Bytes", ReferenceSpec("__PACKAGE__.Byte"),),
+                    ModularInteger("__PACKAGE__.Byte", Number(256)),
+                    Array("__PACKAGE__.Bytes", ReferenceSpec("__PACKAGE__.Byte")),
                     MessageSpec(
                         "__PACKAGE__.Foo",
                         [
@@ -888,7 +888,7 @@ def test_array_type_spec() -> None:
                             Component("Bytes", "Bytes"),
                         ],
                     ),
-                    Array("__PACKAGE__.Bar", ReferenceSpec("__PACKAGE__.Foo"),),
+                    Array("__PACKAGE__.Bar", ReferenceSpec("__PACKAGE__.Foo")),
                 ],
             ),
         )
@@ -943,7 +943,7 @@ def test_message_type_spec() -> None:
 def test_message_type_message() -> None:
     simple_structure = [
         Link(INITIAL, Field("Bar")),
-        Link(Field("Bar"), Field("Baz"),),
+        Link(Field("Bar"), Field("Baz")),
         Link(Field("Baz"), FINAL),
     ]
 
@@ -956,8 +956,8 @@ def test_message_type_message() -> None:
 
     structure = [
         Link(INITIAL, Field("Foo")),
-        Link(Field("Foo"), Field("Bar"), LessEqual(Variable("Foo"), Number(30, 16)),),
-        Link(Field("Foo"), Field("Baz"), Greater(Variable("Foo"), Number(30, 16)),),
+        Link(Field("Foo"), Field("Bar"), LessEqual(Variable("Foo"), Number(30, 16))),
+        Link(Field("Foo"), Field("Baz"), Greater(Variable("Foo"), Number(30, 16))),
         Link(Field("Bar"), Field("Baz")),
         Link(Field("Baz"), FINAL),
     ]
@@ -1216,7 +1216,7 @@ def test_ethernet_spec() -> None:
                                     Then(
                                         "Payload",
                                         UNDEFINED,
-                                        Sub(Last("Message"), Last("Type_Length"),),
+                                        Sub(Last("Message"), Last("Type_Length")),
                                         GreaterEqual(Variable("Type_Length"), Number(1536)),
                                     ),
                                 ],
