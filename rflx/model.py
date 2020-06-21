@@ -231,7 +231,7 @@ class RangeInteger(Integer):
 
         if int(last_num).bit_length() > int(size_num):
             self.error.append(
-                "size too small", Subsystem.MODEL, Severity.ERROR, self.location,
+                f'size of "{self.name}" too small', Subsystem.MODEL, Severity.ERROR, self.location,
             )
         if int(size_num) > 64:
             self.error.append(
@@ -300,7 +300,7 @@ class Enumeration(Scalar):
 
         if max(map(int, literals.values())).bit_length() > int(size_num):
             self.error.append(
-                "size too small", Subsystem.MODEL, Severity.ERROR, self.location,
+                f'size of "{self.name}" too small', Subsystem.MODEL, Severity.ERROR, self.location,
             )
         if int(size_num) > 64:
             self.error.append(
@@ -313,7 +313,7 @@ class Enumeration(Scalar):
             for i2, v2 in enumerate(literals.values()):
                 if i1 < i2 and v1 == v2:
                     self.error.append(
-                        f'duplicate enumeration value "{v1}"',
+                        f'duplicate enumeration value "{v1}" in "{self.name}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         v2.location,
@@ -326,7 +326,10 @@ class Enumeration(Scalar):
         for k, v in literals.items():
             if " " in str(k) or "." in str(k):
                 self.error.append(
-                    f'invalid literal name "{k}"', Subsystem.MODEL, Severity.ERROR, self.location,
+                    f'invalid literal name "{k}" in "{self.name}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
                 )
                 continue
             self.literals[ID(k)] = v
@@ -602,7 +605,7 @@ class AbstractMessage(Type):
 
         for f in structure_fields - type_fields:
             self.error.append(
-                f'missing type for field "{f.name}"',
+                f'missing type for field "{f.name}" in "{self.identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 f.identifier.location,
@@ -610,12 +613,18 @@ class AbstractMessage(Type):
 
         for f in type_fields - structure_fields - {FINAL}:
             self.error.append(
-                f'unused field "{f.name}"', Subsystem.MODEL, Severity.ERROR, f.identifier.location,
+                f'unused field "{f.name}" in "{self.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                f.identifier.location,
             )
 
         if len(self.outgoing(INITIAL)) != 1:
             self.error.append(
-                "ambiguous first field", Subsystem.MODEL, Severity.ERROR, self.location,
+                f'ambiguous first field in "{self.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
             )
             self.error.extend(
                 [
@@ -876,7 +885,7 @@ class AbstractMessage(Type):
         for f in (INITIAL, *self.fields):
             if not has_final(f):
                 self.error.append(
-                    f'no path to FINAL for field "{f.name}"',
+                    f'no path to FINAL for field "{f.name}" in "{self.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     f.identifier.location,
