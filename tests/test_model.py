@@ -133,7 +133,7 @@ M_SMPL_REF_DERI = UnprovenDerivedMessage(
 )
 
 
-def assert_type(instance: Type, regex: str) -> None:
+def assert_type_error(instance: Type, regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         instance.error.propagate()
 
@@ -150,11 +150,11 @@ def test_type_name() -> None:
     t = ModularInteger("Package.Type_Name", Number(256))
     assert t.name == "Type_Name"
     assert t.package == ID("Package")
-    assert_type(
+    assert_type_error(
         ModularInteger("X", Number(256), Location((10, 20))),
         r'^<stdin>:10:20: model: error: unexpected format of type name "X"$',
     )
-    assert_type(
+    assert_type_error(
         ModularInteger("X.Y.Z", Number(256), Location((10, 20))),
         '^<stdin>:10:20: model: error: unexpected format of type name "X.Y.Z"$',
     )
@@ -177,21 +177,21 @@ def test_modular_last() -> None:
 
 
 def test_modular_invalid_modulus_power_of_two() -> None:
-    assert_type(
+    assert_type_error(
         ModularInteger("P.T", Number(255), Location((65, 3))),
         r'^<stdin>:65:3: model: error: modulus of "T" not power of two$',
     )
 
 
 def test_modular_invalid_modulus_variable() -> None:
-    assert_type(
+    assert_type_error(
         ModularInteger("P.T", Pow(Number(2), Variable("X")), Location((3, 23))),
         r'^<stdin>:3:23: model: error: modulus of "T" contains variable$',
     )
 
 
 def test_modular_invalid_modulus_limit() -> None:
-    assert_type(
+    assert_type_error(
         ModularInteger("P.T", Pow(Number(2), Number(128), Location((55, 3)))),
         r'^<stdin>:55:3: model: error: modulus of "T" exceeds limit \(2\*\*64\)$',
     )
@@ -205,14 +205,14 @@ def test_range_size() -> None:
 
 
 def test_range_invalid_first_variable() -> None:
-    assert_type(
+    assert_type_error(
         RangeInteger("P.T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3))),
         r'^<stdin>:5:3: model: error: first of "T" contains variable$',
     )
 
 
 def test_range_invalid_last_variable() -> None:
-    assert_type(
+    assert_type_error(
         RangeInteger("P.T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6))),
         r'^<stdin>:80:6: model: error: last of "T" contains variable$',
     )
@@ -226,21 +226,21 @@ def test_range_invalid_last_exceeds_limit() -> None:
 
 
 def test_range_invalid_first_negative() -> None:
-    assert_type(
+    assert_type_error(
         RangeInteger("P.T", Number(-1), Number(0), Number(1), Location((6, 4))),
         r'^<stdin>:6:4: model: error: first of "T" negative$',
     )
 
 
 def test_range_invalid_range() -> None:
-    assert_type(
+    assert_type_error(
         RangeInteger("P.T", Number(1), Number(0), Number(1), Location((10, 5))),
         r'^<stdin>:10:5: model: error: range of "T" negative$',
     )
 
 
 def test_range_invalid_size_variable() -> None:
-    assert_type(
+    assert_type_error(
         RangeInteger(
             "P.T", Number(0), Number(256), Add(Number(8), Variable("X")), Location((22, 4))
         ),
@@ -249,7 +249,7 @@ def test_range_invalid_size_variable() -> None:
 
 
 def test_range_invalid_size_too_small() -> None:
-    assert_type(
+    assert_type_error(
         RangeInteger("P.T", Number(0), Number(256), Number(8), Location((10, 4))),
         r'^<stdin>:10:4: model: error: size of "T" too small$',
     )
@@ -257,14 +257,14 @@ def test_range_invalid_size_too_small() -> None:
 
 def test_range_invalid_size_exceeds_limit() -> None:
     # ISSUE: Componolit/RecordFlux#238
-    assert_type(
+    assert_type_error(
         RangeInteger("P.T", Number(0), Number(256), Number(128), Location((50, 3))),
         r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*64\)$',
     )
 
 
 def test_enumeration_invalid_size_variable() -> None:
-    assert_type(
+    assert_type_error(
         Enumeration(
             "P.T", {"A": Number(1)}, Add(Number(8), Variable("X")), False, Location((34, 3))
         ),
@@ -273,14 +273,14 @@ def test_enumeration_invalid_size_variable() -> None:
 
 
 def test_enumeration_invalid_size_too_small() -> None:
-    assert_type(
+    assert_type_error(
         Enumeration("P.T", {"A": Number(256)}, Number(8), False, Location((10, 5))),
         r'^<stdin>:10:5: model: error: size of "T" too small$',
     )
 
 
 def test_enumeration_invalid_size_exceeds_limit() -> None:
-    assert_type(
+    assert_type_error(
         Enumeration("P.T", {"A": Number(256)}, Number(128), False, Location((8, 20))),
         r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*64\)$',
     )
@@ -294,11 +294,11 @@ def test_enumeration_invalid_always_valid_aspect() -> None:
 
 
 def test_enumeration_invalid_literal() -> None:
-    assert_type(
+    assert_type_error(
         Enumeration("P.T", {"A B": Number(1)}, Number(8), False, Location(((1, 2)))),
         r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$',
     )
-    assert_type(
+    assert_type_error(
         Enumeration("P.T", {"A.B": Number(1)}, Number(8), False, Location((6, 4))),
         r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$',
     )
@@ -436,7 +436,7 @@ def test_message_cycle() -> None:
     assert_type(
         Message("P.M", structure, types, Location((10, 5))),
         '^<stdin>:10:5: model: error: structure of "P.M" contains cycle'
-        # We cannot detect cycles, c.f. Componolit/RecordFlux#256
+        # ISSUE: Componolit/RecordFlux#256
         # '\n'
         # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
         # '<stdin>:4:5: model: info: field "Y" links to "Z"\n'
@@ -1027,7 +1027,6 @@ def test_merge_message_simple_derived() -> None:
 
 
 def test_merge_message_error_name_conflict() -> None:
-
     m2_f2 = Field(ID("F2", Location((10, 5))))
 
     m2 = UnprovenMessage(
@@ -1047,7 +1046,7 @@ def test_merge_message_error_name_conflict() -> None:
         Location((2, 9)),
     )
 
-    assert_type(
+    assert_type_error(
         m1.merged(),
         r"^"
         r'<stdin>:30:5: model: error: name conflict for "F1_F2" in "P.M1"\n'
@@ -1057,14 +1056,13 @@ def test_merge_message_error_name_conflict() -> None:
 
 
 def test_refinement_invalid_package() -> None:
-    assert_type(
+    assert_type_error(
         Refinement(ID("A.B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME),
         r'^<stdin>:22:10: model: error: unexpected format of package name "A.B"$',
     )
 
 
 def test_field_locations() -> None:
-
     f2 = Field(ID("F2", Location((2, 2))))
     f3 = Field(ID("F3", Location((3, 2))))
 
