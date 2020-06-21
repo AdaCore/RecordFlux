@@ -1541,12 +1541,12 @@ INTERNAL_TYPES = {
 BOOLEAN = Enumeration(
     BUILTINS_PACKAGE * "Boolean",
     {
-        ID("False", Location((1, 18), Path(str(BUILTINS_PACKAGE)), (1, 21))): Number(0),
-        ID("True", Location((1, 24), Path(str(BUILTINS_PACKAGE)), (1, 28))): Number(1),
+        ID("False", Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0))): Number(0),
+        ID("True", Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0))): Number(1),
     },
     Number(1),
     False,
-    Location((1, 1), Path(str(BUILTINS_PACKAGE)), (1, 30)),
+    Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0)),
 )
 
 BUILTIN_TYPES = {
