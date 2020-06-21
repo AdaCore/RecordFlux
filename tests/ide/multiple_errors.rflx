@@ -103,9 +103,8 @@ package RFLX_Invalid is
          Length : R then Data with Length => Length;
          Data : Opaque;
       end message;
-   for RFLX_Invalid.PDU1 use (Data => RFLX_Invalid.SDU1);
+   for RFLX_Invalid.PDU1 use (Data => RFLX_Invalid.SDU2);
 
-   -- FIXME: Not detected
    -- error: duplicate refinement
    for PDU1 use (Data => SDU2);
 
