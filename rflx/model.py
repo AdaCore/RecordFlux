@@ -653,7 +653,7 @@ class AbstractMessage(Type):
         for link in self.structure:
             duplicate_links[(link.source, link.target, link.condition)].append(link)
 
-        for _, links in duplicate_links.items():
+        for links in duplicate_links.values():
             if len(links) > 1:
                 self.error.append(
                     f'duplicate link from "{links[0].source.identifier}"'
@@ -1152,7 +1152,7 @@ class AbstractMessage(Type):
                 Severity.ERROR,
                 self.location,
             )
-            # We do not identify the cycles in the model, c.f. Componolit/RecordFlux#256
+            # ISSUE: Componolit/RecordFlux#256
             return None
         return tuple(f for f in result if f not in [INITIAL, FINAL])
 

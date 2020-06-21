@@ -905,7 +905,7 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): ModularInteger("P.Modular", Number(256)),
+        Field("F1"): MODULAR_INTEGER,
         Field("F2"): MODULAR_INTEGER,
         Field("F3"): MODULAR_INTEGER,
     }
