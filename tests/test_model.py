@@ -251,7 +251,7 @@ def test_range_invalid_size_variable() -> None:
 def test_range_invalid_size_too_small() -> None:
     assert_type(
         RangeInteger("P.T", Number(0), Number(256), Number(8), Location((10, 4))),
-        r"^<stdin>:10:4: model: error: size too small$",
+        r'^<stdin>:10:4: model: error: size of "T" too small$',
     )
 
 
@@ -275,7 +275,7 @@ def test_enumeration_invalid_size_variable() -> None:
 def test_enumeration_invalid_size_too_small() -> None:
     assert_type(
         Enumeration("P.T", {"A": Number(256)}, Number(8), False, Location((10, 5))),
-        r"^<stdin>:10:5: model: error: size too small$",
+        r'^<stdin>:10:5: model: error: size of "T" too small$',
     )
 
 
@@ -296,11 +296,11 @@ def test_enumeration_invalid_always_valid_aspect() -> None:
 def test_enumeration_invalid_literal() -> None:
     assert_type(
         Enumeration("P.T", {"A B": Number(1)}, Number(8), False, Location(((1, 2)))),
-        r'^<stdin>:1:2: model: error: invalid literal name "A B"$',
+        r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$',
     )
     assert_type(
         Enumeration("P.T", {"A.B": Number(1)}, Number(8), False, Location((6, 4))),
-        r'^<stdin>:6:4: model: error: invalid literal name "A.B"$',
+        r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$',
     )
 
 
@@ -316,7 +316,8 @@ def test_message_missing_type() -> None:
     structure = [Link(INITIAL, x), Link(x, FINAL)]
 
     assert_type(
-        Message("P.M", structure, {}), '^<stdin>:5:6: model: error: missing type for field "X"$',
+        Message("P.M", structure, {}),
+        '^<stdin>:5:6: model: error: missing type for field "X" in "P.M"$',
     )
 
 
@@ -330,7 +331,9 @@ def test_message_unused_type() -> None:
 
     types = {Field("X"): t, Field(ID("Y", Location((5, 6)))): t}
 
-    assert_type(Message("P.M", structure, types), '^<stdin>:5:6: model: error: unused field "Y"$')
+    assert_type(
+        Message("P.M", structure, types), '^<stdin>:5:6: model: error: unused field "Y" in "P.M"$'
+    )
 
 
 def test_message_ambiguous_first_field() -> None:
@@ -348,7 +351,7 @@ def test_message_ambiguous_first_field() -> None:
 
     assert_type(
         Message("P.M", structure, types, location=Location((1, 5))),
-        "^<stdin>:1:5: model: error: ambiguous first field\n"
+        '^<stdin>:1:5: model: error: ambiguous first field in "P.M"\n'
         "<stdin>:2:6: model: info: duplicate\n"
         "<stdin>:3:6: model: info: duplicate",
     )
