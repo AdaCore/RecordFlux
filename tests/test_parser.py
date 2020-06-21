@@ -364,7 +364,7 @@ def test_message_undefined_type() -> None:
                   end message;
             end Test;
         """,
-        r'^<stdin>:5:22: model: error: missing type for field "Foo"$',
+        r'^<stdin>:5:22: model: error: missing type for field "Foo" in "Test.PDU"$',
     )
 
 
@@ -432,7 +432,7 @@ def test_invalid_enumeration_type_size() -> None:
                type T is (Foo, Bar, Baz) with Size => 1;
             end Test;
         """,
-        r"<stdin>:3:16: model: error: size too small",
+        r'<stdin>:3:16: model: error: size of "T" too small',
     )
 
 
@@ -469,7 +469,7 @@ def test_invalid_enumeration_type_duplicate_values() -> None:
                type T is (Foo => 0, Bar => 0) with Size => 1;
             end Test;
         """,
-        r'<stdin>:3:44: model: error: duplicate enumeration value "0"\n'
+        r'<stdin>:3:44: model: error: duplicate enumeration value "0" in "T"\n'
         r"<stdin>:3:34: model: info: previous occurrence",
     )
 
@@ -481,9 +481,9 @@ def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
                type T is (Foo => 0, Foo_1 => 1, Bar => 0, Bar_1 => 1) with Size => 8;
             end Test;
         """,
-        r'<stdin>:3:56: model: error: duplicate enumeration value "0"\n'
+        r'<stdin>:3:56: model: error: duplicate enumeration value "0" in "T"\n'
         r"<stdin>:3:34: model: info: previous occurrence\n"
-        r'<stdin>:3:68: model: error: duplicate enumeration value "1"\n'
+        r'<stdin>:3:68: model: error: duplicate enumeration value "1" in "T"\n'
         r"<stdin>:3:46: model: info: previous occurrence",
     )
 
