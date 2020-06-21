@@ -1226,10 +1226,7 @@ def test_ethernet_spec() -> None:
                                 "Opaque",
                                 [
                                     Then(
-                                        ID(),
-                                        UNDEFINED,
-                                        UNDEFINED,
-                                        And(
+                                        condition=And(
                                             GreaterEqual(
                                                 Div(Length("Payload"), Number(8)), Number(46),
                                             ),

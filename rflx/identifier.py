@@ -9,14 +9,12 @@ from rflx.error import Location
 @invariant(lambda self: "" not in self.parts, "no empty part in identifier")
 class ID:
     def __init__(
-        self, identifier: Union[str, Sequence[str], "ID"] = None, location: Location = None
+        self, identifier: Union[str, Sequence[str], "ID"], location: Location = None
     ) -> None:
         self.parts: Sequence[str]
         self.location = location
 
-        if identifier is None:
-            self.parts = []
-        elif isinstance(identifier, str):
+        if isinstance(identifier, str):
             self.parts = identifier.split(".")
         elif isinstance(identifier, list):
             self.parts = identifier
@@ -78,10 +76,6 @@ class ID:
             if self.location is None:
                 return other.location
         return NotImplemented
-
-    @property
-    def null(self) -> bool:
-        return not self.parts
 
     @property
     def name(self) -> "ID":
