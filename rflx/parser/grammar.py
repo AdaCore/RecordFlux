@@ -333,7 +333,7 @@ def package_declaration() -> Token:
         - Keyword("end")
         - unqualified_identifier()
         - semicolon()
-    ).setParseAction(lambda tokens: PackageSpec(tokens[1], tokens[3].asList(), tokens[5]))
+    ).setParseAction(lambda t: PackageSpec(t[1], t[3].asList(), t[5]))
 
 
 def context_clause() -> Token:
