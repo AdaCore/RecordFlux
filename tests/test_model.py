@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 from copy import deepcopy
+from typing import Mapping, Sequence
 
 import pytest
 from icontract import ViolationError
@@ -136,6 +137,14 @@ M_SMPL_REF_DERI = UnprovenDerivedMessage(
 def assert_type_error(instance: Type, regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         instance.error.propagate()
+
+
+def assert_message_model_error(
+    structure: Sequence[Link], types: Mapping[Field, Type], regex: str
+) -> None:
+    with pytest.raises(RecordFluxError, match=regex):
+        message = Message("P.M", structure, types, Location((10, 8)))
+        message.error.propagate()
 
 
 def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
@@ -305,19 +314,18 @@ def test_enumeration_invalid_literal() -> None:
 
 
 def test_message_incorrect_name() -> None:
-    assert_type(
-        Message("M", [], {}, Location((10, 8))),
-        '^<stdin>:10:8: model: error: unexpected format of type name "M"$',
-    )
+    with pytest.raises(
+        RecordFluxError, match='^<stdin>:10:8: model: error: unexpected format of type name "M"$'
+    ):
+        Message("M", [], {}, Location((10, 8)))
 
 
 def test_message_missing_type() -> None:
     x = Field(ID("X", Location((5, 6))))
     structure = [Link(INITIAL, x), Link(x, FINAL)]
 
-    assert_type(
-        Message("P.M", structure, {}),
-        '^<stdin>:5:6: model: error: missing type for field "X" in "P.M"$',
+    assert_message_model_error(
+        structure, {}, '^<stdin>:5:6: model: error: missing type for field "X" in "P.M"$',
     )
 
 
@@ -331,8 +339,8 @@ def test_message_unused_type() -> None:
 
     types = {Field("X"): t, Field(ID("Y", Location((5, 6)))): t}
 
-    assert_type(
-        Message("P.M", structure, types), '^<stdin>:5:6: model: error: unused field "Y" in "P.M"$'
+    assert_message_model_error(
+        structure, types, '^<stdin>:5:6: model: error: unused field "Y" in "P.M"$'
     )
 
 
@@ -349,9 +357,10 @@ def test_message_ambiguous_first_field() -> None:
 
     types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
 
-    assert_type(
-        Message("P.M", structure, types, location=Location((1, 5))),
-        '^<stdin>:1:5: model: error: ambiguous first field in "P.M"\n'
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:10:8: model: error: ambiguous first field in "P.M"\n'
         "<stdin>:2:6: model: info: duplicate\n"
         "<stdin>:3:6: model: info: duplicate",
     )
@@ -369,8 +378,9 @@ def test_message_duplicate_link() -> None:
 
     types = {Field("X"): t}
 
-    assert_type(
-        Message("P.M", structure, types),
+    assert_message_model_error(
+        structure,
+        types,
         f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
         f"<stdin>:4:42: model: info: duplicate link\n"
         f"<stdin>:5:42: model: info: duplicate link",
@@ -393,8 +403,9 @@ def test_message_multiple_duplicate_links() -> None:
 
     types = {Field("X"): t, Field("Y"): t}
 
-    assert_type(
-        Message("P.M", structure, types),
+    assert_message_model_error(
+        structure,
+        types,
         f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
         f"<stdin>:3:16: model: info: duplicate link\n"
         f"<stdin>:4:18: model: info: duplicate link\n"
@@ -414,9 +425,8 @@ def test_message_unreachable_field() -> None:
 
     types = {Field("X"): BOOLEAN, Field("Y"): BOOLEAN, Field("Z"): BOOLEAN}
 
-    assert_type(
-        Message("P.M", structure, types),
-        '^<stdin>:20:3: model: error: unreachable field "Y" in "P.M"$',
+    assert_message_model_error(
+        structure, types, '^<stdin>:20:3: model: error: unreachable field "Y" in "P.M"$',
     )
 
 
@@ -433,9 +443,10 @@ def test_message_cycle() -> None:
 
     types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
 
-    assert_type(
-        Message("P.M", structure, types, Location((10, 5))),
-        '^<stdin>:10:5: model: error: structure of "P.M" contains cycle'
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:10:8: model: error: structure of "P.M" contains cycle'
         # ISSUE: Componolit/RecordFlux#256
         # '\n'
         # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
@@ -639,9 +650,8 @@ def test_message_nonexistent_variable() -> None:
     ]
 
     types = {Field("F1"): enum_type, Field("F2"): mod_type}
-    assert_type(
-        Message("P.M", structure, types),
-        '^<stdin>:444:55: model: error: undefined variable "Val3" referenced',
+    assert_message_model_error(
+        structure, types, '^<stdin>:444:55: model: error: undefined variable "Val3" referenced',
     )
 
 
@@ -656,9 +666,8 @@ def test_message_subsequent_variable() -> None:
     ]
 
     types = {Field("F1"): t, Field("F2"): t}
-    assert_type(
-        Message("P.M", structure, types),
-        '^<stdin>:1024:57: model: error: subsequent field "F2" referenced',
+    assert_message_model_error(
+        structure, types, '^<stdin>:1024:57: model: error: subsequent field "F2" referenced',
     )
 
 
@@ -668,8 +677,9 @@ def test_message_invalid_use_of_length_attribute() -> None:
         Link(Field("F1"), FINAL, Equal(Length("F1"), Number(32), Location((400, 17)))),
     ]
     types = {Field("F1"): MODULAR_INTEGER}
-    assert_type(
-        Message("P.M", structure, types),
+    assert_message_model_error(
+        structure,
+        types,
         r'^<stdin>:400:17: model: error: invalid use of length attribute for "F1"$',
     )
 
@@ -684,9 +694,8 @@ def test_message_invalid_relation_to_aggregate() -> None:
         ),
     ]
     types = {Field("F1"): Opaque()}
-    assert_type(
-        Message("P.M", structure, types),
-        r'^<stdin>:100:20: model: error: invalid relation " <= " to aggregate$',
+    assert_message_model_error(
+        structure, types, r'^<stdin>:100:20: model: error: invalid relation " <= " to aggregate$',
     )
 
 
@@ -700,8 +709,9 @@ def test_message_invalid_element_in_relation_to_aggregate() -> None:
         ),
     ]
     types = {Field("F1"): MODULAR_INTEGER}
-    assert_type(
-        Message("P.M", structure, types),
+    assert_message_model_error(
+        structure,
+        types,
         r'^<stdin>:14:7: model: error: invalid relation between "F1" and aggregate$',
     )
 
@@ -755,10 +765,10 @@ def test_message_proven() -> None:
 
 
 def test_derived_message_incorrect_base_name() -> None:
-    assert_type(
-        DerivedMessage("P.M", Message("M", [], {}, location=Location((40, 8)))),
-        '^<stdin>:40:8: model: error: unexpected format of type name "M"$',
-    )
+    with pytest.raises(
+        RecordFluxError, match='^<stdin>:40:8: model: error: unexpected format of type name "M"$'
+    ):
+        DerivedMessage("P.M", Message("M", [], {}, location=Location((40, 8))))
 
 
 def test_derived_message_proven() -> None:
@@ -1077,47 +1087,50 @@ def test_field_locations() -> None:
 
 def test_opaque_aggregate_out_of_range() -> None:
     f = Field("F")
-    message = Message(
-        "P.M",
-        [
-            Link(INITIAL, f, length=Number(24)),
-            Link(
-                f,
-                FINAL,
-                condition=Equal(
-                    Variable("F"),
-                    Aggregate(Number(1), Number(2), Number(256, location=Location((44, 3)))),
+    with pytest.raises(
+        RecordFluxError,
+        match=r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 255",
+    ):
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, f, length=Number(24)),
+                Link(
+                    f,
+                    FINAL,
+                    condition=Equal(
+                        Variable("F"),
+                        Aggregate(Number(1), Number(2), Number(256, location=Location((44, 3)))),
+                    ),
                 ),
-            ),
-        ],
-        {Field("F"): Opaque()},
-    )
-
-    assert_type(
-        message, r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 255",
-    )
+            ],
+            {Field("F"): Opaque()},
+        )
 
 
 def test_array_aggregate_out_of_range() -> None:
     array_type = Array("P.Array", ModularInteger("P.Element", Number(64)))
 
     f = Field("F")
-    message = Message(
-        "P.M",
-        [
-            Link(INITIAL, f, length=Number(18)),
-            Link(
-                f,
-                FINAL,
-                condition=Equal(
-                    Variable("F"),
-                    Aggregate(Number(1), Number(2), Number(64, location=Location((44, 3)))),
+    with pytest.raises(
+        RecordFluxError,
+        match=r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 63",
+    ):
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, f, length=Number(18)),
+                Link(
+                    f,
+                    FINAL,
+                    condition=Equal(
+                        Variable("F"),
+                        Aggregate(Number(1), Number(2), Number(64, location=Location((44, 3)))),
+                    ),
                 ),
-            ),
-        ],
-        {Field("F"): array_type},
-    )
-    assert_type(message, r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 63")
+            ],
+            {Field("F"): array_type},
+        )
 
 
 def test_array_aggregate_invalid_element_type() -> None:
@@ -1127,26 +1140,27 @@ def test_array_aggregate_invalid_element_type() -> None:
     array_type = Array("P.Array", inner)
 
     f = Field("F")
-    message = Message(
-        "P.M",
-        [
-            Link(INITIAL, f, length=Number(18)),
-            Link(
-                f,
-                FINAL,
-                condition=Equal(
-                    Variable("F"), Aggregate(Number(1), Number(2), Number(64)), Location((90, 10)),
-                ),
-            ),
-        ],
-        {Field("F"): array_type},
-    )
-
-    assert_type(
-        message,
-        r"^<stdin>:90:10: model: error: invalid array element type"
+    with pytest.raises(
+        RecordFluxError,
+        match=r"^<stdin>:90:10: model: error: invalid array element type"
         ' "P.I" for aggregate comparison$',
-    )
+    ):
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, f, length=Number(18)),
+                Link(
+                    f,
+                    FINAL,
+                    condition=Equal(
+                        Variable("F"),
+                        Aggregate(Number(1), Number(2), Number(64)),
+                        Location((90, 10)),
+                    ),
+                ),
+            ],
+            {Field("F"): array_type},
+        )
 
 
 class NewType(Type):
