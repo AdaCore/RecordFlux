@@ -58,7 +58,7 @@ class Type(Base):
         identifier = ID(identifier)
         self.error = error or RecordFluxError()
 
-        if len(identifier.parts) != 2 and not str(identifier.name).startswith("__REFINEMENT__"):
+        if len(identifier.parts) != 2:
             self.error.append(
                 f'unexpected format of type name "{identifier}"',
                 Subsystem.MODEL,
@@ -1429,6 +1429,7 @@ class Refinement(Type):
             error,
         )
 
+        self.error = error or RecordFluxError()
         if len(package.parts) != 1:
             self.error.append(
                 f'unexpected format of package name "{package}"',
