@@ -279,15 +279,15 @@ def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
 def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
     components = list(message.components)
 
-    if components and not components[0].name.null:
-        components.insert(0, Component(ID(), ID()))
+    if components and components[0].name:
+        components.insert(0, Component())
 
     field_types: Dict[Field, Type] = {}
 
     error = RecordFluxError()
 
     for component in components:
-        if not component.name.null:
+        if component.name and component.type_name:
             type_name = qualified_type_name(component.type_name, message.package)
             if type_name not in types:
                 continue
@@ -296,7 +296,7 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
     structure: List[Link] = []
 
     for i, component in enumerate(components):
-        if component.name.null:
+        if not component.name:
             error.extend(
                 [
                     (
@@ -310,20 +310,21 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
                 ]
             )
 
-        source_node = Field(component.name) if not component.name.null else INITIAL
+        source_node = Field(component.name) if component.name else INITIAL
 
         if not component.thens:
-            target_node = Field(components[i + 1].name) if i + 1 < len(components) else FINAL
+            name = components[i + 1].name if i + 1 < len(components) else None
+            target_node = Field(name) if name else FINAL
             structure.append(Link(source_node, target_node))
 
         for then in component.thens:
-            target_node = Field(then.name) if not then.name.null else FINAL
-            if target_node not in field_types.keys() | {FINAL}:
+            target_node = Field(then.name) if then.name else FINAL
+            if then.name and target_node not in field_types.keys():
                 error.append(
                     f'undefined component "{then.name}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
-                    then.name.location,
+                    then.name.location if then.name else None,
                 )
                 continue
             structure.append(
