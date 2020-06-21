@@ -192,8 +192,8 @@ def test_modular_invalid_modulus_variable() -> None:
 
 def test_modular_invalid_modulus_limit() -> None:
     assert_type(
-        ModularInteger("P.T", Pow(Number(2), Number(128)), Location((55, 3))),
-        r"^<stdin>:55:3: model: error: modulus exceeds limit \(2\*\*64\)$",
+        ModularInteger("P.T", Pow(Number(2), Number(128), Location((55, 3)))),
+        r'^<stdin>:55:3: model: error: modulus of "T" exceeds limit \(2\*\*64\)$',
     )
 
 
@@ -219,10 +219,10 @@ def test_range_invalid_last_variable() -> None:
 
 
 def test_range_invalid_last_exceeds_limit() -> None:
-    with pytest.raises(
-        RecordFluxError, match=r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$'
-    ):
-        RangeInteger("P.T", Number(1), Pow(Number(2), Number(63)), Number(64))
+    assert_type_error(
+        RangeInteger("P.T", Number(1), Pow(Number(2), Number(63)), Number(64)),
+        r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$',
+    )
 
 
 def test_range_invalid_first_negative() -> None:
@@ -1154,7 +1154,7 @@ class NewType(Type):
 
 @pytest.mark.skipif(not __debug__, reason="depends on contract")
 def test_invalid_message_field_type() -> None:
-    with pytest.raises(ViolationError, match=r"rflx/model.py, line 436"):
+    with pytest.raises(ViolationError, match=r"rflx/model.py"):
         Message(
             "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): NewType("T")},
         )

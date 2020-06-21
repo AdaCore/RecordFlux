@@ -137,7 +137,7 @@ class ModularInteger(Integer):
                 f'modulus of "{self.name}" exceeds limit (2**64)',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                self.location,
+                modulus.location,
             )
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
             self.error.append(
@@ -179,6 +179,8 @@ class RangeInteger(Integer):
         super().__init__(identifier, size, location)
 
         first_num = first.simplified()
+        last_num = last.simplified()
+        size_num = size.simplified()
 
         if not isinstance(first_num, Number):
             self.error.append(
@@ -187,8 +189,6 @@ class RangeInteger(Integer):
                 Severity.ERROR,
                 self.location,
             )
-
-        last_num = last.simplified()
 
         if not isinstance(last_num, Number):
             self.error.append(
@@ -205,16 +205,6 @@ class RangeInteger(Integer):
                 Severity.ERROR,
                 self.location,
             )
-        if first_num < Number(0):
-            self.error.append(
-                f'first of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
-            )
-        if first_num > last_num:
-            self.error.append(
-                f'range of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
-            )
-
-        size_num = size.simplified()
 
         if not isinstance(size_num, Number):
             self.error.append(
@@ -223,10 +213,21 @@ class RangeInteger(Integer):
                 Severity.ERROR,
                 self.location,
             )
+
+        if self.error.check():
             return
 
-        if not isinstance(last_num, Number):
-            return
+        assert isinstance(last_num, Number)
+        assert isinstance(size_num, Number)
+
+        if first_num < Number(0):
+            self.error.append(
+                f'first of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
+            )
+        if first_num > last_num:
+            self.error.append(
+                f'range of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
+            )
 
         if int(last_num).bit_length() > int(size_num):
             self.error.append(
