@@ -252,7 +252,7 @@ def message_type_definition() -> Token:
 
     then = locatedExpr(
         Keyword("then")
-        - (Keyword("null").setParseAction(lambda t: ID()) | unqualified_identifier())
+        - (Keyword("null") | unqualified_identifier())
         - Group(Optional(component_aspects))
         - Group(Optional(value_constraint()))
     )
@@ -273,7 +273,7 @@ def message_type_definition() -> Token:
     )
     component_item.setName("Component")
     null_component_item = Keyword("null") - then - semicolon()
-    null_component_item.setParseAction(lambda t: Component(ID(), ID(), [t[1]]))
+    null_component_item.setParseAction(lambda t: Component(None, None, [t[1]]))
     null_component_item.setName("NullComponent")
     component_list = Group(
         Optional(null_component_item) - component_item - ZeroOrMore(component_item)
@@ -457,7 +457,7 @@ def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
     tokens = tokens[0]
     start = tokens.pop(0)
     return Then(
-        tokens[1],
+        tokens[1] if tokens[1] != "null" else None,
         tokens[2][0]["first"] if tokens[2] and "first" in tokens[2][0] else UNDEFINED,
         tokens[2][0]["length"] if tokens[2] and "length" in tokens[2][0] else UNDEFINED,
         tokens[3][0] if tokens[3] else TRUE,

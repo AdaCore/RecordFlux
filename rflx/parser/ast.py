@@ -20,13 +20,13 @@ class SyntaxTree:
 class Then(SyntaxTree):
     def __init__(
         self,
-        name: StrID,
+        name: StrID = None,
         first: Expr = UNDEFINED,
         length: Expr = UNDEFINED,
         condition: Expr = TRUE,
         location: Location = None,
     ) -> None:
-        self.name = ID(name)
+        self.name = ID(name) if name else None
         self.first = first
         self.length = length
         self.condition = condition
@@ -44,9 +44,11 @@ class Then(SyntaxTree):
 
 
 class Component(SyntaxTree):
-    def __init__(self, name: StrID, type_name: StrID, thens: List[Then] = None) -> None:
-        self.name = ID(name)
-        self.type_name = ID(type_name)
+    def __init__(
+        self, name: StrID = None, type_name: StrID = None, thens: List[Then] = None
+    ) -> None:
+        self.name = ID(name) if name else None
+        self.type_name = ID(type_name) if type_name else None
         self.thens = thens or []
 
 
