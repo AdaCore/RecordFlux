@@ -1227,6 +1227,8 @@ class Message(AbstractMessage):
         if not self.error.check() and (structure or types):
             self._prove()
 
+        self.error.propagate()
+
     def copy(
         self,
         identifier: StrID = None,
