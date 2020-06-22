@@ -47,7 +47,7 @@ log = logging.getLogger(__name__)
 class Parser:
     def __init__(self) -> None:
         self.__specifications: Deque[Specification] = deque()
-        self.__evaluated_specifications: Set[str] = set()
+        self.__evaluated_specifications: Set[ID] = set()
         self.__types: Dict[ID, Type] = {**BUILTIN_TYPES, **INTERNAL_TYPES}
 
     def parse(self, specfile: Path) -> None:
@@ -116,9 +116,9 @@ class Parser:
     def create_model(self) -> Model:
         error = RecordFluxError()
         for specification in self.__specifications:
-            if str(specification.package.identifier) in self.__evaluated_specifications:
+            if specification.package.identifier in self.__evaluated_specifications:
                 continue
-            self.__evaluated_specifications.add(str(specification.package.identifier))
+            self.__evaluated_specifications.add(specification.package.identifier)
             try:
                 self.__evaluate_specification(specification)
             except RecordFluxError as e:
