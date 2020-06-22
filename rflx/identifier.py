@@ -75,7 +75,7 @@ class ID:
                 return None
             if self.location is None:
                 return other.location
-        return NotImplemented
+        raise NotImplementedError
 
     @property
     def name(self) -> "ID":
