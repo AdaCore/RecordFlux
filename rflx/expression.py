@@ -116,8 +116,8 @@ class Expr(DBC):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    # pylint: disable=unused-argument,no-self-use
-    def variables(self, proof: bool = False) -> List["Variable"]:
+    # pylint: disable=no-self-use
+    def variables(self) -> List["Variable"]:
         return []
 
     def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
@@ -199,8 +199,8 @@ class Not(Expr):
     def __neg__(self) -> Expr:
         return self.expr
 
-    def variables(self, proof: bool = False) -> List["Variable"]:
-        return self.expr.variables(proof)
+    def variables(self) -> List["Variable"]:
+        return self.expr.variables()
 
     @property
     def precedence(self) -> Precedence:
@@ -236,8 +236,8 @@ class BinExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def variables(self, proof: bool = False) -> List["Variable"]:
-        return list(unique(self.left.variables(proof) + self.right.variables(proof)))
+    def variables(self) -> List["Variable"]:
+        return list(unique(self.left.variables() + self.right.variables()))
 
     def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
         return [
@@ -318,8 +318,8 @@ class AssExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def variables(self, proof: bool = False) -> List["Variable"]:
-        return list(unique([v for t in self.terms for v in t.variables(proof)]))
+    def variables(self) -> List["Variable"]:
+        return list(unique([v for t in self.terms for v in t.variables()]))
 
     def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
         return [
@@ -844,7 +844,7 @@ class Variable(Name):
     def representation(self) -> str:
         return str(self.name)
 
-    def variables(self, proof: bool = False) -> List["Variable"]:
+    def variables(self) -> List["Variable"]:
         return [self]
 
     def z3expr(self) -> z3.ArithRef:
@@ -882,8 +882,8 @@ class Attribute(Name):
         expr = self.__class__(self.prefix.simplified())
         return -expr if self.negative else expr
 
-    def variables(self, proof: bool = False) -> List[Variable]:
-        if proof and not isinstance(self.prefix, Variable):
+    def variables(self) -> List[Variable]:
+        if not isinstance(self.prefix, Variable):
             raise TypeError
         return self.prefix.variables()
 
@@ -1340,13 +1340,13 @@ class If(Expr):
 
         return If(simplified_ce, self.else_expression)
 
-    def variables(self, proof: bool = False) -> List["Variable"]:
+    def variables(self) -> List["Variable"]:
         variables = []
         for ce in self.condition_expressions:
-            variables.extend(ce[0].variables(proof))
-            variables.extend(ce[1].variables(proof))
+            variables.extend(ce[0].variables())
+            variables.extend(ce[1].variables())
         if self.else_expression:
-            variables.extend(self.else_expression.variables(proof))
+            variables.extend(self.else_expression.variables())
         return list(unique(variables))
 
     def z3expr(self) -> z3.ExprRef:
@@ -1414,11 +1414,11 @@ class Case(Expr):
             [(c.simplified(), e.simplified()) for c, e in self.case_statements],
         )
 
-    def variables(self, proof: bool = False) -> List["Variable"]:
-        variables = self.control_expression.variables(proof)
+    def variables(self) -> List["Variable"]:
+        variables = self.control_expression.variables()
         for cs in self.case_statements:
-            variables.extend(cs[0].variables(proof))
-            variables.extend(cs[1].variables(proof))
+            variables.extend(cs[0].variables())
+            variables.extend(cs[1].variables())
         return list(unique(variables))
 
     def z3expr(self) -> Union[z3.BoolRef, z3.ExprRef]:
@@ -1471,8 +1471,8 @@ class QuantifiedExpression(Expr):
     def keyword(self) -> str:
         raise NotImplementedError
 
-    def variables(self, proof: bool = False) -> List["Variable"]:
-        return list(unique(self.iterable.variables(proof) + self.predicate.variables(proof)))
+    def variables(self) -> List["Variable"]:
+        return list(unique(self.iterable.variables() + self.predicate.variables()))
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
