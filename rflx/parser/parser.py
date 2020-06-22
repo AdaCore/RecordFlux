@@ -319,7 +319,7 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
             target_node = Field(then.name) if then.name else FINAL
             if then.name and target_node not in field_types.keys():
                 error.append(
-                    f'undefined component "{then.name}"',
+                    f'undefined field "{then.name}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
                     then.name.location if then.name else None,
