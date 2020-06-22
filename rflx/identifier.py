@@ -75,6 +75,7 @@ class ID:
                 return None
             if self.location is None:
                 return other.location
+            raise NotImplementedError
         return NotImplemented
 
     @property
