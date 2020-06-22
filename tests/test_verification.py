@@ -198,7 +198,7 @@ def test_invalid_path_1(monkeypatch: Any) -> None:
         types,
         r"^"
         r'<stdin>:5:10: model: error: contradicting condition in "P.M"\n'
-        r'<stdin>:20:10: model: info: on path "F1"\n'
+        r'<stdin>:20:10: model: info: on path: "F1"\n'
         r'<stdin>:5:10: model: info: unsatisfied "1 = 2"',
     )
 
@@ -219,7 +219,7 @@ def test_invalid_path_2(monkeypatch: Any) -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "F1"\n'
+        r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "1 = 2"',
     )
 
@@ -227,9 +227,7 @@ def test_invalid_path_2(monkeypatch: Any) -> None:
 def test_contradiction() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), condition=Equal(Number(1), Number(2))),
-        Link(Field("F1"), Field("F2"), condition=Less(Variable("F1"), Number(50))),
-        Link(Field("F1"), FINAL, condition=Greater(Variable("F1"), Number(60))),
+        Link(Field("F1"), Field("F2"), condition=Greater(Variable("F1"), Number(1000))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -241,8 +239,9 @@ def test_contradiction() -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "F1"\n'
-        r'model: info: unsatisfied "1 = 2"',
+        r'model: info: on path: "F1"\n'
+        r'model: info: unsatisfied "F1 <= 100"\n'
+        r'model: info: unsatisfied "F1 > 1000"',
     )
 
 
@@ -261,7 +260,7 @@ def test_invalid_type_condition_range_low() -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "F1"\n'
+        r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 >= 1"\n'
         r'model: info: unsatisfied "F1 < 1"',
     )
@@ -282,7 +281,7 @@ def test_invalid_type_condition_range_high() -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "F1"\n'
+        r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
         r'model: info: unsatisfied "F1 > 200"',
     )
@@ -303,7 +302,7 @@ def test_invalid_type_condition_modular_upper() -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "F1"\n'
+        r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 < 256"\n'
         r'model: info: unsatisfied "F1 > 65537"',
     )
@@ -324,7 +323,7 @@ def test_invalid_type_condition_modular_lower() -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "F1"\n'
+        r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 >= 0"\n'
         r'model: info: unsatisfied "F1 < 0"',
     )
@@ -564,8 +563,8 @@ def test_field_coverage_1(monkeypatch: Any) -> None:
         types,
         r"^"
         r"model: error: path does not cover whole message\n"
-        r'model: info: on path "F1"\n'
-        r'model: info: on path "F2"'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"'
         r"$",
     )
 
@@ -597,10 +596,10 @@ def test_field_coverage_2(monkeypatch: Any) -> None:
         types,
         r"^"
         r"model: error: path does not cover whole message\n"
-        r'model: info: on path "F1"\n'
-        r'model: info: on path "F2"\n'
-        r'model: info: on path "F3"\n'
-        r'model: info: on path "F4"'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: on path: "F3"\n'
+        r'model: info: on path: "F4"'
         r"$",
     )
 
@@ -969,7 +968,7 @@ def test_aggregate_equal_invalid_length1() -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "Magic"\n'
+        r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'model: info: unsatisfied "Magic\'Length = 40"',
     )
@@ -992,7 +991,7 @@ def test_aggregate_equal_invalid_length2() -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "Magic"\n'
+        r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'model: info: unsatisfied "Magic\'Length = 40"',
     )
@@ -1032,7 +1031,7 @@ def test_aggregate_inequal_invalid_length() -> None:
         types,
         r"^"
         r'model: error: contradicting condition in "P.M"\n'
-        r'model: info: on path "Magic"\n'
+        r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'model: info: unsatisfied "Magic\'Length = 40"',
     )
@@ -1076,7 +1075,7 @@ def test_aggregate_equal_array_invalid_length() -> None:
         types,
         r"^"
         r'<stdin>:17:3: model: error: contradicting condition in "P.M"\n'
-        r'<stdin>:3:5: model: info: on path "Magic"\n'
+        r'<stdin>:3:5: model: info: on path: "Magic"\n'
         r'<stdin>:17:3: model: info: unsatisfied "2 [*] Modular\'Length = Magic\'Length"\n'
         r'<stdin>:66:3: model: info: unsatisfied "Modular\'Length = 7"\n'
         r'<stdin>:19:17: model: info: unsatisfied "Magic\'Length = 40"',
@@ -1110,8 +1109,8 @@ def test_aggregate_equal_invalid_length_field() -> None:
         types,
         r"^"
         r'<stdin>:10:5: model: error: contradicting condition in "P.M"\n'
-        r'<stdin>:2:5: model: info: on path "Length"\n'
-        r'<stdin>:3:5: model: info: on path "Magic"\n'
+        r'<stdin>:2:5: model: info: on path: "Length"\n'
+        r'<stdin>:3:5: model: info: on path: "Magic"\n'
         r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"\n'
         r'<stdin>:6:5: model: info: unsatisfied "Magic\'Length = 8 [*] Length"',
