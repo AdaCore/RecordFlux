@@ -35,6 +35,7 @@ from rflx.expression import (
     Aggregate,
     And,
     Attribute,
+    BooleanTrue,
     Div,
     Equal,
     Expr,
@@ -456,12 +457,13 @@ def parse_mathematical_expression(string: str, location: int, tokens: ParseResul
 def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
     tokens = tokens[0]
     start = tokens.pop(0)
+    locn = parser_location(start, tokens[-1], string)
     return Then(
         tokens[1] if tokens[1] != "null" else None,
         tokens[2][0]["first"] if tokens[2] and "first" in tokens[2][0] else UNDEFINED,
         tokens[2][0]["length"] if tokens[2] and "length" in tokens[2][0] else UNDEFINED,
-        tokens[3][0] if tokens[3] else TRUE,
-        parser_location(start, tokens[-1], string),
+        tokens[3][0] if tokens[3] else BooleanTrue(location=locn),
+        locn,
     )
 
 
