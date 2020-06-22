@@ -686,7 +686,7 @@ class AbstractMessage(Type):
         self, expression: Expr, state: Tuple[Set[ID], Set[ID], Set[ID]], location: Location = None,
     ) -> None:
         variables, literals, seen = state
-        for v in expression.variables(True):
+        for v in expression.variables():
             if v.identifier not in literals and v.identifier not in seen:
                 if v.identifier in variables:
                     message = f'subsequent field "{v}" referenced'
