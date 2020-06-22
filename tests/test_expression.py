@@ -555,10 +555,9 @@ def test_attribute_str() -> None:
 
 def test_attribute_variables() -> None:
     assert First("X").variables() == [Variable("X")]
-    assert First("X").variables(proof=True) == [Variable("X")]
-    assert First(Call("X")).variables() == []
+    assert First("X").variables() == [Variable("X")]
     with pytest.raises(TypeError):
-        First(Call("X")).variables(proof=True)
+        First(Call("X")).variables()
 
 
 def test_attribute_z3expr() -> None:
@@ -1119,19 +1118,19 @@ def test_expr_substituted_pre() -> None:
 
 
 def test_length_z3variables() -> None:
-    assert Length("Z").variables(True) == [Variable("Z")]
+    assert Length("Z").variables() == [Variable("Z")]
 
 
 def test_last_z3variables() -> None:
-    assert Last("Z").variables(True) == [Variable("Z")]
+    assert Last("Z").variables() == [Variable("Z")]
 
 
 def test_first_z3variables() -> None:
-    assert First("Z").variables(True) == [Variable("Z")]
+    assert First("Z").variables() == [Variable("Z")]
 
 
 def test_size_z3variables() -> None:
-    assert Size("Z").variables(True) == [Variable("Z")]
+    assert Size("Z").variables() == [Variable("Z")]
 
 
 def test_not_variables() -> None:
