@@ -223,8 +223,8 @@ def check_types(types: Mapping[ID, Type], error: RecordFluxError) -> None:
             )
 
     literals = {l: t for t in types.values() if isinstance(t, Enumeration) for l in t.literals}
-    type_set = {t.name for t in types.keys() if t.parent != BUILTINS_PACKAGE}
-    name_conflicts = type_set & set(literals.keys())
+    type_set = {t.name for t in types.keys()}
+    name_conflicts = [n for n in literals.keys() if n in type_set]
     for name in sorted(name_conflicts):
         error.append(
             f'literal conflicts with type "{name}"',
@@ -232,9 +232,7 @@ def check_types(types: Mapping[ID, Type], error: RecordFluxError) -> None:
             Severity.ERROR,
             name.location,
         )
-        type_location = [
-            v.location for k, v in types.items() if k.parent != BUILTINS_PACKAGE and k.name == name
-        ][0]
+        type_location = [v.location for k, v in types.items() if k.name == name][0]
         error.append(
             "conflicting type declaration", Subsystem.PARSER, Severity.INFO, type_location,
         )
