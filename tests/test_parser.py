@@ -1303,3 +1303,15 @@ def test_parsed_field_locations() -> None:
         Field(ID("F1", Location((6, 21), end=(6, 22)))),
         Field(ID("F2", Location((7, 21), end=(7, 22)))),
     )
+
+
+def test_conflicting_literal_builtin_type() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is (E1, Boolean) with Size => 8;
+            end Test;
+        """,
+        r'<stdin>:3:31: parser: error: literal conflicts with type "Boolean"\n'
+        r"__BUILTINS__:0:0: parser: info: conflicting type declaration",
+    )
