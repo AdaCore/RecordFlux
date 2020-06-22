@@ -380,7 +380,7 @@ def test_message_undefined_component() -> None:
                   end message;
             end Test;
         """,
-        r'^<stdin>:7:30: parser: error: undefined component "Bar"$',
+        r'^<stdin>:7:30: parser: error: undefined field "Bar"$',
     )
 
 
