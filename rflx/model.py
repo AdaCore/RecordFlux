@@ -928,37 +928,45 @@ class AbstractMessage(Type):
 
     def __prove_contradictions(self) -> None:
         for f in (INITIAL, *self.fields):
+            contradictions = []
+            paths = 0
             for path in self._state.paths[f]:
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 for c in self.outgoing(f):
+                    paths += 1
                     contradiction = c.condition
                     constraints = self.__type_constraints(contradiction)
                     proof = contradiction.check([*constraints, *facts])
-                    if proof.result == ProofResult.unsat:
-                        self.error.append(
-                            f'contradicting condition in "{self.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            c.condition.location,
-                        )
-                        self.error.extend(
-                            [
-                                (
-                                    f'on path "{l.target.identifier}"',
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    l.target.identifier.location,
-                                )
-                                for l in path
-                            ]
-                        )
-                        self.error.extend(
-                            [
-                                (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
-                                for m, l in proof.error
-                            ]
-                        )
-                        return
+                    if proof.result == ProofResult.sat:
+                        continue
+
+                    contradictions.append((path, c.condition, proof.error))
+
+            if paths == len(contradictions):
+                for path, cond, errors in sorted(contradictions):
+                    self.error.append(
+                        f'contradicting condition in "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        cond.location,
+                    )
+                    self.error.extend(
+                        [
+                            (
+                                f'on path: "{l.target.identifier}"',
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                l.target.identifier.location,
+                            )
+                            for l in path
+                        ]
+                    )
+                    self.error.extend(
+                        [
+                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
+                            for m, l in errors
+                        ]
+                    )
 
     @staticmethod
     def __target_first(link: Link) -> Expr:
@@ -1001,32 +1009,33 @@ class AbstractMessage(Type):
         ]
 
     def __prove_field_positions(self) -> None:
-        for f in self.fields:
-            for p, l in [(p, p[-1]) for p in self._state.paths[f] if p]:
-                positive = GreaterEqual(self.__target_length(l), Number(0), l.length.location)
-                facts = [f for l in p for f in self.__link_expression(l)]
-                facts.extend(self.__type_constraints(positive))
-                proof = positive.check(facts)
-                if proof.result != ProofResult.sat:
-                    path_message = " -> ".join([l.target.name for l in p])
-                    self.error.append(
-                        f'negative length for field "{f.name}" ({path_message})',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.identifier.location,
-                    )
-                    self.error.extend(
-                        [
-                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
-                            for m, l in proof.error
-                        ]
+        for f in (*self.fields, FINAL):
+            for path in self._state.paths[f]:
+
+                last = path[-1]
+                positive = GreaterEqual(self.__target_length(last), Number(0), last.length.location)
+                start = GreaterEqual(self.__target_first(last), First("Message"), last.location)
+
+                facts = [fact for link in path for fact in self.__link_expression(link)]
+
+                outgoing = self.outgoing(f)
+                if f != FINAL and outgoing:
+                    facts.append(
+                        Or(*[o.condition for o in outgoing], location=f.identifier.location)
                     )
 
-                start = GreaterEqual(self.__target_first(l), First("Message"), l.location)
+                facts.extend(self.__type_constraints(positive))
                 facts.extend(self.__type_constraints(start))
-                proof = start.check(facts)
+
+                proof = TRUE.check(facts)
+
+                # Only check positions of reachable paths
                 if proof.result != ProofResult.sat:
-                    path_message = " -> ".join([l.target.name for l in p])
+                    continue
+
+                proof = positive.check(facts)
+                if proof.result != ProofResult.sat:
+                    path_message = " -> ".join([l.target.name for l in path])
                     self.error.append(
                         f'negative length for field "{f.name}" ({path_message})',
                         Subsystem.MODEL,
@@ -1035,10 +1044,28 @@ class AbstractMessage(Type):
                     )
                     self.error.extend(
                         [
-                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
-                            for m, l in proof.error
+                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                            for m, locn in proof.error
                         ]
                     )
+                    return
+
+                proof = start.check(facts)
+                if proof.result != ProofResult.sat:
+                    path_message = " -> ".join([last.target.name for last in path])
+                    self.error.append(
+                        f'negative length for field "{f.name}" ({path_message})',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.identifier.location,
+                    )
+                    self.error.extend(
+                        [
+                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                            for m, locn in proof.error
+                        ]
+                    )
+                    return
 
     def __prove_coverage(self) -> None:
         """
@@ -1093,7 +1120,7 @@ class AbstractMessage(Type):
                 self.error.extend(
                     [
                         (
-                            f'on path "{l.target.identifier}"',
+                            f'on path: "{l.target.identifier}"',
                             Subsystem.MODEL,
                             Severity.INFO,
                             l.target.identifier.location,
