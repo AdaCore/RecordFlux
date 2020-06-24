@@ -1530,6 +1530,14 @@ class ValueRange(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
+    def substituted(
+        self, func: Callable[["Expr"], "Expr"] = None, mapping: Mapping["Name", "Expr"] = None
+    ) -> "Expr":
+
+        return self.__class__(
+            self.lower.substituted(mapping=mapping), self.upper.substituted(mapping=mapping)
+        )
+
 
 def substitution(
     mapping: Mapping[Name, Expr], func: Callable[["Expr"], "Expr"] = None

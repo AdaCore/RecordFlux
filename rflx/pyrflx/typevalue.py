@@ -526,8 +526,8 @@ class MessageValue(TypeValue):
         self._fields[INITIAL.name] = initial
         self._simplified_mapping: Mapping[Name, Expr] = {}
         self.accessible_fields: List[str] = []
-        self._update_accessible_fields()
         self._preset_fields(INITIAL.name)
+        self._update_accessible_fields()
 
     def __copy__(self) -> "MessageValue":
         return MessageValue(self._type, self._refinements)
@@ -990,12 +990,6 @@ class MessageValue(TypeValue):
         if not self._simplified_mapping:
             self.__update_simplified_mapping()
 
-        # Could be implemented as substituted for ValueRange
-        if isinstance(expr, ValueRange):
-            expr.lower = expr.lower.substituted(mapping=self._simplified_mapping)
-            expr.upper = expr.upper.substituted(mapping=self._simplified_mapping)
-            return expr.simplified()
-
         return (
             expr.substituted(mapping=self._simplified_mapping)
             .substituted(mapping=self._simplified_mapping)
@@ -1008,19 +1002,15 @@ class MessageValue(TypeValue):
             self.function: Optional[Callable] = None
             self.expressions: List["MessageValue.Checksum.EvaluatedExpression"] = []
             for expr in expressions:
-                if not (
-                    isinstance(expr, ValueRange)
-                    or isinstance(expr, Attribute)
-                    or isinstance(expr, Variable)
-                ):
+                if not isinstance(expr, (ValueRange, Attribute, Variable)):
                     raise ValueError(
                         f"Allowed expression types are: ValueRange, Attribute and Variable. "
                         f"Expression {expr} is of type {type(expr)}"
                     )
                 self.expressions.append(self.EvaluatedExpression(expr))
 
-        def set_checksum_function(self, checksum_func: Callable) -> None:
-            self.function = checksum_func
+        def set_checksum_function(self, function: Callable) -> None:
+            self.function = function
 
         @dataclass
         class EvaluatedExpression:
