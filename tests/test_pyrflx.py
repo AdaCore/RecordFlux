@@ -6,6 +6,7 @@ from typing import List
 
 import pytest
 
+from rflx.expression import UNDEFINED, Add, First, Last, Length, Sub, ValueRange
 from rflx.expression import UNDEFINED, First, Last, Length, Sub, ValueRange
 from rflx.expression import UNDEFINED, Variable
 from rflx.identifier import ID
@@ -15,6 +16,7 @@ from rflx.model import (
     INITIAL,
     Array,
     Enumeration,
+    Message,
     ModularInteger,
     Number,
     Opaque,
@@ -143,6 +145,12 @@ def fixture_alert(tls_alert_package: Package) -> MessageValue:
 @pytest.fixture(name="icmp")
 def fixture_echo_request_reply_message(icmp_package: Package) -> MessageValue:
     return icmp_package["Message"]
+
+
+@pytest.fixture(name="icmp_type")
+def fixture_icmp_type(icmp_package: Package) -> Message:
+    # pylint: disable = protected-access
+    return icmp_package["Message"]._type
 
 
 @pytest.fixture(name="message_odd_length")
@@ -1466,29 +1474,27 @@ def test_tlv_generating_tlv_error(tlv: MessageValue) -> None:
     assert tlv.bytestring == b"\xc0"
 
 
-def test_aspect_checksum(echo_request_reply_message: MessageValue) -> None:
-    # pylint: disable=protected-access
+def test_aspect_checksum(icmp_type: Message) -> None:
     def checksum_icmp(message: bytes, **kwargs) -> int:
         def add_ones_complement(num1: int, num2: int) -> int:
             mod = 1 << 16
             result = num1 + num2
             return result if result < mod else (result + 1) % mod
 
-        tag_first, checksum_first_minus_one = kwargs.get(
-            "Tag'First .. Checksum'First - 1"
-        )
-        identifier_first, data_last = kwargs.get("Identifier'First .. Data'Last")
+        first_arg = kwargs.get("Tag'First .. Checksum'First - 1")
+        assert isinstance(first_arg, tuple)
+        tag_first, checksum_first_minus_one = first_arg
+        assert tag_first == 0 and checksum_first_minus_one == 15
+        second_arg = kwargs.get("(Checksum'Last + 1) .. Message'Last")
+        assert isinstance(second_arg, tuple)
+        checksum_last_plus_one, data_last = second_arg
+        assert checksum_last_plus_one == 32 and data_last == 511
         checksum_length = kwargs.get("Checksum'Length")
-        assert (
-            isinstance(tag_first, int)
-            and isinstance(checksum_first_minus_one, int)
-            and isinstance(checksum_length, int)
-            and isinstance(identifier_first, int)
-            and isinstance(data_last, int)
-        )
+        assert checksum_length == 16
+
         checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
         checksum_bytes += b"\x00" * (checksum_length // 8)
-        checksum_bytes += message[(identifier_first // 8) : (data_last + 1) // 8]
+        checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
 
         message_in_sixteen_bit_chunks = [
             int.from_bytes(checksum_bytes[i : i + 2], "big")
@@ -1500,11 +1506,7 @@ def test_aspect_checksum(echo_request_reply_message: MessageValue) -> None:
                 intermediary_result, message_in_sixteen_bit_chunks[i]
             )
 
-        # Debug
-        print("\n")
-        print(f"Checksum Bytes {checksum_bytes.hex()}")
-        print(f"Length Checksum Bytes {len(checksum_bytes.hex())}")
-        print(f"Result of checksum func {intermediary_result ^ 0xFFFF}")
+        assert intermediary_result ^ 0xFFFF == 12824
         return intermediary_result ^ 0xFFFF
 
     test_data = (
@@ -1514,14 +1516,13 @@ def test_aspect_checksum(echo_request_reply_message: MessageValue) -> None:
         b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
     )
 
-    icmp_type = echo_request_reply_message._type
     icmp_type.aspects = {
         "Checksum": [
             {
                 "Checksum": [
                     ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
                     Length("Checksum"),
-                    ValueRange(First("Identifier"), Last("Data")),
+                    ValueRange(Add(Last("Checksum"), Number(1)), Last("Message")),
                 ]
             }
         ]
@@ -1530,7 +1531,7 @@ def test_aspect_checksum(echo_request_reply_message: MessageValue) -> None:
     icmp_checksum.set_checksum_function("Checksum", checksum_icmp)
 
     icmp_checksum.set("Tag", "Echo_Request")
-    icmp_checksum.set("Code", 0)
+    icmp_checksum.set("Code_Zero", 0)
     # 12824 = correct checksum
     icmp_checksum.set("Checksum", 1234)
     icmp_checksum.set("Identifier", 5)
@@ -1538,9 +1539,5 @@ def test_aspect_checksum(echo_request_reply_message: MessageValue) -> None:
     icmp_checksum.set(
         "Data", test_data,
     )
-
-    #Debug
-    print(icmp_checksum.bytestring.hex())
-    print(len(icmp_checksum.bytestring.hex()))
 
     assert icmp_checksum.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
