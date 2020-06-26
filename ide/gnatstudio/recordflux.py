@@ -53,6 +53,8 @@ XML = r"""<?xml version="1.0"?>
          <filter id="RecordFlux"/>
          <filter id="Source editor"/>
       </filter_and>
+      <shell show-command="false">MDI.save_all</shell>
+      <shell show-command="false">Locations.remove_category "RecordFlux"</shell>
       <external>rflx check %F</external>
       <on-failure>
          <shell lang="python" show-command="false">recordflux.parse_output(&quot;&quot;&quot;%1&quot;&quot;&quot;)</shell>
@@ -61,6 +63,8 @@ XML = r"""<?xml version="1.0"?>
 
    <action name="check_all">
       <filter id="File"/>
+      <shell show-command="false">MDI.save_all</shell>
+      <shell show-command="false">Locations.remove_category "RecordFlux"</shell>
       <shell lang="python" show-command="false">recordflux.get_source_files()</shell>
       <external>rflx check %1"</external>
       <on-failure>
@@ -73,6 +77,8 @@ XML = r"""<?xml version="1.0"?>
          <filter id="RecordFlux"/>
          <filter id="Source editor"/>
       </filter_and>
+      <shell show-command="false">MDI.save_all</shell>
+      <shell show-command="false">Locations.remove_category "RecordFlux"</shell>
       <external>rflx generate -d generated %F</external>
       <on-failure>
          <shell lang="python" show-command="false">recordflux.parse_output(&quot;&quot;&quot;%1&quot;&quot;&quot;)</shell>
@@ -83,6 +89,8 @@ XML = r"""<?xml version="1.0"?>
       <filter_and>
          <filter id="File"/>
       </filter_and>
+      <shell show-command="false">MDI.save_all</shell>
+      <shell show-command="false">Locations.remove_category "RecordFlux"</shell>
       <shell lang="python" show-command="false">recordflux.get_source_files()</shell>
       <external>rflx generate -d generated %1"</external>
       <on-failure>
