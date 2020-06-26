@@ -8,6 +8,7 @@ from pyparsing import (
     Literal,
     Optional,
     ParseFatalException,
+    ParserElement,
     ParseResults,
     QuotedString,
     Regex,
@@ -69,6 +70,8 @@ from .ast import (
     Specification,
     Then,
 )
+
+ParserElement.enablePackrat()
 
 
 def comma() -> Token:
