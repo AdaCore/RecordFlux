@@ -491,7 +491,7 @@ private
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Last
-                       and Cursors (F).First <= (Cursors (F).Last + 1)
+                       and Cursors (F).First <= Cursors (F).Last + 1
                        and Cursors (F).Value.Fld = F))
       and then ((if
                     Structural_Valid (Cursors (F_Option_Class))
@@ -545,28 +545,28 @@ private
       and then (if
                    Structural_Valid (Cursors (F_Copied))
                 then
-                   (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                   Cursors (F_Copied).Last - Cursors (F_Copied).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                    and then Cursors (F_Copied).Predecessor = F_Initial
                    and then Cursors (F_Copied).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Option_Class))
                              then
-                                (Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1) = RFLX.IPv4.Option_Class_Base'Size
+                                Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1 = RFLX.IPv4.Option_Class_Base'Size
                                 and then Cursors (F_Option_Class).Predecessor = F_Copied
-                                and then Cursors (F_Option_Class).First = (Cursors (F_Copied).Last + 1)
+                                and then Cursors (F_Option_Class).First = Cursors (F_Copied).Last + 1
                                 and then (if
                                              Structural_Valid (Cursors (F_Option_Number))
                                           then
-                                             (Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1) = RFLX.IPv4.Option_Number'Size
+                                             Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1 = RFLX.IPv4.Option_Number'Size
                                              and then Cursors (F_Option_Number).Predecessor = F_Option_Class
-                                             and then Cursors (F_Option_Number).First = (Cursors (F_Option_Class).Last + 1)
+                                             and then Cursors (F_Option_Number).First = Cursors (F_Option_Class).Last + 1
                                              and then (if
                                                           Structural_Valid (Cursors (F_Option_Length))
                                                           and then Cursors (F_Option_Number).Value.Option_Number_Value > 1
                                                        then
-                                                          (Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1) = RFLX.IPv4.Option_Length_Base'Size
+                                                          Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1 = RFLX.IPv4.Option_Length_Base'Size
                                                           and then Cursors (F_Option_Length).Predecessor = F_Option_Number
-                                                          and then Cursors (F_Option_Length).First = (Cursors (F_Option_Number).Last + 1)
+                                                          and then Cursors (F_Option_Length).First = Cursors (F_Option_Number).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Option_Data))
                                                                        and then ((Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
@@ -582,9 +582,9 @@ private
                                                                                      and Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
                                                                                      and Cursors (F_Option_Number).Value.Option_Number_Value = 8))
                                                                     then
-                                                                       (Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1) = ((Types.Bit_Length (Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8
+                                                                       Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (Types.Bit_Length (Cursors (F_Option_Length).Value.Option_Length_Value) - 2) * 8
                                                                        and then Cursors (F_Option_Data).Predecessor = F_Option_Length
-                                                                       and then Cursors (F_Option_Data).First = (Cursors (F_Option_Length).Last + 1)))))));
+                                                                       and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))));
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
       record

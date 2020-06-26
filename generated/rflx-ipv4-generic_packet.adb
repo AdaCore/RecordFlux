@@ -19,7 +19,7 @@ is
 
    function Initialized (Ctx : Context) return Boolean is
      (Valid_Next (Ctx, F_Version)
-      and then Available_Space (Ctx, F_Version) = (Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1)
+      and then Available_Space (Ctx, F_Version) = Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1
       and then Invalid (Ctx, F_Version)
       and then Invalid (Ctx, F_IHL)
       and then Invalid (Ctx, F_DSCP)
@@ -272,13 +272,13 @@ is
           when F_Destination =>
              (case Fld is
                  when F_Options =>
-                    ((Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5)) * 32,
+                    (Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5) * 32,
                  when others =>
                     Types.Unreachable_Bit_Length),
           when F_Options =>
              (case Fld is
                  when F_Payload =>
-                    (Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32)),
+                    Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32),
                  when others =>
                     Types.Unreachable_Bit_Length),
           when F_Payload | F_Final =>
@@ -292,28 +292,28 @@ is
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Version
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_DSCP =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_IHL
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_ECN =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_DSCP
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Total_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_ECN
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Identification =>
@@ -321,14 +321,14 @@ is
                  Ctx.Cursors (Fld).Predecessor = F_Total_Length
                  and then Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Flag_R =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Identification
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Flag_DF =>
@@ -336,75 +336,75 @@ is
                  Ctx.Cursors (Fld).Predecessor = F_Flag_R
                  and then Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.U64 (To_Base (False))
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Flag_MF =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Flag_DF
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Fragment_Offset =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Flag_MF
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_TTL =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Fragment_Offset
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Protocol =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_TTL
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Header_Checksum =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Protocol
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Source =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Header_Checksum
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Destination =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Source
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Options =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Destination
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Payload =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Options
               then
-                 (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length)));
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     ((Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1));
+     (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
      ((case Fld is
@@ -565,7 +565,7 @@ is
       and then Path_Condition (Ctx, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
-     ((Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1));
+     (Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -573,7 +573,7 @@ is
       and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
       and Field_Length (Ctx, Fld) >= 0
       and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld)) <= Types.Bit_Length'Last / 2
+      and Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
       and Ctx.First <= Field_First (Ctx, Fld)
       and Ctx.Last >= Field_Last (Ctx, Fld))
     with
@@ -1223,107 +1223,107 @@ is
                pragma Assert ((if
                                   Structural_Valid (Ctx.Cursors (F_Version))
                                then
-                                  (Ctx.Cursors (F_Version).Last - Ctx.Cursors (F_Version).First + 1) = RFLX.IPv4.Version_Base'Size
+                                  Ctx.Cursors (F_Version).Last - Ctx.Cursors (F_Version).First + 1 = RFLX.IPv4.Version_Base'Size
                                   and then Ctx.Cursors (F_Version).Predecessor = F_Initial
                                   and then Ctx.Cursors (F_Version).First = Ctx.First
                                   and then (if
                                                Structural_Valid (Ctx.Cursors (F_IHL))
                                             then
-                                               (Ctx.Cursors (F_IHL).Last - Ctx.Cursors (F_IHL).First + 1) = RFLX.IPv4.IHL_Base'Size
+                                               Ctx.Cursors (F_IHL).Last - Ctx.Cursors (F_IHL).First + 1 = RFLX.IPv4.IHL_Base'Size
                                                and then Ctx.Cursors (F_IHL).Predecessor = F_Version
-                                               and then Ctx.Cursors (F_IHL).First = (Ctx.Cursors (F_Version).Last + 1)
+                                               and then Ctx.Cursors (F_IHL).First = Ctx.Cursors (F_Version).Last + 1
                                                and then (if
                                                             Structural_Valid (Ctx.Cursors (F_DSCP))
                                                          then
-                                                            (Ctx.Cursors (F_DSCP).Last - Ctx.Cursors (F_DSCP).First + 1) = RFLX.IPv4.DCSP'Size
+                                                            Ctx.Cursors (F_DSCP).Last - Ctx.Cursors (F_DSCP).First + 1 = RFLX.IPv4.DCSP'Size
                                                             and then Ctx.Cursors (F_DSCP).Predecessor = F_IHL
-                                                            and then Ctx.Cursors (F_DSCP).First = (Ctx.Cursors (F_IHL).Last + 1)
+                                                            and then Ctx.Cursors (F_DSCP).First = Ctx.Cursors (F_IHL).Last + 1
                                                             and then (if
                                                                          Structural_Valid (Ctx.Cursors (F_ECN))
                                                                       then
-                                                                         (Ctx.Cursors (F_ECN).Last - Ctx.Cursors (F_ECN).First + 1) = RFLX.IPv4.ECN'Size
+                                                                         Ctx.Cursors (F_ECN).Last - Ctx.Cursors (F_ECN).First + 1 = RFLX.IPv4.ECN'Size
                                                                          and then Ctx.Cursors (F_ECN).Predecessor = F_DSCP
-                                                                         and then Ctx.Cursors (F_ECN).First = (Ctx.Cursors (F_DSCP).Last + 1)
+                                                                         and then Ctx.Cursors (F_ECN).First = Ctx.Cursors (F_DSCP).Last + 1
                                                                          and then (if
                                                                                       Structural_Valid (Ctx.Cursors (F_Total_Length))
                                                                                    then
-                                                                                      (Ctx.Cursors (F_Total_Length).Last - Ctx.Cursors (F_Total_Length).First + 1) = RFLX.IPv4.Total_Length'Size
+                                                                                      Ctx.Cursors (F_Total_Length).Last - Ctx.Cursors (F_Total_Length).First + 1 = RFLX.IPv4.Total_Length'Size
                                                                                       and then Ctx.Cursors (F_Total_Length).Predecessor = F_ECN
-                                                                                      and then Ctx.Cursors (F_Total_Length).First = (Ctx.Cursors (F_ECN).Last + 1)
+                                                                                      and then Ctx.Cursors (F_Total_Length).First = Ctx.Cursors (F_ECN).Last + 1
                                                                                       and then (if
                                                                                                    Structural_Valid (Ctx.Cursors (F_Identification))
                                                                                                    and then Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
                                                                                                 then
-                                                                                                   (Ctx.Cursors (F_Identification).Last - Ctx.Cursors (F_Identification).First + 1) = RFLX.IPv4.Identification'Size
+                                                                                                   Ctx.Cursors (F_Identification).Last - Ctx.Cursors (F_Identification).First + 1 = RFLX.IPv4.Identification'Size
                                                                                                    and then Ctx.Cursors (F_Identification).Predecessor = F_Total_Length
-                                                                                                   and then Ctx.Cursors (F_Identification).First = (Ctx.Cursors (F_Total_Length).Last + 1)
+                                                                                                   and then Ctx.Cursors (F_Identification).First = Ctx.Cursors (F_Total_Length).Last + 1
                                                                                                    and then (if
                                                                                                                 Structural_Valid (Ctx.Cursors (F_Flag_R))
                                                                                                              then
-                                                                                                                (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                                Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                                 and then Ctx.Cursors (F_Flag_R).Predecessor = F_Identification
-                                                                                                                and then Ctx.Cursors (F_Flag_R).First = (Ctx.Cursors (F_Identification).Last + 1)
+                                                                                                                and then Ctx.Cursors (F_Flag_R).First = Ctx.Cursors (F_Identification).Last + 1
                                                                                                                 and then (if
                                                                                                                              Structural_Valid (Ctx.Cursors (F_Flag_DF))
                                                                                                                              and then Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.U64 (To_Base (False))
                                                                                                                           then
-                                                                                                                             (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                                             Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                                              and then Ctx.Cursors (F_Flag_DF).Predecessor = F_Flag_R
-                                                                                                                             and then Ctx.Cursors (F_Flag_DF).First = (Ctx.Cursors (F_Flag_R).Last + 1)
+                                                                                                                             and then Ctx.Cursors (F_Flag_DF).First = Ctx.Cursors (F_Flag_R).Last + 1
                                                                                                                              and then (if
                                                                                                                                           Structural_Valid (Ctx.Cursors (F_Flag_MF))
                                                                                                                                        then
-                                                                                                                                          (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                                                          Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                                                           and then Ctx.Cursors (F_Flag_MF).Predecessor = F_Flag_DF
-                                                                                                                                          and then Ctx.Cursors (F_Flag_MF).First = (Ctx.Cursors (F_Flag_DF).Last + 1)
+                                                                                                                                          and then Ctx.Cursors (F_Flag_MF).First = Ctx.Cursors (F_Flag_DF).Last + 1
                                                                                                                                           and then (if
                                                                                                                                                        Structural_Valid (Ctx.Cursors (F_Fragment_Offset))
                                                                                                                                                     then
-                                                                                                                                                       (Ctx.Cursors (F_Fragment_Offset).Last - Ctx.Cursors (F_Fragment_Offset).First + 1) = RFLX.IPv4.Fragment_Offset'Size
+                                                                                                                                                       Ctx.Cursors (F_Fragment_Offset).Last - Ctx.Cursors (F_Fragment_Offset).First + 1 = RFLX.IPv4.Fragment_Offset'Size
                                                                                                                                                        and then Ctx.Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF
-                                                                                                                                                       and then Ctx.Cursors (F_Fragment_Offset).First = (Ctx.Cursors (F_Flag_MF).Last + 1)
+                                                                                                                                                       and then Ctx.Cursors (F_Fragment_Offset).First = Ctx.Cursors (F_Flag_MF).Last + 1
                                                                                                                                                        and then (if
                                                                                                                                                                     Structural_Valid (Ctx.Cursors (F_TTL))
                                                                                                                                                                  then
-                                                                                                                                                                    (Ctx.Cursors (F_TTL).Last - Ctx.Cursors (F_TTL).First + 1) = RFLX.IPv4.TTL'Size
+                                                                                                                                                                    Ctx.Cursors (F_TTL).Last - Ctx.Cursors (F_TTL).First + 1 = RFLX.IPv4.TTL'Size
                                                                                                                                                                     and then Ctx.Cursors (F_TTL).Predecessor = F_Fragment_Offset
-                                                                                                                                                                    and then Ctx.Cursors (F_TTL).First = (Ctx.Cursors (F_Fragment_Offset).Last + 1)
+                                                                                                                                                                    and then Ctx.Cursors (F_TTL).First = Ctx.Cursors (F_Fragment_Offset).Last + 1
                                                                                                                                                                     and then (if
                                                                                                                                                                                  Structural_Valid (Ctx.Cursors (F_Protocol))
                                                                                                                                                                               then
-                                                                                                                                                                                 (Ctx.Cursors (F_Protocol).Last - Ctx.Cursors (F_Protocol).First + 1) = RFLX.IPv4.Protocol_Base'Size
+                                                                                                                                                                                 Ctx.Cursors (F_Protocol).Last - Ctx.Cursors (F_Protocol).First + 1 = RFLX.IPv4.Protocol_Base'Size
                                                                                                                                                                                  and then Ctx.Cursors (F_Protocol).Predecessor = F_TTL
-                                                                                                                                                                                 and then Ctx.Cursors (F_Protocol).First = (Ctx.Cursors (F_TTL).Last + 1)
+                                                                                                                                                                                 and then Ctx.Cursors (F_Protocol).First = Ctx.Cursors (F_TTL).Last + 1
                                                                                                                                                                                  and then (if
                                                                                                                                                                                               Structural_Valid (Ctx.Cursors (F_Header_Checksum))
                                                                                                                                                                                            then
-                                                                                                                                                                                              (Ctx.Cursors (F_Header_Checksum).Last - Ctx.Cursors (F_Header_Checksum).First + 1) = RFLX.IPv4.Header_Checksum'Size
+                                                                                                                                                                                              Ctx.Cursors (F_Header_Checksum).Last - Ctx.Cursors (F_Header_Checksum).First + 1 = RFLX.IPv4.Header_Checksum'Size
                                                                                                                                                                                               and then Ctx.Cursors (F_Header_Checksum).Predecessor = F_Protocol
-                                                                                                                                                                                              and then Ctx.Cursors (F_Header_Checksum).First = (Ctx.Cursors (F_Protocol).Last + 1)
+                                                                                                                                                                                              and then Ctx.Cursors (F_Header_Checksum).First = Ctx.Cursors (F_Protocol).Last + 1
                                                                                                                                                                                               and then (if
                                                                                                                                                                                                            Structural_Valid (Ctx.Cursors (F_Source))
                                                                                                                                                                                                         then
-                                                                                                                                                                                                           (Ctx.Cursors (F_Source).Last - Ctx.Cursors (F_Source).First + 1) = RFLX.IPv4.Address'Size
+                                                                                                                                                                                                           Ctx.Cursors (F_Source).Last - Ctx.Cursors (F_Source).First + 1 = RFLX.IPv4.Address'Size
                                                                                                                                                                                                            and then Ctx.Cursors (F_Source).Predecessor = F_Header_Checksum
-                                                                                                                                                                                                           and then Ctx.Cursors (F_Source).First = (Ctx.Cursors (F_Header_Checksum).Last + 1)
+                                                                                                                                                                                                           and then Ctx.Cursors (F_Source).First = Ctx.Cursors (F_Header_Checksum).Last + 1
                                                                                                                                                                                                            and then (if
                                                                                                                                                                                                                         Structural_Valid (Ctx.Cursors (F_Destination))
                                                                                                                                                                                                                      then
-                                                                                                                                                                                                                        (Ctx.Cursors (F_Destination).Last - Ctx.Cursors (F_Destination).First + 1) = RFLX.IPv4.Address'Size
+                                                                                                                                                                                                                        Ctx.Cursors (F_Destination).Last - Ctx.Cursors (F_Destination).First + 1 = RFLX.IPv4.Address'Size
                                                                                                                                                                                                                         and then Ctx.Cursors (F_Destination).Predecessor = F_Source
-                                                                                                                                                                                                                        and then Ctx.Cursors (F_Destination).First = (Ctx.Cursors (F_Source).Last + 1)
+                                                                                                                                                                                                                        and then Ctx.Cursors (F_Destination).First = Ctx.Cursors (F_Source).Last + 1
                                                                                                                                                                                                                         and then (if
                                                                                                                                                                                                                                      Structural_Valid (Ctx.Cursors (F_Options))
                                                                                                                                                                                                                                   then
-                                                                                                                                                                                                                                     (Ctx.Cursors (F_Options).Last - Ctx.Cursors (F_Options).First + 1) = ((Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5)) * 32
+                                                                                                                                                                                                                                     Ctx.Cursors (F_Options).Last - Ctx.Cursors (F_Options).First + 1 = (Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5) * 32
                                                                                                                                                                                                                                      and then Ctx.Cursors (F_Options).Predecessor = F_Destination
-                                                                                                                                                                                                                                     and then Ctx.Cursors (F_Options).First = (Ctx.Cursors (F_Destination).Last + 1)
+                                                                                                                                                                                                                                     and then Ctx.Cursors (F_Options).First = Ctx.Cursors (F_Destination).Last + 1
                                                                                                                                                                                                                                      and then (if
                                                                                                                                                                                                                                                   Structural_Valid (Ctx.Cursors (F_Payload))
                                                                                                                                                                                                                                                then
-                                                                                                                                                                                                                                                  (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32))
+                                                                                                                                                                                                                                                  Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32)
                                                                                                                                                                                                                                                   and then Ctx.Cursors (F_Payload).Predecessor = F_Options
-                                                                                                                                                                                                                                                  and then Ctx.Cursors (F_Payload).First = (Ctx.Cursors (F_Options).Last + 1)))))))))))))))))));
+                                                                                                                                                                                                                                                  and then Ctx.Cursors (F_Payload).First = Ctx.Cursors (F_Options).Last + 1))))))))))))))))));
                if Fld = F_Version then
                   Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
                elsif Fld = F_IHL then
@@ -1391,7 +1391,7 @@ is
 
    function Present (Ctx : Context; Fld : Field) return Boolean is
      (Structural_Valid (Ctx.Cursors (Fld))
-      and then Ctx.Cursors (Fld).First < (Ctx.Cursors (Fld).Last + 1));
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
    function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
      ((Ctx.Cursors (Fld).State = S_Valid
@@ -1399,7 +1399,7 @@ is
 
    function Valid (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Valid
-      and then Ctx.Cursors (Fld).First < (Ctx.Cursors (Fld).Last + 1));
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Incomplete);
@@ -1545,7 +1545,7 @@ is
        and Fst = Field_First (Ctx, Val.Fld)
        and Lst = Field_Last (Ctx, Val.Fld)
        and Fst >= Ctx.First
-       and Fst <= (Lst + 1)
+       and Fst <= Lst + 1
        and Types.Byte_Index (Lst) <= Ctx.Buffer_Last
        and (for all F in Field'Range =>
                (if
@@ -1824,107 +1824,107 @@ is
       pragma Assert ((if
                          Structural_Valid (Ctx.Cursors (F_Version))
                       then
-                         (Ctx.Cursors (F_Version).Last - Ctx.Cursors (F_Version).First + 1) = RFLX.IPv4.Version_Base'Size
+                         Ctx.Cursors (F_Version).Last - Ctx.Cursors (F_Version).First + 1 = RFLX.IPv4.Version_Base'Size
                          and then Ctx.Cursors (F_Version).Predecessor = F_Initial
                          and then Ctx.Cursors (F_Version).First = Ctx.First
                          and then (if
                                       Structural_Valid (Ctx.Cursors (F_IHL))
                                    then
-                                      (Ctx.Cursors (F_IHL).Last - Ctx.Cursors (F_IHL).First + 1) = RFLX.IPv4.IHL_Base'Size
+                                      Ctx.Cursors (F_IHL).Last - Ctx.Cursors (F_IHL).First + 1 = RFLX.IPv4.IHL_Base'Size
                                       and then Ctx.Cursors (F_IHL).Predecessor = F_Version
-                                      and then Ctx.Cursors (F_IHL).First = (Ctx.Cursors (F_Version).Last + 1)
+                                      and then Ctx.Cursors (F_IHL).First = Ctx.Cursors (F_Version).Last + 1
                                       and then (if
                                                    Structural_Valid (Ctx.Cursors (F_DSCP))
                                                 then
-                                                   (Ctx.Cursors (F_DSCP).Last - Ctx.Cursors (F_DSCP).First + 1) = RFLX.IPv4.DCSP'Size
+                                                   Ctx.Cursors (F_DSCP).Last - Ctx.Cursors (F_DSCP).First + 1 = RFLX.IPv4.DCSP'Size
                                                    and then Ctx.Cursors (F_DSCP).Predecessor = F_IHL
-                                                   and then Ctx.Cursors (F_DSCP).First = (Ctx.Cursors (F_IHL).Last + 1)
+                                                   and then Ctx.Cursors (F_DSCP).First = Ctx.Cursors (F_IHL).Last + 1
                                                    and then (if
                                                                 Structural_Valid (Ctx.Cursors (F_ECN))
                                                              then
-                                                                (Ctx.Cursors (F_ECN).Last - Ctx.Cursors (F_ECN).First + 1) = RFLX.IPv4.ECN'Size
+                                                                Ctx.Cursors (F_ECN).Last - Ctx.Cursors (F_ECN).First + 1 = RFLX.IPv4.ECN'Size
                                                                 and then Ctx.Cursors (F_ECN).Predecessor = F_DSCP
-                                                                and then Ctx.Cursors (F_ECN).First = (Ctx.Cursors (F_DSCP).Last + 1)
+                                                                and then Ctx.Cursors (F_ECN).First = Ctx.Cursors (F_DSCP).Last + 1
                                                                 and then (if
                                                                              Structural_Valid (Ctx.Cursors (F_Total_Length))
                                                                           then
-                                                                             (Ctx.Cursors (F_Total_Length).Last - Ctx.Cursors (F_Total_Length).First + 1) = RFLX.IPv4.Total_Length'Size
+                                                                             Ctx.Cursors (F_Total_Length).Last - Ctx.Cursors (F_Total_Length).First + 1 = RFLX.IPv4.Total_Length'Size
                                                                              and then Ctx.Cursors (F_Total_Length).Predecessor = F_ECN
-                                                                             and then Ctx.Cursors (F_Total_Length).First = (Ctx.Cursors (F_ECN).Last + 1)
+                                                                             and then Ctx.Cursors (F_Total_Length).First = Ctx.Cursors (F_ECN).Last + 1
                                                                              and then (if
                                                                                           Structural_Valid (Ctx.Cursors (F_Identification))
                                                                                           and then Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
                                                                                        then
-                                                                                          (Ctx.Cursors (F_Identification).Last - Ctx.Cursors (F_Identification).First + 1) = RFLX.IPv4.Identification'Size
+                                                                                          Ctx.Cursors (F_Identification).Last - Ctx.Cursors (F_Identification).First + 1 = RFLX.IPv4.Identification'Size
                                                                                           and then Ctx.Cursors (F_Identification).Predecessor = F_Total_Length
-                                                                                          and then Ctx.Cursors (F_Identification).First = (Ctx.Cursors (F_Total_Length).Last + 1)
+                                                                                          and then Ctx.Cursors (F_Identification).First = Ctx.Cursors (F_Total_Length).Last + 1
                                                                                           and then (if
                                                                                                        Structural_Valid (Ctx.Cursors (F_Flag_R))
                                                                                                     then
-                                                                                                       (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                       Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                        and then Ctx.Cursors (F_Flag_R).Predecessor = F_Identification
-                                                                                                       and then Ctx.Cursors (F_Flag_R).First = (Ctx.Cursors (F_Identification).Last + 1)
+                                                                                                       and then Ctx.Cursors (F_Flag_R).First = Ctx.Cursors (F_Identification).Last + 1
                                                                                                        and then (if
                                                                                                                     Structural_Valid (Ctx.Cursors (F_Flag_DF))
                                                                                                                     and then Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.U64 (To_Base (False))
                                                                                                                  then
-                                                                                                                    (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                                    Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                                     and then Ctx.Cursors (F_Flag_DF).Predecessor = F_Flag_R
-                                                                                                                    and then Ctx.Cursors (F_Flag_DF).First = (Ctx.Cursors (F_Flag_R).Last + 1)
+                                                                                                                    and then Ctx.Cursors (F_Flag_DF).First = Ctx.Cursors (F_Flag_R).Last + 1
                                                                                                                     and then (if
                                                                                                                                  Structural_Valid (Ctx.Cursors (F_Flag_MF))
                                                                                                                               then
-                                                                                                                                 (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                                                 Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                                                  and then Ctx.Cursors (F_Flag_MF).Predecessor = F_Flag_DF
-                                                                                                                                 and then Ctx.Cursors (F_Flag_MF).First = (Ctx.Cursors (F_Flag_DF).Last + 1)
+                                                                                                                                 and then Ctx.Cursors (F_Flag_MF).First = Ctx.Cursors (F_Flag_DF).Last + 1
                                                                                                                                  and then (if
                                                                                                                                               Structural_Valid (Ctx.Cursors (F_Fragment_Offset))
                                                                                                                                            then
-                                                                                                                                              (Ctx.Cursors (F_Fragment_Offset).Last - Ctx.Cursors (F_Fragment_Offset).First + 1) = RFLX.IPv4.Fragment_Offset'Size
+                                                                                                                                              Ctx.Cursors (F_Fragment_Offset).Last - Ctx.Cursors (F_Fragment_Offset).First + 1 = RFLX.IPv4.Fragment_Offset'Size
                                                                                                                                               and then Ctx.Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF
-                                                                                                                                              and then Ctx.Cursors (F_Fragment_Offset).First = (Ctx.Cursors (F_Flag_MF).Last + 1)
+                                                                                                                                              and then Ctx.Cursors (F_Fragment_Offset).First = Ctx.Cursors (F_Flag_MF).Last + 1
                                                                                                                                               and then (if
                                                                                                                                                            Structural_Valid (Ctx.Cursors (F_TTL))
                                                                                                                                                         then
-                                                                                                                                                           (Ctx.Cursors (F_TTL).Last - Ctx.Cursors (F_TTL).First + 1) = RFLX.IPv4.TTL'Size
+                                                                                                                                                           Ctx.Cursors (F_TTL).Last - Ctx.Cursors (F_TTL).First + 1 = RFLX.IPv4.TTL'Size
                                                                                                                                                            and then Ctx.Cursors (F_TTL).Predecessor = F_Fragment_Offset
-                                                                                                                                                           and then Ctx.Cursors (F_TTL).First = (Ctx.Cursors (F_Fragment_Offset).Last + 1)
+                                                                                                                                                           and then Ctx.Cursors (F_TTL).First = Ctx.Cursors (F_Fragment_Offset).Last + 1
                                                                                                                                                            and then (if
                                                                                                                                                                         Structural_Valid (Ctx.Cursors (F_Protocol))
                                                                                                                                                                      then
-                                                                                                                                                                        (Ctx.Cursors (F_Protocol).Last - Ctx.Cursors (F_Protocol).First + 1) = RFLX.IPv4.Protocol_Base'Size
+                                                                                                                                                                        Ctx.Cursors (F_Protocol).Last - Ctx.Cursors (F_Protocol).First + 1 = RFLX.IPv4.Protocol_Base'Size
                                                                                                                                                                         and then Ctx.Cursors (F_Protocol).Predecessor = F_TTL
-                                                                                                                                                                        and then Ctx.Cursors (F_Protocol).First = (Ctx.Cursors (F_TTL).Last + 1)
+                                                                                                                                                                        and then Ctx.Cursors (F_Protocol).First = Ctx.Cursors (F_TTL).Last + 1
                                                                                                                                                                         and then (if
                                                                                                                                                                                      Structural_Valid (Ctx.Cursors (F_Header_Checksum))
                                                                                                                                                                                   then
-                                                                                                                                                                                     (Ctx.Cursors (F_Header_Checksum).Last - Ctx.Cursors (F_Header_Checksum).First + 1) = RFLX.IPv4.Header_Checksum'Size
+                                                                                                                                                                                     Ctx.Cursors (F_Header_Checksum).Last - Ctx.Cursors (F_Header_Checksum).First + 1 = RFLX.IPv4.Header_Checksum'Size
                                                                                                                                                                                      and then Ctx.Cursors (F_Header_Checksum).Predecessor = F_Protocol
-                                                                                                                                                                                     and then Ctx.Cursors (F_Header_Checksum).First = (Ctx.Cursors (F_Protocol).Last + 1)
+                                                                                                                                                                                     and then Ctx.Cursors (F_Header_Checksum).First = Ctx.Cursors (F_Protocol).Last + 1
                                                                                                                                                                                      and then (if
                                                                                                                                                                                                   Structural_Valid (Ctx.Cursors (F_Source))
                                                                                                                                                                                                then
-                                                                                                                                                                                                  (Ctx.Cursors (F_Source).Last - Ctx.Cursors (F_Source).First + 1) = RFLX.IPv4.Address'Size
+                                                                                                                                                                                                  Ctx.Cursors (F_Source).Last - Ctx.Cursors (F_Source).First + 1 = RFLX.IPv4.Address'Size
                                                                                                                                                                                                   and then Ctx.Cursors (F_Source).Predecessor = F_Header_Checksum
-                                                                                                                                                                                                  and then Ctx.Cursors (F_Source).First = (Ctx.Cursors (F_Header_Checksum).Last + 1)
+                                                                                                                                                                                                  and then Ctx.Cursors (F_Source).First = Ctx.Cursors (F_Header_Checksum).Last + 1
                                                                                                                                                                                                   and then (if
                                                                                                                                                                                                                Structural_Valid (Ctx.Cursors (F_Destination))
                                                                                                                                                                                                             then
-                                                                                                                                                                                                               (Ctx.Cursors (F_Destination).Last - Ctx.Cursors (F_Destination).First + 1) = RFLX.IPv4.Address'Size
+                                                                                                                                                                                                               Ctx.Cursors (F_Destination).Last - Ctx.Cursors (F_Destination).First + 1 = RFLX.IPv4.Address'Size
                                                                                                                                                                                                                and then Ctx.Cursors (F_Destination).Predecessor = F_Source
-                                                                                                                                                                                                               and then Ctx.Cursors (F_Destination).First = (Ctx.Cursors (F_Source).Last + 1)
+                                                                                                                                                                                                               and then Ctx.Cursors (F_Destination).First = Ctx.Cursors (F_Source).Last + 1
                                                                                                                                                                                                                and then (if
                                                                                                                                                                                                                             Structural_Valid (Ctx.Cursors (F_Options))
                                                                                                                                                                                                                          then
-                                                                                                                                                                                                                            (Ctx.Cursors (F_Options).Last - Ctx.Cursors (F_Options).First + 1) = ((Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5)) * 32
+                                                                                                                                                                                                                            Ctx.Cursors (F_Options).Last - Ctx.Cursors (F_Options).First + 1 = (Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5) * 32
                                                                                                                                                                                                                             and then Ctx.Cursors (F_Options).Predecessor = F_Destination
-                                                                                                                                                                                                                            and then Ctx.Cursors (F_Options).First = (Ctx.Cursors (F_Destination).Last + 1)
+                                                                                                                                                                                                                            and then Ctx.Cursors (F_Options).First = Ctx.Cursors (F_Destination).Last + 1
                                                                                                                                                                                                                             and then (if
                                                                                                                                                                                                                                          Structural_Valid (Ctx.Cursors (F_Payload))
                                                                                                                                                                                                                                       then
-                                                                                                                                                                                                                                         (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32))
+                                                                                                                                                                                                                                         Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32)
                                                                                                                                                                                                                                          and then Ctx.Cursors (F_Payload).Predecessor = F_Options
-                                                                                                                                                                                                                                         and then Ctx.Cursors (F_Payload).First = (Ctx.Cursors (F_Options).Last + 1)))))))))))))))))));
+                                                                                                                                                                                                                                         and then Ctx.Cursors (F_Payload).First = Ctx.Cursors (F_Options).Last + 1))))))))))))))))));
       Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload;
@@ -1940,107 +1940,107 @@ is
          pragma Assert ((if
                             Structural_Valid (Ctx.Cursors (F_Version))
                          then
-                            (Ctx.Cursors (F_Version).Last - Ctx.Cursors (F_Version).First + 1) = RFLX.IPv4.Version_Base'Size
+                            Ctx.Cursors (F_Version).Last - Ctx.Cursors (F_Version).First + 1 = RFLX.IPv4.Version_Base'Size
                             and then Ctx.Cursors (F_Version).Predecessor = F_Initial
                             and then Ctx.Cursors (F_Version).First = Ctx.First
                             and then (if
                                          Structural_Valid (Ctx.Cursors (F_IHL))
                                       then
-                                         (Ctx.Cursors (F_IHL).Last - Ctx.Cursors (F_IHL).First + 1) = RFLX.IPv4.IHL_Base'Size
+                                         Ctx.Cursors (F_IHL).Last - Ctx.Cursors (F_IHL).First + 1 = RFLX.IPv4.IHL_Base'Size
                                          and then Ctx.Cursors (F_IHL).Predecessor = F_Version
-                                         and then Ctx.Cursors (F_IHL).First = (Ctx.Cursors (F_Version).Last + 1)
+                                         and then Ctx.Cursors (F_IHL).First = Ctx.Cursors (F_Version).Last + 1
                                          and then (if
                                                       Structural_Valid (Ctx.Cursors (F_DSCP))
                                                    then
-                                                      (Ctx.Cursors (F_DSCP).Last - Ctx.Cursors (F_DSCP).First + 1) = RFLX.IPv4.DCSP'Size
+                                                      Ctx.Cursors (F_DSCP).Last - Ctx.Cursors (F_DSCP).First + 1 = RFLX.IPv4.DCSP'Size
                                                       and then Ctx.Cursors (F_DSCP).Predecessor = F_IHL
-                                                      and then Ctx.Cursors (F_DSCP).First = (Ctx.Cursors (F_IHL).Last + 1)
+                                                      and then Ctx.Cursors (F_DSCP).First = Ctx.Cursors (F_IHL).Last + 1
                                                       and then (if
                                                                    Structural_Valid (Ctx.Cursors (F_ECN))
                                                                 then
-                                                                   (Ctx.Cursors (F_ECN).Last - Ctx.Cursors (F_ECN).First + 1) = RFLX.IPv4.ECN'Size
+                                                                   Ctx.Cursors (F_ECN).Last - Ctx.Cursors (F_ECN).First + 1 = RFLX.IPv4.ECN'Size
                                                                    and then Ctx.Cursors (F_ECN).Predecessor = F_DSCP
-                                                                   and then Ctx.Cursors (F_ECN).First = (Ctx.Cursors (F_DSCP).Last + 1)
+                                                                   and then Ctx.Cursors (F_ECN).First = Ctx.Cursors (F_DSCP).Last + 1
                                                                    and then (if
                                                                                 Structural_Valid (Ctx.Cursors (F_Total_Length))
                                                                              then
-                                                                                (Ctx.Cursors (F_Total_Length).Last - Ctx.Cursors (F_Total_Length).First + 1) = RFLX.IPv4.Total_Length'Size
+                                                                                Ctx.Cursors (F_Total_Length).Last - Ctx.Cursors (F_Total_Length).First + 1 = RFLX.IPv4.Total_Length'Size
                                                                                 and then Ctx.Cursors (F_Total_Length).Predecessor = F_ECN
-                                                                                and then Ctx.Cursors (F_Total_Length).First = (Ctx.Cursors (F_ECN).Last + 1)
+                                                                                and then Ctx.Cursors (F_Total_Length).First = Ctx.Cursors (F_ECN).Last + 1
                                                                                 and then (if
                                                                                              Structural_Valid (Ctx.Cursors (F_Identification))
                                                                                              and then Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
                                                                                           then
-                                                                                             (Ctx.Cursors (F_Identification).Last - Ctx.Cursors (F_Identification).First + 1) = RFLX.IPv4.Identification'Size
+                                                                                             Ctx.Cursors (F_Identification).Last - Ctx.Cursors (F_Identification).First + 1 = RFLX.IPv4.Identification'Size
                                                                                              and then Ctx.Cursors (F_Identification).Predecessor = F_Total_Length
-                                                                                             and then Ctx.Cursors (F_Identification).First = (Ctx.Cursors (F_Total_Length).Last + 1)
+                                                                                             and then Ctx.Cursors (F_Identification).First = Ctx.Cursors (F_Total_Length).Last + 1
                                                                                              and then (if
                                                                                                           Structural_Valid (Ctx.Cursors (F_Flag_R))
                                                                                                        then
-                                                                                                          (Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                          Ctx.Cursors (F_Flag_R).Last - Ctx.Cursors (F_Flag_R).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                           and then Ctx.Cursors (F_Flag_R).Predecessor = F_Identification
-                                                                                                          and then Ctx.Cursors (F_Flag_R).First = (Ctx.Cursors (F_Identification).Last + 1)
+                                                                                                          and then Ctx.Cursors (F_Flag_R).First = Ctx.Cursors (F_Identification).Last + 1
                                                                                                           and then (if
                                                                                                                        Structural_Valid (Ctx.Cursors (F_Flag_DF))
                                                                                                                        and then Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.U64 (To_Base (False))
                                                                                                                     then
-                                                                                                                       (Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                                       Ctx.Cursors (F_Flag_DF).Last - Ctx.Cursors (F_Flag_DF).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                                        and then Ctx.Cursors (F_Flag_DF).Predecessor = F_Flag_R
-                                                                                                                       and then Ctx.Cursors (F_Flag_DF).First = (Ctx.Cursors (F_Flag_R).Last + 1)
+                                                                                                                       and then Ctx.Cursors (F_Flag_DF).First = Ctx.Cursors (F_Flag_R).Last + 1
                                                                                                                        and then (if
                                                                                                                                     Structural_Valid (Ctx.Cursors (F_Flag_MF))
                                                                                                                                  then
-                                                                                                                                    (Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                                                                                                                                    Ctx.Cursors (F_Flag_MF).Last - Ctx.Cursors (F_Flag_MF).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                                                     and then Ctx.Cursors (F_Flag_MF).Predecessor = F_Flag_DF
-                                                                                                                                    and then Ctx.Cursors (F_Flag_MF).First = (Ctx.Cursors (F_Flag_DF).Last + 1)
+                                                                                                                                    and then Ctx.Cursors (F_Flag_MF).First = Ctx.Cursors (F_Flag_DF).Last + 1
                                                                                                                                     and then (if
                                                                                                                                                  Structural_Valid (Ctx.Cursors (F_Fragment_Offset))
                                                                                                                                               then
-                                                                                                                                                 (Ctx.Cursors (F_Fragment_Offset).Last - Ctx.Cursors (F_Fragment_Offset).First + 1) = RFLX.IPv4.Fragment_Offset'Size
+                                                                                                                                                 Ctx.Cursors (F_Fragment_Offset).Last - Ctx.Cursors (F_Fragment_Offset).First + 1 = RFLX.IPv4.Fragment_Offset'Size
                                                                                                                                                  and then Ctx.Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF
-                                                                                                                                                 and then Ctx.Cursors (F_Fragment_Offset).First = (Ctx.Cursors (F_Flag_MF).Last + 1)
+                                                                                                                                                 and then Ctx.Cursors (F_Fragment_Offset).First = Ctx.Cursors (F_Flag_MF).Last + 1
                                                                                                                                                  and then (if
                                                                                                                                                               Structural_Valid (Ctx.Cursors (F_TTL))
                                                                                                                                                            then
-                                                                                                                                                              (Ctx.Cursors (F_TTL).Last - Ctx.Cursors (F_TTL).First + 1) = RFLX.IPv4.TTL'Size
+                                                                                                                                                              Ctx.Cursors (F_TTL).Last - Ctx.Cursors (F_TTL).First + 1 = RFLX.IPv4.TTL'Size
                                                                                                                                                               and then Ctx.Cursors (F_TTL).Predecessor = F_Fragment_Offset
-                                                                                                                                                              and then Ctx.Cursors (F_TTL).First = (Ctx.Cursors (F_Fragment_Offset).Last + 1)
+                                                                                                                                                              and then Ctx.Cursors (F_TTL).First = Ctx.Cursors (F_Fragment_Offset).Last + 1
                                                                                                                                                               and then (if
                                                                                                                                                                            Structural_Valid (Ctx.Cursors (F_Protocol))
                                                                                                                                                                         then
-                                                                                                                                                                           (Ctx.Cursors (F_Protocol).Last - Ctx.Cursors (F_Protocol).First + 1) = RFLX.IPv4.Protocol_Base'Size
+                                                                                                                                                                           Ctx.Cursors (F_Protocol).Last - Ctx.Cursors (F_Protocol).First + 1 = RFLX.IPv4.Protocol_Base'Size
                                                                                                                                                                            and then Ctx.Cursors (F_Protocol).Predecessor = F_TTL
-                                                                                                                                                                           and then Ctx.Cursors (F_Protocol).First = (Ctx.Cursors (F_TTL).Last + 1)
+                                                                                                                                                                           and then Ctx.Cursors (F_Protocol).First = Ctx.Cursors (F_TTL).Last + 1
                                                                                                                                                                            and then (if
                                                                                                                                                                                         Structural_Valid (Ctx.Cursors (F_Header_Checksum))
                                                                                                                                                                                      then
-                                                                                                                                                                                        (Ctx.Cursors (F_Header_Checksum).Last - Ctx.Cursors (F_Header_Checksum).First + 1) = RFLX.IPv4.Header_Checksum'Size
+                                                                                                                                                                                        Ctx.Cursors (F_Header_Checksum).Last - Ctx.Cursors (F_Header_Checksum).First + 1 = RFLX.IPv4.Header_Checksum'Size
                                                                                                                                                                                         and then Ctx.Cursors (F_Header_Checksum).Predecessor = F_Protocol
-                                                                                                                                                                                        and then Ctx.Cursors (F_Header_Checksum).First = (Ctx.Cursors (F_Protocol).Last + 1)
+                                                                                                                                                                                        and then Ctx.Cursors (F_Header_Checksum).First = Ctx.Cursors (F_Protocol).Last + 1
                                                                                                                                                                                         and then (if
                                                                                                                                                                                                      Structural_Valid (Ctx.Cursors (F_Source))
                                                                                                                                                                                                   then
-                                                                                                                                                                                                     (Ctx.Cursors (F_Source).Last - Ctx.Cursors (F_Source).First + 1) = RFLX.IPv4.Address'Size
+                                                                                                                                                                                                     Ctx.Cursors (F_Source).Last - Ctx.Cursors (F_Source).First + 1 = RFLX.IPv4.Address'Size
                                                                                                                                                                                                      and then Ctx.Cursors (F_Source).Predecessor = F_Header_Checksum
-                                                                                                                                                                                                     and then Ctx.Cursors (F_Source).First = (Ctx.Cursors (F_Header_Checksum).Last + 1)
+                                                                                                                                                                                                     and then Ctx.Cursors (F_Source).First = Ctx.Cursors (F_Header_Checksum).Last + 1
                                                                                                                                                                                                      and then (if
                                                                                                                                                                                                                   Structural_Valid (Ctx.Cursors (F_Destination))
                                                                                                                                                                                                                then
-                                                                                                                                                                                                                  (Ctx.Cursors (F_Destination).Last - Ctx.Cursors (F_Destination).First + 1) = RFLX.IPv4.Address'Size
+                                                                                                                                                                                                                  Ctx.Cursors (F_Destination).Last - Ctx.Cursors (F_Destination).First + 1 = RFLX.IPv4.Address'Size
                                                                                                                                                                                                                   and then Ctx.Cursors (F_Destination).Predecessor = F_Source
-                                                                                                                                                                                                                  and then Ctx.Cursors (F_Destination).First = (Ctx.Cursors (F_Source).Last + 1)
+                                                                                                                                                                                                                  and then Ctx.Cursors (F_Destination).First = Ctx.Cursors (F_Source).Last + 1
                                                                                                                                                                                                                   and then (if
                                                                                                                                                                                                                                Structural_Valid (Ctx.Cursors (F_Options))
                                                                                                                                                                                                                             then
-                                                                                                                                                                                                                               (Ctx.Cursors (F_Options).Last - Ctx.Cursors (F_Options).First + 1) = ((Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5)) * 32
+                                                                                                                                                                                                                               Ctx.Cursors (F_Options).Last - Ctx.Cursors (F_Options).First + 1 = (Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5) * 32
                                                                                                                                                                                                                                and then Ctx.Cursors (F_Options).Predecessor = F_Destination
-                                                                                                                                                                                                                               and then Ctx.Cursors (F_Options).First = (Ctx.Cursors (F_Destination).Last + 1)
+                                                                                                                                                                                                                               and then Ctx.Cursors (F_Options).First = Ctx.Cursors (F_Destination).Last + 1
                                                                                                                                                                                                                                and then (if
                                                                                                                                                                                                                                             Structural_Valid (Ctx.Cursors (F_Payload))
                                                                                                                                                                                                                                          then
-                                                                                                                                                                                                                                            (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = (Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32))
+                                                                                                                                                                                                                                            Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32)
                                                                                                                                                                                                                                             and then Ctx.Cursors (F_Payload).Predecessor = F_Options
-                                                                                                                                                                                                                                            and then Ctx.Cursors (F_Payload).First = (Ctx.Cursors (F_Options).Last + 1)))))))))))))))))));
+                                                                                                                                                                                                                                            and then Ctx.Cursors (F_Payload).First = Ctx.Cursors (F_Options).Last + 1))))))))))))))))));
          Ctx.Cursors (F_Options) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Options), Predecessor => Ctx.Cursors (F_Options).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
       end if;

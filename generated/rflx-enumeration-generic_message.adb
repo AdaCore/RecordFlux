@@ -19,7 +19,7 @@ is
 
    function Initialized (Ctx : Context) return Boolean is
      (Valid_Next (Ctx, F_Priority)
-      and then Available_Space (Ctx, F_Priority) = (Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1)
+      and then Available_Space (Ctx, F_Priority) = Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1
       and then Invalid (Ctx, F_Priority));
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
@@ -70,7 +70,7 @@ is
              Ctx.First));
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     ((Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1));
+     (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
      ((case Fld is
@@ -104,7 +104,7 @@ is
       and then Path_Condition (Ctx, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
-     ((Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1));
+     (Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -112,7 +112,7 @@ is
       and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
       and Field_Length (Ctx, Fld) >= 0
       and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld)) <= Types.Bit_Length'Last / 2
+      and Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
       and Ctx.First <= Field_First (Ctx, Fld)
       and Ctx.Last >= Field_Last (Ctx, Fld))
     with
@@ -204,7 +204,7 @@ is
                pragma Assert ((if
                                   Structural_Valid (Ctx.Cursors (F_Priority))
                                then
-                                  (Ctx.Cursors (F_Priority).Last - Ctx.Cursors (F_Priority).First + 1) = RFLX.Enumeration.Priority_Base'Size
+                                  Ctx.Cursors (F_Priority).Last - Ctx.Cursors (F_Priority).First + 1 = RFLX.Enumeration.Priority_Base'Size
                                   and then Ctx.Cursors (F_Priority).Predecessor = F_Initial
                                   and then Ctx.Cursors (F_Priority).First = Ctx.First));
                if Fld = F_Priority then
@@ -226,7 +226,7 @@ is
 
    function Present (Ctx : Context; Fld : Field) return Boolean is
      (Structural_Valid (Ctx.Cursors (Fld))
-      and then Ctx.Cursors (Fld).First < (Ctx.Cursors (Fld).Last + 1));
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
    function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
      ((Ctx.Cursors (Fld).State = S_Valid
@@ -234,7 +234,7 @@ is
 
    function Valid (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Valid
-      and then Ctx.Cursors (Fld).First < (Ctx.Cursors (Fld).Last + 1));
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Incomplete);
@@ -272,7 +272,7 @@ is
        and Fst = Field_First (Ctx, Val.Fld)
        and Lst = Field_Last (Ctx, Val.Fld)
        and Fst >= Ctx.First
-       and Fst <= (Lst + 1)
+       and Fst <= Lst + 1
        and Types.Byte_Index (Lst) <= Ctx.Buffer_Last
        and (for all F in Field'Range =>
                (if

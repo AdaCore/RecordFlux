@@ -19,7 +19,7 @@ is
 
    function Initialized (Ctx : Context) return Boolean is
      (Valid_Next (Ctx, F_Payload)
-      and then Available_Space (Ctx, F_Payload) = (Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1)
+      and then Available_Space (Ctx, F_Payload) = Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1
       and then Invalid (Ctx, F_Payload));
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
@@ -73,7 +73,7 @@ is
              Ctx.First));
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     ((Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1));
+     (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
      ((case Fld is
@@ -112,7 +112,7 @@ is
       and then Path_Condition (Ctx, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
-     ((Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1));
+     (Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -120,7 +120,7 @@ is
       and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
       and Field_Length (Ctx, Fld) >= 0
       and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld)) <= Types.Bit_Length'Last / 2
+      and Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
       and Ctx.First <= Field_First (Ctx, Fld)
       and Ctx.Last >= Field_Last (Ctx, Fld))
     with
@@ -209,7 +209,7 @@ is
                pragma Assert ((if
                                   Structural_Valid (Ctx.Cursors (F_Payload))
                                then
-                                  (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = 16
+                                  Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = 16
                                   and then Ctx.Cursors (F_Payload).Predecessor = F_Initial
                                   and then Ctx.Cursors (F_Payload).First = Ctx.First));
                if Fld = F_Payload then
@@ -231,7 +231,7 @@ is
 
    function Present (Ctx : Context; Fld : Field) return Boolean is
      (Structural_Valid (Ctx.Cursors (Fld))
-      and then Ctx.Cursors (Fld).First < (Ctx.Cursors (Fld).Last + 1));
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
    function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
      ((Ctx.Cursors (Fld).State = S_Valid
@@ -239,7 +239,7 @@ is
 
    function Valid (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Valid
-      and then Ctx.Cursors (Fld).First < (Ctx.Cursors (Fld).Last + 1));
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Incomplete);
@@ -287,7 +287,7 @@ is
       pragma Assert ((if
                          Structural_Valid (Ctx.Cursors (F_Payload))
                       then
-                         (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) = 16
+                         Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = 16
                          and then Ctx.Cursors (F_Payload).Predecessor = F_Initial
                          and then Ctx.Cursors (F_Payload).First = Ctx.First));
       Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);

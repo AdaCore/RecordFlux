@@ -598,7 +598,7 @@ private
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Last
-                       and Cursors (F).First <= (Cursors (F).Last + 1)
+                       and Cursors (F).First <= Cursors (F).Last + 1
                        and Cursors (F).Value.Fld = F))
       and then ((if
                     Structural_Valid (Cursors (F_Modular_Vector))
@@ -639,33 +639,33 @@ private
       and then (if
                    Structural_Valid (Cursors (F_Length))
                 then
-                   (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = RFLX.Arrays.Length'Size
+                   Cursors (F_Length).Last - Cursors (F_Length).First + 1 = RFLX.Arrays.Length'Size
                    and then Cursors (F_Length).Predecessor = F_Initial
                    and then Cursors (F_Length).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Modular_Vector))
                              then
-                                (Cursors (F_Modular_Vector).Last - Cursors (F_Modular_Vector).First + 1) = Types.Bit_Length (Cursors (F_Length).Value.Length_Value) * 8
+                                Cursors (F_Modular_Vector).Last - Cursors (F_Modular_Vector).First + 1 = Types.Bit_Length (Cursors (F_Length).Value.Length_Value) * 8
                                 and then Cursors (F_Modular_Vector).Predecessor = F_Length
-                                and then Cursors (F_Modular_Vector).First = (Cursors (F_Length).Last + 1)
+                                and then Cursors (F_Modular_Vector).First = Cursors (F_Length).Last + 1
                                 and then (if
                                              Structural_Valid (Cursors (F_Range_Vector))
                                           then
-                                             (Cursors (F_Range_Vector).Last - Cursors (F_Range_Vector).First + 1) = 16
+                                             Cursors (F_Range_Vector).Last - Cursors (F_Range_Vector).First + 1 = 16
                                              and then Cursors (F_Range_Vector).Predecessor = F_Modular_Vector
-                                             and then Cursors (F_Range_Vector).First = (Cursors (F_Modular_Vector).Last + 1)
+                                             and then Cursors (F_Range_Vector).First = Cursors (F_Modular_Vector).Last + 1
                                              and then (if
                                                           Structural_Valid (Cursors (F_Enumeration_Vector))
                                                        then
-                                                          (Cursors (F_Enumeration_Vector).Last - Cursors (F_Enumeration_Vector).First + 1) = 16
+                                                          Cursors (F_Enumeration_Vector).Last - Cursors (F_Enumeration_Vector).First + 1 = 16
                                                           and then Cursors (F_Enumeration_Vector).Predecessor = F_Range_Vector
-                                                          and then Cursors (F_Enumeration_Vector).First = (Cursors (F_Range_Vector).Last + 1)
+                                                          and then Cursors (F_Enumeration_Vector).First = Cursors (F_Range_Vector).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_AV_Enumeration_Vector))
                                                                     then
-                                                                       (Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1) = 16
+                                                                       Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1 = 16
                                                                        and then Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
-                                                                       and then Cursors (F_AV_Enumeration_Vector).First = (Cursors (F_Enumeration_Vector).Last + 1)))))));
+                                                                       and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1))))));
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
       record

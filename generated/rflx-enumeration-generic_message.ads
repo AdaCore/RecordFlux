@@ -272,14 +272,14 @@ private
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Last
-                       and Cursors (F).First <= (Cursors (F).Last + 1)
+                       and Cursors (F).First <= Cursors (F).Last + 1
                        and Cursors (F).Value.Fld = F))
       and then (True)
       and then (True)
       and then (if
                    Structural_Valid (Cursors (F_Priority))
                 then
-                   (Cursors (F_Priority).Last - Cursors (F_Priority).First + 1) = RFLX.Enumeration.Priority_Base'Size
+                   Cursors (F_Priority).Last - Cursors (F_Priority).First + 1 = RFLX.Enumeration.Priority_Base'Size
                    and then Cursors (F_Priority).Predecessor = F_Initial
                    and then Cursors (F_Priority).First = First));
 
