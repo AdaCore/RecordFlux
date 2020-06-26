@@ -7,7 +7,11 @@ import re
 
 import GPS
 import highlighter.common as hl
-from gs_utils import hook
+
+try:
+    from gs_utils import hook
+except ImportError:
+    from gps_utils import hook
 
 XML = r"""<?xml version="1.0"?>
 <GNAT_Studio>
