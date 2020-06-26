@@ -579,8 +579,8 @@ def test_incongruent_overlay() -> None:
         r"^"
         r'model: error: field "F3" not congruent with overlaid field "F1"\n'
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'Last = [(][(]Message\'First [+] 8[)][)] - 1"\n'
-        r'model: info: unsatisfied "[(][(]F1\'First [+] 16[)][)] - 1 = F1\'Last"'
+        r'model: info: unsatisfied "F1\'Last = [(]Message\'First [+] 8[)] - 1"\n'
+        r'model: info: unsatisfied "[(]F1\'First [+] 16[)] - 1 = F1\'Last"'
         r"$",
     )
 
@@ -776,12 +776,12 @@ def test_conditionally_unreachable_field_mod_last() -> None:
         r"^"
         r'model: error: unreachable field "F2" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
         r'model: error: unreachable field "Final" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"',
     )
@@ -832,12 +832,12 @@ def test_conditionally_unreachable_field_range_last() -> None:
         r"^"
         r'model: error: unreachable field "F2" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
         r'model: error: unreachable field "Final" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"',
     )
@@ -888,12 +888,12 @@ def test_conditionally_unreachable_field_enum_last() -> None:
         r"^"
         r'model: error: unreachable field "F2" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
         r'model: error: unreachable field "Final" in "P.M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(][(][(]F1\'Last [+] 1[)] [+] 8[)][)] - 1"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"',
     )

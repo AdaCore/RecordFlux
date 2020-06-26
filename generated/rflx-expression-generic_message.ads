@@ -301,14 +301,14 @@ private
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Last
-                       and Cursors (F).First <= (Cursors (F).Last + 1)
+                       and Cursors (F).First <= Cursors (F).Last + 1
                        and Cursors (F).Value.Fld = F))
       and then (True)
       and then (True)
       and then (if
                    Structural_Valid (Cursors (F_Payload))
                 then
-                   (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = 16
+                   Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = 16
                    and then Cursors (F_Payload).Predecessor = F_Initial
                    and then Cursors (F_Payload).First = First));
 

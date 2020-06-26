@@ -393,7 +393,7 @@ private
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Last
-                       and Cursors (F).First <= (Cursors (F).Last + 1)
+                       and Cursors (F).First <= Cursors (F).Last + 1
                        and Cursors (F).Value.Fld = F))
       and then ((if
                     Structural_Valid (Cursors (F_Length))
@@ -417,22 +417,22 @@ private
       and then (if
                    Structural_Valid (Cursors (F_Tag))
                 then
-                   (Cursors (F_Tag).Last - Cursors (F_Tag).First + 1) = RFLX.TLV.Tag_Base'Size
+                   Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = RFLX.TLV.Tag_Base'Size
                    and then Cursors (F_Tag).Predecessor = F_Initial
                    and then Cursors (F_Tag).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Length))
                                 and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
                              then
-                                (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = RFLX.TLV.Length'Size
+                                Cursors (F_Length).Last - Cursors (F_Length).First + 1 = RFLX.TLV.Length'Size
                                 and then Cursors (F_Length).Predecessor = F_Tag
-                                and then Cursors (F_Length).First = (Cursors (F_Tag).Last + 1)
+                                and then Cursors (F_Length).First = Cursors (F_Tag).Last + 1
                                 and then (if
                                              Structural_Valid (Cursors (F_Value))
                                           then
-                                             (Cursors (F_Value).Last - Cursors (F_Value).First + 1) = Types.Bit_Length (Cursors (F_Length).Value.Length_Value) * 8
+                                             Cursors (F_Value).Last - Cursors (F_Value).First + 1 = Types.Bit_Length (Cursors (F_Length).Value.Length_Value) * 8
                                              and then Cursors (F_Value).Predecessor = F_Length
-                                             and then Cursors (F_Value).First = (Cursors (F_Length).Last + 1)))));
+                                             and then Cursors (F_Value).First = Cursors (F_Length).Last + 1))));
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
       record

@@ -612,7 +612,7 @@ class Add(AssExpr):
                 result += f" - {self.parenthesized(-t)}"
             else:
                 result += f"{self.symbol}{self.parenthesized(t)}"
-        return f"({result})"
+        return f"{result}"
 
     def __neg__(self) -> Expr:
         return Add(*[-term for term in self.terms])
