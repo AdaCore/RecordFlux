@@ -10,9 +10,6 @@ with open("rflx/__init__.py") as f:
 with open("README.md") as f:
     readme = f.read()
 
-with open("requirements.txt") as f:
-    requirements = f.read().splitlines()
-
 setup(
     name="RecordFlux",
     version=version,
@@ -47,6 +44,18 @@ setup(
     package_data={"rflx": ["templates/*"]},
     python_requires=">=3.6",
     install_requires=["icontract >=2.3.4", "pydotplus", "pyparsing >=2.4.0", "z3-solver"],
-    extras_require={"devel": requirements},
+    extras_require={
+        "devel": [
+            "black",
+            "coverage",
+            "flake8",
+            "isort",
+            "mypy",
+            "pyicontract-lint >=2.0.0",
+            "pylint",
+            "pytest",
+            "pytest-xdist",
+        ]
+    },
     scripts=["bin/rflx"],
 )
