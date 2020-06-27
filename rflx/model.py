@@ -805,6 +805,13 @@ class AbstractMessage(Type):
             assert righttype
             return (lefttype, righttype)
 
+        def __invalid_relation(left: TypeExpr, right: TypeExpr) -> bool:
+            return (
+                (isinstance(left, Opaque) and not isinstance(right, (Opaque, Aggregate)))
+                or (isinstance(left, Array) and not isinstance(right, (Array, Aggregate)))
+                or (isinstance(left, Aggregate) and not isinstance(right, Composite))
+            )
+
         for relation in expression.findall(lambda x: isinstance(x, Relation)):
             assert isinstance(relation, Relation)
             left, right = __resolve_types(
@@ -816,18 +823,9 @@ class AbstractMessage(Type):
                 ):
                     relation_error(relation, left, right)
             elif isinstance(relation, (Equal, NotEqual)):
-                # pylint: disable=too-many-boolean-expressions
-                if (
-                    (isinstance(left, Opaque) and not isinstance(right, (Opaque, Aggregate)))
-                    or (isinstance(left, Array) and not isinstance(right, (Array, Aggregate)))
-                    or (isinstance(left, Aggregate) and not isinstance(right, Composite))
-                ):
+                if __invalid_relation(left, right):
                     relation_error(relation, left, right)
-                elif (
-                    (not isinstance(left, (Opaque, Aggregate)) and isinstance(right, Opaque))
-                    or (not isinstance(left, (Array, Aggregate)) and isinstance(right, Array))
-                    or (not isinstance(left, Composite) and isinstance(right, Aggregate))
-                ):
+                elif __invalid_relation(left=right, right=left):
                     relation_error(relation, left=right, right=left)
                 elif isinstance(left, Aggregate) and isinstance(right, Composite):
                     check_composite_element_range(relation, left, right)
