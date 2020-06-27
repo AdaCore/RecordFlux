@@ -449,9 +449,6 @@ class MessageState(Base):
     field_condition: Mapping[Field, Expr] = {}
 
 
-TypeExpr = Union[Type, Expr]
-
-
 @invariant(lambda self: valid_message_field_types(self))
 class AbstractMessage(Type):
     # pylint: disable=too-many-arguments
@@ -723,6 +720,9 @@ class AbstractMessage(Type):
 
     # pylint: disable=too-many-statements
     def __check_relations(self, expression: Expr, literals: Dict[ID, Enumeration]) -> None:
+
+        TypeExpr = Union[Type, Expr]
+
         def check_composite_element_range(
             relation: Relation, aggregate: Aggregate, composite: Composite
         ) -> None:
