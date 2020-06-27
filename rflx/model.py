@@ -718,7 +718,6 @@ class AbstractMessage(Type):
                     location,
                 )
 
-    # pylint: disable=too-many-statements
     def __check_relations(self, expression: Expr, literals: Dict[ID, Enumeration]) -> None:
 
         TypeExpr = Union[Type, Expr]
@@ -784,40 +783,26 @@ class AbstractMessage(Type):
         def __resolve_types(
             left: Expr, right: Expr, literals: Dict[ID, Enumeration],
         ) -> Tuple[TypeExpr, TypeExpr]:
+            def __resolve_type(expr: Expr) -> Optional[TypeExpr]:
+                if not isinstance(expr, Variable):
+                    return expr
+                if expr.identifier in literals:
+                    return literals[expr.identifier]
+                if Field(expr.name) in self.types:
+                    return self.types[Field(expr.name)]
+                self.error.append(
+                    'undefined variable "{expr.identifier}" referenced',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    expr.location,
+                )
+                return None
 
-            lefttype: TypeExpr
-            if isinstance(left, Variable):
-                if left.identifier in literals:
-                    lefttype = literals[left.identifier]
-                elif Field(left.name) in self.types:
-                    lefttype = self.types[Field(left.name)]
-                else:
-                    self.error.append(
-                        'undefined variable "{left.identifier}" referenced',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        left.location,
-                    )
-            else:
-                lefttype = left
-
-            righttype: TypeExpr
-            if isinstance(right, Variable):
-                if right.identifier in literals:
-                    righttype = literals[right.identifier]
-                elif Field(right.name) in self.types:
-                    righttype = self.types[Field(right.name)]
-                else:
-                    self.error.append(
-                        'undefined variable "{right.identifier}" referenced',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        right.location,
-                    )
-            else:
-                righttype = right
-
+            lefttype = __resolve_type(left)
+            righttype = __resolve_type(right)
             self.error.propagate()
+            assert lefttype
+            assert righttype
             return (lefttype, righttype)
 
         for relation in expression.findall(lambda x: isinstance(x, Relation)):
