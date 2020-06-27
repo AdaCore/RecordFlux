@@ -721,45 +721,7 @@ class AbstractMessage(Type):
                     location,
                 )
 
-    def __resolve_types(
-        self, left: Expr, right: Expr, literals: Dict[ID, Enumeration],
-    ) -> Tuple[TypeExpr, TypeExpr]:
-
-        lefttype: TypeExpr
-        if isinstance(left, Variable):
-            if left.identifier in literals:
-                lefttype = literals[left.identifier]
-            elif Field(left.name) in self.types:
-                lefttype = self.types[Field(left.name)]
-            else:
-                self.error.append(
-                    'undefined variable "{left.identifier}" referenced',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    left.location,
-                )
-        else:
-            lefttype = left
-
-        righttype: TypeExpr
-        if isinstance(right, Variable):
-            if right.identifier in literals:
-                righttype = literals[right.identifier]
-            elif Field(right.name) in self.types:
-                righttype = self.types[Field(right.name)]
-            else:
-                self.error.append(
-                    'undefined variable "{right.identifier}" referenced',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    right.location,
-                )
-        else:
-            righttype = right
-
-        self.error.propagate()
-        return (lefttype, righttype)
-
+    # pylint: disable=too-many-statements
     def __check_relations(self, expression: Expr, literals: Dict[ID, Enumeration]) -> None:
         def check_composite_element_range(
             relation: Relation, aggregate: Aggregate, composite: Composite
@@ -819,9 +781,48 @@ class AbstractMessage(Type):
                 relation.location,
             )
 
+        def __resolve_types(
+            left: Expr, right: Expr, literals: Dict[ID, Enumeration],
+        ) -> Tuple[TypeExpr, TypeExpr]:
+
+            lefttype: TypeExpr
+            if isinstance(left, Variable):
+                if left.identifier in literals:
+                    lefttype = literals[left.identifier]
+                elif Field(left.name) in self.types:
+                    lefttype = self.types[Field(left.name)]
+                else:
+                    self.error.append(
+                        'undefined variable "{left.identifier}" referenced',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        left.location,
+                    )
+            else:
+                lefttype = left
+
+            righttype: TypeExpr
+            if isinstance(right, Variable):
+                if right.identifier in literals:
+                    righttype = literals[right.identifier]
+                elif Field(right.name) in self.types:
+                    righttype = self.types[Field(right.name)]
+                else:
+                    self.error.append(
+                        'undefined variable "{right.identifier}" referenced',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        right.location,
+                    )
+            else:
+                righttype = right
+
+            self.error.propagate()
+            return (lefttype, righttype)
+
         for relation in expression.findall(lambda x: isinstance(x, Relation)):
             assert isinstance(relation, Relation)
-            left, right = self.__resolve_types(
+            left, right = __resolve_types(
                 relation.left.simplified(), relation.right.simplified(), literals
             )
             if isinstance(relation, (Less, LessEqual, Greater, GreaterEqual)):
