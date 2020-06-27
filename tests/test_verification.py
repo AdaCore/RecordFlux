@@ -960,7 +960,7 @@ def test_aggregate_equal_valid_length() -> None:
         Link(INITIAL, Field("Magic"), length=Number(40)),
         Link(
             Field("Magic"),
-            Field("Final"),
+            FINAL,
             condition=Equal(
                 Variable("Magic"), Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
             ),
@@ -977,7 +977,7 @@ def test_aggregate_equal_invalid_length1() -> None:
         Link(INITIAL, Field("Magic"), length=Number(40)),
         Link(
             Field("Magic"),
-            Field("Final"),
+            FINAL,
             condition=Equal(Variable("Magic"), Aggregate(Number(1), Number(2))),
         ),
     ]
@@ -1000,7 +1000,7 @@ def test_aggregate_equal_invalid_length2() -> None:
         Link(INITIAL, Field("Magic"), length=Number(40)),
         Link(
             Field("Magic"),
-            Field("Final"),
+            FINAL,
             condition=Equal(Aggregate(Number(1), Number(2)), Variable("Magic")),
         ),
     ]
@@ -1023,7 +1023,7 @@ def test_aggregate_inequal_valid_length() -> None:
         Link(INITIAL, Field("Magic"), length=Number(40)),
         Link(
             Field("Magic"),
-            Field("Final"),
+            FINAL,
             condition=NotEqual(
                 Variable("Magic"), Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
             ),
@@ -1040,7 +1040,7 @@ def test_aggregate_inequal_invalid_length() -> None:
         Link(INITIAL, Field("Magic"), length=Number(40)),
         Link(
             Field("Magic"),
-            Field("Final"),
+            FINAL,
             condition=NotEqual(Variable("Magic"), Aggregate(Number(1), Number(2))),
         ),
     ]
@@ -1063,7 +1063,7 @@ def test_aggregate_equal_array_valid_length() -> None:
         Link(INITIAL, Field("Magic"), length=Number(14)),
         Link(
             Field("Magic"),
-            Field("Final"),
+            FINAL,
             condition=NotEqual(Variable("Magic"), Aggregate(Number(1), Number(2))),
         ),
     ]
@@ -1075,12 +1075,11 @@ def test_aggregate_equal_array_valid_length() -> None:
 
 def test_aggregate_equal_array_invalid_length() -> None:
     magic = Field(ID("Magic", Location((3, 5))))
-    final = Field(ID("Final", Location((10, 7))))
     structure = [
         Link(INITIAL, magic, length=Number(40, location=Location((19, 17)))),
         Link(
             magic,
-            final,
+            FINAL,
             condition=NotEqual(
                 Variable("Magic"), Aggregate(Number(1), Number(2)), Location((17, 3))
             ),
@@ -1162,11 +1161,10 @@ def test_no_contradiction_multi() -> None:
 
 
 def test_opaque_equal_scalar() -> None:
-    final = Field(ID("Final", Location((10, 7))))
     structure = [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Data"), length=Variable("Length")),
-        Link(Field("Data"), final, condition=Equal(Variable("Data"), Number(42))),
+        Link(Field("Data"), FINAL, condition=Equal(Variable("Data"), Number(42))),
     ]
     types = {Field("Length"): RANGE_INTEGER, Field("Data"): Opaque()}
     assert_message_model_error(
