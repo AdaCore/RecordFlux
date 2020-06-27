@@ -4,4 +4,8 @@ project RecordFlux is
    for Source_Dirs use (".", "../../specs");
    for Languages use ("Ada", "RecordFlux");
 
+   package Recordflux is
+      for Output_Dir use "../../generated";
+   end Recordflux;
+
 end RecordFlux;
