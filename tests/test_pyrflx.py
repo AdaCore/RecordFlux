@@ -642,7 +642,7 @@ def test_value_range() -> None:
 
 def test_value_enum() -> None:
     # pylint: disable=pointless-statement
-    enumtype = Enumeration("Test.Enum", {"One": Number(1), "Two": Number(2)}, Number(8), False)
+    enumtype = Enumeration("Test.Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False)
     enumvalue = EnumValue(enumtype)
     assert not enumvalue.initialized
     with pytest.raises(NotInitializedError, match="value not initialized"):
@@ -680,7 +680,7 @@ def test_value_opaque() -> None:
 def test_value_equal() -> None:
     # pylint: disable=comparison-with-itself
     ov = OpaqueValue(Opaque())
-    enumtype = Enumeration("Test.Enum", {"One": Number(1), "Two": Number(2)}, Number(8), False)
+    enumtype = Enumeration("Test.Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False)
     ev = EnumValue(enumtype)
     rangetype = RangeInteger("Test.Int", Number(8), Number(16), Number(8))
     rv = IntegerValue(rangetype)
@@ -787,7 +787,9 @@ def test_value_parse_from_bitstring(tlv: MessageValue) -> None:
     intval.parse(b"\x02")
     assert intval.value == 2
     enumval = EnumValue(
-        Enumeration("Test.Enum", {"something": Number(1), "other": Number(2)}, Number(2), False,)
+        Enumeration(
+            "Test.Enum", [("something", Number(1)), ("other", Number(2))], Number(2), False,
+        )
     )
     enumval.parse(b"\x01")
     assert enumval.value == "something"
@@ -851,7 +853,9 @@ def test_array_preserve_value() -> None:
     intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
     intval.assign(1)
     enumval = EnumValue(
-        Enumeration("Test.Enum", {"something": Number(1), "other": Number(2)}, Number(2), False,)
+        Enumeration(
+            "Test.Enum", [("something", Number(1)), ("other", Number(2))], Number(2), False,
+        )
     )
     enumval.assign("something")
     type_array = ArrayValue(Array("Test.Array", ModularInteger("Test.Mod_Int", Number(256))))
@@ -878,7 +882,9 @@ def test_array_assign_incorrect_values(
 
     intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
     enumval = EnumValue(
-        Enumeration("Test.Enum", {"something": Number(1), "other": Number(2)}, Number(2), False,)
+        Enumeration(
+            "Test.Enum", [("something", Number(1)), ("other", Number(2))], Number(2), False,
+        )
     )
     enumval.assign("something")
     with pytest.raises(ValueError, match="cannot assign EnumValue to an array of ModularInteger"):

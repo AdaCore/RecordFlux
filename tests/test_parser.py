@@ -436,32 +436,6 @@ def test_invalid_enumeration_type_size() -> None:
     )
 
 
-def test_invalid_enumeration_type_duplicate_elements() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T is (Foo, Foo) with Size => 1;
-            end Test;
-        """,
-        r'<stdin>:3:32: model: error: duplicate element "Foo"\n'
-        r"<stdin>:3:27: model: info: previous occurrence",
-    )
-
-
-def test_invalid_enumeration_type_multiple_duplicate_elements() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T is (Foo, Bar, Foo, Bar) with Size => 1;
-            end Test;
-        """,
-        r'<stdin>:3:37: model: error: duplicate element "Foo"\n'
-        r"<stdin>:3:27: model: info: previous occurrence\n"
-        r'<stdin>:3:42: model: error: duplicate element "Bar"\n'
-        r"<stdin>:3:32: model: info: previous occurrence",
-    )
-
-
 def test_invalid_enumeration_type_duplicate_values() -> None:
     assert_error_string(
         """
@@ -840,24 +814,27 @@ def test_enumeration_type_spec() -> None:
                 [
                     Enumeration(
                         "__PACKAGE__.Day",
-                        {
-                            "Mon": Number(1),
-                            "Tue": Number(2),
-                            "Wed": Number(3),
-                            "Thu": Number(4),
-                            "Fri": Number(5),
-                            "Sat": Number(6),
-                            "Sun": Number(7),
-                        },
+                        [
+                            ("Mon", Number(1)),
+                            ("Tue", Number(2)),
+                            ("Wed", Number(3)),
+                            ("Thu", Number(4)),
+                            ("Fri", Number(5)),
+                            ("Sat", Number(6)),
+                            ("Sun", Number(7)),
+                        ],
                         Number(3),
                         False,
                     ),
                     Enumeration(
-                        "__PACKAGE__.Gender", {"M": Number(0), "F": Number(1)}, Number(1), False,
+                        "__PACKAGE__.Gender",
+                        [("M", Number(0)), ("F", Number(1))],
+                        Number(1),
+                        False,
                     ),
                     Enumeration(
                         "__PACKAGE__.Priority",
-                        {"LOW": Number(1), "MEDIUM": Number(4), "HIGH": Number(7)},
+                        [("LOW", Number(1)), ("MEDIUM", Number(4)), ("HIGH", Number(7))],
                         Number(3),
                         True,
                     ),
