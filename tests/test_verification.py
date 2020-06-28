@@ -341,17 +341,17 @@ def test_invalid_type_condition_enum() -> None:
     ]
     e1 = Enumeration(
         "P.E1",
-        {"E1": Number(1), "E2": Number(2), "E3": Number(3)},
+        [("E1", Number(1)), ("E2", Number(2)), ("E3", Number(3))],
         Number(8),
         False,
-        location=Location((10, 4)),
+        Location((10, 4)),
     )
     e2 = Enumeration(
         "P.E2",
-        {"E4": Number(1), "E5": Number(2), "E6": Number(3)},
+        [("E4", Number(1)), ("E5", Number(2)), ("E6", Number(3))],
         Number(8),
         False,
-        location=Location((11, 4)),
+        Location((11, 4)),
     )
     types = {
         Field("F1"): e1,

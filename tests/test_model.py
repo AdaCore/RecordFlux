@@ -273,7 +273,7 @@ def test_range_invalid_size_exceeds_limit() -> None:
 def test_enumeration_invalid_size_variable() -> None:
     assert_type_error(
         Enumeration(
-            "P.T", {"A": Number(1)}, Add(Number(8), Variable("X")), False, Location((34, 3))
+            "P.T", [("A", Number(1))], Add(Number(8), Variable("X")), False, Location((34, 3))
         ),
         r'^<stdin>:34:3: model: error: size of "T" contains variable$',
     )
@@ -281,14 +281,14 @@ def test_enumeration_invalid_size_variable() -> None:
 
 def test_enumeration_invalid_size_too_small() -> None:
     assert_type_error(
-        Enumeration("P.T", {"A": Number(256)}, Number(8), False, Location((10, 5))),
+        Enumeration("P.T", [("A", Number(256))], Number(8), False, Location((10, 5))),
         r'^<stdin>:10:5: model: error: size of "T" too small$',
     )
 
 
 def test_enumeration_invalid_size_exceeds_limit() -> None:
     assert_type_error(
-        Enumeration("P.T", {"A": Number(256)}, Number(128), False, Location((8, 20))),
+        Enumeration("P.T", [("A", Number(256))], Number(128), False, Location((8, 20))),
         r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*64\)$',
     )
 
@@ -297,16 +297,16 @@ def test_enumeration_invalid_always_valid_aspect() -> None:
     with pytest.raises(
         RecordFluxError, match=r'^model: error: unnecessary always-valid aspect on "T"$'
     ):
-        Enumeration("P.T", {"A": Number(0), "B": Number(1)}, Number(1), True).error.propagate()
+        Enumeration("P.T", [("A", Number(0)), ("B", Number(1))], Number(1), True).error.propagate()
 
 
 def test_enumeration_invalid_literal() -> None:
     assert_type_error(
-        Enumeration("P.T", {"A B": Number(1)}, Number(8), False, Location(((1, 2)))),
+        Enumeration("P.T", [("A B", Number(1))], Number(8), False, Location(((1, 2)))),
         r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$',
     )
     assert_type_error(
-        Enumeration("P.T", {"A.B": Number(1)}, Number(8), False, Location((6, 4))),
+        Enumeration("P.T", [("A.B", Number(1))], Number(8), False, Location((6, 4))),
         r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$',
     )
 
@@ -636,7 +636,7 @@ def test_message_successors() -> None:
 
 def test_message_nonexistent_variable() -> None:
     mod_type = ModularInteger("P.MT", Pow(Number(2), Number(32)))
-    enum_type = Enumeration("P.ET", {"Val1": Number(0), "Val2": Number(1)}, Number(8), True)
+    enum_type = Enumeration("P.ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), True)
     structure = [
         Link(INITIAL, Field("F1")),
         Link(
@@ -1174,3 +1174,36 @@ def test_invalid_message_field_type() -> None:
         Message(
             "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): NewType("T")},
         )
+
+
+def test_invalid_enumeration_type_duplicate_elements() -> None:
+    assert_type_error(
+        Enumeration(
+            "P.T",
+            [(ID("Foo", Location((3, 27))), Number(1)), (ID("Foo", Location((3, 32))), Number(2))],
+            Number(1),
+            False,
+        ),
+        r'<stdin>:3:32: model: error: duplicate element "Foo"\n'
+        r"<stdin>:3:27: model: info: previous occurrence",
+    )
+
+
+def test_invalid_enumeration_type_multiple_duplicate_elements() -> None:
+    assert_type_error(
+        Enumeration(
+            "P.T",
+            [
+                (ID("Foo", Location((3, 27))), Number(1)),
+                (ID("Bar", Location((3, 32))), Number(2)),
+                (ID("Foo", Location((3, 37))), Number(3)),
+                (ID("Bar", Location((3, 42))), Number(4)),
+            ],
+            Number(2),
+            False,
+        ),
+        r'<stdin>:3:37: model: error: duplicate element "Foo"\n'
+        r"<stdin>:3:27: model: info: previous occurrence\n"
+        r'<stdin>:3:42: model: error: duplicate element "Bar"\n'
+        r"<stdin>:3:32: model: info: previous occurrence",
+    )

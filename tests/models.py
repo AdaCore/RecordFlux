@@ -34,7 +34,9 @@ from rflx.model import (
 NULL_MESSAGE = Message("Null.Message", [], {})
 NULL_MODEL = Model([NULL_MESSAGE])
 
-TLV_TAG = Enumeration("TLV.Tag", {"Msg_Data": Number(1), "Msg_Error": Number(3)}, Number(2), False)
+TLV_TAG = Enumeration(
+    "TLV.Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(2), False
+)
 TLV_LENGTH = ModularInteger("TLV.Length", Pow(Number(2), Number(14)))
 TLV_MESSAGE = Message(
     "TLV.Message",
@@ -117,7 +119,7 @@ ETHERNET_MODEL = Model(
 
 ENUMERATION_PRIORITY = Enumeration(
     "Enumeration.Priority",
-    {"LOW": Number(1), "MEDIUM": Number(4), "HIGH": Number(7)},
+    [("LOW", Number(1)), ("MEDIUM", Number(4)), ("HIGH", Number(7))],
     Number(3),
     True,
 )
@@ -134,12 +136,15 @@ ARRAYS_MODULAR_VECTOR = Array("Arrays.Modular_Vector", ARRAYS_MODULAR_INTEGER)
 ARRAYS_RANGE_INTEGER = RangeInteger("Arrays.Range_Integer", Number(1), Number(100), Number(8))
 ARRAYS_RANGE_VECTOR = Array("Arrays.Range_Vector", ARRAYS_RANGE_INTEGER)
 ARRAYS_ENUMERATION = Enumeration(
-    "Arrays.Enumeration", {"ZERO": Number(0), "ONE": Number(1), "TWO": Number(2)}, Number(8), False,
+    "Arrays.Enumeration",
+    [("ZERO", Number(0)), ("ONE", Number(1)), ("TWO", Number(2))],
+    Number(8),
+    False,
 )
 ARRAYS_ENUMERATION_VECTOR = Array("Arrays.Enumeration_Vector", ARRAYS_ENUMERATION)
 ARRAYS_AV_ENUMERATION = Enumeration(
     "Arrays.AV_Enumeration",
-    {"AV_ZERO": Number(0), "AV_ONE": Number(1), "AV_TWO": Number(2)},
+    [("AV_ZERO", Number(0)), ("AV_ONE", Number(1)), ("AV_TWO", Number(2))],
     Number(8),
     True,
 )
@@ -215,5 +220,8 @@ DERIVATION_MODEL = Model([*ARRAYS_MODEL.types, DERIVATION_MESSAGE])
 MODULAR_INTEGER = ModularInteger("P.Modular", Number(256))
 RANGE_INTEGER = RangeInteger("P.Range", Number(1), Number(100), Number(8))
 ENUMERATION = Enumeration(
-    "P.Enumeration", {"ZERO": Number(0), "ONE": Number(1), "TWO": Number(2)}, Number(8), False,
+    "P.Enumeration",
+    [("ZERO", Number(0)), ("ONE", Number(1)), ("TWO", Number(2))],
+    Number(8),
+    False,
 )
