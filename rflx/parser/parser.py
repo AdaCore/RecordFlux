@@ -18,7 +18,6 @@ from rflx.expression import UNDEFINED, Number
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
-    BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
     INTERNAL_TYPES,
@@ -123,8 +122,12 @@ class Parser:
                 self.__evaluate_specification(specification)
             except RecordFluxError as e:
                 error.extend(e)
+        try:
+            result = Model(list(self.__types.values()))
+        except RecordFluxError as e:
+            error.extend(e)
         error.propagate()
-        return Model(list(self.__types.values()))
+        return result
 
     @property
     def specifications(self) -> Dict[str, Specification]:
@@ -135,7 +138,6 @@ class Parser:
 
         error = RecordFluxError()
         self.__evaluate_types(specification, error)
-        check_types(self.__types, error)
         error.propagate()
 
     def __evaluate_types(self, spec: Specification, error: RecordFluxError) -> None:
@@ -187,57 +189,6 @@ class Parser:
 
 def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
     return {n: m for n, m in types.items() if isinstance(m, Message)}
-
-
-def check_types(types: Mapping[ID, Type], error: RecordFluxError) -> None:
-    for e1, e2 in [
-        (e1, e2)
-        for i1, e1 in enumerate(types.values())
-        for i2, e2 in enumerate(types.values())
-        if (
-            isinstance(e1, Enumeration)
-            and isinstance(e2, Enumeration)
-            and i1 < i2
-            and (
-                e1.package == e2.package
-                or e1.package == BUILTINS_PACKAGE
-                or e2.package == BUILTINS_PACKAGE
-            )
-        )
-    ]:
-        identical_literals = set(e2.literals) & set(e1.literals)
-
-        if identical_literals:
-            literals_message = ", ".join([f"{l}" for l in sorted(identical_literals)])
-            error.append(
-                f"conflicting literals: {literals_message}",
-                Subsystem.PARSER,
-                Severity.ERROR,
-                e2.location,
-            )
-            error.extend(
-                [
-                    (f'previous occurrence of "{l}"', Subsystem.PARSER, Severity.INFO, l.location)
-                    for l in sorted(identical_literals)
-                ]
-            )
-
-    literals = {l: t for t in types.values() if isinstance(t, Enumeration) for l in t.literals}
-    type_set = {t.name for t in types.keys()}
-    name_conflicts = [n for n in literals.keys() if n in type_set]
-    for name in sorted(name_conflicts):
-        error.append(
-            f'literal conflicts with type "{name}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            name.location,
-        )
-        type_location = [v.location for k, v in types.items() if k.name == name][0]
-        error.append(
-            "conflicting type declaration", Subsystem.PARSER, Severity.INFO, type_location,
-        )
-
-    error.propagate()
 
 
 def create_array(array: Array, types: Mapping[ID, Type]) -> Array:

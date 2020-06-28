@@ -286,7 +286,7 @@ def test_incorrect_specification() -> None:
 def test_unexpected_exception_in_parser(monkeypatch: Any) -> None:
     p = Parser()
     with pytest.raises(RecordFluxError, match=r"parser: error: TEST"):
-        monkeypatch.setattr(parser, "check_types", lambda x, e: raise_parser_error())
+        monkeypatch.setattr(parser, "check_naming", lambda x, e: raise_parser_error())
         p.parse_string(
             """
                 package Test is
@@ -462,53 +462,11 @@ def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
     )
 
 
-def test_invalid_enumeration_type_identical_literals() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T1 is (Foo, Bar) with Size => 1;
-               type T2 is (Bar, Baz) with Size => 1;
-            end Test;
-        """,
-        r"<stdin>:4:16: parser: error: conflicting literals: Bar\n"
-        r'<stdin>:3:33: parser: info: previous occurrence of "Bar"',
-    )
-
-
 def test_invalid_enumeration_type_identical_literals_location() -> None:
     assert_error_files(
         [f"{TESTDIR}/identical_literals.rflx"],
-        f"{TESTDIR}/identical_literals.rflx:3:4: parser: error: conflicting literals: Bar\n"
-        f'{TESTDIR}/identical_literals.rflx:2:21: parser: info: previous occurrence of "Bar"',
-    )
-
-
-def test_invalid_enumeration_type_builtin_literals() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T is (True, False) with Size => 1;
-            end Test;
-        """,
-        r"<stdin>:3:16: parser: error: conflicting literals: False, True\n"
-        r'__BUILTINS__:0:0: parser: info: previous occurrence of "False"\n'
-        r'__BUILTINS__:0:0: parser: info: previous occurrence of "True"',
-    )
-
-
-def test_name_conflict_between_literal_and_type() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T is (Foo, Bar) with Size => 1;
-               type Foo is mod 2**8;
-               type Bar is mod 2**8;
-            end Test;
-        """,
-        r'<stdin>:3:32: parser: error: literal conflicts with type "Bar"\n'
-        r"<stdin>:5:16: parser: info: conflicting type declaration\n"
-        r'<stdin>:3:27: parser: error: literal conflicts with type "Foo"\n'
-        r"<stdin>:4:16: parser: info: conflicting type declaration",
+        f"{TESTDIR}/identical_literals.rflx:3:4: model: error: conflicting literals: Bar\n"
+        f'{TESTDIR}/identical_literals.rflx:2:21: model: info: previous occurrence of "Bar"',
     )
 
 
@@ -1279,16 +1237,4 @@ def test_parsed_field_locations() -> None:
     assert m.messages[0].fields == (
         Field(ID("F1", Location((6, 21), end=(6, 22)))),
         Field(ID("F2", Location((7, 21), end=(7, 22)))),
-    )
-
-
-def test_conflicting_literal_builtin_type() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T is (E1, Boolean) with Size => 8;
-            end Test;
-        """,
-        r'<stdin>:3:31: parser: error: literal conflicts with type "Boolean"\n'
-        r"__BUILTINS__:0:0: parser: info: conflicting type declaration",
     )
