@@ -281,12 +281,40 @@ class Enumeration(Scalar):
     def __init__(
         self,
         identifier: StrID,
-        literals: Dict[StrID, Number],
+        literals: Sequence[Tuple[StrID, Number]],
         size: Expr,
         always_valid: bool,
         location: Location = None,
     ) -> None:
         super().__init__(identifier, size, location)
+
+        for i1, e1 in enumerate(literals):
+            for i2, e2 in enumerate(literals):
+                if i2 < i1 and e1[0] == e2[0]:
+                    self.error.append(
+                        f'duplicate element "{e1[0]}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        e1[0].location if isinstance(e1[0], ID) else self.location,
+                    )
+                    self.error.append(
+                        "previous occurrence",
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        e2[0].location if isinstance(e2[0], ID) else self.location,
+                    )
+
+        self.literals = {}
+        for k, v in literals:
+            if " " in str(k) or "." in str(k):
+                self.error.append(
+                    f'invalid literal name "{k}" in "{self.name}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
+                )
+                continue
+            self.literals[ID(k)] = v
 
         size_num = size.simplified()
 
@@ -299,7 +327,9 @@ class Enumeration(Scalar):
             )
             return
 
-        if max(map(int, literals.values())).bit_length() > int(size_num):
+        if self.literals.values() and max(map(int, self.literals.values())).bit_length() > int(
+            size_num
+        ):
             self.error.append(
                 f'size of "{self.name}" too small', Subsystem.MODEL, Severity.ERROR, self.location,
             )
@@ -310,8 +340,8 @@ class Enumeration(Scalar):
                 Severity.ERROR,
                 self.location,
             )
-        for i1, v1 in enumerate(literals.values()):
-            for i2, v2 in enumerate(literals.values()):
+        for i1, v1 in enumerate(self.literals.values()):
+            for i2, v2 in enumerate(self.literals.values()):
                 if i1 < i2 and v1 == v2:
                     self.error.append(
                         f'duplicate enumeration value "{v1}" in "{self.name}"',
@@ -322,18 +352,6 @@ class Enumeration(Scalar):
                     self.error.append(
                         "previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location
                     )
-
-        self.literals = {}
-        for k, v in literals.items():
-            if " " in str(k) or "." in str(k):
-                self.error.append(
-                    f'invalid literal name "{k}" in "{self.name}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
-                )
-                continue
-            self.literals[ID(k)] = v
 
         if always_valid and len(self.literals) == 2 ** int(size_num):
             self.error.append(
@@ -1600,10 +1618,10 @@ INTERNAL_TYPES = {
 
 BOOLEAN = Enumeration(
     BUILTINS_PACKAGE * "Boolean",
-    {
-        ID("False", Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0))): Number(0),
-        ID("True", Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0))): Number(1),
-    },
+    [
+        (ID("False", Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0))), Number(0)),
+        (ID("True", Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0))), Number(1)),
+    ],
     Number(1),
     False,
     Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0)),

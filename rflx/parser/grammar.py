@@ -588,20 +588,6 @@ def parse_aspects(string: str, location: int, tokens: ParseResults) -> Dict[str,
 
 @fatalexceptions
 def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
-    def check_conflicts(tokens: ParseResults, error: RecordFluxError) -> None:
-        for i1, e1 in enumerate(tokens):
-            for i2, e2 in enumerate(tokens):
-                if i2 < i1 and e1[0] == e2[0]:
-                    error.append(
-                        f'duplicate element "{e1[0]}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        e1[0].location,
-                    )
-                    error.append(
-                        "previous occurrence", Subsystem.MODEL, Severity.INFO, e2[0].location
-                    )
-
     package = ID("__PACKAGE__")
     name = tokens[1]
 
@@ -619,14 +605,13 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
     if tokens[3] == "null message":
         return MessageSpec(identifier, [], locn)
     if tokens[3] == "(":
-        elements = dict(tokens[4:-3])
+        elements = tokens[4:-3]
         aspects = tokens[-2]
         if "always_valid" not in aspects:
             aspects["always_valid"] = False
         enumeration = Enumeration(
             identifier, elements, aspects["size"], aspects["always_valid"], locn
         )
-        check_conflicts(tokens[4:-3], enumeration.error)
         return enumeration
     if tokens[3] == "new":
         return DerivationSpec(identifier, tokens[4], locn)
