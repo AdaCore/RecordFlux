@@ -1191,7 +1191,7 @@ def test_invalid_enumeration_type_duplicate_elements() -> None:
             Number(1),
             False,
         ),
-        r'<stdin>:3:32: model: error: duplicate element "Foo"\n'
+        r'<stdin>:3:32: model: error: duplicate literal "Foo"\n'
         r"<stdin>:3:27: model: info: previous occurrence",
     )
 
@@ -1209,9 +1209,9 @@ def test_invalid_enumeration_type_multiple_duplicate_elements() -> None:
             Number(2),
             False,
         ),
-        r'<stdin>:3:37: model: error: duplicate element "Foo"\n'
+        r'<stdin>:3:37: model: error: duplicate literal "Foo"\n'
         r"<stdin>:3:27: model: info: previous occurrence\n"
-        r'<stdin>:3:42: model: error: duplicate element "Bar"\n'
+        r'<stdin>:3:42: model: error: duplicate literal "Bar"\n'
         r"<stdin>:3:32: model: info: previous occurrence",
     )
 

@@ -292,7 +292,7 @@ class Enumeration(Scalar):
             for i2, e2 in enumerate(literals):
                 if i2 < i1 and e1[0] == e2[0]:
                     self.error.append(
-                        f'duplicate element "{e1[0]}"',
+                        f'duplicate literal "{e1[0]}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         e1[0].location if isinstance(e1[0], ID) else self.location,
