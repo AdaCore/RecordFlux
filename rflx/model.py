@@ -780,10 +780,10 @@ class AbstractMessage(Type):
                 relation.location,
             )
 
-        def __resolve_types(
+        def resolve_types(
             left: Expr, right: Expr, literals: Dict[ID, Enumeration],
         ) -> Tuple[TypeExpr, TypeExpr]:
-            def __resolve_type(expr: Expr) -> Optional[TypeExpr]:
+            def resolve_type(expr: Expr) -> Optional[TypeExpr]:
                 if not isinstance(expr, Variable):
                     return expr
                 if expr.identifier in literals:
@@ -798,14 +798,14 @@ class AbstractMessage(Type):
                 )
                 return None
 
-            lefttype = __resolve_type(left)
-            righttype = __resolve_type(right)
+            lefttype = resolve_type(left)
+            righttype = resolve_type(right)
             self.error.propagate()
             assert lefttype
             assert righttype
             return (lefttype, righttype)
 
-        def __invalid_relation(left: TypeExpr, right: TypeExpr) -> bool:
+        def invalid_relation(left: TypeExpr, right: TypeExpr) -> bool:
             return (
                 (isinstance(left, Opaque) and not isinstance(right, (Opaque, Aggregate)))
                 or (isinstance(left, Array) and not isinstance(right, (Array, Aggregate)))
@@ -814,7 +814,7 @@ class AbstractMessage(Type):
 
         for relation in expression.findall(lambda x: isinstance(x, Relation)):
             assert isinstance(relation, Relation)
-            left, right = __resolve_types(
+            left, right = resolve_types(
                 relation.left.simplified(), relation.right.simplified(), literals
             )
             if isinstance(relation, (Less, LessEqual, Greater, GreaterEqual)):
@@ -823,9 +823,9 @@ class AbstractMessage(Type):
                 ):
                     relation_error(relation, left, right)
             elif isinstance(relation, (Equal, NotEqual)):
-                if __invalid_relation(left, right):
+                if invalid_relation(left, right):
                     relation_error(relation, left, right)
-                elif __invalid_relation(left=right, right=left):
+                elif invalid_relation(left=right, right=left):
                     relation_error(relation, left=right, right=left)
                 elif isinstance(left, Aggregate) and isinstance(right, Composite):
                     check_composite_element_range(relation, left, right)
