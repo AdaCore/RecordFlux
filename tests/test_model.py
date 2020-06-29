@@ -16,6 +16,8 @@ from rflx.expression import (
     GreaterEqual,
     Length,
     LessEqual,
+    Mod,
+    Mul,
     NotEqual,
     Number,
     Or,
@@ -1400,4 +1402,127 @@ def test_invalid_enumeration_type_identical_literals() -> None:
         ],
         r"<stdin>:4:16: model: error: conflicting literals: Bar\n"
         r'<stdin>:3:33: model: info: previous occurrence of "Bar"',
+    )
+
+
+def test_opaque_not_byte_aligned() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:44:3: model: error: opaque field "O" not aligned to 8 bit boundary',
+    ):
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, Field("P")),
+                Link(Field("P"), Field("O"), length=Number(128)),
+                Link(Field("O"), FINAL),
+            ],
+            {Field("P"): ModularInteger("P.T", Number(4)), Field("O"): Opaque()},
+        )
+
+
+def test_opaque_not_byte_aligned_dynamic() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:44:3: model: error: opaque field "O2" not aligned to 8 bit boundary',
+    ):
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, Field("L1")),
+                Link(
+                    Field("L1"),
+                    Field("O1"),
+                    length=Variable("L1"),
+                    condition=Equal(Mod(Variable("L1"), Number(8)), Number(0)),
+                ),
+                Link(Field("O1"), Field("L2")),
+                Link(Field("L2"), Field("O2"), length=Number(128)),
+                Link(Field("O2"), FINAL),
+            ],
+            {
+                Field("L1"): MODULAR_INTEGER,
+                Field("L2"): ModularInteger("P.T", Number(4)),
+                Field("O1"): Opaque(),
+                Field("O2"): Opaque(),
+            },
+        )
+
+
+def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
+    Message(
+        "P.M",
+        [
+            Link(INITIAL, Field("L")),
+            Link(Field("L"), Field("O1"), length=Mul(Number(8), Variable("L"))),
+            Link(Field("O1"), FINAL),
+        ],
+        {Field("L"): MODULAR_INTEGER, Field("O1"): Opaque(),},
+    )
+
+
+def test_opaque_valid_byte_aligned_dynamic_constrained() -> None:
+    Message(
+        "P.M",
+        [
+            Link(INITIAL, Field("L")),
+            Link(
+                Field("L"),
+                Field("O1"),
+                length=Variable("L"),
+                condition=Equal(Mod(Variable("L"), Number(8)), Number(0)),
+            ),
+            Link(Field("O1"), Field("O2"), length=Number(128)),
+            Link(Field("O2"), FINAL),
+        ],
+        {
+            Field("L"): ModularInteger("P.T", Number(16)),
+            Field("O1"): Opaque(),
+            Field("O2"): Opaque(),
+        },
+    )
+
+
+def test_opaque_length_not_multiple_of_8() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:44:3: model: error: length of opaque field "O" not multiple of 8 bit',
+    ):
+        Message(
+            "P.M",
+            [Link(INITIAL, Field("O"), length=Number(68)), Link(Field("O"), FINAL)],
+            {Field("O"): Opaque()},
+        )
+
+
+def test_opaque_length_not_multiple_of_8_dynamic() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:44:3: model: error: length of opaque field "O" not multiple of 8 bit',
+    ):
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, Field("L")),
+                Link(Field("L"), Field("O"), length=Variable("L")),
+                Link(Field("O"), FINAL),
+            ],
+            {Field("L"): MODULAR_INTEGER, Field("O"): Opaque()},
+        )
+
+
+def test_opaque_length_valid_multiple_of_8_dynamic_constrained() -> None:
+    Message(
+        "P.M",
+        [
+            Link(INITIAL, Field("L")),
+            Link(
+                Field("L"),
+                Field("O"),
+                length=Variable("L"),
+                condition=Equal(Mod(Variable("L"), Number(8)), Number(0)),
+            ),
+            Link(Field("O"), FINAL),
+        ],
+        {Field("L"): MODULAR_INTEGER, Field("O"): Opaque()},
     )
