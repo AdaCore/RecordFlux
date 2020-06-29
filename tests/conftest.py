@@ -10,7 +10,7 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
             "Expr instances",
             "repr:",
             *[f"    {l}" for l in ("Actual:   " + repr(left)).split("\n")],
-            *[f"    {l}" for l in ("Expected: " + repr(left)).split("\n")],
+            *[f"    {l}" for l in ("Expected: " + repr(right)).split("\n")],
             "str:",
             "    Actual:   " + re.sub(r"\n +", " ", str(left)),
             "    Expected: " + re.sub(r"\n +", " ", str(right)),
