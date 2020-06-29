@@ -2,7 +2,7 @@ from typing import Iterable, Iterator, Set, TypeVar
 
 
 def generic_repr(class_name: str, obj_dict: dict) -> str:
-    args = "\n" + ",\n".join(f"{k}={v!r}" for k, v in obj_dict.items())
+    args = "\n" + ",\n".join(f"{k}={v!r}" for k, v in obj_dict.items() if k != "location")
     return indent_next(f"\n{class_name}({indent(args, 4)})", 4)
 
 
