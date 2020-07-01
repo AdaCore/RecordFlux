@@ -1,7 +1,8 @@
 with "aunit";
-with "switches";
+with "defaults";
 
 project Test is
+
    type Flag_Type is ("yes", "no");
    AUnit : Flag_Type := external ("aunit", "yes");
    Optimization : Flag_Type := external ("optimization", "no");
@@ -27,18 +28,21 @@ project Test is
    for Object_Dir use "build";
    for Create_Missing_Dirs use "True";
 
+   package Builder is
+      case Optimization is
+         when "yes" =>
+            for Default_Switches ("Ada") use Defaults.Builder_Switches & ("-O3");
+         when "no" =>
+            for Default_Switches ("Ada") use Defaults.Builder_Switches & Defaults.Compiler_Switches;
+      end case;
+   end Builder;
+
+   package Binder is
+      for Default_Switches ("Ada") use Defaults.Binder_Switches;
+   end Binder;
+
    package Prove is
-      for Proof_Switches ("Ada") use (
-         "-j0",
-         "--prover=z3,cvc4,altergo",
-         "--steps=1000",
-         "--timeout=60",
-         "--memlimit=1000",
-         "--checks-as-errors",
-         "--warnings=error",
-         "--proof-warnings",
-         "--no-axiom-guard"
-      );
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches;
 
       --  Improving proof time
       for Proof_Switches ("rflx-ethernet-frame.ads") use ("--steps=15000");
@@ -61,19 +65,5 @@ project Test is
             for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=92000");
       end case;
    end Prove;
-
-   package Builder is
-      for Switches ("Ada") use ("-j0");
-      case Optimization is
-         when "yes" =>
-            for Default_Switches ("Ada") use ("-O3");
-         when "no" =>
-            for Default_Switches ("Ada") use Switches.Compiler_Switches;
-      end case;
-   end Builder;
-
-   package Binder is
-      for Default_Switches ("Ada") use ("-Es");
-   end Binder;
 
 end Test;

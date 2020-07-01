@@ -1,5 +1,22 @@
-abstract project Switches
-is
+abstract project Defaults is
+
+   Proof_Switches :=
+   (
+      "--prover=z3,cvc4,altergo",
+      "--steps=1000",
+      "--timeout=60",
+      "--memlimit=1000",
+      "--checks-as-errors",
+      "--warnings=error",
+      "--proof-warnings",
+      "--no-axiom-guard",
+      "-j0"
+   );
+
+   Builder_Switches :=
+   (
+      "-j0"
+   );
 
    Compiler_Switches :=
    (
@@ -63,4 +80,9 @@ is
       ""
    );
 
-end Switches;
+   Binder_Switches :=
+   (
+      "-Es"
+   );
+
+end Defaults;
