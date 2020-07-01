@@ -50,6 +50,9 @@ from rflx.ada import (
     RangeSubtype,
     RangeType,
     RecordType,
+)
+from rflx.ada import Size as SizeAspect
+from rflx.ada import (
     SparkMode,
     Statement,
     Subprogram,
@@ -2665,7 +2668,7 @@ def create_file(filename: Path, content: str) -> None:
 
 
 def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
-    return [ModularType(integer.name, integer.modulus)]
+    return [ModularType(integer.name, integer.modulus, aspects=[SizeAspect(integer.size)])]
 
 
 def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
@@ -2675,7 +2678,7 @@ def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
             Pow(Number(2), integer.size),
             [Annotate("GNATprove", "No_Wrap_Around")],
         ),
-        RangeType(integer.name, integer.first, integer.last, integer.size),
+        RangeType(integer.name, integer.first, integer.last, aspects=[SizeAspect(integer.size)]),
     ]
 
 

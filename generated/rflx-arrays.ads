@@ -4,7 +4,9 @@ package RFLX.Arrays with
   SPARK_Mode
 is
 
-   type Length is mod 2**8;
+   type Length is mod 2**8 with
+     Size =>
+       8;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -36,7 +38,9 @@ is
      Pre =>
        Valid (Val);
 
-   type Modular_Integer is mod 2**16;
+   type Modular_Integer is mod 2**16 with
+     Size =>
+       16;
 
    pragma Warnings (Off, "precondition is * false");
 

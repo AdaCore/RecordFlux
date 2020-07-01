@@ -4,7 +4,9 @@ package RFLX.Ethernet with
   SPARK_Mode
 is
 
-   type Address is mod 2**48;
+   type Address is mod 2**48 with
+     Size =>
+       48;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -96,7 +98,9 @@ is
      Pre =>
        Valid (Val);
 
-   type TCI is mod 2**16;
+   type TCI is mod 2**16 with
+     Size =>
+       16;
 
    pragma Warnings (Off, "precondition is * false");
 
