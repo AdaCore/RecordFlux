@@ -286,6 +286,14 @@ def test_enumeration_invalid_size_variable() -> None:
     )
 
 
+def test_enumeration_invalid_literal_value() -> None:
+    assert_type_error(
+        Enumeration("P.T", [("A", Number(2 ** 63))], Number(64), False, Location((10, 5))),
+        r'^<stdin>:10:5: model: error: enumeration value of "T"'
+        r" outside of permitted range \(0 .. 2\*\*63 - 1\)$",
+    )
+
+
 def test_enumeration_invalid_size_too_small() -> None:
     assert_type_error(
         Enumeration("P.T", [("A", Number(256))], Number(8), False, Location((10, 5))),
