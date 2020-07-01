@@ -547,7 +547,7 @@ class AbstractMessage(Type):
     ) -> None:
         super().__init__(identifier, location, error)
 
-        self.structure = structure
+        self.structure = sorted(structure)
         self.__types = types
         self.__has_unreachable = False
         self._state = state or MessageState()

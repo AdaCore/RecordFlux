@@ -18,20 +18,20 @@ def test_graph_object() -> None:
     f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
     m = Message(
         "P.M",
-        structure=[Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
-        types={Field("F1"): f_type},
+        structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
+        types={Field("X"): f_type},
     )
     g = Graph(m).get
     assert [(e.get_source(), e.get_destination()) for e in g.get_edges()] == [
-        ("Initial", "F1"),
-        ("F1", "Final"),
+        ("Initial", "X"),
+        ("X", "Final"),
     ]
     assert [n.get_name() for n in g.get_nodes()] == [
         "graph",
         "edge",
         "node",
         "Initial",
-        "F1",
+        "X",
         "Final",
     ]
 
@@ -57,8 +57,8 @@ def test_dot_graph() -> None:
     f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
     m = Message(
         "P.M",
-        structure=[Link(INITIAL, Field("F1")), Link(Field("F1"), FINAL)],
-        types={Field("F1"): f_type},
+        structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
+        types={Field("X"): f_type},
     )
     expected = """
         digraph "P.M" {
@@ -67,9 +67,9 @@ def test_dot_graph() -> None:
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
-            F1;
-            Initial -> F1 [xlabel="(⊤, 32, ⋆)"];
-            F1 -> Final [xlabel="(⊤, 0, ⋆)"];
+            X;
+            Initial -> X [xlabel="(⊤, 32, ⋆)"];
+            X -> Final [xlabel="(⊤, 0, ⋆)"];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
@@ -82,10 +82,10 @@ def test_dot_graph_with_condition() -> None:
     m = Message(
         "P.M",
         structure=[
-            Link(INITIAL, Field("F1")),
-            Link(Field("F1"), FINAL, Greater(Variable("F1"), Number(100))),
+            Link(INITIAL, Field("X")),
+            Link(Field("X"), FINAL, Greater(Variable("X"), Number(100))),
         ],
-        types={Field("F1"): f_type},
+        types={Field("X"): f_type},
     )
     expected = """
         digraph "P.M" {
@@ -94,9 +94,9 @@ def test_dot_graph_with_condition() -> None:
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
-            F1;
-            Initial -> F1 [xlabel="(⊤, 32, ⋆)"];
-            F1 -> Final [xlabel="(F1 > 100, 0, ⋆)"];
+            X;
+            Initial -> X [xlabel="(⊤, 32, ⋆)"];
+            X -> Final [xlabel="(X > 100, 0, ⋆)"];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
@@ -109,11 +109,11 @@ def test_dot_graph_with_double_edge() -> None:
     m = Message(
         "P.M",
         structure=[
-            Link(INITIAL, Field("F1")),
-            Link(Field("F1"), FINAL, Greater(Variable("F1"), Number(100))),
-            Link(Field("F1"), FINAL, Less(Variable("F1"), Number(50))),
+            Link(INITIAL, Field("X")),
+            Link(Field("X"), FINAL, Greater(Variable("X"), Number(100))),
+            Link(Field("X"), FINAL, Less(Variable("X"), Number(50))),
         ],
-        types={Field("F1"): f_type},
+        types={Field("X"): f_type},
     )
     expected = """
         digraph "P.M" {
@@ -122,10 +122,10 @@ def test_dot_graph_with_double_edge() -> None:
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
-            F1;
-            Initial -> F1 [xlabel="(⊤, 32, ⋆)"];
-            F1 -> Final [xlabel="(F1 > 100, 0, ⋆)"];
-            F1 -> Final [xlabel="(F1 < 50, 0, ⋆)"];
+            X;
+            Initial -> X [xlabel="(⊤, 32, ⋆)"];
+            X -> Final [xlabel="(X > 100, 0, ⋆)"];
+            X -> Final [xlabel="(X < 50, 0, ⋆)"];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """

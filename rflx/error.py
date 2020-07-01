@@ -50,6 +50,11 @@ class Location:
             return self.__dict__ == other.__dict__
         return NotImplemented
 
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.start < other.start
+        return NotImplemented
+
     def __hash__(self) -> int:
         return hash(f"{self.__start}:{self.__source}:{self.__end}")
 

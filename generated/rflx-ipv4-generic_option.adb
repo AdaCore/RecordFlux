@@ -37,15 +37,15 @@ is
 
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if
+          Structural_Valid (Ctx.Cursors (F_Option_Data))
+       then
+          Ctx.Cursors (F_Option_Data).Last
+       elsif
           Structural_Valid (Ctx.Cursors (F_Option_Number))
           and then (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
                     and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)
        then
           Ctx.Cursors (F_Option_Number).Last
-       elsif
-          Structural_Valid (Ctx.Cursors (F_Option_Data))
-       then
-          Ctx.Cursors (F_Option_Data).Last
        else
           Types.Unreachable_Bit_Length));
 
@@ -275,10 +275,10 @@ is
              (Valid (Ctx.Cursors (F_Option_Length))
               and Ctx.Cursors (Fld).Predecessor = F_Option_Length),
           when F_Final =>
-             (Valid (Ctx.Cursors (F_Option_Number))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Number)
-             or (Structural_Valid (Ctx.Cursors (F_Option_Data))
-                 and Ctx.Cursors (Fld).Predecessor = F_Option_Data)));
+             (Structural_Valid (Ctx.Cursors (F_Option_Data))
+              and Ctx.Cursors (Fld).Predecessor = F_Option_Data)
+             or (Valid (Ctx.Cursors (F_Option_Number))
+                 and Ctx.Cursors (Fld).Predecessor = F_Option_Number)));
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is

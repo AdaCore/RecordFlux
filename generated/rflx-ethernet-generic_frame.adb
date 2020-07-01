@@ -208,14 +208,14 @@ is
                  Types.Unreachable_Bit_Length),
           when F_Type_Length =>
              (if
+                 Ctx.Cursors (Fld).Predecessor = F_TCI
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              elsif
                  Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID
                  and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
               then
                  Ctx.Cursors (F_Type_Length_TPID).First
-              elsif
-                 Ctx.Cursors (Fld).Predecessor = F_TCI
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
                  Types.Unreachable_Bit_Length),
           when F_Payload =>
@@ -307,10 +307,10 @@ is
              (Valid (Ctx.Cursors (F_TPID))
               and Ctx.Cursors (Fld).Predecessor = F_TPID),
           when F_Type_Length =>
-             (Valid (Ctx.Cursors (F_Type_Length_TPID))
-              and Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID)
-             or (Valid (Ctx.Cursors (F_TCI))
-                 and Ctx.Cursors (Fld).Predecessor = F_TCI),
+             (Valid (Ctx.Cursors (F_TCI))
+              and Ctx.Cursors (Fld).Predecessor = F_TCI)
+             or (Valid (Ctx.Cursors (F_Type_Length_TPID))
+                 and Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID),
           when F_Payload =>
              (Valid (Ctx.Cursors (F_Type_Length))
               and Ctx.Cursors (Fld).Predecessor = F_Type_Length),
