@@ -97,8 +97,8 @@ def test_exclusive_conflict() -> None:
         types,
         r"^"
         r'<stdin>:8:4: model: error: conflicting conditions for field "F1"\n'
-        r"<stdin>:10:5: model: info: condition 0 [(]F1 -> Final[)]: F1 > 50\n"
-        r"<stdin>:11:7: model: info: condition 1 [(]F1 -> F2[)]: F1 < 80"
+        r"<stdin>:11:7: model: info: condition 0 [(]F1 -> F2[)]: F1 < 80\n"
+        r"<stdin>:10:5: model: info: condition 1 [(]F1 -> Final[)]: F1 > 50"
         r"$",
     )
 
@@ -142,8 +142,8 @@ def test_exclusive_with_length_invalid() -> None:
         types,
         r"^"
         r'<stdin>:98:10: model: error: conflicting conditions for field "F1"\n'
-        r"<stdin>:10:2: model: info: condition 0 [(]F1 -> Final[)]: F1\'Length = 32\n"
-        r"<stdin>:12:4: model: info: condition 1 [(]F1 -> F2[)]: F1\'Length = 32"
+        r"<stdin>:12:4: model: info: condition 0 [(]F1 -> F2[)]: F1\'Length = 32\n"
+        r"<stdin>:10:2: model: info: condition 1 [(]F1 -> Final[)]: F1\'Length = 32"
         r"$",
     )
 

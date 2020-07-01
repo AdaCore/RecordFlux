@@ -74,8 +74,8 @@ is
           when F_Initial =>
              True,
           when F_Tag =>
-             Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Msg_Data))
-             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Msg_Error)),
+             Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Msg_Error))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Msg_Data)),
           when F_Length | F_Value =>
              True,
           when F_Final =>
@@ -138,13 +138,13 @@ is
      ((case Fld is
           when F_Tag =>
              (if
-                 Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
-              then
-                 F_Length
-              elsif
                  Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))
               then
                  F_Final
+              elsif
+                 Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
+              then
+                 F_Length
               else
                  F_Initial),
           when F_Length =>
@@ -386,17 +386,17 @@ is
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Tag)
-      and then ((Valid (Ctx, F_Length)
-                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
-                 and then Structural_Valid (Ctx, F_Value))
-                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))));
+      and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))
+                or (Valid (Ctx, F_Length)
+                    and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
+                    and then Structural_Valid (Ctx, F_Value))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Tag)
-      and then ((Valid (Ctx, F_Length)
-                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
-                 and then Valid (Ctx, F_Value))
-                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))));
+      and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))
+                or (Valid (Ctx, F_Length)
+                    and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
+                    and then Valid (Ctx, F_Value))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Tag)

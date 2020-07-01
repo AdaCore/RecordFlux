@@ -14,6 +14,7 @@ from rflx.expression import (
     Equal,
     First,
     GreaterEqual,
+    Last,
     Length,
     LessEqual,
     Mod,
@@ -590,8 +591,8 @@ def test_message_field_condition() -> None:
     assert_equal(
         ETHERNET_FRAME.field_condition(Field("Type_Length")),
         Or(
-            NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
             Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
+            NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
         ),
     )
     assert_equal(
@@ -599,15 +600,15 @@ def test_message_field_condition() -> None:
         Or(
             And(
                 Or(
-                    NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
                     Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
+                    NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
                 ),
                 LessEqual(Variable("Type_Length"), Number(1500)),
             ),
             And(
                 Or(
-                    NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
                     Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
+                    NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
                 ),
                 GreaterEqual(Variable("Type_Length"), Number(1536)),
             ),
@@ -620,13 +621,13 @@ def test_message_incoming() -> None:
     assert_equal(
         ETHERNET_FRAME.incoming(Field("Type_Length")),
         [
+            Link(Field("TCI"), Field("Type_Length")),
             Link(
                 Field("Type_Length_TPID"),
                 Field("Type_Length"),
                 NotEqual(Variable("Type_Length_TPID"), Number(0x8100, 16)),
                 first=First("Type_Length_TPID"),
             ),
-            Link(Field("TCI"), Field("Type_Length")),
         ],
     )
     assert_equal(
@@ -646,7 +647,23 @@ def test_message_incoming() -> None:
 
 def test_message_outgoing() -> None:
     assert_equal(ETHERNET_FRAME.outgoing(INITIAL), [Link(INITIAL, Field("Destination"))])
-    assert_equal(ETHERNET_FRAME.outgoing(Field("Type_Length")), ETHERNET_FRAME.structure[7:9])
+    assert_equal(
+        ETHERNET_FRAME.outgoing(Field("Type_Length")),
+        [
+            Link(
+                Field("Type_Length"),
+                Field("Payload"),
+                LessEqual(Variable("Type_Length"), Number(1500)),
+                Mul(Variable("Type_Length"), Number(8)),
+            ),
+            Link(
+                Field("Type_Length"),
+                Field("Payload"),
+                GreaterEqual(Variable("Type_Length"), Number(1536)),
+                Sub(Last("Message"), Last("Type_Length")),
+            ),
+        ],
+    )
     assert_equal(ETHERNET_FRAME.outgoing(FINAL), [])
 
 
@@ -654,7 +671,7 @@ def test_message_direct_predecessors() -> None:
     assert_equal(ETHERNET_FRAME.direct_predecessors(INITIAL), [])
     assert_equal(
         ETHERNET_FRAME.direct_predecessors(Field("Type_Length")),
-        [Field("Type_Length_TPID"), Field("TCI")],
+        [Field("TCI"), Field("Type_Length_TPID")],
     )
     assert_equal(ETHERNET_FRAME.direct_predecessors(FINAL), [Field("Payload")])
 

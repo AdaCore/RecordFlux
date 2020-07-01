@@ -630,11 +630,11 @@ private
                 and then (if
                              Structural_Valid (Cursors (F_Type_Length))
                           then
-                             (Valid (Cursors (F_Type_Length_TPID))
-                              and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
-                              and then Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#)
-                             or (Valid (Cursors (F_TCI))
-                                 and then Cursors (F_Type_Length).Predecessor = F_TCI))
+                             (Valid (Cursors (F_TCI))
+                              and then Cursors (F_Type_Length).Predecessor = F_TCI)
+                             or (Valid (Cursors (F_Type_Length_TPID))
+                                 and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
+                                 and then Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#))
                 and then (if
                              Structural_Valid (Cursors (F_Payload))
                           then
@@ -661,8 +661,8 @@ private
                           then
                              Invalid (Cursors (F_TCI)))
                 and then (if
-                             Invalid (Cursors (F_Type_Length_TPID))
-                             and then Invalid (Cursors (F_TCI))
+                             Invalid (Cursors (F_TCI))
+                             and then Invalid (Cursors (F_Type_Length_TPID))
                           then
                              Invalid (Cursors (F_Type_Length)))
                 and then (if
