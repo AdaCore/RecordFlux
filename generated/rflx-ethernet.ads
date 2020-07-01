@@ -85,8 +85,7 @@ is
    pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.Ethernet.TPID_Base) return Boolean is
-     (Val >= 16#8100#
-      and Val <= 16#8100#);
+     (Val = 16#8100#);
 
    function To_Base (Val : RFLX.Ethernet.TPID) return RFLX.Ethernet.TPID_Base is
      (RFLX.Ethernet.TPID_Base (Val));
