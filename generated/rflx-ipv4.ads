@@ -23,8 +23,7 @@ is
    pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.IPv4.Version_Base) return Boolean is
-     (Val >= 4
-      and Val <= 4);
+     (Val = 4);
 
    function To_Base (Val : RFLX.IPv4.Version) return RFLX.IPv4.Version_Base is
      (RFLX.IPv4.Version_Base (Val));
