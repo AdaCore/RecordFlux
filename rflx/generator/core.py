@@ -2267,6 +2267,10 @@ class Generator:
         return UnitPart(specification)
 
     def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
+        enum_size = enum.size.simplified()
+        assert isinstance(enum_size, Number)
+        incomplete = len(enum.literals) < 2 ** int(enum_size)
+
         specification: List[Declaration] = []
 
         enum_value = Variable("Val")
@@ -2277,7 +2281,8 @@ class Generator:
         else:
             validation_cases: List[Tuple[Expr, Expr]] = []
             validation_cases.extend((value, Variable("True")) for value in enum.literals.values())
-            validation_cases.append((Variable("others"), Variable("False")))
+            if incomplete:
+                validation_cases.append((Variable("others"), Variable("False")))
 
             validation_expression = Case(enum_value, validation_cases)
 
@@ -2371,9 +2376,10 @@ class Generator:
 
         else:
             conversion_cases.extend((value, Variable(key)) for key, value in enum.literals.items())
-            conversion_cases.append(
-                (Variable("others"), Call(unreachable_function_name(enum.full_name)))
-            )
+            if incomplete:
+                conversion_cases.append(
+                    (Variable("others"), Call(unreachable_function_name(enum.full_name)))
+                )
 
             specification.extend(
                 [
