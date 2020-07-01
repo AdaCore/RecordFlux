@@ -408,11 +408,12 @@ class ModularType(TypeDeclaration):
 
 
 class RangeType(TypeDeclaration):
-    def __init__(self, identifier: StrID, first: Expr, last: Expr, size: Expr) -> None:
-        super().__init__(identifier, aspects=[Size(size)])
+    def __init__(
+        self, identifier: StrID, first: Expr, last: Expr, aspects: Sequence[Aspect] = None
+    ) -> None:
+        super().__init__(identifier, aspects=aspects or [])
         self.first = first
         self.last = last
-        self.size = size
 
     @property
     def type_definition(self) -> str:

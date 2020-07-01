@@ -4,7 +4,9 @@ package RFLX.UDP with
   SPARK_Mode
 is
 
-   type Port is mod 2**16;
+   type Port is mod 2**16 with
+     Size =>
+       16;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -66,7 +68,9 @@ is
      Pre =>
        Valid (Val);
 
-   type Checksum is mod 2**16;
+   type Checksum is mod 2**16 with
+     Size =>
+       16;
 
    pragma Warnings (Off, "precondition is * false");
 
