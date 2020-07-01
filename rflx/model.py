@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from rflx.common import flat_name, generic_repr
+from rflx.common import flat_name, generic_repr, indent, indent_next
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import (
@@ -52,6 +52,10 @@ class Base(ABC):
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
+
+    @property
+    def _prefixed_str(self) -> str:
+        return "\n" + "\n".join(f"# {l}" if l else "#" for l in str(self).split("\n")) + "\n"
 
 
 class Type(Base):
@@ -155,6 +159,15 @@ class ModularInteger(Integer):
         self.__modulus = modulus
         self._size = Number((modulus_int - 1).bit_length())
 
+    def __repr__(self) -> str:
+        return (
+            f"\nModularInteger(\n{indent(repr(self.identifier), 4)},{self.modulus!r}\n)"
+            + self._prefixed_str
+        )
+
+    def __str__(self) -> str:
+        return f"type {self.name} is mod {self.modulus}"
+
     @property
     def modulus(self) -> Expr:
         return self.__modulus
@@ -250,6 +263,19 @@ class RangeInteger(Integer):
 
         self.__first = first
         self.__last = last
+
+    def __repr__(self) -> str:
+        return (
+            "\nRangeInteger(\n"
+            f"{indent(repr(self.identifier), 4)},"
+            f"{self.first!r},"
+            f"{self.last!r},"
+            f"{self.size!r}"
+            "\n)" + self._prefixed_str
+        )
+
+    def __str__(self) -> str:
+        return f"type {self.name} is range {self.first} .. {self.last} with Size => {self.size}"
 
     @property
     def first(self) -> Expr:
@@ -387,6 +413,21 @@ class Enumeration(Scalar):
 
         self.always_valid = always_valid
 
+    def __repr__(self) -> str:
+        return (
+            "\nEnumeration(\n"
+            f"{indent(repr(self.identifier), 4)},\n"
+            f"{indent(repr(list(self.literals.items())), 4)},"
+            f"{self.size!r},\n"
+            f"{indent(repr(self.always_valid), 4)}"
+            "\n)" + self._prefixed_str
+        )
+
+    def __str__(self) -> str:
+        literals = ", ".join(f"{l} => {v}" for l, v in self.literals.items())
+        always_valid = f", Always_Valid => {self.always_valid}" if self.always_valid else ""
+        return f"type {self.name} is ({literals}) with Size => {self.size}{always_valid}"
+
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
     ) -> Sequence[Expr]:
@@ -455,6 +496,17 @@ class Array(Composite):
                     element_type.location,
                 )
 
+    def __repr__(self) -> str:
+        return (
+            "\nArray(\n"
+            f"{indent(repr(self.identifier), 4)},"
+            f"{indent(repr(self.element_type), 4)}"
+            "\n)" + self._prefixed_str
+        )
+
+    def __str__(self) -> str:
+        return f"type {self.name} is array of {self.element_type.name}"
+
     @property
     def element_size(self) -> Expr:
         return Length(self.element_type.name)
@@ -463,6 +515,9 @@ class Array(Composite):
 class Opaque(Composite):
     def __init__(self, location: Location = None) -> None:
         super().__init__(INTERNAL_PACKAGE * "Opaque", location)
+
+    def __repr__(self) -> str:
+        return "\nOpaque()"
 
     @property
     def element_size(self) -> Expr:
@@ -475,6 +530,9 @@ class Field(Base):
 
     def __hash__(self) -> int:
         return hash(self.identifier)
+
+    def __repr__(self) -> str:
+        return f'Field("{self.identifier}")'
 
     def __lt__(self, other: "Field") -> int:
         return self.identifier < other.identifier
@@ -503,6 +561,19 @@ class Link:
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
+
+    def __str__(self) -> str:
+        condition = indent_next(
+            f"\nif {indent_next(str(self.condition), 3)}" if self.condition != TRUE else "", 3
+        )
+        aspects = []
+        if self.length != UNDEFINED:
+            aspects.append(f"Length => {self.length}")
+        if self.first != UNDEFINED:
+            aspects.append(f"First => {self.first}")
+        with_clause = indent_next("\nwith " + ", ".join(aspects) if aspects else "", 3)
+        target_name = self.target.name if self.target != FINAL else "null"
+        return f"then {target_name}{with_clause}{condition}"
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -568,6 +639,38 @@ class AbstractMessage(Type):
                     self.__verify_conditions()
             except RecordFluxError:
                 pass
+
+    def __repr__(self) -> str:
+        return (
+            f"\n{self.__class__.__name__}(\n"
+            f"{indent(repr(self.identifier), 4)},\n"
+            f"{indent(repr(self.structure), 4)},\n"
+            f"{indent(repr(self.types), 4)},\n"
+            f"\n)" + self._prefixed_str
+        )
+
+    def __str__(self) -> str:
+        if not self.structure or not self.types:
+            return f"type {self.name} is null message"
+
+        fields = ""
+        for f in [INITIAL, *self.fields]:
+            if f != INITIAL:
+                fields += "\n" if fields else ""
+                fields += f"{f.name} : {self.types[f].name}"
+            outgoing = self.outgoing(f)
+            if not (
+                len(outgoing) == 1
+                and outgoing[0].condition == TRUE
+                and outgoing[0].length == UNDEFINED
+                and outgoing[0].first == UNDEFINED
+            ):
+                if f == INITIAL:
+                    fields += "null"
+                fields += "\n" + indent(",\n".join(str(o) for o in outgoing), 3)
+            if fields:
+                fields += ";"
+        return f"type {self.name} is\n   message\n{indent(fields, 6)}\n   end message"
 
     @abstractmethod
     def copy(
@@ -1741,6 +1844,10 @@ class Refinement(Type):
         self.sdu = sdu
         self.condition = condition
 
+    def __str__(self) -> str:
+        condition = f"\n   if {self.condition}" if self.condition != TRUE else ""
+        return f"for {self.pdu.name} use ({self.field.name} => {self.sdu.name}){condition}"
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return (
@@ -1756,6 +1863,16 @@ class Model(Base):
     def __init__(self, types: Sequence[Type]) -> None:
         self.types = types
         self.__check_types()
+
+    def __repr__(self) -> str:
+        return "\nModel(\n" f"{indent(repr(self.types), 4)},\n)" + self._prefixed_str
+
+    def __str__(self) -> str:
+        return "\n\n".join(
+            f"{t};"
+            for t in self.types
+            if not is_builtin_type(t.name) and not is_internal_type(t.name)
+        )
 
     @property
     def messages(self) -> Sequence[Message]:
