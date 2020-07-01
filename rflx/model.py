@@ -605,6 +605,7 @@ class MessageState(Base):
 
 
 @invariant(lambda self: valid_message_field_types(self))
+@invariant(lambda self: not self.types if not self.structure else True)
 class AbstractMessage(Type):
     # pylint: disable=too-many-arguments
     def __init__(
