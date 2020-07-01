@@ -51,7 +51,9 @@ is
 
    pragma Warnings (On, "unreachable branch");
 
-   type Length is mod 2**14;
+   type Length is mod 2**14 with
+     Size =>
+       14;
 
    pragma Warnings (Off, "precondition is * false");
 

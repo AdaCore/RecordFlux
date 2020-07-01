@@ -64,7 +64,9 @@ is
      Pre =>
        Valid (Val);
 
-   type DCSP is mod 2**6;
+   type DCSP is mod 2**6 with
+     Size =>
+       6;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -96,7 +98,9 @@ is
      Pre =>
        Valid (Val);
 
-   type ECN is mod 2**2;
+   type ECN is mod 2**2 with
+     Size =>
+       2;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -158,7 +162,9 @@ is
      Pre =>
        Valid (Val);
 
-   type Identification is mod 2**16;
+   type Identification is mod 2**16 with
+     Size =>
+       16;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -190,7 +196,9 @@ is
      Pre =>
        Valid (Val);
 
-   type Fragment_Offset is mod 2**13;
+   type Fragment_Offset is mod 2**13 with
+     Size =>
+       13;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -222,7 +230,9 @@ is
      Pre =>
        Valid (Val);
 
-   type TTL is mod 2**8;
+   type TTL is mod 2**8 with
+     Size =>
+       8;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -318,7 +328,9 @@ is
        else
           Val.Raw));
 
-   type Header_Checksum is mod 2**16;
+   type Header_Checksum is mod 2**16 with
+     Size =>
+       16;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -350,7 +362,9 @@ is
      Pre =>
        Valid (Val);
 
-   type Address is mod 2**32;
+   type Address is mod 2**32 with
+     Size =>
+       32;
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -429,7 +443,9 @@ is
 
    pragma Warnings (On, "unreachable branch");
 
-   type Option_Number is mod 2**5;
+   type Option_Number is mod 2**5 with
+     Size =>
+       5;
 
    pragma Warnings (Off, "precondition is * false");
 
