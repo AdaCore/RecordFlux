@@ -289,6 +289,7 @@ class Enumeration(Scalar):
         always_valid: bool,
         location: Location = None,
     ) -> None:
+        # pylint: disable=too-many-branches, too-many-locals
         super().__init__(identifier, size, location)
 
         for i1, e1 in enumerate(literals):
@@ -330,12 +331,24 @@ class Enumeration(Scalar):
             )
             return
 
-        if self.literals.values() and max(map(int, self.literals.values())).bit_length() > int(
-            size_num
-        ):
-            self.error.append(
-                f'size of "{self.name}" too small', Subsystem.MODEL, Severity.ERROR, self.location,
-            )
+        if self.literals.values():
+            min_literal_value = min(map(int, self.literals.values()))
+            max_literal_value = max(map(int, self.literals.values()))
+            if min_literal_value < 0 or max_literal_value > 2 ** 63 - 1:
+                self.error.append(
+                    f'enumeration value of "{self.name}"'
+                    " outside of permitted range (0 .. 2**63 - 1)",
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
+                )
+            if max_literal_value.bit_length() > int(size_num):
+                self.error.append(
+                    f'size of "{self.name}" too small',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
+                )
         if int(size_num) > 64:
             self.error.append(
                 f'size of "{self.name}" exceeds limit (2**64)',
