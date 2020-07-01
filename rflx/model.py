@@ -261,6 +261,9 @@ class RangeInteger(Integer):
                 Equal(Length(name), self.size, location=self.location),
             ]
 
+        if self.first.simplified() == self.last.simplified():
+            return [Equal(Variable(name), self.first)]
+
         c: Expr = TRUE
         if self.first.simplified() != self.base_first.simplified():
             c = GreaterEqual(Variable(name), self.first)
