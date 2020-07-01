@@ -2173,11 +2173,11 @@ class Generator:
         if isinstance(field_type, ModularInteger):
             unit += UnitPart(modular_types(field_type))
             unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
-            unit += self.__modular_functions(field_type)
+            unit += self.__integer_functions(field_type)
         elif isinstance(field_type, RangeInteger):
             unit += UnitPart(range_types(field_type))
             unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
-            unit += self.__range_functions(field_type)
+            unit += self.__integer_functions(field_type)
         elif isinstance(field_type, Enumeration):
             unit += UnitPart(enumeration_types(field_type))
             unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
@@ -2239,35 +2239,30 @@ class Generator:
 
         self.__create_instantiation_unit(array_package.identifier, array_context, array_package)
 
-    def __range_functions(self, integer: RangeInteger) -> SubprogramUnitPart:
-        specification: List[Subprogram] = []
-
-        for range_type in range_types(integer):
-            if isinstance(range_type, RangeSubtype):
-                continue
-
-        specification.append(
-            self.__type_validation_function(integer, And(*integer.constraints("Val")).simplified())
-        )
-        specification.extend(self.__integer_conversion_functions(integer))
-
-        return SubprogramUnitPart(specification)
-
-    def __modular_functions(self, integer: ModularInteger) -> UnitPart:
+    def __integer_functions(self, integer: Integer) -> UnitPart:
         specification: List[Declaration] = []
 
-        specification.extend(
-            [
-                Pragma("Warnings", ["Off", '"unused variable ""Val"""']),
-                Pragma("Warnings", ["Off", '"formal parameter ""Val"" is not referenced"']),
-                self.__type_validation_function(
-                    integer, And(*integer.constraints("Val")).simplified()
-                ),
-                Pragma("Warnings", ["On", '"formal parameter ""Val"" is not referenced"']),
-                Pragma("Warnings", ["On", '"unused variable ""Val"""']),
-                *self.__integer_conversion_functions(integer),
-            ]
-        )
+        constraints = And(*integer.constraints("Val")).simplified()
+
+        if constraints == TRUE:
+            specification.extend(
+                [
+                    Pragma("Warnings", ["Off", '"unused variable ""Val"""']),
+                    Pragma("Warnings", ["Off", '"formal parameter ""Val"" is not referenced"']),
+                ]
+            )
+
+        specification.append(self.__type_validation_function(integer, constraints))
+
+        if constraints == TRUE:
+            specification.extend(
+                [
+                    Pragma("Warnings", ["On", '"formal parameter ""Val"" is not referenced"']),
+                    Pragma("Warnings", ["On", '"unused variable ""Val"""']),
+                ]
+            )
+
+        specification.extend(self.__integer_conversion_functions(integer))
 
         return UnitPart(specification)
 
