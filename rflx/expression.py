@@ -161,6 +161,9 @@ class BooleanLiteral(Expr):
 
 
 class BooleanTrue(BooleanLiteral):
+    def __repr__(self) -> str:
+        return "TRUE"
+
     def __str__(self) -> str:
         return "True"
 
@@ -175,6 +178,9 @@ TRUE = BooleanTrue()
 
 
 class BooleanFalse(BooleanLiteral):
+    def __repr__(self) -> str:
+        return "FALSE"
+
     def __str__(self) -> str:
         return "False"
 
@@ -207,7 +213,17 @@ class Not(Expr):
         return Precedence.highest_precedence_operator
 
     def simplified(self) -> Expr:
-        return self
+        for relation, inverse_relation in [
+            (Less, GreaterEqual),
+            (LessEqual, Greater),
+            (Equal, NotEqual),
+            (GreaterEqual, Less),
+            (Greater, LessEqual),
+            (NotEqual, Equal),
+        ]:
+            if isinstance(self.expr, relation):
+                return inverse_relation(self.expr.left.simplified(), self.expr.right.simplified())
+        return self.__class__(self.expr.simplified())
 
     def z3expr(self) -> z3.BoolRef:
         z3expr = self.expr.z3expr()
@@ -221,6 +237,13 @@ class BinExpr(Expr):
         super().__init__(location)
         self.left = left
         self.right = right
+
+    def __repr__(self) -> str:
+        return (
+            f"\n{self.__class__.__name__}(\n"
+            + ",\n".join(indent(repr(t), 4) for t in [self.left, self.right])
+            + ")"
+        )
 
     def __str__(self) -> str:
         return f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}"
@@ -268,6 +291,13 @@ class AssExpr(Expr):
     def __init__(self, *terms: Expr, location: Location = None) -> None:
         super().__init__(location)
         self.terms = list(terms)
+
+    def __repr__(self) -> str:
+        return (
+            f"\n{self.__class__.__name__}(\n"
+            + ",\n".join(indent(repr(t), 4) for t in self.terms)
+            + ")"
+        )
 
     def __str__(self) -> str:
         if not self.terms:

@@ -1,6 +1,5 @@
 from typing import Optional, Sequence, Union
 
-from rflx.common import generic_repr
 from rflx.contract import invariant
 from rflx.error import Location
 
@@ -38,7 +37,7 @@ class ID:
         return hash(tuple(self.parts))
 
     def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
+        return f'ID("{self}")'
 
     def __str__(self) -> str:
         return ".".join(self.parts)

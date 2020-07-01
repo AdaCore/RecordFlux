@@ -98,6 +98,33 @@ def test_not_neg() -> None:
     assert -Not(Variable("X")) == Variable("X")
 
 
+def test_not_simplified() -> None:
+    assert_equal(
+        Not(Less(Variable("X"), Variable("Y"))).simplified(),
+        GreaterEqual(Variable("X"), Variable("Y")),
+    )
+    assert_equal(
+        Not(LessEqual(Variable("X"), Variable("Y"))).simplified(),
+        Greater(Variable("X"), Variable("Y")),
+    )
+    assert_equal(
+        Not(Equal(Variable("X"), Variable("Y"))).simplified(),
+        NotEqual(Variable("X"), Variable("Y")),
+    )
+    assert_equal(
+        Not(GreaterEqual(Variable("X"), Variable("Y"))).simplified(),
+        Less(Variable("X"), Variable("Y")),
+    )
+    assert_equal(
+        Not(Greater(Variable("X"), Variable("Y"))).simplified(),
+        LessEqual(Variable("X"), Variable("Y")),
+    )
+    assert_equal(
+        Not(NotEqual(Variable("X"), Variable("Y"))).simplified(),
+        Equal(Variable("X"), Variable("Y")),
+    )
+
+
 def test_not_z3expr() -> None:
     assert Not(TRUE).z3expr() == z3.Not(z3.BoolVal(True))
     with pytest.raises(TypeError):
