@@ -50,9 +50,9 @@ setup(
             "coverage",
             "flake8",
             "isort",
-            "mypy",
+            "mypy >=0.770",
             "pyicontract-lint >=2.0.0",
-            "pylint",
+            "pylint >=2.5.0",
             "pytest",
             "pytest-xdist",
         ]
