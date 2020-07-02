@@ -2274,9 +2274,7 @@ class Generator:
         return UnitPart(specification)
 
     def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
-        enum_size = enum.size.simplified()
-        assert isinstance(enum_size, Number)
-        incomplete = len(enum.literals) < 2 ** int(enum_size)
+        incomplete = len(enum.literals) < 2 ** int(enum.size)
 
         specification: List[Declaration] = []
 
@@ -2672,27 +2670,34 @@ def create_file(filename: Path, content: str) -> None:
 
 
 def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
-    return [ModularType(integer.name, integer.modulus, aspects=[SizeAspect(integer.size)])]
+    return [ModularType(integer.name, integer.modulus, aspects=[SizeAspect(integer.size_expr)])]
 
 
 def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
     return [
         ModularType(
             common.base_type_name(integer),
-            Pow(Number(2), integer.size),
+            Pow(Number(2), integer.size_expr),
             [Annotate("GNATprove", "No_Wrap_Around")],
         ),
-        RangeType(integer.name, integer.first, integer.last, aspects=[SizeAspect(integer.size)]),
+        RangeType(
+            integer.name,
+            integer.first_expr,
+            integer.last_expr,
+            aspects=[SizeAspect(integer.size_expr)],
+        ),
     ]
 
 
 def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
     types: List[TypeDeclaration] = []
 
-    types.append(ModularType(common.base_type_name(enum), Pow(Number(2), enum.size)))
+    types.append(ModularType(common.base_type_name(enum), Pow(Number(2), enum.size_expr)))
     types.append(
         EnumerationType(
-            common.enum_name(enum) if enum.always_valid else enum.name, enum.literals, enum.size
+            common.enum_name(enum) if enum.always_valid else enum.name,
+            enum.literals,
+            enum.size_expr,
         )
     )
     if enum.always_valid:
