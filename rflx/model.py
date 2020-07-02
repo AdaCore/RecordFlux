@@ -102,7 +102,13 @@ class Scalar(Type):
         self._size = size
 
     @property
-    def size(self) -> Expr:
+    def size(self) -> Number:
+        size_num = self._size.simplified()
+        assert isinstance(size_num, Number)
+        return size_num
+
+    @property
+    def size_expr(self) -> Expr:
         return self._size
 
     @abstractmethod
@@ -115,12 +121,12 @@ class Scalar(Type):
 class Integer(Scalar):
     @property
     @abstractmethod
-    def first(self) -> Expr:
+    def first(self) -> Number:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def last(self) -> Expr:
+    def last(self) -> Number:
         raise NotImplementedError
 
 
@@ -173,12 +179,14 @@ class ModularInteger(Integer):
         return self.__modulus
 
     @property
-    def first(self) -> Expr:
+    def first(self) -> Number:
         return Number(0)
 
     @property
-    def last(self) -> Expr:
-        return Sub(self.modulus, Number(1))
+    def last(self) -> Number:
+        modulus = self.modulus.simplified()
+        assert isinstance(modulus, Number)
+        return modulus - Number(1)
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
@@ -237,6 +245,7 @@ class RangeInteger(Integer):
         if self.error.check():
             return
 
+        assert isinstance(first_num, Number)
         assert isinstance(last_num, Number)
         assert isinstance(size_num, Number)
 
@@ -261,29 +270,42 @@ class RangeInteger(Integer):
                 self.location,
             )
 
-        self.__first = first
-        self.__last = last
+        self.__first_expr = first
+        self.__first = first_num
+        self.__last_expr = last
+        self.__last = last_num
 
     def __repr__(self) -> str:
         return (
             "\nRangeInteger(\n"
             f"{indent(repr(self.identifier), 4)},"
-            f"{self.first!r},"
-            f"{self.last!r},"
-            f"{self.size!r}"
+            f"{self.first_expr!r},"
+            f"{self.last_expr!r},"
+            f"{self.size_expr!r}"
             "\n)" + self._prefixed_str
         )
 
     def __str__(self) -> str:
-        return f"type {self.name} is range {self.first} .. {self.last} with Size => {self.size}"
+        return (
+            f"type {self.name} is range {self.first_expr} .. {self.last_expr}"
+            f" with Size => {self.size_expr}"
+        )
 
     @property
-    def first(self) -> Expr:
+    def first(self) -> Number:
         return self.__first
 
     @property
-    def last(self) -> Expr:
+    def first_expr(self) -> Expr:
+        return self.__first_expr
+
+    @property
+    def last(self) -> Number:
         return self.__last
+
+    @property
+    def last_expr(self) -> Expr:
+        return self.__last_expr
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
@@ -418,7 +440,7 @@ class Enumeration(Scalar):
             "\nEnumeration(\n"
             f"{indent(repr(self.identifier), 4)},\n"
             f"{indent(repr(list(self.literals.items())), 4)},"
-            f"{self.size!r},\n"
+            f"{self.size_expr!r},\n"
             f"{indent(repr(self.always_valid), 4)}"
             "\n)" + self._prefixed_str
         )
@@ -426,7 +448,7 @@ class Enumeration(Scalar):
     def __str__(self) -> str:
         literals = ", ".join(f"{l} => {v}" for l, v in self.literals.items())
         always_valid = f", Always_Valid => {self.always_valid}" if self.always_valid else ""
-        return f"type {self.name} is ({literals}) with Size => {self.size}{always_valid}"
+        return f"type {self.name} is ({literals}) with Size => {self.size_expr}{always_valid}"
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True

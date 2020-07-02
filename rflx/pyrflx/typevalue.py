@@ -140,9 +140,7 @@ class ScalarValue(TypeValue):
 
     @property
     def size(self) -> Number:
-        size_expr = self._type.size.simplified()
-        assert isinstance(size_expr, Number)
-        return size_expr
+        return self._type.size
 
 
 class IntegerValue(ScalarValue):
@@ -155,15 +153,11 @@ class IntegerValue(ScalarValue):
 
     @property
     def _first(self) -> int:
-        first = self._type.first.simplified()
-        assert isinstance(first, Number)
-        return first.value
+        return self._type.first.value
 
     @property
     def _last(self) -> int:
-        last = self._type.last.simplified()
-        assert isinstance(last, Number)
-        return last.value
+        return self._type.last.value
 
     def assign(self, value: int, check: bool = True) -> None:
         if (
@@ -450,7 +444,6 @@ class ArrayValue(CompositeValue):
         elif isinstance(self._element_type, Scalar):
             value_str = str(value)
             type_size = self._element_type.size
-            assert isinstance(type_size, Number)
             type_size_int = type_size.value
             new_value = []
 

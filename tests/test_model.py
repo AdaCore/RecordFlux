@@ -173,18 +173,17 @@ def test_type_name() -> None:
 
 def test_modular_size() -> None:
     assert ModularInteger("P.T", Pow(Number(2), Number(32))).size == Number(32)
+    assert ModularInteger("P.T", Pow(Number(2), Number(32))).size_expr == Number(32)
 
 
 def test_modular_first() -> None:
     mod = ModularInteger("P.T", Pow(Number(2), Number(32)))
     assert mod.first == Number(0)
-    assert mod.first.simplified() == Number(0)
 
 
 def test_modular_last() -> None:
     mod = ModularInteger("P.T", Pow(Number(2), Number(32)))
-    assert mod.last == Sub(Pow(Number(2), Number(32)), Number(1))
-    assert mod.last.simplified() == Number(2 ** 32 - 1)
+    assert mod.last == Number(2 ** 32 - 1)
 
 
 def test_modular_invalid_modulus_power_of_two() -> None:
@@ -210,9 +209,28 @@ def test_modular_invalid_modulus_limit() -> None:
 
 def test_range_size() -> None:
     assert_equal(
-        RangeInteger("P.T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32)).size,
-        Number(32),
+        RangeInteger("P.T", Number(16), Number(128), Pow(Number(2), Number(5))).size, Number(32),
     )
+    assert_equal(
+        RangeInteger("P.T", Number(16), Number(128), Pow(Number(2), Number(5))).size_expr,
+        Pow(Number(2), Number(5)),
+    )
+
+
+def test_range_first() -> None:
+    integer = RangeInteger(
+        "P.T", Pow(Number(2), Number(4)), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32)
+    )
+    assert integer.first == Number(16)
+    assert integer.first_expr == Pow(Number(2), Number(4))
+
+
+def test_range_last() -> None:
+    integer = RangeInteger(
+        "P.T", Pow(Number(2), Number(4)), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32)
+    )
+    assert integer.last == Number(2 ** 32 - 1)
+    assert integer.last_expr == Sub(Pow(Number(2), Number(32)), Number(1))
 
 
 def test_range_invalid_first_variable() -> None:
@@ -271,6 +289,21 @@ def test_range_invalid_size_exceeds_limit() -> None:
     assert_type_error(
         RangeInteger("P.T", Number(0), Number(256), Number(128), Location((50, 3))),
         r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*64\)$',
+    )
+
+
+def test_enumeration_size() -> None:
+    assert_equal(
+        Enumeration(
+            "P.T", [("A", Number(1))], Pow(Number(2), Number(5)), False, Location((34, 3))
+        ).size,
+        Number(32),
+    )
+    assert_equal(
+        Enumeration(
+            "P.T", [("A", Number(1))], Pow(Number(2), Number(5)), False, Location((34, 3))
+        ).size_expr,
+        Pow(Number(2), Number(5)),
     )
 
 
