@@ -21,10 +21,6 @@ def test_main_help() -> None:
         cli.main(["rflx", "-h"])
 
 
-def test_main_version() -> None:
-    assert cli.main(["rflx", "--version"]) == 0
-
-
 def test_main_check() -> None:
     assert cli.main(["rflx", "check", "specs/tlv.rflx"]) == 0
 

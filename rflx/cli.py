@@ -22,7 +22,7 @@ def main(argv: List[str]) -> Union[int, str]:
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="disable logging to standard output"
     )
-    parser.add_argument("--version", action="store_true")
+    parser.add_argument("--version", action="version", version=__version__)
 
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -67,10 +67,6 @@ def main(argv: List[str]) -> Union[int, str]:
     parser_graph.set_defaults(func=graph)
 
     args = parser.parse_args(argv[1:])
-
-    if args.version:
-        print(__version__)
-        return 0
 
     if not args.subcommand:
         parser.print_usage()
