@@ -1,12 +1,11 @@
-import subprocess
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import List
 
 import pytest
 
 from rflx.generator import Generator
 from rflx.parser import Parser
+from tests import utils
 
 CODEDIR = "generated"
 SPECDIR = "specs"
@@ -40,36 +39,14 @@ def assert_compilable_code(spec_files: List[str], prefix: str = None) -> None:
     for spec_file in spec_files:
         parser.parse(Path(spec_file))
 
-    _assert_compilable_code(parser, prefix)
+    utils.assert_compilable_code(parser.create_model(), prefix)
 
 
 def assert_compilable_code_string(specification: str, prefix: str = None) -> None:
     parser = Parser()
     parser.parse_string(specification)
 
-    _assert_compilable_code(parser, prefix)
-
-
-def _assert_compilable_code(parser: Parser, prefix: str = None) -> None:
-    model = parser.create_model()
-
-    generator = Generator(prefix if prefix else "RFLX")
-    generator.generate(model)
-
-    with TemporaryDirectory() as tmpdir:
-        tmp_path = Path(tmpdir)
-
-        generator.write_units(tmp_path)
-        generator.write_library_files(tmp_path)
-        generator.write_top_level_package(tmp_path)
-
-        p = subprocess.run(
-            ["gprbuild", "-q", "-U"], cwd=tmp_path, check=False, stderr=subprocess.PIPE
-        )
-        if p.returncode:
-            raise AssertionError(
-                f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
-            )
+    utils.assert_compilable_code(parser.create_model(), prefix)
 
 
 def test_ethernet() -> None:
@@ -201,7 +178,7 @@ def test_array_with_imported_element_type_scalar() -> None:
            end Test;
         """
     )
-    _assert_compilable_code(p)
+    utils.assert_compilable_code(p.create_model())
 
 
 def test_array_with_imported_element_type_message() -> None:
@@ -227,4 +204,4 @@ def test_array_with_imported_element_type_message() -> None:
            end Test;
         """
     )
-    _assert_compilable_code(p)
+    utils.assert_compilable_code(p.create_model())

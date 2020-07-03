@@ -7,7 +7,12 @@ disable=missing-docstring, bad-continuation, unnecessary-lambda, inconsistent-re
 [BASIC]
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names=log
+good-names=i,
+           j,
+           k,
+           ex,
+           log,
+           _
 
 # Regular expression matching correct argument names. Overrides argument-
 # naming-style.
@@ -58,3 +63,8 @@ min-similarity-lines=12
 
 # Ignore imports when computing similarities.
 ignore-imports=yes
+
+
+[TYPECHECK]
+
+signature-mutators=hypothesis.strategies._internal.core.composite
