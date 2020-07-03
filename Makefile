@@ -8,7 +8,7 @@ noprefix-dir := build/noprefix
 
 project := test
 test-bin := $(build-dir)/test
-test-files := $(wildcard generated/rflx-*.ad? tests/*.ad? tests/*.raw test.gpr)
+test-files := $(wildcard generated/rflx-*.ad? tests/*.ad? tests/*.raw specs/*.rflx test.gpr)
 
 ifneq ($(NOPREFIX),)
 project := $(noprefix-dir)/test
@@ -90,6 +90,10 @@ $(noprefix-dir)/generated/%: generated/rflx-%
 
 $(noprefix-dir)/tests/%: tests/rflx-%
 	$(remove-prefix)
+
+$(noprefix-dir)/specs/%: specs/%
+	$(VERBOSE)mkdir -p $(dir $@)
+	$(VERBOSE)cp $< $@
 
 $(noprefix-dir)/%: %
 	$(remove-prefix)
