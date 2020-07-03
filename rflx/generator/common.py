@@ -86,7 +86,7 @@ def substitution(
                 if embedded:
                     return Equal(
                         Indexed(
-                            Variable("Buffer"),
+                            Variable("Buffer.all"),
                             ValueRange(
                                 Call(
                                     const.TYPES_BYTE_INDEX,
