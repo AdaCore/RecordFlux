@@ -285,7 +285,7 @@ def run(files, mode, options=None):
     assert mode == "check" or mode == "generate"
     options = options or []
 
-    GPS.MDI.save_all()
+    GPS.MDI.save_all(force=True)
     GPS.Locations.remove_category("RecordFlux")
 
     return "rflx {mode} {options} {files}".format(
