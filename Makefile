@@ -49,16 +49,22 @@ format:
 	black -l 100 $(python-packages) ide/gnatstudio
 	isort -rc $(python-packages) ide/gnatstudio
 
-test: check test_python test_spark prove_spark
+test: check test_python test_python_property test_spark prove_spark
 
 test_python:
-	python3 -m pytest -n$(shell nproc) -vv
+	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis"
+
+test_python_property:
+	python3 -m pytest -vv tests/property
+
+test_python_verification:
+	python3 -m pytest -vv -m "verification" -s
 
 test_python_optimized:
-	python3 -O -m pytest -n$(shell nproc) -vv
+	python3 -O -m pytest -n$(shell nproc) -vv -m "not hypothesis"
 
 test_python_coverage:
-	coverage run --branch --source=rflx -m pytest -vv
+	coverage run --branch --source=rflx -m pytest -vv -m "not hypothesis"
 
 test_spark: $(test-files)
 	gprbuild -P$(project)

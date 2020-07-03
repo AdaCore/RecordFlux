@@ -59,6 +59,7 @@ from rflx.expression import (
 from rflx.identifier import ID
 from rflx.model import Enumeration, ModularInteger, RangeInteger, Type, qualified_type_name
 
+from . import const
 from .ast import (
     ArraySpec,
     Component,
@@ -476,88 +477,11 @@ def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
 
 @fatalexceptions
 def verify_identifier(string: str, location: int, tokens: ParseResults) -> ID:
-    reserved_words = [
-        "abort",
-        "abs",
-        "abstract",
-        "accept",
-        "access",
-        "aliased",
-        "all",
-        "and",
-        "array",
-        "at",
-        "begin",
-        "body",
-        "case",
-        "constant",
-        "declare",
-        "delay",
-        "delta",
-        "digits",
-        "do",
-        "else",
-        "elsif",
-        "end",
-        "entry",
-        "exception",
-        "exit",
-        "for",
-        "function",
-        "generic",
-        "goto",
-        "if",
-        "in",
-        "interface",
-        "is",
-        "limited",
-        "loop",
-        "mod",
-        "new",
-        "not",
-        "null",
-        "of",
-        "or",
-        "others",
-        "out",
-        "overriding",
-        "package",
-        "pragma",
-        "private",
-        "procedure",
-        "protected",
-        "raise",
-        "range",
-        "record",
-        "rem",
-        "renames",
-        "requeue",
-        "return",
-        "reverse",
-        "select",
-        "separate",
-        "some",
-        "subtype",
-        "synchronized",
-        "tagged",
-        "task",
-        "terminate",
-        "then",
-        "type",
-        "until",
-        "use",
-        "when",
-        "while",
-        "with",
-        "xor",
-        "initial",
-        "final",
-    ]
     data = tokens[0].asDict()
     tokens = data["value"]
     locn = parser_location(data["locn_start"], data["locn_end"], string)
 
-    if tokens[0].lower() in reserved_words:
+    if tokens[0].lower() in const.RESERVED_WORDS:
         fail(
             f'reserved word "{tokens[0]}" used as identifier',
             Subsystem.PARSER,

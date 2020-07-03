@@ -72,6 +72,8 @@ jobs:
         target: ["python"]
         python-version: [3.7, 3.8]
         include:
+          - target: "python_property"
+            python-version: 3.8
           - target: "python_optimized"
             python-version: 3.8
           - target: "python_coverage"
@@ -104,6 +106,7 @@ jobs:
         echo "::add-path::$HOME/.local/bin"
         echo "::add-path::$HOME/bin"
         echo "::set-env name=PYTHONPATH::$PWD"
+        echo "::set-env name=HYPOTHESIS_PROFILE::ci"
     - name: Configure kernel parameters
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
@@ -121,6 +124,49 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
+
+  tests_python_verification:
+    name: Tests
+    if: github.event.schedule
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ["python_verification"]
+        python-version: [3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Determine exact Python version
+      run:
+        python -c "import platform; print('::set-env name=PYTHON_VERSION::' + platform.python_version())"
+    - name: Cache Python dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/bin
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('**/setup.py') }}
+    - name: Install dependencies
+      run: |
+        sudo apt install graphviz
+        python -m pip install --upgrade pip
+        pip install --user -e .[devel]
+        mkdir $HOME/bin
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
+        chmod +x $HOME/bin/gprbuild
+        echo "::add-path::$HOME/.local/bin"
+        echo "::add-path::$HOME/bin"
+        echo "::set-env name=PYTHONPATH::$PWD"
+        echo "::set-env name=HYPOTHESIS_PROFILE::ci"
+    - name: Test
+      run: |
+        make test_${{ matrix.target }}
 
   tests_spark:
     name: Tests
