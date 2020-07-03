@@ -31,7 +31,7 @@ project Test is
       );
 
       --  Improving proof time
-      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--steps=25000");
+      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--steps=32000");
       for Proof_Switches ("rflx-ipv4-option.ads") use ("--steps=2000");
       for Proof_Switches ("rflx-ipv4-packet.ads") use ("--steps=14000");
       for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--steps=72000", "--prover=altergo,cvc4,z3");
