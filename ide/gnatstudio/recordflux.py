@@ -108,10 +108,10 @@ end %(name);</text>
    </alias>
 
    <!-- Submenu -->
-   <submenu before="Window">
+   <submenu>
       <title>RecordFlux</title>
 
-      <menu action="rflx_check">
+      <menu after="SPARK" action="rflx_check">
          <title>Check</title>
       </menu>
 
