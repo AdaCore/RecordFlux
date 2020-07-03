@@ -669,6 +669,28 @@ class AbstractMessage(Type):
                 ]
             )
 
+        name_conflicts = [
+            (f, l)
+            for f in type_fields
+            for l in qualified_literals(self.types, self.package)
+            if f.identifier == l
+        ]
+
+        if name_conflicts:
+            conflicting_field, conflicting_literal = name_conflicts.pop(0)
+            self.error.append(
+                f'name conflict for field "{conflicting_field.name}" in "{self.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                conflicting_field.identifier.location,
+            )
+            self.error.append(
+                "conflicting enumeration literal",
+                Subsystem.MODEL,
+                Severity.INFO,
+                conflicting_literal.location,
+            )
+
         self.error.propagate()
 
         for f in structure_fields:

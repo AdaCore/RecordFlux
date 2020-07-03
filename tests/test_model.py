@@ -379,6 +379,29 @@ def test_message_ambiguous_first_field() -> None:
     )
 
 
+def test_message_name_conflict_field_enum() -> None:
+    t = Enumeration(
+        "P.T",
+        [(ID("X", Location((3, 27))), Number(1)), (ID("Y", Location((3, 32))), Number(2))],
+        Number(8),
+        False,
+    )
+
+    structure = [
+        Link(INITIAL, Field("X")),
+        Link(Field("X"), FINAL),
+    ]
+
+    types = {Field(ID("X", Location((5, 6)))): t}
+
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:5:6: model: error: name conflict for field "X" in "P.M"\n'
+        "<stdin>:3:27: model: info: conflicting enumeration literal",
+    )
+
+
 def test_message_duplicate_link() -> None:
     t = ModularInteger("P.T", Number(2))
     x = Field(ID("X", location=Location((1, 5))))
