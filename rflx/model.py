@@ -421,6 +421,23 @@ class Array(Composite):
                 element_type.location,
             )
 
+        if isinstance(element_type, Scalar):
+            element_type_size = element_type.size.simplified()
+            if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
+                self.error.append(
+                    f'unsupported element type size of array "{self.name}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    location,
+                )
+                self.error.append(
+                    f'type "{element_type.name}" has size {element_type_size},'
+                    r" must be multiple of 8",
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    element_type.location,
+                )
+
     @property
     def element_size(self) -> Expr:
         return Length(self.element_type.name)

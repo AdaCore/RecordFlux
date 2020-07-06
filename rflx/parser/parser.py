@@ -214,22 +214,6 @@ def create_array(array: ArraySpec, types: Mapping[ID, Type]) -> Array:
             array.element_type.location,
         )
 
-    if isinstance(element_type, Scalar):
-        element_type_size = element_type.size.simplified()
-        if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
-            error = RecordFluxError()
-            error.append(
-                "unsupported element type size", Subsystem.PARSER, Severity.ERROR, array.location
-            )
-            error.append(
-                f'type "{element_type.identifier}" has size {element_type_size},'
-                r" must be multiple of 8",
-                Subsystem.PARSER,
-                Severity.INFO,
-                element_type.location,
-            )
-            error.propagate()
-
     return Array(array.identifier, element_type, array.location)
 
 

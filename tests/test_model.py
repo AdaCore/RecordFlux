@@ -345,6 +345,23 @@ def test_array_invalid_element_type() -> None:
     )
 
 
+def test_array_unsupported_element_type() -> None:
+    assert_type_error(
+        Array(
+            "P.A",
+            ModularInteger("P.B", Pow(Number(2), Number(4)), Location((3, 4))),
+            Location((5, 4)),
+        ),
+        r'^<stdin>:5:4: model: error: unsupported element type size of array "A"\n'
+        r'<stdin>:3:4: model: info: type "B" has size 4, must be multiple of 8$',
+    )
+    assert_type_error(
+        Array("P.A", BOOLEAN, Location((5, 4))),
+        r'^<stdin>:5:4: model: error: unsupported element type size of array "A"\n'
+        r'__BUILTINS__:0:0: model: info: type "Boolean" has size 1, must be multiple of 8$',
+    )
+
+
 def test_message_incorrect_name() -> None:
     with pytest.raises(
         RecordFluxError, match='^<stdin>:10:8: model: error: unexpected format of type name "M"$'
