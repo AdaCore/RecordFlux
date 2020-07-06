@@ -64,6 +64,18 @@ class ContextSpec(SyntaxTree):
         self.items = list(map(ID, items))
 
 
+class ReferenceSpec(Type):
+    pass
+
+
+class ArraySpec(Type):
+    def __init__(
+        self, identifier: StrID, element_type: ReferenceSpec, location: Location = None
+    ) -> None:
+        super().__init__(identifier, location)
+        self.element_type = element_type
+
+
 class MessageSpec(Type):
     def __init__(
         self, identifier: StrID, components: List[Component], location: Location = None
@@ -96,10 +108,6 @@ class RefinementSpec(Type):
             f"__{flat_name(str(self.pdu))}__{field}__",
             location,
         )
-
-
-class ReferenceSpec(Type):
-    pass
 
 
 class Specification(SyntaxTree):
