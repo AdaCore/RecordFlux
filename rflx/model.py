@@ -405,14 +405,30 @@ class Array(Composite):
         super().__init__(identifier, location)
         self.element_type = element_type
 
+        if not isinstance(element_type, Scalar) and not (
+            isinstance(element_type, Message) and element_type.structure
+        ):
+            self.error.append(
+                f'invalid element type of array "{self.name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                location,
+            )
+            self.error.append(
+                f'type "{element_type.name}" must be scalar or non-null message',
+                Subsystem.MODEL,
+                Severity.INFO,
+                element_type.location,
+            )
+
     @property
     def element_size(self) -> Expr:
         return Length(self.element_type.name)
 
 
 class Opaque(Composite):
-    def __init__(self) -> None:
-        super().__init__(INTERNAL_PACKAGE * "Opaque")
+    def __init__(self, location: Location = None) -> None:
+        super().__init__(INTERNAL_PACKAGE * "Opaque", location)
 
     @property
     def element_size(self) -> Expr:
@@ -1721,8 +1737,10 @@ def qualified_type_name(name: ID, package: ID) -> ID:
     return name
 
 
+OPAQUE = Opaque(location=Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0)))
+
 INTERNAL_TYPES = {
-    Opaque().identifier: Opaque(),
+    OPAQUE.identifier: OPAQUE,
 }
 
 BOOLEAN = Enumeration(
