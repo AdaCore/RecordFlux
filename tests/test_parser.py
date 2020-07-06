@@ -481,29 +481,6 @@ def test_array_undefined_type() -> None:
     )
 
 
-def test_array_unsupported_element_type() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type Foo is mod 2**4;
-               type T is array of Foo;
-            end Test;
-        """,
-        r"<stdin>:4:16: parser: error: unsupported element type size\n"
-        r'<stdin>:3:16: parser: info: type "Test.Foo" has size 4, must be multiple of 8',
-    )
-    assert_error_string(
-        """
-            package Test is
-               type T is array of Boolean;
-            end Test;
-        """,
-        r"<stdin>:3:16: parser: error: unsupported element type size\n"
-        r'__BUILTINS__:0:0: parser: info: type "__BUILTINS__.Boolean" has size 1,'
-        r" must be multiple of 8",
-    )
-
-
 def test_duplicate_message() -> None:
     assert_error_string(
         """
