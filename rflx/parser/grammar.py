@@ -57,9 +57,10 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID
-from rflx.model import Array, Enumeration, ModularInteger, RangeInteger, Type, qualified_type_name
+from rflx.model import Enumeration, ModularInteger, RangeInteger, Type, qualified_type_name
 
 from .ast import (
+    ArraySpec,
     Component,
     ContextSpec,
     DerivationSpec,
@@ -616,7 +617,7 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
     if tokens[3] == "new":
         return DerivationSpec(identifier, tokens[4], locn)
     if tokens[3] == "array of":
-        return Array(
+        return ArraySpec(
             identifier,
             ReferenceSpec(qualified_type_name(tokens[4], package), tokens[4].location),
             locn,

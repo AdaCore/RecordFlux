@@ -29,6 +29,7 @@ from rflx.model import (
     BUILTIN_TYPES,
     FINAL,
     INITIAL,
+    OPAQUE,
     Array,
     DerivedMessage,
     Enumeration,
@@ -323,6 +324,24 @@ def test_enumeration_invalid_literal() -> None:
     assert_type_error(
         Enumeration("P.T", [("A.B", Number(1))], Number(8), False, Location((6, 4))),
         r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$',
+    )
+
+
+def test_array_invalid_element_type() -> None:
+    assert_type_error(
+        Array("P.A", Array("P.B", MODULAR_INTEGER, Location((3, 4))), Location((5, 4))),
+        r'^<stdin>:5:4: model: error: invalid element type of array "A"\n'
+        r'<stdin>:3:4: model: info: type "B" must be scalar or non-null message$',
+    )
+    assert_type_error(
+        Array("P.A", Message("P.B", [], {}, Location((3, 4))), Location((5, 4))),
+        r'^<stdin>:5:4: model: error: invalid element type of array "A"\n'
+        r'<stdin>:3:4: model: info: type "B" must be scalar or non-null message$',
+    )
+    assert_type_error(
+        Array("P.A", OPAQUE, Location((5, 4))),
+        r'^<stdin>:5:4: model: error: invalid element type of array "A"\n'
+        r'__BUILTINS__:0:0: model: info: type "Opaque" must be scalar or non-null message$',
     )
 
 

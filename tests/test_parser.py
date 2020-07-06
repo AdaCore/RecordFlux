@@ -30,7 +30,6 @@ from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
-    Array,
     DerivedMessage,
     Enumeration,
     Field,
@@ -43,6 +42,7 @@ from rflx.model import (
 )
 from rflx.parser import grammar, parser
 from rflx.parser.ast import (
+    ArraySpec,
     ContextSpec,
     DerivationSpec,
     MessageSpec,
@@ -815,7 +815,7 @@ def test_array_type_spec() -> None:
                 "Array_Type",
                 [
                     ModularInteger("__PACKAGE__.Byte", Number(256)),
-                    Array("__PACKAGE__.Bytes", ReferenceSpec("__PACKAGE__.Byte")),
+                    ArraySpec("__PACKAGE__.Bytes", ReferenceSpec("__PACKAGE__.Byte")),
                     MessageSpec(
                         "__PACKAGE__.Foo",
                         [
@@ -827,7 +827,7 @@ def test_array_type_spec() -> None:
                             Component("Bytes", "Bytes"),
                         ],
                     ),
-                    Array("__PACKAGE__.Bar", ReferenceSpec("__PACKAGE__.Foo")),
+                    ArraySpec("__PACKAGE__.Bar", ReferenceSpec("__PACKAGE__.Foo")),
                 ],
             ),
         )

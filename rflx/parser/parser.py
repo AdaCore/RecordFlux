@@ -14,7 +14,7 @@ from rflx.error import (
     pop_source,
     push_source,
 )
-from rflx.expression import UNDEFINED, Number
+from rflx.expression import UNDEFINED
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
@@ -38,7 +38,15 @@ from rflx.model import (
 )
 
 from . import grammar
-from .ast import Component, DerivationSpec, MessageSpec, PackageSpec, RefinementSpec, Specification
+from .ast import (
+    ArraySpec,
+    Component,
+    DerivationSpec,
+    MessageSpec,
+    PackageSpec,
+    RefinementSpec,
+    Specification,
+)
 
 log = logging.getLogger(__name__)
 
@@ -165,7 +173,7 @@ class Parser:
                 if isinstance(t, Scalar):
                     new_type = t
 
-                elif isinstance(t, Array):
+                elif isinstance(t, ArraySpec):
                     new_type = create_array(t, self.__types)
 
                 elif isinstance(t, MessageSpec):
@@ -191,7 +199,7 @@ def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
     return {n: m for n, m in types.items() if isinstance(m, Message)}
 
 
-def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
+def create_array(array: ArraySpec, types: Mapping[ID, Type]) -> Array:
     array.element_type.identifier = ID(
         array.element_type.full_name.replace("__PACKAGE__", str(array.package)), array.location
     )
@@ -222,7 +230,7 @@ def create_array(array: Array, types: Mapping[ID, Type]) -> Array:
             )
             error.propagate()
 
-    return Array(array.identifier, element_type)
+    return Array(array.identifier, element_type, array.location)
 
 
 def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
