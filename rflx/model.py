@@ -1593,6 +1593,20 @@ class Refinement(Type):
                 package.location,
             )
 
+        if not isinstance(pdu.types[field], Opaque):
+            self.error.append(
+                f'invalid type of field "{field.name}" in refinement of "{pdu.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                field.identifier.location,
+            )
+            self.error.append(
+                "expected field of type Opaque",
+                Subsystem.MODEL,
+                Severity.INFO,
+                next(f for f in pdu.fields if f == field).identifier.location,
+            )
+
         self.pdu = pdu
         self.field = field
         self.sdu = sdu

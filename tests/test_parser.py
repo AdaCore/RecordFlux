@@ -527,17 +527,19 @@ def test_duplicate_refinement() -> None:
     assert_error_string(
         """
             package Test is
-               type T is mod 256;
                type PDU is
                   message
-                     Foo : T;
+                     null
+                        then Foo
+                           with Length => 8;
+                     Foo : Opaque;
                   end message;
                for Test.PDU use (Foo => Test.PDU);
                for PDU use (Foo => PDU);
             end Test;
         """,
-        r'^<stdin>:9:16: parser: error: duplicate refinement with "Test.PDU"\n'
-        r"<stdin>:8:16: parser: info: previous occurrence",
+        r'^<stdin>:11:16: parser: error: duplicate refinement with "Test.PDU"\n'
+        r"<stdin>:10:16: parser: info: previous occurrence",
     )
 
 
@@ -588,19 +590,21 @@ def test_refinement_invalid_condition() -> None:
     assert_error_string(
         """
             package Test is
-               type T is mod 256;
                type PDU is
                   message
-                     Foo : T;
+                     null
+                        then Foo
+                           with Length => 8;
+                     Foo : Opaque;
                   end message;
                for PDU use (Foo => PDU)
                   if X < Y + 1;
             end Test;
         """,
         r"^"
-        r'<stdin>:9:22: parser: error: unknown field or literal "X"'
+        r'<stdin>:11:22: parser: error: unknown field or literal "X"'
         r' in refinement condition of "Test.PDU"\n'
-        r'<stdin>:9:26: parser: error: unknown field or literal "Y"'
+        r'<stdin>:11:26: parser: error: unknown field or literal "Y"'
         r' in refinement condition of "Test.PDU"'
         r"$",
     )
