@@ -1111,6 +1111,18 @@ def test_refinement_invalid_package() -> None:
     )
 
 
+def test_refinement_invalid_field_type() -> None:
+    x = Field(ID("X", Location((20, 10))))
+
+    message = Message("P.M", [Link(INITIAL, x), Link(x, FINAL)], {x: MODULAR_INTEGER})
+
+    assert_type_error(
+        Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
+        r'^<stdin>:33:22: model: error: invalid type of field "X" in refinement of "P.M"\n'
+        r"<stdin>:20:10: model: info: expected field of type Opaque",
+    )
+
+
 def test_field_locations() -> None:
     f2 = Field(ID("F2", Location((2, 2))))
     f3 = Field(ID("F3", Location((3, 2))))
