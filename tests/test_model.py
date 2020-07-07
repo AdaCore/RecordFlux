@@ -487,6 +487,35 @@ def test_message_multiple_duplicate_links() -> None:
     )
 
 
+def test_message_unsupported_expression() -> None:
+    x = Field("X")
+
+    structure = [
+        Link(INITIAL, x),
+        Link(
+            x,
+            FINAL,
+            condition=LessEqual(
+                Pow(
+                    Number(2),
+                    Add(Variable("X", location=Location((10, 23))), Number(1)),
+                    location=Location((10, 19)),
+                ),
+                Number(1024),
+            ),
+        ),
+    ]
+
+    types = {x: MODULAR_INTEGER}
+
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:10:19: model: error: unsupported expression in "P.M"\n'
+        '<stdin>:10:23: model: info: variable "X" in exponent',
+    )
+
+
 def test_message_unreachable_field() -> None:
     structure = [
         Link(INITIAL, Field("X")),

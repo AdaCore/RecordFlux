@@ -667,6 +667,7 @@ class AbstractMessage(Type):
 
         return self.copy(structure=structure, types=types)
 
+    # pylint: disable=too-many-branches
     def __verify(self) -> None:
         type_fields = self.__types.keys() | {INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
@@ -755,6 +756,28 @@ class AbstractMessage(Type):
                 self.error.extend(
                     [("duplicate link", Subsystem.MODEL, Severity.INFO, l.location,) for l in links]
                 )
+
+        for l in self.structure:
+            exponentiations = And(l.condition, l.first, l.length).findall(
+                lambda x: isinstance(x, Pow)
+            )
+            for e in exponentiations:
+                assert isinstance(e, Pow)
+                variables = e.right.findall(lambda x: isinstance(x, Variable))
+                if variables:
+                    self.error.append(
+                        f'unsupported expression in "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        e.location,
+                    )
+                    for v in variables:
+                        self.error.append(
+                            f'variable "{v}" in exponent',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            v.location,
+                        )
 
     def __verify_conditions(self) -> None:
         literals = qualified_literals(self.types, self.package)
