@@ -12,6 +12,10 @@ project Test is
       for Driver ("RecordFlux") use "";
    end Compiler;
 
+   package Naming is
+      for Spec_Suffix ("RecordFlux") use ".rflx";
+   end Naming;
+
    case AUnit is
       when "yes" =>
          for Source_Dirs use ("generated", "tests", "specs");
