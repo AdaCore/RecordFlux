@@ -1,5 +1,7 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
+with RFLX.RFLX_Arithmetic;
+
 pragma Warnings (Off, "type ""Bytes_Ptr"" is not referenced");
 
 generic
@@ -31,6 +33,8 @@ is
                               "Bit_Length'Last must be equal to Length'Last * 8");
 
    subtype Bit_Index is Bit_Length range 1 .. Bit_Length'Last;
+
+   subtype U64 is RFLX.RFLX_Arithmetic.U64;
 
    function Byte_Index (Bit_Idx : Bit_Index) return Index is
      (Index (Length ((Bit_Idx - 1) / 8) + 1));

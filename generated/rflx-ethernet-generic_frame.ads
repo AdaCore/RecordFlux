@@ -9,7 +9,11 @@ package RFLX.Ethernet.Generic_Frame with
     (GNATprove, Terminating)
 is
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
+   pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
+
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index, Types.U64;
+
+   pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
    type Virtual_Field is (F_Initial, F_Destination, F_Source, F_Type_Length_TPID, F_TPID, F_TCI, F_Type_Length, F_Payload, F_Final);
 
@@ -295,12 +299,12 @@ is
        and Invalid (Ctx, F_Type_Length)
        and Invalid (Ctx, F_Payload)
        and (if
-               Types.Bit_Length (Get_Type_Length_TPID (Ctx)) = 16#8100#
+               Get_Type_Length_TPID (Ctx) = 16#8100#
             then
                Predecessor (Ctx, F_TPID) = F_Type_Length_TPID
                and Valid_Next (Ctx, F_TPID))
        and (if
-               Types.Bit_Length (Get_Type_Length_TPID (Ctx)) /= 16#8100#
+               Get_Type_Length_TPID (Ctx) /= 16#8100#
             then
                Predecessor (Ctx, F_Type_Length) = F_Type_Length_TPID
                and Valid_Next (Ctx, F_Type_Length))
@@ -390,12 +394,12 @@ is
        and Get_Type_Length (Ctx) = Val
        and Invalid (Ctx, F_Payload)
        and (if
-               Types.Bit_Length (Get_Type_Length (Ctx)) <= 1500
+               Get_Type_Length (Ctx) <= 1500
             then
                Predecessor (Ctx, F_Payload) = F_Type_Length
                and Valid_Next (Ctx, F_Payload))
        and (if
-               Types.Bit_Length (Get_Type_Length (Ctx)) >= 1536
+               Get_Type_Length (Ctx) >= 1536
             then
                Predecessor (Ctx, F_Payload) = F_Type_Length
                and Valid_Next (Ctx, F_Payload))
@@ -617,7 +621,7 @@ private
                           then
                              (Valid (Cursors (F_Type_Length_TPID))
                               and then Cursors (F_TPID).Predecessor = F_Type_Length_TPID
-                              and then Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#))
+                              and then Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#))
                 and then (if
                              Structural_Valid (Cursors (F_TCI))
                           then
@@ -628,7 +632,7 @@ private
                           then
                              (Valid (Cursors (F_Type_Length_TPID))
                               and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
-                              and then Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#)
+                              and then Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#)
                              or (Valid (Cursors (F_TCI))
                                  and then Cursors (F_Type_Length).Predecessor = F_TCI))
                 and then (if
@@ -636,10 +640,10 @@ private
                           then
                              (Valid (Cursors (F_Type_Length))
                               and then Cursors (F_Payload).Predecessor = F_Type_Length
-                              and then Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) <= 1500)
+                              and then Cursors (F_Type_Length).Value.Type_Length_Value <= 1500)
                              or (Valid (Cursors (F_Type_Length))
                                  and then Cursors (F_Payload).Predecessor = F_Type_Length
-                                 and then Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) >= 1536)))
+                                 and then Cursors (F_Type_Length).Value.Type_Length_Value >= 1536)))
       and then ((if
                     Invalid (Cursors (F_Destination))
                  then
@@ -685,7 +689,7 @@ private
                                              and then Cursors (F_Type_Length_TPID).First = (Cursors (F_Source).Last + 1)
                                              and then (if
                                                           Structural_Valid (Cursors (F_TPID))
-                                                          and then Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) = 16#8100#
+                                                          and then Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#
                                                        then
                                                           (Cursors (F_TPID).Last - Cursors (F_TPID).First + 1) = RFLX.Ethernet.TPID_Base'Size
                                                           and then Cursors (F_TPID).Predecessor = F_Type_Length_TPID
@@ -704,35 +708,35 @@ private
                                                                                     and then Cursors (F_Type_Length).First = (Cursors (F_TCI).Last + 1)
                                                                                     and then (if
                                                                                                  Structural_Valid (Cursors (F_Payload))
-                                                                                                 and then Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) <= 1500
+                                                                                                 and then Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
                                                                                               then
                                                                                                  (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) * 8
                                                                                                  and then Cursors (F_Payload).Predecessor = F_Type_Length
                                                                                                  and then Cursors (F_Payload).First = (Cursors (F_Type_Length).Last + 1))
                                                                                     and then (if
                                                                                                  Structural_Valid (Cursors (F_Payload))
-                                                                                                 and then Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) >= 1536
+                                                                                                 and then Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
                                                                                               then
                                                                                                  (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = (Last - Cursors (F_Type_Length).Last)
                                                                                                  and then Cursors (F_Payload).Predecessor = F_Type_Length
                                                                                                  and then Cursors (F_Payload).First = (Cursors (F_Type_Length).Last + 1)))))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Type_Length))
-                                                          and then Types.Bit_Length (Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value) /= 16#8100#
+                                                          and then Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
                                                        then
                                                           (Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1) = RFLX.Ethernet.Type_Length_Base'Size
                                                           and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
                                                           and then Cursors (F_Type_Length).First = Cursors (F_Type_Length_TPID).First
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Payload))
-                                                                       and then Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) <= 1500
+                                                                       and then Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
                                                                     then
                                                                        (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) * 8
                                                                        and then Cursors (F_Payload).Predecessor = F_Type_Length
                                                                        and then Cursors (F_Payload).First = (Cursors (F_Type_Length).Last + 1))
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Payload))
-                                                                       and then Types.Bit_Length (Cursors (F_Type_Length).Value.Type_Length_Value) >= 1536
+                                                                       and then Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
                                                                     then
                                                                        (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = (Last - Cursors (F_Type_Length).Last)
                                                                        and then Cursors (F_Payload).Predecessor = F_Type_Length

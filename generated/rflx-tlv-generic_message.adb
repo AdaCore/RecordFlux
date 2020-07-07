@@ -36,7 +36,7 @@ is
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if
           Structural_Valid (Ctx.Cursors (F_Tag))
-          and Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Error))
+          and Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))
        then
           Ctx.Cursors (F_Tag).Last
        elsif
@@ -57,7 +57,7 @@ is
           when F_Tag =>
              (case Fld is
                  when F_Length =>
-                    Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data)),
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data)),
                  when others =>
                     False),
           when F_Length =>
@@ -74,8 +74,8 @@ is
           when F_Initial =>
              True,
           when F_Tag =>
-             Types.Bit_Length (Val.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))
-             or Types.Bit_Length (Val.Tag_Value) = Types.Bit_Length (To_Base (Msg_Error)),
+             Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Msg_Data))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Msg_Error)),
           when F_Length | F_Value =>
              True,
           when F_Final =>
@@ -111,7 +111,7 @@ is
           when F_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Tag
-                 and Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))
+                 and Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               else
@@ -138,11 +138,11 @@ is
      ((case Fld is
           when F_Tag =>
              (if
-                 Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))
+                 Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
               then
                  F_Length
               elsif
-                 Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Error))
+                 Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))
               then
                  F_Final
               else
@@ -331,7 +331,7 @@ is
                                   and then Ctx.Cursors (F_Tag).First = Ctx.First
                                   and then (if
                                                Structural_Valid (Ctx.Cursors (F_Length))
-                                               and then Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))
+                                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
                                             then
                                                (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.TLV.Length'Size
                                                and then Ctx.Cursors (F_Length).Predecessor = F_Tag
@@ -387,16 +387,16 @@ is
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Tag)
       and then ((Valid (Ctx, F_Length)
-                 and then Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
                  and then Structural_Valid (Ctx, F_Value))
-                or Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Error))));
+                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Tag)
       and then ((Valid (Ctx, F_Length)
-                 and then Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
                  and then Valid (Ctx, F_Value))
-                or Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Error))));
+                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Tag)
@@ -518,7 +518,7 @@ is
                          and then Ctx.Cursors (F_Tag).First = Ctx.First
                          and then (if
                                       Structural_Valid (Ctx.Cursors (F_Length))
-                                      and then Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))
+                                      and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
                                    then
                                       (Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1) = RFLX.TLV.Length'Size
                                       and then Ctx.Cursors (F_Length).Predecessor = F_Tag

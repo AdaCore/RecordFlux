@@ -3,6 +3,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List
 
+import pytest
+
 from rflx.generator import Generator
 from rflx.parser import Parser
 
@@ -135,3 +137,26 @@ def test_type_name_equals_package_name() -> None:
     assert_compilable_code_string(spec.format("range 1 .. 2**32 - 1 with Size => 32"))
     assert_compilable_code_string(spec.format("(A, B, C) with Size => 32"))
     assert_compilable_code_string(spec.format("(A, B, C) with Size => 32, Always_Valid"))
+
+
+@pytest.mark.parametrize("condition", ["A + 1 = 17179869178", "A = B - 1"])
+def test_comparison_big_integers(condition: str) -> None:
+    assert_compilable_code_string(
+        f"""
+           package Test is
+
+              type D is range 17179869177 .. 17179869178 with Size => 35;
+
+              type E is
+                 message
+                    A : D;
+                    B : D
+                       then C
+                          with Length => 8
+                          if {condition};
+                    C : Opaque;
+                 end message;
+
+           end Test;
+        """
+    )
