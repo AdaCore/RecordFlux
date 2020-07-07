@@ -14,7 +14,11 @@ package RFLX.IPv4.Generic_Packet with
     (GNATprove, Terminating)
 is
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
+   pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
+
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index, Types.U64;
+
+   pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
    type Virtual_Field is (F_Initial, F_Version, F_IHL, F_DSCP, F_ECN, F_Total_Length, F_Identification, F_Flag_R, F_Flag_DF, F_Flag_MF, F_Fragment_Offset, F_TTL, F_Protocol, F_Header_Checksum, F_Source, F_Destination, F_Options, F_Payload, F_Final);
 
@@ -468,7 +472,7 @@ is
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (if
-               Types.Bit_Length (Get_Total_Length (Ctx)) >= Types.Bit_Length (Get_IHL (Ctx)) * 4
+               Types.U64 (Get_Total_Length (Ctx)) >= Types.U64 (Get_IHL (Ctx)) * 4
             then
                Predecessor (Ctx, F_Identification) = F_Total_Length
                and Valid_Next (Ctx, F_Identification))
@@ -552,7 +556,7 @@ is
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (if
-               Types.Bit_Length (To_Base (Get_Flag_R (Ctx))) = Types.Bit_Length (To_Base (False))
+               Types.U64 (To_Base (Get_Flag_R (Ctx))) = Types.U64 (To_Base (False))
             then
                Predecessor (Ctx, F_Flag_DF) = F_Flag_R
                and Valid_Next (Ctx, F_Flag_DF))
@@ -919,12 +923,12 @@ is
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (if
-               Types.Bit_Length (Get_IHL (Ctx)) = 5
+               Get_IHL (Ctx) = 5
             then
                Predecessor (Ctx, F_Payload) = F_Destination
                and Valid_Next (Ctx, F_Payload))
        and (if
-               Types.Bit_Length (Get_IHL (Ctx)) > 5
+               Get_IHL (Ctx) > 5
             then
                Predecessor (Ctx, F_Options) = F_Destination
                and Valid_Next (Ctx, F_Options))
@@ -1247,7 +1251,7 @@ private
                           then
                              (Valid (Cursors (F_Total_Length))
                               and then Cursors (F_Identification).Predecessor = F_Total_Length
-                              and then Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4))
+                              and then Types.U64 (Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.U64 (Cursors (F_IHL).Value.IHL_Value) * 4))
                 and then (if
                              Structural_Valid (Cursors (F_Flag_R))
                           then
@@ -1258,7 +1262,7 @@ private
                           then
                              (Valid (Cursors (F_Flag_R))
                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
-                              and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (To_Base (False))))
+                              and then Types.U64 (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.U64 (To_Base (False))))
                 and then (if
                              Structural_Valid (Cursors (F_Flag_MF))
                           then
@@ -1299,13 +1303,13 @@ private
                           then
                              (Valid (Cursors (F_Destination))
                               and then Cursors (F_Options).Predecessor = F_Destination
-                              and then Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) > 5))
+                              and then Cursors (F_IHL).Value.IHL_Value > 5))
                 and then (if
                              Structural_Valid (Cursors (F_Payload))
                           then
                              (Valid (Cursors (F_Destination))
                               and then Cursors (F_Payload).Predecessor = F_Destination
-                              and then Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) = 5)
+                              and then Cursors (F_IHL).Value.IHL_Value = 5)
                              or (Structural_Valid (Cursors (F_Options))
                                  and then Cursors (F_Payload).Predecessor = F_Options)))
       and then ((if
@@ -1405,7 +1409,7 @@ private
                                                                        and then Cursors (F_Total_Length).First = (Cursors (F_ECN).Last + 1)
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Identification))
-                                                                                    and then Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 4
+                                                                                    and then Types.U64 (Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.U64 (Cursors (F_IHL).Value.IHL_Value) * 4
                                                                                  then
                                                                                     (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1) = RFLX.IPv4.Identification'Size
                                                                                     and then Cursors (F_Identification).Predecessor = F_Total_Length
@@ -1418,7 +1422,7 @@ private
                                                                                                  and then Cursors (F_Flag_R).First = (Cursors (F_Identification).Last + 1)
                                                                                                  and then (if
                                                                                                               Structural_Valid (Cursors (F_Flag_DF))
-                                                                                                              and then Types.Bit_Length (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.Bit_Length (To_Base (False))
+                                                                                                              and then Types.U64 (Cursors (F_Flag_R).Value.Flag_R_Value) = Types.U64 (To_Base (False))
                                                                                                            then
                                                                                                               (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1) = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
                                                                                                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
@@ -1467,14 +1471,14 @@ private
                                                                                                                                                                                                          and then Cursors (F_Destination).First = (Cursors (F_Source).Last + 1)
                                                                                                                                                                                                          and then (if
                                                                                                                                                                                                                       Structural_Valid (Cursors (F_Payload))
-                                                                                                                                                                                                                      and then Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) = 5
+                                                                                                                                                                                                                      and then Cursors (F_IHL).Value.IHL_Value = 5
                                                                                                                                                                                                                    then
                                                                                                                                                                                                                       (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = (Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - Cursors (F_Destination).Last + Cursors (F_Version).First - 1)
                                                                                                                                                                                                                       and then Cursors (F_Payload).Predecessor = F_Destination
                                                                                                                                                                                                                       and then Cursors (F_Payload).First = (Cursors (F_Destination).Last + 1))
                                                                                                                                                                                                          and then (if
                                                                                                                                                                                                                       Structural_Valid (Cursors (F_Options))
-                                                                                                                                                                                                                      and then Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) > 5
+                                                                                                                                                                                                                      and then Cursors (F_IHL).Value.IHL_Value > 5
                                                                                                                                                                                                                    then
                                                                                                                                                                                                                       (Cursors (F_Options).Last - Cursors (F_Options).First + 1) = (Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 32 - 160)
                                                                                                                                                                                                                       and then Cursors (F_Options).Predecessor = F_Destination

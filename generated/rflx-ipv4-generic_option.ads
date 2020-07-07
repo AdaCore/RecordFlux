@@ -12,7 +12,11 @@ package RFLX.IPv4.Generic_Option with
     (GNATprove, Terminating)
 is
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
+   pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
+
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index, Types.U64;
+
+   pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
    type Virtual_Field is (F_Initial, F_Copied, F_Option_Class, F_Option_Number, F_Option_Length, F_Option_Data, F_Final);
 
@@ -280,7 +284,7 @@ is
        and Invalid (Ctx, F_Option_Length)
        and Invalid (Ctx, F_Option_Data)
        and (if
-               Types.Bit_Length (Get_Option_Number (Ctx)) > 1
+               Get_Option_Number (Ctx) > 1
             then
                Predecessor (Ctx, F_Option_Length) = F_Option_Number
                and Valid_Next (Ctx, F_Option_Length))
@@ -309,18 +313,18 @@ is
        and Get_Option_Length (Ctx) = Val
        and Invalid (Ctx, F_Option_Data)
        and (if
-               (Types.Bit_Length (To_Base (Get_Option_Class (Ctx))) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
-                and Types.Bit_Length (Get_Option_Number (Ctx)) = 4)
-               or (Types.Bit_Length (To_Base (Get_Option_Class (Ctx))) = Types.Bit_Length (To_Base (Control))
-                   and (Types.Bit_Length (Get_Option_Number (Ctx)) = 9
-                        or Types.Bit_Length (Get_Option_Number (Ctx)) = 3
-                        or Types.Bit_Length (Get_Option_Number (Ctx)) = 7))
-               or (Types.Bit_Length (Get_Option_Length (Ctx)) = 11
-                   and Types.Bit_Length (To_Base (Get_Option_Class (Ctx))) = Types.Bit_Length (To_Base (Control))
-                   and Types.Bit_Length (Get_Option_Number (Ctx)) = 2)
-               or (Types.Bit_Length (Get_Option_Length (Ctx)) = 4
-                   and Types.Bit_Length (To_Base (Get_Option_Class (Ctx))) = Types.Bit_Length (To_Base (Control))
-                   and Types.Bit_Length (Get_Option_Number (Ctx)) = 8)
+               (Types.U64 (To_Base (Get_Option_Class (Ctx))) = Types.U64 (To_Base (Debugging_And_Measurement))
+                and Get_Option_Number (Ctx) = 4)
+               or (Types.U64 (To_Base (Get_Option_Class (Ctx))) = Types.U64 (To_Base (Control))
+                   and (Get_Option_Number (Ctx) = 9
+                        or Get_Option_Number (Ctx) = 3
+                        or Get_Option_Number (Ctx) = 7))
+               or (Get_Option_Length (Ctx) = 11
+                   and Types.U64 (To_Base (Get_Option_Class (Ctx))) = Types.U64 (To_Base (Control))
+                   and Get_Option_Number (Ctx) = 2)
+               or (Get_Option_Length (Ctx) = 4
+                   and Types.U64 (To_Base (Get_Option_Class (Ctx))) = Types.U64 (To_Base (Control))
+                   and Get_Option_Number (Ctx) = 8)
             then
                Predecessor (Ctx, F_Option_Data) = F_Option_Length
                and Valid_Next (Ctx, F_Option_Data))
@@ -480,24 +484,24 @@ private
                           then
                              (Valid (Cursors (F_Option_Number))
                               and then Cursors (F_Option_Length).Predecessor = F_Option_Number
-                              and then Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) > 1))
+                              and then Cursors (F_Option_Number).Value.Option_Number_Value > 1))
                 and then (if
                              Structural_Valid (Cursors (F_Option_Data))
                           then
                              (Valid (Cursors (F_Option_Length))
                               and then Cursors (F_Option_Data).Predecessor = F_Option_Length
-                              and then ((Types.Bit_Length (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
-                                         and Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                                        or (Types.Bit_Length (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
-                                            and (Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                                                 or Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                                                 or Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-                                        or (Types.Bit_Length (Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                                            and Types.Bit_Length (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
-                                            and Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-                                        or (Types.Bit_Length (Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                                            and Types.Bit_Length (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
-                                            and Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 8)))))
+                              and then ((Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
+                                         and Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+                                        or (Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                            and (Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                                                 or Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                                                 or Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+                                        or (Cursors (F_Option_Length).Value.Option_Length_Value = 11
+                                            and Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                            and Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+                                        or (Cursors (F_Option_Length).Value.Option_Length_Value = 4
+                                            and Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                            and Cursors (F_Option_Number).Value.Option_Number_Value = 8)))))
       and then ((if
                     Invalid (Cursors (F_Copied))
                  then
@@ -534,25 +538,25 @@ private
                                              and then Cursors (F_Option_Number).First = (Cursors (F_Option_Class).Last + 1)
                                              and then (if
                                                           Structural_Valid (Cursors (F_Option_Length))
-                                                          and then Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) > 1
+                                                          and then Cursors (F_Option_Number).Value.Option_Number_Value > 1
                                                        then
                                                           (Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1) = RFLX.IPv4.Option_Length_Base'Size
                                                           and then Cursors (F_Option_Length).Predecessor = F_Option_Number
                                                           and then Cursors (F_Option_Length).First = (Cursors (F_Option_Number).Last + 1)
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Option_Data))
-                                                                       and then ((Types.Bit_Length (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Debugging_And_Measurement))
-                                                                                  and Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 4)
-                                                                                 or (Types.Bit_Length (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
-                                                                                     and (Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 9
-                                                                                          or Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 3
-                                                                                          or Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 7))
-                                                                                 or (Types.Bit_Length (Cursors (F_Option_Length).Value.Option_Length_Value) = 11
-                                                                                     and Types.Bit_Length (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
-                                                                                     and Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 2)
-                                                                                 or (Types.Bit_Length (Cursors (F_Option_Length).Value.Option_Length_Value) = 4
-                                                                                     and Types.Bit_Length (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.Bit_Length (To_Base (Control))
-                                                                                     and Types.Bit_Length (Cursors (F_Option_Number).Value.Option_Number_Value) = 8))
+                                                                       and then ((Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
+                                                                                  and Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+                                                                                 or (Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                                                                     and (Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                                                                                          or Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                                                                                          or Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+                                                                                 or (Cursors (F_Option_Length).Value.Option_Length_Value = 11
+                                                                                     and Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                                                                     and Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+                                                                                 or (Cursors (F_Option_Length).Value.Option_Length_Value = 4
+                                                                                     and Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                                                                     and Cursors (F_Option_Number).Value.Option_Number_Value = 8))
                                                                     then
                                                                        (Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1) = ((Types.Bit_Length (Cursors (F_Option_Length).Value.Option_Length_Value) - 2)) * 8
                                                                        and then Cursors (F_Option_Data).Predecessor = F_Option_Length

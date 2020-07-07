@@ -41,24 +41,24 @@ project Test is
       );
 
       --  Improving proof time
-      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--steps=32000");
+      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--steps=15000");
+      for Proof_Switches ("rflx-in_ipv4-contains.ads") use ("--steps=118000");
       for Proof_Switches ("rflx-ipv4-option.ads") use ("--steps=2000");
-      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--steps=14000");
+      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--steps=12000");
       for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--steps=72000", "--prover=altergo,cvc4,z3");
       for Proof_Switches ("rflx-rflx_arithmetic.ads") use ("--steps=72000", "--prover=altergo,cvc4,z3");
       for Proof_Switches ("rflx-rflx_types.ads") use ("--steps=240000", "--prover=altergo,cvc4,z3");
-      for Proof_Switches ("rflx-udp-datagram.ads") use ("--steps=4000");
+      for Proof_Switches ("rflx-udp-datagram.ads") use ("--steps=2400");
 
       case AUnit is
          when "yes" =>
-            for Proof_Switches ("rflx-arrays-tests.adb") use ("--steps=4000");
-            for Proof_Switches ("rflx-builtin_types_tests.adb") use ("--steps=4000");
-            for Proof_Switches ("rflx-custom_types_tests.adb") use ("--steps=365000", "--prover=altergo,cvc4,z3");
-            for Proof_Switches ("rflx-derivation-tests.adb") use ("--steps=4000");
-            for Proof_Switches ("rflx-ethernet-tests.adb") use ("--steps=4000");
-            for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=117000");
-            for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=149000");
-            for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=79000");
+            for Proof_Switches ("rflx-arrays-tests.adb") use ("--steps=1800");
+            for Proof_Switches ("rflx-custom_types_tests.adb") use ("--steps=376000", "--prover=altergo,cvc4,z3");
+            for Proof_Switches ("rflx-derivation-tests.adb") use ("--steps=2300");
+            for Proof_Switches ("rflx-ethernet-tests.adb") use ("--steps=3400");
+            for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=109000");
+            for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=142000");
+            for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=77000");
       end case;
    end Prove;
 
