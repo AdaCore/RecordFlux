@@ -9,7 +9,11 @@ package RFLX.Expression.Generic_Message with
     (GNATprove, Terminating)
 is
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
+   pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
+
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index, Types.U64;
+
+   pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
    type Virtual_Field is (F_Initial, F_Payload, F_Final);
 

@@ -1,7 +1,5 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
-with {prefix}RFLX_Arithmetic;
-
 package body {prefix}RFLX_Generic_Types with
   SPARK_Mode
 is
@@ -41,8 +39,6 @@ is
    --
 
    use type {prefix}RFLX_Arithmetic.U64;
-
-   subtype U64 is {prefix}RFLX_Arithmetic.U64;
 
    function Left_Shift (Value : U64; Value_Size : Positive; Length : Natural) return U64 renames {prefix}RFLX_Arithmetic.Left_Shift;
 

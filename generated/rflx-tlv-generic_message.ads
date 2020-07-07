@@ -9,7 +9,11 @@ package RFLX.TLV.Generic_Message with
     (GNATprove, Terminating)
 is
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
+   pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
+
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index, Types.U64;
+
+   pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
    type Virtual_Field is (F_Initial, F_Tag, F_Length, F_Value, F_Final);
 
@@ -214,7 +218,7 @@ is
        and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Value)
        and (if
-               Types.Bit_Length (To_Base (Get_Tag (Ctx))) = Types.Bit_Length (To_Base (Msg_Data))
+               Types.U64 (To_Base (Get_Tag (Ctx))) = Types.U64 (To_Base (Msg_Data))
             then
                Predecessor (Ctx, F_Length) = F_Tag
                and Valid_Next (Ctx, F_Length))
@@ -374,7 +378,7 @@ private
                  then
                     (Valid (Cursors (F_Tag))
                      and then Cursors (F_Length).Predecessor = F_Tag
-                     and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))))
+                     and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))))
                 and then (if
                              Structural_Valid (Cursors (F_Value))
                           then
@@ -396,7 +400,7 @@ private
                    and then Cursors (F_Tag).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Length))
-                                and then Types.Bit_Length (Cursors (F_Tag).Value.Tag_Value) = Types.Bit_Length (To_Base (Msg_Data))
+                                and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
                              then
                                 (Cursors (F_Length).Last - Cursors (F_Length).First + 1) = RFLX.TLV.Length'Size
                                 and then Cursors (F_Length).Predecessor = F_Tag

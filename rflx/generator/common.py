@@ -35,6 +35,7 @@ from rflx.expression import (
     NotEqual,
     Number,
     Or,
+    Relation,
     Selected,
     Size,
     Sub,
@@ -62,9 +63,12 @@ from . import const
 
 
 def substitution(
-    message: Message, embedded: bool = False, public: bool = False
+    message: Message,
+    embedded: bool = False,
+    public: bool = False,
+    target_type: ID = const.TYPES_U64,
 ) -> Callable[[Expr], Expr]:
-    facts = substitution_facts(message, embedded, public)
+    facts = substitution_facts(message, embedded, public, target_type)
 
     def func(expression: Expr) -> Expr:
         def byte_aggregate(aggregate: Aggregate) -> Aggregate:
@@ -77,10 +81,10 @@ def substitution(
             field = None
             aggregate = None
             if isinstance(expression.left, Variable) and isinstance(expression.right, Aggregate):
-                field = expression.left
+                field = Field(expression.left.name)
                 aggregate = byte_aggregate(expression.right)
             elif isinstance(expression.left, Aggregate) and isinstance(expression.right, Variable):
-                field = expression.right
+                field = Field(expression.right.name)
                 aggregate = byte_aggregate(expression.left)
             if field and aggregate:
                 if embedded:
@@ -93,8 +97,7 @@ def substitution(
                                     [
                                         Selected(
                                             Indexed(
-                                                Variable("Cursors"),
-                                                Variable(Field(field.name).affixed_name),
+                                                Variable("Cursors"), Variable(field.affixed_name),
                                             ),
                                             "First",
                                         )
@@ -105,8 +108,7 @@ def substitution(
                                     [
                                         Selected(
                                             Indexed(
-                                                Variable("Cursors"),
-                                                Variable(Field(field.name).affixed_name),
+                                                Variable("Cursors"), Variable(field.affixed_name),
                                             ),
                                             "Last",
                                         )
@@ -116,9 +118,40 @@ def substitution(
                         ),
                         aggregate,
                     )
-                return Call(
-                    "Equal", [Variable("Ctx"), Variable(Field(field.name).affixed_name), aggregate]
-                )
+                return Call("Equal", [Variable("Ctx"), Variable(field.affixed_name), aggregate])
+
+        literals = [
+            l
+            for t in message.types.values()
+            if isinstance(t, Enumeration)
+            for l in t.literals.keys()
+        ]
+
+        def field_value(field: Field) -> Expr:
+            if public:
+                return Call(f"Get_{field.name}", [Variable("Ctx")])
+            return Selected(
+                Indexed(
+                    Variable("Ctx.Cursors" if not embedded else "Cursors"),
+                    Variable(field.affixed_name),
+                ),
+                f"Value.{field.name}_Value",
+            )
+
+        if isinstance(expression, Relation):
+            for left, right in [
+                (expression.left, expression.right),
+                (expression.right, expression.left),
+            ]:
+                if (
+                    isinstance(left, Variable)
+                    and Field(left.name) in message.fields
+                    and (
+                        isinstance(right, Number)
+                        or (isinstance(right, Variable) and right.name in literals)
+                    )
+                ):
+                    return expression.__class__(field_value(Field(left.name)), right)
 
         return expression
 
@@ -126,7 +159,10 @@ def substitution(
 
 
 def substitution_facts(
-    message: Message, embedded: bool = False, public: bool = False
+    message: Message,
+    embedded: bool = False,
+    public: bool = False,
+    target_type: ID = const.TYPES_U64,
 ) -> Mapping[Name, Expr]:
     def prefixed(name: str) -> Expr:
         return Variable(f"Ctx.{name}") if not embedded else Variable(name)
@@ -160,11 +196,10 @@ def substitution_facts(
         if isinstance(field_type, Enumeration):
             if public:
                 return Call(
-                    const.TYPES_BIT_LENGTH,
-                    [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
+                    target_type, [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
                 )
             return Call(
-                const.TYPES_BIT_LENGTH,
+                target_type,
                 [
                     Selected(
                         Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
@@ -173,9 +208,9 @@ def substitution_facts(
             )
         if isinstance(field_type, Scalar):
             if public:
-                return Call(const.TYPES_BIT_LENGTH, [Call(f"Get_{field.name}", [Variable("Ctx")])])
+                return Call(target_type, [Call(f"Get_{field.name}", [Variable("Ctx")])])
             return Call(
-                const.TYPES_BIT_LENGTH,
+                target_type,
                 [
                     Selected(
                         Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
@@ -196,15 +231,13 @@ def substitution_facts(
         **{Length(f.name): field_length(f) for f in message.fields},
         **{Variable(f.name): field_value(f, t) for f, t in message.types.items()},
         **{
-            Variable(l): Call(const.TYPES_BIT_LENGTH, [Call("To_Base", [Variable(l)])])
+            Variable(l): Call(target_type, [Call("To_Base", [Variable(l)])])
             for t in message.types.values()
             if isinstance(t, Enumeration)
             for l in t.literals.keys()
         },
         **{
-            Variable(t.package * l): Call(
-                const.TYPES_BIT_LENGTH, [Call("To_Base", [Variable(t.package * l)])]
-            )
+            Variable(t.package * l): Call(target_type, [Call("To_Base", [Variable(t.package * l)])])
             for t in message.types.values()
             if isinstance(t, Enumeration)
             for l in t.literals.keys()
@@ -232,7 +265,9 @@ def message_structure_invariant(
     length = (
         Size(prefix * full_base_type_name(field_type))
         if isinstance(field_type, Scalar)
-        else link.length.substituted(substitution(message, embedded)).simplified()
+        else link.length.substituted(
+            substitution(message, embedded, target_type=const.TYPES_BIT_LENGTH)
+        ).simplified()
     )
     first = (
         prefixed("First")

@@ -377,14 +377,17 @@ class Generator:
     def __create_use_type_clause(composite_fields: Sequence[Field]) -> UnitPart:
         return UnitPart(
             [
+                Pragma("Warnings", ["Off", '"use clause for type ""U64"" * has no effect"']),
                 UseTypeClause(
                     *[
                         *([const.TYPES_BYTES] if composite_fields else []),
                         const.TYPES_BYTES_PTR,
                         const.TYPES_INDEX,
                         const.TYPES_BIT_INDEX,
+                        const.TYPES_U64,
                     ]
-                )
+                ),
+                Pragma("Warnings", ["On", '"use clause for type ""U64"" * has no effect"']),
             ]
         )
 
@@ -888,7 +891,9 @@ class Generator:
                                 [(l.condition, l.length) for l in links],
                                 Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
                             )
-                            .substituted(common.substitution(message))
+                            .substituted(
+                                common.substitution(message, target_type=const.TYPES_BIT_LENGTH)
+                            )
                             .simplified()
                         )
                 cases.append((Variable(target.affixed_name), length))
@@ -899,7 +904,9 @@ class Generator:
             if set(message.fields) - {l.target for l in message.outgoing(field)}:
                 cases.append((Variable("others"), Variable(const.TYPES_UNREACHABLE_BIT_LENGTH)))
             return (
-                Case(Variable("Fld"), cases).substituted(common.substitution(message)).simplified()
+                Case(Variable("Fld"), cases)
+                .substituted(common.substitution(message, target_type=const.TYPES_BIT_LENGTH))
+                .simplified()
             )
 
         specification = FunctionSpecification(
@@ -1037,7 +1044,7 @@ class Generator:
             )
             if field not in (INITIAL, FINAL) and isinstance(message.types[field], Scalar):
                 c = c.substituted(
-                    lambda x: Call(const.TYPES_BIT_LENGTH, [Variable(f"Val.{field.name}_Value")])
+                    lambda x: Call(const.TYPES_U64, [Variable(f"Val.{field.name}_Value")])
                     if x == Variable(field.name)
                     else x
                 )
