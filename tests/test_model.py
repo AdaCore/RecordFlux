@@ -754,7 +754,7 @@ def test_message_nonexistent_variable() -> None:
 
     types = {Field("F1"): enum_type, Field("F2"): mod_type}
     assert_message_model_error(
-        structure, types, '^<stdin>:444:55: model: error: undefined variable "Val3" referenced',
+        structure, types, '^<stdin>:444:55: model: error: undefined variable "Val3" referenced$',
     )
 
 
