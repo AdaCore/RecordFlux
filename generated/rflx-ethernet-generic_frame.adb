@@ -40,8 +40,8 @@ is
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if
           Structural_Valid (Ctx.Cursors (F_Payload))
-          and ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 >= 46
-          and ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 <= 1500
+          and then (((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 >= 46
+                    and ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1)) / 8 <= 1500)
        then
           Ctx.Cursors (F_Payload).Last
        else
@@ -194,7 +194,7 @@ is
           when F_TPID =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID
-                 and Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#
+                 and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#
               then
                  Ctx.Cursors (F_Type_Length_TPID).First
               else
@@ -209,7 +209,7 @@ is
           when F_Type_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID
-                 and Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
+                 and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
               then
                  Ctx.Cursors (F_Type_Length_TPID).First
               elsif
@@ -221,12 +221,12 @@ is
           when F_Payload =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Type_Length
-                 and Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
+                 and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               elsif
                  Ctx.Cursors (Fld).Predecessor = F_Type_Length
-                 and Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
+                 and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               else

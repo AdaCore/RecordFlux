@@ -957,7 +957,7 @@ class Generator:
                 If(
                     [
                         (
-                            And(
+                            AndThen(
                                 Equal(
                                     Selected(
                                         Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
@@ -1452,7 +1452,7 @@ class Generator:
                     If(
                         [
                             (
-                                And(
+                                AndThen(
                                     Call(
                                         "Structural_Valid",
                                         [

@@ -328,7 +328,7 @@ is
           when F_Identification =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Total_Length
-                 and Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
+                 and then Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               else
@@ -343,7 +343,7 @@ is
           when F_Flag_DF =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Flag_R
-                 and Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.U64 (To_Base (False))
+                 and then Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = Types.U64 (To_Base (False))
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               else
@@ -400,7 +400,7 @@ is
           when F_Options =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Destination
-                 and Ctx.Cursors (F_IHL).Value.IHL_Value > 5
+                 and then Ctx.Cursors (F_IHL).Value.IHL_Value > 5
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               else
@@ -408,7 +408,7 @@ is
           when F_Payload =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Destination
-                 and Ctx.Cursors (F_IHL).Value.IHL_Value = 5
+                 and then Ctx.Cursors (F_IHL).Value.IHL_Value = 5
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               elsif
