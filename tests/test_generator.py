@@ -1,10 +1,12 @@
 from pathlib import Path
+from typing import Callable
 
 import pytest
 
+import rflx.expression as expr
 from rflx.generator import Generator, common, const
 from rflx.identifier import ID
-from rflx.model import Model, Type
+from rflx.model import BUILTIN_TYPES, Model, Type
 from tests.models import (
     ARRAYS_MODEL,
     DERIVATION_MODEL,
@@ -15,8 +17,10 @@ from tests.models import (
     NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
     NULL_MODEL,
     RANGE_INTEGER,
+    TLV_MESSAGE,
     TLV_MODEL,
 )
+from tests.utils import assert_equal
 
 TESTDIR = Path("generated")
 
@@ -168,6 +172,41 @@ def test_derivation_spec() -> None:
 def test_derivation_body() -> None:
     generator = generate(DERIVATION_MODEL)
     assert_body(generator)
+
+
+@pytest.mark.parametrize(
+    "left,right",
+    [
+        (expr.Variable("Value"), expr.Aggregate(expr.Number(1), expr.Number(2))),
+        (expr.Aggregate(expr.Number(1), expr.Number(2)), expr.Variable("Value")),
+    ],
+)
+@pytest.mark.parametrize("relation", [expr.Equal, expr.NotEqual])
+def test_substitution_relation_aggregate(
+    relation: Callable[[expr.Expr, expr.Expr], expr.Relation], left: expr.Expr, right: expr.Expr
+) -> None:
+    equal_call = expr.Call(
+        "Equal",
+        [
+            expr.Variable("Ctx"),
+            expr.Variable("F_Value"),
+            expr.Aggregate(
+                expr.Val(expr.Variable("Types.Byte"), expr.Number(1)),
+                expr.Val(expr.Variable("Types.Byte"), expr.Number(2)),
+            ),
+        ],
+    )
+
+    assert_equal(
+        relation(left, right).substituted(common.substitution(TLV_MESSAGE)),
+        equal_call if relation == expr.Equal else expr.Not(equal_call),
+    )
+
+
+def test_prefixed_type_name() -> None:
+    assert common.prefixed_type_name(ID("Modular"), "P") == ID("P.Modular")
+    for t in BUILTIN_TYPES:
+        assert common.prefixed_type_name(t, "P") == t
 
 
 def test_base_type_name() -> None:
