@@ -49,7 +49,7 @@ format:
 	black -l 100 $(python-packages) ide/gnatstudio
 	isort -rc $(python-packages) ide/gnatstudio
 
-test: check test_python test_python_property test_spark prove_spark
+test: check test_python_coverage test_python_property test_spark prove_spark
 
 test_python:
 	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis"
@@ -64,7 +64,7 @@ test_python_optimized:
 	python3 -O -m pytest -n$(shell nproc) -vv -m "not hypothesis"
 
 test_python_coverage:
-	coverage run --branch --source=rflx -m pytest -vv -m "not hypothesis"
+	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=98.6 --cov-report=term-missing -m "not hypothesis" tests
 
 test_spark: $(test-files)
 	gprbuild -P$(project)
