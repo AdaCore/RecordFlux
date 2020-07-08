@@ -14,16 +14,16 @@ package Feature_Integration is
                if Enumeration = Enumeration_Type.HIGH;
          Integer : Integer_Type.Byte
             then Scalar_Array
-               with Length => Integer;
+               with Length => 8 * Integer;
          Scalar_Array : Array_Type.Bytes
             then Message_Array
-               with Length => Integer;
+               with Length => 8 * Integer;
          Message_Array : Array_Type.Bar;
          Message_Type : Message_Type.PDU;
          Message_In_Message : Message_In_Message.Message;
          Derived_Message_In_Message : Message_In_Message.Derived_Message
             then Opaque
-               with Length => Integer;
+               with Length => 8 * Integer;
          Opaque : Opaque;
       end message;
 

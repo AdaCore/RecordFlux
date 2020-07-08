@@ -1408,7 +1408,8 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 def test_opaque_not_byte_aligned() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: opaque field "O" not aligned to 8 bit boundary',
+        match=r'^<stdin>:44:3: model: error: opaque field "O" not aligned to'
+        r" 8 bit boundary [(]P -> O[)]",
     ):
         Message(
             "P.M",
@@ -1418,13 +1419,15 @@ def test_opaque_not_byte_aligned() -> None:
                 Link(Field("O"), FINAL),
             ],
             {Field("P"): ModularInteger("P.T", Number(4)), Field("O"): Opaque()},
+            location=Location((44, 3)),
         )
 
 
 def test_opaque_not_byte_aligned_dynamic() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: opaque field "O2" not aligned to 8 bit boundary',
+        match=r'^<stdin>:44:3: model: error: opaque field "O2" not aligned to'
+        r" 8 bit boundary [(]L1 -> O1 -> L2 -> O2[)]",
     ):
         Message(
             "P.M",
@@ -1446,6 +1449,7 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
                 Field("O1"): Opaque(),
                 Field("O2"): Opaque(),
             },
+            location=Location((44, 3)),
         )
 
 
@@ -1457,11 +1461,11 @@ def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
             Link(Field("L"), Field("O1"), length=Mul(Number(8), Variable("L"))),
             Link(Field("O1"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O1"): Opaque(),},
+        {Field("L"): MODULAR_INTEGER, Field("O1"): Opaque()},
     )
 
 
-def test_opaque_valid_byte_aligned_dynamic_constrained() -> None:
+def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
     Message(
         "P.M",
         [
@@ -1475,30 +1479,29 @@ def test_opaque_valid_byte_aligned_dynamic_constrained() -> None:
             Link(Field("O1"), Field("O2"), length=Number(128)),
             Link(Field("O2"), FINAL),
         ],
-        {
-            Field("L"): ModularInteger("P.T", Number(16)),
-            Field("O1"): Opaque(),
-            Field("O2"): Opaque(),
-        },
+        {Field("L"): MODULAR_INTEGER, Field("O1"): Opaque(), Field("O2"): Opaque()},
     )
 
 
 def test_opaque_length_not_multiple_of_8() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: length of opaque field "O" not multiple of 8 bit',
+        match=r'^<stdin>:44:3: model: error: length of opaque field "O"'
+        " not multiple of 8 bit [(]O[)]",
     ):
         Message(
             "P.M",
             [Link(INITIAL, Field("O"), length=Number(68)), Link(Field("O"), FINAL)],
             {Field("O"): Opaque()},
+            location=Location((44, 3)),
         )
 
 
 def test_opaque_length_not_multiple_of_8_dynamic() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: length of opaque field "O" not multiple of 8 bit',
+        match=r'^<stdin>:44:3: model: error: length of opaque field "O" not multiple of 8 bit'
+        " [(]L -> O[)]",
     ):
         Message(
             "P.M",
@@ -1508,10 +1511,11 @@ def test_opaque_length_not_multiple_of_8_dynamic() -> None:
                 Link(Field("O"), FINAL),
             ],
             {Field("L"): MODULAR_INTEGER, Field("O"): Opaque()},
+            location=Location((44, 3)),
         )
 
 
-def test_opaque_length_valid_multiple_of_8_dynamic_constrained() -> None:
+def test_opaque_length_valid_multiple_of_8_dynamic_cond() -> None:
     Message(
         "P.M",
         [

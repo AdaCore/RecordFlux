@@ -25,6 +25,7 @@ from rflx.expression import (
     Length,
     Less,
     LessEqual,
+    Mod,
     Mul,
     Not,
     NotEqual,
@@ -1012,9 +1013,16 @@ class AbstractMessage(Type):
             if isinstance(r.left, Variable) and isinstance(r.right, Aggregate):
                 aggregate_constraints.extend(get_constraints(r.right, r.left))
 
-        return aggregate_constraints + [
-            c for n, t in scalar_types for c in t.constraints(name=n, proof=True)
+        message_constraints: List[Expr] = [
+            Equal(Mod(First("Message"), Number(8)), Number(1)),
+            Equal(Mod(Length("Message"), Number(8)), Number(0)),
         ]
+
+        return (
+            message_constraints
+            + aggregate_constraints
+            + [c for n, t in scalar_types for c in t.constraints(name=n, proof=True)]
+        )
 
     def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.fields):
@@ -1238,6 +1246,39 @@ class AbstractMessage(Type):
                         ]
                     )
                     return
+
+                if f in self.__types and isinstance(self.__types[f], Opaque):
+                    start_aligned = Not(
+                        Equal(Mod(self.__target_first(last), Number(8)), Number(1), last.location)
+                    )
+                    proof = start_aligned.check([*facts, *self.__type_constraints(start_aligned)])
+                    if proof.result != ProofResult.unsat:
+                        path_message = " -> ".join([p.target.name for p in path])
+                        self.error.append(
+                            f'opaque field "{f.name}" not aligned to 8 bit boundary'
+                            f" ({path_message})",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        )
+                        return
+
+                    length_multiple_8 = Not(
+                        Equal(Mod(self.__target_length(last), Number(8)), Number(0), last.location)
+                    )
+                    proof = length_multiple_8.check(
+                        [*facts, *self.__type_constraints(length_multiple_8)]
+                    )
+                    if proof.result != ProofResult.unsat:
+                        path_message = " -> ".join([p.target.name for p in path])
+                        self.error.append(
+                            f'length of opaque field "{f.name}" not multiple of 8 bit'
+                            f" ({path_message})",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        )
+                        return
 
     def __prove_coverage(self) -> None:
         """
