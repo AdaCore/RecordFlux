@@ -1247,15 +1247,21 @@ class AbstractMessage(Type):
                     )
                     return
 
-                if f in self.__types and isinstance(self.__types[f], Opaque):
+                if f in self.__types:
+                    t = self.__types[f]
+                    if not isinstance(t, Opaque):
+                        continue
+                    element_size = t.element_size
                     start_aligned = Not(
-                        Equal(Mod(self.__target_first(last), Number(8)), Number(1), last.location)
+                        Equal(
+                            Mod(self.__target_first(last), element_size), Number(1), last.location
+                        )
                     )
                     proof = start_aligned.check([*facts, *self.__type_constraints(start_aligned)])
                     if proof.result != ProofResult.unsat:
                         path_message = " -> ".join([p.target.name for p in path])
                         self.error.append(
-                            f'opaque field "{f.name}" not aligned to 8 bit boundary'
+                            f'opaque field "{f.name}" not aligned to {element_size} bit boundary'
                             f" ({path_message})",
                             Subsystem.MODEL,
                             Severity.ERROR,
@@ -1263,16 +1269,18 @@ class AbstractMessage(Type):
                         )
                         return
 
-                    length_multiple_8 = Not(
-                        Equal(Mod(self.__target_length(last), Number(8)), Number(0), last.location)
+                    length_multiple_element_size = Not(
+                        Equal(
+                            Mod(self.__target_length(last), element_size), Number(0), last.location
+                        )
                     )
-                    proof = length_multiple_8.check(
-                        [*facts, *self.__type_constraints(length_multiple_8)]
+                    proof = length_multiple_element_size.check(
+                        [*facts, *self.__type_constraints(length_multiple_element_size)]
                     )
                     if proof.result != ProofResult.unsat:
                         path_message = " -> ".join([p.target.name for p in path])
                         self.error.append(
-                            f'length of opaque field "{f.name}" not multiple of 8 bit'
+                            f'length of opaque field "{f.name}" not multiple of {element_size} bit'
                             f" ({path_message})",
                             Subsystem.MODEL,
                             Severity.ERROR,
