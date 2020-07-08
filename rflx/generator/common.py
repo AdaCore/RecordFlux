@@ -139,19 +139,30 @@ def substitution(
             )
 
         if isinstance(expression, Relation):
-            for left, right in [
-                (expression.left, expression.right),
-                (expression.right, expression.left),
-            ]:
-                if (
-                    isinstance(left, Variable)
-                    and Field(left.name) in message.fields
-                    and (
-                        isinstance(right, Number)
-                        or (isinstance(right, Variable) and right.name in literals)
+            if (
+                isinstance(expression.left, Variable)
+                and Field(expression.left.name) in message.fields
+                and (
+                    isinstance(expression.right, Number)
+                    or (
+                        isinstance(expression.right, Variable) and expression.right.name in literals
                     )
-                ):
-                    return expression.__class__(field_value(Field(left.name)), right)
+                )
+            ):
+                return expression.__class__(
+                    field_value(Field(expression.left.name)), expression.right
+                )
+            if (
+                isinstance(expression.right, Variable)
+                and Field(expression.right.name) in message.fields
+                and (
+                    isinstance(expression.left, Number)
+                    or (isinstance(expression.left, Variable) and expression.left.name in literals)
+                )
+            ):
+                return expression.__class__(
+                    expression.left, field_value(Field(expression.right.name))
+                )
 
         return expression
 
