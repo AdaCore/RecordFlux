@@ -125,13 +125,6 @@ def substitution(
                 )
                 return equal_call if isinstance(expression, Equal) else Not(equal_call)
 
-        literals = [
-            l
-            for t in message.types.values()
-            if isinstance(t, Enumeration)
-            for l in t.literals.keys()
-        ]
-
         def field_value(field: Field) -> Expr:
             if public:
                 return Call(f"Get_{field.name}", [Variable("Ctx")])
@@ -147,12 +140,7 @@ def substitution(
             if (
                 isinstance(expression.left, Variable)
                 and Field(expression.left.name) in message.fields
-                and (
-                    isinstance(expression.right, Number)
-                    or (
-                        isinstance(expression.right, Variable) and expression.right.name in literals
-                    )
-                )
+                and isinstance(expression.right, Number)
             ):
                 return expression.__class__(
                     field_value(Field(expression.left.name)), expression.right
@@ -160,10 +148,7 @@ def substitution(
             if (
                 isinstance(expression.right, Variable)
                 and Field(expression.right.name) in message.fields
-                and (
-                    isinstance(expression.left, Number)
-                    or (isinstance(expression.left, Variable) and expression.left.name in literals)
-                )
+                and isinstance(expression.left, Number)
             ):
                 return expression.__class__(
                     expression.left, field_value(Field(expression.right.name))

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Tuple
 
 import pytest
 
@@ -200,6 +200,35 @@ def test_substitution_relation_aggregate(
     assert_equal(
         relation(left, right).substituted(common.substitution(TLV_MESSAGE)),
         equal_call if relation == expr.Equal else expr.Not(equal_call),
+    )
+
+
+@pytest.mark.parametrize(
+    "expressions,expected",
+    [
+        (
+            (expr.Variable("Length"), expr.Number(1)),
+            (expr.Call("Get_Length", [expr.Variable("Ctx")]), expr.Number(1)),
+        ),
+        (
+            (expr.Number(1), expr.Variable("Length")),
+            (expr.Number(1), expr.Call("Get_Length", [expr.Variable("Ctx")])),
+        ),
+        ((expr.Number(1), expr.Variable("Unknown")), (expr.Number(1), expr.Variable("Unknown"))),
+    ],
+)
+@pytest.mark.parametrize(
+    "relation",
+    [expr.Less, expr.LessEqual, expr.Equal, expr.GreaterEqual, expr.Greater, expr.NotEqual],
+)
+def test_substitution_relation_scalar(
+    relation: Callable[[expr.Expr, expr.Expr], expr.Relation],
+    expressions: Tuple[expr.Expr, expr.Expr],
+    expected: Tuple[expr.Expr, expr.Expr],
+) -> None:
+    assert_equal(
+        relation(*expressions).substituted(common.substitution(TLV_MESSAGE, public=True)),
+        relation(*expected),
     )
 
 
