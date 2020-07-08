@@ -32,6 +32,7 @@ from rflx.expression import (
     Mod,
     Name,
     NamedAggregate,
+    Not,
     NotEqual,
     Number,
     Or,
@@ -87,6 +88,7 @@ def substitution(
                 field = Field(expression.right.name)
                 aggregate = byte_aggregate(expression.left)
             if field and aggregate:
+                assert field in message.fields
                 if embedded:
                     return Equal(
                         Indexed(
@@ -118,7 +120,10 @@ def substitution(
                         ),
                         aggregate,
                     )
-                return Call("Equal", [Variable("Ctx"), Variable(field.affixed_name), aggregate])
+                equal_call = Call(
+                    "Equal", [Variable("Ctx"), Variable(field.affixed_name), aggregate]
+                )
+                return equal_call if isinstance(expression, Equal) else Not(equal_call)
 
         literals = [
             l
