@@ -1259,7 +1259,7 @@ class AbstractMessage(Type):
                             f" ({path_message})",
                             Subsystem.MODEL,
                             Severity.ERROR,
-                            self.location,
+                            f.identifier.location,
                         )
                         return
 
@@ -1276,7 +1276,7 @@ class AbstractMessage(Type):
                             f" ({path_message})",
                             Subsystem.MODEL,
                             Severity.ERROR,
-                            self.location,
+                            f.identifier.location,
                         )
                         return
 
