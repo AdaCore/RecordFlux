@@ -1411,15 +1411,11 @@ def test_opaque_not_byte_aligned() -> None:
         match=r'^<stdin>:44:3: model: error: opaque field "O" not aligned to'
         r" 8 bit boundary [(]P -> O[)]",
     ):
+        o = Field(ID("O", location=Location((44, 3))))
         Message(
             "P.M",
-            [
-                Link(INITIAL, Field("P")),
-                Link(Field("P"), Field("O"), length=Number(128)),
-                Link(Field("O"), FINAL),
-            ],
-            {Field("P"): ModularInteger("P.T", Number(4)), Field("O"): Opaque()},
-            location=Location((44, 3)),
+            [Link(INITIAL, Field("P")), Link(Field("P"), o, length=Number(128)), Link(o, FINAL)],
+            {Field("P"): ModularInteger("P.T", Number(4)), o: Opaque()},
         )
 
 
@@ -1429,6 +1425,7 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
         match=r'^<stdin>:44:3: model: error: opaque field "O2" not aligned to'
         r" 8 bit boundary [(]L1 -> O1 -> L2 -> O2[)]",
     ):
+        o2 = Field(ID("O2", location=Location((44, 3))))
         Message(
             "P.M",
             [
@@ -1440,16 +1437,15 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
                     condition=Equal(Mod(Variable("L1"), Number(8)), Number(0)),
                 ),
                 Link(Field("O1"), Field("L2")),
-                Link(Field("L2"), Field("O2"), length=Number(128)),
-                Link(Field("O2"), FINAL),
+                Link(Field("L2"), o2, length=Number(128)),
+                Link(o2, FINAL),
             ],
             {
                 Field("L1"): MODULAR_INTEGER,
                 Field("L2"): ModularInteger("P.T", Number(4)),
                 Field("O1"): Opaque(),
-                Field("O2"): Opaque(),
+                o2: Opaque(),
             },
-            location=Location((44, 3)),
         )
 
 
@@ -1489,11 +1485,9 @@ def test_opaque_length_not_multiple_of_8() -> None:
         match=r'^<stdin>:44:3: model: error: length of opaque field "O"'
         " not multiple of 8 bit [(]O[)]",
     ):
+        o = Field(ID("O", location=Location((44, 3))))
         Message(
-            "P.M",
-            [Link(INITIAL, Field("O"), length=Number(68)), Link(Field("O"), FINAL)],
-            {Field("O"): Opaque()},
-            location=Location((44, 3)),
+            "P.M", [Link(INITIAL, o, length=Number(68)), Link(o, FINAL)], {o: Opaque()},
         )
 
 
@@ -1503,15 +1497,11 @@ def test_opaque_length_not_multiple_of_8_dynamic() -> None:
         match=r'^<stdin>:44:3: model: error: length of opaque field "O" not multiple of 8 bit'
         " [(]L -> O[)]",
     ):
+        o = Field(ID("O", location=Location((44, 3))))
         Message(
             "P.M",
-            [
-                Link(INITIAL, Field("L")),
-                Link(Field("L"), Field("O"), length=Variable("L")),
-                Link(Field("O"), FINAL),
-            ],
-            {Field("L"): MODULAR_INTEGER, Field("O"): Opaque()},
-            location=Location((44, 3)),
+            [Link(INITIAL, Field("L")), Link(Field("L"), o, length=Variable("L")), Link(o, FINAL)],
+            {Field("L"): MODULAR_INTEGER, o: Opaque()},
         )
 
 
