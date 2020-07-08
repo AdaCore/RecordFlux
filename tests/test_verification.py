@@ -375,7 +375,7 @@ def test_tlv_valid_enum() -> None:
         Link(
             Field("T"),
             Field("V"),
-            length=Variable("L"),
+            length=Mul(Number(8), Variable("L")),
             condition=And(
                 NotEqual(Variable("T"), Variable("TWO")), LessEqual(Variable("L"), Number(8192))
             ),
@@ -468,7 +468,7 @@ def test_invalid_first_forward_reference() -> None:
 def test_valid_length_reference() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), length=Variable("F1")),
+        Link(Field("F1"), Field("F2"), length=Mul(Number(8), Variable("F1"))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -1131,9 +1131,10 @@ def test_aggregate_equal_invalid_length_field() -> None:
         r'<stdin>:10:5: model: error: contradicting condition in "P.M"\n'
         r'<stdin>:2:5: model: info: on path: "Length"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
+        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Length = 8 [*] Length"\n'
         r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
-        r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"\n'
-        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Length = 8 [*] Length"',
+        r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"'
+        r"$",
     )
 
 

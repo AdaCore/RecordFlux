@@ -145,7 +145,7 @@ def test_comparison_big_integers(condition: str) -> None:
         f"""
            package Test is
 
-              type D is range 17179869177 .. 17179869178 with Size => 35;
+              type D is range 17179869177 .. 17179869178 with Size => 40;
 
               type E is
                  message
