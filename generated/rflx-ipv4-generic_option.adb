@@ -38,8 +38,8 @@ is
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if
           Structural_Valid (Ctx.Cursors (F_Option_Number))
-          and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
-          and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1
+          and then (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                    and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)
        then
           Ctx.Cursors (F_Option_Number).Last
        elsif
@@ -177,7 +177,7 @@ is
           when F_Option_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Option_Number
-                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1
+                 and then Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               else
@@ -185,18 +185,18 @@ is
           when F_Option_Data =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Option_Length
-                 and ((Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
-                       and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-                      or (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
-                          and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                               or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                               or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-                      or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
-                          and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
-                          and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-                      or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
-                          and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
-                          and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8))
+                 and then ((Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
+                            and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+                           or (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                               and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                                    or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                                    or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+                           or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
+                               and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+                           or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
+                               and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8))
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               else

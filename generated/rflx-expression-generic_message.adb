@@ -34,7 +34,7 @@ is
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if
           Structural_Valid (Ctx.Cursors (F_Payload))
-          and Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2)))
+          and then Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2)))
        then
           Ctx.Cursors (F_Payload).Last
        else

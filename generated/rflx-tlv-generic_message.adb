@@ -36,7 +36,7 @@ is
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if
           Structural_Valid (Ctx.Cursors (F_Tag))
-          and Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))
+          and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Error))
        then
           Ctx.Cursors (F_Tag).Last
        elsif
@@ -111,7 +111,7 @@ is
           when F_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Tag
-                 and Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
               then
                  (Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1)
               else
