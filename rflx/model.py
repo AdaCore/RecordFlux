@@ -903,12 +903,6 @@ class AbstractMessage(Type):
                     return literals[expr.identifier]
                 if Field(expr.name) in self.types:
                     return self.types[Field(expr.name)]
-                self.error.append(
-                    'undefined variable "{expr.identifier}" referenced',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    expr.location,
-                )
                 return None
 
             lefttype = resolve_type(left)
