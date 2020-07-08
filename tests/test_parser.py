@@ -774,7 +774,7 @@ def test_enumeration_type_spec() -> None:
                     Enumeration(
                         "__PACKAGE__.Priority",
                         [("LOW", Number(1)), ("MEDIUM", Number(4)), ("HIGH", Number(7))],
-                        Number(3),
+                        Number(8),
                         True,
                     ),
                 ],
@@ -899,7 +899,7 @@ def test_message_in_message() -> None:
         "Message_In_Message.Length_Value",
         [
             Link(INITIAL, Field("Length")),
-            Link(Field("Length"), Field("Value"), length=Variable("Length")),
+            Link(Field("Length"), Field("Value"), length=Mul(Number(8), Variable("Length"))),
             Link(Field("Value"), FINAL),
         ],
         {Field("Length"): length, Field("Value"): Opaque()},
@@ -913,8 +913,16 @@ def test_message_in_message() -> None:
             Link(INITIAL, Field("Foo_Length")),
             Link(Field("Foo_Value"), Field("Bar_Length")),
             Link(Field("Bar_Value"), FINAL),
-            Link(Field("Foo_Length"), Field("Foo_Value"), length=Variable("Foo_Length")),
-            Link(Field("Bar_Length"), Field("Bar_Value"), length=Variable("Bar_Length")),
+            Link(
+                Field("Foo_Length"),
+                Field("Foo_Value"),
+                length=Mul(Variable("Foo_Length"), Number(8)),
+            ),
+            Link(
+                Field("Bar_Length"),
+                Field("Bar_Value"),
+                length=Mul(Variable("Bar_Length"), Number(8)),
+            ),
         ],
         {
             Field("Foo_Length"): length,
@@ -1049,7 +1057,7 @@ def test_type_derivation_message() -> None:
 def test_type_derivation_refinements() -> None:
     message_foo = Message(
         "Test.Foo",
-        [Link(INITIAL, Field("Baz"), length=Number(42)), Link(Field("Baz"), FINAL)],
+        [Link(INITIAL, Field("Baz"), length=Number(48)), Link(Field("Baz"), FINAL)],
         {Field("Baz"): Opaque()},
     )
     message_bar = DerivedMessage("Test.Bar", message_foo)
@@ -1061,7 +1069,7 @@ def test_type_derivation_refinements() -> None:
                   message
                      null
                         then Baz
-                           with Length => 42;
+                           with Length => 48;
                      Baz : Opaque;
                   end message;
                for Foo use (Baz => Foo);
@@ -1185,7 +1193,7 @@ def test_message_with_two_length_fields() -> None:
                     Length_1 : Length;
                     Length_2 : Length
                        then Payload
-                          with Length => Length_1 + Length_2;
+                          with Length => 8 * (Length_1 + Length_2);
                     Payload : Opaque;
                  end message;
            end Test;
