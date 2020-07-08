@@ -51,7 +51,6 @@ setup(
     extras_require={
         "devel": [
             "black",
-            "coverage >=4, <6",
             "flake8 >=3, <4",
             "hypothesis >=5, <6",
             "isort >=4, <5",
@@ -59,6 +58,7 @@ setup(
             "pyicontract-lint >=2.0.0, <3",
             "pylint >=2.5.0, <3",
             "pytest >=5, <6",
+            "pytest-cov >=2.10.0, <3",
             "pytest-xdist >=1.32.0, <2",
         ]
     },
