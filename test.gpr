@@ -56,7 +56,7 @@ project Test is
             for Proof_Switches ("rflx-custom_types_tests.adb") use ("--steps=376000", "--prover=altergo,cvc4,z3");
             for Proof_Switches ("rflx-derivation-tests.adb") use ("--steps=2300");
             for Proof_Switches ("rflx-ethernet-tests.adb") use ("--steps=3400");
-            for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=109000");
+            for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=110000");
             for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=142000");
             for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=78000");
       end case;
