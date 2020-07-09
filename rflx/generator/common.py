@@ -369,10 +369,10 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                                             ),
                                             Variable(l.source.affixed_name),
                                         ),
-                                        l.condition,
-                                    )
-                                    .substituted(substitution(message, embedded=True))
-                                    .simplified()
+                                        l.condition.substituted(
+                                            substitution(message, embedded=True)
+                                        ),
+                                    ).simplified()
                                     for l in message.incoming(f)
                                 ]
                             ),
@@ -478,7 +478,7 @@ def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequen
         If(
             [
                 (
-                    l.condition,
+                    l.condition.substituted(substitution(message, public=True)),
                     And(
                         Equal(
                             Call(
@@ -492,9 +492,7 @@ def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequen
                     ),
                 )
             ]
-        )
-        .substituted(substitution(message, public=True))
-        .simplified()
+        ).simplified()
         for l in message.outgoing(field)
         if l.target != FINAL
     ]
