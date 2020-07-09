@@ -822,7 +822,7 @@ class Generator:
     def __create_path_condition_function(message: Message) -> UnitPart:
         def condition(field: Field, message: Message) -> Expr:
             cases: List[Tuple[Expr, Expr]] = [
-                (target, Or(*[c for _, c in conditions]))
+                (target, Or(*[c for _, c in conditions]).substituted(common.substitution(message)))
                 for target, conditions in itertools.groupby(
                     [
                         (Variable(l.target.affixed_name), l.condition)
@@ -834,9 +834,7 @@ class Generator:
             ]
             if set(message.fields) - {l.target for l in message.outgoing(field)}:
                 cases.append((Variable("others"), FALSE))
-            return (
-                Case(Variable("Fld"), cases).substituted(common.substitution(message)).simplified()
-            )
+            return Case(Variable("Fld"), cases).simplified()
 
         specification = FunctionSpecification(
             "Path_Condition",
@@ -886,28 +884,25 @@ class Generator:
                     if len(links) == 1:
                         length = links[0].length
                     elif len(links) > 1:
-                        length = (
-                            If(
-                                [(l.condition, l.length) for l in links],
-                                Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
-                            )
-                            .substituted(
-                                common.substitution(message, target_type=const.TYPES_BIT_LENGTH)
-                            )
-                            .simplified()
+                        length = If(
+                            [(l.condition, l.length) for l in links],
+                            Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
                         )
-                cases.append((Variable(target.affixed_name), length))
+                cases.append(
+                    (
+                        Variable(target.affixed_name),
+                        length.substituted(
+                            common.substitution(message, target_type=const.TYPES_BIT_LENGTH)
+                        ).simplified(),
+                    )
+                )
 
             if not cases:
                 return Number(0)
 
             if set(message.fields) - {l.target for l in message.outgoing(field)}:
                 cases.append((Variable("others"), Variable(const.TYPES_UNREACHABLE_BIT_LENGTH)))
-            return (
-                Case(Variable("Fld"), cases)
-                .substituted(common.substitution(message, target_type=const.TYPES_BIT_LENGTH))
-                .simplified()
-            )
+            return Case(Variable("Fld"), cases).simplified()
 
         specification = FunctionSpecification(
             "Field_Length",
@@ -953,31 +948,27 @@ class Generator:
                 Number(1),
             )
 
-            return (
-                If(
-                    [
-                        (
-                            AndThen(
-                                Equal(
-                                    Selected(
-                                        Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                                        "Predecessor",
-                                    ),
-                                    Variable(l.source.affixed_name),
+            return If(
+                [
+                    (
+                        AndThen(
+                            Equal(
+                                Selected(
+                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
+                                    "Predecessor",
                                 ),
-                                l.condition,
+                                Variable(l.source.affixed_name),
                             ),
-                            l.first.substituted(
-                                lambda x: contiguous_first if x == UNDEFINED else x
-                            ),
-                        )
-                        for l in message.incoming(field)
-                    ],
-                    Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
-                )
-                .substituted(common.substitution(message))
-                .simplified()
-            )
+                            l.condition.substituted(common.substitution(message)),
+                        ),
+                        l.first.substituted(
+                            lambda x: contiguous_first if x == UNDEFINED else x
+                        ).substituted(common.substitution(message)),
+                    )
+                    for l in message.incoming(field)
+                ],
+                Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
+            ).simplified()
 
         specification = FunctionSpecification(
             "Field_First",
@@ -1135,13 +1126,14 @@ class Generator:
                                 Variable(f.affixed_name),
                                 If(
                                     [
-                                        (l.condition, Variable(l.target.affixed_name))
+                                        (
+                                            l.condition.substituted(common.substitution(message)),
+                                            Variable(l.target.affixed_name),
+                                        )
                                         for l in message.outgoing(f)
                                     ],
                                     Variable(INITIAL.affixed_name),
-                                )
-                                .substituted(common.substitution(message))
-                                .simplified(),
+                                ).simplified(),
                             )
                             for f in message.fields
                         ],

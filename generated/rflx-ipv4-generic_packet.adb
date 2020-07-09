@@ -279,7 +279,7 @@ is
           when F_Destination =>
              (case Fld is
                  when F_Payload =>
-                    (Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + (((-Ctx.Cursors (F_Destination).Last) + Ctx.Cursors (F_Version).First - 1))),
+                    (Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - Ctx.Cursors (F_Destination).Last + Ctx.Cursors (F_Version).First - 1),
                  when F_Options =>
                     (Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * 32 - 160),
                  when others =>

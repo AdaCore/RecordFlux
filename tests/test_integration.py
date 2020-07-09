@@ -160,3 +160,25 @@ def test_comparison_big_integers(condition: str) -> None:
            end Test;
         """
     )
+
+
+def test_potential_name_conflicts_fields_literals() -> None:
+    assert_compilable_code_string(
+        """
+           package Test is
+
+              type E is (F_A => 0, F_B => 1) with Size => 8;
+
+              type M is
+                 message
+                    A : E
+                       then null
+                          if A = F_A,
+                       then B
+                          if A = F_B;
+                    B : E;
+                 end message;
+
+           end Test;
+        """
+    )
