@@ -502,13 +502,7 @@ def test_invalid_negative_field_length() -> None:
         Field("F2"): Opaque(),
     }
     assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r'model: error: negative length for field "F2" [(]F1 -> F2[)]\n'
-        r'model: info: unsatisfied "F1 < 256"\n'
-        r'model: info: unsatisfied "F1 - 300 >= 0"'
-        r"$",
+        structure, types, r"^" r'model: error: negative length for field "F2" [(]F1 -> F2[)]' r"$",
     )
 
 
@@ -638,7 +632,7 @@ def test_field_after_message_start(monkeypatch: Any) -> None:
         structure,
         types,
         r"^"
-        r'model: error: negative length for field "F2" [(]F1 -> F2[)]\n'
+        r'model: error: negative start for field "F2" [(]F1 -> F2[)]\n'
         r'model: info: unsatisfied "Message\'First - 1000 >= Message\'First"'
         r"$",
     )
