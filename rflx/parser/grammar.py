@@ -417,10 +417,13 @@ def parse_logical_expression(string: str, location: int, tokens: ParseResults) -
         operator = result.pop(0)
         right = result.pop(0)
         expression: Expr
+        assert left.location
+        assert right.location
+        locn = Location(left.location.start, left.location.source, right.location.end)
         if operator == "and":
-            expression = And(left, right)
+            expression = And(left, right, location=locn)
         elif operator == "or":
-            expression = Or(left, right)
+            expression = Or(left, right, location=locn)
         else:
             raise ParseFatalException(string, location, "unexpected logical operator")
         result.insert(0, expression)
