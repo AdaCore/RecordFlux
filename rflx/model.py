@@ -1012,11 +1012,9 @@ class AbstractMessage(Type):
             Equal(Mod(Length("Message"), Number(8)), Number(0)),
         ]
 
-        return (
-            message_constraints
-            + aggregate_constraints
-            + [c for n, t in scalar_types for c in t.constraints(name=n, proof=True)]
-        )
+        scalar_constraints = [c for n, t in scalar_types for c in t.constraints(name=n, proof=True)]
+
+        return [*message_constraints, *aggregate_constraints, *scalar_constraints]
 
     def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.fields):
@@ -1187,7 +1185,7 @@ class AbstractMessage(Type):
             for path in self._state.paths[f]:
 
                 last = path[-1]
-                positive = GreaterEqual(self.__target_length(last), Number(0), last.length.location)
+                negative = Less(self.__target_length(last), Number(0), last.length.location)
                 start = GreaterEqual(self.__target_first(last), First("Message"), last.location)
 
                 facts = [fact for link in path for fact in self.__link_expression(link)]
@@ -1198,7 +1196,7 @@ class AbstractMessage(Type):
                         Or(*[o.condition for o in outgoing], location=f.identifier.location)
                     )
 
-                facts.extend(self.__type_constraints(positive))
+                facts.extend(self.__type_constraints(negative))
                 facts.extend(self.__type_constraints(start))
 
                 proof = TRUE.check(facts)
@@ -1207,20 +1205,14 @@ class AbstractMessage(Type):
                 if proof.result != ProofResult.sat:
                     continue
 
-                proof = positive.check(facts)
-                if proof.result != ProofResult.sat:
+                proof = negative.check(facts)
+                if proof.result != ProofResult.unsat:
                     path_message = " -> ".join([l.target.name for l in path])
                     self.error.append(
                         f'negative length for field "{f.name}" ({path_message})',
                         Subsystem.MODEL,
                         Severity.ERROR,
-                        self.identifier.location,
-                    )
-                    self.error.extend(
-                        [
-                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
-                            for m, locn in proof.error
-                        ]
+                        f.identifier.location,
                     )
                     return
 
@@ -1228,7 +1220,7 @@ class AbstractMessage(Type):
                 if proof.result != ProofResult.sat:
                     path_message = " -> ".join([last.target.name for last in path])
                     self.error.append(
-                        f'negative length for field "{f.name}" ({path_message})',
+                        f'negative start for field "{f.name}" ({path_message})',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.identifier.location,
