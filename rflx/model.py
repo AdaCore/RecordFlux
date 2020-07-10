@@ -1024,6 +1024,8 @@ class AbstractMessage(Type):
                         conflict = And(c1.condition, c2.condition)
                         proof = conflict.check(self.__type_constraints(conflict))
                         if proof.result == ProofResult.sat:
+                            c1_message = str(c1.condition).replace("\n", " ")
+                            c2_message = str(c2.condition).replace("\n", " ")
                             self.error.append(
                                 f'conflicting conditions for field "{f.name}"',
                                 Subsystem.MODEL,
@@ -1032,14 +1034,14 @@ class AbstractMessage(Type):
                             )
                             self.error.append(
                                 f"condition {i1} ({f.identifier} -> {c1.target.identifier}):"
-                                f" {c1.condition}",
+                                f" {c1_message}",
                                 Subsystem.MODEL,
                                 Severity.INFO,
                                 c1.condition.location,
                             )
                             self.error.append(
                                 f"condition {i2} ({f.identifier} -> {c2.target.identifier}):"
-                                f" {c2.condition}",
+                                f" {c2_message}",
                                 Subsystem.MODEL,
                                 Severity.INFO,
                                 c2.condition.location,
