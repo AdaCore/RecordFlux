@@ -209,7 +209,11 @@ def test_unexpected_relation_operator() -> None:
 
 def test_unexpected_logical_operator() -> None:
     with pytest.raises(ParseFatalException, match=r"^unexpected logical operator"):
-        grammar.parse_logical_expression("", 0, [[Number(1), "xor", Number(1)]])
+        grammar.parse_logical_expression(
+            "",
+            0,
+            [[Number(1, location=Location((1, 8))), "xor", Number(1, location=Location((2, 25)))]],
+        )
 
 
 def test_unexpected_mathematical_operator() -> None:
