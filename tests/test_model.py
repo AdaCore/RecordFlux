@@ -1520,20 +1520,3 @@ def test_opaque_length_valid_multiple_of_8_dynamic_cond() -> None:
         ],
         {Field("L"): MODULAR_INTEGER, Field("O"): Opaque()},
     )
-
-
-def test_length_range_underflow() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: negative length for field "O" [(]L -> O[)]$',
-    ):
-        o = Field(ID("O", location=Location((44, 3))))
-        Message(
-            "P.M",
-            [
-                Link(INITIAL, Field("L")),
-                Link(Field("L"), o, length=Mul(Number(8), Sub(Variable("L"), Number(50))),),
-                Link(o, FINAL),
-            ],
-            {Field("L"): RangeInteger("P.Len", Number(40), Number(1500), Number(16)), o: Opaque()},
-        )
