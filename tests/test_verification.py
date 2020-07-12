@@ -491,10 +491,10 @@ def test_invalid_length_forward_reference() -> None:
     assert_message_model_error(structure, types, '^model: error: subsequent field "F2" referenced$')
 
 
-def test_invalid_negative_field_length() -> None:
+def test_invalid_negative_field_length_modular() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), length=Sub(Variable("F1"), Number(300))),
+        Link(Field("F1"), Field("F2"), length=Sub(Variable("F1"), Number(2))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -502,8 +502,25 @@ def test_invalid_negative_field_length() -> None:
         Field("F2"): Opaque(),
     }
     assert_message_model_error(
-        structure, types, r"^" r'model: error: negative length for field "F2" [(]F1 -> F2[)]' r"$",
+        structure, types, r'^model: error: negative length for field "F2" [(]F1 -> F2[)]$',
     )
+
+
+def test_invalid_negative_field_length_range_integer() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:44:3: model: error: negative length for field "O" [(]L -> O[)]$',
+    ):
+        o = Field(ID("O", location=Location((44, 3))))
+        Message(
+            "P.M",
+            [
+                Link(INITIAL, Field("L")),
+                Link(Field("L"), o, length=Mul(Number(8), Sub(Variable("L"), Number(50))),),
+                Link(o, FINAL),
+            ],
+            {Field("L"): RANGE_INTEGER, o: Opaque()},
+        )
 
 
 def test_payload_no_length() -> None:
