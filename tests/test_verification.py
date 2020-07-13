@@ -1,9 +1,7 @@
 # pylint: disable=too-many-lines
-from typing import Any, Mapping, Sequence
+from typing import Any
 
-import pytest
-
-from rflx.error import Location, RecordFluxError
+from rflx.error import Location
 from rflx.expression import (
     Add,
     Aggregate,
@@ -33,17 +31,9 @@ from rflx.model import (
     ModularInteger,
     Opaque,
     RangeInteger,
-    Type,
 )
 from tests.models import ARRAYS_MODULAR_VECTOR, ENUMERATION, MODULAR_INTEGER, RANGE_INTEGER
-
-
-def assert_message_model_error(
-    structure: Sequence[Link], types: Mapping[Field, Type], regex: str
-) -> None:
-    with pytest.raises(RecordFluxError, match=regex):
-        message = Message("P.M", structure, types)
-        message.error.propagate()
+from tests.utils import assert_message_model_error
 
 
 def test_exclusive_valid() -> None:
@@ -507,20 +497,18 @@ def test_invalid_negative_field_length_modular() -> None:
 
 
 def test_invalid_negative_field_length_range_integer() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: negative length for field "O" [(]L -> O[)]$',
-    ):
-        o = Field(ID("O", location=Location((44, 3))))
-        Message(
-            "P.M",
-            [
-                Link(INITIAL, Field("L")),
-                Link(Field("L"), o, length=Mul(Number(8), Sub(Variable("L"), Number(50))),),
-                Link(o, FINAL),
-            ],
-            {Field("L"): RANGE_INTEGER, o: Opaque()},
-        )
+    o = Field(ID("O", location=Location((44, 3))))
+    structure = [
+        Link(INITIAL, Field("L")),
+        Link(Field("L"), o, length=Mul(Number(8), Sub(Variable("L"), Number(50))),),
+        Link(o, FINAL),
+    ]
+    types = {Field("L"): RANGE_INTEGER, o: Opaque()}
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:44:3: model: error: negative length for field "O" [(]L -> O[)]$',
+    )
 
 
 def test_payload_no_length() -> None:

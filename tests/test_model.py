@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 from copy import deepcopy
-from typing import Mapping, Sequence
+from typing import Sequence
 
 import pytest
 
@@ -48,7 +48,7 @@ from rflx.model import (
     UnprovenMessage,
 )
 from tests.models import ENUMERATION, ETHERNET_FRAME, MODULAR_INTEGER, RANGE_INTEGER
-from tests.utils import assert_equal
+from tests.utils import assert_equal, assert_message_model_error
 
 M_NO_REF = UnprovenMessage(
     "P.No_Ref",
@@ -146,13 +146,6 @@ def assert_type_error(instance: Type, regex: str) -> None:
 def assert_model_error(types: Sequence[Type], regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         Model([*BUILTIN_TYPES.values(), *types])
-
-
-def assert_message_model_error(
-    structure: Sequence[Link], types: Mapping[Field, Type], regex: str
-) -> None:
-    with pytest.raises(RecordFluxError, match=regex):
-        Message("P.M", structure, types, Location((10, 8)))
 
 
 def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
@@ -414,6 +407,7 @@ def test_message_ambiguous_first_field() -> None:
         '^<stdin>:10:8: model: error: ambiguous first field in "P.M"\n'
         "<stdin>:2:6: model: info: duplicate\n"
         "<stdin>:3:6: model: info: duplicate",
+        Location((10, 8)),
     )
 
 
@@ -549,12 +543,13 @@ def test_message_cycle() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:8: model: error: structure of "P.M" contains cycle'
+        '^<stdin>:10:8: model: error: structure of "P.M" contains cycle',
         # ISSUE: Componolit/RecordFlux#256
         # '\n'
         # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
         # '<stdin>:4:5: model: info: field "Y" links to "Z"\n'
         # '<stdin>:5:5: model: info: field "Z" links to "X"\n',
+        Location((10, 8)),
     )
 
 
