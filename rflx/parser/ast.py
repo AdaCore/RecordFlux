@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Mapping
 
 from rflx.common import flat_name, generic_repr
 from rflx.error import Location
@@ -78,10 +78,15 @@ class ArraySpec(Type):
 
 class MessageSpec(Type):
     def __init__(
-        self, identifier: StrID, components: List[Component], location: Location = None
+        self,
+        identifier: StrID,
+        components: List[Component],
+        aspects: Mapping[ID, Mapping[ID, List[Expr]]] = None,
+        location: Location = None,
     ) -> None:
         super().__init__(identifier, location)
         self.components = components
+        self.aspects = aspects or {}
 
 
 class DerivationSpec(Type):

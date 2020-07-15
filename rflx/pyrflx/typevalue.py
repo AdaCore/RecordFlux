@@ -18,6 +18,7 @@ from rflx.expression import (
     Length,
     Name,
     Sub,
+    ValidChecksum,
     ValueRange,
     Variable,
 )
@@ -502,18 +503,10 @@ class MessageValue(TypeValue):
             for f in self._type.fields
         }
 
-        self._checksums: Dict[str, MessageValue.Checksum] = {}
-        if "Checksum" in self._type.aspects.keys():
-            aspects = [*self._type.aspects["Checksum"]]
-            for checksum_aspect in aspects:
-                self._checksums.update(
-                    {
-                        checksum_field_name: MessageValue.Checksum(
-                            checksum_field_name, checksum_values
-                        )
-                        for checksum_field_name, checksum_values in checksum_aspect.items()
-                    }
-                )
+        self._checksums: Mapping[str, MessageValue.Checksum] = {
+            str(field_name): MessageValue.Checksum(str(field_name), parameters)
+            for field_name, parameters in self._type.checksums.items()
+        }
 
         self.__type_literals: Mapping[Name, Expr] = {}
         self._last_field: str = self._next_field(INITIAL.name)
@@ -1006,7 +999,10 @@ class MessageValue(TypeValue):
             **{Last(k): v.last for k, v in self._fields.items() if v.set},
         }
 
-        self._simplified_mapping = {**field_values, **self.__type_literals}
+        # ISSUE: Componolit/RecordFlux#240
+        checksums: Mapping[Name, Expr] = {ValidChecksum(f): TRUE for f in self._checksums}
+
+        self._simplified_mapping = {**field_values, **checksums, **self.__type_literals}
 
         pre_final = self._prev_field("Final")
         if pre_final != "" and self._fields[pre_final].set:
@@ -1023,18 +1019,19 @@ class MessageValue(TypeValue):
         )
 
     class Checksum:
-        @dataclass
-        class ExpressionTuple:
-            expression: Expr
-            evaluated_expression: Expr = UNDEFINED
-
-        def __init__(self, checksum_field_name: str, expressions: Sequence[Expr]):
-            self.field_name: str = checksum_field_name
+        def __init__(self, field_name: str, parameters: Sequence[Expr]):
+            self.field_name = field_name
             self.function: Optional[Callable] = None
-            self.parameters: List[MessageValue.Checksum.ExpressionTuple] = []
-            for expr in expressions:
+
+            @dataclass
+            class ExpressionTuple:
+                expression: Expr
+                evaluated_expression: Expr = UNDEFINED
+
+            self.parameters: List[ExpressionTuple] = []
+            for expr in parameters:
                 assert isinstance(expr, (ValueRange, Attribute, Variable))
-                self.parameters.append(self.ExpressionTuple(expr))
+                self.parameters.append(ExpressionTuple(expr))
 
         def set_checksum_function(self, function: Callable) -> None:
             self.function = function

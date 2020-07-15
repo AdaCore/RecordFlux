@@ -278,7 +278,9 @@ def create_message(
             )
 
     return (
-        UnprovenMessage(message.identifier, structure, field_types, message.location, error)
+        UnprovenMessage(
+            message.identifier, structure, field_types, message.aspects, message.location, error
+        )
         .merged()
         .proven(skip_verification)
     )

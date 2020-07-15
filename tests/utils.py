@@ -8,7 +8,9 @@ from typing import Any, Mapping, Sequence
 import pytest
 
 from rflx.error import Location, RecordFluxError
+from rflx.expression import Expr
 from rflx.generator import Generator
+from rflx.identifier import ID
 from rflx.model import Field, Link, Message, Model, Type
 
 BASE_TMP_DIR = os.environ.get("BASE_TMP_DIR")
@@ -19,10 +21,14 @@ def assert_equal(left: Any, right: Any) -> None:
 
 
 def assert_message_model_error(
-    structure: Sequence[Link], types: Mapping[Field, Type], regex: str, location: Location = None
+    structure: Sequence[Link],
+    types: Mapping[Field, Type],
+    regex: str,
+    aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+    location: Location = None,
 ) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        Message("P.M", structure, types, location)
+        Message("P.M", structure, types, aspects=aspects, location=location)
 
 
 def assert_compilable_code(model: Model, prefix: str = None) -> None:

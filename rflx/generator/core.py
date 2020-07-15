@@ -102,6 +102,7 @@ from rflx.expression import (
     Range,
     Selected,
     Size,
+    ValidChecksum,
     ValueRange,
     Variable,
 )
@@ -161,6 +162,13 @@ class Generator:
                 self.__create_type(t, t.package)
 
             elif isinstance(t, Message):
+                # ISSUE: Componolit/RecordFlux#276
+                if t.checksums:
+                    print(
+                        "warning: checksums not supported by SPARK code generator"
+                        " and therefore ignored"
+                    )
+
                 if isinstance(t, DerivedMessage):
                     self.__create_derived_message(t)
                 else:
@@ -1032,6 +1040,8 @@ class Generator:
                     Last(field.name): Call(
                         "Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]
                     ),
+                    # ISSUE: Componolit/RecordFlux#276
+                    **{ValidChecksum(f): TRUE for f in message.checksums},
                 }
             )
             if field not in (INITIAL, FINAL) and isinstance(message.types[field], Scalar):

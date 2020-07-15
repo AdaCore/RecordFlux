@@ -9,6 +9,7 @@ import pytest
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
     UNDEFINED,
+    Add,
     Aggregate,
     And,
     Div,
@@ -24,6 +25,7 @@ from rflx.expression import (
     Number,
     Pow,
     Sub,
+    ValueRange,
     Variable,
 )
 from rflx.identifier import ID
@@ -1256,3 +1258,36 @@ def test_array_with_imported_element_type() -> None:
     assert len(arrays) == 1
     assert arrays[0].identifier == ID("Array_Test.T")
     assert arrays[0].element_type == ModularInteger("Test.T", Number(256))
+
+
+def test_parse_checksum() -> None:
+    p = Parser()
+    p.parse_string(
+        """
+           package Test is
+              type T is mod 2**8;
+              type M is
+                 message
+                    F1 : T;
+                    F2 : T;
+                    C1 : T;
+                    F3 : T;
+                    C2 : T
+                       then F4
+                          if C1'Valid_Checksum and C2'Valid_Checksum;
+                    F4 : T;
+                 end message
+                    with Checksum => (C1 => (F3, F1'First .. F2'Last),
+                                      C2 => (C1'Last + 1 .. C2'First - 1));
+            end Test;
+        """
+    )
+    m = p.create_model()
+
+    assert_equal(
+        m.messages[0].checksums,
+        {
+            ID("C1"): [Variable("F3"), ValueRange(First("F1"), Last("F2"))],
+            ID("C2"): [ValueRange(Add(Last("C1"), Number(1)), Sub(First("C2"), Number(1)))],
+        },
+    )

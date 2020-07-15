@@ -880,6 +880,9 @@ class Attribute(Name):
     def representation(self) -> str:
         return f"{self.prefix}'{self.__class__.__name__}"
 
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [self] if match(self) else self.prefix.findall(match)
+
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
@@ -900,7 +903,7 @@ class Attribute(Name):
             raise TypeError
         return self.prefix.variables()
 
-    def z3expr(self) -> z3.ArithRef:
+    def z3expr(self) -> z3.ExprRef:
         if not isinstance(self.prefix, Variable):
             raise TypeError
         return z3.Int(f"{self.prefix}'{self.__class__.__name__}")
@@ -936,6 +939,15 @@ class Result(Attribute):
 
 class Constrained(Attribute):
     pass
+
+
+class ValidChecksum(Attribute):
+    def z3expr(self) -> z3.BoolRef:
+        return z3.BoolVal(True)
+
+    @property
+    def representation(self) -> str:
+        return f"{self.prefix}'Valid_Checksum"
 
 
 class AttributeExpression(Attribute, ABC):
@@ -1509,8 +1521,8 @@ class ForAllIn(QuantifiedExpression):
 
 
 class ValueRange(Expr):
-    def __init__(self, lower: Expr, upper: Expr):
-        super().__init__()
+    def __init__(self, lower: Expr, upper: Expr, location: Location = None):
+        super().__init__(location)
         self.lower = lower
         self.upper = upper
 

@@ -6,7 +6,18 @@ from typing import List
 
 import pytest
 
-from rflx.expression import UNDEFINED, Add, First, Last, Length, Sub, ValueRange, Variable
+from rflx.expression import (
+    UNDEFINED,
+    Add,
+    And,
+    First,
+    Last,
+    Length,
+    Sub,
+    ValidChecksum,
+    ValueRange,
+    Variable,
+)
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -14,6 +25,7 @@ from rflx.model import (
     INITIAL,
     Array,
     Enumeration,
+    Link,
     Message,
     ModularInteger,
     Number,
@@ -230,230 +242,209 @@ def test_message_eq(tlv_package: Package) -> None:
 
 
 def test_attributes(pyrflx: PyRFLX) -> None:
-    pyrflx = PyRFLX([f"{TESTDIR}/tlv_with_checksum.rflx"])
-    assert isinstance(pyrflx["TLV_With_Checksum"], Package)
-    tlv_package = pyrflx["TLV_With_Checksum"]
+    pyrflx = PyRFLX([f"{SPECDIR}/tlv.rflx"])
+    assert isinstance(pyrflx["TLV"], Package)
+    tlv_package = pyrflx["TLV"]
     assert isinstance(tlv_package["Message"], MessageValue)
 
 
-def test_all_fields(tlv_checksum: MessageValue) -> None:
-    assert tlv_checksum.fields == ["Tag", "Length", "Value", "Checksum"]
+def test_all_fields(tlv: MessageValue) -> None:
+    assert tlv.fields == ["Tag", "Length", "Value"]
 
 
-def test_accessible_fields_initial_fields(tlv_checksum: MessageValue) -> None:
-    assert tlv_checksum.accessible_fields == ["Tag"]
+def test_accessible_fields_initial_fields(tlv: MessageValue) -> None:
+    assert tlv.accessible_fields == ["Tag"]
 
 
-def test_accessible_fields_tag_fields(tlv_checksum: MessageValue) -> None:
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert tlv_checksum.accessible_fields == ["Tag", "Length"]
+def test_accessible_fields_tag_fields(tlv: MessageValue) -> None:
+    tlv.set("Tag", "Msg_Data")
+    assert tlv.accessible_fields == ["Tag", "Length"]
 
 
-def test_accessible_fields_length_fields(tlv_checksum: MessageValue) -> None:
-    tlv_checksum.set("Tag", "Msg_Data")
-    tlv_checksum.set("Length", 1)
-    assert tlv_checksum.accessible_fields == ["Tag", "Length", "Value", "Checksum"]
-    tlv_checksum.set("Value", b"\x01")
-    assert tlv_checksum.accessible_fields == ["Tag", "Length", "Value", "Checksum"]
+def test_accessible_fields_length_fields(tlv: MessageValue) -> None:
+    tlv.set("Tag", "Msg_Data")
+    tlv.set("Length", 1)
+    assert tlv.accessible_fields == ["Tag", "Length", "Value"]
+    tlv.set("Value", b"\x01")
+    assert tlv.accessible_fields == ["Tag", "Length", "Value"]
 
 
-def test_accessible_fields_error_fields(tlv_checksum: MessageValue) -> None:
-    tlv_checksum.set("Tag", "Msg_Error")
-    assert tlv_checksum.accessible_fields == ["Tag"]
+def test_accessible_fields_error_fields(tlv: MessageValue) -> None:
+    tlv.set("Tag", "Msg_Error")
+    assert tlv.accessible_fields == ["Tag"]
 
 
-def test_accessible_fields_error_reset_fields(tlv_checksum: MessageValue) -> None:
-    tlv_checksum.set("Tag", "Msg_Data")
-    tlv_checksum.set("Length", 1)
-    assert tlv_checksum.accessible_fields == ["Tag", "Length", "Value", "Checksum"]
-    tlv_checksum.set("Tag", "Msg_Error")
-    assert tlv_checksum.accessible_fields == ["Tag"]
+def test_accessible_fields_error_reset_fields(tlv: MessageValue) -> None:
+    tlv.set("Tag", "Msg_Data")
+    tlv.set("Length", 1)
+    assert tlv.accessible_fields == ["Tag", "Length", "Value"]
+    tlv.set("Tag", "Msg_Error")
+    assert tlv.accessible_fields == ["Tag"]
 
 
-def test_accessible_fields_fields_complex(tlv_checksum: MessageValue) -> None:
-    assert tlv_checksum.accessible_fields == ["Tag"]
-    tlv_checksum.set("Tag", "Msg_Error")
-    assert tlv_checksum.accessible_fields == ["Tag"]
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert tlv_checksum.accessible_fields == ["Tag", "Length"]
-    tlv_checksum.set("Length", 1)
-    assert tlv_checksum.accessible_fields == ["Tag", "Length", "Value", "Checksum"]
-    tlv_checksum.set("Value", b"\x01")
-    assert tlv_checksum.accessible_fields == ["Tag", "Length", "Value", "Checksum"]
-    tlv_checksum.set("Checksum", 0xFFFFFFFF)
-    assert tlv_checksum.accessible_fields == ["Tag", "Length", "Value", "Checksum"]
-    tlv_checksum.set("Tag", "Msg_Error")
-    assert tlv_checksum.accessible_fields == ["Tag"]
+def test_accessible_fields_fields_complex(tlv: MessageValue) -> None:
+    assert tlv.accessible_fields == ["Tag"]
+    tlv.set("Tag", "Msg_Error")
+    assert tlv.accessible_fields == ["Tag"]
+    tlv.set("Tag", "Msg_Data")
+    assert tlv.accessible_fields == ["Tag", "Length"]
+    tlv.set("Length", 1)
+    assert tlv.accessible_fields == ["Tag", "Length", "Value"]
+    tlv.set("Value", b"\x01")
+    assert tlv.accessible_fields == ["Tag", "Length", "Value"]
+    tlv.set("Tag", "Msg_Error")
+    assert tlv.accessible_fields == ["Tag"]
 
 
-def test_valid_message(tlv_checksum: MessageValue) -> None:
-    assert not tlv_checksum.valid_message
-    tlv_checksum.set("Tag", "Msg_Error")
-    assert tlv_checksum.valid_message
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert not tlv_checksum.valid_message
-    tlv_checksum.set("Length", 1)
-    assert not tlv_checksum.valid_message
-    tlv_checksum.set("Value", b"\x01")
-    assert not tlv_checksum.valid_message
-    tlv_checksum.set("Checksum", 0xFFFFFFFF)
-    assert tlv_checksum.valid_message
+def test_valid_message(tlv: MessageValue) -> None:
+    assert not tlv.valid_message
+    tlv.set("Tag", "Msg_Error")
+    assert tlv.valid_message
+    tlv.set("Tag", "Msg_Data")
+    assert not tlv.valid_message
+    tlv.set("Length", 1)
+    assert not tlv.valid_message
+    tlv.set("Value", b"\x01")
+    assert tlv.valid_message
 
 
-def test_valid_fields(tlv_checksum: MessageValue) -> None:
-    assert tlv_checksum.valid_fields == []
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert tlv_checksum.valid_fields == ["Tag"]
-    tlv_checksum.set("Length", 1)
-    assert tlv_checksum.valid_fields == ["Tag", "Length"]
-    tlv_checksum.set("Value", b"\x01")
-    assert tlv_checksum.valid_fields == ["Tag", "Length", "Value"]
-    tlv_checksum.set("Checksum", 0xFFFFFFFF)
-    assert tlv_checksum.valid_fields == ["Tag", "Length", "Value", "Checksum"]
+def test_valid_fields(tlv: MessageValue) -> None:
+    assert tlv.valid_fields == []
+    tlv.set("Tag", "Msg_Data")
+    assert tlv.valid_fields == ["Tag"]
+    tlv.set("Length", 1)
+    assert tlv.valid_fields == ["Tag", "Length"]
+    tlv.set("Value", b"\x01")
+    assert tlv.valid_fields == ["Tag", "Length", "Value"]
 
 
-def test_set_value(tlv_checksum: MessageValue) -> None:
+def test_set_value(tlv: MessageValue) -> None:
     v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
     v2 = b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10"
-    tlv_checksum.set("Tag", "Msg_Data")
-    tlv_checksum.set("Length", 8)
-    tlv_checksum.set("Value", v1)
+    tlv.set("Tag", "Msg_Data")
+    tlv.set("Length", 8)
+    tlv.set("Value", v1)
     with pytest.raises(
         ValueError,
         match="invalid data length: input length is 80 while expected input length is 64",
     ):
-        tlv_checksum.set("Value", v2)
+        tlv.set("Value", v2)
 
 
-def test_tlv_message(tlv_checksum: MessageValue) -> None:
-    v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    tlv_checksum.set("Tag", "Msg_Data")
-    tlv_checksum.set("Length", 8)
-    tlv_checksum.set("Value", v1)
-    tlv_checksum.set("Checksum", 2 ** 32 - 1)
-
-
-def test_tlv_generate(tlv_checksum: MessageValue) -> None:
+def test_generate(tlv: MessageValue) -> None:
     test_payload = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    test_data = b"\x40\x08" + test_payload + b"\xff\xff\xff\xff"
-    tlv_checksum.set("Tag", "Msg_Data")
-    tlv_checksum.set("Length", 8)
-    tlv_checksum.set("Value", test_payload)
-    tlv_checksum.set("Checksum", 0xFFFFFFFF)
-    assert tlv_checksum.bytestring == test_data
+    test_data = b"\x40\x08" + test_payload
+    tlv.set("Tag", "Msg_Data")
+    tlv.set("Length", 8)
+    tlv.set("Value", test_payload)
+    assert tlv.bytestring == test_data
 
 
-def test_tlv_change_field(tlv_checksum: MessageValue) -> None:
-    tlv_checksum.set("Tag", "Msg_Data")
-    tlv_checksum.set("Length", 1)
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert "Length" in tlv_checksum.valid_fields
-    tlv_checksum.set("Value", b"a")
-    tlv_checksum.set("Checksum", 0)
-    tlv_checksum.set("Length", 2)
-    assert "Value" not in tlv_checksum.valid_fields
-    assert "Checksum" not in tlv_checksum.valid_fields
-    tlv_checksum.set("Value", b"ab")
-    assert "Checksum" in tlv_checksum.valid_fields
+def test_change_field(tlv: MessageValue) -> None:
+    tlv.set("Tag", "Msg_Data")
+    tlv.set("Length", 1)
+    tlv.set("Tag", "Msg_Data")
+    assert "Length" in tlv.valid_fields
+    tlv.set("Value", b"a")
+    tlv.set("Length", 2)
+    assert "Value" not in tlv.valid_fields
+    tlv.set("Value", b"ab")
+    assert "Value" in tlv.valid_fields
 
 
-def test_tlv_binary_length(tlv_checksum: MessageValue) -> None:
-    tlv_checksum.set("Tag", "Msg_Data")
-    tlv_checksum.set("Length", 8)
-    assert tlv_checksum.bytestring == b"\x40\x08"
+def test_binary_length(tlv: MessageValue) -> None:
+    tlv.set("Tag", "Msg_Data")
+    tlv.set("Length", 8)
+    assert tlv.bytestring == b"\x40\x08"
 
 
-def test_tlv_value(tlv_checksum: MessageValue) -> None:
+def test_set_get_value(tlv: MessageValue) -> None:
     v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    tlv_checksum.set("Tag", "Msg_Data")
-    tlv_checksum.set("Length", 8)
-    tlv_checksum.set("Value", v1)
-    tlv_checksum.set("Checksum", 2 ** 32 - 1)
-    assert tlv_checksum.get("Tag") == "Msg_Data"
-    assert tlv_checksum.get("Length") == 8
-    assert tlv_checksum.get("Value") == v1
-    assert tlv_checksum.get("Checksum") == 0xFFFFFFFF
+    tlv.set("Tag", "Msg_Data")
+    tlv.set("Length", 8)
+    tlv.set("Value", v1)
+    assert tlv.get("Tag") == "Msg_Data"
+    assert tlv.get("Length") == 8
+    assert tlv.get("Value") == v1
 
 
-def test_tlv_get_invalid_field(tlv_checksum: MessageValue) -> None:
+def test_get_invalid_field(tlv: MessageValue) -> None:
     with pytest.raises(ValueError, match=r"field nofield not valid"):
-        tlv_checksum.get("nofield")
+        tlv.get("nofield")
 
 
-def test_tlv_set_invalid_field(tlv_checksum: MessageValue) -> None:
-    tlv_checksum.set("Tag", "Msg_Data")
+def test_set_invalid_field(tlv: MessageValue) -> None:
+    tlv.set("Tag", "Msg_Data")
     with pytest.raises(KeyError, match=r"cannot access field Value"):
-        tlv_checksum.set("Value", b"")
+        tlv.set("Value", b"")
     with pytest.raises(KeyError, match=r"cannot access field Checksum"):
-        tlv_checksum.set("Checksum", 8)
-    tlv_checksum.set("Tag", "Msg_Error")
+        tlv.set("Checksum", 8)
+    tlv.set("Tag", "Msg_Error")
     with pytest.raises(KeyError, match=r"cannot access field Length"):
-        tlv_checksum.set("Length", 8)
+        tlv.set("Length", 8)
 
 
-def test_tlv_invalid_value(tlv_checksum: MessageValue) -> None:
+def test_invalid_value(tlv: MessageValue) -> None:
     with pytest.raises(
         ValueError,
         match="Error while setting value for field Tag: "
         "cannot assign different types: str != int",
     ):
-        tlv_checksum.set("Tag", 1)
-    tlv_checksum.set("Tag", "Msg_Data")
+        tlv.set("Tag", 1)
+    tlv.set("Tag", "Msg_Data")
     with pytest.raises(
         ValueError,
         match="Error while setting value for field Length: "
         "cannot assign different types: int != str",
     ):
-        tlv_checksum.set("Length", "blubb")
+        tlv.set("Length", "blubb")
 
 
-def test_tlv_next(tlv_checksum: MessageValue) -> None:
+def test_next(tlv: MessageValue) -> None:
     # pylint: disable=protected-access
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert tlv_checksum._next_field(INITIAL.name) == "Tag"
-    assert tlv_checksum._next_field("Tag") == "Length"
-    assert tlv_checksum._next_field(FINAL.name) == ""
+    tlv.set("Tag", "Msg_Data")
+    assert tlv._next_field(INITIAL.name) == "Tag"
+    assert tlv._next_field("Tag") == "Length"
+    assert tlv._next_field(FINAL.name) == ""
 
 
-def test_tlv_prev(tlv_checksum: MessageValue) -> None:
+def test_prev(tlv: MessageValue) -> None:
     # pylint: disable=protected-access
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert tlv_checksum._prev_field("Tag") == INITIAL.name
-    assert tlv_checksum._prev_field(INITIAL.name) == ""
-    tlv_checksum.set("Tag", "Msg_Error")
-    assert tlv_checksum._prev_field("Length") == ""
+    tlv.set("Tag", "Msg_Data")
+    assert tlv._prev_field("Tag") == INITIAL.name
+    assert tlv._prev_field(INITIAL.name) == ""
+    tlv.set("Tag", "Msg_Error")
+    assert tlv._prev_field("Length") == ""
 
 
-def test_tlv_required_fields(tlv_checksum: MessageValue) -> None:
-    assert tlv_checksum.required_fields == ["Tag"]
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert tlv_checksum.required_fields == ["Length"]
-    tlv_checksum.set("Length", 1)
-    assert tlv_checksum.required_fields == ["Value", "Checksum"]
-    tlv_checksum.set("Value", b"\x01")
-    assert tlv_checksum.required_fields == ["Checksum"]
-    tlv_checksum.set("Checksum", 0xFFFFFFFF)
-    assert tlv_checksum.required_fields == []
+def test_required_fields(tlv: MessageValue) -> None:
+    assert tlv.required_fields == ["Tag"]
+    tlv.set("Tag", "Msg_Data")
+    assert tlv.required_fields == ["Length"]
+    tlv.set("Length", 1)
+    assert tlv.required_fields == ["Value"]
+    tlv.set("Value", b"\x01")
+    assert tlv.required_fields == []
 
 
-def test_tlv_length_unchecked(tlv_checksum: MessageValue) -> None:
+def test_length_unchecked(tlv: MessageValue) -> None:
     # pylint: disable=protected-access
-    tlv_checksum.set("Tag", "Msg_Error")
-    assert not isinstance(tlv_checksum._get_length_unchecked("Value"), Number)
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert not isinstance(tlv_checksum._get_length_unchecked("Value"), Number)
-    tlv_checksum.set("Length", 1)
-    assert isinstance(tlv_checksum._get_length_unchecked("Value"), Number)
+    tlv.set("Tag", "Msg_Error")
+    assert not isinstance(tlv._get_length_unchecked("Value"), Number)
+    tlv.set("Tag", "Msg_Data")
+    assert not isinstance(tlv._get_length_unchecked("Value"), Number)
+    tlv.set("Length", 1)
+    assert isinstance(tlv._get_length_unchecked("Value"), Number)
 
 
-def test_tlv_first_unchecked(tlv_checksum: MessageValue) -> None:
+def test_first_unchecked(tlv: MessageValue) -> None:
     # pylint: disable=protected-access
-    tlv_checksum.set("Tag", "Msg_Error")
-    assert not isinstance(tlv_checksum._get_first_unchecked("Checksum"), Number)
-    tlv_checksum.set("Tag", "Msg_Data")
-    assert not isinstance(tlv_checksum._get_first_unchecked("Checksum"), Number)
-    tlv_checksum.set("Length", 1)
-    assert isinstance(tlv_checksum._get_first_unchecked("Checksum"), Number)
+    tlv.set("Tag", "Msg_Error")
+    assert not isinstance(tlv._get_first_unchecked("Value"), Number)
+    tlv.set("Tag", "Msg_Data")
+    assert isinstance(tlv._get_first_unchecked("Value"), Number)
+    tlv.set("Length", 1)
+    assert isinstance(tlv._get_first_unchecked("Value"), Number)
 
 
 def test_ethernet_all_fields(frame: MessageValue) -> None:
@@ -840,15 +831,15 @@ def test_field_set() -> None:
     assert f.set
 
 
-def test_get_first_unchecked_undefined(tlv_checksum: MessageValue) -> None:
+def test_get_first_unchecked_undefined(tlv: MessageValue) -> None:
     # pylint: disable=protected-access
-    assert tlv_checksum._get_first_unchecked("Length") == UNDEFINED
+    assert tlv._get_first_unchecked("Length") == UNDEFINED
 
 
-def test_check_nodes_opaque(tlv_checksum: MessageValue, frame: MessageValue) -> None:
+def test_check_nodes_opaque(tlv: MessageValue, frame: MessageValue) -> None:
     # pylint: disable=protected-access
-    assert tlv_checksum._is_valid_opaque_field("Length")
-    assert not tlv_checksum._is_valid_opaque_field("Value")
+    assert tlv._is_valid_opaque_field("Length")
+    assert not tlv._is_valid_opaque_field("Value")
     frame.set("Destination", 2 ** 48 - 1)
     frame.set("Source", 0)
     frame.set("Type_Length_TPID", 1501)
@@ -897,7 +888,7 @@ def test_value_parse_from_bitstring(tlv: MessageValue, enum_value: EnumValue) ->
     msg_array.parse(tlv.bytestring)
 
 
-def test_bitstring(tlv_checksum: MessageValue) -> None:
+def test_bitstring(tlv: MessageValue) -> None:
     with pytest.raises(ValueError, match="Bitstring does not consist of only 0 and 1"):
         Bitstring("123")
     assert Bitstring("01") + Bitstring("00") == Bitstring("0100")
@@ -910,8 +901,8 @@ def test_bitstring(tlv_checksum: MessageValue) -> None:
             " - stopped while parsing field: Length"
         ),
     ):
-        tlv_checksum.parse(test_bytes)
-    assert not tlv_checksum.valid_message
+        tlv.parse(test_bytes)
+    assert not tlv.valid_message
 
 
 def test_odd_length_binary(message_odd_length: MessageValue) -> None:
@@ -1512,18 +1503,25 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
 
 @pytest.fixture(name="icmp_checksum")
 def fixture_icmp_checksum(icmp_type: Message) -> MessageValue:
-    icmp_type.aspects = {
-        "Checksum": [
-            {
-                "Checksum": [
-                    ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
-                    Length("Checksum"),
-                    ValueRange(Add(Last("Checksum"), Number(1)), Last("Message")),
-                ]
-            }
-        ]
-    }
-    return MessageValue(icmp_type)
+    return MessageValue(
+        icmp_type.copy(
+            structure=[
+                Link(l.source, l.target, condition=And(l.condition, ValidChecksum("Checksum")))
+                if l.target == FINAL
+                else l
+                for l in icmp_type.structure
+            ],
+            aspects={
+                ID("Checksum"): {
+                    ID("Checksum"): [
+                        ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
+                        Length("Checksum"),
+                        ValueRange(Add(Last("Checksum"), Number(1)), Last("Message")),
+                    ]
+                }
+            },
+        )
+    )
 
 
 def test_checksum_field_not_defined(icmp_checksum: MessageValue) -> None:
@@ -1570,31 +1568,33 @@ def test_checksum_icmp(icmp_checksum: MessageValue) -> None:
     assert icmp_checksum.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
 
 
-def tlv_checksum_function(msg: bytes, **kwargs: int) -> int:
-    return (int.from_bytes(msg, "big") ^ kwargs["Length"]) % 1 << 32
-
-
-def test_is_checksum_settable(tlv_checksum_type: Message) -> None:
+def test_checksum_is_checksum_settable(tlv_checksum_type: Message) -> None:
     # pylint: disable=protected-access
-    tlv_checksum_type.aspects = {
-        "Checksum": [{"Checksum": [Variable("Length"), Length("Value"), Variable("Value")]}]
-    }
     tlv_msg = MessageValue(tlv_checksum_type)
-    tlv_msg.set_checksum_function({"Checksum": tlv_checksum_function})
+    tlv_msg.set_checksum_function({"Checksum": lambda x, **y: 0})
+    assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
     tlv_msg.set("Tag", "Msg_Data")
+    assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
     tlv_msg.set("Length", 5)
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
     tlv_msg.set("Value", bytes(5))
+    assert tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
     tlv_msg.set("Checksum", 0)
     assert tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
 
 
 def test_checksum_value_range(no_conditionals_type: Message) -> None:
     # pylint: disable=protected-access
-    no_conditionals_type.aspects = {
-        "Checksum": [{"Checksum": [ValueRange(First("Tag"), Last("Data"))]}]
-    }
-    msg = MessageValue(no_conditionals_type)
+    message = no_conditionals_type.copy(
+        structure=[
+            Link(l.source, l.target, condition=ValidChecksum("Checksum"))
+            if l.target == FINAL
+            else l
+            for l in no_conditionals_type.structure
+        ],
+        aspects={ID("Checksum"): {ID("Checksum"): [ValueRange(First("Tag"), Last("Data"))]}},
+    )
+    msg = MessageValue(message)
     msg.set("Tag", 0)
     msg.set("Data", 0)
     assert not msg._is_checksum_settable(msg._checksums["Checksum"])
