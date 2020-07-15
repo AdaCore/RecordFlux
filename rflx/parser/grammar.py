@@ -153,7 +153,12 @@ def logical_expression() -> Token:
     relation.setName("Relation")
 
     return (
-        infixNotation(relation, [(logical_operator, 2, opAssoc.LEFT, parse_logical_expression)])
+        infixNotation(
+            relation | attribute_reference(),
+            [(logical_operator, 2, opAssoc.LEFT, parse_logical_expression)],
+            lpar=left_parenthesis(),
+            rpar=right_parenthesis(),
+        )
     ).setName("LogicalExpression")
 
 
@@ -177,6 +182,8 @@ def mathematical_expression() -> Token:
         infixNotation(
             array_aggregate | string,
             [(Suppress(Keyword("&")), 2, opAssoc.LEFT, parse_concatenation)],
+            lpar=left_parenthesis(),
+            rpar=right_parenthesis(),
         )
     ).setName("Concatenation")
 
@@ -191,6 +198,8 @@ def mathematical_expression() -> Token:
                 (multiplying_operator, 2, opAssoc.LEFT, parse_mathematical_expression),
                 (binary_adding_operator, 2, opAssoc.LEFT, parse_mathematical_expression),
             ],
+            lpar=left_parenthesis(),
+            rpar=right_parenthesis(),
         )
     ).setName("MathematicalExpression")
 
