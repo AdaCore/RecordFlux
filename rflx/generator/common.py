@@ -41,6 +41,7 @@ from rflx.expression import (
     Size,
     Sub,
     Val,
+    ValidChecksum,
     ValueRange,
     Variable,
 )
@@ -243,6 +244,8 @@ def substitution_facts(
             if isinstance(t, Enumeration)
             for l in t.literals.keys()
         },
+        # ISSUE: Componolit/RecordFlux#276
+        **{ValidChecksum(f): TRUE for f in message.checksums},
     }
 
 

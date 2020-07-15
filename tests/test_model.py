@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 from copy import deepcopy
-from typing import Sequence
+from typing import Mapping, Sequence
 
 import pytest
 
@@ -12,6 +12,7 @@ from rflx.expression import (
     And,
     Div,
     Equal,
+    Expr,
     First,
     Greater,
     GreaterEqual,
@@ -26,6 +27,8 @@ from rflx.expression import (
     Or,
     Pow,
     Sub,
+    ValidChecksum,
+    ValueRange,
     Variable,
 )
 from rflx.identifier import ID
@@ -365,7 +368,7 @@ def test_array_invalid_element_type() -> None:
         r'<stdin>:3:4: model: info: type "B" must be scalar or non-null message$',
     )
     assert_type_error(
-        Array("P.A", Message("P.B", [], {}, Location((3, 4))), Location((5, 4))),
+        Array("P.A", Message("P.B", [], {}, location=Location((3, 4))), Location((5, 4))),
         r'^<stdin>:5:4: model: error: invalid element type of array "A"\n'
         r'<stdin>:3:4: model: info: type "B" must be scalar or non-null message$',
     )
@@ -397,7 +400,7 @@ def test_message_incorrect_name() -> None:
     with pytest.raises(
         RecordFluxError, match='^<stdin>:10:8: model: error: unexpected format of type name "M"$'
     ):
-        Message("M", [], {}, Location((10, 8)))
+        Message("M", [], {}, location=Location((10, 8)))
 
 
 def test_message_missing_type() -> None:
@@ -443,7 +446,7 @@ def test_message_ambiguous_first_field() -> None:
         '^<stdin>:10:8: model: error: ambiguous first field in "P.M"\n'
         "<stdin>:2:6: model: info: duplicate\n"
         "<stdin>:3:6: model: info: duplicate",
-        Location((10, 8)),
+        location=Location((10, 8)),
     )
 
 
@@ -585,7 +588,7 @@ def test_message_cycle() -> None:
         # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
         # '<stdin>:4:5: model: info: field "Y" links to "Z"\n'
         # '<stdin>:5:5: model: info: field "Z" links to "X"\n',
-        Location((10, 8)),
+        location=Location((10, 8)),
     )
 
 
@@ -869,12 +872,117 @@ def test_message_invalid_element_in_relation_to_aggregate() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "checksums,condition",
+    [
+        (
+            {
+                ID("F3"): [
+                    ValueRange(First("F1"), Last("F2")),
+                    Variable("F2"),
+                    ValueRange(Add(Last("F1"), Number(1)), Sub(First("F3"), Number(1))),
+                    ValueRange(First("F3"), Last("F3")),
+                ]
+            },
+            ValidChecksum("F3"),
+        ),
+        (
+            {ID("F2"): [Variable("F1")], ID("F3"): [Variable("F1"), Length("F2")]},
+            And(ValidChecksum("F2"), ValidChecksum("F3")),
+        ),
+        (
+            {
+                ID("F3"): [
+                    ValueRange(First("Message"), Sub(First("F3"), Number(1))),
+                    ValueRange(First("F3"), Last("Message")),
+                ]
+            },
+            ValidChecksum("F3"),
+        ),
+    ],
+)
+def test_message_checksum(checksums: Mapping[ID, Sequence[Expr]], condition: Expr) -> None:
+    f1 = Field("F1")
+    f2 = Field("F2")
+    f3 = Field("F3")
+    structure = [
+        Link(INITIAL, f1),
+        Link(f1, f2),
+        Link(f2, f3),
+        Link(f3, FINAL, condition),
+    ]
+    types = {f1: MODULAR_INTEGER, f2: MODULAR_INTEGER, f3: MODULAR_INTEGER}
+    aspects = {
+        ID("Checksum"): checksums,
+    }
+    message = Message("P.M", structure, types, aspects=aspects)
+    assert message.checksums == checksums
+
+
+@pytest.mark.parametrize(
+    "checksums,condition,error",
+    [
+        (
+            {ID("X", location=Location((10, 20))): []},
+            TRUE,
+            r'^<stdin>:10:20: model: error: checksum definition for unknown field "X"\n'
+            r'<stdin>:10:20: model: error: no validity check of checksum "X"$',
+        ),
+        (
+            {ID("F3", location=Location((10, 20))): []},
+            TRUE,
+            r'^<stdin>:10:20: model: error: no validity check of checksum "F3"$',
+        ),
+        (
+            {},
+            ValidChecksum(ID("F2", location=Location((20, 30)))),
+            r'^<stdin>:20:30: model: error: validity check for undefined checksum "F2"$',
+        ),
+        (
+            {ID("F3"): [First(ID("F2", location=Location((20, 30))))]},
+            ValidChecksum("F3"),
+            r'^<stdin>:20:30: model: error: unsupported expression "F2\'First"'
+            r' in definition of checksum "F3"$',
+        ),
+        (
+            {ID("F3"): [Variable("X", location=Location((20, 30)))]},
+            ValidChecksum("F3"),
+            r'^<stdin>:20:30: model: error: unknown field "X" referenced'
+            r' in definition of checksum "F3"$',
+        ),
+        (
+            {ID("F3"): [ValueRange(First("F2"), Last("F1"), location=Location((20, 30)))]},
+            ValidChecksum("F3"),
+            r'^<stdin>:20:30: model: error: invalid range "F2\'First .. F1\'Last"'
+            r' in definition of checksum "F3"$',
+        ),
+    ],
+)
+def test_message_checksum_error(
+    checksums: Mapping[ID, Sequence[Expr]], condition: Expr, error: str
+) -> None:
+    f1 = Field("F1")
+    f2 = Field("F2")
+    f3 = Field("F3")
+    structure = [
+        Link(INITIAL, f1),
+        Link(f1, f2),
+        Link(f2, f3),
+        Link(f3, FINAL, condition),
+    ]
+    types = {f1: MODULAR_INTEGER, f2: MODULAR_INTEGER, f3: MODULAR_INTEGER}
+    aspects = {
+        ID("Checksum"): checksums,
+    }
+    assert_message_model_error(structure, types, error, aspects=aspects)
+
+
 def test_message_field_size() -> None:
     message = Message(
         "P.M",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
         {Field("F"): MODULAR_INTEGER},
-        Location((30, 10)),
+        location=Location((30, 10)),
     )
 
     assert message.field_size(FINAL) == Number(0)
@@ -1220,7 +1328,7 @@ def test_merge_message_error_name_conflict() -> None:
         "P.M2",
         [Link(INITIAL, m2_f2), Link(m2_f2, FINAL)],
         {Field("F2"): MODULAR_INTEGER},
-        Location((15, 3)),
+        location=Location((15, 3)),
     )
 
     m1_f1 = Field(ID("F1", Location((20, 8))))
@@ -1230,7 +1338,7 @@ def test_merge_message_error_name_conflict() -> None:
         "P.M1",
         [Link(INITIAL, m1_f1), Link(m1_f1, m1_f1_f2), Link(m1_f1_f2, FINAL)],
         {Field("F1"): m2, Field("F1_F2"): MODULAR_INTEGER},
-        Location((2, 9)),
+        location=Location((2, 9)),
     )
 
     assert_type_error(
@@ -1278,7 +1386,7 @@ def test_field_locations() -> None:
         "P.M",
         [Link(INITIAL, f2), Link(f2, f3), Link(f3, FINAL)],
         {Field("F2"): MODULAR_INTEGER, Field("F3"): MODULAR_INTEGER},
-        Location((17, 9)),
+        location=Location((17, 9)),
     )
     assert message.fields == (f2, f3)
 

@@ -54,6 +54,8 @@ from rflx.expression import (
     Pow,
     Relation,
     Sub,
+    ValidChecksum,
+    ValueRange,
     Variable,
 )
 from rflx.identifier import ID
@@ -84,6 +86,14 @@ def semicolon() -> Token:
     return Suppress(Literal(";")).setName('";"')
 
 
+def left_parenthesis() -> Token:
+    return Suppress(Literal("(")).setName('"("')
+
+
+def right_parenthesis() -> Token:
+    return Suppress(Literal(")")).setName('")"')
+
+
 def unqualified_identifier() -> Token:
     return (
         locatedExpr(WordStart(alphas) + Word(alphanums + "_") + WordEnd(alphanums + "_"))
@@ -104,7 +114,7 @@ def qualified_identifier() -> Token:
 
 
 def attribute_reference() -> Token:
-    designator = Keyword("First") | Keyword("Last") | Keyword("Length")
+    designator = Keyword("First") | Keyword("Last") | Keyword("Length") | Keyword("Valid_Checksum")
     reference = unqualified_identifier() + Literal("'") - designator
     reference.setParseAction(parse_attribute)
     return reference.setName("Attribute")
@@ -248,6 +258,31 @@ def array_type_definition() -> Token:
     return (Keyword("array of") + qualified_identifier()).setName("Array")
 
 
+def value_range() -> Token:
+    return (mathematical_expression() + Keyword("..") - mathematical_expression()).setParseAction(
+        lambda t: ValueRange(t[0], t[2], location=t[0].location)
+    )
+
+
+def checksum_aspect() -> Token:
+    checksum_association = (
+        unqualified_identifier()
+        - Keyword("=>")
+        - (
+            left_parenthesis()
+            - delimitedList(value_range() | mathematical_expression())
+            + right_parenthesis()
+        ).setParseAction(lambda t: [t.asList()])
+    ).setParseAction(lambda t: (t[0], t[2]))
+    return (
+        Keyword("Checksum")
+        - Keyword("=>")
+        - left_parenthesis()
+        - delimitedList(checksum_association)
+        - right_parenthesis()
+    ).setParseAction(lambda t: {ID("Checksum"): dict(t[2:])})
+
+
 def message_type_definition() -> Token:
     first_aspect = Keyword("First") - Keyword("=>") - mathematical_expression()
     first_aspect.setParseAction(parse_aspect)
@@ -287,7 +322,11 @@ def message_type_definition() -> Token:
     component_list.setParseAction(lambda t: t.asList())
 
     return (
-        Keyword("message") - component_list - Keyword("end message") | Keyword("null message")
+        Keyword("message")
+        - component_list
+        - Keyword("end message")
+        + Optional(Keyword("with") + checksum_aspect())
+        | Keyword("null message")
     ).setName("Message")
 
 
@@ -315,11 +354,11 @@ def type_refinement() -> Token:
             Suppress(Keyword("for")).setParseAction(lambda s, l, t: l)
             - qualified_identifier()
             - Suppress(Keyword("use"))
-            - Suppress(Literal("("))
+            - left_parenthesis()
             - unqualified_identifier()
             - Suppress(Keyword("=>"))
             - qualified_identifier()
-            - Suppress(Literal(")"))
+            - right_parenthesis()
             - Optional(value_constraint())("constraint")
             - semicolon().setParseAction(lambda s, l, t: l)
         )
@@ -500,6 +539,8 @@ def parse_attribute(string: str, location: int, tokens: ParseResults) -> Attribu
         return Last(tokens[0])
     if tokens[2] == "Length":
         return Length(tokens[0])
+    if tokens[2] == "Valid_Checksum":
+        return ValidChecksum(tokens[0])
 
     raise ParseFatalException(string, location, "unexpected attribute")
 
@@ -529,9 +570,10 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
         tokens[6] = tokens[6]["size"]
         return RangeInteger(identifier, tokens[4], tokens[5], tokens[6], locn)
     if tokens[3] == "message":
-        return MessageSpec(identifier, tokens[4], locn)
+        aspects = tokens[7] if len(tokens) > 7 else {}
+        return MessageSpec(identifier, tokens[4], aspects, locn)
     if tokens[3] == "null message":
-        return MessageSpec(identifier, [], locn)
+        return MessageSpec(identifier, [], location=locn)
     if tokens[3] == "(":
         elements = tokens[4:-3]
         aspects = tokens[-2]

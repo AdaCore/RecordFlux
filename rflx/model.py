@@ -36,6 +36,8 @@ from rflx.expression import (
     ProofResult,
     Relation,
     Sub,
+    ValidChecksum,
+    ValueRange,
     Variable,
 )
 from rflx.identifier import ID, StrID
@@ -624,6 +626,7 @@ class MessageState(Base):
     paths: Mapping[Field, Set[Tuple[Link, ...]]] = {}
     definite_predecessors: Mapping[Field, Tuple[Field, ...]] = {}
     field_condition: Mapping[Field, Expr] = {}
+    checksums: Mapping[ID, Sequence[Expr]] = {}
 
 
 @invariant(lambda self: valid_message_field_types(self))
@@ -635,16 +638,18 @@ class AbstractMessage(Type):
         identifier: StrID,
         structure: Sequence[Link],
         types: Mapping[Field, Type],
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
-        aspects: Mapping[str, Sequence[Mapping[str, Sequence[Expr]]]] = None,
     ) -> None:
+        assert not (state and aspects)
+
         super().__init__(identifier, location, error)
 
         self.structure = sorted(structure)
         self.__types = types
-        self.aspects = aspects or {}
+        self.__aspects = aspects or {}
         self.__has_unreachable = False
         self._state = state or MessageState()
 
@@ -662,6 +667,9 @@ class AbstractMessage(Type):
                         f: self.__compute_field_condition(f).simplified() for f in self.all_fields
                     }
                     self.__verify_conditions()
+                if ID("Checksum") in self.__aspects:
+                    self._state.checksums = self.__aspects[ID("Checksum")]
+                    self.__verify_checksums()
             except RecordFluxError:
                 pass
 
@@ -703,6 +711,7 @@ class AbstractMessage(Type):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "AbstractMessage":
@@ -730,6 +739,14 @@ class AbstractMessage(Type):
     def types(self) -> Mapping[Field, Type]:
         """Return fields and corresponding types topologically sorted."""
         return self.__types
+
+    @property
+    def aspects(self) -> Mapping[ID, Mapping[ID, Sequence[Expr]]]:
+        return self.__aspects
+
+    @property
+    def checksums(self) -> Mapping[ID, Sequence[Expr]]:
+        return self._state.checksums or {}
 
     def incoming(self, field: Field) -> Sequence[Link]:
         return [l for l in self.structure if l.target == field]
@@ -1184,6 +1201,98 @@ class AbstractMessage(Type):
 
         return [*message_constraints, *aggregate_constraints, *scalar_constraints]
 
+    def __verify_checksums(self) -> None:
+        def valid_lower(expression: Expr) -> bool:
+            return isinstance(expression, First) or (
+                isinstance(expression, Add)
+                and len(expression.terms) == 2
+                and isinstance(expression.terms[0], Last)
+                and expression.terms[1] == Number(1)
+            )
+
+        def valid_upper(expression: Expr) -> bool:
+            return isinstance(expression, Last) or (
+                isinstance(expression, Sub)
+                and isinstance(expression.left, First)
+                and expression.right == Number(1)
+            )
+
+        for name, expressions in self.checksums.items():  # pylint: disable=too-many-nested-blocks
+            if Field(name) not in self.fields:
+                self.error.append(
+                    f'checksum definition for unknown field "{name}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    name.location,
+                )
+
+            for e in expressions:
+                if not (
+                    isinstance(e, (Variable, Length))
+                    or (isinstance(e, ValueRange) and valid_lower(e.lower) and valid_upper(e.upper))
+                ):
+                    self.error.append(
+                        f'unsupported expression "{e}" in definition of checksum "{name}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        e.location,
+                    )
+
+                for v in e.findall(lambda x: isinstance(x, Variable)):
+                    assert isinstance(v, Variable)
+
+                    if Field(v.name) not in self.fields:
+                        self.error.append(
+                            f'unknown field "{v.name}" referenced'
+                            f' in definition of checksum "{name}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            v.location,
+                        )
+
+                if isinstance(e, ValueRange):
+                    lower = e.lower.findall(lambda x: isinstance(x, Variable))[0]
+                    upper = e.upper.findall(lambda x: isinstance(x, Variable))[0]
+
+                    assert isinstance(lower, Variable)
+                    assert isinstance(upper, Variable)
+
+                    if lower != upper:
+                        upper_field = (
+                            Field(upper.name) if upper.name.lower() != "message" else FINAL
+                        )
+                        lower_field = (
+                            Field(lower.name) if lower.name.lower() != "message" else INITIAL
+                        )
+                        for p in self._state.paths[upper_field]:
+                            if not any(lower_field == l.source for l in p):
+                                self.error.append(
+                                    f'invalid range "{e}" in definition of checksum "{name}"',
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    e.location,
+                                )
+
+        checked = [
+            e.prefix.identifier
+            for e in self.field_condition(FINAL).findall(lambda x: isinstance(x, ValidChecksum))
+            if isinstance(e, ValidChecksum) and isinstance(e.prefix, Variable)
+        ]
+        for name in set(self.checksums) - set(checked):
+            self.error.append(
+                f'no validity check of checksum "{name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                name.location,
+            )
+        for name in set(checked) - set(self.checksums):
+            self.error.append(
+                f'validity check for undefined checksum "{name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                name.location,
+            )
+
     def __prove_conflicting_conditions(self) -> None:
         for f in (INITIAL, *self.fields):
             for i1, c1 in enumerate(self.outgoing(f)):
@@ -1595,12 +1704,13 @@ class Message(AbstractMessage):
         identifier: StrID,
         structure: Sequence[Link],
         types: Mapping[Field, Type],
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
         skip_proof: bool = False,
     ) -> None:
-        super().__init__(identifier, structure, types, location, error, state)
+        super().__init__(identifier, structure, types, aspects, location, error, state)
 
         if not self.error.check() and (structure or types) and not skip_proof:
             self._prove()
@@ -1612,6 +1722,7 @@ class Message(AbstractMessage):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "Message":
@@ -1619,6 +1730,7 @@ class Message(AbstractMessage):
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
+            aspects if aspects else copy(self.aspects),
             location if location else self.location,
             error if error else self.error,
         )
@@ -1635,6 +1747,7 @@ class DerivedMessage(Message):
         base: AbstractMessage,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -1643,6 +1756,7 @@ class DerivedMessage(Message):
             identifier,
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
+            aspects if aspects else copy(base.aspects),
             location if location else base.location,
             error if error else base.error,
         )
@@ -1653,6 +1767,7 @@ class DerivedMessage(Message):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "DerivedMessage":
@@ -1661,6 +1776,7 @@ class DerivedMessage(Message):
             self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
+            aspects if aspects else copy(self.aspects),
             location if location else self.location,
             error if error else self.error,
         )
@@ -1670,11 +1786,13 @@ class DerivedMessage(Message):
 
 
 class UnprovenMessage(AbstractMessage):
+    # pylint: disable=too-many-arguments
     def copy(
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "UnprovenMessage":
@@ -1682,6 +1800,7 @@ class UnprovenMessage(AbstractMessage):
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
+            aspects if aspects else copy(self.aspects),
             location if location else self.location,
             error if error else self.error,
         )
@@ -1789,6 +1908,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         base: AbstractMessage,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -1797,6 +1917,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
             identifier,
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
+            aspects if aspects else copy(base.aspects),
             location if location else base.location,
             error if error else base.error,
         )
@@ -1808,6 +1929,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "UnprovenDerivedMessage":
@@ -1816,13 +1938,20 @@ class UnprovenDerivedMessage(UnprovenMessage):
             self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
+            aspects if aspects else copy(self.aspects),
             location if location else self.location,
             error if error else self.error,
         )
 
     def proven(self, skip_proof: bool = False) -> DerivedMessage:
         return DerivedMessage(
-            self.identifier, self.base, self.structure, self.types, self.location, self.error,
+            self.identifier,
+            self.base,
+            self.structure,
+            self.types,
+            self.aspects,
+            self.location,
+            self.error,
         )
 
 

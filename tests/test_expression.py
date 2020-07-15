@@ -554,6 +554,10 @@ def test_attribute_neg() -> None:
     assert -First("X") == First("X", True)
 
 
+def test_attributes_findall() -> None:
+    assert First("X").findall(lambda x: isinstance(x, Variable)) == [Variable("X")]
+
+
 def test_attribute_substituted() -> None:
     assert_equal(First("X").substituted(lambda x: Number(42) if x == First("X") else x), Number(42))
     assert_equal(

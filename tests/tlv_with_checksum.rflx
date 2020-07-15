@@ -15,7 +15,10 @@ package TLV_With_Checksum is
             then Value
                with Length => Length * 8;
          Value    : Opaque;
-         Checksum : Checksum;
-       end message;
+         Checksum : Checksum
+            then null
+               if Checksum'Valid_Checksum;
+       end message
+          with Checksum => (Checksum => (Tag, Value'Length, Value));
 
 end TLV_With_Checksum;
