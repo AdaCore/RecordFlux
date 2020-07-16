@@ -1,8 +1,9 @@
 import argparse
+import json
 import logging
 import os
 from pathlib import Path
-from typing import List, Union
+from typing import Dict, List, Union
 
 from rflx import __version__
 from rflx.common import flat_name
@@ -138,8 +139,27 @@ def graph(args: argparse.Namespace) -> None:
         fail(f'directory not found: "{directory}"', Subsystem.GRAPH)
 
     model = parse(args.files)
+    locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = {}
 
     for m in model.messages:
         message = flat_name(m.full_name)
         filename = Path(directory).joinpath(message).with_suffix(f".{args.format}")
         Graph(m).write(filename, fmt=args.format)
+
+        assert m.location
+        assert m.location.start
+        assert m.location.end
+        assert m.location.source
+
+        source = str(m.location.source.name)
+
+        if source not in locations:
+            locations[source] = {}
+        locations[source][message] = {
+            "start": {"line": m.location.start[0], "column": m.location.start[1]},
+            "end": {"line": m.location.end[0], "column": m.location.end[1]},
+        }
+
+    filename = Path(directory).joinpath("locations.json")
+    with open(filename, "w") as f:
+        json.dump(locations, f)
