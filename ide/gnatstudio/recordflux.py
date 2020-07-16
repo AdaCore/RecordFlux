@@ -5,6 +5,8 @@ RecordFlux support for GNAT Studio
 import os
 import re
 
+from gi.repository import Gdk, GLib, GObject, Gtk
+
 import GPS
 import highlighter.common as hl
 
@@ -106,8 +108,7 @@ XML = r"""<?xml version="1.0"?>
       <on-failure>
          <shell lang="python" show-command="false">recordflux.parse_output(&quot;&quot;&quot;%1&quot;&quot;&quot;)</shell>
       </on-failure>
-      <shell lang="python" show-command="false">recordflux.find_message_graph(&quot;%F&quot;)</shell>
-      <external>echo &quot;%1&quot;</external>
+      <shell lang="python" show-command="false">recordflux.display_message_graph(&quot;%F&quot;)</shell>
    </action>
 
    <!-- Aliases -->
@@ -343,5 +344,22 @@ def graph(filename):
     return run([filename], mode="graph", options=["-d", output_dir()])
 
 
-def find_message_graph(filename):
-    return output_dir() + "/ICMP_Message.svg"
+def get_message_name():
+    return "ICMP_Message"
+
+
+def display_message_graph(filename):
+    message_name = get_message_name()
+    scrolled_window = Gtk.ScrolledWindow()
+    scrolled_window.set_border_width(10)
+    scrolled_window.set_policy(Gtk.PolicyType.ALWAYS, Gtk.PolicyType.ALWAYS)
+    graph = Gtk.Image()
+    graph.set_from_file(output_dir() + "/" + message_name + ".svg")
+    scrolled_window.add_with_viewport(graph)
+    GPS.MDI.add(
+        scrolled_window,
+        "Message graph",
+        message_name,
+        group=GPS.MDI.GROUP_GRAPHS,
+        position=GPS.MDI.POSITION_AUTOMATIC,
+    )
