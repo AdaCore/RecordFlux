@@ -11,8 +11,8 @@ log = logging.getLogger(__name__)
 
 
 class PyRFLX:
-    def __init__(self, files: List[str]) -> None:
-        parser = Parser()
+    def __init__(self, files: List[str], skip_verification: bool = False) -> None:
+        parser = Parser(skip_verification)
         self.__packages: Dict[str, Package] = {}
 
         for f in files:
