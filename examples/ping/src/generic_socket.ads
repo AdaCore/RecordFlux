@@ -1,13 +1,15 @@
 private with Interfaces.C;
+with RFLX.IPv4;
 
 generic
    type Element_Type is (<>);
    type Index_Type is (<>);
    type Buffer_Type is array (Index_Type range <>) of Element_Type;
+   type IP4_Address is mod <>;
 package Generic_Socket
   with Abstract_State => Network
 is
-   procedure Setup
+   procedure Setup (Iface : String)
    with
       Global => (Output => Network);
 
@@ -23,8 +25,9 @@ is
       Post => Valid
               and then (if Success then Last <= Buffer'Last);
 
-   procedure Send (Buffer  : Buffer_Type;
-                   Success : out Boolean) with
+   procedure Send (Buffer      :     Buffer_Type;
+                   Destination :     IP4_Address;
+                   Success     : out Boolean) with
       Global => (Input => Network),
       Pre => Valid,
       Post => Valid;

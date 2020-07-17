@@ -1,4 +1,5 @@
 with System;
+with RFLX;
 
 package body Generic_Socket
   with Refined_State => (Network => (FD_In, FD_Out))
@@ -16,28 +17,49 @@ is
    FD_In  : IC.int := -1;
    FD_Out : IC.int := -1;
 
-   procedure Setup
+   procedure Setup (Iface : String)
    is
       function C_Socket (Domain   : IC.int;
                          C_Type   : IC.int;
                          Protocol : IC.int) return IC.int
-      with
+         with
+            Global => null,
+            Import,
+            Convention => C,
+            External_Name => "socket";
+      function C_Setsockopt (FD : IC.int;
+                             Level : IC.int;
+                             Opt : IC.int;
+                             Val : String;
+                             Len : IC.int) return IC.int with
          Global => null,
          Import,
          Convention => C,
-         External_Name => "socket";
-      PF_INET      : constant IC.int := 2;
-      SOCK_RAW     : constant IC.int := 3;
-      IPPROTO_ICMP : constant IC.int := 1;
-      IPPROTO_RAW  : constant IC.int := 255;
+         External_Name => "setsockopt";
+      PF_INET         : constant IC.int := 2;
+      SOCK_RAW        : constant IC.int := 3;
+      IPPROTO_ICMP    : constant IC.int := 1;
+      IPPROTO_RAW     : constant IC.int := 255;
+      SOL_SOCKET      : constant IC.int := 1;
+      SO_BINDTODEVICE : constant IC.int := 25;
    begin
       FD_In := C_Socket (PF_INET, SOCK_RAW, IPPROTO_ICMP);
       if FD_In < 0 then
          C_Perror ("C_Socket (PF_INET, SOCK_RAW, IPPROTO_ICMP)" & ASCII.NUL);
+         return;
+      end if;
+      if C_Setsockopt (FD_In, SOL_SOCKET, SO_BINDTODEVICE, Iface & ASCII.NUL, Iface'Length) < 0 then
+         C_Perror ("C_Setsockopt (FD_In, SOL_SOCKET, SO_BINDTODEVICE, Iface & ASCII.NUL, Iface'Length)" & ASCII.NUL);
+         return;
       end if;
       FD_Out := C_Socket (PF_Inet, SOCK_RAW, IPPROTO_RAW);
       if FD_Out < 0 then
          C_Perror ("C_Socket (PF_Inet, SOCK_RAW, IPPROTO_RAW)" & ASCII.NUL);
+         return;
+      end if;
+      if C_Setsockopt (FD_Out, SOL_SOCKET, SO_BINDTODEVICE, Iface & ASCII.NUL, Iface'Length) < 0 then
+         C_Perror ("C_Setsockopt (FD_Out, SOL_SOCKET, SO_BINDTODEVICE, Iface & ASCII.NUL, Iface'Length)" & ASCII.NUL);
+         return;
       end if;
    end Setup;
 
@@ -73,16 +95,17 @@ is
       end if;
    end Receive;
 
-   procedure Send (Buffer  : Buffer_Type;
-                   Success : out Boolean)
+   procedure Send (Buffer      :     Buffer_Type;
+                   Destination :     IP4_Address;
+                   Success     : out Boolean)
    is
       function C_Send (FD     : IC.int;
+                       Dest   : IP4_Address;
                        Buffer : Buffer_Type;
-                       Length : IC.size_t;
-                       Flags  : IC.int) return IC.int with
+                       Length : IC.size_t) return IC.int with
          Import,
          Convention => C,
-         External_Name => "send",
+         External_Name => "c_send",
          Global => null,
          Pre => Length >= IC.size_t (Buffer'Length),
          Post => C_Send'Result <= IC.int (Buffer'Length);
@@ -92,7 +115,7 @@ is
          Success := True;
          return;
       end if;
-      Result := C_Send (Fd_Out, Buffer, IC.size_t (Buffer'Length), 0);
+      Result := C_Send (Fd_Out, Destination, Buffer, IC.size_t (Buffer'Length));
       Success := Result >= IC.int (Buffer'Length);
       if not Success then
          C_Perror ("Error sending packet len: " & Buffer'Length'Img & ASCII.NUL);
