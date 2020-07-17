@@ -1,4 +1,4 @@
-#!/usr/bin/env -S python3 -O
+#!/usr/bin/env -S ./python -O
 
 import ipaddress
 import socket
