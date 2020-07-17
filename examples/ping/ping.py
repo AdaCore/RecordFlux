@@ -15,7 +15,6 @@ ICMP_DATA = bytes(list(range(0, 56)))
 
 
 def ping(target: str) -> None:
-    local = get_local_ip_address()
     target_ip = socket.gethostbyname(target)
 
     print(f"PING {target} ({target_ip})")
@@ -26,10 +25,7 @@ def ping(target: str) -> None:
     seq = 0
     while True:
         sock_out.sendto(
-            create_request(
-                int(ipaddress.IPv4Address(local)), int(ipaddress.IPv4Address(target_ip)), seq
-            ),
-            (target, 0),
+            create_request(0, int(ipaddress.IPv4Address(target_ip)), seq), (target, 0),
         )
 
         packet = parse_reply(sock_in.recv(4096))
@@ -102,14 +98,6 @@ def icmp_checksum(message: bytes) -> int:
         intermediary_result = add_ones_complement(intermediary_result, chunks[i])
 
     return intermediary_result ^ 0xFFFF
-
-
-def get_local_ip_address() -> str:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    address = s.getsockname()[0]
-    s.close()
-    return address
 
 
 if __name__ == "__main__":
