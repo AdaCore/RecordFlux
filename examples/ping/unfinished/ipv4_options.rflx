@@ -1,0 +1,25 @@
+package IPv4_Option is
+
+   type Option_Class is (Control => 0, Debugging_And_Measurement => 2) with Size => 2;
+   type Option_Number is mod 2**5;
+   type Option_Length is range 2 .. 2**8 - 1 with Size => 8;
+
+   type Option is
+      message
+         Copied : Boolean;         Option_Class : Option_Class;
+         Option_Number : Option_Number
+            then null
+               if Option_Class = Control,
+            then Option_Length
+               if Option_Number > 1;
+         Option_Length : Option_Length
+            then Option_Data
+               with Length => (Option_Length - 2) * 8
+               if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
+                  or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
+                  or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
+                  or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
+         Option_Data : Opaque;
+      end message;
+
+end IPv4_Option;

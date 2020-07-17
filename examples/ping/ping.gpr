@@ -1,15 +1,18 @@
 project Ping is
 
-   for Languages use ("RecordFlux");
-
-   for Source_Dirs use ("specs");
+   for Languages use ("RecordFlux", "Python", "Ada");
+   for Source_Dirs use (".", "specs", "unfinished", "generated");
 
    package Compiler is
-      for Driver ("RecordFlux") use "";
+      for Driver ("recordflux") use "";
    end Compiler;
 
    package Naming is
-      for Spec_Suffix ("RecordFlux") use ".rflx";
+      for Spec_Suffix ("recordflux") use ".rflx";
    end Naming;
+
+   package Recordflux is
+      for Output_Dir use "generated";
+   end Recordflux;
 
 end Ping;

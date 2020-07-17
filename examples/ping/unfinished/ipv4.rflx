@@ -1,0 +1,34 @@
+package IPv4 is
+   type Version is range 4 .. 4 with Size => 4;
+   type IHL is mod 2**4;
+   type DCSP is mod 2**6;
+   type ECN is mod 2**2;
+   type Total_Length is mod 2**16;
+   type Identification is mod 2**16;
+   type Fragment_Offset is mod 2**13;
+   type TTL is mod 2**8;
+   type Protocol is mod 2**8;
+   type Header_Checksum is mod 2**16;
+   type Address is mod 2**32;
+
+   type Packet is
+      message
+         Version : Version;
+         IHL : IHL;
+         DSCP : DCSP;
+         ECN : ECN;
+         Total_Length : Total_Length;
+         Identification : Identification;
+         Flag_R : Boolean;
+         Flag_DF : Boolean;
+         Flag_MF : Boolean;
+         Fragment_Offset : Fragment_Offset;
+         TTL : TTL;
+         Protocol : Protocol;
+         Header_Checksum : Header_Checksum;
+         Source : Address;
+         Destination : Address;
+         Options : Opaque;
+         Payload : Opaque;
+      end message;
+end IPv4;
