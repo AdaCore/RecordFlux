@@ -30,6 +30,7 @@ from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
+    Array,
     DerivedMessage,
     Enumeration,
     Field,
@@ -1231,3 +1232,27 @@ def test_parsed_field_locations() -> None:
         Field(ID("F1", Location((6, 21), end=(6, 22)))),
         Field(ID("F2", Location((7, 21), end=(7, 22)))),
     )
+
+
+def test_array_with_imported_element_type() -> None:
+    p = Parser()
+    p.parse_string(
+        """
+           with Test;
+           package Array_Test is
+              type T is array of Test.T;
+           end Array_Test;
+        """
+    )
+    p.parse_string(
+        """
+           package Test is
+              type T is mod 256;
+           end Test;
+        """
+    )
+    m = p.create_model()
+    arrays = [t for t in m.types if isinstance(t, Array)]
+    assert len(arrays) == 1
+    assert arrays[0].identifier == ID("Array_Test.T")
+    assert arrays[0].element_type == ModularInteger("Test.T", Number(256))

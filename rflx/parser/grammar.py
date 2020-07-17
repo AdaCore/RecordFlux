@@ -244,7 +244,7 @@ def enumeration_type_definition() -> Token:
 
 
 def array_type_definition() -> Token:
-    return (Keyword("array of") + unqualified_identifier()).setName("Array")
+    return (Keyword("array of") + qualified_identifier()).setName("Array")
 
 
 def message_type_definition() -> Token:
