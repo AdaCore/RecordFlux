@@ -565,7 +565,7 @@ class AbstractMessage(Type):
         raise NotImplementedError
 
     @abstractmethod
-    def proven(self) -> "Message":
+    def proven(self, skip_proof: bool = False) -> "Message":
         raise NotImplementedError
 
     @property
@@ -1430,10 +1430,11 @@ class Message(AbstractMessage):
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
+        skip_proof: bool = False,
     ) -> None:
         super().__init__(identifier, structure, types, location, error, state)
 
-        if not self.error.check() and (structure or types):
+        if not self.error.check() and (structure or types) and not skip_proof:
             self._prove()
 
         self.error.propagate()
@@ -1454,7 +1455,7 @@ class Message(AbstractMessage):
             error if error else self.error,
         )
 
-    def proven(self) -> "Message":
+    def proven(self, skip_proof: bool = False) -> "Message":
         return copy(self)
 
 
@@ -1496,7 +1497,7 @@ class DerivedMessage(Message):
             error if error else self.error,
         )
 
-    def proven(self) -> "DerivedMessage":
+    def proven(self, skip_proof: bool = False) -> "DerivedMessage":
         return copy(self)
 
 
@@ -1517,7 +1518,7 @@ class UnprovenMessage(AbstractMessage):
             error if error else self.error,
         )
 
-    def proven(self) -> Message:
+    def proven(self, skip_proof: bool = False) -> Message:
         return Message(
             identifier=self.identifier,
             structure=self.structure,
@@ -1525,6 +1526,7 @@ class UnprovenMessage(AbstractMessage):
             location=self.location,
             error=self.error,
             state=self._state,
+            skip_proof=skip_proof,
         )
 
     @ensure(lambda result: valid_message_field_types(result))
@@ -1650,9 +1652,9 @@ class UnprovenDerivedMessage(UnprovenMessage):
             error if error else self.error,
         )
 
-    def proven(self) -> DerivedMessage:
+    def proven(self, skip_proof: bool = False) -> DerivedMessage:
         return DerivedMessage(
-            self.identifier, self.base, self.structure, self.types, self.location, self.error
+            self.identifier, self.base, self.structure, self.types, self.location, self.error,
         )
 
 
