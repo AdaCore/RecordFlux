@@ -345,11 +345,7 @@ def graph(filename):
     return run([filename], mode="graph", options=["-d", output_dir()])
 
 
-def get_message_name(locations, filename):
-    name = GPS.File(filename).base_name()
-    loc = GPS.EditorBuffer.get().current_view().cursor()
-    column = loc.column()
-    line = loc.line()
+def get_message_name(locations, name, line, column):
     for message, pos in locations[name].items():
         if line > pos["start"]["line"] and line < pos["end"]["line"]:
             return message
@@ -363,9 +359,18 @@ def get_message_name(locations, filename):
 def display_message_graph(filename):
     with open(output_dir() + "/locations.json", "r") as f:
         locations = json.load(f)
-    message_name = get_message_name(locations, filename)
+    loc = GPS.EditorBuffer.get().current_view().cursor()
+    column = loc.column()
+    line = loc.line()
+    name = GPS.File(filename).base_name()
+    message_name = get_message_name(locations, name, line, column)
     if not message_name:
-        print("No message found under cursor")
+        GPS.MDI.dialog(
+            "No message found at {name}:{line}:{column}".format(
+                name=name, line=line, column=column
+            ),
+            "Error opening graph",
+        )
         return
 
     scrolled_window = Gtk.ScrolledWindow()
