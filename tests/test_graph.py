@@ -41,7 +41,7 @@ def test_empty_message_graph() -> None:
     m = Message("P.M", [], {})
     expected = """
         digraph "P.M" {
-            graph [ranksep="0.8 equally", splines=ortho];
+            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
@@ -63,7 +63,7 @@ def test_dot_graph() -> None:
     )
     expected = """
         digraph "P.M" {
-            graph [ranksep="0.8 equally", splines=ortho];
+            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
@@ -90,7 +90,7 @@ def test_dot_graph_with_condition() -> None:
     )
     expected = """
         digraph "P.M" {
-            graph [ranksep="0.8 equally", splines=ortho];
+            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
@@ -118,7 +118,7 @@ def test_dot_graph_with_double_edge() -> None:
     )
     expected = """
         digraph "P.M" {
-            graph [ranksep="0.8 equally", splines=ortho];
+            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
