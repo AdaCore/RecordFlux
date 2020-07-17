@@ -45,7 +45,7 @@ def test_empty_message_graph() -> None:
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
-            Initial -> Final [xlabel="(⊤, 0, ⋆)"];
+            Initial -> Final [xlabel="  (⊤, 0, ⋆)  "];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
@@ -68,8 +68,8 @@ def test_dot_graph() -> None:
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
             F1;
-            Initial -> F1 [xlabel="(⊤, 32, ⋆)"];
-            F1 -> Final [xlabel="(⊤, 0, ⋆)"];
+            Initial -> F1 [xlabel="  (⊤, 32, ⋆)  "];
+            F1 -> Final [xlabel="  (⊤, 0, ⋆)  "];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
@@ -95,8 +95,8 @@ def test_dot_graph_with_condition() -> None:
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
             F1;
-            Initial -> F1 [xlabel="(⊤, 32, ⋆)"];
-            F1 -> Final [xlabel="(F1 > 100, 0, ⋆)"];
+            Initial -> F1 [xlabel="  (⊤, 32, ⋆)  "];
+            F1 -> Final [xlabel="  (F1 > 100, 0, ⋆)  "];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
@@ -123,9 +123,9 @@ def test_dot_graph_with_double_edge() -> None:
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
             F1;
-            Initial -> F1 [xlabel="(⊤, 32, ⋆)"];
-            F1 -> Final [xlabel="(F1 > 100, 0, ⋆)"];
-            F1 -> Final [xlabel="(F1 < 50, 0, ⋆)"];
+            Initial -> F1 [xlabel="  (⊤, 32, ⋆)  "];
+            F1 -> Final [xlabel="  (F1 > 100, 0, ⋆)  "];
+            F1 -> Final [xlabel="  (F1 < 50, 0, ⋆)  "];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
