@@ -52,7 +52,8 @@ log = logging.getLogger(__name__)
 
 
 class Parser:
-    def __init__(self) -> None:
+    def __init__(self, skip_verification: bool = False) -> None:
+        self.skip_verification = skip_verification
         self.__specifications: Deque[Specification] = deque()
         self.__evaluated_specifications: Set[ID] = set()
         self.__types: Dict[ID, Type] = {**BUILTIN_TYPES, **INTERNAL_TYPES}
@@ -177,7 +178,7 @@ class Parser:
                     new_type = create_array(t, self.__types)
 
                 elif isinstance(t, MessageSpec):
-                    new_type = create_message(t, self.__types)
+                    new_type = create_message(t, self.__types, self.skip_verification)
 
                 elif isinstance(t, DerivationSpec):
                     new_type = create_derived_message(t, self.__types)
@@ -217,7 +218,9 @@ def create_array(array: ArraySpec, types: Mapping[ID, Type]) -> Array:
     return Array(array.identifier, element_type, array.location)
 
 
-def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
+def create_message(
+    message: MessageSpec, types: Mapping[ID, Type], skip_verification: bool = False
+) -> Message:
     components = list(message.components)
 
     if components and components[0].name:
@@ -277,7 +280,7 @@ def create_message(message: MessageSpec, types: Mapping[ID, Type]) -> Message:
     return (
         UnprovenMessage(message.identifier, structure, field_types, message.location, error)
         .merged()
-        .proven()
+        .proven(skip_verification)
     )
 
 
