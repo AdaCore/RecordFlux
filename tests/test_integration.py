@@ -182,3 +182,49 @@ def test_potential_name_conflicts_fields_literals() -> None:
            end Test;
         """
     )
+
+
+def test_array_with_imported_element_type_scalar() -> None:
+    p = Parser()
+    p.parse_string(
+        """
+           with Test;
+           package Array_Test is
+              type T is array of Test.T;
+           end Array_Test;
+        """
+    )
+    p.parse_string(
+        """
+           package Test is
+              type T is mod 256;
+           end Test;
+        """
+    )
+    _assert_compilable_code(p)
+
+
+def test_array_with_imported_element_type_message() -> None:
+    p = Parser()
+    p.parse_string(
+        """
+           with Test;
+           package Array_Test is
+              type T is array of Test.M;
+           end Array_Test;
+        """
+    )
+    p.parse_string(
+        """
+           package Test is
+              type M is
+                 message
+                    null
+                       then A
+                          with Length => 8;
+                    A : Opaque;
+                 end message;
+           end Test;
+        """
+    )
+    _assert_compilable_code(p)
