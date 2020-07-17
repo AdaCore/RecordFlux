@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cp $(readlink -f $(which python3)) python
+sudo setcap "cap_net_raw,cap_net_admin+ep" python

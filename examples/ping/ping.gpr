@@ -1,0 +1,15 @@
+project Ping is
+
+   for Languages use ("RecordFlux");
+
+   for Source_Dirs use ("specs");
+
+   package Compiler is
+      for Driver ("RecordFlux") use "";
+   end Compiler;
+
+   package Naming is
+      for Spec_Suffix ("RecordFlux") use ".rflx";
+   end Naming;
+
+end Ping;
