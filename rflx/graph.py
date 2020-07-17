@@ -51,7 +51,8 @@ class Graph:
         for f in self.__message.fields:
             result.add_node(Node(name=f.name))
         for l in self.__message.structure:
-            result.add_edge(Edge(src=l.source.name, dst=l.target.name, xlabel=self.__edge_label(l)))
+            label = self.__edge_label(l).replace("\n", "  \n  ")
+            result.add_edge(Edge(src=l.source.name, dst=l.target.name, xlabel=f"  {label}  "))
         result.add_node(
             Node(name="Final", fillcolor="#6f6f6f", shape="circle", width="0.5", label="")
         )
