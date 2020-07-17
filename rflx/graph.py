@@ -32,7 +32,9 @@ class Graph:
     def get(self) -> Dot:
         """Return pydot graph representation of message."""
         result = Dot(graph_name=self.__message.full_name)
-        result.set_graph_defaults(splines="ortho", ranksep="0.8 equally", pad="0.5")
+        result.set_graph_defaults(
+            splines="ortho", ranksep="0.8 equally", pad="0.5", truecolor="true", bgcolor="#00000000"
+        )
         result.set_edge_defaults(fontname="Fira Code", fontcolor="#6f6f6f", color="#6f6f6f")
         result.set_node_defaults(
             fontname="Arimo",
