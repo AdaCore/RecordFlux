@@ -2,10 +2,11 @@
 RecordFlux support for GNAT Studio
 """
 
+import json
 import os
 import re
 
-from gi.repository import Gdk, GLib, GObject, Gtk
+from gi.repository import Gtk
 
 import GPS
 import highlighter.common as hl
@@ -344,12 +345,28 @@ def graph(filename):
     return run([filename], mode="graph", options=["-d", output_dir()])
 
 
-def get_message_name():
-    return "ICMP_Message"
+def get_message_name(locations, filename):
+    name = GPS.File(filename).base_name()
+    loc = GPS.EditorBuffer.get().current_view().cursor()
+    column = loc.column()
+    line = loc.line()
+    for message, pos in locations[name].items():
+        if line > pos["start"]["line"] and line < pos["end"]["line"]:
+            return message
+        if line == pos["start"]["line"] and column >= pos["start"]["column"]:
+            return message
+        if line == pos["end"]["line"] and column <= pos["end"]["column"]:
+            return message
+    return None
 
 
 def display_message_graph(filename):
-    message_name = get_message_name()
+    with open(output_dir() + "/locations.json", "r") as f:
+        locations = json.load(f)
+    message_name = get_message_name(locations, filename)
+    if not message_name:
+        print("No message found under cursor")
+        return
     scrolled_window = Gtk.ScrolledWindow()
     scrolled_window.set_border_width(10)
     scrolled_window.set_policy(Gtk.PolicyType.ALWAYS, Gtk.PolicyType.ALWAYS)
