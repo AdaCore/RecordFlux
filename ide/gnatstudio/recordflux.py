@@ -6,7 +6,7 @@ import json
 import os
 import re
 
-from gi.repository import Gtk
+from gi.repository import Gdk, Gtk
 
 import GPS
 import highlighter.common as hl
@@ -367,9 +367,11 @@ def display_message_graph(filename):
     if not message_name:
         print("No message found under cursor")
         return
+
     scrolled_window = Gtk.ScrolledWindow()
-    scrolled_window.set_border_width(10)
+    scrolled_window.set_border_width(0)
     scrolled_window.set_policy(Gtk.PolicyType.ALWAYS, Gtk.PolicyType.ALWAYS)
+    scrolled_window.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA())
     graph = Gtk.Image()
     graph.set_from_file(output_dir() + "/" + message_name + ".svg")
     scrolled_window.add_with_viewport(graph)
