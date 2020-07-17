@@ -2203,23 +2203,23 @@ class Generator:
             ]
             array_package = GenericPackageInstantiation(
                 self.prefix * array_type.identifier,
-                const.MESSAGE_SEQUENCE_PACKAGE,
+                self.prefix * const.MESSAGE_SEQUENCE_PACKAGE,
                 [
                     self.prefix * const.TYPES_PACKAGE,
-                    f"{element_type.name}.Context",
-                    f"{element_type.name}.Initialize",
-                    f"{element_type.name}.Take_Buffer",
-                    f"{element_type.name}.Has_Buffer",
-                    f"{element_type.name}.Message_Last",
-                    f"{element_type.name}.Initialized",
-                    f"{element_type.name}.Structural_Valid_Message",
+                    self.prefix * element_type.identifier * "Context",
+                    self.prefix * element_type.identifier * "Initialize",
+                    self.prefix * element_type.identifier * "Take_Buffer",
+                    self.prefix * element_type.identifier * "Has_Buffer",
+                    self.prefix * element_type.identifier * "Message_Last",
+                    self.prefix * element_type.identifier * "Initialized",
+                    self.prefix * element_type.identifier * "Structural_Valid_Message",
                 ],
             )
         elif isinstance(element_type, Scalar):
             array_context = [
                 Pragma("SPARK_Mode"),
                 WithClause(self.prefix * const.SCALAR_SEQUENCE_PACKAGE),
-                WithClause(self.prefix * package_name),
+                WithClause(self.prefix * element_type.package.name),
                 WithClause(self.prefix * const.TYPES_PACKAGE),
             ]
             array_package = GenericPackageInstantiation(
@@ -2227,13 +2227,17 @@ class Generator:
                 self.prefix * const.SCALAR_SEQUENCE_PACKAGE,
                 [
                     self.prefix * const.TYPES_PACKAGE,
-                    element_type.name,
-                    common.base_type_name(element_type)
-                    if not isinstance(element_type, ModularInteger)
-                    else element_type.name,
-                    "Valid",
-                    "To_Actual",
-                    "To_Base",
+                    self.prefix * element_type.identifier,
+                    self.prefix
+                    * element_type.package.name
+                    * (
+                        common.base_type_name(element_type)
+                        if not isinstance(element_type, ModularInteger)
+                        else element_type.name
+                    ),
+                    self.prefix * element_type.package.name * "Valid",
+                    self.prefix * element_type.package.name * "To_Actual",
+                    self.prefix * element_type.package.name * "To_Base",
                 ],
             )
         else:
