@@ -28,7 +28,7 @@ check_black:
 	black -l 100 --check $(python-packages) ide/gnatstudio
 
 check_isort:
-	isort -rc -c $(python-packages) ide/gnatstudio
+	isort -rc -df -c $(python-packages) ide/gnatstudio
 
 check_flake8:
 	flake8 $(python-packages) ide/gnatstudio
