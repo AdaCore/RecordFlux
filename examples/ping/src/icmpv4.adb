@@ -1,10 +1,43 @@
 with Basalt.Strings_Generic;
-with Ada.Text_IO;
 with Interfaces;
+with RFLX.IPv4.Packet;
+with RFLX.IPv4.Contains;
+with RFLX.ICMP;
+with RFLX.ICMP.Message;
+with RFLX.RFLX_Types;
+with Generic_Checksum;
+with Ada.Text_IO;
 
 package body ICMPv4 with
    SPARK_Mode
 is
+
+   package Checksum is new Generic_Checksum (RFLX.RFLX_Types);
+   function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.ICMP.Sequence_Number);
+   function Image is new Basalt.Strings_Generic.Image_Ranged (RFLX.IPv4.Total_Length);
+
+   function Image (Addr : RFLX.IPv4.Address) return String;
+
+   Sequence : RFLX.ICMP.Sequence_Number := 0;
+
+   function Image (Addr : RFLX.IPv4.Address) return String
+   is
+      use type RFLX.IPv4.Address;
+      subtype Octet is RFLX.IPv4.Address range 0 .. 255;
+      function Img is new Basalt.Strings_Generic.Image_Modular (Octet);
+      type Octet_Address is array (1 .. 4) of Octet;
+      Addr_Var : RFLX.IPv4.Address := Addr;
+      Address : Octet_Address;
+   begin
+      for O of Address loop
+         O := Addr_Var and 16#ff#;
+         Addr_Var := Addr_Var / 256;
+      end loop;
+      return Img (Address (1)) & "."
+         & Img (Address (2)) & "."
+         & Img (Address (3)) & "."
+         & Img (Address (4));
+   end Image;
 
    ----------------
    -- To_Address --
@@ -77,9 +110,54 @@ is
 
    procedure Generate (Buf  : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr;
                        Addr :        RFLX.IPv4.Address) is
+      use type RFLX.ICMP.Sequence_Number;
+      IP_Context : RFLX.IPv4.Packet.Context;
+      ICMP_Context : RFLX.ICMP.Message.Context;
+      Data : constant RFLX.RFLX_Builtin_Types.Bytes (1 .. 8) := (others => 65);
+      function Valid_Length (L : RFLX.RFLX_Builtin_Types.Length) return Boolean is
+         (L = Data'Length);
+      procedure Process_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes) with
+         Pre => Valid_Length (Buffer'Length);
+      procedure Process_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes)
+      is
+      begin
+         Buffer := Data;
+      end Process_Data;
+      procedure Set_Data is new RFLX.ICMP.Message.Set_Bounded_Data (Process_Data, Valid_Length);
    begin
-      pragma Compile_Time_Warning (Standard.True, "Generate unimplemented");
-      raise Program_Error with "Unimplemented procedure Generate";
+      RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
+      RFLX.IPv4.Packet.Set_Version (IP_Context, 4);
+      RFLX.IPv4.Packet.Set_IHL (IP_Context, 5);
+      RFLX.IPv4.Packet.Set_DSCP (IP_Context, 0);
+      RFLX.IPv4.Packet.Set_ECN (IP_Context, 0);
+      RFLX.IPv4.Packet.Set_Total_Length (IP_Context, 36);
+      RFLX.IPv4.Packet.Set_Identification (IP_Context, 1);
+      RFLX.IPv4.Packet.Set_Flag_R (IP_Context, False);
+      RFLX.IPv4.Packet.Set_Flag_DF (IP_Context, False);
+      RFLX.IPv4.Packet.Set_Flag_MF (IP_Context, False);
+      RFLX.IPv4.Packet.Set_Fragment_Offset (IP_Context, 0);
+      RFLX.IPv4.Packet.Set_TTL (IP_Context, 64);
+      RFLX.IPv4.Packet.Set_Protocol (IP_Context, RFLX.IPv4.PROTOCOL_ICMP);
+      RFLX.IPv4.Packet.Set_Header_Checksum (IP_Context, 0);
+      RFLX.IPv4.Packet.Set_Source (IP_Context, 0);
+      RFLX.IPv4.Packet.Set_Destination (IP_Context, Addr);
+      RFLX.IPv4.Packet.Initialize_Payload (IP_Context);
+      if RFLX.IPv4.Contains.ICMP_Message_In_Packet_Payload (IP_Context) then
+         RFLX.IPv4.Contains.Switch_To_Payload (IP_Context, ICMP_Context);
+         RFLX.ICMP.Message.Set_Tag (ICMP_Context, RFLX.ICMP.Echo_Request);
+         RFLX.ICMP.Message.Set_Code_Zero (ICMP_Context, 0);
+         RFLX.ICMP.Message.Set_Checksum (ICMP_Context,
+                                         Checksum.Echo_Request_Reply_Checksum
+                                            (RFLX.ICMP.Echo_Request,
+                                             0, 0, Sequence, Data));
+         RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
+         RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
+         Set_Data (ICMP_Context, 64);
+         RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
+         Sequence := Sequence + 1;
+      else
+         RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
+      end if;
    end Generate;
 
    -----------
@@ -87,9 +165,32 @@ is
    -----------
 
    procedure Print (Buf : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr) is
+      IP_Context   : RFLX.IPv4.Packet.Context;
+      ICMP_Context : RFLX.ICMP.Message.Context;
+      Length       : RFLX.IPv4.Total_Length;
+      Source       : RFLX.IPv4.Address;
+      Seq          : RFLX.ICMP.Sequence_Number;
    begin
-      pragma Compile_Time_Warning (Standard.True, "Print unimplemented");
-      raise Program_Error with "Unimplemented procedure Print";
+      RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
+      RFLX.IPv4.Packet.Verify_Message (IP_Context);
+      if
+         not RFLX.IPv4.Packet.Structural_Valid_Message (IP_Context)
+         or else not RFLX.IPv4.Contains.ICMP_Message_In_Packet_Payload (IP_Context)
+      then
+         RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
+         return;
+      end if;
+      Length := RFLX.IPv4.Packet.Get_Total_Length (IP_Context);
+      Source := RFLX.IPv4.Packet.Get_Source (IP_Context);
+      RFLX.IPv4.Contains.Switch_To_Payload (IP_Context, ICMP_Context);
+      RFLX.ICMP.Message.Verify_Message (ICMP_Context);
+      if not RFLX.ICMP.Message.Structural_Valid_Message (ICMP_Context) then
+         RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
+         return;
+      end if;
+      Seq := RFLX.ICMP.Message.Get_Sequence_Number (ICMP_Context);
+      RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
+      Ada.Text_IO.Put_Line (Image (Length) & " bytes from " & Image (Source) & ": icmp_seq=" & Image (Seq));
    end Print;
 
 end ICMPv4;
