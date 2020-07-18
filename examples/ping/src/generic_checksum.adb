@@ -23,15 +23,20 @@ is
       use type Types.Index;
       Checksum : ICMP.Checksum := Shl (ICMP.Checksum (ICMP.To_Base (Tag)))
                                       + ICMP.Checksum (ICMP.To_Base (Code));
-      Index    : Types.Index := Data'First;
+      Index    : Types.Index;
    begin
       Checksum := Add (Checksum, Add (ICMP.Checksum (Identifier), ICMP.Checksum (Sequence_Number)));
-      while Index < Data'Last loop
-         Checksum := Add (Checksum, Shl (To_Checksum (Data (Index))) + To_Checksum (Data (Index + 1)));
-         Index    := Index + 2;
-      end loop;
-      if Index = Data'Last then
-         Checksum := Add (Checksum, Shl (To_Checksum (Data (Index))));
+      if Data'Length > 0 then
+         Index := Data'First;
+         while Index < Data'Last loop
+            pragma Loop_Invariant (Index in Data'Range);
+            Checksum := Add (Checksum, Shl (To_Checksum (Data (Index))) + To_Checksum (Data (Index + 1)));
+            exit when Index >= Data'Last - 1;
+            Index    := Index + 2;
+         end loop;
+         if Index = Data'Last then
+            Checksum := Add (Checksum, Shl (To_Checksum (Data (Index))));
+         end if;
       end if;
       return not Checksum;
    end Echo_Request_Reply_Checksum;

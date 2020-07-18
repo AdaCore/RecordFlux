@@ -1,8 +1,9 @@
 with System;
 with RFLX;
 
-package body Generic_Socket
-  with Refined_State => (Network => (FD_In, FD_Out))
+package body Generic_Socket with
+   SPARK_Mode,
+   Refined_State => (Network => (FD_In, FD_Out))
 is
    package IC renames Interfaces.C;
    use type IC.int;
