@@ -14,6 +14,7 @@ from rflx.ada import (
     OutParameter,
     Parameter,
     Postcondition,
+    Pragma,
     Precondition,
     ProcedureSpecification,
     Subprogram,
@@ -53,7 +54,17 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID
-from rflx.model import BUILTINS_PACKAGE, FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
+from rflx.model import (
+    BUILTINS_PACKAGE,
+    FINAL,
+    Array,
+    Enumeration,
+    Field,
+    Message,
+    Opaque,
+    Scalar,
+    Type,
+)
 
 from . import common, const
 
@@ -374,6 +385,105 @@ class GeneratorGenerator:
                     ],
                 )
                 for f, t in scalar_fields.items()
+            ],
+        )
+
+    def create_composite_setter_empty_procedures(self, message: Message) -> UnitPart:
+        def specification(field: Field) -> ProcedureSpecification:
+            return ProcedureSpecification(
+                f"Set_{field.name}_Empty", [InOutParameter(["Ctx"], "Context")]
+            )
+
+        return UnitPart(
+            [
+                Pragma("Warnings", ["Off", '"precondition is always False"']),
+                *[
+                    SubprogramDeclaration(
+                        specification(f),
+                        [
+                            Precondition(
+                                AndThen(
+                                    *self.setter_preconditions(f),
+                                    *self.unbounded_composite_setter_preconditions(message, f),
+                                    Equal(
+                                        Call(
+                                            "Field_Length",
+                                            [Variable("Ctx"), Variable(f.affixed_name)],
+                                        ),
+                                        Number(0),
+                                    ),
+                                )
+                            ),
+                            Postcondition(And(*self.composite_setter_postconditions(message, f))),
+                        ],
+                    )
+                    for f, t in message.types.items()
+                    if isinstance(t, (Array, Opaque))
+                ],
+                Pragma("Warnings", ["On", '"precondition is always False"']),
+            ],
+            [
+                SubprogramBody(
+                    specification(f),
+                    [
+                        ObjectDeclaration(
+                            ["First"],
+                            const.TYPES_BIT_INDEX,
+                            Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
+                            True,
+                        ),
+                        ObjectDeclaration(
+                            ["Last"],
+                            const.TYPES_BIT_INDEX,
+                            Call("Field_Last", [Variable("Ctx"), Variable(f.affixed_name)]),
+                            True,
+                        ),
+                    ],
+                    [
+                        CallStatement(
+                            "Reset_Dependent_Fields", [Variable("Ctx"), Variable(f.affixed_name)],
+                        ),
+                        Assignment(
+                            "Ctx",
+                            Aggregate(
+                                Variable("Ctx.Buffer_First"),
+                                Variable("Ctx.Buffer_Last"),
+                                Variable("Ctx.First"),
+                                Variable("Last"),
+                                Variable("Ctx.Buffer"),
+                                Variable("Ctx.Cursors"),
+                            ),
+                        ),
+                        Assignment(
+                            Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
+                            NamedAggregate(
+                                ("State", Variable("S_Valid")),
+                                ("First", Variable("First")),
+                                ("Last", Variable("Last")),
+                                ("Value", NamedAggregate(("Fld", Variable(f.affixed_name)))),
+                                (
+                                    "Predecessor",
+                                    Selected(
+                                        Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
+                                        "Predecessor",
+                                    ),
+                                ),
+                            ),
+                        ),
+                        Assignment(
+                            Indexed(
+                                Variable("Ctx.Cursors"),
+                                Call("Successor", [Variable("Ctx"), Variable(f.affixed_name)]),
+                            ),
+                            NamedAggregate(
+                                ("State", Variable("S_Invalid")),
+                                ("Predecessor", Variable(f.affixed_name)),
+                            ),
+                        ),
+                    ],
+                )
+                for f, t in message.types.items()
+                if isinstance(t, (Array, Opaque))
             ],
         )
 

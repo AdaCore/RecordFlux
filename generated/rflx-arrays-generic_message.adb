@@ -583,6 +583,46 @@ is
       Ctx.Cursors (Successor (Ctx, F_Length)) := (State => S_Invalid, Predecessor => F_Length);
    end Set_Length;
 
+   procedure Set_Modular_Vector_Empty (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);
+   begin
+      Reset_Dependent_Fields (Ctx, F_Modular_Vector);
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Cursors (F_Modular_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Modular_Vector), Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
+   end Set_Modular_Vector_Empty;
+
+   procedure Set_Range_Vector_Empty (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Range_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Range_Vector);
+   begin
+      Reset_Dependent_Fields (Ctx, F_Range_Vector);
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Cursors (F_Range_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Range_Vector), Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Range_Vector)) := (State => S_Invalid, Predecessor => F_Range_Vector);
+   end Set_Range_Vector_Empty;
+
+   procedure Set_Enumeration_Vector_Empty (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Enumeration_Vector);
+   begin
+      Reset_Dependent_Fields (Ctx, F_Enumeration_Vector);
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Cursors (F_Enumeration_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Enumeration_Vector), Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Enumeration_Vector)) := (State => S_Invalid, Predecessor => F_Enumeration_Vector);
+   end Set_Enumeration_Vector_Empty;
+
+   procedure Set_AV_Enumeration_Vector_Empty (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_AV_Enumeration_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_AV_Enumeration_Vector);
+   begin
+      Reset_Dependent_Fields (Ctx, F_AV_Enumeration_Vector);
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_AV_Enumeration_Vector), Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_AV_Enumeration_Vector)) := (State => S_Invalid, Predecessor => F_AV_Enumeration_Vector);
+   end Set_AV_Enumeration_Vector_Empty;
+
    procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);

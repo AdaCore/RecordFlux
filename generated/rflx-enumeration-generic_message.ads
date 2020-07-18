@@ -203,6 +203,10 @@ is
        and Predecessor (Ctx, F_Priority) = Predecessor (Ctx, F_Priority)'Old
        and Valid_Next (Ctx, F_Priority) = Valid_Next (Ctx, F_Priority)'Old;
 
+   pragma Warnings (Off, "precondition is always False");
+
+   pragma Warnings (On, "precondition is always False");
+
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),

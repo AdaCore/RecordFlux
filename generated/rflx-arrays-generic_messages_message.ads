@@ -220,6 +220,31 @@ is
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old;
 
+   pragma Warnings (Off, "precondition is always False");
+
+   procedure Set_Messages_Empty (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Messages)
+       and then Field_Last (Ctx, F_Messages) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Messages))
+       and then Available_Space (Ctx, F_Messages) >= Field_Length (Ctx, F_Messages)
+       and then Field_First (Ctx, F_Messages) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Messages) mod Types.Byte'Size = 0
+       and then Field_Length (Ctx, F_Messages) = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Predecessor (Ctx, F_Messages) = Predecessor (Ctx, F_Messages)'Old
+       and Valid_Next (Ctx, F_Messages) = Valid_Next (Ctx, F_Messages)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Messages);
+
+   pragma Warnings (On, "precondition is always False");
+
    procedure Switch_To_Messages (Ctx : in out Context; Seq_Ctx : out Inner_Messages_Sequence.Context) with
      Pre =>
        not Ctx'Constrained

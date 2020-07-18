@@ -316,6 +316,7 @@ package body RFLX.IPv4.Tests is
       IPv4.Packet.Set_Header_Checksum (Context, 16#7CBE#);
       IPv4.Packet.Set_Source (Context, 16#7f000001#);
       IPv4.Packet.Set_Destination (Context, 16#7f000001#);
+      IPv4.Packet.Set_Options_Empty (Context);
       Data := (0, 53, 0, 53, 0, 24, 1, 82, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
       Set_Payload (Context);
 

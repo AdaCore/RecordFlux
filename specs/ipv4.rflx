@@ -4,11 +4,11 @@ package IPv4 is
    type IHL is range 5 .. 15 with Size => 4;
    type DCSP is mod 2**6;
    type ECN is mod 2**2;
-   type Total_Length is range 20 .. 2**16 - 1 with Size => 16;
+   type Total_Length is mod 2**16;
    type Identification is mod 2**16;
    type Fragment_Offset is mod 2**13;
    type TTL is mod 2**8;
-   type Protocol is (PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
+   type Protocol is (PROTOCOL_ICMP => 1, PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
    type Header_Checksum is mod 2**16;
    type Address is mod 2**32;
 
@@ -58,12 +58,8 @@ package IPv4 is
          Header_Checksum : Header_Checksum;
          Source : Address;
          Destination : Address
-            then Payload
-               with Length => Total_Length * 8 - (Destination'Last - Version'First + 1)
-               if IHL = 5,
             then Options
-               with Length => IHL * 32 - (5 * 32)
-               if IHL > 5;
+               with Length => (IHL - 5) * 32;
          Options : Options
             then Payload
                with Length => Total_Length * 8 - (IHL * 32);

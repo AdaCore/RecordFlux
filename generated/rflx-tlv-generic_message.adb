@@ -492,6 +492,16 @@ is
       Ctx.Cursors (Successor (Ctx, F_Length)) := (State => S_Invalid, Predecessor => F_Length);
    end Set_Length;
 
+   procedure Set_Value_Empty (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Value);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Value);
+   begin
+      Reset_Dependent_Fields (Ctx, F_Value);
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Cursors (F_Value) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Value), Predecessor => Ctx.Cursors (F_Value).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Value)) := (State => S_Invalid, Predecessor => F_Value);
+   end Set_Value_Empty;
+
    procedure Set_Value (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Value);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Value);
