@@ -14,7 +14,7 @@ is
 
    package Checksum is new Generic_Checksum (RFLX.RFLX_Types);
    function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.ICMP.Sequence_Number);
-   function Image is new Basalt.Strings_Generic.Image_Ranged (RFLX.IPv4.Total_Length);
+   function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.IPv4.Total_Length);
 
    function Image (Addr : RFLX.IPv4.Address) return String;
 
@@ -141,6 +141,7 @@ is
       RFLX.IPv4.Packet.Set_Header_Checksum (IP_Context, 0);
       RFLX.IPv4.Packet.Set_Source (IP_Context, 0);
       RFLX.IPv4.Packet.Set_Destination (IP_Context, Addr);
+      RFLX.IPv4.Packet.Set_Options_Empty (IP_Context);
       RFLX.IPv4.Packet.Initialize_Payload (IP_Context);
       if RFLX.IPv4.Contains.ICMP_Message_In_Packet_Payload (IP_Context) then
          RFLX.IPv4.Contains.Switch_To_Payload (IP_Context, ICMP_Context);
