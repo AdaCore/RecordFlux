@@ -9,7 +9,7 @@ generic
 package Generic_Socket
   with Abstract_State => Network
 is
-   procedure Setup (Iface : String)
+   procedure Setup
    with
       Global => (Output => Network);
 

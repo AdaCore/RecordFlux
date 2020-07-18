@@ -17,7 +17,7 @@ is
    FD_In  : IC.int := -1;
    FD_Out : IC.int := -1;
 
-   procedure Setup (Iface : String)
+   procedure Setup
    is
       function C_Socket (Domain   : IC.int;
                          C_Type   : IC.int;
@@ -27,38 +27,19 @@ is
             Import,
             Convention => C,
             External_Name => "socket";
-      function C_Setsockopt (FD : IC.int;
-                             Level : IC.int;
-                             Opt : IC.int;
-                             Val : String;
-                             Len : IC.int) return IC.int with
-         Global => null,
-         Import,
-         Convention => C,
-         External_Name => "setsockopt";
       PF_INET         : constant IC.int := 2;
       SOCK_RAW        : constant IC.int := 3;
       IPPROTO_ICMP    : constant IC.int := 1;
       IPPROTO_RAW     : constant IC.int := 255;
-      SOL_SOCKET      : constant IC.int := 1;
-      SO_BINDTODEVICE : constant IC.int := 25;
    begin
       FD_In := C_Socket (PF_INET, SOCK_RAW, IPPROTO_ICMP);
       if FD_In < 0 then
          C_Perror ("C_Socket (PF_INET, SOCK_RAW, IPPROTO_ICMP)" & ASCII.NUL);
          return;
       end if;
-      if C_Setsockopt (FD_In, SOL_SOCKET, SO_BINDTODEVICE, Iface & ASCII.NUL, Iface'Length) < 0 then
-         C_Perror ("C_Setsockopt (FD_In, SOL_SOCKET, SO_BINDTODEVICE, Iface & ASCII.NUL, Iface'Length)" & ASCII.NUL);
-         return;
-      end if;
       FD_Out := C_Socket (PF_Inet, SOCK_RAW, IPPROTO_RAW);
       if FD_Out < 0 then
          C_Perror ("C_Socket (PF_Inet, SOCK_RAW, IPPROTO_RAW)" & ASCII.NUL);
-         return;
-      end if;
-      if C_Setsockopt (FD_Out, SOL_SOCKET, SO_BINDTODEVICE, Iface & ASCII.NUL, Iface'Length) < 0 then
-         C_Perror ("C_Setsockopt (FD_Out, SOL_SOCKET, SO_BINDTODEVICE, Iface & ASCII.NUL, Iface'Length)" & ASCII.NUL);
          return;
       end if;
    end Setup;
