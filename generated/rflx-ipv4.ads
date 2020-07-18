@@ -132,11 +132,7 @@ is
      Pre =>
        Valid (Val);
 
-   type Total_Length_Base is mod 2**16 with
-     Annotate =>
-       (GNATprove, No_Wrap_Around);
-
-   type Total_Length is range 20 .. 2**16 - 1 with
+   type Total_Length is mod 2**16 with
      Size =>
        16;
 
@@ -150,14 +146,22 @@ is
 
    pragma Warnings (On, "precondition is * false");
 
-   function Valid (Val : RFLX.IPv4.Total_Length_Base) return Boolean is
-     (Val >= 20);
+   pragma Warnings (Off, "unused variable ""Val""");
 
-   function To_Base (Val : RFLX.IPv4.Total_Length) return RFLX.IPv4.Total_Length_Base is
-     (RFLX.IPv4.Total_Length_Base (Val));
+   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
 
-   function To_Actual (Val : RFLX.IPv4.Total_Length_Base) return RFLX.IPv4.Total_Length is
-     (RFLX.IPv4.Total_Length (Val))
+   function Valid (Val : RFLX.IPv4.Total_Length) return Boolean is
+     (True);
+
+   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
+
+   pragma Warnings (On, "unused variable ""Val""");
+
+   function To_Base (Val : RFLX.IPv4.Total_Length) return RFLX.IPv4.Total_Length is
+     (Val);
+
+   function To_Actual (Val : RFLX.IPv4.Total_Length) return RFLX.IPv4.Total_Length is
+     (Val)
     with
      Pre =>
        Valid (Val);
@@ -266,10 +270,10 @@ is
 
    type Protocol_Base is mod 2**8;
 
-   type Protocol_Enum is (PROTOCOL_UDP) with
+   type Protocol_Enum is (PROTOCOL_ICMP, PROTOCOL_UDP) with
      Size =>
        8;
-   for Protocol_Enum use (PROTOCOL_UDP => 17);
+   for Protocol_Enum use (PROTOCOL_ICMP => 1, PROTOCOL_UDP => 17);
 
    type Protocol (Known : Boolean := False) is
       record
@@ -304,6 +308,8 @@ is
 
    function To_Base (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.IPv4.Protocol_Base is
      ((case Enum is
+          when PROTOCOL_ICMP =>
+             1,
           when PROTOCOL_UDP =>
              17));
 
@@ -312,6 +318,8 @@ is
 
    function To_Actual (Val : RFLX.IPv4.Protocol_Base) return RFLX.IPv4.Protocol is
      ((case Val is
+          when 1 =>
+             (True, PROTOCOL_ICMP),
           when 17 =>
              (True, PROTOCOL_UDP),
           when others =>

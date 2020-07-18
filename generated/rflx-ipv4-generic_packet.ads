@@ -53,7 +53,7 @@ is
             when F_ECN =>
                ECN_Value : RFLX.IPv4.ECN;
             when F_Total_Length =>
-               Total_Length_Value : RFLX.IPv4.Total_Length_Base;
+               Total_Length_Value : RFLX.IPv4.Total_Length;
             when F_Identification =>
                Identification_Value : RFLX.IPv4.Identification;
             when F_Flag_R =>
@@ -922,16 +922,8 @@ is
        and Get_Destination (Ctx) = Val
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
-       and (if
-               Get_IHL (Ctx) = 5
-            then
-               Predecessor (Ctx, F_Payload) = F_Destination
-               and Valid_Next (Ctx, F_Payload))
-       and (if
-               Get_IHL (Ctx) > 5
-            then
-               Predecessor (Ctx, F_Options) = F_Destination
-               and Valid_Next (Ctx, F_Options))
+       and (Predecessor (Ctx, F_Options) = F_Destination
+            and Valid_Next (Ctx, F_Options))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -965,6 +957,79 @@ is
        and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
        and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old
        and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old;
+
+   procedure Set_Options_Empty (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Options)
+       and then Field_Last (Ctx, F_Options) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Options))
+       and then Available_Space (Ctx, F_Options) >= Field_Length (Ctx, F_Options)
+       and then Field_First (Ctx, F_Options) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Options) mod Types.Byte'Size = 0
+       and then Field_Length (Ctx, F_Options) = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Invalid (Ctx, F_Payload)
+       and (Predecessor (Ctx, F_Payload) = F_Options
+            and Valid_Next (Ctx, F_Payload))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
+       and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
+       and Get_Version (Ctx) = Get_Version (Ctx)'Old
+       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and Structural_Valid (Ctx, F_Options);
+
+   procedure Set_Payload_Empty (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Payload)
+       and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Payload))
+       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Field_Length (Ctx, F_Payload) = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
+       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Get_Version (Ctx) = Get_Version (Ctx)'Old
+       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and Structural_Valid (Ctx, F_Payload);
 
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
@@ -1302,16 +1367,12 @@ private
                              Structural_Valid (Cursors (F_Options))
                           then
                              (Valid (Cursors (F_Destination))
-                              and then Cursors (F_Options).Predecessor = F_Destination
-                              and then Cursors (F_IHL).Value.IHL_Value > 5))
+                              and then Cursors (F_Options).Predecessor = F_Destination))
                 and then (if
                              Structural_Valid (Cursors (F_Payload))
                           then
-                             (Valid (Cursors (F_Destination))
-                              and then Cursors (F_Payload).Predecessor = F_Destination
-                              and then Cursors (F_IHL).Value.IHL_Value = 5)
-                             or (Structural_Valid (Cursors (F_Options))
-                                 and then Cursors (F_Payload).Predecessor = F_Options)))
+                             (Structural_Valid (Cursors (F_Options))
+                              and then Cursors (F_Payload).Predecessor = F_Options)))
       and then ((if
                     Invalid (Cursors (F_Version))
                  then
@@ -1373,8 +1434,7 @@ private
                           then
                              Invalid (Cursors (F_Options)))
                 and then (if
-                             Invalid (Cursors (F_Destination))
-                             and then Invalid (Cursors (F_Options))
+                             Invalid (Cursors (F_Options))
                           then
                              Invalid (Cursors (F_Payload))))
       and then (if
@@ -1404,7 +1464,7 @@ private
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Total_Length))
                                                                     then
-                                                                       (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = RFLX.IPv4.Total_Length_Base'Size
+                                                                       (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1) = RFLX.IPv4.Total_Length'Size
                                                                        and then Cursors (F_Total_Length).Predecessor = F_ECN
                                                                        and then Cursors (F_Total_Length).First = (Cursors (F_ECN).Last + 1)
                                                                        and then (if
@@ -1470,17 +1530,9 @@ private
                                                                                                                                                                                                          and then Cursors (F_Destination).Predecessor = F_Source
                                                                                                                                                                                                          and then Cursors (F_Destination).First = (Cursors (F_Source).Last + 1)
                                                                                                                                                                                                          and then (if
-                                                                                                                                                                                                                      Structural_Valid (Cursors (F_Payload))
-                                                                                                                                                                                                                      and then Cursors (F_IHL).Value.IHL_Value = 5
-                                                                                                                                                                                                                   then
-                                                                                                                                                                                                                      (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1) = (Types.Bit_Length (Cursors (F_Total_Length).Value.Total_Length_Value) * 8 - Cursors (F_Destination).Last + Cursors (F_Version).First - 1)
-                                                                                                                                                                                                                      and then Cursors (F_Payload).Predecessor = F_Destination
-                                                                                                                                                                                                                      and then Cursors (F_Payload).First = (Cursors (F_Destination).Last + 1))
-                                                                                                                                                                                                         and then (if
                                                                                                                                                                                                                       Structural_Valid (Cursors (F_Options))
-                                                                                                                                                                                                                      and then Cursors (F_IHL).Value.IHL_Value > 5
                                                                                                                                                                                                                    then
-                                                                                                                                                                                                                      (Cursors (F_Options).Last - Cursors (F_Options).First + 1) = (Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) * 32 - 160)
+                                                                                                                                                                                                                      (Cursors (F_Options).Last - Cursors (F_Options).First + 1) = ((Types.Bit_Length (Cursors (F_IHL).Value.IHL_Value) - 5)) * 32
                                                                                                                                                                                                                       and then Cursors (F_Options).Predecessor = F_Destination
                                                                                                                                                                                                                       and then Cursors (F_Options).First = (Cursors (F_Destination).Last + 1)
                                                                                                                                                                                                                       and then (if

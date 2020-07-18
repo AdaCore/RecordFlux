@@ -247,6 +247,32 @@ is
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old;
 
+   procedure Set_Modular_Vector_Empty (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Modular_Vector)
+       and then Field_Last (Ctx, F_Modular_Vector) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Modular_Vector))
+       and then Available_Space (Ctx, F_Modular_Vector) >= Field_Length (Ctx, F_Modular_Vector)
+       and then Field_First (Ctx, F_Modular_Vector) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Modular_Vector) mod Types.Byte'Size = 0
+       and then Field_Length (Ctx, F_Modular_Vector) = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Invalid (Ctx, F_Range_Vector)
+       and Invalid (Ctx, F_Enumeration_Vector)
+       and Invalid (Ctx, F_AV_Enumeration_Vector)
+       and (Predecessor (Ctx, F_Range_Vector) = F_Modular_Vector
+            and Valid_Next (Ctx, F_Range_Vector))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
+       and Valid_Next (Ctx, F_Modular_Vector) = Valid_Next (Ctx, F_Modular_Vector)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Modular_Vector);
+
    procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) with
      Pre =>
        not Ctx'Constrained

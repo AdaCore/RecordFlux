@@ -252,6 +252,28 @@ is
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old;
 
+   procedure Set_Value_Empty (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Value)
+       and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Value))
+       and then Available_Space (Ctx, F_Value) >= Field_Length (Ctx, F_Value)
+       and then Field_First (Ctx, F_Value) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Value) mod Types.Byte'Size = 0
+       and then Field_Length (Ctx, F_Value) = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
+       and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
+       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Value);
+
    generic
       with procedure Process_Value (Value : out Types.Bytes);
       with function Valid_Length (Length : Types.Length) return Boolean;
