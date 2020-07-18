@@ -164,6 +164,7 @@ package body RFLX.In_IPv4.Tests is
          IPv4.Packet.Set_Header_Checksum (IPv4_Packet_Context, 16#7CBC#);
          IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
          IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
+         IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
          IPv4.Packet.Initialize_Payload (IPv4_Packet_Context);
 
          Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");

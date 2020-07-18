@@ -668,6 +668,22 @@ class AbstractMessage(Type):
 
         return self.copy(structure=structure, types=types)
 
+    def is_possibly_empty(self, field: Field) -> bool:
+        if isinstance(self.types[field], Scalar):
+            return False
+
+        for p in self._state.paths[FINAL]:
+            conditions = [l.condition for l in p if l.condition != TRUE]
+            lengths = [Equal(Length(l.target.name), l.length) for l in p if l.length != UNDEFINED]
+            empty_field = Equal(Length(field.name), Number(0))
+            proof = empty_field.check(
+                [*self.__type_constraints(empty_field), *conditions, *lengths]
+            )
+            if proof.result == ProofResult.sat:
+                return True
+
+        return False
+
     # pylint: disable=too-many-branches
     def __verify(self) -> None:
         type_fields = self.__types.keys() | {INITIAL, FINAL}

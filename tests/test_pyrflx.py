@@ -1183,6 +1183,7 @@ def test_ethernet_generating_udp_in_ipv4_in_ethernet(
     ipv4.set("Header_Checksum", int("7CBC", 16))
     ipv4.set("Source", int("7f000001", 16))
     ipv4.set("Destination", int("7f000001", 16))
+    ipv4.set("Options", [])
     ipv4.set("Payload", udp_binary)
     ip_binary = ipv4.bytestring
 
@@ -1261,6 +1262,7 @@ def test_ipv4_generating_ipv4(ipv4: MessageValue) -> None:
     ipv4.set("Header_Checksum", int("7CBE", 16))
     ipv4.set("Source", int("7f000001", 16))
     ipv4.set("Destination", int("7f000001", 16))
+    ipv4.set("Options", [])
     ipv4.set("Payload", data)
     assert ipv4.valid_message
 

@@ -109,6 +109,7 @@ package body RFLX.In_Ethernet.Tests is
          IPv4.Packet.Set_Header_Checksum (IPv4_Packet_Context, 16#7CBC#);
          IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
          IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
+         IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
          Data := (0, 53, 0, 53, 0, 26, 1, 78, others => 0);
          Set_Payload (IPv4_Packet_Context);
 

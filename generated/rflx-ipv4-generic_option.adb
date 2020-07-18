@@ -736,6 +736,16 @@ is
       Ctx.Cursors (Successor (Ctx, F_Option_Length)) := (State => S_Invalid, Predecessor => F_Option_Length);
    end Set_Option_Length;
 
+   procedure Set_Option_Data_Empty (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
+   begin
+      Reset_Dependent_Fields (Ctx, F_Option_Data);
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Cursors (F_Option_Data) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Option_Data), Predecessor => Ctx.Cursors (F_Option_Data).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Option_Data)) := (State => S_Invalid, Predecessor => F_Option_Data);
+   end Set_Option_Data_Empty;
+
    procedure Set_Option_Data (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);

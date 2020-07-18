@@ -365,6 +365,7 @@ class Generator:
 
         unit += self.generator.create_internal_functions(message, scalar_fields)
         unit += self.generator.create_scalar_setter_procedures(message, scalar_fields)
+        unit += self.generator.create_composite_setter_empty_procedures(message)
         unit += self.generator.create_composite_setter_procedures(message)
         unit += self.generator.create_composite_initialize_procedures(message)
 
