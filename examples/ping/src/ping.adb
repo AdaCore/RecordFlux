@@ -14,22 +14,22 @@ is
    Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes (1 .. 1024);
    Last    : RFLX.RFLX_Builtin_Types.Index;
 begin
-   if Ada.Command_Line.Argument_Count < 2 then
+   if Ada.Command_Line.Argument_Count < 1 then
       Ada.Text_IO.Put_Line (Ada.Command_Line.Command_Name & " <Interface> <IP address>");
       Ada.Command_Line.Set_Exit_Status (1);
       return;
    end if;
-   Socket.Setup (Ada.Command_Line.Argument (1));
+   Socket.Setup;
    if not Socket.Valid then
       return;
    end if;
-   ICMPv4.Get_Address (Ada.Command_Line.Argument (2), Address, Success);
+   ICMPv4.Get_Address (Ada.Command_Line.Argument (1), Address, Success);
    if not Success then
-      Ada.Text_IO.Put_Line ("Failed to parse IP Address: " & Ada.Command_Line.Argument (2));
+      Ada.Text_IO.Put_Line ("Failed to parse IP Address: " & Ada.Command_Line.Argument (1));
       Ada.Command_Line.Set_Exit_Status (1);
       return;
    end if;
-   Ada.Text_IO.Put_Line ("PING " & Ada.Command_Line.Argument (2));
+   Ada.Text_IO.Put_Line ("PING " & Ada.Command_Line.Argument (1));
    loop
       ICMPv4.Generate (Buffer, Address);
       Socket.Send (Buffer.all (Buffer'First .. Buffer'First + 35), Address, Success);
