@@ -5,6 +5,8 @@ package ICMPv4 with
    SPARK_Mode
 is
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    use type RFLX.RFLX_Builtin_Types.Bytes_Ptr;
    use type RFLX.RFLX_Builtin_Types.Length;
 
@@ -17,10 +19,16 @@ is
       Pre => Buf /= null
       and then Buf'Length = 1024
       and then Buf'First = 1,
-      Post => Buf /= null;
+      Post => Buf /= null
+      and then Buf'Length = Buf'Length'Old
+      and then Buf'First = Buf'First'Old;
 
    procedure Print (Buf : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr) with
-      Pre => Buf /= null,
-      Post => Buf /= null;
+      Pre => Buf /= null
+      and then Buf'Length = 1024
+      and then Buf'First = 1,
+      Post => Buf /= null
+      and then Buf'Length = Buf'Length'Old
+      and then Buf'First = Buf'First'Old;
 
 end ICMPv4;

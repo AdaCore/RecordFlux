@@ -6,12 +6,15 @@ generic
    type Index_Type is (<>);
    type Buffer_Type is array (Index_Type range <>) of Element_Type;
    type IP4_Address is mod <>;
-package Generic_Socket
-  with Abstract_State => Network
+package Generic_Socket with
+   SPARK_Mode,
+   Abstract_State => Network,
+   Initializes    => Network
 is
+
    procedure Setup
    with
-      Global => (Output => Network);
+      Global => (In_Out => Network);
 
    function Valid return Boolean
    with
