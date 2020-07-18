@@ -111,6 +111,7 @@ is
    procedure Generate (Buf  : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr;
                        Addr :        RFLX.IPv4.Address) is
       use type RFLX.ICMP.Sequence_Number;
+      use type RFLX.RFLX_Builtin_Types.Bit_Length;
       IP_Context : RFLX.IPv4.Packet.Context;
       ICMP_Context : RFLX.ICMP.Message.Context;
       Data : constant RFLX.RFLX_Builtin_Types.Bytes (1 .. 8) := (others => 65);
@@ -126,6 +127,7 @@ is
       procedure Set_Data is new RFLX.ICMP.Message.Set_Bounded_Data (Process_Data, Valid_Length);
    begin
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
+      pragma Assert (IP_Context.First = 1);
       RFLX.IPv4.Packet.Set_Version (IP_Context, 4);
       RFLX.IPv4.Packet.Set_IHL (IP_Context, 5);
       RFLX.IPv4.Packet.Set_DSCP (IP_Context, 0);
@@ -165,7 +167,9 @@ is
    -- Print --
    -----------
 
-   procedure Print (Buf : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr) is
+   procedure Print (Buf : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr)
+   is
+      use type RFLX.ICMP.Tag;
       IP_Context   : RFLX.IPv4.Packet.Context;
       ICMP_Context : RFLX.ICMP.Message.Context;
       Length       : RFLX.IPv4.Total_Length;
@@ -185,7 +189,10 @@ is
       Source := RFLX.IPv4.Packet.Get_Source (IP_Context);
       RFLX.IPv4.Contains.Switch_To_Payload (IP_Context, ICMP_Context);
       RFLX.ICMP.Message.Verify_Message (ICMP_Context);
-      if not RFLX.ICMP.Message.Structural_Valid_Message (ICMP_Context) then
+      if
+         not RFLX.ICMP.Message.Structural_Valid_Message (ICMP_Context)
+         or else RFLX.ICMP.Message.Get_Tag (ICMP_Context) /= RFLX.ICMP.Echo_Reply
+      then
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          return;
       end if;
