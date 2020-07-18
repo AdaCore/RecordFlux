@@ -583,6 +583,16 @@ is
       Ctx.Cursors (Successor (Ctx, F_Length)) := (State => S_Invalid, Predecessor => F_Length);
    end Set_Length;
 
+   procedure Set_Modular_Vector_Empty (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);
+   begin
+      Reset_Dependent_Fields (Ctx, F_Modular_Vector);
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Cursors (F_Modular_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Modular_Vector), Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
+   end Set_Modular_Vector_Empty;
+
    procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);

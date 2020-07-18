@@ -44,7 +44,7 @@ project Test is
       for Proof_Switches ("rflx-ethernet-frame.ads") use ("--steps=15000");
       for Proof_Switches ("rflx-in_ipv4-contains.ads") use ("--steps=118000");
       for Proof_Switches ("rflx-ipv4-option.ads") use ("--steps=2000");
-      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--steps=12000");
+      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--steps=30000");
       for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--steps=72000", "--prover=altergo,cvc4,z3");
       for Proof_Switches ("rflx-rflx_arithmetic.ads") use ("--steps=72000", "--prover=altergo,cvc4,z3");
       for Proof_Switches ("rflx-rflx_types.ads") use ("--steps=240000", "--prover=altergo,cvc4,z3");
@@ -56,9 +56,9 @@ project Test is
             for Proof_Switches ("rflx-custom_types_tests.adb") use ("--steps=376000", "--prover=altergo,cvc4,z3");
             for Proof_Switches ("rflx-derivation-tests.adb") use ("--steps=2300");
             for Proof_Switches ("rflx-ethernet-tests.adb") use ("--steps=3400");
-            for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=110000");
-            for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=142000");
-            for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=78000");
+            for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--steps=131000");
+            for Proof_Switches ("rflx-in_ipv4-tests.adb") use ("--steps=149000");
+            for Proof_Switches ("rflx-ipv4-tests.adb") use ("--steps=92000");
       end case;
    end Prove;
 

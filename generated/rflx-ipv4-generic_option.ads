@@ -340,6 +340,30 @@ is
        and Context_Cursor (Ctx, F_Option_Class) = Context_Cursor (Ctx, F_Option_Class)'Old
        and Context_Cursor (Ctx, F_Option_Number) = Context_Cursor (Ctx, F_Option_Number)'Old;
 
+   procedure Set_Option_Data_Empty (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Option_Data)
+       and then Field_Last (Ctx, F_Option_Data) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Option_Data))
+       and then Available_Space (Ctx, F_Option_Data) >= Field_Length (Ctx, F_Option_Data)
+       and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
+       and then Field_Length (Ctx, F_Option_Data) mod Types.Byte'Size = 0
+       and then Field_Length (Ctx, F_Option_Data) = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
+       and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
+       and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
+       and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
+       and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Option_Data);
+
    generic
       with procedure Process_Option_Data (Option_Data : out Types.Bytes);
       with function Valid_Length (Length : Types.Length) return Boolean;
