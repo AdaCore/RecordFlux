@@ -1,3 +1,4 @@
+with Ada.Unchecked_Deallocation;
 with Basalt.Strings_Generic;
 with Interfaces;
 with RFLX.IPv4.Packet;
@@ -11,7 +12,7 @@ with Ada.Text_IO;
 
 package body ICMPv4 with
    SPARK_Mode,
-   Refined_State => (Ping_State => (Buffer, Sequence))
+   Refined_State => (Ping_State => Sequence)
 is
 
    package Checksum is new Generic_Checksum (RFLX.RFLX_Types);
@@ -23,7 +24,6 @@ is
       and then Image'Result'Length <= 83,
       Global => null;
 
-   Buffer   : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(1 .. 1024 => 0);
    Sequence : RFLX.ICMP.Sequence_Number := 0;
 
    function Image (Addr : RFLX.IPv4.Address) return String
@@ -45,6 +45,9 @@ is
          & Img (Address (4));
    end Image;
 
+   procedure Free_Bytes_Ptr is new Ada.Unchecked_Deallocation (Object => RFLX.RFLX_Builtin_Types.Bytes,
+                                                               Name => RFLX.RFLX_Builtin_Types.Bytes_Ptr);
+
    procedure Ping (Addr : String)
    is
       use type RFLX.RFLX_Builtin_Types.Length;
@@ -56,6 +59,7 @@ is
       Address     : RFLX.IPv4.Address;
       Success     : Boolean;
       Ignore_Last : RFLX.RFLX_Builtin_Types.Index;
+      Buffer      : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(1 .. 1024 => 0);
    begin
       Socket.Setup;
       if
@@ -66,11 +70,13 @@ is
          or else Buffer'First /= 1
          or else Buffer'Length /= 1024
       then
+         Free_Bytes_Ptr (Buffer);
          return;
       end if;
       ICMPv4.Get_Address (Addr, Address, Success);
       if not Success then
          Ada.Text_IO.Put_Line ("Failed to parse IP Address: " & Addr);
+            Free_Bytes_Ptr (Buffer);
          return;
       end if;
       Ada.Text_IO.Put_Line ("PING " & Addr);
@@ -82,12 +88,14 @@ is
          Socket.Send (Buffer.all (Buffer'First .. Buffer'First + 35), Address, Success);
          if not Success then
             Ada.Text_IO.Put_Line ("Failed to send packet");
+            Free_Bytes_Ptr (Buffer);
             return;
          end if;
          Buffer.all := (others => 0);
          Socket.Receive (Buffer.all, Ignore_Last, Success);
          if not Success then
             Ada.Text_IO.Put_Line ("Receive failed");
+            Free_Bytes_Ptr (Buffer);
             return;
          end if;
          ICMPv4.Print (Buffer);
