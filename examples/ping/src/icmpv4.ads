@@ -14,6 +14,8 @@ is
                           Addr  : out RFLX.IPv4.Address;
                           Valid : out Boolean);
 
+   procedure Ping (Addr : String);
+
    procedure Generate (Buf  : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr;
                        Addr :        RFLX.IPv4.Address) with
       Pre => Buf /= null
