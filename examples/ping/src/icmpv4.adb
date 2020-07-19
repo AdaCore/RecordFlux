@@ -6,6 +6,7 @@ with RFLX.ICMP;
 with RFLX.ICMP.Message;
 with RFLX.RFLX_Types;
 with Generic_Checksum;
+with Generic_Socket;
 with Ada.Text_IO;
 
 package body ICMPv4 with
@@ -16,8 +17,11 @@ is
    function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.ICMP.Sequence_Number);
    function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.IPv4.Total_Length);
 
-   function Image (Addr : RFLX.IPv4.Address) return String;
+   function Image (Addr : RFLX.IPv4.Address) return String with
+      Post => Image'Result'First = 1
+      and then Image'Result'Length <= 83;
 
+   Buffer   : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(1 .. 1024 => 0);
    Sequence : RFLX.ICMP.Sequence_Number := 0;
 
    function Image (Addr : RFLX.IPv4.Address) return String
@@ -38,6 +42,56 @@ is
          & Img (Address (3)) & "."
          & Img (Address (4));
    end Image;
+
+   procedure Ping (Addr : String)
+   is
+      use type RFLX.RFLX_Builtin_Types.Length;
+      use type RFLX.RFLX_Builtin_Types.Bytes_Ptr;
+      package Socket is new Generic_Socket (RFLX.RFLX_Builtin_Types.Byte,
+                                            RFLX.RFLX_Builtin_Types.Index,
+                                            RFLX.RFLX_Builtin_Types.Bytes,
+                                            RFLX.IPv4.Address);
+      Address     : RFLX.IPv4.Address;
+      Success     : Boolean;
+      Ignore_Last : RFLX.RFLX_Builtin_Types.Index;
+   begin
+      Socket.Setup;
+      if
+         not Socket.Valid
+         or else Addr'Length < 1
+         or else Addr'Length > 15
+         or else Buffer = null
+         or else Buffer'First /= 1
+         or else Buffer'Length /= 1024
+      then
+         return;
+      end if;
+      ICMPv4.Get_Address (Addr, Address, Success);
+      if not Success then
+         Ada.Text_IO.Put_Line ("Failed to parse IP Address: " & Addr);
+         return;
+      end if;
+      Ada.Text_IO.Put_Line ("PING " & Addr);
+      loop
+         pragma Loop_Invariant (Buffer /= null);
+         pragma Loop_Invariant (Buffer'First = 1);
+         pragma Loop_Invariant (Buffer'Length = 1024);
+         ICMPv4.Generate (Buffer, Address);
+         Socket.Send (Buffer.all (Buffer'First .. Buffer'First + 35), Address, Success);
+         if not Success then
+            Ada.Text_IO.Put_Line ("Failed to send packet");
+            return;
+         end if;
+         Buffer.all := (others => 0);
+         Socket.Receive (Buffer.all, Ignore_Last, Success);
+         if not Success then
+            Ada.Text_IO.Put_Line ("Receive failed");
+            return;
+         end if;
+         ICMPv4.Print (Buffer);
+         delay 1.0;
+      end loop;
+   end Ping;
 
    ----------------
    -- To_Address --
@@ -126,6 +180,7 @@ is
       end Process_Data;
       procedure Set_Data is new RFLX.ICMP.Message.Set_Bounded_Data (Process_Data, Valid_Length);
    begin
+      pragma Warnings (Off, "unused assignment to ""*_Context""");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
       pragma Assert (IP_Context.First = 1);
       RFLX.IPv4.Packet.Set_Version (IP_Context, 4);
@@ -155,12 +210,14 @@ is
                                              0, 0, Sequence, Data));
          RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
          RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
+         pragma Assert (RFLX.ICMP.Message.Field_First (ICMP_Context, RFLX.ICMP.Message.F_Data) mod RFLX.RFLX_Builtin_Types.Byte'Size = 1);
          Set_Data (ICMP_Context, 64);
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          Sequence := Sequence + 1;
       else
          RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
       end if;
+      pragma Warnings (On, "unused assignment to ""*_Context""");
    end Generate;
 
    -----------
@@ -176,6 +233,7 @@ is
       Source       : RFLX.IPv4.Address;
       Seq          : RFLX.ICMP.Sequence_Number;
    begin
+      pragma Warnings (Off, "unused assignment to ""*_Context""");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
       RFLX.IPv4.Packet.Verify_Message (IP_Context);
       if
@@ -199,6 +257,7 @@ is
       Seq := RFLX.ICMP.Message.Get_Sequence_Number (ICMP_Context);
       RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
       Ada.Text_IO.Put_Line (Image (Length) & " bytes from " & Image (Source) & ": icmp_seq=" & Image (Seq));
+      pragma Warnings (On, "unused assignment to ""*_Context""");
    end Print;
 
 end ICMPv4;
