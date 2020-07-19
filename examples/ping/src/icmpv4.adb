@@ -10,7 +10,8 @@ with Generic_Socket;
 with Ada.Text_IO;
 
 package body ICMPv4 with
-   SPARK_Mode
+   SPARK_Mode,
+   Refined_State => (Ping_State => (Buffer, Sequence))
 is
 
    package Checksum is new Generic_Checksum (RFLX.RFLX_Types);
@@ -19,7 +20,8 @@ is
 
    function Image (Addr : RFLX.IPv4.Address) return String with
       Post => Image'Result'First = 1
-      and then Image'Result'Length <= 83;
+      and then Image'Result'Length <= 83,
+      Global => null;
 
    Buffer   : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(1 .. 1024 => 0);
    Sequence : RFLX.ICMP.Sequence_Number := 0;
