@@ -6,9 +6,10 @@ from typing import List
 
 import pytest
 
-from rflx.expression import UNDEFINED
+from rflx.expression import UNDEFINED, Variable
 from rflx.identifier import ID
 from rflx.model import (
+    BOOLEAN,
     FINAL,
     INITIAL,
     Array,
@@ -640,23 +641,99 @@ def test_value_range() -> None:
         rangevalue.assign(7)
 
 
-def test_value_enum() -> None:
-    # pylint: disable=pointless-statement
-    enumtype = Enumeration("Test.Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False)
-    enumvalue = EnumValue(enumtype)
-    assert not enumvalue.initialized
+@pytest.fixture(name="enum_value")
+def fixture_enum_value() -> EnumValue:
+    return EnumValue(
+        Enumeration("Test.Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False)
+    )
+
+
+def test_value_enum(enum_value: EnumValue) -> None:
+    assert enum_value.literals == {
+        Variable("One"): Number(1),
+        Variable("Test.One"): Number(1),
+        Variable("Two"): Number(2),
+        Variable("Test.Two"): Number(2),
+    }
+    assert not enum_value.initialized
+
+
+def test_value_enum_assign(enum_value: EnumValue) -> None:
     with pytest.raises(NotInitializedError, match="value not initialized"):
-        enumvalue.value
+        enum_value.value  # pylint: disable=pointless-statement
     with pytest.raises(NotInitializedError, match="value not initialized"):
-        enumvalue.expr
-    enumvalue.assign("One")
-    assert enumvalue.initialized
-    assert enumvalue.value == "One"
-    assert str(enumvalue.bitstring) == "00000001"
+        enum_value.expr  # pylint: disable=pointless-statement
+
+    enum_value.assign("One")
+    assert enum_value.initialized
+    assert enum_value.value == "One"
+    assert str(enum_value.bitstring) == "00000001"
+
     with pytest.raises(KeyError, match=r"Three is not a valid enum value"):
-        enumvalue.assign("Three")
+        enum_value.assign("Three")
+
+
+def test_value_enum_parse(enum_value: EnumValue) -> None:
+    enum_value.parse(b"\x01")
+    assert enum_value.value == "One"
+
     with pytest.raises(KeyError, match=r"Number 15 is not a valid enum value"):
-        enumvalue.parse(Bitstring("1111"))
+        enum_value.parse(Bitstring("1111"))
+
+
+@pytest.fixture(name="enum_value_imported")
+def fixture_enum_value_imported() -> EnumValue:
+    return EnumValue(
+        Enumeration("Test.Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False),
+        imported=True,
+    )
+
+
+def test_value_enum_imported(enum_value_imported: EnumValue) -> None:
+    assert enum_value_imported.literals == {
+        Variable("Test.One"): Number(1),
+        Variable("Test.Two"): Number(2),
+    }
+    assert not enum_value_imported.initialized
+
+
+def test_value_enum_imported_assign(enum_value_imported: EnumValue) -> None:
+    enum_value_imported.assign("One")
+    assert enum_value_imported.value == "Test.One"
+    enum_value_imported.assign("Test.Two")
+    assert enum_value_imported.value == "Test.Two"
+
+
+def test_value_enum_imported_parse(enum_value_imported: EnumValue) -> None:
+    enum_value_imported.parse(b"\x01")
+    assert enum_value_imported.value == "Test.One"
+
+
+@pytest.fixture(name="enum_value_builtin")
+def fixture_enum_value_builtin() -> EnumValue:
+    return EnumValue(BOOLEAN, imported=True)
+
+
+def test_value_enum_builtin(enum_value_builtin: EnumValue) -> None:
+    assert enum_value_builtin.literals == {
+        Variable("False"): Number(0),
+        Variable("True"): Number(1),
+    }
+    assert not enum_value_builtin.initialized
+
+
+def test_value_enum_builtin_assign(enum_value_builtin: EnumValue) -> None:
+    enum_value_builtin.assign("True")
+    assert enum_value_builtin.value == "True"
+    enum_value_builtin.assign("False")
+    assert enum_value_builtin.value == "False"
+
+
+def test_value_enum_builtin_parse(enum_value_builtin: EnumValue) -> None:
+    enum_value_builtin.parse(b"\x00")
+    assert enum_value_builtin.value == "False"
+    enum_value_builtin.parse(b"\x01")
+    assert enum_value_builtin.value == "True"
 
 
 def test_value_opaque() -> None:
@@ -677,11 +754,10 @@ def test_value_opaque() -> None:
     assert opaquevalue._value == b"\x0f"
 
 
-def test_value_equal() -> None:
+def test_value_equal(enum_value: EnumValue) -> None:
     # pylint: disable=comparison-with-itself
     ov = OpaqueValue(Opaque())
-    enumtype = Enumeration("Test.Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False)
-    ev = EnumValue(enumtype)
+    ev = enum_value
     rangetype = RangeInteger("Test.Int", Number(8), Number(16), Number(8))
     rv = IntegerValue(rangetype)
     modtype = ModularInteger("Test.Int", Number(2 ** 16))
@@ -781,18 +857,13 @@ def test_ethernet_parse_binary(frame: MessageValue) -> None:
     assert frame.bytestring == test_bytes
 
 
-def test_value_parse_from_bitstring(tlv: MessageValue) -> None:
+def test_value_parse_from_bitstring(tlv: MessageValue, enum_value: EnumValue) -> None:
     # pylint: disable=protected-access
     intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
     intval.parse(b"\x02")
     assert intval.value == 2
-    enumval = EnumValue(
-        Enumeration(
-            "Test.Enum", [("something", Number(1)), ("other", Number(2))], Number(2), False,
-        )
-    )
-    enumval.parse(b"\x01")
-    assert enumval.value == "something"
+    enum_value.parse(b"\x01")
+    assert enum_value.value == "One"
     msg_array = ArrayValue(Array("Test.MsgArray", tlv._type))
     tlv.set("Tag", "Msg_Data")
     tlv.set("Length", 4)
@@ -849,20 +920,15 @@ def test_array_nested_values(array_type_foo: MessageValue) -> None:
     assert array_type_foo.bytestring == b"\x03\x05\x06\x07"
 
 
-def test_array_preserve_value() -> None:
+def test_array_preserve_value(enum_value: EnumValue) -> None:
     intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
     intval.assign(1)
-    enumval = EnumValue(
-        Enumeration(
-            "Test.Enum", [("something", Number(1)), ("other", Number(2))], Number(2), False,
-        )
-    )
-    enumval.assign("something")
+    enum_value.assign("One")
     type_array = ArrayValue(Array("Test.Array", ModularInteger("Test.Mod_Int", Number(256))))
     type_array.assign([intval])
     assert type_array.value == [intval]
     with pytest.raises(ValueError, match="cannot assign EnumValue to an array of ModularInteger"):
-        type_array.assign([enumval])
+        type_array.assign([enum_value])
     assert type_array.value == [intval]
 
 
@@ -874,21 +940,16 @@ def test_array_parse_from_bytes(array_message: MessageValue, array_type_foo: Mes
 
 
 def test_array_assign_incorrect_values(
-    tlv: MessageValue, frame: MessageValue, array_type_foo: MessageValue
+    tlv: MessageValue, frame: MessageValue, array_type_foo: MessageValue, enum_value: EnumValue
 ) -> None:
     # pylint: disable=protected-access
     type_array = ArrayValue(Array("Test.Array", ModularInteger("Test.Mod_Int", Number(256))))
     msg_array = ArrayValue(Array("Test.MsgArray", tlv._type))
 
     intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
-    enumval = EnumValue(
-        Enumeration(
-            "Test.Enum", [("something", Number(1)), ("other", Number(2))], Number(2), False,
-        )
-    )
-    enumval.assign("something")
+    enum_value.assign("One")
     with pytest.raises(ValueError, match="cannot assign EnumValue to an array of ModularInteger"):
-        type_array.assign([enumval])
+        type_array.assign([enum_value])
 
     tlv.set("Tag", "Msg_Data")
     with pytest.raises(
@@ -898,7 +959,7 @@ def test_array_assign_incorrect_values(
         msg_array.assign([tlv])
 
     with pytest.raises(ValueError, match="cannot assign EnumValue to an array of Message"):
-        msg_array.assign([enumval])
+        msg_array.assign([enum_value])
 
     tlv.set("Tag", "Msg_Data")
     tlv.set("Length", 4)
@@ -955,6 +1016,76 @@ def test_incorrect_nested_message(frame: MessageValue) -> None:
         "stopped while parsing field: Payload",
     ):
         frame.parse(incorrect_message)
+
+
+def test_imported_literals(tmp_path: Path) -> None:
+    with open(tmp_path / "test.rflx", "x") as f:
+        f.write(
+            """
+            with Foo;
+
+            package Test is
+
+               type T is (E1 => 1, E2 => 2) with Size => 8;
+
+               type Message is
+                  message
+                     A : Foo.T
+                        then null
+                           if A = Foo.E1;
+                  end message;
+
+            end Test;
+            """
+        )
+
+    with open(tmp_path / "foo.rflx", "x") as f:
+        f.write(
+            """
+            package Foo is
+
+               type T is (E1 => 11, E2 => 12) with Size => 8;
+
+            end Foo;
+            """
+        )
+
+    pyrflx = PyRFLX([str(tmp_path / "test.rflx")])
+    m = pyrflx["Test"]["Message"]
+
+    m.set("A", "E1")
+    assert m.valid_message
+
+    m.set("A", "Foo.E1")
+    assert m.valid_message
+
+    m.parse(b"\x0B")
+    assert m.valid_message
+    assert m.get("A") == "Foo.E1"
+
+    with pytest.raises(
+        ValueError,
+        match=r"^none of the field conditions \['A = Foo.E1'\] for field A have been met"
+        " by the assigned value: 00001100$",
+    ):
+        m.parse(b"\x0C")
+        assert not m.valid_message
+
+    with pytest.raises(
+        ValueError,
+        match=r"^none of the field conditions \['A = Foo.E1'\] for field A have been met"
+        " by the assigned value: E2$",
+    ):
+        m.set("A", "E2")
+        assert not m.valid_message
+
+    with pytest.raises(
+        ValueError,
+        match=r"^none of the field conditions \['A = Foo.E1'\] for field A have been met"
+        " by the assigned value: Foo.E2$",
+    ):
+        m.set("A", "Foo.E2")
+        assert not m.valid_message
 
 
 # rflx-ethernet-tests.adb
