@@ -67,8 +67,6 @@ is
          or else Addr'Length < 1
          or else Addr'Length > 15
          or else Buffer = null
-         or else Buffer'First /= 1
-         or else Buffer'Length /= 1024
       then
          Free_Bytes_Ptr (Buffer);
          return;
@@ -76,7 +74,7 @@ is
       ICMPv4.Get_Address (Addr, Address, Success);
       if not Success then
          Ada.Text_IO.Put_Line ("Failed to parse IP Address: " & Addr);
-            Free_Bytes_Ptr (Buffer);
+         Free_Bytes_Ptr (Buffer);
          return;
       end if;
       Ada.Text_IO.Put_Line ("PING " & Addr);
