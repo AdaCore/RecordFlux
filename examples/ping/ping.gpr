@@ -18,4 +18,31 @@ project Ping is
       for Output_Dir use "generated";
    end Recordflux;
 
+   package Prove is
+      for Proof_Switches ("Ada") use (
+         "-j0",
+         "--prover=cvc4,z3,altergo",
+         "--steps=0",
+         "--timeout=90",
+         "--memlimit=1000",
+         "--checks-as-errors",
+         "--warnings=error",
+         "--proof-warnings",
+         "--no-axiom-guard"
+      );
+
+      for Proof_Switches ("basalt-strings_generic.adb") use ("--prover=CVC4", "--steps=1735");
+      for Proof_Switches ("icmpv4.adb") use ("--prover=Z3,CVC4", "--steps=202506");
+      for Proof_Switches ("rflx-icmp-message.ads") use ("--prover=CVC4", "--steps=31799");
+      for Proof_Switches ("rflx-icmp.ads") use ("--prover=CVC4", "--steps=1");
+      for Proof_Switches ("rflx-ipv4-contains.ads") use ("--prover=CVC4,Z3", "--steps=65010");
+      for Proof_Switches ("rflx-ipv4-options.ads") use ("--prover=CVC4", "--steps=450");
+      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--prover=Z3,CVC4", "--steps=138127");
+      for Proof_Switches ("rflx-ipv4.ads") use ("--prover=CVC4", "--steps=1");
+      for Proof_Switches ("rflx-ipv4_option-option.ads") use ("--prover=CVC4", "--steps=1920");
+      for Proof_Switches ("rflx-ipv4_option.ads") use ("--prover=CVC4", "--steps=1");
+      for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--prover=CVC4", "--steps=70979");
+      for Proof_Switches ("rflx-rflx_types.ads") use ("--prover=altergo,Z3,CVC4", "--steps=239854");
+   end Prove;
+
 end Ping;
