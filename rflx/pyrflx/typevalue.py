@@ -18,6 +18,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID
 from rflx.model import (
+    BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
     Array,
@@ -109,11 +110,13 @@ class TypeValue(ABC):
         raise NotImplementedError
 
     @classmethod
-    def construct(cls, vtype: Type, refinements: Sequence[Refinement] = None) -> "TypeValue":
+    def construct(
+        cls, vtype: Type, imported: bool = False, refinements: Sequence[Refinement] = None
+    ) -> "TypeValue":
         if isinstance(vtype, Integer):
             return IntegerValue(vtype)
         if isinstance(vtype, Enumeration):
-            return EnumValue(vtype)
+            return EnumValue(vtype, imported)
         if isinstance(vtype, Opaque):
             return OpaqueValue(vtype)
         if isinstance(vtype, Array):
@@ -204,25 +207,44 @@ class EnumValue(ScalarValue):
     _value: Tuple[str, Number]
     _type: Enumeration
 
-    def __init__(self, vtype: Enumeration) -> None:
+    def __init__(self, vtype: Enumeration, imported: bool = False) -> None:
         super().__init__(vtype)
+        self.__imported = imported
+        self.__builtin = self._type.package == BUILTINS_PACKAGE
+        self.__literals: Dict[Name, Expr] = {}
+
+        for k, v in self._type.literals.items():
+            if self.__builtin or not self.__imported:
+                self.__literals[Variable(k)] = v
+            if not self.__builtin:
+                self.__literals[Variable(self._type.package * k)] = v
 
     def assign(self, value: str, check: bool = True) -> None:
-        if ID(value) not in self._type.literals:
+        prefixed_value = (
+            ID(value)
+            if value.startswith(str(self._type.package)) or not self.__imported or self.__builtin
+            else self._type.package * value
+        )
+        if Variable(prefixed_value) not in self.literals:
             raise KeyError(f"{value} is not a valid enum value")
         r = (
             And(*self._type.constraints("__VALUE__", check))
             .substituted(
                 mapping={
                     **{Variable(k): v for k, v in self._type.literals.items()},
-                    **{Variable("__VALUE__"): self._type.literals[ID(value)]},
+                    **{Variable("__VALUE__"): self._type.literals[prefixed_value.name]},
                     **{Length("__VALUE__"): self._type.size},
                 }
             )
             .simplified()
         )
         assert r == TRUE
-        self._value = value, self._type.literals[ID(value)]
+        self._value = (
+            str(prefixed_value)
+            if self.__imported and not self.__builtin
+            else str(prefixed_value.name),
+            self._type.literals[prefixed_value.name],
+        )
 
     def parse(self, value: Union[Bitstring, bytes]) -> None:
         if isinstance(value, bytes):
@@ -236,8 +258,12 @@ class EnumValue(ScalarValue):
         else:
             for k, v in self.literals.items():
                 if v == value_as_number:
+                    assert isinstance(k, Variable)
                     assert isinstance(v, Number)
-                    self._value = str(k), v
+                    self._value = (
+                        str(k.identifier) if self.__imported else str(k.identifier.name),
+                        v,
+                    )
 
     @property
     def value(self) -> str:
@@ -260,7 +286,7 @@ class EnumValue(ScalarValue):
 
     @property
     def literals(self) -> Mapping[Name, Expr]:
-        return {Variable(k): v for k, v in self._type.literals.items()}
+        return self.__literals
 
 
 class CompositeValue(TypeValue):
@@ -427,7 +453,9 @@ class ArrayValue(CompositeValue):
             new_value = []
 
             while len(value_str) != 0:
-                nested_value = TypeValue.construct(self._element_type)
+                nested_value = TypeValue.construct(
+                    self._element_type, imported=self._element_type.package != self._type.package
+                )
                 nested_value.parse(Bitstring(value_str[:type_size_int]))
                 new_value.append(nested_value)
                 value_str = value_str[type_size_int:]
@@ -466,7 +494,12 @@ class MessageValue(TypeValue):
         super().__init__(model)
         self._refinements = refinements or []
         self._fields: Dict[str, MessageValue.Field] = {
-            f.name: self.Field(TypeValue.construct(self._type.types[f])) for f in self._type.fields
+            f.name: self.Field(
+                TypeValue.construct(
+                    self._type.types[f], imported=self._type.types[f].package != model.package
+                )
+            )
+            for f in self._type.fields
         }
         self.__type_literals: Mapping[Name, Expr] = {}
         self._last_field: str = self._next_field(INITIAL.name)
