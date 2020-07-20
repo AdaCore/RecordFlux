@@ -10,7 +10,7 @@ package IPv4_Option is
          Option_Class : Option_Class;
          Option_Number : Option_Number
             then null
-               if Option_Class = Control and Option_Number = 1,
+               if Option_Class = Control,
             then Option_Length
                if Option_Number > 1;
          Option_Length : Option_Length
