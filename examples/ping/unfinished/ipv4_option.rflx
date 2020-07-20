@@ -6,10 +6,11 @@ package IPv4_Option is
 
    type Option is
       message
-         Copied : Boolean;         Option_Class : Option_Class;
+         Copied : Boolean;
+         Option_Class : Option_Class;
          Option_Number : Option_Number
             then null
-               if Option_Class = Control,
+               if Option_Class = Control and Option_Number = 1,
             then Option_Length
                if Option_Number > 1;
          Option_Length : Option_Length
