@@ -326,7 +326,7 @@ class CompositeValue(TypeValue):
 
 class OpaqueValue(CompositeValue):
 
-    _value: bytes
+    _value: Optional[bytes]
     _nested_message: Optional["MessageValue"] = None
 
     def __init__(self, vtype: Opaque) -> None:
@@ -374,11 +374,13 @@ class OpaqueValue(CompositeValue):
     @property
     def value(self) -> bytes:
         self._raise_initialized()
+        assert self._value
         return self._value
 
     @property
     def bitstring(self) -> Bitstring:
         self._raise_initialized()
+        assert self._value
         return Bitstring(format(int.from_bytes(self._value, "big"), f"0{self.size}b"))
 
     @property

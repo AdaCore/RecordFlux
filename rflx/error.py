@@ -38,7 +38,7 @@ class Location:
         def linecol_str(linecol: Tuple[int, int]) -> str:
             return f"{linecol[0]}:{linecol[1]}"
 
-        start = f":{linecol_str(self.__start)}" if self.__start else ""
+        start = f":{linecol_str(self.__start)}"
         end = f"-{linecol_str(self.__end)}" if self.__end and self.__verbose else ""
         return f"{self.__source if self.__source else '<stdin>'}{start}{end}"
 
