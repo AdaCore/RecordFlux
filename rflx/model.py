@@ -101,7 +101,9 @@ class Scalar(Type):
         return self._size
 
     @abstractmethod
-    def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
+    def constraints(
+        self, name: str, proof: bool = False, same_package: bool = True
+    ) -> Sequence[Expr]:
         raise NotImplementedError
 
 
@@ -164,7 +166,9 @@ class ModularInteger(Integer):
     def last(self) -> Expr:
         return Sub(self.modulus, Number(1))
 
-    def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
+    def constraints(
+        self, name: str, proof: bool = False, same_package: bool = True
+    ) -> Sequence[Expr]:
         if proof:
             return [
                 Less(Variable(name), self.__modulus, location=self.location),
@@ -254,7 +258,9 @@ class RangeInteger(Integer):
     def last(self) -> Expr:
         return self.__last
 
-    def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
+    def constraints(
+        self, name: str, proof: bool = False, same_package: bool = True
+    ) -> Sequence[Expr]:
         if proof:
             return [
                 GreaterEqual(Variable(name), self.first, location=self.location),
@@ -380,15 +386,24 @@ class Enumeration(Scalar):
 
         self.always_valid = always_valid
 
-    def constraints(self, name: str, proof: bool = False) -> Sequence[Expr]:
+    def constraints(
+        self, name: str, proof: bool = False, same_package: bool = True
+    ) -> Sequence[Expr]:
         if proof:
+            prefixed_literals = {self.package * l: v for l, v in self.literals.items()}
+            if self.package == BUILTINS_PACKAGE:
+                literals = self.literals
+            elif same_package:
+                literals = {**self.literals, **prefixed_literals}
+            else:
+                literals = prefixed_literals
             result: List[Expr] = [
                 Or(
-                    *[Equal(Variable(name), Variable(l), self.location) for l in self.literals],
+                    *[Equal(Variable(name), Variable(l), self.location) for l in literals],
                     location=self.location,
                 )
             ]
-            result.extend([Equal(Variable(l), v, self.location) for l, v in self.literals.items()])
+            result.extend([Equal(Variable(l), v, self.location) for l, v in literals.items()])
             result.append(Equal(Length(name), self.size, self.location))
             return result
         return [TRUE]
@@ -1028,7 +1043,11 @@ class AbstractMessage(Type):
             Equal(Mod(Length("Message"), Number(8)), Number(0)),
         ]
 
-        scalar_constraints = [c for n, t in scalar_types for c in t.constraints(name=n, proof=True)]
+        scalar_constraints = [
+            c
+            for n, t in scalar_types
+            for c in t.constraints(name=n, proof=True, same_package=self.package == t.package)
+        ]
 
         return [*message_constraints, *aggregate_constraints, *scalar_constraints]
 
