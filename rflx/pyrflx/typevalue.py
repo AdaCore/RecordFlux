@@ -228,10 +228,10 @@ class EnumValue(ScalarValue):
         if Variable(prefixed_value) not in self.literals:
             raise KeyError(f"{value} is not a valid enum value")
         r = (
-            And(*self._type.constraints("__VALUE__", check))
+            And(*self._type.constraints("__VALUE__", check, not self.__imported))
             .substituted(
                 mapping={
-                    **{Variable(k): v for k, v in self._type.literals.items()},
+                    **self.literals,
                     **{Variable("__VALUE__"): self._type.literals[prefixed_value.name]},
                     **{Length("__VALUE__"): self._type.size},
                 }
