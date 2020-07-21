@@ -267,7 +267,7 @@ class BinExpr(Expr):
 class AssExpr(Expr):
     def __init__(self, *terms: Expr, location: Location = None) -> None:
         super().__init__(location)
-        self.terms = [t for t in list(terms) if isinstance(t, Expr)]
+        self.terms = list(terms)
 
     def __str__(self) -> str:
         if not self.terms:
@@ -1061,7 +1061,7 @@ UNDEFINED = UndefinedExpr()
 class Aggregate(Expr):
     def __init__(self, *elements: Expr, location: Location = None) -> None:
         super().__init__(location)
-        self.elements = [t for t in list(elements) if isinstance(t, Expr)]
+        self.elements = list(elements)
 
     def __str__(self) -> str:
         return "(" + ", ".join(map(str, self.elements)) + ")"

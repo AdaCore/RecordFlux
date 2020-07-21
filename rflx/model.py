@@ -1026,7 +1026,7 @@ class AbstractMessage(Type):
             (f.name, t)
             for f, t in self.types.items()
             if isinstance(t, Scalar)
-            and f.name not in literals
+            and ID(f.name) not in literals
             and f.name not in ["Message", "Final"]
         ]
 
