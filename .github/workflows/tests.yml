@@ -184,10 +184,17 @@ jobs:
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
         chmod +x $HOME/bin/gnatprove
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 run_spat $@' > $HOME/bin/run_spat
+        chmod +x $HOME/bin/run_spat
         echo "::add-path::$HOME/bin"
-    - name: Test
+    - name: Verify
       run: |
         make prove_${{ matrix.target }}
+    - name: Show proof results
+      if: ${{ always() }}
+      run: |
+        run_spat -Ptest -ca -ra
+        run_spat -Ptest -g
 
   verification_cached:
     name: Verification
@@ -206,12 +213,19 @@ jobs:
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
         chmod +x $HOME/bin/gnatprove
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 run_spat $@' > $HOME/bin/run_spat
+        chmod +x $HOME/bin/run_spat
         echo "::add-path::$HOME/bin"
     - name: Cache GNATprove results
       uses: actions/cache@v2
       with:
         path: build/gnatprove
         key: ${{ runner.os }}-gnatprove2020-${{ matrix.target }}
-    - name: Test
+    - name: Verify
       run: |
         make prove_${{ matrix.target }}
+    - name: Show proof results
+      if: ${{ always() }}
+      run: |
+        run_spat -Ptest -ca -ra
+        run_spat -Ptest -g
