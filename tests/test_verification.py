@@ -64,6 +64,22 @@ def test_exclusive_enum_valid() -> None:
     Message("P.M", structure, types)
 
 
+def test_exclusive_prefixed_enum_valid() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), FINAL, condition=Equal(Variable("F1"), Variable("ONE"))),
+        Link(Field("F1"), Field("F2"), condition=Equal(Variable("F1"), Variable("P.TWO"))),
+        Link(Field("F2"), FINAL),
+    ]
+    types = {
+        Field("F1"): ENUMERATION,
+        Field("F2"): Enumeration(
+            "P2.Enumeration", [("ONE", Number(2)), ("TWO", Number(1))], Number(8), False,
+        ),
+    }
+    Message("P.M", structure, types)
+
+
 def test_exclusive_conflict() -> None:
     f1 = Field(ID("F1", Location((8, 4))))
     structure = [
