@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import copy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -630,7 +632,6 @@ class MessageValue(TypeValue):
             value = Bitstring.from_bytes(value)
         current_field_name = self._next_field(INITIAL.name)
         last_field_first_in_bitstr = current_field_first_in_bitstr = 0
-        current_field_length = 0
 
         def get_current_pos_in_bitstr(field_name: str) -> int:
             # if the previous node is a virtual node i.e. has the same first as the current node
@@ -707,8 +708,7 @@ class MessageValue(TypeValue):
         self,
         field_name: str,
         value: Union[bytes, int, str, Sequence[TypeValue], Bitstring],
-        skip_checksum: bool = False,
-        skip_preset_fields: bool = False,
+        prevent_recursive_checksum_calc: bool = False,
     ) -> None:
         def set_refinement(fld: MessageValue.Field, fld_name: str) -> None:
             if isinstance(fld.typeval, OpaqueValue):
@@ -719,6 +719,25 @@ class MessageValue(TypeValue):
                         and self._valid_refinement_condition(ref)
                     ):
                         fld.typeval.set_refinement(ref.sdu, self._refinements)
+
+        def check_outgoing_condition_satisfied() -> None:
+            if all(
+                [
+                    self.__simplified(o.condition) == FALSE
+                    for o in self._type.outgoing(Field(field_name))
+                ]
+            ):
+                self._fields[field_name].typeval.clear()
+                if isinstance(value, bytes):
+                    value_repr = "x" + value.hex()
+                else:
+                    value_repr = str(value)
+
+                raise ValueError(
+                    f"none of the field conditions "
+                    f"{[str(o.condition) for o in self._type.outgoing(Field(field_name))]}"
+                    f" for field {field_name} have been met by the assigned value: {value_repr}"
+                )
 
         if field_name in self.accessible_fields:
             field = self._fields[field_name]
@@ -756,11 +775,9 @@ class MessageValue(TypeValue):
                 f" for field {field_name} have been met by the assigned value: {value!s}"
             )
 
-        if not skip_preset_fields:
+        if not prevent_recursive_checksum_calc:
             self._preset_fields(field_name)
-        self._update_accessible_fields()
-
-        if not skip_checksum:
+            self._update_accessible_fields()
             for checksum_aspect in self._checksums.values():
                 if self._is_checksum_settable(checksum_aspect):
                     self._calculate_checksum(checksum_aspect)
@@ -827,37 +844,30 @@ class MessageValue(TypeValue):
 
         arguments: Dict[str, Union[int, Tuple[int, int]]] = {}
         for mapping in checksum_aspect.expressions:
-            if (
-                isinstance(mapping.evaluated_expression, ValueRange)
-                and isinstance(mapping.evaluated_expression.lower, Number)
-                and isinstance(mapping.evaluated_expression.upper, Number)
-            ):
+            if isinstance(mapping.evaluated_expression, ValueRange):
+                assert isinstance(mapping.evaluated_expression.lower, Number) and isinstance(
+                    mapping.evaluated_expression.upper, Number
+                )
                 arguments[str(mapping.expression)] = (
                     mapping.evaluated_expression.lower.value,
                     mapping.evaluated_expression.upper.value,
                 )
             elif isinstance(mapping.evaluated_expression, Variable):
-                if (
+                assert (
                     mapping.evaluated_expression.name in self.fields
                     and self._fields[mapping.evaluated_expression.name].set
-                ):
-                    arguments[str(mapping.expression)] = self._fields[
-                        mapping.evaluated_expression.name
-                    ].typeval.value
-            elif isinstance(mapping.evaluated_expression, Number):
-                arguments[str(mapping.expression)] = mapping.evaluated_expression.value
-            else:
-                raise ValueError(
-                    f"Expressions can only be Numbers, Variables or ValueRanges: "
-                    f"{mapping.evaluated_expression} is of type "
-                    f"{type(mapping.evaluated_expression)}"
                 )
+                arguments[str(mapping.expression)] = self._fields[
+                    mapping.evaluated_expression.name
+                ].typeval.value
+            else:
+                assert isinstance(mapping.evaluated_expression, Number)
+                arguments[str(mapping.expression)] = mapping.evaluated_expression.value
 
         self.set(
             checksum_aspect.field_name,
             checksum_aspect.function(self.bytestring, **arguments),
-            skip_checksum=True,
-            skip_preset_fields=True,
+            prevent_recursive_checksum_calc=True,
         )
 
     def get(self, field_name: str) -> Union["MessageValue", Sequence[TypeValue], int, str, bytes]:
@@ -1005,7 +1015,7 @@ class MessageValue(TypeValue):
                 if not isinstance(expr, (ValueRange, Attribute, Variable)):
                     raise ValueError(
                         f"Allowed expression types are: ValueRange, Attribute and Variable. "
-                        f"Expression {expr} is of type {type(expr)}"
+                        f"Expression {expr} is of type {expr.__class__.__name__}"
                     )
                 self.expressions.append(self.EvaluatedExpression(expr))
 

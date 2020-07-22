@@ -6,9 +6,7 @@ from typing import List
 
 import pytest
 
-from rflx.expression import UNDEFINED, Add, First, Last, Length, Sub, ValueRange
-from rflx.expression import UNDEFINED, First, Last, Length, Sub, ValueRange
-from rflx.expression import UNDEFINED, Variable
+from rflx.expression import UNDEFINED, Add, First, Last, Length, Sub, ValueRange, Variable
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -1475,7 +1473,7 @@ def test_tlv_generating_tlv_error(tlv: MessageValue) -> None:
 
 
 def test_aspect_checksum(icmp_type: Message) -> None:
-    def checksum_icmp(message: bytes, **kwargs) -> int:
+    def checksum_icmp(message: bytes, **kwargs) -> int:  # type: ignore
         def add_ones_complement(num1: int, num2: int) -> int:
             mod = 1 << 16
             result = num1 + num2
@@ -1516,6 +1514,14 @@ def test_aspect_checksum(icmp_type: Message) -> None:
         b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
     )
 
+    with pytest.raises(
+        ValueError,
+        match="Allowed expression types are: ValueRange, Attribute and Variable. "
+        "Expression 0 is of type Number",
+    ):
+        icmp_type.aspects = {"Checksum": [{"Checksum": [Number(0)]}]}
+        icmp_checksum = MessageValue(icmp_type)
+
     icmp_type.aspects = {
         "Checksum": [
             {
@@ -1528,7 +1534,16 @@ def test_aspect_checksum(icmp_type: Message) -> None:
         ]
     }
     icmp_checksum = MessageValue(icmp_type)
-    icmp_checksum.set_checksum_function("Checksum", checksum_icmp)
+
+    with pytest.raises(
+        KeyError, match="Field NonExistingField is not defined",
+    ):
+        icmp_checksum.set_checksum_function("NonExistingField", checksum_icmp)
+
+    with pytest.raises(
+        KeyError, match="Field Tag has not been defined as a checksum field",
+    ):
+        icmp_checksum.set_checksum_function("Tag", checksum_icmp)
 
     icmp_checksum.set("Tag", "Echo_Request")
     icmp_checksum.set("Code_Zero", 0)
@@ -1536,8 +1551,44 @@ def test_aspect_checksum(icmp_type: Message) -> None:
     icmp_checksum.set("Checksum", 1234)
     icmp_checksum.set("Identifier", 5)
     icmp_checksum.set("Sequence_Number", 1)
-    icmp_checksum.set(
-        "Data", test_data,
-    )
+
+    with pytest.raises(
+        AttributeError,
+        match="A callable checksum function must be set in order to calculate a checksum for "
+        "Checksum.",
+    ):
+        icmp_checksum.set("Data", test_data)
+
+    icmp_checksum.set_checksum_function("Checksum", checksum_icmp)
+    icmp_checksum.set("Data", test_data)
 
     assert icmp_checksum.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
+
+
+def test_checksum_settable(tlv_checksum: MessageValue) -> None:
+    # pylint: disable=protected-access
+    def checksum_func(msg: bytes, **kwargs) -> int:
+        length = kwargs.get("Length")
+        assert length == 5
+        return len(msg)
+
+    tlv_checksum = tlv_checksum._type
+    tlv_checksum.aspects = {"Checksum": [{"Checksum": [Variable("Length")]}]}
+    tlv_msg = MessageValue(tlv_checksum)
+    tlv_msg.set_checksum_function("Checksum", checksum_func)
+    assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
+    tlv_msg.set("Tag", "Msg_Data")
+    tlv_msg.set("Length", 5)
+    assert tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
+
+    tlv_checksum.aspects = {
+        "Checksum": [{"Checksum": [Variable("Length"), Length("Value"), Variable("Value")]}]
+    }
+    tlv_msg = MessageValue(tlv_checksum)
+    tlv_msg.set("Tag", "Msg_Data")
+    tlv_msg.set("Length", 5)
+    assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
+    tlv_msg.set_checksum_function("Checksum", checksum_func)
+    tlv_msg.set("Value", bytes(5))
+    tlv_msg.set("Checksum", 0)
+    assert tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
