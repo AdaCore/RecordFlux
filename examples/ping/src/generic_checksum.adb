@@ -1,4 +1,3 @@
-
 with System.Unsigned_Types;
 
 package body Generic_Checksum with

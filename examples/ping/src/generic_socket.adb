@@ -5,15 +5,15 @@ package body Generic_Socket with
    SPARK_Mode,
    Refined_State => (Network => (FD_In, FD_Out))
 is
+
    package IC renames Interfaces.C;
    use type IC.int;
    use type IC.size_t;
 
-   procedure C_Perror (Message : String)
-      with
-         Global => null,
-         Import,
-         External_Name => "perror";
+   procedure C_Perror (Message : String) with
+      Global        => null,
+      Import,
+      External_Name => "perror";
 
    FD_In  : IC.int := -1;
    FD_Out : IC.int := -1;
@@ -22,16 +22,15 @@ is
    is
       function C_Socket (Domain   : IC.int;
                          C_Type   : IC.int;
-                         Protocol : IC.int) return IC.int
-         with
-            Global => null,
-            Import,
-            Convention => C,
-            External_Name => "socket";
-      PF_INET         : constant IC.int := 2;
-      SOCK_RAW        : constant IC.int := 3;
-      IPPROTO_ICMP    : constant IC.int := 1;
-      IPPROTO_RAW     : constant IC.int := 255;
+                         Protocol : IC.int) return IC.int with
+         Global        => null,
+         Import,
+         Convention    => C,
+         External_Name => "socket";
+      PF_INET      : constant IC.int := 2;
+      SOCK_RAW     : constant IC.int := 3;
+      IPPROTO_ICMP : constant IC.int := 1;
+      IPPROTO_RAW  : constant IC.int := 255;
    begin
       FD_In := C_Socket (PF_INET, SOCK_RAW, IPPROTO_ICMP);
       if FD_In < 0 then
@@ -52,17 +51,16 @@ is
                       Last    : out Index_Type;
                       Success : out Boolean)
    is
-      function C_Recv (FD       : IC.int;
-                       Buffer   : Buffer_Type;
-                       Length   : IC.size_t;
-                       Flags    : IC.int) return IC.int
-      with
+      function C_Recv (FD     : IC.int;
+                       Buffer : Buffer_Type;
+                       Length : IC.size_t;
+                       Flags  : IC.int) return IC.int with
          Import,
-         Convention => C,
+         Convention    => C,
          External_Name => "recv",
-         Global => null,
-         Pre  => Length <= IC.size_t (Buffer'Length),
-         Post => C_Recv'Result <= IC.int (Buffer'Length);
+         Global        => null,
+         Pre           => Length <= IC.size_t (Buffer'Length),
+         Post          => C_Recv'Result <= IC.int (Buffer'Length);
       Result : IC.int;
    begin
       Buffer := (others => Element_Type'First);
@@ -86,18 +84,18 @@ is
                        Buffer : Buffer_Type;
                        Length : IC.size_t) return IC.int with
          Import,
-         Convention => C,
+         Convention    => C,
          External_Name => "c_send",
-         Global => null,
-         Pre => Length >= IC.size_t (Buffer'Length),
-         Post => C_Send'Result <= IC.int (Buffer'Length);
+         Global        => null,
+         Pre           => Length >= IC.size_t (Buffer'Length),
+         Post          => C_Send'Result <= IC.int (Buffer'Length);
       Result : IC.int;
    begin
       if Buffer'Length < 1 then
          Success := True;
          return;
       end if;
-      Result := C_Send (Fd_Out, Destination, Buffer, IC.size_t (Buffer'Length));
+      Result  := C_Send (Fd_Out, Destination, Buffer, IC.size_t (Buffer'Length));
       Success := Result >= IC.int (Buffer'Length);
       if not Success then
          C_Perror ("Error sending packet len: " & Buffer'Length'Img & ASCII.NUL);

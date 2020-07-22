@@ -12,27 +12,24 @@ package Generic_Socket with
    Initializes    => Network
 is
 
-   procedure Setup
-   with
+   procedure Setup with
       Global => (In_Out => Network);
 
-   function Valid return Boolean
-   with
+   function Valid return Boolean with
       Global => (Input => Network);
 
    procedure Receive (Buffer  : out Buffer_Type;
                       Last    : out Index_Type;
                       Success : out Boolean) with
       Global => (Input => Network),
-      Pre  => Valid and Buffer'Length > 0,
-      Post => Valid
-              and then (if Success then Last <= Buffer'Last);
+      Pre    => Valid and Buffer'Length > 0,
+      Post   => Valid and then (if Success then Last <= Buffer'Last);
 
    procedure Send (Buffer      :     Buffer_Type;
                    Destination :     IP4_Address;
                    Success     : out Boolean) with
       Global => (Input => Network),
-      Pre => Valid,
-      Post => Valid;
+      Pre    => Valid,
+      Post   => Valid;
 
 end Generic_Socket;
