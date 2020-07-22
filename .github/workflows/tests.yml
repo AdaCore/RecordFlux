@@ -217,10 +217,11 @@ jobs:
         chmod +x $HOME/bin/run_spat
         echo "::add-path::$HOME/bin"
     - name: Cache GNATprove results
-      uses: actions/cache@v2
+      uses: Componolit/github-action-cache@master  # ISSUE: actions/cache#342
       with:
         path: build/gnatprove
         key: ${{ runner.os }}-gnatprove2020-${{ matrix.target }}
+        update: true
     - name: Verify
       run: |
         make prove_${{ matrix.target }}
