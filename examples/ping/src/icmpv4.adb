@@ -20,8 +20,8 @@ is
    function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.IPv4.Total_Length);
 
    function Image (Addr : RFLX.IPv4.Address) return String with
-      Post => Image'Result'First = 1
-      and then Image'Result'Length <= 83,
+      Post   => Image'Result'First = 1
+                and then Image'Result'Length <= 83,
       Global => null;
 
    Sequence : RFLX.ICMP.Sequence_Number := 0;
@@ -33,20 +33,20 @@ is
       function Img is new Basalt.Strings_Generic.Image_Modular (Octet);
       type Octet_Address is array (1 .. 4) of Octet;
       Addr_Var : RFLX.IPv4.Address := Addr;
-      Address : Octet_Address;
+      Address  : Octet_Address;
    begin
       for O of Address loop
-         O := Addr_Var and 16#ff#;
+         O        := Addr_Var and 16#ff#;
          Addr_Var := Addr_Var / 256;
       end loop;
       return Img (Address (1)) & "."
-         & Img (Address (2)) & "."
-         & Img (Address (3)) & "."
-         & Img (Address (4));
+             & Img (Address (2)) & "."
+             & Img (Address (3)) & "."
+             & Img (Address (4));
    end Image;
 
    procedure Free_Bytes_Ptr is new Ada.Unchecked_Deallocation (Object => RFLX.RFLX_Builtin_Types.Bytes,
-                                                               Name => RFLX.RFLX_Builtin_Types.Bytes_Ptr);
+                                                               Name   => RFLX.RFLX_Builtin_Types.Bytes_Ptr);
 
    procedure Ping (Addr : String)
    is
@@ -114,10 +114,10 @@ is
       subtype Octet is RFLX.IPv4.Address range 0 .. 255;
       type Octet_Address is array (1 .. 4) of Octet;
       package Val is new Basalt.Strings_Generic.Value_Option_Modular (Octet);
-      Address : Octet_Address := (others => 0);
+      Address   : Octet_Address := (others => 0);
       Oct_First : Natural;
       Oct_Last  : Natural;
-      Oct_Index : Positive := Address'First;
+      Oct_Index : Positive      := Address'First;
       V         : Val.Optional;
    begin
       Addr  := 0;
@@ -174,9 +174,9 @@ is
                        Addr :        RFLX.IPv4.Address) is
       use type RFLX.ICMP.Sequence_Number;
       use type RFLX.RFLX_Builtin_Types.Bit_Length;
-      IP_Context : RFLX.IPv4.Packet.Context;
+      IP_Context   : RFLX.IPv4.Packet.Context;
       ICMP_Context : RFLX.ICMP.Message.Context;
-      Data : constant RFLX.RFLX_Builtin_Types.Bytes (1 .. 8) := (others => 65);
+      Data         : constant RFLX.RFLX_Builtin_Types.Bytes (1 .. 8) := (others => 65);
       function Valid_Length (L : RFLX.RFLX_Builtin_Types.Length) return Boolean is
          (L = Data'Length);
       procedure Process_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes) with
@@ -195,7 +195,7 @@ is
       RFLX.IPv4.Packet.Set_IHL (IP_Context, 5);
       RFLX.IPv4.Packet.Set_DSCP (IP_Context, 0);
       RFLX.IPv4.Packet.Set_ECN (IP_Context, 0);
-      RFLX.IPv4.Packet.Set_Total_Length (IP_Context, 36);
+      RFLX.IPv4.Packet.Set_Total_Length (IP_Context, 24);
       RFLX.IPv4.Packet.Set_Identification (IP_Context, 1);
       RFLX.IPv4.Packet.Set_Flag_R (IP_Context, False);
       RFLX.IPv4.Packet.Set_Flag_DF (IP_Context, False);
@@ -218,7 +218,8 @@ is
                                              0, 0, Sequence, Data));
          RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
          RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
-         pragma Assert (RFLX.ICMP.Message.Field_First (ICMP_Context, RFLX.ICMP.Message.F_Data) mod RFLX.RFLX_Builtin_Types.Byte'Size = 1);
+         pragma Assert (RFLX.ICMP.Message.Field_First (ICMP_Context, RFLX.ICMP.Message.F_Data)
+                        mod RFLX.RFLX_Builtin_Types.Byte'Size = 1);
          Set_Data (ICMP_Context, 64);
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          Sequence := Sequence + 1;
