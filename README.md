@@ -299,7 +299,7 @@ $ make install_gnatstudio
 
 ## Limitations
 
-A list of known limitations for version 0.4.0 can be found [here](https://github.com/Componolit/RecordFlux/issues?q=is%3Aissue+label%3Alimitation+label%3Av0.4.0).
+A list of known limitations for version 0.4.1 can be found [here](https://github.com/Componolit/RecordFlux/issues?q=is%3Aissue+label%3Alimitation+label%3Av0.4.1).
 
 ## Background
 
