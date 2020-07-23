@@ -2,7 +2,6 @@
 
 import copy
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from rflx.common import generic_repr
@@ -1057,7 +1056,6 @@ class MessageValue(TypeValue):
         def set_checksum_function(self, function: Callable) -> None:
             self.function = function
 
-        @dataclass
         class EvaluatedExpression:
             def __init__(self, expression: Expr):
                 self.expression = expression
