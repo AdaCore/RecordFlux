@@ -51,7 +51,7 @@ setup(
     extras_require={
         "devel": [
             "black",
-            "coverage >=4, <5",
+            "coverage >=4, <6",
             "flake8 >=3, <4",
             "isort >=4, <5",
             "mypy >=0.770",
