@@ -842,7 +842,7 @@ class MessageValue(TypeValue):
 
             return False
 
-        for expr in checksum_aspect.expressions:
+        for expr in checksum_aspect.parameters:
             expr.evaluated_expression = self.__simplified(copy.copy(expr.expression))
             if (
                 isinstance(expr.evaluated_expression, ValueRange)
@@ -877,26 +877,26 @@ class MessageValue(TypeValue):
             )
 
         arguments: Dict[str, Union[int, Tuple[int, int]]] = {}
-        for mapping in checksum_aspect.expressions:
-            if isinstance(mapping.evaluated_expression, ValueRange):
-                assert isinstance(mapping.evaluated_expression.lower, Number) and isinstance(
-                    mapping.evaluated_expression.upper, Number
+        for parameter in checksum_aspect.parameters:
+            if isinstance(parameter.evaluated_expression, ValueRange):
+                assert isinstance(parameter.evaluated_expression.lower, Number) and isinstance(
+                    parameter.evaluated_expression.upper, Number
                 )
-                arguments[str(mapping.expression)] = (
-                    mapping.evaluated_expression.lower.value,
-                    mapping.evaluated_expression.upper.value,
+                arguments[str(parameter.expression)] = (
+                    parameter.evaluated_expression.lower.value,
+                    parameter.evaluated_expression.upper.value,
                 )
-            elif isinstance(mapping.evaluated_expression, Variable):
+            elif isinstance(parameter.evaluated_expression, Variable):
                 assert (
-                    mapping.evaluated_expression.name in self.fields
-                    and self._fields[mapping.evaluated_expression.name].set
+                    parameter.evaluated_expression.name in self.fields
+                    and self._fields[parameter.evaluated_expression.name].set
                 )
-                arguments[str(mapping.expression)] = self._fields[
-                    mapping.evaluated_expression.name
+                arguments[str(parameter.expression)] = self._fields[
+                    parameter.evaluated_expression.name
                 ].typeval.value
             else:
-                assert isinstance(mapping.evaluated_expression, Number)
-                arguments[str(mapping.expression)] = mapping.evaluated_expression.value
+                assert isinstance(parameter.evaluated_expression, Number)
+                arguments[str(parameter.expression)] = parameter.evaluated_expression.value
 
         self.set(
             checksum_aspect.field_name,
@@ -1044,14 +1044,14 @@ class MessageValue(TypeValue):
         def __init__(self, checksum_field_name: str, expressions: Sequence[Expr]):
             self.field_name: str = checksum_field_name
             self.function: Optional[Callable] = None
-            self.expressions: List["MessageValue.Checksum.EvaluatedExpression"] = []
+            self.parameters: List["MessageValue.Checksum.EvaluatedExpression"] = []
             for expr in expressions:
                 if not isinstance(expr, (ValueRange, Attribute, Variable)):
                     raise ValueError(
                         f"Allowed expression types are: ValueRange, Attribute and Variable. "
                         f"Expression {expr} is of type {expr.__class__.__name__}"
                     )
-                self.expressions.append(self.EvaluatedExpression(expr))
+                self.parameters.append(self.EvaluatedExpression(expr))
 
         def set_checksum_function(self, function: Callable) -> None:
             self.function = function
