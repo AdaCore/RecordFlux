@@ -31,7 +31,6 @@ setup(
         "Programming Language :: Ada",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Topic :: Communications",
@@ -42,7 +41,7 @@ setup(
     ],
     packages=find_packages(exclude=("tests",)),
     package_data={"rflx": ["templates/*"]},
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=[
         "icontract >=2.3.4, <3",
         "pydotplus >=2, <3",
