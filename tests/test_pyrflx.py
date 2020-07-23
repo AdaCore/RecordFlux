@@ -56,8 +56,14 @@ def fixture_pyrflx() -> PyRFLX:
             f"{TESTDIR}/message_odd_length.rflx",
             f"{TESTDIR}/null_message.rflx",
             f"{TESTDIR}/tlv_with_checksum.rflx",
+            f"{TESTDIR}/no_conditionals.rflx",
         ]
     )
+
+
+@pytest.fixture(name="no_conditionals_package", scope="module")
+def fixture_no_conditionals_package(pyrflx: PyRFLX) -> Package:
+    return pyrflx["No_Conditionals"]
 
 
 @pytest.fixture(name="tlv_checksum_package", scope="module")
@@ -145,12 +151,6 @@ def fixture_echo_request_reply_message(icmp_package: Package) -> MessageValue:
     return icmp_package["Message"]
 
 
-@pytest.fixture(name="icmp_type")
-def fixture_icmp_type(icmp_package: Package) -> Message:
-    # pylint: disable = protected-access
-    return icmp_package["Message"]._type
-
-
 @pytest.fixture(name="message_odd_length")
 def fixture_odd_length(message_odd_length_package: Package) -> MessageValue:
     return message_odd_length_package["Message"]
@@ -179,6 +179,18 @@ def fixture_array_type_foo(array_type_package: Package) -> MessageValue:
 @pytest.fixture(name="udp")
 def fixture_udp(udp_package: Package) -> MessageValue:
     return udp_package["Datagram"]
+
+
+@pytest.fixture(name="icmp_type")
+def fixture_icmp_type(icmp_package: Package) -> Message:
+    # pylint: disable = protected-access
+    return icmp_package["Message"]._type
+
+
+@pytest.fixture(name="no_conditionals_msg")
+def fixture_no_conditionals_msg(no_conditionals_package: Package) -> Message:
+    # pylint: disable = protected-access
+    return no_conditionals_package["Message"]._type
 
 
 def test_file_not_found(tmp_path: Path) -> None:
@@ -1561,30 +1573,29 @@ def test_aspect_checksum(icmp_type: Message) -> None:
 
     icmp_checksum.set_checksum_function("Checksum", checksum_icmp)
     icmp_checksum.set("Data", test_data)
-
     assert icmp_checksum.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
 
 
-def test_checksum_settable(tlv_checksum: MessageValue) -> None:
+def test_checksum_settable(tlv_checksum: MessageValue, no_conditionals_msg: Message) -> None:
     # pylint: disable=protected-access
-    def checksum_func(msg: bytes, **kwargs) -> int:
+    def checksum_func(msg: bytes, **kwargs) -> int:  # type: ignore
         length = kwargs.get("Length")
         assert length == 5
         return len(msg)
 
-    tlv_checksum = tlv_checksum._type
-    tlv_checksum.aspects = {"Checksum": [{"Checksum": [Variable("Length")]}]}
-    tlv_msg = MessageValue(tlv_checksum)
+    tlv_checksum_type = tlv_checksum._type
+    tlv_checksum_type.aspects = {"Checksum": [{"Checksum": [Variable("Length")]}]}
+    tlv_msg = MessageValue(tlv_checksum_type)
     tlv_msg.set_checksum_function("Checksum", checksum_func)
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
     tlv_msg.set("Tag", "Msg_Data")
     tlv_msg.set("Length", 5)
     assert tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
 
-    tlv_checksum.aspects = {
+    tlv_checksum_type.aspects = {
         "Checksum": [{"Checksum": [Variable("Length"), Length("Value"), Variable("Value")]}]
     }
-    tlv_msg = MessageValue(tlv_checksum)
+    tlv_msg = MessageValue(tlv_checksum_type)
     tlv_msg.set("Tag", "Msg_Data")
     tlv_msg.set("Length", 5)
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
@@ -1592,3 +1603,11 @@ def test_checksum_settable(tlv_checksum: MessageValue) -> None:
     tlv_msg.set("Value", bytes(5))
     tlv_msg.set("Checksum", 0)
     assert tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
+
+    no_conditionals_msg.aspects = {
+        "Checksum": [{"Checksum": [ValueRange(First("Tag"), Last("Data"))]}]
+    }
+    msg = MessageValue(no_conditionals_msg)
+    msg.set("Tag", 0)
+    msg.set("Data", 0)
+    assert not msg._is_checksum_settable(msg._checksums["Checksum"])
