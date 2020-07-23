@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6]
+        python-version: [3.7]
         target: [black, isort, flake8, pylint, mypy, contracts, doc]
     steps:
     - uses: actions/checkout@v2
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6]
+        python-version: [3.7]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -70,7 +70,7 @@ jobs:
       fail-fast: false
       matrix:
         target: ["python"]
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.7, 3.8]
         include:
           - target: "python_optimized"
             python-version: 3.8
