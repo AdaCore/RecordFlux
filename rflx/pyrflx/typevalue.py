@@ -812,12 +812,47 @@ class MessageValue(TypeValue):
         raise KeyError(f"Field {checksum_field_name} has not been defined as a checksum field")
 
     def _is_checksum_settable(self, checksum_aspect: "MessageValue.Checksum") -> bool:
+        def valid_path(value_range: ValueRange) -> bool:
+            expr: Dict[Expr, str] = dict.fromkeys([value_range.lower, value_range.upper])
+
+            for k in expr:
+                if isinstance(k, Sub):
+                    assert isinstance(k.left, (First, Last))
+                    expr[k] = str(k.left.prefix)
+                elif isinstance(k, Add):
+                    for t in k.terms:
+                        if isinstance(t, (First, Last)):
+                            expr[k] = str(t.prefix)
+                else:
+                    assert isinstance(k, (First, Last))
+                    expr[k] = str(k.prefix)
+
+            field = expr.get(value_range.lower)
+            assert isinstance(field, str)
+            upper_field_name = expr.get(value_range.upper)
+            if upper_field_name == "Message":
+                upper_field_name = "Final"
+            while field != upper_field_name:
+                field = self._next_field(field)
+                if field == "Final":
+                    continue
+                if field == "" or not self._fields[field].set:
+                    break
+            else:
+                return True
+
+            return False
 
         for expr in checksum_aspect.expressions:
             expr.evaluated_expression = self.__simplified(copy.copy(expr.expression))
-            if isinstance(expr.evaluated_expression, ValueRange) and (
-                not isinstance(expr.evaluated_expression.lower, Number)
-                or not isinstance(expr.evaluated_expression.upper, Number)
+            if (
+                isinstance(expr.evaluated_expression, ValueRange)
+                and isinstance(expr.expression, ValueRange)
+                and (
+                    not isinstance(expr.evaluated_expression.lower, Number)
+                    or not isinstance(expr.evaluated_expression.upper, Number)
+                    or not valid_path(expr.expression)
+                )
             ):
                 break
             if (
