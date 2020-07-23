@@ -190,7 +190,6 @@ is
    begin
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
-      pragma Assert (IP_Context.First = 1);
       RFLX.IPv4.Packet.Set_Version (IP_Context, 4);
       RFLX.IPv4.Packet.Set_IHL (IP_Context, 5);
       RFLX.IPv4.Packet.Set_DSCP (IP_Context, 0);
@@ -218,8 +217,6 @@ is
                                              0, 0, Sequence, Data));
          RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
          RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
-         pragma Assert (RFLX.ICMP.Message.Field_First (ICMP_Context, RFLX.ICMP.Message.F_Data)
-                        mod RFLX.RFLX_Builtin_Types.Byte'Size = 1);
          Set_Data (ICMP_Context, 64);
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          Sequence := Sequence + 1;
