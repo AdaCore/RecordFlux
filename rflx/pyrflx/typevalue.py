@@ -707,7 +707,7 @@ class MessageValue(TypeValue):
         self,
         field_name: str,
         value: Union[bytes, int, str, Sequence[TypeValue], Bitstring],
-        prevent_recursive_checksum_calc: bool = False,
+        checksum_calculation: bool = True,
     ) -> None:
         def set_refinement(fld: MessageValue.Field, fld_name: str) -> None:
             if isinstance(fld.typeval, OpaqueValue):
@@ -774,7 +774,7 @@ class MessageValue(TypeValue):
                 f" for field {field_name} have been met by the assigned value: {value!s}"
             )
 
-        if not prevent_recursive_checksum_calc:
+        if checksum_calculation:
             self._preset_fields(field_name)
             self._update_accessible_fields()
             for checksum_aspect in self._checksums.values():
@@ -901,7 +901,7 @@ class MessageValue(TypeValue):
         self.set(
             checksum_aspect.field_name,
             checksum_aspect.function(self.bytestring, **arguments),
-            prevent_recursive_checksum_calc=True,
+            checksum_calculation=False,
         )
 
     def get(self, field_name: str) -> Union["MessageValue", Sequence[TypeValue], int, str, bytes]:
