@@ -872,7 +872,7 @@ class Generator:
         def length(field: Field, message: Message) -> Expr:
             target_links = [
                 (target, list(links))
-                for target, links in itertools.groupby(message.outgoing(field), lambda x: x[1])
+                for target, links in itertools.groupby(message.outgoing(field), lambda x: x.target)
                 if target != FINAL
             ]
             cases: List[Tuple[Expr, Expr]] = []
