@@ -1542,12 +1542,13 @@ def fixture_icmp_checksum(icmp_type: Message) -> MessageValue:
 
 def test_checksum_field_not_defined(icmp_checksum: MessageValue) -> None:
     with pytest.raises(
-        KeyError, match="Field NonExistingField is not defined",
+        KeyError, match="cannot set checksum function: field NonExistingField is not defined",
     ):
         icmp_checksum.set_checksum_function("NonExistingField", icmp_checksum_function)
 
     with pytest.raises(
-        KeyError, match="Field Tag has not been defined as a checksum field",
+        KeyError,
+        match="cannot set checksum function: field Tag has not been defined as " "a checksum field",
     ):
         icmp_checksum.set_checksum_function("Tag", icmp_checksum_function)
 
@@ -1560,8 +1561,7 @@ def test_checksum_function_not_set(icmp_checksum: MessageValue) -> None:
     icmp_checksum.set("Sequence_Number", 1)
     with pytest.raises(
         AttributeError,
-        match="A callable checksum function must be set in order to calculate a checksum for "
-        "Checksum.",
+        match="cannot calculate checksum for Checksum: no callable checksum function provided",
     ):
         icmp_checksum.set("Data", b"\x00")
 
