@@ -221,7 +221,7 @@ def substitution_facts(
         if isinstance(field_type, Composite):
             return Variable(field.name)
 
-        raise AssertionError(f'unexpected type "{type(field_type).__name__}"')
+        assert False, f'unexpected type "{type(field_type).__name__}"'
 
     return {
         **{First("Message"): first},

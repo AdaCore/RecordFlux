@@ -1,8 +1,8 @@
 [report]
 exclude_lines =
     pragma: no cover
+    assert False
     def __repr__
     def __str__
-    raise AssertionError
     raise NotImplementedError
     return NotImplemented
