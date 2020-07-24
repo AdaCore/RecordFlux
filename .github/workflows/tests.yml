@@ -73,11 +73,11 @@ jobs:
         python-version: [3.7, 3.8]
         include:
           - target: "python_property"
-            python-version: 3.8
+            python-version: 3.7
           - target: "python_optimized"
-            python-version: 3.8
+            python-version: 3.7
           - target: "python_coverage"
-            python-version: 3.8
+            python-version: 3.7
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
