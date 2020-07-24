@@ -4,6 +4,7 @@ from typing import Any
 import pkg_resources
 import pytest
 
+import rflx.parser
 from rflx import cli
 from rflx.error import Location, Severity, Subsystem, fail
 
@@ -34,8 +35,13 @@ def test_main_check_parser_error() -> None:
     assert "README.md:1:1: parser: error: " in str(cli.main(["rflx", "check", "README.md"]))
 
 
-def test_main_check_model_error(monkeypatch: Any) -> None:
+def test_main_check_model_error_parse(monkeypatch: Any) -> None:
     monkeypatch.setattr(cli, "check", lambda x: raise_model_error())
+    assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
+
+
+def test_main_check_model_error_create_model(monkeypatch: Any) -> None:
+    monkeypatch.setattr(rflx.parser.Parser, "create_model", lambda x: raise_model_error())
     assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
 
 

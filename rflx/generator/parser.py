@@ -736,8 +736,6 @@ class ParserGenerator:
 def valid_message_condition(
     message: Message, field: Field = INITIAL, structural: bool = False
 ) -> Expr:
-    if not message.outgoing(field):
-        return TRUE
     return Or(
         *[
             l.condition

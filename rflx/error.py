@@ -55,9 +55,6 @@ class Location:
             return self.start < other.start
         return NotImplemented
 
-    def __hash__(self) -> int:
-        return hash(f"{self.__start}:{self.__source}:{self.__end}")
-
     @property
     def source(self) -> Optional[Path]:
         return self.__source
@@ -86,11 +83,6 @@ class Severity(Enum):
     INFO = 2
     WARNING = 3
     ERROR = 4
-
-    def __gt__(self, other: "Severity") -> bool:
-        # ISSUE: PyCQA/pylint#2306
-        value = int(self.value)
-        return value > other.value
 
     def __str__(self) -> str:
         return str.lower(self.name)
