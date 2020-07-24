@@ -2,6 +2,7 @@
 
 import copy
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from rflx.common import generic_repr
@@ -777,9 +778,9 @@ class MessageValue(TypeValue):
         if checksum_calculation:
             self._preset_fields(field_name)
             self._update_accessible_fields()
-            for checksum_aspect in self._checksums.values():
-                if self._is_checksum_settable(checksum_aspect):
-                    self._calculate_checksum(checksum_aspect)
+            for checksum in self._checksums.values():
+                if self._is_checksum_settable(checksum):
+                    self._calculate_checksum(checksum)
 
     def _preset_fields(self, fld: str) -> None:
         nxt = self._next_field(fld)
@@ -803,32 +804,37 @@ class MessageValue(TypeValue):
 
     def set_checksum_function(self, checksum_field_name: str, checksum_method: Callable) -> None:
         if checksum_field_name not in self.fields:
-            raise KeyError(f"Field {checksum_field_name} is not defined")
+            raise KeyError(
+                f"cannot set checksum function: field {checksum_field_name} is not defined"
+            )
         for field_name, checksum in self._checksums.items():
             if field_name == checksum_field_name:
                 checksum.set_checksum_function(checksum_method)
                 return
-        raise KeyError(f"Field {checksum_field_name} has not been defined as a checksum field")
+        raise KeyError(
+            f"cannot set checksum function: field {checksum_field_name} "
+            f"has not been defined as a checksum field"
+        )
 
-    def _is_checksum_settable(self, checksum_aspect: "MessageValue.Checksum") -> bool:
+    def _is_checksum_settable(self, checksum: "MessageValue.Checksum") -> bool:
         def valid_path(value_range: ValueRange) -> bool:
             expr: Dict[Expr, str] = dict.fromkeys([value_range.lower, value_range.upper])
 
-            for k in expr:
-                if isinstance(k, Sub):
-                    assert isinstance(k.left, (First, Last))
-                    expr[k] = str(k.left.prefix)
-                elif isinstance(k, Add):
-                    for t in k.terms:
+            for e in expr:
+                if isinstance(e, Sub):
+                    assert isinstance(e.left, (First, Last))
+                    expr[e] = str(e.left.prefix)
+                elif isinstance(e, Add):
+                    for t in e.terms:
                         if isinstance(t, (First, Last)):
-                            expr[k] = str(t.prefix)
+                            expr[e] = str(t.prefix)
                 else:
-                    assert isinstance(k, (First, Last))
-                    expr[k] = str(k.prefix)
+                    assert isinstance(e, (First, Last))
+                    expr[e] = str(e.prefix)
 
             field = expr.get(value_range.lower)
             assert isinstance(field, str)
-            upper_field_name = expr.get(value_range.upper)
+            upper_field_name = expr[value_range.upper]
             if upper_field_name == "Message":
                 upper_field_name = "Final"
             while field != upper_field_name:
@@ -842,26 +848,26 @@ class MessageValue(TypeValue):
 
             return False
 
-        for expr in checksum_aspect.parameters:
-            expr.evaluated_expression = self.__simplified(copy.copy(expr.expression))
+        for expr_tuple in checksum.parameters:
+            expr_tuple.evaluated_expression = self.__simplified(copy.copy(expr_tuple.expression))
             if (
-                isinstance(expr.evaluated_expression, ValueRange)
-                and isinstance(expr.expression, ValueRange)
+                isinstance(expr_tuple.evaluated_expression, ValueRange)
+                and isinstance(expr_tuple.expression, ValueRange)
                 and (
-                    not isinstance(expr.evaluated_expression.lower, Number)
-                    or not isinstance(expr.evaluated_expression.upper, Number)
-                    or not valid_path(expr.expression)
+                    not isinstance(expr_tuple.evaluated_expression.lower, Number)
+                    or not isinstance(expr_tuple.evaluated_expression.upper, Number)
+                    or not valid_path(expr_tuple.expression)
                 )
             ):
                 break
             if (
-                isinstance(expr.evaluated_expression, Variable)
-                and not self._fields[expr.evaluated_expression.name].set
+                isinstance(expr_tuple.evaluated_expression, Variable)
+                and not self._fields[expr_tuple.evaluated_expression.name].set
             ):
                 break
             if (
-                isinstance(expr.evaluated_expression, Attribute)
-                and not self._fields[str(expr.evaluated_expression.prefix)].set
+                isinstance(expr_tuple.evaluated_expression, Attribute)
+                and not self._fields[str(expr_tuple.evaluated_expression.prefix)].set
             ):
                 break
         else:
@@ -869,38 +875,38 @@ class MessageValue(TypeValue):
 
         return False
 
-    def _calculate_checksum(self, checksum_aspect: "MessageValue.Checksum") -> None:
-        if not checksum_aspect.function:
+    def _calculate_checksum(self, checksum: "MessageValue.Checksum") -> None:
+        if not checksum.function:
             raise AttributeError(
-                f"A callable checksum function must be set in order to "
-                f"calculate a checksum for {checksum_aspect.field_name}."
+                f"cannot calculate checksum for {checksum.field_name}: "
+                f"no callable checksum function provided"
             )
 
         arguments: Dict[str, Union[int, Tuple[int, int]]] = {}
-        for parameter in checksum_aspect.parameters:
-            if isinstance(parameter.evaluated_expression, ValueRange):
-                assert isinstance(parameter.evaluated_expression.lower, Number) and isinstance(
-                    parameter.evaluated_expression.upper, Number
+        for expr_tuple in checksum.parameters:
+            if isinstance(expr_tuple.evaluated_expression, ValueRange):
+                assert isinstance(expr_tuple.evaluated_expression.lower, Number) and isinstance(
+                    expr_tuple.evaluated_expression.upper, Number
                 )
-                arguments[str(parameter.expression)] = (
-                    parameter.evaluated_expression.lower.value,
-                    parameter.evaluated_expression.upper.value,
+                arguments[str(expr_tuple.expression)] = (
+                    expr_tuple.evaluated_expression.lower.value,
+                    expr_tuple.evaluated_expression.upper.value,
                 )
-            elif isinstance(parameter.evaluated_expression, Variable):
+            elif isinstance(expr_tuple.evaluated_expression, Variable):
                 assert (
-                    parameter.evaluated_expression.name in self.fields
-                    and self._fields[parameter.evaluated_expression.name].set
+                    expr_tuple.evaluated_expression.name in self.fields
+                    and self._fields[expr_tuple.evaluated_expression.name].set
                 )
-                arguments[str(parameter.expression)] = self._fields[
-                    parameter.evaluated_expression.name
+                arguments[str(expr_tuple.expression)] = self._fields[
+                    expr_tuple.evaluated_expression.name
                 ].typeval.value
             else:
-                assert isinstance(parameter.evaluated_expression, Number)
-                arguments[str(parameter.expression)] = parameter.evaluated_expression.value
+                assert isinstance(expr_tuple.evaluated_expression, Number)
+                arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.value
 
         self.set(
-            checksum_aspect.field_name,
-            checksum_aspect.function(self.bytestring, **arguments),
+            checksum.field_name,
+            checksum.function(self.bytestring, **arguments),
             checksum_calculation=False,
         )
 
@@ -1044,18 +1050,18 @@ class MessageValue(TypeValue):
         def __init__(self, checksum_field_name: str, expressions: Sequence[Expr]):
             self.field_name: str = checksum_field_name
             self.function: Optional[Callable] = None
-            self.parameters: List["MessageValue.Checksum.EvaluatedExpression"] = []
+            self.parameters: List["MessageValue.Checksum.ExpressionTuple"] = []
             for expr in expressions:
                 assert isinstance(expr, (ValueRange, Attribute, Variable))
-                self.parameters.append(self.EvaluatedExpression(expr))
+                self.parameters.append(self.ExpressionTuple(expr))
 
         def set_checksum_function(self, function: Callable) -> None:
             self.function = function
 
-        class EvaluatedExpression:
-            def __init__(self, expression: Expr):
-                self.expression = expression
-                self.evaluated_expression = expression
+        @dataclass
+        class ExpressionTuple:
+            expression: Expr
+            evaluated_expression: Expr = UNDEFINED
 
     class Field:
         def __init__(self, t: TypeValue):
