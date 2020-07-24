@@ -84,10 +84,7 @@ install_gnatstudio:
 	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
 
 clean:
-	gprclean -Ptest
-	gnatprove -Ptest --clean
-	test -d $(noprefix-dir) && rm -r $(noprefix-dir) || true
-	rmdir $(build-dir)
+	rm -rf $(build-dir) .hypothesis .mypy_cache .pytest_cache
 
 remove-prefix = $(VERBOSE) \
 	mkdir -p $(dir $@) && \
