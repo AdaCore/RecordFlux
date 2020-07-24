@@ -107,6 +107,7 @@ jobs:
         echo "::add-path::$HOME/bin"
         echo "::set-env name=PYTHONPATH::$PWD"
         echo "::set-env name=HYPOTHESIS_PROFILE::ci"
+        echo "::set-env name=BASE_TMP_DIR::build"
     - name: Configure kernel parameters
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
@@ -164,6 +165,7 @@ jobs:
         echo "::add-path::$HOME/bin"
         echo "::set-env name=PYTHONPATH::$PWD"
         echo "::set-env name=HYPOTHESIS_PROFILE::ci"
+        echo "::set-env name=BASE_TMP_DIR::build"
     - name: Test
       run: |
         make test_${{ matrix.target }}

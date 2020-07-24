@@ -4,10 +4,11 @@ from tempfile import TemporaryDirectory
 from rflx.expression import Greater, Variable
 from rflx.graph import Graph
 from rflx.model import FINAL, INITIAL, Field, Less, Link, Message, ModularInteger, Number, Pow
+from tests.utils import BASE_TMP_DIR
 
 
 def assert_graph(graph: Graph, expected: str) -> None:
-    with TemporaryDirectory() as directory:
+    with TemporaryDirectory(dir=BASE_TMP_DIR) as directory:
         path = Path(directory) / Path("test.dot")
         graph.write(path, fmt="raw")
         with open(path) as f:

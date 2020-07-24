@@ -1,3 +1,4 @@
+import os
 import pathlib
 import shutil
 import subprocess
@@ -9,6 +10,8 @@ import pytest
 from rflx.error import Location, RecordFluxError
 from rflx.generator import Generator
 from rflx.model import Field, Link, Message, Model, Type
+
+BASE_TMP_DIR = os.environ.get("BASE_TMP_DIR")
 
 
 def assert_equal(left: Any, right: Any) -> None:
@@ -23,7 +26,7 @@ def assert_message_model_error(
 
 
 def assert_compilable_code(model: Model, prefix: str = None) -> None:
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(dir=BASE_TMP_DIR) as tmpdir:
         tmp_path = pathlib.Path(tmpdir)
 
         _create_files(tmp_path, model, prefix)
@@ -38,7 +41,7 @@ def assert_compilable_code(model: Model, prefix: str = None) -> None:
 
 
 def assert_provable_code(model: Model, prefix: str = None) -> None:
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(dir=BASE_TMP_DIR) as tmpdir:
         tmp_path = pathlib.Path(tmpdir)
 
         _create_files(tmp_path, model, prefix)
