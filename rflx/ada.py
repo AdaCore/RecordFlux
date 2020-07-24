@@ -2,7 +2,9 @@
 import itertools
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
+from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
 from rflx.common import file_name, generic_repr, indent, indent_next, unique
 from rflx.contract import invariant
@@ -991,16 +993,18 @@ class InstantiationUnit(Unit):
         return file_name(str(self.declaration.identifier))
 
 
-class UnitPart(NamedTuple):
-    specification: Sequence[Declaration] = []
-    body: Sequence[Declaration] = []
-    private: Sequence[Declaration] = []
+@dataclass
+class UnitPart:
+    specification: Sequence[Declaration] = dataclass_field(default_factory=list)
+    body: Sequence[Declaration] = dataclass_field(default_factory=list)
+    private: Sequence[Declaration] = dataclass_field(default_factory=list)
 
 
-class SubprogramUnitPart(NamedTuple):
-    specification: Sequence[Subprogram] = []
-    body: Sequence[Subprogram] = []
-    private: Sequence[Subprogram] = []
+@dataclass
+class SubprogramUnitPart:
+    specification: Sequence[Subprogram] = dataclass_field(default_factory=list)
+    body: Sequence[Subprogram] = dataclass_field(default_factory=list)
+    private: Sequence[Subprogram] = dataclass_field(default_factory=list)
 
 
 def generic_formal_part(parameters: Sequence[FormalDeclaration] = None) -> str:

@@ -3,8 +3,9 @@ import itertools
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import copy
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from rflx.common import flat_name, generic_repr
 from rflx.contract import ensure, invariant
@@ -491,7 +492,8 @@ INITIAL = Field("Initial")
 FINAL = Field("Final")
 
 
-class Link(NamedTuple):
+@dataclass(order=True)
+class Link:
     source: Field
     target: Field
     condition: Expr = TRUE
@@ -500,8 +502,7 @@ class Link(NamedTuple):
     location: Optional[Location] = None
 
     def __repr__(self) -> str:
-        # pylint: disable=no-member
-        return generic_repr(self.__class__.__name__, self._asdict())
+        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
