@@ -1513,8 +1513,7 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
     checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
 
     message_in_sixteen_bit_chunks = [
-        int.from_bytes(checksum_bytes[i : i + 2], "big")
-        for i in range(0, len(checksum_bytes), 2)
+        int.from_bytes(checksum_bytes[i : i + 2], "big") for i in range(0, len(checksum_bytes), 2)
     ]
     intermediary_result = message_in_sixteen_bit_chunks[0]
     for i in range(1, len(message_in_sixteen_bit_chunks)):
@@ -1591,7 +1590,9 @@ def tlv_checksum_function(msg: bytes, **kwargs: int) -> int:
 
 def test_is_checksum_settable(tlv_checksum_type: Message) -> None:
     # pylint: disable=protected-access
-    tlv_checksum_type.aspects = {"Checksum": [{"Checksum": [Variable("Length"), Length("Value"), Variable("Value")]}]}
+    tlv_checksum_type.aspects = {
+        "Checksum": [{"Checksum": [Variable("Length"), Length("Value"), Variable("Value")]}]
+    }
     tlv_msg = MessageValue(tlv_checksum_type)
     tlv_msg.set_checksum_function("Checksum", tlv_checksum_function)
     tlv_msg.set("Tag", "Msg_Data")

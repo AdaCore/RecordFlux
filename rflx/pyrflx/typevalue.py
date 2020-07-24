@@ -1046,11 +1046,7 @@ class MessageValue(TypeValue):
             self.function: Optional[Callable] = None
             self.parameters: List["MessageValue.Checksum.EvaluatedExpression"] = []
             for expr in expressions:
-                if not isinstance(expr, (ValueRange, Attribute, Variable)):
-                    raise ValueError(
-                        f"Allowed expression types are: ValueRange, Attribute and Variable. "
-                        f"Expression {expr} is of type {expr.__class__.__name__}"
-                    )
+                assert isinstance(expr, (ValueRange, Attribute, Variable))
                 self.parameters.append(self.EvaluatedExpression(expr))
 
         def set_checksum_function(self, function: Callable) -> None:
