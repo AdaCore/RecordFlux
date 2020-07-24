@@ -6,6 +6,7 @@ import hypothesis
 import pytest
 
 from rflx.expression import Expr
+from tests.utils import BASE_TMP_DIR
 
 hypothesis.settings.register_profile(
     "default", max_examples=100, verbosity=hypothesis.Verbosity.verbose
@@ -21,6 +22,9 @@ def pytest_configure(config: Any) -> None:
     config.addinivalue_line(
         "markers", "verification: Tests which use formal verification. Not run by default."
     )
+    if BASE_TMP_DIR:
+        config.addinivalue_line("addopts", f"--basetemp={BASE_TMP_DIR}")
+        os.makedirs(BASE_TMP_DIR, exist_ok=True)
 
 
 def pytest_collection_modifyitems(config: Any, items: list) -> None:
