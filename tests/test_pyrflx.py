@@ -187,10 +187,16 @@ def fixture_icmp_type(icmp_package: Package) -> Message:
     return icmp_package["Message"]._type
 
 
-@pytest.fixture(name="no_conditionals_msg")
+@pytest.fixture(name="no_conditionals_type")
 def fixture_no_conditionals_msg(no_conditionals_package: Package) -> Message:
     # pylint: disable = protected-access
     return no_conditionals_package["Message"]._type
+
+
+@pytest.fixture(name="tlv_checksum_type")
+def fixture_tlv_checksum_type(tlv_checksum: MessageValue) -> Message:
+    # pylint: disable=protected-access
+    return tlv_checksum._type
 
 
 def test_file_not_found(tmp_path: Path) -> None:
@@ -1484,56 +1490,43 @@ def test_tlv_generating_tlv_error(tlv: MessageValue) -> None:
     assert tlv.bytestring == b"\xc0"
 
 
-def test_aspect_checksum(icmp_type: Message) -> None:
-    def checksum_icmp(message: bytes, **kwargs) -> int:  # type: ignore
-        def add_ones_complement(num1: int, num2: int) -> int:
-            mod = 1 << 16
-            result = num1 + num2
-            return result if result < mod else (result + 1) % mod
+def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
+    def add_ones_complement(num1: int, num2: int) -> int:
+        mod = 1 << 16
+        result = num1 + num2
+        return result if result < mod else (result + 1) % mod
 
-        first_arg = kwargs.get("Tag'First .. Checksum'First - 1")
-        assert isinstance(first_arg, tuple)
-        tag_first, checksum_first_minus_one = first_arg
-        assert tag_first == 0 and checksum_first_minus_one == 15
-        second_arg = kwargs.get("(Checksum'Last + 1) .. Message'Last")
-        assert isinstance(second_arg, tuple)
-        checksum_last_plus_one, data_last = second_arg
-        assert checksum_last_plus_one == 32 and data_last == 511
-        checksum_length = kwargs.get("Checksum'Length")
-        assert checksum_length == 16
+    first_arg = kwargs.get("Tag'First .. Checksum'First - 1")
+    assert isinstance(first_arg, tuple)
+    tag_first, checksum_first_minus_one = first_arg
+    assert tag_first == 0 and checksum_first_minus_one == 15
+    second_arg = kwargs.get("(Checksum'Last + 1) .. Message'Last")
+    assert isinstance(second_arg, tuple)
+    checksum_last_plus_one, data_last = second_arg
+    assert checksum_last_plus_one == 32 and data_last == 511
+    checksum_length = kwargs.get("Checksum'Length")
+    assert isinstance(checksum_length, int)
+    assert checksum_length == 16
 
-        checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
-        checksum_bytes += b"\x00" * (checksum_length // 8)
-        checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
+    checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
+    checksum_bytes += b"\x00" * (checksum_length // 8)
+    checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
 
-        message_in_sixteen_bit_chunks = [
-            int.from_bytes(checksum_bytes[i : i + 2], "big")
-            for i in range(0, len(checksum_bytes), 2)
-        ]
-        intermediary_result = message_in_sixteen_bit_chunks[0]
-        for i in range(1, len(message_in_sixteen_bit_chunks)):
-            intermediary_result = add_ones_complement(
-                intermediary_result, message_in_sixteen_bit_chunks[i]
-            )
+    message_in_sixteen_bit_chunks = [
+        int.from_bytes(checksum_bytes[i : i + 2], "big")
+        for i in range(0, len(checksum_bytes), 2)
+    ]
+    intermediary_result = message_in_sixteen_bit_chunks[0]
+    for i in range(1, len(message_in_sixteen_bit_chunks)):
+        intermediary_result = add_ones_complement(
+            intermediary_result, message_in_sixteen_bit_chunks[i]
+        )
 
-        assert intermediary_result ^ 0xFFFF == 12824
-        return intermediary_result ^ 0xFFFF
+    return intermediary_result ^ 0xFFFF
 
-    test_data = (
-        b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
-        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
-        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
-        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
-    )
 
-    with pytest.raises(
-        ValueError,
-        match="Allowed expression types are: ValueRange, Attribute and Variable. "
-        "Expression 0 is of type Number",
-    ):
-        icmp_type.aspects = {"Checksum": [{"Checksum": [Number(0)]}]}
-        icmp_checksum = MessageValue(icmp_type)
-
+@pytest.fixture(name="icmp_checksum")
+def fixture_icmp_checksum(icmp_type: Message) -> MessageValue:
     icmp_type.aspects = {
         "Checksum": [
             {
@@ -1545,69 +1538,76 @@ def test_aspect_checksum(icmp_type: Message) -> None:
             }
         ]
     }
-    icmp_checksum = MessageValue(icmp_type)
+    return MessageValue(icmp_type)
 
+
+def test_checksum_field_not_defined(icmp_checksum: MessageValue) -> None:
     with pytest.raises(
         KeyError, match="Field NonExistingField is not defined",
     ):
-        icmp_checksum.set_checksum_function("NonExistingField", checksum_icmp)
+        icmp_checksum.set_checksum_function("NonExistingField", icmp_checksum_function)
 
     with pytest.raises(
         KeyError, match="Field Tag has not been defined as a checksum field",
     ):
-        icmp_checksum.set_checksum_function("Tag", checksum_icmp)
+        icmp_checksum.set_checksum_function("Tag", icmp_checksum_function)
 
+
+def test_checksum_function_not_set(icmp_checksum: MessageValue) -> None:
     icmp_checksum.set("Tag", "Echo_Request")
     icmp_checksum.set("Code_Zero", 0)
-    # 12824 = correct checksum
     icmp_checksum.set("Checksum", 1234)
     icmp_checksum.set("Identifier", 5)
     icmp_checksum.set("Sequence_Number", 1)
-
     with pytest.raises(
         AttributeError,
         match="A callable checksum function must be set in order to calculate a checksum for "
         "Checksum.",
     ):
-        icmp_checksum.set("Data", test_data)
+        icmp_checksum.set("Data", b"\x00")
 
-    icmp_checksum.set_checksum_function("Checksum", checksum_icmp)
+
+def test_checksum_icmp(icmp_checksum: MessageValue) -> None:
+    test_data = (
+        b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
+        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
+        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+    icmp_checksum.set_checksum_function("Checksum", icmp_checksum_function)
+    icmp_checksum.set("Tag", "Echo_Request")
+    icmp_checksum.set("Code_Zero", 0)
+    icmp_checksum.set("Checksum", 1234)
+    icmp_checksum.set("Identifier", 5)
+    icmp_checksum.set("Sequence_Number", 1)
     icmp_checksum.set("Data", test_data)
+    assert icmp_checksum.get("Checksum") == 12824
     assert icmp_checksum.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
 
 
-def test_checksum_settable(tlv_checksum: MessageValue, no_conditionals_msg: Message) -> None:
+def tlv_checksum_function(msg: bytes, **kwargs: int) -> int:
+    return (int.from_bytes(msg, "big") ^ kwargs["Length"]) % 1 << 32
+
+
+def test_is_checksum_settable(tlv_checksum_type: Message) -> None:
     # pylint: disable=protected-access
-    def checksum_func(msg: bytes, **kwargs) -> int:  # type: ignore
-        length = kwargs.get("Length")
-        assert length == 5
-        return len(msg)
-
-    tlv_checksum_type = tlv_checksum._type
-    tlv_checksum_type.aspects = {"Checksum": [{"Checksum": [Variable("Length")]}]}
+    tlv_checksum_type.aspects = {"Checksum": [{"Checksum": [Variable("Length"), Length("Value"), Variable("Value")]}]}
     tlv_msg = MessageValue(tlv_checksum_type)
-    tlv_msg.set_checksum_function("Checksum", checksum_func)
-    assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
-    tlv_msg.set("Tag", "Msg_Data")
-    tlv_msg.set("Length", 5)
-    assert tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
-
-    tlv_checksum_type.aspects = {
-        "Checksum": [{"Checksum": [Variable("Length"), Length("Value"), Variable("Value")]}]
-    }
-    tlv_msg = MessageValue(tlv_checksum_type)
+    tlv_msg.set_checksum_function("Checksum", tlv_checksum_function)
     tlv_msg.set("Tag", "Msg_Data")
     tlv_msg.set("Length", 5)
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
-    tlv_msg.set_checksum_function("Checksum", checksum_func)
     tlv_msg.set("Value", bytes(5))
     tlv_msg.set("Checksum", 0)
     assert tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
 
-    no_conditionals_msg.aspects = {
+
+def test_checksum_value_range(no_conditionals_type: Message) -> None:
+    # pylint: disable=protected-access
+    no_conditionals_type.aspects = {
         "Checksum": [{"Checksum": [ValueRange(First("Tag"), Last("Data"))]}]
     }
-    msg = MessageValue(no_conditionals_msg)
+    msg = MessageValue(no_conditionals_type)
     msg.set("Tag", 0)
     msg.set("Data", 0)
     assert not msg._is_checksum_settable(msg._checksums["Checksum"])
