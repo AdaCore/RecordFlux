@@ -1,6 +1,5 @@
 # pylint: disable=too-many-lines
 
-import copy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
@@ -788,17 +787,13 @@ class MessageValue(TypeValue):
             field = self._fields[nxt]
             if not self._has_first(nxt) or not self._has_length(nxt):
                 break
-
             field.first = self._get_first(nxt)
             if isinstance(field.typeval, OpaqueValue):
                 field.typeval.set_expected_size(self._get_length(nxt))
-
-            # apparently this removes the value of an opaque value in case of an update, but why?
             if field.set and isinstance(field.typeval, OpaqueValue):
                 field.first = UNDEFINED
                 field.typeval.clear()
                 break
-
             self._last_field = nxt
             nxt = self._next_field(nxt)
 
@@ -849,7 +844,7 @@ class MessageValue(TypeValue):
             return False
 
         for expr_tuple in checksum.parameters:
-            expr_tuple.evaluated_expression = self.__simplified(copy.copy(expr_tuple.expression))
+            expr_tuple.evaluated_expression = self.__simplified(expr_tuple.expression)
             if (
                 isinstance(expr_tuple.evaluated_expression, ValueRange)
                 and isinstance(expr_tuple.expression, ValueRange)
