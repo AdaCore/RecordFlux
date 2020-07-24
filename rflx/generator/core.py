@@ -884,7 +884,7 @@ class Generator:
                 else:
                     if len(links) == 1:
                         length = links[0].length
-                    elif len(links) > 1:
+                    else:
                         length = If(
                             [(l.condition, l.length) for l in links],
                             Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),

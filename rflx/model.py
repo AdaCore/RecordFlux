@@ -1098,6 +1098,8 @@ class AbstractMessage(Type):
                     check_composite_element_range(relation, right, left)
                 elif isinstance(left, Enumeration) and isinstance(right, Enumeration):
                     check_enumeration(relation, left, right)
+            else:
+                assert False, f'unexpected relation type "{type(relation).__name__}"'
 
     def __check_first_expression(self, link: Link, location: Location = None) -> None:
         if link.first != UNDEFINED and not isinstance(link.first, First):
