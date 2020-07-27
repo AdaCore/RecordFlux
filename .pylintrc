@@ -1,3 +1,9 @@
+[MASTER]
+
+# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
+# number of processors available to use.
+jobs=0
+
 [MESSAGES CONTROL]
 
 # Enable/disable the message, report, category or checker with the given id(s).
