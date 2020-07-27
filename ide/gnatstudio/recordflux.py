@@ -6,10 +6,9 @@ import json
 import os
 import re
 
-from gi.repository import Gdk, Gtk
-
 import GPS
 import highlighter.common as hl
+from gi.repository import Gdk, Gtk
 
 try:
     from gs_utils import hook
