@@ -104,16 +104,6 @@ XML = r"""<?xml version="1.0"?>
 
    <action name="rflx_display_graph">
       <filter id="RecordFlux"/>
-      <shell lang="python" show-command="false">recordflux.graph(&quot;%F&quot;)</shell>
-      <external>%1</external>
-      <on-failure>
-         <shell lang="python" show-command="false">recordflux.parse_output(&quot;&quot;&quot;%1&quot;&quot;&quot;)</shell>
-      </on-failure>
-      <shell lang="python" show-command="false">recordflux.display_message_graph(&quot;%F&quot;)</shell>
-   </action>
-
-   <action name="rflx_display_graph_unverified">
-      <filter id="RecordFlux"/>
       <shell lang="python" show-command="false">recordflux.graph(&quot;%F&quot;, True)</shell>
       <external>%1</external>
       <on-failure>
@@ -154,10 +144,6 @@ end %(name);</text>
     <!-- Context menu -->
     <contextual action="rflx_display_graph">
         <Title>RecordFlux/Display message graph</Title>
-    </contextual>
-
-    <contextual action="rflx_display_graph_unverified">
-        <Title>RecordFlux/Display message graph (unverified)</Title>
     </contextual>
 
 </GNAT_Studio>
