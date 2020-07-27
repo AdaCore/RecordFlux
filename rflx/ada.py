@@ -2,8 +2,7 @@
 import itertools
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from dataclasses import dataclass
-from dataclasses import field as dataclass_field
+from dataclasses import dataclass, field as dataclass_field
 from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
 from rflx.common import file_name, generic_repr, indent, indent_next, unique

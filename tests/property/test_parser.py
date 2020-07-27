@@ -1,7 +1,6 @@
 import math
 
-from hypothesis import HealthCheck, given, settings
-from hypothesis import strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 import rflx.expression as expr
 from rflx.model import Model

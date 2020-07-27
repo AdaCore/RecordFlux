@@ -50,9 +50,7 @@ from rflx.ada import (
     RangeSubtype,
     RangeType,
     RecordType,
-)
-from rflx.ada import Size as SizeAspect
-from rflx.ada import (
+    Size as SizeAspect,
     SparkMode,
     Statement,
     Subprogram,
