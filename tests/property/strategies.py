@@ -2,8 +2,7 @@ import string
 from dataclasses import dataclass
 from typing import Callable, Generator, List, Sequence
 
-from hypothesis import assume
-from hypothesis import strategies as st
+from hypothesis import assume, strategies as st
 
 import rflx.error as error
 import rflx.expression as expr
