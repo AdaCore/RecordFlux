@@ -54,7 +54,7 @@ setup(
             "black",
             "flake8 >=3, <4",
             "hypothesis >=5, <6",
-            "isort >=4, <5",
+            "isort >=5, <6",
             "mypy >=0.770",
             "pyicontract-lint >=2.0.0, <3",
             "pylint >=2.5.0, <3",
