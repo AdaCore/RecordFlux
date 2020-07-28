@@ -521,7 +521,6 @@ class MessageValue(TypeValue):
         self._simplified_mapping: Mapping[Name, Expr] = {}
         self.accessible_fields: List[str] = []
         self._preset_fields(INITIAL.name)
-        self._update_accessible_fields(INITIAL.name)
 
     def __copy__(self) -> "MessageValue":
         return MessageValue(self._type, self._refinements)
@@ -744,18 +743,28 @@ class MessageValue(TypeValue):
 
         if checksum_calculation:
             self._preset_fields(field_name)
-            self._update_accessible_fields(field_name)
             for checksum in self._checksums.values():
                 if self._is_checksum_settable(checksum):
                     self._calculate_checksum(checksum)
 
     def _preset_fields(self, fld: str) -> None:
         nxt = self._next_field(fld)
+        fields: List[str] = []
         while nxt and nxt != FINAL.name:
             field = self._fields[nxt]
             first = self._get_first(nxt)
             length = self._get_length(nxt)
-            if first is None or length is None:
+            if first is None:
+                break
+
+            if self.__simplified(self._type.field_condition(Field(nxt))) == TRUE and (
+                self._is_valid_opaque_field(nxt)
+                if isinstance(self._fields[nxt].typeval, OpaqueValue)
+                else length is not None
+            ):
+                fields.append(nxt)
+
+            if length is None:
                 break
 
             field.first = first
@@ -768,6 +777,12 @@ class MessageValue(TypeValue):
                 break
             self._last_field = nxt
             nxt = self._next_field(nxt)
+        try:
+            self.accessible_fields = (
+                self.accessible_fields[: self.accessible_fields.index(fld) + 1] + fields
+            )
+        except ValueError:
+            self.accessible_fields = fields
 
     def set_checksum_function(self, checksums: Dict[str, Callable]) -> None:
         for checksum_field_name, checksum_function in checksums.items():
@@ -917,32 +932,6 @@ class MessageValue(TypeValue):
     @property
     def fields(self) -> List[str]:
         return [f.name for f in self._type.fields]
-
-    def _update_accessible_fields(self, current: str) -> None:
-        nxt = self._next_field(current)
-        fields: List[str] = []
-        while nxt and nxt != FINAL.name:
-            first = self._get_first(nxt)
-            length = self._get_length(nxt)
-            if (
-                first is None
-                or self.__simplified(self._type.field_condition(Field(nxt))) != TRUE
-                or (
-                    length is None
-                    if not isinstance(self._fields[nxt].typeval, OpaqueValue)
-                    else not self._is_valid_opaque_field(nxt)
-                )
-            ):
-                break
-
-            fields.append(nxt)
-            nxt = self._next_field(nxt)
-        try:
-            self.accessible_fields = (
-                self.accessible_fields[: self.accessible_fields.index(current) + 1] + fields
-            )
-        except ValueError:
-            self.accessible_fields = fields
 
     def _is_valid_opaque_field(self, field: str) -> bool:
 
