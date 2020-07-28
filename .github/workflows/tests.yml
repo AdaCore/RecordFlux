@@ -159,8 +159,9 @@ jobs:
         pip install --user -e .[devel]
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
         chmod +x $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
+        chmod +x $HOME/bin/gnatprove
         echo "::add-path::$HOME/.local/bin"
         echo "::add-path::$HOME/bin"
         echo "::set-env name=PYTHONPATH::$PWD"
