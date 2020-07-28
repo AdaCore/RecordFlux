@@ -114,17 +114,6 @@ jobs:
     - name: Test
       run: |
         make test_${{ matrix.target }}
-    - name: Create coverage report
-      if: matrix.target == 'python_coverage'
-      run: |
-        coverage report
-        coverage xml
-    - name: Upload coverage to Codecov
-      if: matrix.target == 'python_coverage'
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
 
   tests_python_verification:
     name: Tests
