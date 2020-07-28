@@ -2170,8 +2170,7 @@ class Generator:
     def __create_type(self, field_type: Type, message_package: ID) -> None:
         unit = self.units[message_package]
 
-        if field_type.package == BUILTINS_PACKAGE or self.__is_seen_type(field_type):
-            return
+        assert field_type.package != BUILTINS_PACKAGE
 
         if isinstance(field_type, ModularInteger):
             unit += UnitPart(modular_types(field_type))
@@ -2655,11 +2654,6 @@ class Generator:
                 [Precondition(Call("Valid", [Variable("Val")]))],
             ),
         ]
-
-    def __is_seen_type(self, field_type: Type) -> bool:
-        seen = field_type.identifier in self.seen_types
-        self.seen_types.add(field_type.identifier)
-        return seen
 
 
 def create_file(filename: Path, content: str) -> None:

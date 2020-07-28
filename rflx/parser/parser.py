@@ -364,15 +364,6 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
                 variable.location,
             )
 
-    if Field(refinement.field) not in pdu.fields:
-        error.append(
-            f'invalid field "{refinement.field}" in refinement',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            refinement.field.location,
-        )
-        error.propagate()
-
     refinement.sdu = qualified_type_name(refinement.sdu, refinement.package)
     if refinement.sdu not in messages:
         error.append(

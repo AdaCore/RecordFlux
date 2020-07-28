@@ -358,6 +358,10 @@ def test_number_ge() -> None:
     assert not Number(2) >= Variable("X")
 
 
+def test_number_hashable() -> None:
+    assert {Number(1), Number(2)}
+
+
 def test_add_neg() -> None:
     assert -Add(Variable("X"), Number(1)) == Add(Variable("X", True), Number(-1))
 
@@ -845,6 +849,12 @@ def test_slice_substituted() -> None:
         ),
         Slice(Variable("P_X"), Variable("P_Y"), Variable("P_Z")),
     )
+    assert_equal(
+        Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
+            lambda x: Variable("Z") if isinstance(x, Slice) else x
+        ),
+        Variable("Z"),
+    )
 
 
 def test_slice_simplified() -> None:
@@ -856,7 +866,7 @@ def test_slice_simplified() -> None:
     )
 
 
-def test_if_expr_findall() -> None:
+def test_if_findall() -> None:
     assert_equal(
         If(
             [
@@ -869,15 +879,17 @@ def test_if_expr_findall() -> None:
     )
 
 
-def test_if_expr_substituted() -> None:
+def test_if_substituted() -> None:
+    if_expr = If(
+        [
+            (Equal(Variable("X"), Number(42)), Number(21)),
+            (Variable("Y"), Number(42)),
+            (Number(42), Variable("Z")),
+        ]
+    )
+
     assert_equal(
-        If(
-            [
-                (Equal(Variable("X"), Number(42)), Number(21)),
-                (Variable("Y"), Number(42)),
-                (Number(42), Variable("Z")),
-            ]
-        ).substituted(lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x),
+        if_expr.substituted(lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x),
         If(
             [
                 (Equal(Variable("P_X"), Number(42)), Number(21)),
@@ -887,13 +899,7 @@ def test_if_expr_substituted() -> None:
         ),
     )
     assert_equal(
-        If(
-            [
-                (Equal(Variable("X"), Number(42)), Number(21)),
-                (Variable("Y"), Number(42)),
-                (Number(42), Variable("Z")),
-            ]
-        ).substituted(
+        if_expr.substituted(
             lambda x: Variable(f"P_{x}")
             if isinstance(x, Variable)
             else (
@@ -910,6 +916,9 @@ def test_if_expr_substituted() -> None:
                 (Variable("P_Z"), Number(1)),
             ]
         ),
+    )
+    assert_equal(
+        if_expr.substituted(lambda x: Variable("Z") if isinstance(x, If) else x), Variable("Z"),
     )
 
 
@@ -934,10 +943,18 @@ def test_if_variables() -> None:
                 (Variable("X"), Number(21)),
                 (Variable("Y"), Add(Number(21), Number(21))),
                 (Add(Number(21), Number(21)), Variable("Z")),
-            ]
+            ],
         ).variables(),
         [Variable("X"), Variable("Y"), Variable("Z")],
     )
+    assert_equal(
+        If([(Variable("X"), Number(21))], Variable("Z")).variables(),
+        [Variable("X"), Variable("Z")],
+    )
+
+
+def test_if_z3expr() -> None:
+    assert If([]).z3expr() == z3.BoolVal(False)
 
 
 def test_if_str() -> None:
@@ -976,6 +993,12 @@ def test_case_substituted() -> None:
             )
         ),
         Case(Variable("P_X"), [(Variable("P_Y"), Number(0)), (Variable("P_Z"), Number(1))]),
+    )
+    assert_equal(
+        Case(Variable("X"), [(Variable("Y"), Variable("Z"))]).substituted(
+            lambda x: Variable("Z") if isinstance(x, Case) else x
+        ),
+        Variable("Z"),
     )
 
 
