@@ -1235,6 +1235,15 @@ def test_refinement_invalid_field_type() -> None:
     )
 
 
+def test_refinement_invalid_field() -> None:
+    message = Message("P.M", [], {})
+
+    assert_type_error(
+        Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
+        r'^<stdin>:33:22: model: error: invalid field "X" in refinement of "P.M"$',
+    )
+
+
 def test_field_locations() -> None:
     f2 = Field(ID("F2", Location((2, 2))))
     f3 = Field(ID("F3", Location((3, 2))))

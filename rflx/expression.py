@@ -471,8 +471,7 @@ class And(LogExpr):
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
         boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
-        if len(z3exprs) != len(boolexprs):
-            raise TypeError
+        assert len(z3exprs) == len(boolexprs)
         return z3.And(*boolexprs)
 
 
@@ -509,8 +508,7 @@ class Or(LogExpr):
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
         boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
-        if len(z3exprs) != len(boolexprs):
-            raise TypeError
+        assert len(z3exprs) == len(boolexprs)
         return z3.Or(*boolexprs)
 
 
@@ -681,8 +679,7 @@ class Add(AssExpr):
 
     def z3expr(self) -> z3.ArithRef:
         z3expr = sum(t.z3expr() for t in self.terms)
-        if not isinstance(z3expr, z3.ArithRef):
-            raise TypeError
+        assert isinstance(z3expr, z3.ArithRef)
         return z3expr
 
 
@@ -708,11 +705,9 @@ class Mul(AssExpr):
         z3expr = self.terms[0].z3expr()
         for t in self.terms[1:]:
             tmp = t.z3expr()
-            if not isinstance(z3expr, z3.ArithRef) or not isinstance(tmp, z3.ArithRef):
-                raise TypeError
+            assert isinstance(z3expr, z3.ArithRef) and isinstance(tmp, z3.ArithRef)
             z3expr = z3expr * tmp
-        if not isinstance(z3expr, z3.ArithRef):
-            raise TypeError
+        assert isinstance(z3expr, z3.ArithRef)
         return z3expr
 
 
@@ -735,11 +730,8 @@ class Sub(BinExpr):
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            result = left - right
-        if isinstance(result, z3.ArithRef):
-            return result
-        raise TypeError
+        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        return left - right
 
 
 class Div(BinExpr):
@@ -761,11 +753,8 @@ class Div(BinExpr):
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            result = left / right
-        if isinstance(result, z3.ArithRef):
-            return result
-        raise TypeError
+        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        return left / right
 
 
 class Pow(BinExpr):
@@ -787,11 +776,8 @@ class Pow(BinExpr):
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            result = left ** right
-        if isinstance(result, z3.ArithRef):
-            return result
-        raise TypeError
+        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        return left ** right
 
 
 class Mod(BinExpr):
@@ -813,11 +799,8 @@ class Mod(BinExpr):
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            result = left % right
-        if isinstance(result, z3.ArithRef):
-            return result
-        raise TypeError
+        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        return left % right
 
 
 class Name(Expr):
@@ -974,14 +957,12 @@ class AttributeExpression(Attribute, ABC):
         return -expr if self.negative else expr
 
     def simplified(self) -> Expr:
-        if isinstance(self, self.__class__):
-            prefix = self.prefix.simplified()
-            return (
-                -self.__class__(prefix, self.expression.simplified())
-                if self.negative
-                else self.__class__(prefix, self.expression.simplified())
-            )
-        return self
+        prefix = self.prefix.simplified()
+        return (
+            -self.__class__(prefix, self.expression.simplified())
+            if self.negative
+            else self.__class__(prefix, self.expression.simplified())
+        )
 
     @property
     def representation(self) -> str:
@@ -1136,7 +1117,7 @@ class NamedAggregate(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        raise NotImplementedError
 
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
@@ -1187,9 +1168,8 @@ class Less(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            return left < right
-        raise TypeError
+        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        return left < right
 
 
 class LessEqual(Relation):
@@ -1206,9 +1186,8 @@ class LessEqual(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            return left <= right
-        raise TypeError
+        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        return left <= right
 
 
 class Equal(Relation):
@@ -1226,8 +1205,7 @@ class Equal(Relation):
         left = self.left.z3expr()
         right = self.right.z3expr()
         result = left == right
-        if not isinstance(left == right, z3.BoolRef):
-            raise TypeError
+        assert isinstance(result, z3.BoolRef)
         return result
 
 
@@ -1245,9 +1223,8 @@ class GreaterEqual(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            return left >= right
-        raise TypeError
+        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        return left >= right
 
 
 class Greater(Relation):
@@ -1264,9 +1241,8 @@ class Greater(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        if isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef):
-            return left > right
-        raise TypeError
+        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        return left > right
 
 
 class NotEqual(Relation):
@@ -1284,8 +1260,7 @@ class NotEqual(Relation):
         left = self.left.z3expr()
         right = self.right.z3expr()
         result = left != right
-        if not isinstance(result, z3.BoolRef):
-            raise TypeError
+        assert isinstance(result, z3.BoolRef)
         return result
 
 
@@ -1388,8 +1363,7 @@ class If(Expr):
             c = conditions[0][0].z3expr()
             e = conditions[0][1].z3expr()
             r = If.ifexpr(conditions[1:], elseexpr)
-            if not isinstance(c, z3.BoolRef):
-                raise TypeError
+            assert isinstance(c, z3.BoolRef)
             return z3.If(c, e, r)
         if elseexpr:
             return elseexpr.z3expr()

@@ -564,7 +564,7 @@ def test_refinement_invalid_field() -> None:
                for PDU use (Bar => PDU);
             end Test;
         """,
-        r'^<stdin>:8:29: parser: error: invalid field "Bar" in refinement',
+        r'^<stdin>:8:29: model: error: invalid field "Bar" in refinement',
     )
 
 

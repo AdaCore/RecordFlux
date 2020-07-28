@@ -728,15 +728,10 @@ class MessageValue(TypeValue):
             ]
         ):
             self._fields[field_name].typeval.clear()
-            if isinstance(value, bytes):
-                value_repr = "x" + value.hex()
-            else:
-                value_repr = str(value)
-
             raise ValueError(
                 f"none of the field conditions "
                 f"{[str(o.condition) for o in self._type.outgoing(Field(field_name))]}"
-                f" for field {field_name} have been met by the assigned value: {value_repr}"
+                f" for field {field_name} have been met by the assigned value: {value!s}"
             )
 
         self._preset_fields(field_name)

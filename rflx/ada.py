@@ -254,17 +254,6 @@ class FormalPackageDeclaration(FormalDeclaration):
         return f"with package {self.name} is new {self.generic_name} ({associations});"
 
 
-class FormalTypeDeclaration(FormalDeclaration):
-    def __init__(self, type_declaration: "TypeDeclaration") -> None:
-        self.type_declaration = type_declaration
-
-    def __hash__(self) -> int:
-        return hash(self.type_declaration)
-
-    def __str__(self) -> str:
-        return str(self.type_declaration)
-
-
 class PackageDeclaration(Declaration):
     def __init__(
         self,
@@ -365,7 +354,7 @@ class Discriminant(Ada):
         return f"{identifiers} : {self.type_name}{default}"
 
 
-class TypeDeclaration(Declaration):
+class TypeDeclaration(Declaration, FormalDeclaration):
     def __init__(
         self,
         identifier: StrID,
