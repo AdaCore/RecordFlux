@@ -789,11 +789,11 @@ class MessageValue(TypeValue):
             for field_name, checksum in self._checksums.items():
                 if field_name == checksum_field_name:
                     checksum.set_checksum_function(checksum_function)
-                    return
-            raise KeyError(
-                f"cannot set checksum function: field {checksum_field_name} "
-                f"has not been defined as a checksum field"
-            )
+                else:
+                    raise KeyError(
+                        f"cannot set checksum function: field {checksum_field_name} "
+                        f"has not been defined as a checksum field"
+                    )
 
     def _is_checksum_settable(self, checksum: "MessageValue.Checksum") -> bool:
         def valid_path(value_range: ValueRange) -> bool:
