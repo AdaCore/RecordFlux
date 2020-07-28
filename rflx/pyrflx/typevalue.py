@@ -1035,21 +1035,21 @@ class MessageValue(TypeValue):
         )
 
     class Checksum:
+        @dataclass
+        class ExpressionTuple:
+            expression: Expr
+            evaluated_expression: Expr = UNDEFINED
+
         def __init__(self, checksum_field_name: str, expressions: Sequence[Expr]):
             self.field_name: str = checksum_field_name
             self.function: Optional[Callable] = None
-            self.parameters: List["MessageValue.Checksum.ExpressionTuple"] = []
+            self.parameters: List[MessageValue.Checksum.ExpressionTuple] = []
             for expr in expressions:
                 assert isinstance(expr, (ValueRange, Attribute, Variable))
                 self.parameters.append(self.ExpressionTuple(expr))
 
         def set_checksum_function(self, function: Callable) -> None:
             self.function = function
-
-        @dataclass
-        class ExpressionTuple:
-            expression: Expr
-            evaluated_expression: Expr = UNDEFINED
 
     class Field:
         def __init__(self, t: TypeValue):
