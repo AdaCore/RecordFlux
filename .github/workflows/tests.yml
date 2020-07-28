@@ -7,7 +7,7 @@ on:
 
 jobs:
   Checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +45,7 @@ jobs:
         make check_${{ matrix.target }}
 
   Installation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python-version: [3.7]
@@ -65,7 +65,7 @@ jobs:
 
   tests_python:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -120,7 +120,7 @@ jobs:
   tests_python_verification:
     name: Tests
     if: github.event.schedule
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -164,7 +164,7 @@ jobs:
 
   tests_spark:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -186,7 +186,7 @@ jobs:
 
   runtime_compatibility:
     name: Runtime compatibility
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Install GNAT
@@ -209,7 +209,7 @@ jobs:
   verification:
     name: Verification
     if: github.event.schedule
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -238,7 +238,7 @@ jobs:
 
   verification_cached:
     name: Verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
