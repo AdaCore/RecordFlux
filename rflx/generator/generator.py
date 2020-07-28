@@ -38,6 +38,7 @@ from rflx.expression import (
     If,
     In,
     Indexed,
+    Length,
     Last,
     LessEqual,
     Mod,
@@ -839,8 +840,16 @@ class GeneratorGenerator:
 
 
 def unbounded_setter_required(message: Message, field: Field) -> bool:
-    return any(True for l in message.incoming(field) if Last("Message") not in l.length)
+    return any(
+        True
+        for l in message.incoming(field)
+        if Length("Message") not in l.length and Last("Message") not in l.length
+    )
 
 
 def bounded_setter_required(message: Message, field: Field) -> bool:
-    return any(True for l in message.incoming(field) if Last("Message") in l.length)
+    return any(
+        True
+        for l in message.incoming(field)
+        if Length("Message") in l.length or Last("Message") in l.length
+    )

@@ -205,3 +205,21 @@ def test_array_with_imported_element_type_message() -> None:
         """
     )
     utils.assert_compilable_code(p.create_model())
+
+
+def test_unbounded_message() -> None:
+    assert_compilable_code_string(
+        """
+           package Test is
+
+              type M is
+                 message
+                    null
+                       then A
+                          with Length => Message'Length;
+                    A : Opaque;
+                 end message;
+
+           end Test;
+        """
+    )
