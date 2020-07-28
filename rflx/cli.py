@@ -68,10 +68,7 @@ def main(argv: List[str]) -> Union[int, str]:
     parser_graph.add_argument(
         "--no-verification",
         action="store_true",
-        help=(
-            "skip time-consuming verification of model"
-            " (CAUTION: this can lead to unexpected results)"
-        ),
+        help=("skip time-consuming verification of model"),
     )
     parser_graph.set_defaults(func=graph)
 
