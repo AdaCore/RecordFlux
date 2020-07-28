@@ -6,18 +6,7 @@ from typing import List
 
 import pytest
 
-from rflx.expression import (
-    UNDEFINED,
-    Add,
-    And,
-    First,
-    Last,
-    Length,
-    Sub,
-    ValidChecksum,
-    ValueRange,
-    Variable,
-)
+from rflx.expression import Add, And, First, Last, Length, Sub, ValidChecksum, ValueRange, Variable
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -427,26 +416,6 @@ def test_required_fields(tlv: MessageValue) -> None:
     assert tlv.required_fields == []
 
 
-def test_length_unchecked(tlv: MessageValue) -> None:
-    # pylint: disable=protected-access
-    tlv.set("Tag", "Msg_Error")
-    assert not isinstance(tlv._get_length_unchecked("Value"), Number)
-    tlv.set("Tag", "Msg_Data")
-    assert not isinstance(tlv._get_length_unchecked("Value"), Number)
-    tlv.set("Length", 1)
-    assert isinstance(tlv._get_length_unchecked("Value"), Number)
-
-
-def test_first_unchecked(tlv: MessageValue) -> None:
-    # pylint: disable=protected-access
-    tlv.set("Tag", "Msg_Error")
-    assert not isinstance(tlv._get_first_unchecked("Value"), Number)
-    tlv.set("Tag", "Msg_Data")
-    assert isinstance(tlv._get_first_unchecked("Value"), Number)
-    tlv.set("Length", 1)
-    assert isinstance(tlv._get_first_unchecked("Value"), Number)
-
-
 def test_ethernet_all_fields(frame: MessageValue) -> None:
     assert frame.fields == [
         "Destination",
@@ -592,13 +561,6 @@ def test_tls_invalid_path(alert: MessageValue) -> None:
     alert.set("Level", "FATAL")
     assert not alert.valid_message
     assert alert.valid_fields == ["Level"]
-
-
-def test_tls_length_unchecked(tls_record: MessageValue) -> None:
-    # pylint: disable=protected-access
-    tls_record.set("Tag", "APPLICATION_DATA")
-    tls_record.set("Legacy_Record_Version", "TLS_1_2")
-    assert not isinstance(tls_record._get_length_unchecked("Fragment"), Number)
 
 
 def test_icmp_echo_request(icmp: MessageValue) -> None:
@@ -829,11 +791,6 @@ def test_field_set() -> None:
     assert not f.set
     f.first = Number(1)
     assert f.set
-
-
-def test_get_first_unchecked_undefined(tlv: MessageValue) -> None:
-    # pylint: disable=protected-access
-    assert tlv._get_first_unchecked("Length") == UNDEFINED
 
 
 def test_check_nodes_opaque(tlv: MessageValue, frame: MessageValue) -> None:
