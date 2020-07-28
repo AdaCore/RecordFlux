@@ -792,19 +792,20 @@ class MessageValue(TypeValue):
             self._last_field = nxt
             nxt = self._next_field(nxt)
 
-    def set_checksum_function(self, checksum_field_name: str, checksum_method: Callable) -> None:
-        if checksum_field_name not in self.fields:
+    def set_checksum_function(self, checksums: Dict[str, Callable]) -> None:
+        for checksum_field_name, checksum_function in checksums.items():
+            if checksum_field_name not in self.fields:
+                raise KeyError(
+                    f"cannot set checksum function: field {checksum_field_name} is not defined"
+                )
+            for field_name, checksum in self._checksums.items():
+                if field_name == checksum_field_name:
+                    checksum.set_checksum_function(checksum_function)
+                    return
             raise KeyError(
-                f"cannot set checksum function: field {checksum_field_name} is not defined"
+                f"cannot set checksum function: field {checksum_field_name} "
+                f"has not been defined as a checksum field"
             )
-        for field_name, checksum in self._checksums.items():
-            if field_name == checksum_field_name:
-                checksum.set_checksum_function(checksum_method)
-                return
-        raise KeyError(
-            f"cannot set checksum function: field {checksum_field_name} "
-            f"has not been defined as a checksum field"
-        )
 
     def _is_checksum_settable(self, checksum: "MessageValue.Checksum") -> bool:
         def valid_path(value_range: ValueRange) -> bool:
