@@ -4,6 +4,7 @@ from typing import Callable, Generator, List, NamedTuple, Sequence
 from hypothesis import assume
 from hypothesis import strategies as st
 
+import rflx.error as error
 import rflx.expression as expr
 from rflx.identifier import ID
 from rflx.model import (
@@ -25,6 +26,7 @@ from rflx.model import (
     Refinement,
     Scalar,
     Type,
+    UnprovenMessage,
 )
 from rflx.parser import const
 
@@ -271,7 +273,17 @@ def messages(
         for l in loose_ends:
             structure.append(Link(l, FINAL))
 
-    return Message(next(unique_identifiers), structure, types_)
+    message = UnprovenMessage(next(unique_identifiers), structure, types_)
+
+    try:
+        return message.proven()
+    except error.RecordFluxError as e:
+        e.append(
+            f"incorrectly generated message:\n {message}",
+            error.Subsystem.MODEL,
+            error.Severity.INFO,
+        )
+        raise e
 
 
 def non_null_messages(unique_identifiers: Generator[ID, None, None]) -> st.SearchStrategy[Message]:
