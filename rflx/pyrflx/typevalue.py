@@ -850,21 +850,18 @@ class MessageValue(TypeValue):
                     or not valid_path(expr_tuple.expression)
                 )
             ):
-                break
+                return False
             if (
                 isinstance(expr_tuple.evaluated_expression, Variable)
                 and not self._fields[expr_tuple.evaluated_expression.name].set
             ):
-                break
+                return False
             if (
                 isinstance(expr_tuple.evaluated_expression, Attribute)
                 and not self._fields[str(expr_tuple.evaluated_expression.prefix)].set
             ):
-                break
-        else:
-            return True
-
-        return False
+                return False
+        return True
 
     def _calculate_checksum(self, checksum: "MessageValue.Checksum") -> None:
         if not checksum.function:
