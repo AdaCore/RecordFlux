@@ -521,7 +521,7 @@ class MessageValue(TypeValue):
         self._simplified_mapping: Mapping[Name, Expr] = {}
         self.accessible_fields: List[str] = []
         self._preset_fields(INITIAL.name)
-        self._update_accessible_fields()
+        self._update_accessible_fields(INITIAL.name)
 
     def __copy__(self) -> "MessageValue":
         return MessageValue(self._type, self._refinements)
@@ -557,10 +557,11 @@ class MessageValue(TypeValue):
     def _prev_field(self, fld: str) -> str:
         if fld == INITIAL.name:
             return ""
-        prev: List[str] = []
-        for l in self._type.incoming(Field(fld)):
-            if self.__simplified(l.condition) == TRUE:
-                prev.append(l.source.name)
+        prev: List[str] = [
+            l.source.name
+            for l in self._type.incoming(Field(fld))
+            if self.__simplified(l.condition) == TRUE
+        ]
 
         if len(prev) == 1:
             return prev[0]
@@ -569,8 +570,10 @@ class MessageValue(TypeValue):
                 return field
         return ""
 
-    def _get_length_unchecked(self, fld: str) -> Expr:
+    def _get_length(self, fld: str) -> Optional[Number]:
         typeval = self._fields[fld].typeval
+        if isinstance(typeval, ScalarValue):
+            return typeval.size
         if isinstance(typeval, CompositeValue):
             for l in self._type.incoming(Field(fld)):
                 if (
@@ -578,35 +581,20 @@ class MessageValue(TypeValue):
                     and l.length != UNDEFINED
                     and self._fields[l.source.name].set
                 ):
-                    return self.__simplified(l.length)
-        if isinstance(typeval, ScalarValue):
-            return typeval.size
-        return UNDEFINED
+                    length = self.__simplified(l.length)
+                    return length if isinstance(length, Number) else None
+        return None
 
-    def _has_length(self, fld: str) -> bool:
-        return isinstance(self._get_length_unchecked(fld), Number)
-
-    def _get_length(self, fld: str) -> Number:
-        length = self._get_length_unchecked(fld)
-        assert isinstance(length, Number)
-        return length
-
-    def _get_first_unchecked(self, fld: str) -> Expr:
+    def _get_first(self, fld: str) -> Optional[Number]:
         for l in self._type.incoming(Field(fld)):
             if self.__simplified(l.condition) == TRUE and l.first != UNDEFINED:
-                return self.__simplified(l.first)
+                first = self.__simplified(l.first)
+                return first if isinstance(first, Number) else None
         prv = self._prev_field(fld)
         if prv:
-            return self.__simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
-        return UNDEFINED
-
-    def _has_first(self, fld: str) -> bool:
-        return isinstance(self._get_first_unchecked(fld), Number)
-
-    def _get_first(self, fld: str) -> Number:
-        first = self._get_first_unchecked(fld)
-        assert isinstance(first, Number)
-        return first
+            first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
+            return first if isinstance(first, Number) else None
+        return None
 
     @property
     def accepted_type(self) -> type:
@@ -643,7 +631,9 @@ class MessageValue(TypeValue):
         def set_field_without_length(field_name: str, field: MessageValue.Field) -> Tuple[int, int]:
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
             assert isinstance(field.typeval, OpaqueValue)
-            field.first = self._get_first(field_name)
+            first = self._get_first(field_name)
+            assert first is not None
+            field.first = first
             self.set(field_name, value[current_pos_in_bitstring:])
             return last_pos_in_bitstr, current_pos_in_bitstring
 
@@ -673,17 +663,16 @@ class MessageValue(TypeValue):
 
         while current_field_name != FINAL.name:
             current_field = self._fields[current_field_name]
-            if isinstance(current_field.typeval, OpaqueValue) and not self._has_length(
-                current_field_name
-            ):
+            length = self._get_length(current_field_name)
+            if isinstance(current_field.typeval, OpaqueValue) and length is None:
                 (
                     last_field_first_in_bitstr,
                     current_field_first_in_bitstr,
                 ) = set_field_without_length(current_field_name, current_field)
 
             else:
-                assert self._has_length(current_field_name)
-                current_field_length = self._get_length(current_field_name).value
+                assert length is not None
+                current_field_length = length.value
                 try:
                     (
                         last_field_first_in_bitstr,
@@ -728,9 +717,12 @@ class MessageValue(TypeValue):
 
         if field_name in self.accessible_fields:
             field = self._fields[field_name]
-            field.first = self._get_first(field_name)
-            if isinstance(field.typeval, CompositeValue) and self._has_length(field_name):
-                field.typeval.set_expected_size(self._get_length(field_name))
+            field_first = self._get_first(field_name)
+            field_length = self._get_length(field_name)
+            assert field_first is not None
+            field.first = field_first
+            if isinstance(field.typeval, CompositeValue) and field_length is not None:
+                field.typeval.set_expected_size(field_length)
             set_refinement(field, field_name)
             try:
                 if isinstance(value, Bitstring):
@@ -752,7 +744,7 @@ class MessageValue(TypeValue):
 
         if checksum_calculation:
             self._preset_fields(field_name)
-            self._update_accessible_fields()
+            self._update_accessible_fields(field_name)
             for checksum in self._checksums.values():
                 if self._is_checksum_settable(checksum):
                     self._calculate_checksum(checksum)
@@ -761,11 +753,15 @@ class MessageValue(TypeValue):
         nxt = self._next_field(fld)
         while nxt and nxt != FINAL.name:
             field = self._fields[nxt]
-            if not self._has_first(nxt) or not self._has_length(nxt):
+            first = self._get_first(nxt)
+            length = self._get_length(nxt)
+            if first is None or length is None:
                 break
-            field.first = self._get_first(nxt)
+
+            field.first = first
             if isinstance(field.typeval, OpaqueValue):
-                field.typeval.set_expected_size(self._get_length(nxt))
+                field.typeval.set_expected_size(length)
+
             if field.set and isinstance(field.typeval, OpaqueValue):
                 field.first = UNDEFINED
                 field.typeval.clear()
@@ -922,16 +918,17 @@ class MessageValue(TypeValue):
     def fields(self) -> List[str]:
         return [f.name for f in self._type.fields]
 
-    def _update_accessible_fields(self) -> None:
-        nxt = self._next_field(INITIAL.name)
+    def _update_accessible_fields(self, current: str) -> None:
+        nxt = self._next_field(current)
         fields: List[str] = []
         while nxt and nxt != FINAL.name:
-
+            first = self._get_first(nxt)
+            length = self._get_length(nxt)
             if (
-                self.__simplified(self._type.field_condition(Field(nxt))) != TRUE
-                or not self._has_first(nxt)
+                first is None
+                or self.__simplified(self._type.field_condition(Field(nxt))) != TRUE
                 or (
-                    not self._has_length(nxt)
+                    length is None
                     if not isinstance(self._fields[nxt].typeval, OpaqueValue)
                     else not self._is_valid_opaque_field(nxt)
                 )
@@ -940,13 +937,31 @@ class MessageValue(TypeValue):
 
             fields.append(nxt)
             nxt = self._next_field(nxt)
-        self.accessible_fields = fields
+        try:
+            self.accessible_fields = (
+                self.accessible_fields[: self.accessible_fields.index(current) + 1] + fields
+            )
+        except ValueError:
+            self.accessible_fields = fields
 
     def _is_valid_opaque_field(self, field: str) -> bool:
-        if self._get_length_unchecked(field) == UNDEFINED:
-            return False
 
-        for edge in self._type.incoming(Field(field)):
+        typeval = self._fields[field].typeval
+        if not isinstance(typeval, (ScalarValue, CompositeValue)):
+            return False
+        incoming = self._type.incoming(Field(field))
+        if isinstance(typeval, CompositeValue):
+            for l in incoming:
+                if (
+                    self.__simplified(l.condition) == TRUE
+                    and l.length != UNDEFINED
+                    and self._fields[l.source.name].set
+                ):
+                    break
+            else:
+                return False
+
+        for edge in incoming:
             if self.__simplified(edge.condition) == TRUE:
                 valid_edge = edge
                 break
