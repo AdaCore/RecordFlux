@@ -730,7 +730,7 @@ class MessageValue(TypeValue):
                 raise ValueError(
                     f"none of the field conditions "
                     f"{[str(o.condition) for o in self._type.outgoing(Field(field_name))]}"
-                    f" for field {field_name} have been met by the assigned value: {str(value)}"
+                    f" for field {field_name} have been met by the assigned value: {value!s}"
                 )
 
         if field_name in self.accessible_fields:
@@ -755,19 +755,7 @@ class MessageValue(TypeValue):
             raise KeyError(f"cannot access field {field_name}")
 
         self.__update_simplified_mapping()
-
-        if all(
-            [
-                self.__simplified(o.condition) == FALSE
-                for o in self._type.outgoing(Field(field_name))
-            ]
-        ):
-            self._fields[field_name].typeval.clear()
-            raise ValueError(
-                f"none of the field conditions "
-                f"{[str(o.condition) for o in self._type.outgoing(Field(field_name))]}"
-                f" for field {field_name} have been met by the assigned value: {value!s}"
-            )
+        check_outgoing_condition_satisfied()
 
         if checksum_calculation:
             self._preset_fields(field_name)

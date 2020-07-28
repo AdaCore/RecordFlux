@@ -1496,7 +1496,7 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
     assert isinstance(first_arg, tuple)
     tag_first, checksum_first_minus_one = first_arg
     assert tag_first == 0 and checksum_first_minus_one == 15
-    second_arg = kwargs.get("(Checksum'Last + 1) .. Message'Last")
+    second_arg = kwargs.get("Checksum'Last + 1 .. Message'Last")
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, data_last = second_arg
     assert checksum_last_plus_one == 32 and data_last == 511
