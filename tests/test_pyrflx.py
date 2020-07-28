@@ -1530,13 +1530,13 @@ def test_checksum_field_not_defined(icmp_checksum: MessageValue) -> None:
     with pytest.raises(
         KeyError, match="cannot set checksum function: field NonExistingField is not defined",
     ):
-        icmp_checksum.set_checksum_function("NonExistingField", icmp_checksum_function)
+        icmp_checksum.set_checksum_function({"NonExistingField": icmp_checksum_function})
 
     with pytest.raises(
         KeyError,
         match="cannot set checksum function: field Tag has not been defined as " "a checksum field",
     ):
-        icmp_checksum.set_checksum_function("Tag", icmp_checksum_function)
+        icmp_checksum.set_checksum_function({"Tag": icmp_checksum_function})
 
 
 def test_checksum_function_not_set(icmp_checksum: MessageValue) -> None:
@@ -1559,7 +1559,7 @@ def test_checksum_icmp(icmp_checksum: MessageValue) -> None:
         b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
         b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
     )
-    icmp_checksum.set_checksum_function("Checksum", icmp_checksum_function)
+    icmp_checksum.set_checksum_function({"Checksum": icmp_checksum_function})
     icmp_checksum.set("Tag", "Echo_Request")
     icmp_checksum.set("Code_Zero", 0)
     icmp_checksum.set("Checksum", 1234)
@@ -1580,7 +1580,7 @@ def test_is_checksum_settable(tlv_checksum_type: Message) -> None:
         "Checksum": [{"Checksum": [Variable("Length"), Length("Value"), Variable("Value")]}]
     }
     tlv_msg = MessageValue(tlv_checksum_type)
-    tlv_msg.set_checksum_function("Checksum", tlv_checksum_function)
+    tlv_msg.set_checksum_function({"Checksum": tlv_checksum_function})
     tlv_msg.set("Tag", "Msg_Data")
     tlv_msg.set("Length", 5)
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
