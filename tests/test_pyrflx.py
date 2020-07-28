@@ -33,6 +33,7 @@ from rflx.pyrflx import (
     PyRFLX,
     TypeValue,
 )
+from rflx.pyrflx.utils import checksum_functions
 
 TESTDIR = "tests"
 SPECDIR = "specs"
@@ -1491,11 +1492,6 @@ def test_tlv_generating_tlv_error(tlv: MessageValue) -> None:
 
 
 def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
-    def add_ones_complement(num1: int, num2: int) -> int:
-        mod = 1 << 16
-        result = num1 + num2
-        return result if result < mod else (result + 1) % mod
-
     first_arg = kwargs.get("Tag'First .. Checksum'First - 1")
     assert isinstance(first_arg, tuple)
     tag_first, checksum_first_minus_one = first_arg
@@ -1511,17 +1507,7 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
     checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
     checksum_bytes += b"\x00" * (checksum_length // 8)
     checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
-
-    message_in_sixteen_bit_chunks = [
-        int.from_bytes(checksum_bytes[i : i + 2], "big") for i in range(0, len(checksum_bytes), 2)
-    ]
-    intermediary_result = message_in_sixteen_bit_chunks[0]
-    for i in range(1, len(message_in_sixteen_bit_chunks)):
-        intermediary_result = add_ones_complement(
-            intermediary_result, message_in_sixteen_bit_chunks[i]
-        )
-
-    return intermediary_result ^ 0xFFFF
+    return checksum_functions.internet_checksum(checksum_bytes)
 
 
 @pytest.fixture(name="icmp_checksum")
