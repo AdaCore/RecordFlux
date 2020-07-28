@@ -78,6 +78,8 @@ jobs:
             python-version: 3.7
           - target: "python_coverage"
             python-version: 3.7
+          - target: "examples"
+            python-version: 3.7
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}

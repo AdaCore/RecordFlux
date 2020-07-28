@@ -22,6 +22,9 @@ def pytest_configure(config: Any) -> None:
     config.addinivalue_line(
         "markers", "verification: Tests which use formal verification. Not run by default."
     )
+    config.addinivalue_line(
+        "markers", "root: Tests which need root privileges. Not run by default."
+    )
     if BASE_TMP_DIR:
         config.addinivalue_line("addopts", f"--basetemp={BASE_TMP_DIR}")
         os.makedirs(BASE_TMP_DIR, exist_ok=True)
@@ -29,10 +32,11 @@ def pytest_configure(config: Any) -> None:
 
 def pytest_collection_modifyitems(config: Any, items: list) -> None:
     markexpr = config.getoption("-m")
-    if "verification" not in markexpr.split(" "):
-        for item in items:
-            if any(m.name == "verification" for m in item.own_markers):
-                item.add_marker(pytest.mark.skip(reason="need '-m verification' option to run"))
+    for marker in ["verification", "root"]:
+        if marker not in markexpr.split(" "):
+            for item in items:
+                if any(m.name == marker for m in item.own_markers):
+                    item.add_marker(pytest.mark.skip(reason="need '-m {marker}' option to run"))
 
 
 def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[str]:
