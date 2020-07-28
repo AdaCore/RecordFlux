@@ -17,7 +17,7 @@ test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
 .PHONY: check check_black check_isort check_flake8 check_pylint check_mypy format \
-	test test_python test_spark prove_spark clean
+	test test_python test_spark prove_spark test_examples clean
 
 check: check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc
 
@@ -73,6 +73,9 @@ test_spark: $(test-files)
 test_spark_optimized: $(test-files)
 	gprbuild -P$(project) -Xoptimization=yes
 	$(test-bin)
+
+test_examples:
+	python3 -m pytest -n$(shell nproc) -vv -m "root or not root" tests/test_examples.py
 
 prove_spark: $(test-files)
 	gnatprove -P$(project) $(GNATPROVE_ARGS)
