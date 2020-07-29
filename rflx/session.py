@@ -15,7 +15,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID, StrID
 from rflx.model import Base
-from rflx.parser.session import FSMParser
+from rflx.parser.session import SessionParser
 from rflx.statement import Statement
 
 
@@ -282,9 +282,9 @@ class StateMachine(Base):
         return self.__states
 
 
-class FSM:
+class Session:
     def __init__(self) -> None:
-        self.__fsms: List[StateMachine] = []
+        self.__sessions: List[StateMachine] = []
         self.error = RecordFluxError()
 
     def __parse_functions(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
@@ -292,7 +292,7 @@ class FSM:
             return
         for index, f in enumerate(doc["functions"]):
             try:
-                name, declaration = FSMParser.declaration().parseString(f)[0]
+                name, declaration = SessionParser.declaration().parseString(f)[0]
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
@@ -313,7 +313,7 @@ class FSM:
             return
         for index, f in enumerate(doc["variables"]):
             try:
-                name, declaration = FSMParser.declaration().parseString(f)[0]
+                name, declaration = SessionParser.declaration().parseString(f)[0]
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
@@ -334,7 +334,7 @@ class FSM:
             return
         for index, f in enumerate(doc["types"]):
             try:
-                name, declaration = FSMParser.declaration().parseString(f)[0]
+                name, declaration = SessionParser.declaration().parseString(f)[0]
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
@@ -391,7 +391,7 @@ class FSM:
             return
         for index, f in enumerate(doc["renames"]):
             try:
-                name, declaration = FSMParser.declaration().parseString(f)[0]
+                name, declaration = SessionParser.declaration().parseString(f)[0]
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
@@ -430,7 +430,7 @@ class FSM:
                     )
                 if "condition" in t:
                     try:
-                        condition = FSMParser.expression().parseString(t["condition"])[0]
+                        condition = SessionParser.expression().parseString(t["condition"])[0]
                     except RecordFluxError as e:
                         tname = t["target"]
                         self.error.append(
@@ -463,7 +463,7 @@ class FSM:
             if "actions" in s and s["actions"]:
                 for a in s["actions"]:
                     try:
-                        actions.append(FSMParser.action().parseString(a)[0])
+                        actions.append(SessionParser.action().parseString(a)[0])
                     except RecordFluxError as e:
                         self.error.extend(e)
                         continue
@@ -471,7 +471,7 @@ class FSM:
             if "variables" in s and s["variables"]:
                 for v in s["variables"]:
                     try:
-                        dname, declaration = FSMParser.declaration().parseString(v)[0]
+                        dname, declaration = SessionParser.declaration().parseString(v)[0]
                     except RecordFluxError as e:
                         self.error.extend(e)
                         continue
@@ -509,15 +509,15 @@ class FSM:
                 f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.SESSION, Severity.ERROR
             )
 
-        fsm = StateMachine(
+        session = StateMachine(
             name=name,
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
             states=self.__parse_states(doc),
             declarations={ID(k): v for k, v in self.__parse_declarations(doc).items()},
         )
-        self.error.extend(fsm.error)
-        self.__fsms.append(fsm)
+        self.error.extend(session.error)
+        self.__sessions.append(session)
         self.error.propagate()
 
     def parse(self, name: str, filename: str) -> None:
@@ -528,5 +528,5 @@ class FSM:
         self.__parse(name, yaml.safe_load(string))
 
     @property
-    def fsms(self) -> List[StateMachine]:
-        return self.__fsms
+    def sessions(self) -> List[StateMachine]:
+        return self.__sessions

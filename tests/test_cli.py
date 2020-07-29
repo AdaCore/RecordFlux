@@ -127,13 +127,13 @@ def test_main_graph_non_existent_files(tmp_path: Path) -> None:
     )
 
 
-def test_main_fsm() -> None:
-    assert cli.main(["rflx", "fsm", "specs/simple.yaml"]) == 0
+def test_main_session() -> None:
+    assert cli.main(["rflx", "session", "specs/simple.yaml"]) == 0
 
 
-def test_main_fsm_non_existent_file() -> None:
+def test_main_session_non_existent_file() -> None:
     assert 'session: error: file not found: "non-existent file"' in str(
-        cli.main(["rflx", "fsm", "non-existent file"])
+        cli.main(["rflx", "session", "non-existent file"])
     )
 
 

@@ -14,21 +14,21 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.identifier import ID
-from rflx.session import FSM, State, StateMachine, StateName, Transition
+from rflx.session import Session, State, StateMachine, StateName, Transition
 from rflx.statement import Assignment
 
 
 def assert_parse_exception_string(string: str, regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        fsm = FSM()
-        fsm.parse_string("fsm", string)
-        fsm.error.propagate()
+        session = Session()
+        session.parse_string("session", string)
+        session.error.propagate()
 
 
-def test_simple_fsm() -> None:
-    f = FSM()
+def test_simple_session() -> None:
+    f = Session()
     f.parse_string(
-        "fsm",
+        "session",
         """
             initial: START
             final: END
@@ -40,7 +40,7 @@ def test_simple_fsm() -> None:
         """,
     )
     expected = StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -49,7 +49,7 @@ def test_simple_fsm() -> None:
         ],
         declarations={},
     )
-    assert f.fsms[0] == expected
+    assert f.sessions[0] == expected
 
 
 def test_missing_initial() -> None:
@@ -62,7 +62,7 @@ def test_missing_initial() -> None:
                   - target: END
               - name: END
         """,
-        '^session: error: missing initial state in "fsm"$',
+        '^session: error: missing initial state in "session"$',
     )
 
 
@@ -76,7 +76,7 @@ def test_missing_final() -> None:
                   - target: END
               - name: END
         """,
-        '^session: error: missing final state in "fsm"$',
+        '^session: error: missing final state in "session"$',
     )
 
 
@@ -86,7 +86,7 @@ def test_missing_states() -> None:
             initial: START
             final: END
         """,
-        '^session: error: missing states section in "fsm"$',
+        '^session: error: missing states section in "session"$',
     )
 
 
@@ -96,13 +96,13 @@ def test_empty_states() -> None:
         match=(
             "^"
             "session: error: empty states\n"
-            'session: error: initial state "START" does not exist in "fsm"\n'
-            'session: error: final state "END" does not exist in "fsm"'
+            'session: error: initial state "START" does not exist in "session"\n'
+            'session: error: final state "END" does not exist in "session"'
             "$"
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[],
@@ -115,13 +115,13 @@ def test_invalid_initial() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: initial state "NONEXISTENT" does not exist in "fsm"\n'
+            'session: error: initial state "NONEXISTENT" does not exist in "session"\n'
             "session: error: unreachable states START"
             "$"
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("NONEXISTENT"),
             final=StateName("END"),
             states=[
@@ -137,13 +137,13 @@ def test_invalid_final() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: final state "NONEXISTENT" does not exist in "fsm"\n'
+            'session: error: final state "NONEXISTENT" does not exist in "session"\n'
             "session: error: detached states END"
             "$"
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("NONEXISTENT"),
             states=[
@@ -158,10 +158,10 @@ def test_invalid_target_state() -> None:
     with pytest.raises(
         RecordFluxError,
         match='^session: error: transition from state "START" to non-existent'
-        ' state "NONEXISTENT" in "fsm"$',
+        ' state "NONEXISTENT" in "session"$',
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -181,7 +181,7 @@ def test_invalid_target_state() -> None:
 def test_duplicate_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: duplicate states: START$"):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -198,7 +198,7 @@ def test_multiple_duplicate_states() -> None:
         RecordFluxError, match=("^session: error: duplicate states: BAR, FOO, START$")
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -217,7 +217,7 @@ def test_multiple_duplicate_states() -> None:
 def test_unreachable_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: unreachable states UNREACHABLE$"):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -237,7 +237,7 @@ def test_multiple_unreachable_states() -> None:
         RecordFluxError, match="^session: error: unreachable states UNREACHABLE1, UNREACHABLE2$"
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -259,7 +259,7 @@ def test_multiple_unreachable_states() -> None:
 def test_detached_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: detached states DETACHED$"):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -282,7 +282,7 @@ def test_multiple_detached_states() -> None:
         RecordFluxError, match="^session: error: detached states DETACHED1, DETACHED2$"
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -302,10 +302,10 @@ def test_multiple_detached_states() -> None:
         )
 
 
-def test_fsm_with_conditions() -> None:
-    f = FSM()
+def test_session_with_conditions() -> None:
+    f = Session()
     f.parse_string(
-        "fsm",
+        "session",
         """
             initial: START
             final: END
@@ -324,7 +324,7 @@ def test_fsm_with_conditions() -> None:
         """,
     )
     expected = StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -344,10 +344,10 @@ def test_fsm_with_conditions() -> None:
         ],
         declarations={"Error": VariableDeclaration("Boolean")},
     )
-    assert f.fsms[0] == expected
+    assert f.sessions[0] == expected
 
 
-def test_fsm_with_invalid_condition() -> None:
+def test_session_with_invalid_condition() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -357,8 +357,8 @@ def test_fsm_with_invalid_condition() -> None:
             "$"
         ),
     ):
-        FSM().parse_string(
-            "fsm",
+        Session().parse_string(
+            "session",
             """
                 initial: START
                 final: END
@@ -381,10 +381,10 @@ def test_fsm_with_invalid_condition() -> None:
         )
 
 
-def test_fsm_condition_equal() -> None:
-    f = FSM()
+def test_session_condition_equal() -> None:
+    f = Session()
     f.parse_string(
-        "fsm",
+        "session",
         """
             initial: START
             final: END
@@ -404,7 +404,7 @@ def test_fsm_condition_equal() -> None:
         """,
     )
     expected = StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -428,7 +428,7 @@ def test_fsm_condition_equal() -> None:
             "Something": VariableDeclaration("Boolean"),
         },
     )
-    assert f.fsms[0] == expected
+    assert f.sessions[0] == expected
 
 
 def test_unexpected_elements() -> None:
@@ -448,10 +448,10 @@ def test_unexpected_elements() -> None:
     )
 
 
-def test_fsm_with_function_decl() -> None:
-    f = FSM()
+def test_session_with_function_decl() -> None:
+    f = Session()
     f.parse_string(
-        "fsm",
+        "session",
         """
             initial: START
             final: END
@@ -466,7 +466,7 @@ def test_fsm_with_function_decl() -> None:
         """,
     )
     expected = StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -487,13 +487,13 @@ def test_fsm_with_function_decl() -> None:
             ID("Foo"): Subprogram([Argument("Bar", "T1"), Argument("Baz", "P1.T1")], "P2.T3")
         },
     )
-    assert f.fsms[0] == expected
+    assert f.sessions[0] == expected
 
 
-def test_fsm_with_variable_decl() -> None:
-    f = FSM()
+def test_session_with_variable_decl() -> None:
+    f = Session()
     f.parse_string(
-        "fsm",
+        "session",
         """
             initial: START
             final: END
@@ -510,7 +510,7 @@ def test_fsm_with_variable_decl() -> None:
         """,
     )
     expected = StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -528,13 +528,13 @@ def test_fsm_with_variable_decl() -> None:
         ],
         declarations={"Global": VariableDeclaration("Boolean")},
     )
-    assert f.fsms[0] == expected
+    assert f.sessions[0] == expected
 
 
-def test_fsm_with_actions() -> None:
-    f = FSM()
+def test_session_with_actions() -> None:
+    f = Session()
     f.parse_string(
-        "fsm",
+        "session",
         """
             initial: START
             final: END
@@ -550,7 +550,7 @@ def test_fsm_with_actions() -> None:
         """,
     )
     expected = StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -564,7 +564,7 @@ def test_fsm_with_actions() -> None:
         ],
         declarations={"Global": VariableDeclaration("Boolean")},
     )
-    assert f.fsms[0] == expected
+    assert f.sessions[0] == expected
 
 
 def test_duplicate_variable() -> None:
@@ -625,10 +625,10 @@ def test_channel_shadowing_rename() -> None:
     )
 
 
-def test_fsm_with_renames() -> None:
-    f = FSM()
+def test_session_with_renames() -> None:
+    f = Session()
     f.parse_string(
-        "fsm",
+        "session",
         """
             initial: START
             final: END
@@ -645,7 +645,7 @@ def test_fsm_with_renames() -> None:
         """,
     )
     expected = StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -662,4 +662,4 @@ def test_fsm_with_renames() -> None:
             "Bar": VariableDeclaration("Boolean"),
         },
     )
-    assert f.fsms[0] == expected
+    assert f.sessions[0] == expected

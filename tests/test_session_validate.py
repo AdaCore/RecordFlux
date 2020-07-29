@@ -200,7 +200,7 @@ def test_undeclared_variable() -> None:
         RecordFluxError, match='^model: error: undeclared variable "Undefined"$',
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -220,7 +220,7 @@ def test_undeclared_variable() -> None:
 
 def test_declared_variable() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -238,7 +238,7 @@ def test_declared_variable() -> None:
 
 def test_declared_local_variable() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -263,7 +263,7 @@ def test_undeclared_local_variable() -> None:
         RecordFluxError, match=('^model: error: undeclared variable "Local"$'),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -292,7 +292,7 @@ def test_undeclared_local_variable() -> None:
 
 def test_declared_local_variable_valid() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -313,7 +313,7 @@ def test_declared_local_variable_valid() -> None:
 
 def test_declared_local_variable_field() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -344,7 +344,7 @@ def test_assignment_to_undeclared_variable() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -371,7 +371,7 @@ def test_assignment_from_undeclared_variable() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -398,7 +398,7 @@ def test_erasure_of_undeclared_variable() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -425,7 +425,7 @@ def test_reset_of_undeclared_list() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -452,7 +452,7 @@ def test_call_to_undeclared_function() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -472,7 +472,7 @@ def test_call_to_undeclared_function() -> None:
 
 def test_call_to_builtin_read() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -493,7 +493,7 @@ def test_call_to_builtin_read() -> None:
 
 def test_call_to_builtin_write() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -518,7 +518,7 @@ def test_call_to_builtin_write() -> None:
 
 def test_call_to_builtin_call() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -541,7 +541,7 @@ def test_call_to_builtin_call() -> None:
 
 def test_call_to_builtin_data_available() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -575,7 +575,7 @@ def test_call_to_builtin_read_without_arguments() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -602,7 +602,7 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -635,7 +635,7 @@ def test_call_to_builtin_read_invalid_channel_type() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -662,7 +662,7 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -698,7 +698,7 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -732,7 +732,7 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -762,7 +762,7 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -792,7 +792,7 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -813,7 +813,7 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
 
 def test_subprogram_call() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -843,7 +843,7 @@ def test_undeclared_variable_in_subprogram_call() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -879,7 +879,7 @@ def test_function_declaration_is_no_builtin_read() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -905,7 +905,7 @@ def test_function_declaration_is_no_builtin_write() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -931,7 +931,7 @@ def test_function_declaration_is_no_builtin_call() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -957,7 +957,7 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -985,7 +985,7 @@ def test_local_variable_shadows_global() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -1009,7 +1009,7 @@ def test_unused_global_variable() -> None:
         RecordFluxError, match='^session: error: unused variable "Global"$',
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -1029,7 +1029,7 @@ def test_unused_local_variable() -> None:
         RecordFluxError, match='^session: error: unused local variable "Data" in state START$',
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -1049,7 +1049,7 @@ def test_renames_references_undefined_variable() -> None:
         RecordFluxError, match='^model: error: undeclared variable "Foo"$',
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -1068,7 +1068,7 @@ def test_renames_references_undefined_variable() -> None:
 
 def test_binding_as_subprogram_parameter() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -1098,7 +1098,7 @@ def test_binding_as_subprogram_parameter() -> None:
 
 def test_for_all() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -1121,7 +1121,7 @@ def test_for_all() -> None:
 
 def test_append_list_attribute() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -1146,7 +1146,7 @@ def test_append_list_attribute() -> None:
 
 def test_extend_list_attribute() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -1180,7 +1180,7 @@ def test_aggregate_with_undefined_parameter() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -1205,7 +1205,7 @@ def test_aggregate_with_undefined_parameter() -> None:
 
 def test_comprehension() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -1241,7 +1241,7 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
         ),
     ):
         StateMachine(
-            name="fsm",
+            name="session",
             initial=StateName("START"),
             final=StateName("END"),
             states=[
@@ -1263,7 +1263,7 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
 
 def test_assignment_opaque_subprogram_result() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -1283,7 +1283,7 @@ def test_assignment_opaque_subprogram_result() -> None:
 
 def test_assignment_opaque_subprogram_binding() -> None:
     StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[

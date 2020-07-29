@@ -13,7 +13,7 @@ from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Model
 from rflx.parser import Parser
-from rflx.session import FSM
+from rflx.session import Session
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -74,16 +74,16 @@ def main(argv: List[str]) -> Union[int, str]:
     )
     parser_graph.set_defaults(func=graph)
 
-    parser_fsm = subparsers.add_parser("fsm", help="load fsm")
-    parser_fsm.add_argument("files", metavar="FILE", type=str, nargs="+", help="fsm file")
-    parser_fsm.add_argument(
+    parser_session = subparsers.add_parser("session", help="load session")
+    parser_session.add_argument("files", metavar="FILE", type=str, nargs="+", help="session file")
+    parser_session.add_argument(
         "-f",
         "--format",
         type=str,
         choices=["dot", "jpg", "pdf", "png", "raw", "svg"],
         help=("output graph with specified format"),
     )
-    parser_fsm.set_defaults(func=fsm)
+    parser_session.set_defaults(func=session)
 
     args = parser.parse_args(argv[1:])
 
@@ -181,17 +181,17 @@ def graph(args: argparse.Namespace) -> None:
         json.dump(locations, f)
 
 
-def fsm(args: argparse.Namespace) -> None:
-    state_machine = FSM()
+def session(args: argparse.Namespace) -> None:
+    state_machine = Session()
 
     for f in args.files:
         if not Path(f).is_file():
             fail(f'file not found: "{f}"', Subsystem.SESSION)
 
-        print(f"Loading FSM {f}... ", end="")
+        print(f"Loading Session {f}... ", end="")
         state_machine.parse(f, f)
 
         if args.format:
-            for sm in state_machine.fsms:
+            for sm in state_machine.sessions:
                 Graph(sm).write(Path(f"{sm.name}.{args.format}"), fmt=args.format)
         print("OK")
