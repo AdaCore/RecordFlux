@@ -25,7 +25,6 @@ from rflx.expression import (
     Argument,
     Binding,
     Comprehension,
-    Contains,
     Conversion,
     Div,
     Equal,
@@ -34,12 +33,13 @@ from rflx.expression import (
     ForSomeIn,
     Greater,
     Head,
+    In,
     Length,
     Less,
     MessageAggregate,
     Mul,
-    NotContains,
     NotEqual,
+    NotIn,
     Opaque,
     Or,
     Present,
@@ -103,9 +103,9 @@ def __parse_op_comp(tokens: List[Expr]) -> Expr:
 
 def __parse_op_set(tokens: List[Expr]) -> Expr:
     if tokens[1] == "not in":
-        return NotContains(tokens[0], tokens[2])
+        return NotIn(tokens[0], tokens[2])
     if tokens[1] == "in":
-        return Contains(tokens[0], tokens[2])
+        return In(tokens[0], tokens[2])
     assert False, f"Unsupported set operator {tokens[1]}"
 
 
