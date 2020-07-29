@@ -6,14 +6,15 @@ from rflx.expression import (
     FALSE,
     Argument,
     Channel,
+    Field,
     PrivateDeclaration,
     Renames,
     Subprogram,
+    SubprogramCall,
     Variable,
     VariableDeclaration,
 )
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
-from rflx.fsm_expression import Field, SubprogramCall
 from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
 from rflx.statement import Assignment

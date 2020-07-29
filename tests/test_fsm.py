@@ -9,11 +9,11 @@ from rflx.expression import (
     Number,
     Renames,
     Subprogram,
+    SubprogramCall,
     Variable,
     VariableDeclaration,
 )
 from rflx.fsm import FSM, State, StateMachine, StateName, Transition
-from rflx.fsm_expression import SubprogramCall
 from rflx.identifier import ID
 from rflx.statement import Assignment
 

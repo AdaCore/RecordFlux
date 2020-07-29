@@ -7,35 +7,33 @@ from rflx.expression import (
     TRUE,
     And,
     Argument,
-    Channel,
-    Equal,
-    Length,
-    Less,
-    Number,
-    Renames,
-    Subprogram,
-    Variable,
-    VariableDeclaration,
-)
-from rflx.fsm import State, StateMachine, StateName, Transition
-from rflx.fsm_expression import (
     Binding,
+    Channel,
     Comprehension,
     Contains,
     Conversion,
+    Equal,
     Field,
     ForAll,
     ForSome,
     Head,
+    Length,
+    Less,
     MessageAggregate,
     NotContains,
+    Number,
     Opaque,
     Present,
     Quantifier,
+    Renames,
     String,
+    Subprogram,
     SubprogramCall,
     Valid,
+    Variable,
+    VariableDeclaration,
 )
+from rflx.fsm import State, StateMachine, StateName, Transition
 from rflx.identifier import ID
 from rflx.statement import Assignment, Erase, Reset
 
