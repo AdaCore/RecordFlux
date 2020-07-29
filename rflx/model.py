@@ -817,6 +817,8 @@ class AbstractMessage(Type):
             return False
 
         for p in self._state.paths[FINAL]:
+            if not any(l.target == field for l in p):
+                continue
             conditions = [l.condition for l in p if l.condition != TRUE]
             lengths = [Equal(Length(l.target.name), l.length) for l in p if l.length != UNDEFINED]
             empty_field = Equal(Length(field.name), Number(0))

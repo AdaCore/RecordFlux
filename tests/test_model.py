@@ -13,9 +13,11 @@ from rflx.expression import (
     Div,
     Equal,
     First,
+    Greater,
     GreaterEqual,
     Last,
     Length,
+    Less,
     LessEqual,
     Mod,
     Mul,
@@ -913,6 +915,30 @@ def test_message_proven() -> None:
         "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): MODULAR_INTEGER},
     )
     assert message.proven() == message
+
+
+def test_message_is_possibly_empty() -> None:
+    a = Field("A")
+    b = Field("B")
+    c = Field("C")
+
+    array = Array("P.Array", MODULAR_INTEGER)
+
+    message = Message(
+        "P.M",
+        [
+            Link(INITIAL, a),
+            Link(a, c, condition=Less(Variable("A"), Number(10)), length=Variable("A")),
+            Link(a, b, condition=Greater(Variable("A"), Number(20)), length=Variable("A")),
+            Link(b, c, length=Variable("A")),
+            Link(c, FINAL),
+        ],
+        {a: MODULAR_INTEGER, b: array, c: array},
+    )
+
+    assert not message.is_possibly_empty(a)
+    assert not message.is_possibly_empty(b)
+    assert message.is_possibly_empty(c)
 
 
 def test_derived_message_incorrect_base_name() -> None:
