@@ -16,7 +16,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID
 from rflx.parser.session import SessionParser
-from rflx.session import Session, SessionFile, State, StateName, Transition
+from rflx.session import Session, SessionFile, State, Transition
 from rflx.statement import Assignment
 
 
@@ -120,12 +120,12 @@ def test_channels() -> None:
     )
     expected = Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={ID("Local"): VariableDeclaration("Boolean")},
                 actions=[
                     Assignment(
@@ -144,7 +144,7 @@ def test_channels() -> None:
                     ),
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Channel1_Read_Write": Channel(read=True, write=True),

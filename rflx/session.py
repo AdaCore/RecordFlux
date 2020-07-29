@@ -19,20 +19,14 @@ from rflx.parser.session import SessionParser
 from rflx.statement import Statement
 
 
-class StateName(Base):
-    def __init__(self, name: StrID, location: Location = None):
-        self.name = ID(name)
-        self.location = location
-
-
 class Transition(Base):
-    def __init__(self, target: StateName, condition: Expr = TRUE, location: Location = None):
-        self.__target = target
+    def __init__(self, target: StrID, condition: Expr = TRUE, location: Location = None):
+        self.__target = ID(target)
         self.__condition = condition
         self.location = location
 
     @property
-    def target(self) -> StateName:
+    def target(self) -> ID:
         return self.__target
 
     def validate(self, declarations: Dict[ID, Declaration]) -> None:
@@ -46,20 +40,20 @@ class Transition(Base):
 class State(Base):
     def __init__(
         self,
-        name: StateName,
+        name: StrID,
         transitions: Sequence[Transition] = None,
         actions: Sequence[Statement] = None,
         declarations: Dict[ID, Declaration] = None,
         location: Location = None,
     ):
-        self.__name = name
+        self.__name = ID(name)
         self.__transitions = transitions or []
         self.__actions = actions or []
         self.__declarations = {ID(k): v for k, v in declarations.items()} if declarations else {}
         self.location = location
 
     @property
-    def name(self) -> StateName:
+    def name(self) -> ID:
         return self.__name
 
     @property
@@ -78,16 +72,16 @@ class State(Base):
 class Session(Base):
     def __init__(
         self,
-        name: str,
-        initial: StateName,
-        final: StateName,
+        name: StrID,
+        initial: StrID,
+        final: StrID,
         states: Sequence[State],
         declarations: Dict[StrID, Declaration],
         location: Location = None,
     ):  # pylint: disable=too-many-arguments
-        self.__name = name
-        self.__initial = initial
-        self.__final = final
+        self.__name = ID(name)
+        self.__initial = ID(initial)
+        self.__final = ID(final)
         self.__states = states
         self.__declarations = {ID(k): v for k, v in declarations.items()}
         self.location = location
@@ -266,15 +260,15 @@ class Session(Base):
                 )
 
     @property
-    def name(self) -> str:
+    def name(self) -> ID:
         return self.__name
 
     @property
-    def initial(self) -> StateName:
+    def initial(self) -> ID:
         return self.__initial
 
     @property
-    def final(self) -> StateName:
+    def final(self) -> ID:
         return self.__final
 
     @property
@@ -443,7 +437,7 @@ class SessionFile:
                         condition = TRUE
                 else:
                     condition = TRUE
-                transitions.append(Transition(target=StateName(t["target"]), condition=condition))
+                transitions.append(Transition(target=ID(t["target"]), condition=condition))
         self.error.propagate()
         return transitions
 
@@ -479,7 +473,7 @@ class SessionFile:
 
             states.append(
                 State(
-                    name=StateName(s["name"]),
+                    name=ID(s["name"]),
                     transitions=self.__parse_transitions(s),
                     actions=actions,
                     declarations=declarations,
@@ -511,8 +505,8 @@ class SessionFile:
 
         session = Session(
             name=name,
-            initial=StateName(doc["initial"]),
-            final=StateName(doc["final"]),
+            initial=ID(doc["initial"]),
+            final=ID(doc["final"]),
             states=self.__parse_states(doc),
             declarations={ID(k): v for k, v in self.__parse_declarations(doc).items()},
         )
