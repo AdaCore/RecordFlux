@@ -13,7 +13,6 @@ from rflx.expression import (
     Contains,
     Conversion,
     Equal,
-    Field,
     ForAll,
     ForSome,
     Head,
@@ -26,6 +25,7 @@ from rflx.expression import (
     Present,
     Quantifier,
     Renames,
+    Selected,
     String,
     Subprogram,
     SubprogramCall,
@@ -131,8 +131,8 @@ def test_binding_subprogram() -> None:
 
 
 def test_binding_field() -> None:
-    binding = Binding(Field(Variable("A"), "fld"), {"A": Variable("Baz")})
-    expected = Field(Variable("Baz"), "fld")
+    binding = Binding(Selected(Variable("A"), "fld"), {"A": Variable("Baz")})
+    expected = Selected(Variable("Baz"), "fld")
     result = binding.simplified()
     assert result == expected
 
@@ -158,9 +158,9 @@ def test_simplify_string() -> None:
 
 def test_binding_multiple_bindings() -> None:
     binding = Binding(
-        Field(Variable("A"), "fld"), {"A": Binding(Variable("B"), {"B": Variable("Baz")})}
+        Selected(Variable("A"), "fld"), {"A": Binding(Variable("B"), {"B": Variable("Baz")})}
     )
-    expected = Field(Variable("Baz"), "fld")
+    expected = Selected(Variable("Baz"), "fld")
     result = binding.simplified()
     assert result == expected
 
@@ -311,7 +311,7 @@ def test_declared_local_variable_field() -> None:
                 name="START",
                 transitions=[
                     Transition(
-                        target="END", condition=Equal(Field(Variable("Global"), "fld"), TRUE),
+                        target="END", condition=Equal(Selected(Variable("Global"), "fld"), TRUE),
                     )
                 ],
                 declarations={},
@@ -1067,7 +1067,9 @@ def test_for_all() -> None:
                     Transition(
                         target="END",
                         condition=ForAll(
-                            "E", Variable("List"), Equal(Field(Variable("E"), "Tag"), Number(42)),
+                            "E",
+                            Variable("List"),
+                            Equal(Selected(Variable("E"), "Tag"), Number(42)),
                         ),
                     )
                 ],
@@ -1177,8 +1179,8 @@ def test_comprehension() -> None:
                         Comprehension(
                             "K",
                             Variable("Input"),
-                            Field(Variable("K"), "Data"),
-                            Equal(Field(Variable("K"), "Valid"), TRUE),
+                            Selected(Variable("K"), "Data"),
+                            Equal(Selected(Variable("K"), "Valid"), TRUE),
                         ),
                     )
                 ],
@@ -1281,7 +1283,7 @@ def test_extract_variables_and() -> None:
 
 
 def test_extract_variables_field() -> None:
-    result = Field(Variable("Foo"), "Bar").variables()
+    result = Selected(Variable("Foo"), "Bar").variables()
     expected = [Variable("Foo")]
     assert result == expected
 
@@ -1312,7 +1314,7 @@ def test_extract_variables_opaque() -> None:
 
 def test_extract_variables_quantifier() -> None:
     result = Quantifier(
-        "Q", Variable("List"), Equal(Field(Variable("Q"), "Fld"), Variable("X"))
+        "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
     ).variables()
     expected = [Variable("X"), Variable("List")]
     assert result == expected
@@ -1340,8 +1342,8 @@ def test_extract_variables_comprehension() -> None:
     result = Comprehension(
         "I",
         Variable("List"),
-        Field(Variable("I"), "Data"),
-        Less(Field(Variable("I"), "X"), Variable("Z")),
+        Selected(Variable("I"), "Data"),
+        Less(Selected(Variable("I"), "X"), Variable("Z")),
     ).variables()
     expected = [Variable("List"), Variable("Z")]
     assert result == expected
