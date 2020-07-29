@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -144,7 +145,7 @@ def graph(args: argparse.Namespace) -> None:
         fail(f'directory not found: "{directory}"', Subsystem.GRAPH)
 
     model = parse(args.files, args.no_verification)
-    locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = {}
+    locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = defaultdict(dict)
 
     for m in model.messages:
         message = flat_name(m.full_name)
@@ -158,8 +159,6 @@ def graph(args: argparse.Namespace) -> None:
 
         source = str(m.location.source.name)
 
-        if source not in locations:
-            locations[source] = {}
         locations[source][message] = {
             "start": {"line": m.location.start[0], "column": m.location.start[1]},
             "end": {"line": m.location.end[0], "column": m.location.end[1]},
