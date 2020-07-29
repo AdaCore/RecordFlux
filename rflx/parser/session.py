@@ -30,8 +30,8 @@ from rflx.expression import (
     Div,
     Equal,
     Expr,
-    ForAll,
-    ForSome,
+    ForAllIn,
+    ForSomeIn,
     Greater,
     Head,
     Length,
@@ -67,8 +67,8 @@ from rflx.statement import Assignment, Erase, Reset
 def __parse_quantifier(tokens: List[Expr]) -> Expr:
     assert isinstance(tokens[1], ID)
     if tokens[0] == "all":
-        return ForAll(tokens[1], tokens[2], tokens[3])
-    return ForSome(tokens[1], tokens[2], tokens[3])
+        return ForAllIn(tokens[1], tokens[2], tokens[3])
+    return ForSomeIn(tokens[1], tokens[2], tokens[3])
 
 
 def __parse_comprehension(tokens: List[Expr]) -> Expr:

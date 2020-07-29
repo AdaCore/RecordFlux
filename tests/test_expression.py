@@ -1117,7 +1117,7 @@ def test_quantified_expression_variables() -> None:
         ForAllOf(
             "A", Variable("List"), Add(Variable("X"), Add(Variable("Y"), Variable("Z")))
         ).variables(),
-        [Variable("List"), Variable("X"), Variable("Y"), Variable("Z")],
+        [Variable("X"), Variable("Y"), Variable("Z"), Variable("List")],
     )
 
 

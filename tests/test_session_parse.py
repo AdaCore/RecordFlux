@@ -9,8 +9,8 @@ from rflx.expression import (
     Conversion,
     Div,
     Equal,
-    ForAll,
-    ForSome,
+    ForAllIn,
+    ForSomeIn,
     Greater,
     Head,
     Length,
@@ -145,7 +145,7 @@ def test_complex_expression() -> None:
 
 def test_existential_quantification() -> None:
     result = expression().parseString("for some X in Y => X = 3")[0]
-    assert result == ForSome("X", Variable("Y"), Equal(Variable("X"), Number(3)))
+    assert result == ForSomeIn("X", Variable("Y"), Equal(Variable("X"), Number(3)))
 
 
 def test_complex_existential_quantification() -> None:
@@ -155,7 +155,7 @@ def test_complex_existential_quantification() -> None:
         "(GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data).Versions))"
     )
     result = expression().parseString(expr)[0]
-    expected = ForSome(
+    expected = ForSomeIn(
         "E",
         Selected(Variable("Server_Hello_Message"), "Extensions"),
         And(
@@ -187,7 +187,7 @@ def test_conjunction_multi() -> None:
 
 def test_universal_quantification() -> None:
     result = expression().parseString("for all X in Y => X = Bar")[0]
-    assert result == ForAll("X", Variable("Y"), Equal(Variable("X"), Variable("Bar")))
+    assert result == ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar")))
 
 
 def test_type_conversion_simple() -> None:
@@ -319,7 +319,7 @@ def test_complex() -> None:
         "Selected_Group) = False"
     )[0]
     expected = Equal(
-        ForSome(
+        ForSomeIn(
             "S",
             Selected(
                 Conversion(
