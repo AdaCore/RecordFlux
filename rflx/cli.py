@@ -13,7 +13,7 @@ from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Model
 from rflx.parser import Parser
-from rflx.session import Session
+from rflx.session import SessionFile
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -182,16 +182,16 @@ def graph(args: argparse.Namespace) -> None:
 
 
 def session(args: argparse.Namespace) -> None:
-    state_machine = Session()
+    session_file = SessionFile()
 
     for f in args.files:
         if not Path(f).is_file():
             fail(f'file not found: "{f}"', Subsystem.SESSION)
 
         print(f"Loading Session {f}... ", end="")
-        state_machine.parse(f, f)
+        session_file.parse(f, f)
 
         if args.format:
-            for sm in state_machine.sessions:
+            for sm in session_file.sessions:
                 Graph(sm).write(Path(f"{sm.name}.{args.format}"), fmt=args.format)
         print("OK")

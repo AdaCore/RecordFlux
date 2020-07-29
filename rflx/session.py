@@ -75,7 +75,7 @@ class State(Base):
         return self.__actions
 
 
-class StateMachine(Base):
+class Session(Base):
     def __init__(
         self,
         name: str,
@@ -282,9 +282,9 @@ class StateMachine(Base):
         return self.__states
 
 
-class Session:
+class SessionFile:
     def __init__(self) -> None:
-        self.__sessions: List[StateMachine] = []
+        self.__sessions: List[Session] = []
         self.error = RecordFluxError()
 
     def __parse_functions(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
@@ -509,7 +509,7 @@ class Session:
                 f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.SESSION, Severity.ERROR
             )
 
-        session = StateMachine(
+        session = Session(
             name=name,
             initial=StateName(doc["initial"]),
             final=StateName(doc["final"]),
@@ -528,5 +528,5 @@ class Session:
         self.__parse(name, yaml.safe_load(string))
 
     @property
-    def sessions(self) -> List[StateMachine]:
+    def sessions(self) -> List[Session]:
         return self.__sessions

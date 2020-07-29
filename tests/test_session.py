@@ -14,19 +14,19 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.identifier import ID
-from rflx.session import Session, State, StateMachine, StateName, Transition
+from rflx.session import Session, SessionFile, State, StateName, Transition
 from rflx.statement import Assignment
 
 
 def assert_parse_exception_string(string: str, regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        session = Session()
+        session = SessionFile()
         session.parse_string("session", string)
         session.error.propagate()
 
 
 def test_simple_session() -> None:
-    f = Session()
+    f = SessionFile()
     f.parse_string(
         "session",
         """
@@ -39,7 +39,7 @@ def test_simple_session() -> None:
               - name: END
         """,
     )
-    expected = StateMachine(
+    expected = Session(
         name="session",
         initial=StateName("START"),
         final=StateName("END"),
@@ -101,7 +101,7 @@ def test_empty_states() -> None:
             "$"
         ),
     ):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("END"),
@@ -120,7 +120,7 @@ def test_invalid_initial() -> None:
             "$"
         ),
     ):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("NONEXISTENT"),
             final=StateName("END"),
@@ -142,7 +142,7 @@ def test_invalid_final() -> None:
             "$"
         ),
     ):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("NONEXISTENT"),
@@ -160,7 +160,7 @@ def test_invalid_target_state() -> None:
         match='^session: error: transition from state "START" to non-existent'
         ' state "NONEXISTENT" in "session"$',
     ):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("END"),
@@ -180,7 +180,7 @@ def test_invalid_target_state() -> None:
 
 def test_duplicate_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: duplicate states: START$"):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("END"),
@@ -197,7 +197,7 @@ def test_multiple_duplicate_states() -> None:
     with pytest.raises(
         RecordFluxError, match=("^session: error: duplicate states: BAR, FOO, START$")
     ):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("END"),
@@ -216,7 +216,7 @@ def test_multiple_duplicate_states() -> None:
 
 def test_unreachable_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: unreachable states UNREACHABLE$"):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("END"),
@@ -236,7 +236,7 @@ def test_multiple_unreachable_states() -> None:
     with pytest.raises(
         RecordFluxError, match="^session: error: unreachable states UNREACHABLE1, UNREACHABLE2$"
     ):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("END"),
@@ -258,7 +258,7 @@ def test_multiple_unreachable_states() -> None:
 
 def test_detached_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: detached states DETACHED$"):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("END"),
@@ -281,7 +281,7 @@ def test_multiple_detached_states() -> None:
     with pytest.raises(
         RecordFluxError, match="^session: error: detached states DETACHED1, DETACHED2$"
     ):
-        StateMachine(
+        Session(
             name="session",
             initial=StateName("START"),
             final=StateName("END"),
@@ -303,7 +303,7 @@ def test_multiple_detached_states() -> None:
 
 
 def test_session_with_conditions() -> None:
-    f = Session()
+    f = SessionFile()
     f.parse_string(
         "session",
         """
@@ -323,7 +323,7 @@ def test_session_with_conditions() -> None:
               - name: END
         """,
     )
-    expected = StateMachine(
+    expected = Session(
         name="session",
         initial=StateName("START"),
         final=StateName("END"),
@@ -357,7 +357,7 @@ def test_session_with_invalid_condition() -> None:
             "$"
         ),
     ):
-        Session().parse_string(
+        SessionFile().parse_string(
             "session",
             """
                 initial: START
@@ -382,7 +382,7 @@ def test_session_with_invalid_condition() -> None:
 
 
 def test_session_condition_equal() -> None:
-    f = Session()
+    f = SessionFile()
     f.parse_string(
         "session",
         """
@@ -403,7 +403,7 @@ def test_session_condition_equal() -> None:
               - name: END
         """,
     )
-    expected = StateMachine(
+    expected = Session(
         name="session",
         initial=StateName("START"),
         final=StateName("END"),
@@ -449,7 +449,7 @@ def test_unexpected_elements() -> None:
 
 
 def test_session_with_function_decl() -> None:
-    f = Session()
+    f = SessionFile()
     f.parse_string(
         "session",
         """
@@ -465,7 +465,7 @@ def test_session_with_function_decl() -> None:
               - name: END
         """,
     )
-    expected = StateMachine(
+    expected = Session(
         name="session",
         initial=StateName("START"),
         final=StateName("END"),
@@ -491,7 +491,7 @@ def test_session_with_function_decl() -> None:
 
 
 def test_session_with_variable_decl() -> None:
-    f = Session()
+    f = SessionFile()
     f.parse_string(
         "session",
         """
@@ -509,7 +509,7 @@ def test_session_with_variable_decl() -> None:
               - name: END
         """,
     )
-    expected = StateMachine(
+    expected = Session(
         name="session",
         initial=StateName("START"),
         final=StateName("END"),
@@ -532,7 +532,7 @@ def test_session_with_variable_decl() -> None:
 
 
 def test_session_with_actions() -> None:
-    f = Session()
+    f = SessionFile()
     f.parse_string(
         "session",
         """
@@ -549,7 +549,7 @@ def test_session_with_actions() -> None:
               - name: END
         """,
     )
-    expected = StateMachine(
+    expected = Session(
         name="session",
         initial=StateName("START"),
         final=StateName("END"),
@@ -626,7 +626,7 @@ def test_channel_shadowing_rename() -> None:
 
 
 def test_session_with_renames() -> None:
-    f = Session()
+    f = SessionFile()
     f.parse_string(
         "session",
         """
@@ -644,7 +644,7 @@ def test_session_with_renames() -> None:
               - name: END
         """,
     )
-    expected = StateMachine(
+    expected = Session(
         name="session",
         initial=StateName("START"),
         final=StateName("END"),

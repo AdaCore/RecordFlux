@@ -10,16 +10,16 @@ from pydotplus import Dot, Edge, Node
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
 from rflx.model import FINAL, INITIAL, Link, Message
-from rflx.session import State, StateMachine
+from rflx.session import Session, State
 from rflx.statement import Assignment
 
 log = logging.getLogger(__name__)
 
 
 class Graph:
-    def __init__(self, data: Union[StateMachine, Message]) -> None:
+    def __init__(self, data: Union[Session, Message]) -> None:
         self.__data = copy(data)
-        if isinstance(self.__data, StateMachine):
+        if isinstance(self.__data, Session):
             self.__degree = {s.name.name: len(s.transitions) for s in self.__data.states}
             for s in self.__data.states:
                 for p in self.__data.states:
@@ -45,7 +45,7 @@ class Graph:
     def get(self) -> Dot:
         if isinstance(self.__data, Message):
             return self.__get_message
-        if isinstance(self.__data, StateMachine):
+        if isinstance(self.__data, Session):
             return self.__get_session
         raise NotImplementedError(f"Unsupported data format {type(self.__data).__name__}")
 
@@ -73,7 +73,7 @@ class Graph:
 
     def __add_state(self, state: State, result: Dot, variables: Counter[ID]) -> None:
 
-        if not isinstance(self.__data, StateMachine):
+        if not isinstance(self.__data, Session):
             raise TypeError(f"Invalid data format {type(self.__data).__name__}")
 
         height = sqrt(self.__degree[state.name.name] + 1)
@@ -147,11 +147,11 @@ class Graph:
     def __get_session(self) -> Dot:
         """Return pydot graph representation of session."""
 
-        if not isinstance(self.__data, StateMachine):
+        if not isinstance(self.__data, Session):
             raise TypeError(f"Invalid data format {type(self.__data).__name__}")
 
         variables: Counter[ID] = collections.Counter()
-        result = self.__graph_with_defaults("StateMachine")
+        result = self.__graph_with_defaults("Session")
         for s in self.__data.states:
             self.__add_state(s, result, variables)
 
