@@ -68,7 +68,7 @@ class InternalError(Exception):
     pass
 
 
-class FSMParser:
+class SessionParser:
     @classmethod
     def __parse_quantifier(cls, tokens: List[Expr]) -> Expr:
         assert isinstance(tokens[1], ID)

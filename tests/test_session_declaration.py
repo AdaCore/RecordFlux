@@ -15,13 +15,13 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.identifier import ID
-from rflx.parser.session import FSMParser
-from rflx.session import FSM, State, StateMachine, StateName, Transition
+from rflx.parser.session import SessionParser
+from rflx.session import Session, State, StateMachine, StateName, Transition
 from rflx.statement import Assignment
 
 
 def test_simple_function_declaration() -> None:
-    result = FSMParser.declaration().parseString(
+    result = SessionParser.declaration().parseString(
         "Foo (Arg1 : Arg1_Type; Arg2 : Arg2_Type) return Foo_Type"
     )[0]
     expected = (
@@ -34,7 +34,7 @@ def test_simple_function_declaration() -> None:
 def test_invalid_function_name() -> None:
     with pytest.raises(ParseException):
         # pylint: disable=expression-not-assigned
-        FSMParser.declaration().parseString(
+        SessionParser.declaration().parseString(
             "Foo.Bar (Arg1 : Arg1_Type; Arg2 : Arg2_Type) return Foo_Type"
         )[0]
 
@@ -42,25 +42,25 @@ def test_invalid_function_name() -> None:
 def test_invalid_parameter_name() -> None:
     with pytest.raises(ParseException):
         # pylint: disable=expression-not-assigned
-        FSMParser.declaration().parseString(
+        SessionParser.declaration().parseString(
             "Foo (Arg1 : Arg1_Type; Arg2.Invalid : Arg2_Type) return Foo_Type"
         )[0]
 
 
 def test_private_variable_declaration() -> None:
-    result = FSMParser.declaration().parseString("Hash_Context is private")[0]
+    result = SessionParser.declaration().parseString("Hash_Context is private")[0]
     expected = (ID("Hash_Context"), PrivateDeclaration())
     assert result == expected
 
 
 def test_parameterless_function_declaration() -> None:
-    result = FSMParser.declaration().parseString("Foo return Foo_Type")[0]
+    result = SessionParser.declaration().parseString("Foo return Foo_Type")[0]
     expected = (ID("Foo"), Subprogram([], "Foo_Type"))
     assert result == expected
 
 
 def test_simple_variable_declaration() -> None:
-    result = FSMParser.declaration().parseString(
+    result = SessionParser.declaration().parseString(
         "Certificate_Authorities : TLS_Handshake.Certificate_Authorities"
     )[0]
     expected = (
@@ -71,7 +71,7 @@ def test_simple_variable_declaration() -> None:
 
 
 def test_variable_declaration_with_initialization() -> None:
-    result = FSMParser.declaration().parseString(
+    result = SessionParser.declaration().parseString(
         "Certificate_Authorities_Received : Boolean := False"
     )[0]
     expected = (
@@ -82,7 +82,7 @@ def test_variable_declaration_with_initialization() -> None:
 
 
 def test_renames() -> None:
-    result = FSMParser.declaration().parseString(
+    result = SessionParser.declaration().parseString(
         "Certificate_Message : TLS_Handshake.Certificate renames CCR_Handshake_Message.Payload"
     )[0]
     expected = (
@@ -93,9 +93,9 @@ def test_renames() -> None:
 
 
 def test_channels() -> None:
-    f = FSM()
+    f = Session()
     f.parse_string(
-        "fsm",
+        "session",
         """
             channels:
                 - name: Channel1_Read_Write
@@ -119,7 +119,7 @@ def test_channels() -> None:
         """,
     )
     expected = StateMachine(
-        name="fsm",
+        name="session",
         initial=StateName("START"),
         final=StateName("END"),
         states=[
@@ -152,7 +152,7 @@ def test_channels() -> None:
             "Channel3_Write": Channel(read=False, write=True),
         },
     )
-    assert f.fsms[0] == expected
+    assert f.sessions[0] == expected
 
 
 def test_channel_with_invalid_mode() -> None:
@@ -160,8 +160,8 @@ def test_channel_with_invalid_mode() -> None:
         RecordFluxError,
         match="^session: error: channel Channel1_Read_Write has invalid mode Invalid",
     ):
-        FSM().parse_string(
-            "fsm",
+        Session().parse_string(
+            "session",
             """
                 channels:
                     - name: Channel1_Read_Write
@@ -183,8 +183,8 @@ def test_channel_with_invalid_mode() -> None:
 
 def test_channel_without_name() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: channel 0 has no name"):
-        FSM().parse_string(
-            "fsm",
+        Session().parse_string(
+            "session",
             """
                 channels:
                     - mode: Read_Write
@@ -203,8 +203,8 @@ def test_channel_without_mode() -> None:
     with pytest.raises(
         RecordFluxError, match="^session: error: channel Channel_Without_Mode has no mode"
     ):
-        FSM().parse_string(
-            "fsm",
+        Session().parse_string(
+            "session",
             """
                 channels:
                     - name: Channel_Without_Mode
