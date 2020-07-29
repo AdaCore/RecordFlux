@@ -15,15 +15,15 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.identifier import ID
-from rflx.parser.session import SessionParser
+from rflx.parser.session import declaration
 from rflx.session import Session, SessionFile, State, Transition
 from rflx.statement import Assignment
 
 
 def test_simple_function_declaration() -> None:
-    result = SessionParser.declaration().parseString(
-        "Foo (Arg1 : Arg1_Type; Arg2 : Arg2_Type) return Foo_Type"
-    )[0]
+    result = declaration().parseString("Foo (Arg1 : Arg1_Type; Arg2 : Arg2_Type) return Foo_Type")[
+        0
+    ]
     expected = (
         ID("Foo"),
         Subprogram([Argument("Arg1", "Arg1_Type"), Argument("Arg2", "Arg2_Type")], "Foo_Type",),
@@ -34,33 +34,31 @@ def test_simple_function_declaration() -> None:
 def test_invalid_function_name() -> None:
     with pytest.raises(ParseException):
         # pylint: disable=expression-not-assigned
-        SessionParser.declaration().parseString(
-            "Foo.Bar (Arg1 : Arg1_Type; Arg2 : Arg2_Type) return Foo_Type"
-        )[0]
+        declaration().parseString("Foo.Bar (Arg1 : Arg1_Type; Arg2 : Arg2_Type) return Foo_Type")[0]
 
 
 def test_invalid_parameter_name() -> None:
     with pytest.raises(ParseException):
         # pylint: disable=expression-not-assigned
-        SessionParser.declaration().parseString(
+        declaration().parseString(
             "Foo (Arg1 : Arg1_Type; Arg2.Invalid : Arg2_Type) return Foo_Type"
         )[0]
 
 
 def test_private_variable_declaration() -> None:
-    result = SessionParser.declaration().parseString("Hash_Context is private")[0]
+    result = declaration().parseString("Hash_Context is private")[0]
     expected = (ID("Hash_Context"), PrivateDeclaration())
     assert result == expected
 
 
 def test_parameterless_function_declaration() -> None:
-    result = SessionParser.declaration().parseString("Foo return Foo_Type")[0]
+    result = declaration().parseString("Foo return Foo_Type")[0]
     expected = (ID("Foo"), Subprogram([], "Foo_Type"))
     assert result == expected
 
 
 def test_simple_variable_declaration() -> None:
-    result = SessionParser.declaration().parseString(
+    result = declaration().parseString(
         "Certificate_Authorities : TLS_Handshake.Certificate_Authorities"
     )[0]
     expected = (
@@ -71,9 +69,7 @@ def test_simple_variable_declaration() -> None:
 
 
 def test_variable_declaration_with_initialization() -> None:
-    result = SessionParser.declaration().parseString(
-        "Certificate_Authorities_Received : Boolean := False"
-    )[0]
+    result = declaration().parseString("Certificate_Authorities_Received : Boolean := False")[0]
     expected = (
         ID("Certificate_Authorities_Received"),
         VariableDeclaration("Boolean", FALSE),
@@ -82,7 +78,7 @@ def test_variable_declaration_with_initialization() -> None:
 
 
 def test_renames() -> None:
-    result = SessionParser.declaration().parseString(
+    result = declaration().parseString(
         "Certificate_Message : TLS_Handshake.Certificate renames CCR_Handshake_Message.Payload"
     )[0]
     expected = (
