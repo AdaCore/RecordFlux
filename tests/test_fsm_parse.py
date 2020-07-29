@@ -30,8 +30,8 @@ from rflx.expression import (
     Valid,
     Variable,
 )
-from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
+from rflx.parser.session import FSMParser
 
 
 def test_simple_equation() -> None:

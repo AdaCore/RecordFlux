@@ -14,9 +14,9 @@ from rflx.expression import (
     Variable,
     VariableDeclaration,
 )
-from rflx.fsm import FSM, State, StateMachine, StateName, Transition
-from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID
+from rflx.parser.session import FSMParser
+from rflx.session import FSM, State, StateMachine, StateName, Transition
 from rflx.statement import Assignment
 
 

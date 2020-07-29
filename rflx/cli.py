@@ -9,11 +9,11 @@ from typing import Dict, List, Union
 from rflx import __version__
 from rflx.common import flat_name
 from rflx.error import RecordFluxError, Severity, Subsystem, fail
-from rflx.fsm import FSM
 from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Model
 from rflx.parser import Parser
+from rflx.session import FSM
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 

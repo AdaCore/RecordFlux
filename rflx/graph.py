@@ -8,9 +8,9 @@ from typing import Counter, Union
 from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
-from rflx.fsm import State, StateMachine
 from rflx.identifier import ID
 from rflx.model import FINAL, INITIAL, Link, Message
+from rflx.session import State, StateMachine
 from rflx.statement import Assignment
 
 log = logging.getLogger(__name__)
