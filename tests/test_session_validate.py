@@ -13,8 +13,8 @@ from rflx.expression import (
     Contains,
     Conversion,
     Equal,
-    ForAll,
-    ForSome,
+    ForAllIn,
+    ForSomeIn,
     Head,
     Length,
     Less,
@@ -23,7 +23,6 @@ from rflx.expression import (
     Number,
     Opaque,
     Present,
-    Quantifier,
     Renames,
     Selected,
     String,
@@ -50,9 +49,10 @@ def test_binding_aggregate() -> None:
 
 def test_binding_forall_predicate() -> None:
     binding = Binding(
-        ForAll("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))), {"Bar": Variable("Baz")},
+        ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))),
+        {"Bar": Variable("Baz")},
     )
-    expected = ForAll("X", Variable("Y"), Equal(Variable("X"), Variable("Baz")))
+    expected = ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Baz")))
     result = binding.simplified()
     assert result == expected
 
@@ -66,28 +66,29 @@ def test_binding_length() -> None:
 
 def test_binding_forall_iterable() -> None:
     binding = Binding(
-        ForAll("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))), {"Y": Variable("Baz")},
+        ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))), {"Y": Variable("Baz")},
     )
-    expected = ForAll("X", Variable("Baz"), Equal(Variable("X"), Variable("Bar")))
+    expected = ForAllIn("X", Variable("Baz"), Equal(Variable("X"), Variable("Bar")))
     result = binding.simplified()
     assert result == expected
 
 
 def test_binding_forsome_predicate() -> None:
     binding = Binding(
-        ForSome("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))),
+        ForSomeIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))),
         {"Bar": Variable("Baz")},
     )
-    expected = ForSome("X", Variable("Y"), Equal(Variable("X"), Variable("Baz")))
+    expected = ForSomeIn("X", Variable("Y"), Equal(Variable("X"), Variable("Baz")))
     result = binding.simplified()
     assert result == expected
 
 
 def test_binding_forsome_iterable() -> None:
     binding = Binding(
-        ForSome("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))), {"Y": Variable("Baz")},
+        ForSomeIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))),
+        {"Y": Variable("Baz")},
     )
-    expected = ForSome("X", Variable("Baz"), Equal(Variable("X"), Variable("Bar")))
+    expected = ForSomeIn("X", Variable("Baz"), Equal(Variable("X"), Variable("Bar")))
     result = binding.simplified()
     assert result == expected
 
@@ -1066,7 +1067,7 @@ def test_for_all() -> None:
                 transitions=[
                     Transition(
                         target="END",
-                        condition=ForAll(
+                        condition=ForAllIn(
                             "E",
                             Variable("List"),
                             Equal(Selected(Variable("E"), "Tag"), Number(42)),
@@ -1312,8 +1313,16 @@ def test_extract_variables_opaque() -> None:
     assert result == expected
 
 
-def test_extract_variables_quantifier() -> None:
-    result = Quantifier(
+def test_extract_variables_forallin() -> None:
+    result = ForAllIn(
+        "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
+    ).variables()
+    expected = [Variable("X"), Variable("List")]
+    assert result == expected
+
+
+def test_extract_variables_forsomein() -> None:
+    result = ForAllIn(
         "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
     ).variables()
     expected = [Variable("X"), Variable("List")]

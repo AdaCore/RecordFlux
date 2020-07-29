@@ -1562,8 +1562,10 @@ class Case(Expr):
 
 
 class QuantifiedExpression(Expr):
-    def __init__(self, parameter_name: StrID, iterable: Expr, predicate: Expr) -> None:
-        super().__init__()
+    def __init__(
+        self, parameter_name: StrID, iterable: Expr, predicate: Expr, location: Location = None
+    ) -> None:
+        super().__init__(location)
         self.parameter_name = ID(parameter_name)
         self.iterable = iterable
         self.predicate = predicate
@@ -1595,10 +1597,34 @@ class QuantifiedExpression(Expr):
         raise NotImplementedError
 
     def variables(self) -> List["Variable"]:
-        return list(unique(self.iterable.variables() + self.predicate.variables()))
+        return [
+            v
+            for v in self.predicate.variables() + self.iterable.variables()
+            if v.identifier != self.parameter_name
+        ]
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, QuantifiedExpression):
+            return expr.__class__(
+                expr.parameter_name,
+                expr.iterable.substituted(func),
+                expr.predicate.substituted(func),
+                expr.location,
+            )
+        return expr
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        quantifier: Mapping[ID, "Declaration"] = {self.parameter_name: VariableDeclaration()}
+        self.iterable.validate({**declarations, **quantifier})
+        self.predicate.validate({**declarations, **quantifier})
 
 
 class ForAllOf(QuantifiedExpression):
@@ -1621,6 +1647,19 @@ class ForAllIn(QuantifiedExpression):
     @property
     def quantifier(self) -> str:
         return "all"
+
+    @property
+    def keyword(self) -> str:
+        return "in"
+
+
+class ForSomeIn(QuantifiedExpression):
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    @property
+    def quantifier(self) -> str:
+        return "some"
 
     @property
     def keyword(self) -> str:
@@ -1745,90 +1784,6 @@ class Channel(Declaration):
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         pass
-
-
-class Quantifier(Expr):
-    def __init__(
-        self, quantifier: StrID, iteratable: Expr, predicate: Expr, location: Location = None
-    ) -> None:
-        super().__init__(location)
-        self.quantifier = ID(quantifier)
-        self.iterable = iteratable
-        self.predicate = predicate
-        self.symbol: str = ""
-
-    def __str__(self) -> str:
-        return f"for {self.symbol} {self.quantifier} in {self.iterable} => {self.predicate}"
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.undefined
-
-    def simplified(self) -> Expr:
-        return Quantifier(
-            self.quantifier, self.iterable.simplified(), self.predicate.simplified(), self.location,
-        )
-
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
-    def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, Quantifier):
-            return expr.__class__(
-                expr.quantifier,
-                expr.iterable.substituted(func),
-                expr.predicate.substituted(func),
-                expr.location,
-            )
-        return expr
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        quantifier: Mapping[ID, Declaration] = {self.quantifier: VariableDeclaration()}
-        self.iterable.validate({**declarations, **quantifier})
-        self.predicate.validate({**declarations, **quantifier})
-
-    def variables(self) -> List["Variable"]:
-        return [
-            v
-            for v in self.predicate.variables() + self.iterable.variables()
-            if v.identifier != self.quantifier
-        ]
-
-
-class ForSome(Quantifier):
-    symbol: str = "some"
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.undefined
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-
-class ForAll(Quantifier):
-    symbol: str = "all"
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.undefined
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
 
 
 class Contains(Relation):
