@@ -1,5 +1,5 @@
 from rflx.expression import String, SubprogramCall, Variable
-from rflx.fsm_parser import FSMParser
+from rflx.parser.session import FSMParser
 from rflx.statement import Assignment, Erase, Reset
 
 

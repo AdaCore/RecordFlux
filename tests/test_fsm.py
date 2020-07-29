@@ -13,8 +13,8 @@ from rflx.expression import (
     Variable,
     VariableDeclaration,
 )
-from rflx.fsm import FSM, State, StateMachine, StateName, Transition
 from rflx.identifier import ID
+from rflx.session import FSM, State, StateMachine, StateName, Transition
 from rflx.statement import Assignment
 
 

@@ -13,9 +13,9 @@ from rflx.expression import (
     Subprogram,
     VariableDeclaration,
 )
-from rflx.fsm_parser import FSMParser
 from rflx.identifier import ID, StrID
 from rflx.model import Base
+from rflx.parser.session import FSMParser
 from rflx.statement import Statement
 
 
