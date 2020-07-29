@@ -73,9 +73,13 @@ class Expr(DBC):
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return {k: v for k, v in self.__dict__.items() if k != "location"} == {
-                k: v for k, v in other.__dict__.items() if k != "location"
-            }
+            for k in other.__dict__:
+                if k != "location" and k not in self.__dict__:
+                    return False
+            for k, v in self.__dict__.items():
+                if k != "location" and (k not in other.__dict__ or v != other.__dict__[k]):
+                    return False
+            return True
         return NotImplemented
 
     def __hash__(self) -> int:
