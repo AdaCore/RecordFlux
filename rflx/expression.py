@@ -1078,10 +1078,12 @@ class Indexed(Name):
 
 
 class Selected(Name):
-    def __init__(self, prefix: Expr, selector_name: StrID, negative: bool = False) -> None:
+    def __init__(
+        self, prefix: Expr, selector_name: StrID, negative: bool = False, location: Location = None
+    ) -> None:
+        super().__init__(negative, location)
         self.prefix = prefix
         self.selector_name = ID(selector_name)
-        super().__init__(negative)
 
     def __neg__(self) -> "Selected":
         return self.__class__(self.prefix, self.selector_name, not self.negative)
@@ -1092,6 +1094,24 @@ class Selected(Name):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        self.prefix.validate(declarations)
+
+    def variables(self) -> List["Variable"]:
+        return self.prefix.variables()
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Selected):
+            return expr.__class__(
+                expr.prefix.substituted(func), expr.selector_name, location=expr.location
+            )
+        return expr
 
 
 class Call(Name):
@@ -2002,45 +2022,6 @@ class Conversion(Expr):
 
     def variables(self) -> List["Variable"]:
         return self.argument.variables()
-
-
-class Field(Expr):
-    def __init__(self, expression: Expr, field: StrID, location: Location = None) -> None:
-        super().__init__(location)
-        self.expression = expression
-        self.field = ID(field)
-
-    def __str__(self) -> str:
-        return f"{self.expression}.{self.field}"
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    def simplified(self) -> Expr:
-        return Field(self.expression.simplified(), self.field, self.location)
-
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
-    def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, Field):
-            return expr.__class__(expr.expression.substituted(func), expr.field, expr.location,)
-        return expr
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.undefined
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.expression.validate(declarations)
-
-    def variables(self) -> List["Variable"]:
-        return self.expression.variables()
 
 
 class Comprehension(Expr):

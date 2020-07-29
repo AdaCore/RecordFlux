@@ -4,9 +4,9 @@ from pyparsing import ParseException
 from rflx.expression import (
     FALSE,
     Argument,
-    Field,
     PrivateDeclaration,
     Renames,
+    Selected,
     Subprogram,
     Variable,
     VariableDeclaration,
@@ -78,6 +78,8 @@ def test_renames() -> None:
     )[0]
     expected = (
         ID("Certificate_Message"),
-        Renames("TLS_Handshake.Certificate", Field(Variable("CCR_Handshake_Message"), "Payload")),
+        Renames(
+            "TLS_Handshake.Certificate", Selected(Variable("CCR_Handshake_Message"), "Payload")
+        ),
     )
     assert result == expected

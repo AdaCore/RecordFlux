@@ -30,7 +30,6 @@ from rflx.expression import (
     Div,
     Equal,
     Expr,
-    Field,
     ForAll,
     ForSome,
     Greater,
@@ -46,6 +45,7 @@ from rflx.expression import (
     Present,
     PrivateDeclaration,
     Renames,
+    Selected,
     String,
     Sub,
     Subprogram,
@@ -127,7 +127,7 @@ def __parse_variable(tokens: List[ID]) -> Expr:
     assert tokens[-1].location
     locn = Location(start=tokens[0].location.start, end=tokens[-1].location.end)
     if len(tokens) == 2:
-        return Field(Variable(tokens[0]), tokens[1], location=locn)
+        return Selected(Variable(tokens[0]), tokens[1], location=locn)
     return Variable(tokens[0], location=locn)
 
 
@@ -156,8 +156,8 @@ def __parse_suffix(data: List[Any]) -> Expr:
             result = Present(result)
         if suffix[0] == "Length":
             result = Length(result)
-        if suffix[0] == "Field":
-            result = Field(result, suffix[1])
+        if suffix[0] == "Selected":
+            result = Selected(result, suffix[1])
         if suffix[0] == "Binding":
             result = Binding(result, suffix[1])
 
@@ -256,7 +256,7 @@ def __expression() -> Token:  # pylint: disable=too-many-locals
     attribute.setParseAction(lambda t: (t[0], None))
 
     field = Literal(".").suppress() - unqualified_identifier()
-    field.setParseAction(lambda t: ("Field", t[0]))
+    field.setParseAction(lambda t: ("Selected", t[0]))
 
     binding = Keyword("where").suppress() + terms
     binding.setParseAction(lambda t: ("Binding", t[0]))
