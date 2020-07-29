@@ -1,5 +1,6 @@
 import string
-from typing import Callable, Generator, List, NamedTuple, Sequence
+from dataclasses import dataclass
+from typing import Callable, Generator, List, Sequence
 
 from hypothesis import assume
 from hypothesis import strategies as st
@@ -179,7 +180,8 @@ def messages(
 ) -> Message:
     # pylint: disable=too-many-locals
 
-    class FieldPair(NamedTuple):
+    @dataclass
+    class FieldPair:
         source: Field
         target: Field
         source_type: Type
