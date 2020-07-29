@@ -513,7 +513,7 @@ class MessageValue(TypeValue):
         for t in [
             f.typeval.literals for f in self._fields.values() if isinstance(f.typeval, EnumValue)
         ]:
-            self.__type_literals = {**self.__type_literals, **t}
+            self.__type_literals.update(t)
         initial = self.Field(OpaqueValue(Opaque()))
         initial.first = Number(0)
         initial.typeval.assign(bytes())
@@ -958,10 +958,8 @@ class MessageValue(TypeValue):
             return True
 
         return all(
-            [
-                (v.name in self._fields and self._fields[v.name].set) or v.name == "Message"
-                for v in valid_edge.length.variables()
-            ]
+            (v.name in self._fields and self._fields[v.name].set) or v.name == "Message"
+            for v in valid_edge.length.variables()
         )
 
     @property
@@ -992,21 +990,20 @@ class MessageValue(TypeValue):
         return bool(self.valid_fields) and self._next_field(self.valid_fields[-1]) == FINAL.name
 
     def __update_simplified_mapping(self) -> None:
-        field_values: Dict[Name, Expr] = {
-            **{
-                Variable(k): v.typeval.expr
-                for k, v in self._fields.items()
-                if isinstance(v.typeval, ScalarValue) and v.set
-            },
-            **{Length(k): v.typeval.size for k, v in self._fields.items() if v.set},
-            **{First(k): v.first for k, v in self._fields.items() if v.set},
-            **{Last(k): v.last for k, v in self._fields.items() if v.set},
-        }
+        self._simplified_mapping = {}
+        for k, v in self._fields.items():
+            if not v.set:
+                continue
+            if isinstance(v.typeval, ScalarValue):
+                self._simplified_mapping[Variable(k)] = v.typeval.expr
+            self._simplified_mapping[Length(k)] = v.typeval.size
+            self._simplified_mapping[First(k)] = v.first
+            self._simplified_mapping[Last(k)] = v.last
 
         # ISSUE: Componolit/RecordFlux#240
-        checksums: Mapping[Name, Expr] = {ValidChecksum(f): TRUE for f in self._checksums}
+        self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
 
-        self._simplified_mapping = {**field_values, **checksums, **self.__type_literals}
+        self._simplified_mapping.update(self.__type_literals)
 
         pre_final = self._prev_field("Final")
         if pre_final != "" and self._fields[pre_final].set:
