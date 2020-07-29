@@ -13,7 +13,7 @@ from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Model
 from rflx.parser import Parser
-from rflx.session import SessionFile
+from rflx.sessionfile import SessionFile
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
