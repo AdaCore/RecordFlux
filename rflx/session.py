@@ -15,7 +15,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID, StrID
 from rflx.model import Base
-from rflx.parser.session import SessionParser
+from rflx.parser.session import action, declaration, expression
 from rflx.statement import Statement
 
 
@@ -203,18 +203,18 @@ class Session(Base):
             )
 
     @classmethod
-    def __entity_name(cls, declaration: Declaration) -> str:
-        if isinstance(declaration, Subprogram):
+    def __entity_name(cls, decl: Declaration) -> str:
+        if isinstance(decl, Subprogram):
             return "subprogram"
-        if isinstance(declaration, VariableDeclaration):
+        if isinstance(decl, VariableDeclaration):
             return "variable"
-        if isinstance(declaration, Renames):
+        if isinstance(decl, Renames):
             return "renames"
-        if isinstance(declaration, Channel):
+        if isinstance(decl, Channel):
             return "channel"
-        if isinstance(declaration, PrivateDeclaration):
+        if isinstance(decl, PrivateDeclaration):
             return "private declaration"
-        assert False, f"Unsupported entity {type(declaration).__name__}"
+        assert False, f"Unsupported entity {type(decl).__name__}"
 
     def __validate_declarations(self) -> None:
         for s in self.__states:
@@ -286,7 +286,7 @@ class SessionFile:
             return
         for index, f in enumerate(doc["functions"]):
             try:
-                name, declaration = SessionParser.declaration().parseString(f)[0]
+                name, decl = declaration().parseString(f)[0]
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
@@ -299,7 +299,7 @@ class SessionFile:
                 self.error.append(
                     f"conflicting function {name}", Subsystem.SESSION, Severity.ERROR,
                 )
-            result[ID(name)] = declaration
+            result[ID(name)] = decl
         self.error.propagate()
 
     def __parse_variables(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
@@ -307,7 +307,7 @@ class SessionFile:
             return
         for index, f in enumerate(doc["variables"]):
             try:
-                name, declaration = SessionParser.declaration().parseString(f)[0]
+                name, decl = declaration().parseString(f)[0]
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
@@ -320,7 +320,7 @@ class SessionFile:
                 self.error.append(
                     f"conflicting variable {name}", Subsystem.SESSION, Severity.ERROR,
                 )
-            result[ID(name)] = declaration
+            result[ID(name)] = decl
         self.error.propagate()
 
     def __parse_types(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
@@ -328,7 +328,7 @@ class SessionFile:
             return
         for index, f in enumerate(doc["types"]):
             try:
-                name, declaration = SessionParser.declaration().parseString(f)[0]
+                name, decl = declaration().parseString(f)[0]
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
@@ -341,7 +341,7 @@ class SessionFile:
                 self.error.append(
                     f"conflicting type {name}", Subsystem.SESSION, Severity.ERROR,
                 )
-            result[ID(name)] = declaration
+            result[ID(name)] = decl
         self.error.propagate()
 
     def __parse_channels(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
@@ -385,7 +385,7 @@ class SessionFile:
             return
         for index, f in enumerate(doc["renames"]):
             try:
-                name, declaration = SessionParser.declaration().parseString(f)[0]
+                name, decl = declaration().parseString(f)[0]
             except RecordFluxError as e:
                 self.error.extend(e)
                 self.error.append(
@@ -396,7 +396,7 @@ class SessionFile:
                 self.error.append(
                     f"conflicting renames {name}", Subsystem.SESSION, Severity.ERROR,
                 )
-            result[name] = declaration
+            result[name] = decl
         self.error.propagate()
 
     def __parse_declarations(self, doc: Dict[str, Any]) -> Dict[ID, Declaration]:
@@ -424,7 +424,7 @@ class SessionFile:
                     )
                 if "condition" in t:
                     try:
-                        condition = SessionParser.expression().parseString(t["condition"])[0]
+                        condition = expression().parseString(t["condition"])[0]
                     except RecordFluxError as e:
                         tname = t["target"]
                         self.error.append(
@@ -457,7 +457,7 @@ class SessionFile:
             if "actions" in s and s["actions"]:
                 for a in s["actions"]:
                     try:
-                        actions.append(SessionParser.action().parseString(a)[0])
+                        actions.append(action().parseString(a)[0])
                     except RecordFluxError as e:
                         self.error.extend(e)
                         continue
@@ -465,11 +465,11 @@ class SessionFile:
             if "variables" in s and s["variables"]:
                 for v in s["variables"]:
                     try:
-                        dname, declaration = SessionParser.declaration().parseString(v)[0]
+                        dname, decl = declaration().parseString(v)[0]
                     except RecordFluxError as e:
                         self.error.extend(e)
                         continue
-                    declarations[ID(dname)] = declaration
+                    declarations[ID(dname)] = decl
 
             states.append(
                 State(

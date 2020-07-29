@@ -64,314 +64,294 @@ from rflx.parser.grammar import (
 from rflx.statement import Assignment, Erase, Reset
 
 
-class InternalError(Exception):
-    pass
+def __parse_quantifier(tokens: List[Expr]) -> Expr:
+    assert isinstance(tokens[1], ID)
+    if tokens[0] == "all":
+        return ForAll(tokens[1], tokens[2], tokens[3])
+    return ForSome(tokens[1], tokens[2], tokens[3])
 
 
-class SessionParser:
-    @classmethod
-    def __parse_quantifier(cls, tokens: List[Expr]) -> Expr:
-        assert isinstance(tokens[1], ID)
-        if tokens[0] == "all":
-            return ForAll(tokens[1], tokens[2], tokens[3])
-        return ForSome(tokens[1], tokens[2], tokens[3])
+def __parse_comprehension(tokens: List[Expr]) -> Expr:
+    assert isinstance(tokens[0], ID)
+    condition = tokens[3] if len(tokens) > 3 else TRUE
+    return Comprehension(tokens[0], tokens[1], tokens[2], condition)
 
-    @classmethod
-    def __parse_comprehension(cls, tokens: List[Expr]) -> Expr:
-        assert isinstance(tokens[0], ID)
-        condition = tokens[3] if len(tokens) > 3 else TRUE
-        return Comprehension(tokens[0], tokens[1], tokens[2], condition)
 
-    @classmethod
-    def __parse_call(cls, tokens: List[Expr]) -> Expr:
-        assert isinstance(tokens[0], ID)
+def __parse_call(tokens: List[Expr]) -> Expr:
+    assert isinstance(tokens[0], ID)
+    return SubprogramCall(tokens[0], tokens[1:])
+
+
+def __parse_conversion(tokens: List[Expr]) -> Expr:
+    assert isinstance(tokens[0], ID)
+    if tokens[0] in map(ID, ["Read", "Write", "Call", "Data_Available"]):
         return SubprogramCall(tokens[0], tokens[1:])
+    return Conversion(tokens[0], tokens[1])
 
-    @classmethod
-    def __parse_conversion(cls, tokens: List[Expr]) -> Expr:
-        assert isinstance(tokens[0], ID)
-        if tokens[0] in map(ID, ["Read", "Write", "Call", "Data_Available"]):
-            return SubprogramCall(tokens[0], tokens[1:])
-        return Conversion(tokens[0], tokens[1])
 
-    @classmethod
-    def __parse_op_comp(cls, tokens: List[Expr]) -> Expr:
-        if tokens[1] == "<":
-            return Less(tokens[0], tokens[2])
-        if tokens[1] == ">":
-            return Greater(tokens[0], tokens[2])
-        if tokens[1] == "=":
-            return Equal(tokens[0], tokens[2])
-        if tokens[1] == "/=":
-            return NotEqual(tokens[0], tokens[2])
-        raise InternalError(f"Unsupported comparison operator {tokens[1]}")
+def __parse_op_comp(tokens: List[Expr]) -> Expr:
+    if tokens[1] == "<":
+        return Less(tokens[0], tokens[2])
+    if tokens[1] == ">":
+        return Greater(tokens[0], tokens[2])
+    if tokens[1] == "=":
+        return Equal(tokens[0], tokens[2])
+    if tokens[1] == "/=":
+        return NotEqual(tokens[0], tokens[2])
+    assert False, f"Unsupported comparison operator {tokens[1]}"
 
-    @classmethod
-    def __parse_op_set(cls, tokens: List[Expr]) -> Expr:
-        if tokens[1] == "not in":
-            return NotContains(tokens[0], tokens[2])
-        if tokens[1] == "in":
-            return Contains(tokens[0], tokens[2])
-        raise InternalError(f"Unsupported set operator {tokens[1]}")
 
-    @classmethod
-    def __parse_op_add_sub(cls, tokens: List[Expr]) -> Expr:
-        result = tokens[0]
-        for op, right in zip(tokens[1::2], tokens[2::2]):
-            if op == "+":
-                result = Add(result, right)
-            elif op == "-":
-                result = Sub(result, right)
-            else:
-                raise InternalError(f"Unsupported add/sub operator {op}")
-        return result
+def __parse_op_set(tokens: List[Expr]) -> Expr:
+    if tokens[1] == "not in":
+        return NotContains(tokens[0], tokens[2])
+    if tokens[1] == "in":
+        return Contains(tokens[0], tokens[2])
+    assert False, f"Unsupported set operator {tokens[1]}"
 
-    @classmethod
-    def __parse_variable(cls, tokens: List[ID]) -> Expr:
-        assert len(tokens) > 0 and len(tokens) < 3
-        assert tokens[0].location
-        assert tokens[-1].location
-        locn = Location(start=tokens[0].location.start, end=tokens[-1].location.end)
-        if len(tokens) == 2:
-            return Field(Variable(tokens[0]), tokens[1], location=locn)
-        return Variable(tokens[0], location=locn)
 
-    @classmethod
-    def __parse_op_mul_div(cls, tokens: List[Expr]) -> Expr:
-        result = tokens[0]
-        for op, right in zip(tokens[1::2], tokens[2::2]):
-            if op == "*":
-                result = Mul(result, right)
-            elif op == "/":
-                result = Div(result, right)
-            else:
-                raise InternalError(f"Unsupported mul/div operator {op}")
-        return result
+def __parse_op_add_sub(tokens: List[Expr]) -> Expr:
+    result = tokens[0]
+    for op, right in zip(tokens[1::2], tokens[2::2]):
+        if op == "+":
+            result = Add(result, right)
+        elif op == "-":
+            result = Sub(result, right)
+        else:
+            assert False, f"Unsupported add/sub operator {op}"
+    return result
 
-    @classmethod
-    def __parse_suffix(cls, data: List[Any]) -> Expr:
-        result = data[0][0]
-        for suffix in data[0][1:]:
-            if suffix[0] == "Head":
-                result = Head(result)
-            if suffix[0] == "Valid":
-                result = Valid(result)
-            if suffix[0] == "Opaque":
-                result = Opaque(result)
-            if suffix[0] == "Present":
-                result = Present(result)
-            if suffix[0] == "Length":
-                result = Length(result)
-            if suffix[0] == "Field":
-                result = Field(result, suffix[1])
-            if suffix[0] == "Binding":
-                result = Binding(result, suffix[1])
 
-        return result
+def __parse_variable(tokens: List[ID]) -> Expr:
+    assert len(tokens) > 0 and len(tokens) < 3
+    assert tokens[0].location
+    assert tokens[-1].location
+    locn = Location(start=tokens[0].location.start, end=tokens[-1].location.end)
+    if len(tokens) == 2:
+        return Field(Variable(tokens[0]), tokens[1], location=locn)
+    return Variable(tokens[0], location=locn)
 
-    @classmethod
-    def __variable(cls) -> Token:
-        result = delimitedList(unqualified_identifier(), ".")
-        result.setParseAction(cls.__parse_variable)
-        return result
 
-    @classmethod
-    def __expression(cls) -> Token:  # pylint: disable=too-many-locals
+def __parse_op_mul_div(tokens: List[Expr]) -> Expr:
+    result = tokens[0]
+    for op, right in zip(tokens[1::2], tokens[2::2]):
+        if op == "*":
+            result = Mul(result, right)
+        elif op == "/":
+            result = Div(result, right)
+        else:
+            assert False, f"Unsupported mul/div operator {op}"
+    return result
 
-        bool_literal = boolean_literal()
-        bool_literal.setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
 
-        string_literal = (
-            Literal('"').suppress()
-            + Word(printables + " ", excludeChars='"')
-            + Literal('"').suppress()
-        )
-        string_literal.setParseAction(lambda t: String(t[0]))
+def __parse_suffix(data: List[Any]) -> Expr:
+    result = data[0][0]
+    for suffix in data[0][1:]:
+        if suffix[0] == "Head":
+            result = Head(result)
+        if suffix[0] == "Valid":
+            result = Valid(result)
+        if suffix[0] == "Opaque":
+            result = Opaque(result)
+        if suffix[0] == "Present":
+            result = Present(result)
+        if suffix[0] == "Length":
+            result = Length(result)
+        if suffix[0] == "Field":
+            result = Field(result, suffix[1])
+        if suffix[0] == "Binding":
+            result = Binding(result, suffix[1])
 
-        expression = Forward()
+    return result
 
-        parameters = delimitedList(expression, delim=",")
 
-        lpar, rpar = map(Suppress, "()")
+def __variable() -> Token:
+    result = delimitedList(unqualified_identifier(), ".")
+    result.setParseAction(__parse_variable)
+    return result
 
-        function_call = unqualified_identifier() + lpar + parameters + rpar
-        function_call.setParseAction(cls.__parse_call)
 
-        conversion = qualified_identifier() + lpar + expression + rpar
-        conversion.setParseAction(cls.__parse_conversion)
+def __expression() -> Token:  # pylint: disable=too-many-locals
 
-        quantifier = (
-            Keyword("for").suppress()
-            - oneOf(["all", "some"])
-            + unqualified_identifier()
-            - Keyword("in").suppress()
-            + expression
-            - Keyword("=>").suppress()
-            + expression
-        )
-        quantifier.setParseAction(cls.__parse_quantifier)
+    bool_literal = boolean_literal()
+    bool_literal.setParseAction(lambda t: TRUE if t[0] == "True" else FALSE)
 
-        comprehension = (
-            Literal("[").suppress()
-            - Keyword("for").suppress()
-            + unqualified_identifier()
-            - Keyword("in").suppress()
-            + expression
-            - Keyword("=>").suppress()
-            + expression
-            + Optional(Keyword("when").suppress() + expression)
-            - Literal("]").suppress()
-        )
-        comprehension.setParseAction(cls.__parse_comprehension)
+    string_literal = (
+        Literal('"').suppress() + Word(printables + " ", excludeChars='"') + Literal('"').suppress()
+    )
+    string_literal.setParseAction(lambda t: String(t[0]))
 
-        null_message = Keyword("null") + Keyword("message")
-        null_message.setParseAction(lambda t: {})
+    expr = Forward()
 
-        components = delimitedList(
-            unqualified_identifier() + Keyword("=>").suppress() + expression, delim=","
-        )
-        components.setParseAction(lambda t: dict(zip(t[0::2], t[1::2])))
+    parameters = delimitedList(expr, delim=",")
 
-        terms = delimitedList(
-            unqualified_identifier() + Keyword("=").suppress() + expression, delim=","
-        )
-        terms.setParseAction(lambda t: dict(zip(t[0::2], t[1::2])))
+    lpar, rpar = map(Suppress, "()")
 
-        aggregate = (
-            qualified_identifier()
-            + Literal("'").suppress()
-            + lpar
-            + (null_message | components)
-            + rpar
-        )
-        aggregate.setParseAction(lambda t: MessageAggregate(t[0], t[1]))
+    function_call = unqualified_identifier() + lpar + parameters + rpar
+    function_call.setParseAction(__parse_call)
 
-        atom = (
-            numeric_literal()
-            | bool_literal
-            | string_literal
-            | quantifier
-            | comprehension
-            | conversion
-            | function_call
-            | aggregate
-            | cls.__variable()
-        )
+    conversion = qualified_identifier() + lpar + expr + rpar
+    conversion.setParseAction(__parse_conversion)
 
-        attribute_designator = (
-            Keyword("Valid")
-            | Keyword("Present")
-            | Keyword("Length")
-            | Keyword("Head")
-            | Keyword("Opaque")
-        )
+    quantifier = (
+        Keyword("for").suppress()
+        - oneOf(["all", "some"])
+        + unqualified_identifier()
+        - Keyword("in").suppress()
+        + expr
+        - Keyword("=>").suppress()
+        + expr
+    )
+    quantifier.setParseAction(__parse_quantifier)
 
-        attribute = Literal("'").suppress() - attribute_designator
-        attribute.setParseAction(lambda t: (t[0], None))
+    comprehension = (
+        Literal("[").suppress()
+        - Keyword("for").suppress()
+        + unqualified_identifier()
+        - Keyword("in").suppress()
+        + expr
+        - Keyword("=>").suppress()
+        + expr
+        + Optional(Keyword("when").suppress() + expr)
+        - Literal("]").suppress()
+    )
+    comprehension.setParseAction(__parse_comprehension)
 
-        field = Literal(".").suppress() - unqualified_identifier()
-        field.setParseAction(lambda t: ("Field", t[0]))
+    null_message = Keyword("null") + Keyword("message")
+    null_message.setParseAction(lambda t: {})
 
-        binding = Keyword("where").suppress() + terms
-        binding.setParseAction(lambda t: ("Binding", t[0]))
+    components = delimitedList(
+        unqualified_identifier() + Keyword("=>").suppress() + expr, delim=","
+    )
+    components.setParseAction(lambda t: dict(zip(t[0::2], t[1::2])))
 
-        suffix = binding ^ attribute ^ field
+    terms = delimitedList(unqualified_identifier() + Keyword("=").suppress() + expr, delim=",")
+    terms.setParseAction(lambda t: dict(zip(t[0::2], t[1::2])))
 
-        op_comp = Keyword("<") | Keyword(">") | Keyword("=") | Keyword("/=")
+    aggregate = (
+        qualified_identifier() + Literal("'").suppress() + lpar + (null_message | components) + rpar
+    )
+    aggregate.setParseAction(lambda t: MessageAggregate(t[0], t[1]))
 
-        op_add_sub = Keyword("+") | Keyword("-")
+    atom = (
+        numeric_literal()
+        | bool_literal
+        | string_literal
+        | quantifier
+        | comprehension
+        | conversion
+        | function_call
+        | aggregate
+        | __variable()
+    )
 
-        op_mul_div = Keyword("*") | Keyword("/")
+    attribute_designator = (
+        Keyword("Valid")
+        | Keyword("Present")
+        | Keyword("Length")
+        | Keyword("Head")
+        | Keyword("Opaque")
+    )
 
-        op_set = (Keyword("not") + Keyword("in")).setParseAction(lambda t: ["not in"]) | Keyword(
-            "in"
-        )
+    attribute = Literal("'").suppress() - attribute_designator
+    attribute.setParseAction(lambda t: (t[0], None))
 
-        expression <<= infixNotation(
-            atom,
-            [
-                (suffix, 1, opAssoc.LEFT, cls.__parse_suffix),
-                (op_set, 2, opAssoc.LEFT, lambda t: cls.__parse_op_set(t[0])),
-                (op_mul_div, 2, opAssoc.LEFT, lambda t: cls.__parse_op_mul_div(t[0])),
-                (op_add_sub, 2, opAssoc.LEFT, lambda t: cls.__parse_op_add_sub(t[0])),
-                (op_comp, 2, opAssoc.LEFT, lambda t: cls.__parse_op_comp(t[0])),
-                (Keyword("and").suppress(), 2, opAssoc.LEFT, lambda t: And(*t[0])),
-                (Keyword("or").suppress(), 2, opAssoc.LEFT, lambda t: Or(*t[0])),
-            ],
-        )
+    field = Literal(".").suppress() - unqualified_identifier()
+    field.setParseAction(lambda t: ("Field", t[0]))
 
-        expression.enablePackrat()
-        return expression
+    binding = Keyword("where").suppress() + terms
+    binding.setParseAction(lambda t: ("Binding", t[0]))
 
-    @classmethod
-    def expression(cls) -> Token:
-        return cls.__expression() + StringEnd()
+    suffix = binding ^ attribute ^ field
 
-    @classmethod
-    def action(cls) -> Token:
+    op_comp = Keyword("<") | Keyword(">") | Keyword("=") | Keyword("/=")
 
-        lpar, rpar = map(Suppress, "()")
+    op_add_sub = Keyword("+") | Keyword("-")
 
-        parameters = lpar + delimitedList(cls.__expression(), delim=",") + rpar
+    op_mul_div = Keyword("*") | Keyword("/")
 
-        call = unqualified_identifier() + parameters
-        call.setParseAction(cls.__parse_call)
+    op_set = (Keyword("not") + Keyword("in")).setParseAction(lambda t: ["not in"]) | Keyword("in")
 
-        erase = unqualified_identifier() + Literal(":=").suppress() + Keyword("null")
-        erase.setParseAction(lambda t: Erase(t[0]))
+    expr <<= infixNotation(
+        atom,
+        [
+            (suffix, 1, opAssoc.LEFT, __parse_suffix),
+            (op_set, 2, opAssoc.LEFT, lambda t: __parse_op_set(t[0])),
+            (op_mul_div, 2, opAssoc.LEFT, lambda t: __parse_op_mul_div(t[0])),
+            (op_add_sub, 2, opAssoc.LEFT, lambda t: __parse_op_add_sub(t[0])),
+            (op_comp, 2, opAssoc.LEFT, lambda t: __parse_op_comp(t[0])),
+            (Keyword("and").suppress(), 2, opAssoc.LEFT, lambda t: And(*t[0])),
+            (Keyword("or").suppress(), 2, opAssoc.LEFT, lambda t: Or(*t[0])),
+        ],
+    )
 
-        assignment = unqualified_identifier() + Literal(":=").suppress() + cls.__expression()
-        assignment.setParseAction(lambda t: Assignment(t[0], t[1]))
+    expr.enablePackrat()
+    return expr
 
-        attribute_designator = Keyword("Append") | Keyword("Extend")
 
-        list_operation = (
-            unqualified_identifier() + Literal("'").suppress() + attribute_designator + parameters
-        )
-        list_operation.setParseAction(
-            lambda t: Assignment(t[0], SubprogramCall(t[1], [Variable(t[0]), t[2]]))
-        )
+def expression() -> Token:
+    return __expression() + StringEnd()
 
-        list_reset = unqualified_identifier() + Literal("'").suppress() + Keyword("Reset")
-        list_reset.setParseAction(lambda t: Reset(t[0]))
 
-        return (erase | assignment | list_reset | list_operation | call) + StringEnd()
+def action() -> Token:
 
-    @classmethod
-    def declaration(cls) -> Token:
+    lpar, rpar = map(Suppress, "()")
 
-        lpar, rpar = map(Suppress, "()")
+    parameters = lpar + delimitedList(__expression(), delim=",") + rpar
 
-        parameter = unqualified_identifier() + Literal(":").suppress() + qualified_identifier()
-        parameter.setParseAction(lambda t: Argument(t[0], t[1]))
+    call = unqualified_identifier() + parameters
+    call.setParseAction(__parse_call)
 
-        parameter_list = lpar + delimitedList(parameter, delim=";") + rpar
+    erase = unqualified_identifier() + Literal(":=").suppress() + Keyword("null")
+    erase.setParseAction(lambda t: Erase(t[0]))
 
-        function_decl = (
-            unqualified_identifier()
-            + Optional(parameter_list)
-            + Keyword("return").suppress()
-            + qualified_identifier()
-        )
-        function_decl.setParseAction(lambda t: (t[0], Subprogram(t[1:-1], t[-1])))
+    assignment = unqualified_identifier() + Literal(":=").suppress() + __expression()
+    assignment.setParseAction(lambda t: Assignment(t[0], t[1]))
 
-        initializer = Literal(":=").suppress() + cls.__expression()
+    attribute_designator = Keyword("Append") | Keyword("Extend")
 
-        variable_base_decl = (
-            unqualified_identifier() + Literal(":").suppress() + qualified_identifier()
-        )
+    list_operation = (
+        unqualified_identifier() + Literal("'").suppress() + attribute_designator + parameters
+    )
+    list_operation.setParseAction(
+        lambda t: Assignment(t[0], SubprogramCall(t[1], [Variable(t[0]), t[2]]))
+    )
 
-        variable_decl = variable_base_decl + Optional(initializer)
-        variable_decl.setParseAction(
-            lambda t: (t[0], VariableDeclaration(t[1], t[2] if t[2:] else None))
-        )
+    list_reset = unqualified_identifier() + Literal("'").suppress() + Keyword("Reset")
+    list_reset.setParseAction(lambda t: Reset(t[0]))
 
-        renames = variable_base_decl + Keyword("renames").suppress() + cls.__variable()
-        renames.setParseAction(lambda t: (t[0], Renames(t[1], t[2])))
+    return (erase | assignment | list_reset | list_operation | call) + StringEnd()
 
-        private = (
-            unqualified_identifier() + Keyword("is").suppress() + Keyword("private").suppress()
-        )
-        private.setParseAction(lambda t: (t[0], PrivateDeclaration()))
 
-        return (private | renames | variable_decl | function_decl) + StringEnd()
+def declaration() -> Token:
+
+    lpar, rpar = map(Suppress, "()")
+
+    parameter = unqualified_identifier() + Literal(":").suppress() + qualified_identifier()
+    parameter.setParseAction(lambda t: Argument(t[0], t[1]))
+
+    parameter_list = lpar + delimitedList(parameter, delim=";") + rpar
+
+    function_decl = (
+        unqualified_identifier()
+        + Optional(parameter_list)
+        + Keyword("return").suppress()
+        + qualified_identifier()
+    )
+    function_decl.setParseAction(lambda t: (t[0], Subprogram(t[1:-1], t[-1])))
+
+    initializer = Literal(":=").suppress() + __expression()
+
+    variable_base_decl = unqualified_identifier() + Literal(":").suppress() + qualified_identifier()
+
+    variable_decl = variable_base_decl + Optional(initializer)
+    variable_decl.setParseAction(
+        lambda t: (t[0], VariableDeclaration(t[1], t[2] if t[2:] else None))
+    )
+
+    renames = variable_base_decl + Keyword("renames").suppress() + __variable()
+    renames.setParseAction(lambda t: (t[0], Renames(t[1], t[2])))
+
+    private = unqualified_identifier() + Keyword("is").suppress() + Keyword("private").suppress()
+    private.setParseAction(lambda t: (t[0], PrivateDeclaration()))
+
+    return (private | renames | variable_decl | function_decl) + StringEnd()
