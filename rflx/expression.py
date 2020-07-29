@@ -1786,38 +1786,6 @@ class Channel(Declaration):
         pass
 
 
-class Contains(Relation):
-    @property
-    def symbol(self) -> str:
-        return " in "
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.undefined
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-
-class NotContains(Relation):
-    @property
-    def symbol(self) -> str:
-        return " not in "
-
-    def __neg__(self) -> Expr:
-        return Not(Contains(self.left, self.right))
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.undefined
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-
 class SubprogramCall(Expr):
     def __init__(self, name: StrID, arguments: List[Expr], location: Location = None) -> None:
         super().__init__(location)

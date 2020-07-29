@@ -10,16 +10,16 @@ from rflx.expression import (
     Binding,
     Channel,
     Comprehension,
-    Contains,
     Conversion,
     Equal,
     ForAllIn,
     ForSomeIn,
     Head,
+    In,
     Length,
     Less,
     MessageAggregate,
-    NotContains,
+    NotIn,
     Number,
     Opaque,
     Present,
@@ -94,29 +94,29 @@ def test_binding_forsome_iterable() -> None:
 
 
 def test_binding_contains_left() -> None:
-    binding = Binding(Contains(Variable("X"), Variable("Y")), {"X": Variable("Baz")},)
-    expected = Contains(Variable("Baz"), Variable("Y"))
+    binding = Binding(In(Variable("X"), Variable("Y")), {"X": Variable("Baz")},)
+    expected = In(Variable("Baz"), Variable("Y"))
     result = binding.simplified()
     assert result == expected
 
 
 def test_binding_contains_right() -> None:
-    binding = Binding(Contains(Variable("X"), Variable("Y")), {"Y": Variable("Baz")},)
-    expected = Contains(Variable("X"), Variable("Baz"))
+    binding = Binding(In(Variable("X"), Variable("Y")), {"Y": Variable("Baz")},)
+    expected = In(Variable("X"), Variable("Baz"))
     result = binding.simplified()
     assert result == expected
 
 
 def test_binding_not_contains_left() -> None:
-    binding = Binding(NotContains(Variable("X"), Variable("Y")), {"X": Variable("Baz")},)
-    expected = NotContains(Variable("Baz"), Variable("Y"))
+    binding = Binding(NotIn(Variable("X"), Variable("Y")), {"X": Variable("Baz")},)
+    expected = NotIn(Variable("Baz"), Variable("Y"))
     result = binding.simplified()
     assert result == expected
 
 
 def test_binding_not_contains_right() -> None:
-    binding = Binding(NotContains(Variable("X"), Variable("Y")), {"Y": Variable("Baz")},)
-    expected = NotContains(Variable("X"), Variable("Baz"))
+    binding = Binding(NotIn(Variable("X"), Variable("Y")), {"Y": Variable("Baz")},)
+    expected = NotIn(Variable("X"), Variable("Baz"))
     result = binding.simplified()
     assert result == expected
 
@@ -1330,7 +1330,7 @@ def test_extract_variables_forsomein() -> None:
 
 
 def test_extract_variables_contains() -> None:
-    result = Contains(Variable("A"), Variable("B")).variables()
+    result = In(Variable("A"), Variable("B")).variables()
     expected = [Variable("A"), Variable("B")]
     assert result == expected
 

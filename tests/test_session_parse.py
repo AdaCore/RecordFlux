@@ -5,7 +5,6 @@ from rflx.expression import (
     And,
     Binding,
     Comprehension,
-    Contains,
     Conversion,
     Div,
     Equal,
@@ -13,12 +12,13 @@ from rflx.expression import (
     ForSomeIn,
     Greater,
     Head,
+    In,
     Length,
     Less,
     MessageAggregate,
     Mul,
-    NotContains,
     NotEqual,
+    NotIn,
     Number,
     Opaque,
     Or,
@@ -78,7 +78,7 @@ def test_disjunction_multi() -> None:
 
 def test_not_in_whitespace_operator() -> None:
     result = expression().parseString("Foo not   in  Bar")[0]
-    assert result == NotContains(Variable("Foo"), Variable("Bar"))
+    assert result == NotIn(Variable("Foo"), Variable("Bar"))
 
 
 def test_disjunction() -> None:
@@ -90,12 +90,12 @@ def test_disjunction() -> None:
 
 def test_in_operator() -> None:
     result = expression().parseString("Foo in Bar")[0]
-    assert result == Contains(Variable("Foo"), Variable("Bar"))
+    assert result == In(Variable("Foo"), Variable("Bar"))
 
 
 def test_not_in_operator() -> None:
     result = expression().parseString("Foo not in Bar")[0]
-    assert result == NotContains(Variable("Foo"), Variable("Bar"))
+    assert result == NotIn(Variable("Foo"), Variable("Bar"))
 
 
 def test_parenthesized_expression() -> None:
@@ -134,7 +134,7 @@ def test_complex_expression() -> None:
         ),
         And(
             Equal(Selected(Variable("Keystore_Message"), "Length"), Number(0)),
-            NotContains(
+            NotIn(
                 Selected(Variable("TLS_Handshake"), "PSK_DHE_KE"),
                 Selected(Variable("Configuration"), "PSK_Key_Exchange_Modes"),
             ),
@@ -163,7 +163,7 @@ def test_complex_existential_quantification() -> None:
                 Selected(Variable("E"), "Tag"),
                 Selected(Variable("TLS_Handshake"), "EXTENSION_SUPPORTED_VERSIONS"),
             ),
-            NotContains(
+            NotIn(
                 Selected(Variable("GreenTLS"), "TLS_1_3"),
                 Selected(
                     Conversion("TLS_Handshake.Supported_Versions", Selected(Variable("E"), "Data")),
@@ -224,7 +224,7 @@ def test_type_conversion() -> None:
 def test_use_type_conversion() -> None:
     expr = "GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data).Versions"
     result = expression().parseString(expr)[0]
-    expected = NotContains(
+    expected = NotIn(
         Selected(Variable("GreenTLS"), "TLS_1_3"),
         Selected(
             Conversion("TLS_Handshake.Supported_Versions", Selected(Variable("E"), "Data")),
