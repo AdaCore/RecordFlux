@@ -32,8 +32,8 @@ from rflx.pyrflx import (
     Package,
     PyRFLX,
     TypeValue,
+    utils,
 )
-from rflx.pyrflx.utils import checksum_functions
 
 TESTDIR = "tests"
 SPECDIR = "specs"
@@ -1507,7 +1507,7 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
     checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
     checksum_bytes += b"\x00" * (checksum_length // 8)
     checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
-    return checksum_functions.internet_checksum(checksum_bytes)
+    return utils.internet_checksum(checksum_bytes)
 
 
 @pytest.fixture(name="icmp_checksum")
