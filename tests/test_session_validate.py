@@ -34,7 +34,7 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.identifier import ID
-from rflx.session import Session, State, StateName, Transition
+from rflx.session import Session, State, Transition
 from rflx.statement import Assignment, Erase, Reset
 
 
@@ -201,18 +201,16 @@ def test_undeclared_variable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
+                    name="START",
                     transitions=[
-                        Transition(
-                            target=StateName("END"), condition=Equal(Variable("Undefined"), TRUE),
-                        )
+                        Transition(target="END", condition=Equal(Variable("Undefined"), TRUE),)
                     ],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={},
         )
@@ -221,16 +219,14 @@ def test_undeclared_variable() -> None:
 def test_declared_variable() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[
-                    Transition(target=StateName("END"), condition=Equal(Variable("Defined"), TRUE))
-                ],
+                name="START",
+                transitions=[Transition(target="END", condition=Equal(Variable("Defined"), TRUE))],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={"Defined": VariableDeclaration("Some_Type")},
     )
@@ -239,20 +235,19 @@ def test_declared_variable() -> None:
 def test_declared_local_variable() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
+                name="START",
                 transitions=[
                     Transition(
-                        target=StateName("END"),
-                        condition=Equal(Variable("Local"), Variable("Global")),
+                        target="END", condition=Equal(Variable("Local"), Variable("Global")),
                     )
                 ],
                 declarations={ID("Local"): VariableDeclaration("Some_Type")},
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={"Global": VariableDeclaration("Some_Type")},
     )
@@ -264,27 +259,24 @@ def test_undeclared_local_variable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[
-                        Transition(target=StateName("STATE"), condition=Variable("Global"))
-                    ],
+                    name="START",
+                    transitions=[Transition(target="STATE", condition=Variable("Global"))],
                     declarations={},
                 ),
                 State(
-                    name=StateName("STATE"),
+                    name="STATE",
                     transitions=[
                         Transition(
-                            target=StateName("END"),
-                            condition=Equal(Variable("Local"), Variable("Global")),
+                            target="END", condition=Equal(Variable("Local"), Variable("Global")),
                         )
                     ],
                     declarations={},
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={"Global": VariableDeclaration("Some_Type")},
         )
@@ -293,19 +285,17 @@ def test_undeclared_local_variable() -> None:
 def test_declared_local_variable_valid() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
+                name="START",
                 transitions=[
-                    Transition(
-                        target=StateName("END"), condition=Equal(Valid(Variable("Global")), TRUE),
-                    )
+                    Transition(target="END", condition=Equal(Valid(Variable("Global")), TRUE),)
                 ],
                 declarations={},
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={"Global": VariableDeclaration("Boolean")},
     )
@@ -314,20 +304,19 @@ def test_declared_local_variable_valid() -> None:
 def test_declared_local_variable_field() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
+                name="START",
                 transitions=[
                     Transition(
-                        target=StateName("END"),
-                        condition=Equal(Field(Variable("Global"), "fld"), TRUE),
+                        target="END", condition=Equal(Field(Variable("Global"), "fld"), TRUE),
                     )
                 ],
                 declarations={},
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={"Global": VariableDeclaration("Boolean")},
     )
@@ -345,16 +334,16 @@ def test_assignment_to_undeclared_variable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Assignment("Undefined", FALSE)],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={},
         )
@@ -372,16 +361,16 @@ def test_assignment_from_undeclared_variable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Assignment("Global", Variable("Undefined"))],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={"Global": VariableDeclaration("Boolean")},
         )
@@ -399,16 +388,16 @@ def test_erasure_of_undeclared_variable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Erase("Undefined")],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={},
         )
@@ -426,16 +415,16 @@ def test_reset_of_undeclared_list() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Reset("Undefined")],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={},
         )
@@ -453,18 +442,18 @@ def test_call_to_undeclared_function() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[
                         Assignment("Global", SubprogramCall("UndefSub", [Variable("Global")]))
                     ],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={"Global": VariableDeclaration("Boolean")},
         )
@@ -473,16 +462,16 @@ def test_call_to_undeclared_function() -> None:
 def test_call_to_builtin_read() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={},
                 actions=[Assignment("Global", SubprogramCall("Read", [Variable("Some_Channel")]))],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Global": VariableDeclaration("Boolean"),
@@ -494,12 +483,12 @@ def test_call_to_builtin_read() -> None:
 def test_call_to_builtin_write() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={},
                 actions=[
                     Assignment(
@@ -507,7 +496,7 @@ def test_call_to_builtin_write() -> None:
                     )
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Success": VariableDeclaration("Boolean"),
@@ -519,18 +508,18 @@ def test_call_to_builtin_write() -> None:
 def test_call_to_builtin_call() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={},
                 actions=[
                     Assignment("Result", SubprogramCall("Call", [Variable("Some_Channel"), TRUE]))
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Result": VariableDeclaration("Boolean"),
@@ -542,12 +531,12 @@ def test_call_to_builtin_call() -> None:
 def test_call_to_builtin_data_available() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={},
                 actions=[
                     Assignment(
@@ -555,7 +544,7 @@ def test_call_to_builtin_data_available() -> None:
                     )
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Result": VariableDeclaration("Boolean"),
@@ -576,16 +565,16 @@ def test_call_to_builtin_read_without_arguments() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Assignment("Result", SubprogramCall("Read", []))],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={"Result": VariableDeclaration("Boolean")},
         )
@@ -603,22 +592,20 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
+                    name="START",
                     transitions=[
-                        Transition(
-                            target=StateName("END"), condition=Equal(Variable("Result"), TRUE)
-                        )
+                        Transition(target="END", condition=Equal(Variable("Result"), TRUE))
                     ],
                     declarations={},
                     actions=[
                         Assignment("Result", SubprogramCall("Read", [Variable("Undeclared")]))
                     ],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={"Result": VariableDeclaration("Boolean")},
         )
@@ -636,16 +623,16 @@ def test_call_to_builtin_read_invalid_channel_type() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Assignment("Result", SubprogramCall("Read", [Variable("Result")]))],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={"Result": VariableDeclaration("Boolean")},
         )
@@ -663,22 +650,20 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
+                    name="START",
                     transitions=[
-                        Transition(
-                            target=StateName("END"), condition=Equal(Variable("Result"), TRUE)
-                        )
+                        Transition(target="END", condition=Equal(Variable("Result"), TRUE))
                     ],
                     declarations={},
                     actions=[
                         Assignment("Result", SubprogramCall("Write", [Variable("Out_Channel")]))
                     ],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={
                 "Result": VariableDeclaration("Boolean"),
@@ -699,12 +684,12 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[
                         Assignment(
@@ -712,7 +697,7 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
                         )
                     ],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={
                 "Result": VariableDeclaration("Boolean"),
@@ -733,16 +718,16 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Assignment("Result", SubprogramCall("Read", [Variable("Channel")]))],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={
                 "Result": VariableDeclaration("Boolean"),
@@ -763,16 +748,16 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Assignment("Result", SubprogramCall("Call", [Variable("Channel")]))],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={
                 "Result": VariableDeclaration("Boolean"),
@@ -793,16 +778,16 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[Assignment("Result", SubprogramCall("Call", [Variable("Channel")]))],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={
                 "Result": VariableDeclaration("Boolean"),
@@ -814,16 +799,16 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
 def test_subprogram_call() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={},
                 actions=[Assignment("Result", SubprogramCall("Call", [Variable("Channel")]))],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Result": VariableDeclaration("Boolean"),
@@ -844,22 +829,20 @@ def test_undeclared_variable_in_subprogram_call() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
+                    name="START",
                     transitions=[
-                        Transition(
-                            target=StateName("END"), condition=Equal(Variable("Result"), TRUE)
-                        )
+                        Transition(target="END", condition=Equal(Variable("Result"), TRUE))
                     ],
                     declarations={},
                     actions=[
                         Assignment("Result", SubprogramCall("SubProg", [Variable("Undefined")]),)
                     ],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={
                 "Result": VariableDeclaration("Boolean"),
@@ -880,15 +863,11 @@ def test_function_declaration_is_no_builtin_read() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
-                State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
-                    declarations={},
-                ),
-                State(name=StateName("END")),
+                State(name="START", transitions=[Transition(target="END")], declarations={},),
+                State(name="END"),
             ],
             declarations={"Read": Subprogram([], "Boolean")},
         )
@@ -906,15 +885,11 @@ def test_function_declaration_is_no_builtin_write() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
-                State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
-                    declarations={},
-                ),
-                State(name=StateName("END")),
+                State(name="START", transitions=[Transition(target="END")], declarations={},),
+                State(name="END"),
             ],
             declarations={"Write": Channel(read=True, write=False)},
         )
@@ -932,15 +907,11 @@ def test_function_declaration_is_no_builtin_call() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
-                State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
-                    declarations={},
-                ),
-                State(name=StateName("END")),
+                State(name="START", transitions=[Transition(target="END")], declarations={},),
+                State(name="END"),
             ],
             declarations={"Call": VariableDeclaration("Boolean")},
         )
@@ -958,15 +929,11 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
-                State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
-                    declarations={},
-                ),
-                State(name=StateName("END")),
+                State(name="START", transitions=[Transition(target="END")], declarations={},),
+                State(name="END"),
             ],
             declarations={
                 "Data_Available": Renames("Boolean", Variable("Foo")),
@@ -986,19 +953,17 @@ def test_local_variable_shadows_global() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
+                    name="START",
                     transitions=[
-                        Transition(
-                            target=StateName("END"), condition=Equal(Variable("Global"), TRUE)
-                        )
+                        Transition(target="END", condition=Equal(Variable("Global"), TRUE))
                     ],
                     declarations={ID("Global"): VariableDeclaration("Boolean")},
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={ID("Global"): VariableDeclaration("Boolean")},
         )
@@ -1010,15 +975,11 @@ def test_unused_global_variable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
-                State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
-                    declarations={},
-                ),
-                State(name=StateName("END")),
+                State(name="START", transitions=[Transition(target="END")], declarations={},),
+                State(name="END"),
             ],
             declarations={"Global": VariableDeclaration("Boolean")},
         )
@@ -1030,15 +991,15 @@ def test_unused_local_variable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={ID("Data"): VariableDeclaration("Boolean")},
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={},
         )
@@ -1050,17 +1011,15 @@ def test_renames_references_undefined_variable() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[
-                        Transition(target=StateName("END"), condition=Equal(Variable("Ren"), TRUE))
-                    ],
+                    name="START",
+                    transitions=[Transition(target="END", condition=Equal(Variable("Ren"), TRUE))],
                     declarations={},
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={"Ren": Renames("Boolean", Variable("Foo"))},
         )
@@ -1069,12 +1028,12 @@ def test_renames_references_undefined_variable() -> None:
 def test_binding_as_subprogram_parameter() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={},
                 actions=[
                     Assignment(
@@ -1086,7 +1045,7 @@ def test_binding_as_subprogram_parameter() -> None:
                     )
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Result": VariableDeclaration("Boolean"),
@@ -1099,21 +1058,21 @@ def test_binding_as_subprogram_parameter() -> None:
 def test_for_all() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
+                name="START",
                 transitions=[
                     Transition(
-                        target=StateName("END"),
+                        target="END",
                         condition=ForAll(
                             "E", Variable("List"), Equal(Field(Variable("E"), "Tag"), Number(42)),
                         ),
                     )
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={"List": VariableDeclaration("Foo")},
     )
@@ -1122,12 +1081,12 @@ def test_for_all() -> None:
 def test_append_list_attribute() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={},
                 actions=[
                     Assignment(
@@ -1135,7 +1094,7 @@ def test_append_list_attribute() -> None:
                     )
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "List": VariableDeclaration("List_Type"),
@@ -1147,12 +1106,12 @@ def test_append_list_attribute() -> None:
 def test_extend_list_attribute() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 declarations={},
                 actions=[
                     Assignment(
@@ -1160,7 +1119,7 @@ def test_extend_list_attribute() -> None:
                     )
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "List": VariableDeclaration("List_Type"),
@@ -1181,12 +1140,12 @@ def test_aggregate_with_undefined_parameter() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     declarations={},
                     actions=[
                         Assignment(
@@ -1197,7 +1156,7 @@ def test_aggregate_with_undefined_parameter() -> None:
                         )
                     ],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={"Data": VariableDeclaration("Data_Type")},
         )
@@ -1206,12 +1165,12 @@ def test_aggregate_with_undefined_parameter() -> None:
 def test_comprehension() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 actions=[
                     Assignment(
                         "Input",
@@ -1224,7 +1183,7 @@ def test_comprehension() -> None:
                     )
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={"Input": VariableDeclaration("Foo")},
     )
@@ -1242,17 +1201,17 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
     ):
         Session(
             name="session",
-            initial=StateName("START"),
-            final=StateName("END"),
+            initial="START",
+            final="END",
             states=[
                 State(
-                    name=StateName("START"),
-                    transitions=[Transition(target=StateName("END"))],
+                    name="START",
+                    transitions=[Transition(target="END")],
                     actions=[
                         Assignment("Data", Opaque(SubprogramCall("Sub", [Variable("UndefData")]),),)
                     ],
                 ),
-                State(name=StateName("END")),
+                State(name="END"),
             ],
             declarations={
                 "Data": VariableDeclaration("Foo"),
@@ -1264,15 +1223,15 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
 def test_assignment_opaque_subprogram_result() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 actions=[Assignment("Data", Opaque(SubprogramCall("Sub", [Variable("Data")]),),)],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Data": VariableDeclaration("Foo"),
@@ -1284,12 +1243,12 @@ def test_assignment_opaque_subprogram_result() -> None:
 def test_assignment_opaque_subprogram_binding() -> None:
     Session(
         name="session",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial="START",
+        final="END",
         states=[
             State(
-                name=StateName("START"),
-                transitions=[Transition(target=StateName("END"))],
+                name="START",
+                transitions=[Transition(target="END")],
                 actions=[
                     Assignment(
                         "Data",
@@ -1300,7 +1259,7 @@ def test_assignment_opaque_subprogram_binding() -> None:
                     )
                 ],
             ),
-            State(name=StateName("END")),
+            State(name="END"),
         ],
         declarations={
             "Data": VariableDeclaration("Foo"),
