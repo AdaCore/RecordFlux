@@ -16,7 +16,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID
 from rflx.parser.session import SessionParser
-from rflx.session import Session, State, StateMachine, StateName, Transition
+from rflx.session import Session, SessionFile, State, StateName, Transition
 from rflx.statement import Assignment
 
 
@@ -93,7 +93,7 @@ def test_renames() -> None:
 
 
 def test_channels() -> None:
-    f = Session()
+    f = SessionFile()
     f.parse_string(
         "session",
         """
@@ -118,7 +118,7 @@ def test_channels() -> None:
               - name: END
         """,
     )
-    expected = StateMachine(
+    expected = Session(
         name="session",
         initial=StateName("START"),
         final=StateName("END"),
@@ -160,7 +160,7 @@ def test_channel_with_invalid_mode() -> None:
         RecordFluxError,
         match="^session: error: channel Channel1_Read_Write has invalid mode Invalid",
     ):
-        Session().parse_string(
+        SessionFile().parse_string(
             "session",
             """
                 channels:
@@ -183,7 +183,7 @@ def test_channel_with_invalid_mode() -> None:
 
 def test_channel_without_name() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: channel 0 has no name"):
-        Session().parse_string(
+        SessionFile().parse_string(
             "session",
             """
                 channels:
@@ -203,7 +203,7 @@ def test_channel_without_mode() -> None:
     with pytest.raises(
         RecordFluxError, match="^session: error: channel Channel_Without_Mode has no mode"
     ):
-        Session().parse_string(
+        SessionFile().parse_string(
             "session",
             """
                 channels:
