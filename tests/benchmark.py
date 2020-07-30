@@ -1,7 +1,7 @@
 #!/usr/bin/env -S python3 -O
 
 import argparse
-import profile
+import cProfile
 import sys
 from pathlib import Path
 from time import perf_counter
@@ -79,6 +79,6 @@ if __name__ == "__main__":
             for _ in benchmark.generate(20):
                 pass
 
-        profile.run("run()", args.outfile)
+        cProfile.run("run()", args.outfile)
     else:
         benchmark.run()
