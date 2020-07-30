@@ -1875,14 +1875,14 @@ class SubprogramCall(Expr):
             a.validate(declarations)
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        if len(self.arguments) < 1:
-            fail(
-                f'no channel argument in call to "{self.name}"',
-                Subsystem.SESSION,
-                Severity.ERROR,
-                self.location,
-            )
-        if self.name.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
+        if self.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
+            if len(self.arguments) < 1:
+                fail(
+                    f'no channel argument in call to "{self.name}"',
+                    Subsystem.SESSION,
+                    Severity.ERROR,
+                    self.location,
+                )
             self.__validate_channel(declarations)
         else:
             if self.name not in map(ID, ["Append", "Extend"]):
