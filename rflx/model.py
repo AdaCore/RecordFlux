@@ -1273,19 +1273,19 @@ class AbstractMessage(Type):
                                     e.location,
                                 )
 
-        checked = [
+        checked = {
             e.prefix.identifier
             for e in self.field_condition(FINAL).findall(lambda x: isinstance(x, ValidChecksum))
             if isinstance(e, ValidChecksum) and isinstance(e.prefix, Variable)
-        ]
-        for name in set(self.checksums) - set(checked):
+        }
+        for name in set(self.checksums) - checked:
             self.error.append(
                 f'no validity check of checksum "{name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 name.location,
             )
-        for name in set(checked) - set(self.checksums):
+        for name in checked - set(self.checksums):
             self.error.append(
                 f'validity check for undefined checksum "{name}"',
                 Subsystem.MODEL,
