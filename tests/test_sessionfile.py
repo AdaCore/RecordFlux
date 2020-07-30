@@ -14,7 +14,7 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.identifier import ID
-from rflx.session import Channel, Session, State, Transition
+from rflx.session import Channel, Session, State, StateName, Transition
 from rflx.sessionfile import SessionFile
 from rflx.statement import Assignment
 
@@ -42,9 +42,12 @@ def test_simple_session() -> None:
     )
     expected = Session(
         name="session",
-        initial="START",
-        final="END",
-        states=[State(name="START", transitions=[Transition(target="END")]), State(name="END")],
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+            State(name=StateName("END")),
+        ],
         declarations={},
     )
     assert f.sessions[0] == expected
@@ -100,7 +103,11 @@ def test_empty_states() -> None:
         ),
     ):
         Session(
-            name="session", initial="START", final="END", states=[], declarations={},
+            name="session",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[],
+            declarations={},
         )
 
 
@@ -116,11 +123,11 @@ def test_invalid_initial() -> None:
     ):
         Session(
             name="session",
-            initial="NONEXISTENT",
-            final="END",
+            initial=StateName("NONEXISTENT"),
+            final=StateName("END"),
             states=[
-                State(name="START", transitions=[Transition(target="END")]),
-                State(name="END"),
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -138,11 +145,11 @@ def test_invalid_final() -> None:
     ):
         Session(
             name="session",
-            initial="START",
-            final="NONEXISTENT",
+            initial=StateName("START"),
+            final=StateName("NONEXISTENT"),
             states=[
-                State(name="START", transitions=[Transition(target="END")]),
-                State(name="END"),
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -156,14 +163,17 @@ def test_invalid_target_state() -> None:
     ):
         Session(
             name="session",
-            initial="START",
-            final="END",
+            initial=StateName("START"),
+            final=StateName("END"),
             states=[
                 State(
-                    name="START",
-                    transitions=[Transition(target="NONEXISTENT"), Transition(target="END")],
+                    name=StateName("START"),
+                    transitions=[
+                        Transition(target=StateName("NONEXISTENT")),
+                        Transition(target=StateName("END")),
+                    ],
                 ),
-                State(name="END"),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -173,12 +183,12 @@ def test_duplicate_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: duplicate states: START$"):
         Session(
             name="session",
-            initial="START",
-            final="END",
+            initial=StateName("START"),
+            final=StateName("END"),
             states=[
-                State(name="START", transitions=[Transition(target="END")]),
-                State(name="START", transitions=[Transition(target="END")]),
-                State(name="END"),
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -190,16 +200,16 @@ def test_multiple_duplicate_states() -> None:
     ):
         Session(
             name="session",
-            initial="START",
-            final="END",
+            initial=StateName("START"),
+            final=StateName("END"),
             states=[
-                State(name="START", transitions=[Transition(target="FOO")]),
-                State(name="START", transitions=[Transition(target="FOO")]),
-                State(name="FOO", transitions=[Transition(target="BAR")]),
-                State(name="BAR", transitions=[Transition(target="END")]),
-                State(name="FOO", transitions=[Transition(target="BAR")]),
-                State(name="BAR", transitions=[Transition(target="END")]),
-                State(name="END"),
+                State(name=StateName("START"), transitions=[Transition(target=StateName("FOO"))]),
+                State(name=StateName("START"), transitions=[Transition(target=StateName("FOO"))]),
+                State(name=StateName("FOO"), transitions=[Transition(target=StateName("BAR"))]),
+                State(name=StateName("BAR"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("FOO"), transitions=[Transition(target=StateName("BAR"))]),
+                State(name=StateName("BAR"), transitions=[Transition(target=StateName("END"))]),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -209,12 +219,15 @@ def test_unreachable_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: unreachable states UNREACHABLE$"):
         Session(
             name="session",
-            initial="START",
-            final="END",
+            initial=StateName("START"),
+            final=StateName("END"),
             states=[
-                State(name="START", transitions=[Transition(target="END")]),
-                State(name="UNREACHABLE", transitions=[Transition(target="END")],),
-                State(name="END"),
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(
+                    name=StateName("UNREACHABLE"),
+                    transitions=[Transition(target=StateName("END"))],
+                ),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -226,13 +239,19 @@ def test_multiple_unreachable_states() -> None:
     ):
         Session(
             name="session",
-            initial="START",
-            final="END",
+            initial=StateName("START"),
+            final=StateName("END"),
             states=[
-                State(name="START", transitions=[Transition(target="END")]),
-                State(name="UNREACHABLE1", transitions=[Transition(target="END")],),
-                State(name="UNREACHABLE2", transitions=[Transition(target="END")],),
-                State(name="END"),
+                State(name=StateName("START"), transitions=[Transition(target=StateName("END"))]),
+                State(
+                    name=StateName("UNREACHABLE1"),
+                    transitions=[Transition(target=StateName("END"))],
+                ),
+                State(
+                    name=StateName("UNREACHABLE2"),
+                    transitions=[Transition(target=StateName("END"))],
+                ),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -242,15 +261,18 @@ def test_detached_state() -> None:
     with pytest.raises(RecordFluxError, match="^session: error: detached states DETACHED$"):
         Session(
             name="session",
-            initial="START",
-            final="END",
+            initial=StateName("START"),
+            final=StateName("END"),
             states=[
                 State(
-                    name="START",
-                    transitions=[Transition(target="END"), Transition(target="DETACHED")],
+                    name=StateName("START"),
+                    transitions=[
+                        Transition(target=StateName("END")),
+                        Transition(target=StateName("DETACHED")),
+                    ],
                 ),
-                State(name="DETACHED"),
-                State(name="END"),
+                State(name=StateName("DETACHED")),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -262,20 +284,20 @@ def test_multiple_detached_states() -> None:
     ):
         Session(
             name="session",
-            initial="START",
-            final="END",
+            initial=StateName("START"),
+            final=StateName("END"),
             states=[
                 State(
-                    name="START",
+                    name=StateName("START"),
                     transitions=[
-                        Transition(target="END"),
-                        Transition(target="DETACHED1"),
-                        Transition(target="DETACHED2"),
+                        Transition(target=StateName("END")),
+                        Transition(target=StateName("DETACHED1")),
+                        Transition(target=StateName("DETACHED2")),
                     ],
                 ),
-                State(name="DETACHED1"),
-                State(name="DETACHED2"),
-                State(name="END"),
+                State(name=StateName("DETACHED1")),
+                State(name=StateName("DETACHED2")),
+                State(name=StateName("END")),
             ],
             declarations={},
         )
@@ -304,18 +326,22 @@ def test_session_with_conditions() -> None:
     )
     expected = Session(
         name="session",
-        initial="START",
-        final="END",
+        initial=StateName("START"),
+        final=StateName("END"),
         states=[
             State(
-                name="START",
+                name=StateName("START"),
                 transitions=[
-                    Transition(target="INTERMEDIATE", condition=Equal(Variable("Error"), FALSE),),
-                    Transition(target="END"),
+                    Transition(
+                        target=StateName("INTERMEDIATE"), condition=Equal(Variable("Error"), FALSE),
+                    ),
+                    Transition(target=StateName("END")),
                 ],
             ),
-            State(name="INTERMEDIATE", transitions=[Transition(target="END")],),
-            State(name="END"),
+            State(
+                name=StateName("INTERMEDIATE"), transitions=[Transition(target=StateName("END"))],
+            ),
+            State(name=StateName("END")),
         ],
         declarations={"Error": VariableDeclaration("Boolean")},
     )
@@ -380,21 +406,23 @@ def test_session_condition_equal() -> None:
     )
     expected = Session(
         name="session",
-        initial="START",
-        final="END",
+        initial=StateName("START"),
+        final=StateName("END"),
         states=[
             State(
-                name="START",
+                name=StateName("START"),
                 transitions=[
                     Transition(
-                        target="INTERMEDIATE",
+                        target=StateName("INTERMEDIATE"),
                         condition=Equal(Variable("Error"), Variable("Something"),),
                     ),
-                    Transition(target="END"),
+                    Transition(target=StateName("END")),
                 ],
             ),
-            State(name="INTERMEDIATE", transitions=[Transition(target="END")],),
-            State(name="END"),
+            State(
+                name=StateName("INTERMEDIATE"), transitions=[Transition(target=StateName("END"))],
+            ),
+            State(name=StateName("END")),
         ],
         declarations={
             "Error": VariableDeclaration("Boolean"),
@@ -440,21 +468,21 @@ def test_session_with_function_decl() -> None:
     )
     expected = Session(
         name="session",
-        initial="START",
-        final="END",
+        initial=StateName("START"),
+        final=StateName("END"),
         states=[
             State(
-                name="START",
+                name=StateName("START"),
                 transitions=[
                     Transition(
-                        target="END",
+                        target=StateName("END"),
                         condition=Greater(
                             SubprogramCall("Foo", [Number(100), Number(200)]), Number(1000),
                         ),
                     )
                 ],
             ),
-            State(name="END"),
+            State(name=StateName("END")),
         ],
         declarations={
             ID("Foo"): Subprogram([Argument("Bar", "T1"), Argument("Baz", "P1.T1")], "P2.T3")
@@ -484,19 +512,20 @@ def test_session_with_variable_decl() -> None:
     )
     expected = Session(
         name="session",
-        initial="START",
-        final="END",
+        initial=StateName("START"),
+        final=StateName("END"),
         states=[
             State(
-                name="START",
+                name=StateName("START"),
                 transitions=[
                     Transition(
-                        target="END", condition=Equal(Variable("Local"), Variable("Global")),
+                        target=StateName("END"),
+                        condition=Equal(Variable("Local"), Variable("Global")),
                     )
                 ],
                 declarations={ID("Local"): VariableDeclaration("Boolean")},
             ),
-            State(name="END"),
+            State(name=StateName("END")),
         ],
         declarations={"Global": VariableDeclaration("Boolean")},
     )
@@ -523,16 +552,16 @@ def test_session_with_actions() -> None:
     )
     expected = Session(
         name="session",
-        initial="START",
-        final="END",
+        initial=StateName("START"),
+        final=StateName("END"),
         states=[
             State(
-                name="START",
-                transitions=[Transition(target="END")],
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
                 declarations={},
                 actions=[Assignment("Global", FALSE)],
             ),
-            State(name="END"),
+            State(name=StateName("END")),
         ],
         declarations={"Global": VariableDeclaration("Boolean")},
     )
@@ -618,14 +647,16 @@ def test_session_with_renames() -> None:
     )
     expected = Session(
         name="session",
-        initial="START",
-        final="END",
+        initial=StateName("START"),
+        final=StateName("END"),
         states=[
             State(
-                name="START",
-                transitions=[Transition(target="END", condition=Equal(Variable("Foo"), FALSE))],
+                name=StateName("START"),
+                transitions=[
+                    Transition(target=StateName("END"), condition=Equal(Variable("Foo"), FALSE))
+                ],
             ),
-            State(name="END"),
+            State(name=StateName("END")),
         ],
         declarations={
             "Foo": Renames("Boolean", Variable("Bar")),
@@ -663,12 +694,12 @@ def test_channels() -> None:
     )
     expected = Session(
         name="session",
-        initial="START",
-        final="END",
+        initial=StateName("START"),
+        final=StateName("END"),
         states=[
             State(
-                name="START",
-                transitions=[Transition(target="END")],
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("END"))],
                 declarations={ID("Local"): VariableDeclaration("Boolean")},
                 actions=[
                     Assignment(
@@ -687,7 +718,7 @@ def test_channels() -> None:
                     ),
                 ],
             ),
-            State(name="END"),
+            State(name=StateName("END")),
         ],
         declarations={
             "Channel1_Read_Write": Channel(read=True, write=True),

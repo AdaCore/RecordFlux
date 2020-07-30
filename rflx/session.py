@@ -16,14 +16,28 @@ from rflx.model import Base
 from rflx.statement import Statement
 
 
+class StateName(Base):
+    def __init__(self, name: str, location: Location = None):
+        self.name = name
+        self.location = location
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, StateName):
+            return self.name < other.name
+        return NotImplemented
+
+
 class Transition(Base):
-    def __init__(self, target: StrID, condition: Expr = TRUE, location: Location = None):
-        self.__target = ID(target)
+    def __init__(self, target: StateName, condition: Expr = TRUE, location: Location = None):
+        self.__target = target
         self.__condition = condition
         self.location = location
 
     @property
-    def target(self) -> ID:
+    def target(self) -> StateName:
         return self.__target
 
     def validate(self, declarations: Dict[ID, Declaration]) -> None:
@@ -37,20 +51,20 @@ class Transition(Base):
 class State(Base):
     def __init__(
         self,
-        name: StrID,
+        name: StateName,
         transitions: Sequence[Transition] = None,
         actions: Sequence[Statement] = None,
         declarations: Dict[ID, Declaration] = None,
         location: Location = None,
     ):
-        self.__name = ID(name)
+        self.__name = name
         self.__transitions = transitions or []
         self.__actions = actions or []
         self.__declarations = {ID(k): v for k, v in declarations.items()} if declarations else {}
         self.location = location
 
     @property
-    def name(self) -> ID:
+    def name(self) -> StateName:
         return self.__name
 
     @property
@@ -70,15 +84,15 @@ class Session(Base):
     def __init__(
         self,
         name: StrID,
-        initial: StrID,
-        final: StrID,
+        initial: StateName,
+        final: StateName,
         states: Sequence[State],
         declarations: Dict[StrID, Declaration],
         location: Location = None,
     ):  # pylint: disable=too-many-arguments
         self.__name = ID(name)
-        self.__initial = ID(initial)
-        self.__final = ID(final)
+        self.__initial = initial
+        self.__final = final
         self.__states = states
         self.__declarations = {ID(k): v for k, v in declarations.items()}
         self.location = location
@@ -149,14 +163,14 @@ class Session(Base):
 
     def __validate_duplicate_states(self) -> None:
         state_names = [s.name for s in self.__states]
-        seen: Dict[ID, int] = {}
-        duplicates: List[ID] = []
-        for n in [x.name for x in state_names]:
+        seen: Dict[StateName, int] = {}
+        duplicates: List[str] = []
+        for n in state_names:
             if n not in seen:
                 seen[n] = 1
             else:
                 if seen[n] == 1:
-                    duplicates.append(n)
+                    duplicates.append(n.name)
                 seen[n] += 1
 
         if duplicates:
@@ -168,17 +182,15 @@ class Session(Base):
             )
 
     def __validate_state_reachability(self) -> None:
-        inputs: Dict[ID, List[ID]] = {}
+        inputs: Dict[StateName, List[StateName]] = {}
         for s in self.__states:
             for t in s.transitions:
-                if t.target.name in inputs:
-                    inputs[t.target.name].append(s.name.name)
+                if t.target in inputs:
+                    inputs[t.target].append(s.name)
                 else:
-                    inputs[t.target.name] = [s.name.name]
+                    inputs[t.target] = [s.name]
         unreachable = [
-            str(s.name.name)
-            for s in self.__states
-            if s.name != self.__initial and s.name.name not in inputs
+            s.name.name for s in self.__states if s.name != self.__initial and s.name not in inputs
         ]
         if unreachable:
             self.error.append(
@@ -189,7 +201,7 @@ class Session(Base):
             )
 
         detached = [
-            str(s.name.name) for s in self.__states if s.name != self.__final and not s.transitions
+            s.name.name for s in self.__states if s.name != self.__final and not s.transitions
         ]
         if detached:
             self.error.append(
@@ -261,11 +273,11 @@ class Session(Base):
         return self.__name
 
     @property
-    def initial(self) -> ID:
+    def initial(self) -> StateName:
         return self.__initial
 
     @property
-    def final(self) -> ID:
+    def final(self) -> StateName:
         return self.__final
 
     @property
