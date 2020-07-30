@@ -60,6 +60,7 @@ setup(
             "pytest >=5, <6",
             "pytest-cov >=2.10.0, <3",
             "pytest-xdist >=1.32.0, <2",
+            "tqdm >=4, <5",
         ]
     },
     scripts=["bin/rflx"],
