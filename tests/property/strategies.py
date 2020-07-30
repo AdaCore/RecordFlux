@@ -228,6 +228,7 @@ def messages(
         return [l for l in structure if l.source == field]
 
     alignment = 0
+    alignments = {}
     types_ = {}
     for i in range(draw(st.integers(min_value=1 if not_null else 0, max_value=4))):
         f = draw(fields())
@@ -236,9 +237,10 @@ def messages(
             if alignment == 0
             else scalars(unique_identifiers, align_to_8=alignment)
         )
+        types_[f] = t
+        alignments[f] = alignment
         if isinstance(t, Scalar):
             alignment = (alignment + int(t.size)) % 8
-        types_[f] = t
 
     if types_:
         fields_ = list(types_.keys())
@@ -250,18 +252,24 @@ def messages(
             )
             structure.append(Link(source, target, condition=condition(pair), length=length(pair)))
 
-        alignment = 0
         for i, source in enumerate(fields_):
             out = outgoing(source)
             if fields_[i + 1 :] and len(out) == 1 and out[0].condition != expr.TRUE:
-                target = draw(st.sampled_from([FINAL, *fields_[i + 1 :]]))
+                field_size = int(types_[source].size) if isinstance(types_[source], Scalar) else 0
+                target_alignment = (alignments[source] + field_size) % 8
+                potential_targets = [
+                    f
+                    for f in fields_[i + 1 :]
+                    if alignments[f] == target_alignment and f != out[0].target
+                ]
+                target = draw(
+                    st.sampled_from(
+                        potential_targets if potential_targets else [out[0].target, FINAL]
+                    )
+                )
                 pair = FieldPair(
                     source, target, types_[source], types_[target] if target != FINAL else None
                 )
-                if isinstance(pair.source_type, Scalar):
-                    alignment += int(pair.source_type.size) % 8
-                if alignment != 0 and isinstance(pair.target_type, Composite):
-                    continue
                 structure.append(
                     Link(
                         source,
@@ -281,7 +289,7 @@ def messages(
         return message.proven()
     except error.RecordFluxError as e:
         e.append(
-            f"incorrectly generated message:\n {message}",
+            f"incorrectly generated message:\n {message!r}",
             error.Subsystem.MODEL,
             error.Severity.INFO,
         )
