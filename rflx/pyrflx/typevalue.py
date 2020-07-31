@@ -573,15 +573,15 @@ class MessageValue(TypeValue):
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
             return typeval.size
-        if isinstance(typeval, CompositeValue):
-            for l in self._type.incoming(Field(fld)):
-                if (
-                    self.__simplified(l.condition) == TRUE
-                    and l.length != UNDEFINED
-                    and self._fields[l.source.name].set
-                ):
-                    length = self.__simplified(l.length)
-                    return length if isinstance(length, Number) else None
+        assert isinstance(typeval, CompositeValue)
+        for l in self._type.incoming(Field(fld)):
+            if (
+                self.__simplified(l.condition) == TRUE
+                and l.length != UNDEFINED
+                and self._fields[l.source.name].set
+            ):
+                length = self.__simplified(l.length)
+                return length if isinstance(length, Number) else None
         return None
 
     def _get_first(self, fld: str) -> Optional[Number]:
@@ -936,8 +936,7 @@ class MessageValue(TypeValue):
     def _is_valid_opaque_field(self, field: str) -> bool:
 
         typeval = self._fields[field].typeval
-        if not isinstance(typeval, (ScalarValue, CompositeValue)):
-            return False
+        assert isinstance(typeval, (ScalarValue, CompositeValue))
         incoming = self._type.incoming(Field(field))
         if isinstance(typeval, CompositeValue):
             for l in incoming:
