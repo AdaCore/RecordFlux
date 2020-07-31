@@ -702,10 +702,8 @@ class MessageValue(TypeValue):
 
         def check_outgoing_condition_satisfied() -> None:
             if all(
-                [
-                    self.__simplified(o.condition) == FALSE
-                    for o in self._type.outgoing(Field(field_name))
-                ]
+                self.__simplified(o.condition) == FALSE
+                for o in self._type.outgoing(Field(field_name))
             ):
                 self._fields[field_name].typeval.clear()
                 raise ValueError(
@@ -963,6 +961,7 @@ class MessageValue(TypeValue):
 
     @property
     def valid_fields(self) -> List[str]:
+        # ISSUE: nedbat/coveragepy#515
         return [
             f
             for f in self.accessible_fields
@@ -970,10 +969,12 @@ class MessageValue(TypeValue):
                 self._fields[f].set
                 and self.__simplified(self._type.field_condition(Field(f))) == TRUE
                 and any(
-                    [self.__simplified(i.condition) == TRUE for i in self._type.incoming(Field(f))]
+                    self.__simplified(i.condition) == TRUE
+                    for i in self._type.incoming(Field(f))  # pragma: no cover
                 )
                 and any(
-                    [self.__simplified(o.condition) == TRUE for o in self._type.outgoing(Field(f))]
+                    self.__simplified(o.condition) == TRUE
+                    for o in self._type.outgoing(Field(f))  # pragma: no cover
                 )
             )
         ]
