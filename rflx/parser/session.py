@@ -24,6 +24,7 @@ from rflx.expression import (
     And,
     Argument,
     Binding,
+    Call,
     Comprehension,
     Conversion,
     Div,
@@ -49,7 +50,6 @@ from rflx.expression import (
     String,
     Sub,
     Subprogram,
-    SubprogramCall,
     Valid,
     Variable,
     VariableDeclaration,
@@ -79,13 +79,13 @@ def __parse_comprehension(tokens: List[Expr]) -> Expr:
 
 def __parse_call(tokens: List[Expr]) -> Expr:
     assert isinstance(tokens[0], ID)
-    return SubprogramCall(tokens[0], tokens[1:])
+    return Call(tokens[0], tokens[1:])
 
 
 def __parse_conversion(tokens: List[Expr]) -> Expr:
     assert isinstance(tokens[0], ID)
     if tokens[0] in map(ID, ["Read", "Write", "Call", "Data_Available"]):
-        return SubprogramCall(tokens[0], tokens[1:])
+        return Call(tokens[0], tokens[1:])
     return Conversion(tokens[0], tokens[1])
 
 
@@ -312,9 +312,7 @@ def action() -> Token:
     list_operation = (
         unqualified_identifier() + Literal("'").suppress() + attribute_designator + parameters
     )
-    list_operation.setParseAction(
-        lambda t: Assignment(t[0], SubprogramCall(t[1], [Variable(t[0]), t[2]]))
-    )
+    list_operation.setParseAction(lambda t: Assignment(t[0], Call(t[1], [Variable(t[0]), t[2]])))
 
     list_reset = unqualified_identifier() + Literal("'").suppress() + Keyword("Reset")
     list_reset.setParseAction(lambda t: Reset(t[0]))

@@ -1115,10 +1115,10 @@ class Selected(Name):
 
 
 class Call(Name):
-    def __init__(self, name: StrID, args: Sequence[Expr] = None, negative: bool = False) -> None:
-        self.name = name
+    def __init__(self, name: StrID, args: Sequence[Expr] = None, negative: bool = False, location: Location = None) -> None:
+        super().__init__(negative, location)
+        self.name = ID(name)
         self.args = args or []
-        super().__init__(negative)
 
     def __neg__(self) -> "Call":
         return self.__class__(self.name, self.args, not self.negative)
@@ -1133,6 +1133,101 @@ class Call(Name):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+    def __validate_channel(
+        self, declarations: Mapping[ID, "Declaration"], error: RecordFluxError
+    ) -> None:
+        if len(self.args) < 1:
+            fail(
+                f'no channel argument in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+        channel_id = self.args[0]
+        if not isinstance(channel_id, Variable):
+            fail(
+                f'invalid channel ID type in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+        assert isinstance(channel_id, Variable)
+        if channel_id.identifier not in declarations:
+            fail(
+                f'undeclared channel "{channel_id}" in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+
+        assert isinstance(channel_id, Variable)
+        channel = declarations[channel_id.identifier]
+        if not isinstance(channel, Channel):
+            fail(
+                f'invalid channel type in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+
+        assert isinstance(channel, Channel)
+        channel.reference()
+        if self.name in map(ID, ["Write", "Call"]) and not channel.writable:
+            error.append(
+                f'channel "{channel_id}" not writable in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+        if self.name in map(ID, ["Call", "Read", "Data_Available"]) and not channel.readable:
+            error.append(
+                f'channel "{channel_id}" not readable in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
+        for a in self.args[1:]:
+            a.validate(declarations)
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        error = RecordFluxError()
+        if self.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
+            self.__validate_channel(declarations, error)
+        else:
+            if self.name not in map(ID, ["Append", "Extend"]):
+                if self.name not in declarations:
+                    fail(
+                        f'undeclared subprogram "{self.name}" called',
+                        Subsystem.SESSION,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                declarations[self.name].reference()
+            for a in self.args:
+                try:
+                    a.validate(declarations)
+                except RecordFluxError as e:
+                    error.extend(e)
+        error.propagate()
+
+    def variables(self) -> List["Variable"]:
+        result = []
+        for t in self.args:
+            result.extend(t.variables())
+        return result
+
+    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Call):
+            return expr.__class__(
+                expr.name, [a.substituted(func) for a in expr.args], expr.location
+            )
+        return expr
 
 
 class Slice(Name):
@@ -1784,128 +1879,6 @@ class Channel(Declaration):
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         pass
-
-
-class SubprogramCall(Expr):
-    def __init__(self, name: StrID, arguments: List[Expr], location: Location = None) -> None:
-        super().__init__(location)
-        self.name = ID(name)
-        self.arguments = arguments
-        self.error = RecordFluxError()
-
-    def __str__(self) -> str:
-        arguments = ", ".join([f"{a}" for a in self.arguments])
-        return f"{self.name} ({arguments})"
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    def simplified(self) -> Expr:
-        first = [a if isinstance(a, ID) else a.simplified() for a in self.arguments[0:1]]
-        arguments = [
-            *first,
-            *[a.simplified() for a in self.arguments[1:]],
-        ]
-        return SubprogramCall(self.name, arguments, self.location)
-
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
-    def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, SubprogramCall):
-            return expr.__class__(
-                expr.name, [a.substituted(func) for a in expr.arguments], expr.location
-            )
-        return expr
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.undefined
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def __validate_channel(self, declarations: Mapping[ID, Declaration]) -> None:
-        if len(self.arguments) < 1:
-            fail(
-                f'no channel argument in call to "{self.name}"',
-                Subsystem.SESSION,
-                Severity.ERROR,
-                self.location,
-            )
-        channel_id = self.arguments[0]
-        if not isinstance(channel_id, Variable):
-            fail(
-                f'invalid channel ID type in call to "{self.name}"',
-                Subsystem.SESSION,
-                Severity.ERROR,
-                self.location,
-            )
-        assert isinstance(channel_id, Variable)
-        if channel_id.identifier not in declarations:
-            fail(
-                f'undeclared channel "{channel_id}" in call to "{self.name}"',
-                Subsystem.SESSION,
-                Severity.ERROR,
-                self.location,
-            )
-
-        assert isinstance(channel_id, Variable)
-        channel = declarations[channel_id.identifier]
-        if not isinstance(channel, Channel):
-            fail(
-                f'invalid channel type in call to "{self.name}"',
-                Subsystem.SESSION,
-                Severity.ERROR,
-                self.location,
-            )
-
-        assert isinstance(channel, Channel)
-        channel.reference()
-        if self.name.name in map(ID, ["Write", "Call"]) and not channel.writable:
-            self.error.append(
-                f'channel "{channel_id}" not writable in call to "{self.name}"',
-                Subsystem.SESSION,
-                Severity.ERROR,
-                self.location,
-            )
-        if self.name.name in map(ID, ["Call", "Read", "Data_Available"]) and not channel.readable:
-            self.error.append(
-                f'channel "{channel_id}" not readable in call to "{self.name}"',
-                Subsystem.SESSION,
-                Severity.ERROR,
-                self.location,
-            )
-        for a in self.arguments[1:]:
-            a.validate(declarations)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        if self.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
-            self.__validate_channel(declarations)
-        else:
-            if self.name not in map(ID, ["Append", "Extend"]):
-                if self.name not in declarations:
-                    fail(
-                        f'undeclared subprogram "{self.name}" called',
-                        Subsystem.SESSION,
-                        Severity.ERROR,
-                        self.location,
-                    )
-                declarations[self.name].reference()
-            for a in self.arguments:
-                try:
-                    a.validate(declarations)
-                except RecordFluxError as e:
-                    self.error.extend(e)
-        self.error.propagate()
-
-    def variables(self) -> List["Variable"]:
-        result = []
-        for t in self.arguments:
-            result.extend(t.variables())
-        return result
 
 
 class Conversion(Expr):

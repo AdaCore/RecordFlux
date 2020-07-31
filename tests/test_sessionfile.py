@@ -4,12 +4,12 @@ from rflx.error import RecordFluxError
 from rflx.expression import (
     FALSE,
     Argument,
+    Call,
     Equal,
     Greater,
     Number,
     Renames,
     Subprogram,
-    SubprogramCall,
     Variable,
     VariableDeclaration,
 )
@@ -476,9 +476,7 @@ def test_session_with_function_decl() -> None:
                 transitions=[
                     Transition(
                         target=StateName("END"),
-                        condition=Greater(
-                            SubprogramCall("Foo", [Number(100), Number(200)]), Number(1000),
-                        ),
+                        condition=Greater(Call("Foo", [Number(100), Number(200)]), Number(1000),),
                     )
                 ],
             ),
@@ -704,17 +702,16 @@ def test_channels() -> None:
                 actions=[
                     Assignment(
                         "Local",
-                        SubprogramCall(
+                        Call(
                             "Write",
                             [
                                 Variable("Channel1_Read_Write"),
-                                SubprogramCall("Read", [Variable("Channel2_Read")]),
+                                Call("Read", [Variable("Channel2_Read")]),
                             ],
                         ),
                     ),
                     Assignment(
-                        "Local",
-                        SubprogramCall("Write", [Variable("Channel3_Write"), Variable("Local")],),
+                        "Local", Call("Write", [Variable("Channel3_Write"), Variable("Local")],),
                     ),
                 ],
             ),
@@ -822,7 +819,7 @@ def test_function_used() -> None:
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("FINAL"))],
                 declarations={},
-                actions=[Assignment("Data", SubprogramCall("Calculate", [Number(5)]))],
+                actions=[Assignment("Data", Call("Calculate", [Number(5)]))],
             ),
             State(name=StateName("FINAL")),
         ],
