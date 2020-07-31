@@ -845,9 +845,12 @@ class Mod(BinExpr):
 
 
 class Name(Expr):
-    def __init__(self, negative: bool = False, location: Location = None) -> None:
+    def __init__(
+        self, negative: bool = False, immutable: bool = False, location: Location = None
+    ) -> None:
         super().__init__(location)
         self.negative = negative
+        self.immutable = immutable
         self._update_str()
 
     def _update_str(self) -> None:
@@ -868,6 +871,8 @@ class Name(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
     ) -> Expr:
+        if self.immutable:
+            return self
         func = substitution(mapping or {}, func)
         return -func(-self) if self.negative else func(self)
 
@@ -880,10 +885,22 @@ class Name(Expr):
 
 class Variable(Name):
     def __init__(
-        self, identifier: StrID, negative: bool = False, location: Location = None
+        self,
+        identifier: StrID,
+        negative: bool = False,
+        immutable: bool = False,
+        location: Location = None,
     ) -> None:
+        super().__init__(negative, immutable, location)
         self.identifier = ID(identifier)
-        super().__init__(negative, location)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.negative == other.negative and self.identifier == other.identifier
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
 
     @property
     def name(self) -> str:
@@ -923,7 +940,7 @@ class Attribute(Name):
             prefix = Variable(prefix)
 
         self.prefix: Expr = prefix
-        super().__init__(negative, prefix.location)
+        super().__init__(negative, location=prefix.location)
 
     @property
     def representation(self) -> str:
@@ -1081,7 +1098,7 @@ class Selected(Name):
     def __init__(
         self, prefix: Expr, selector_name: StrID, negative: bool = False, location: Location = None
     ) -> None:
-        super().__init__(negative, location)
+        super().__init__(negative, location=location)
         self.prefix = prefix
         self.selector_name = ID(selector_name)
 
