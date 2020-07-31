@@ -75,7 +75,9 @@ class ParserGenerator:
         composite_fields: Sequence[Field],
     ) -> UnitPart:
         def result(field: Field, message: Message) -> NamedAggregate:
-            aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
+            aggregate: List[Tuple[str, Expr]] = [
+                ("Fld", Variable(field.affixed_name, immutable=True))
+            ]
             if field in message.fields and isinstance(message.types[field], Scalar):
                 aggregate.append(
                     (
@@ -105,7 +107,10 @@ class ParserGenerator:
                     Case(
                         Variable("Fld"),
                         [
-                            (Variable(f.affixed_name), TRUE if f in composite_fields else FALSE)
+                            (
+                                Variable(f.affixed_name, immutable=True),
+                                TRUE if f in composite_fields else FALSE,
+                            )
                             for f in message.fields
                         ],
                     ),
@@ -132,7 +137,7 @@ class ParserGenerator:
                             Case(
                                 Variable("Fld"),
                                 [
-                                    (Variable(f.affixed_name), result(f, message))
+                                    (Variable(f.affixed_name, immutable=True), result(f, message))
                                     for f in message.fields
                                 ],
                             )
@@ -242,7 +247,7 @@ class ParserGenerator:
             IfStatement(
                 [
                     (
-                        Equal(Variable("Fld"), Variable(f.affixed_name)),
+                        Equal(Variable("Fld"), Variable(f.affixed_name, immutable=True)),
                         [
                             Assignment(
                                 Indexed(
@@ -334,7 +339,8 @@ class ParserGenerator:
                                                                         (
                                                                             "Predecessor",
                                                                             Variable(
-                                                                                FINAL.affixed_name
+                                                                                FINAL.affixed_name,
+                                                                                immutable=True,
                                                                             ),
                                                                         ),
                                                                     ),
@@ -353,7 +359,9 @@ class ParserGenerator:
                                                         ("State", Variable("S_Incomplete")),
                                                         (
                                                             "Predecessor",
-                                                            Variable(FINAL.affixed_name),
+                                                            Variable(
+                                                                FINAL.affixed_name, immutable=True
+                                                            ),
                                                         ),
                                                     ),
                                                 )
@@ -398,7 +406,9 @@ class ParserGenerator:
                     specification,
                     [],
                     [
-                        CallStatement("Verify", [Variable("Ctx"), Variable(f.affixed_name)])
+                        CallStatement(
+                            "Verify", [Variable("Ctx"), Variable(f.affixed_name, immutable=True)]
+                        )
                         for f in message.fields
                     ],
                 )
@@ -613,7 +623,10 @@ class ParserGenerator:
                     specification,
                     Or(
                         *[
-                            Call("Incomplete", [Variable("Ctx"), Variable(f.affixed_name)])
+                            Call(
+                                "Incomplete",
+                                [Variable("Ctx"), Variable(f.affixed_name, immutable=True)],
+                            )
                             for f in message.fields
                         ]
                     ),
@@ -637,7 +650,9 @@ class ParserGenerator:
                 "To_Actual",
                 [
                     Selected(
-                        Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
+                        Indexed(
+                            Variable("Ctx.Cursors"), Variable(field.affixed_name, immutable=True)
+                        ),
                         f"Value.{field.name}_Value",
                     )
                 ],
@@ -647,7 +662,13 @@ class ParserGenerator:
             [
                 SubprogramDeclaration(
                     specification(f, t),
-                    [Precondition(Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),)],
+                    [
+                        Precondition(
+                            Call(
+                                "Valid", [Variable("Ctx"), Variable(f.affixed_name, immutable=True)]
+                            ),
+                        )
+                    ],
                 )
                 for f, t in scalar_fields.items()
             ],
@@ -670,7 +691,10 @@ class ParserGenerator:
                         Precondition(
                             And(
                                 Call("Has_Buffer", [Variable("Ctx")]),
-                                Call("Present", [Variable("Ctx"), Variable(f.affixed_name)]),
+                                Call(
+                                    "Present",
+                                    [Variable("Ctx"), Variable(f.affixed_name, immutable=True)],
+                                ),
                             )
                         )
                     ],
@@ -695,7 +719,10 @@ class ParserGenerator:
                                 const.TYPES_BYTE_INDEX,
                                 [
                                     Selected(
-                                        Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
+                                        Indexed(
+                                            Variable("Ctx.Cursors"),
+                                            Variable(f.affixed_name, immutable=True),
+                                        ),
                                         "First",
                                     )
                                 ],
@@ -709,7 +736,10 @@ class ParserGenerator:
                                 const.TYPES_BYTE_INDEX,
                                 [
                                     Selected(
-                                        Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
+                                        Indexed(
+                                            Variable("Ctx.Cursors"),
+                                            Variable(f.affixed_name, immutable=True),
+                                        ),
                                         "Last",
                                     )
                                 ],
@@ -745,7 +775,7 @@ def valid_message_condition(
                     "Structural_Valid"
                     if structural and isinstance(message.types[l.target], Composite)
                     else "Valid",
-                    [Variable("Ctx"), Variable(l.target.affixed_name)],
+                    [Variable("Ctx"), Variable(l.target.affixed_name, immutable=True)],
                 ),
                 l.condition,
                 valid_message_condition(message, l.target, structural),

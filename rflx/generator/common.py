@@ -100,7 +100,8 @@ def substitution(
                                     [
                                         Selected(
                                             Indexed(
-                                                Variable("Cursors"), Variable(field.affixed_name),
+                                                Variable("Cursors"),
+                                                Variable(field.affixed_name, immutable=True),
                                             ),
                                             "First",
                                         )
@@ -111,7 +112,8 @@ def substitution(
                                     [
                                         Selected(
                                             Indexed(
-                                                Variable("Cursors"), Variable(field.affixed_name),
+                                                Variable("Cursors"),
+                                                Variable(field.affixed_name, immutable=True),
                                             ),
                                             "Last",
                                         )
@@ -122,7 +124,8 @@ def substitution(
                         aggregate,
                     )
                 equal_call = Call(
-                    "Equal", [Variable("Ctx"), Variable(field.affixed_name), aggregate]
+                    "Equal",
+                    [Variable("Ctx"), Variable(field.affixed_name, immutable=True), aggregate],
                 )
                 return equal_call if isinstance(expression, Equal) else Not(equal_call)
 
@@ -132,7 +135,7 @@ def substitution(
             return Selected(
                 Indexed(
                     Variable("Ctx.Cursors" if not embedded else "Cursors"),
-                    Variable(field.affixed_name),
+                    Variable(field.affixed_name, immutable=True),
                 ),
                 f"Value.{field.name}_Value",
             )
@@ -175,21 +178,27 @@ def substitution_facts(
 
     def field_first(field: Field) -> Expr:
         if public:
-            return Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)])
-        return Selected(Indexed(cursors, Variable(field.affixed_name)), "First")
+            return Call(
+                "Field_First", [Variable("Ctx"), Variable(field.affixed_name, immutable=True)]
+            )
+        return Selected(Indexed(cursors, Variable(field.affixed_name, immutable=True)), "First")
 
     def field_last(field: Field) -> Expr:
         if public:
-            return Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)])
-        return Selected(Indexed(cursors, Variable(field.affixed_name)), "Last")
+            return Call(
+                "Field_Last", [Variable("Ctx"), Variable(field.affixed_name, immutable=True)]
+            )
+        return Selected(Indexed(cursors, Variable(field.affixed_name, immutable=True)), "Last")
 
     def field_length(field: Field) -> Expr:
         if public:
-            return Call("Field_Length", [Variable("Ctx"), Variable(field.affixed_name)])
+            return Call(
+                "Field_Length", [Variable("Ctx"), Variable(field.affixed_name, immutable=True)]
+            )
         return Add(
             Sub(
-                Selected(Indexed(cursors, Variable(field.affixed_name)), "Last"),
-                Selected(Indexed(cursors, Variable(field.affixed_name)), "First"),
+                Selected(Indexed(cursors, Variable(field.affixed_name, immutable=True)), "Last"),
+                Selected(Indexed(cursors, Variable(field.affixed_name, immutable=True)), "First"),
             ),
             Number(1),
         )
@@ -204,7 +213,8 @@ def substitution_facts(
                 target_type,
                 [
                     Selected(
-                        Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
+                        Indexed(cursors, Variable(field.affixed_name, immutable=True)),
+                        f"Value.{field.name}_Value",
                     )
                 ],
             )
@@ -215,7 +225,8 @@ def substitution_facts(
                 target_type,
                 [
                     Selected(
-                        Indexed(cursors, Variable(field.affixed_name)), f"Value.{field.name}_Value"
+                        Indexed(cursors, Variable(field.affixed_name, immutable=True)),
+                        f"Value.{field.name}_Value",
                     )
                 ],
             )
@@ -280,7 +291,10 @@ def message_structure_invariant(
         .substituted(
             mapping={
                 UNDEFINED: Add(
-                    Selected(Indexed(prefixed("Cursors"), Variable(source.affixed_name)), "Last"),
+                    Selected(
+                        Indexed(prefixed("Cursors"), Variable(source.affixed_name, immutable=True)),
+                        "Last",
+                    ),
                     Number(1),
                 )
             }
@@ -294,7 +308,11 @@ def message_structure_invariant(
                 AndThen(
                     Call(
                         "Structural_Valid",
-                        [Indexed(prefixed("Cursors"), Variable(target.affixed_name))],
+                        [
+                            Indexed(
+                                prefixed("Cursors"), Variable(target.affixed_name, immutable=True)
+                            )
+                        ],
                     ),
                     condition,
                 ),
@@ -303,11 +321,17 @@ def message_structure_invariant(
                         Add(
                             Sub(
                                 Selected(
-                                    Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
+                                    Indexed(
+                                        prefixed("Cursors"),
+                                        Variable(target.affixed_name, immutable=True),
+                                    ),
                                     "Last",
                                 ),
                                 Selected(
-                                    Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
+                                    Indexed(
+                                        prefixed("Cursors"),
+                                        Variable(target.affixed_name, immutable=True),
+                                    ),
                                     "First",
                                 ),
                             ),
@@ -317,14 +341,19 @@ def message_structure_invariant(
                     ),
                     Equal(
                         Selected(
-                            Indexed(prefixed("Cursors"), Variable(target.affixed_name)),
+                            Indexed(
+                                prefixed("Cursors"), Variable(target.affixed_name, immutable=True)
+                            ),
                             "Predecessor",
                         ),
-                        Variable(source.affixed_name),
+                        Variable(source.affixed_name, immutable=True),
                     ),
                     Equal(
                         Selected(
-                            Indexed(prefixed("Cursors"), Variable(target.affixed_name)), "First"
+                            Indexed(
+                                prefixed("Cursors"), Variable(target.affixed_name, immutable=True)
+                            ),
+                            "First",
                         ),
                         first,
                     ),
@@ -347,7 +376,12 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                         (
                             Call(
                                 "Structural_Valid",
-                                [Indexed(Variable("Cursors"), Variable(f.affixed_name))],
+                                [
+                                    Indexed(
+                                        Variable("Cursors"),
+                                        Variable(f.affixed_name, immutable=True),
+                                    )
+                                ],
                             ),
                             Or(
                                 *[
@@ -359,18 +393,19 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                                             [
                                                 Indexed(
                                                     Variable("Cursors"),
-                                                    Variable(l.source.affixed_name),
+                                                    Variable(l.source.affixed_name, immutable=True),
                                                 )
                                             ],
                                         ),
                                         Equal(
                                             Selected(
                                                 Indexed(
-                                                    Variable("Cursors"), Variable(f.affixed_name),
+                                                    Variable("Cursors"),
+                                                    Variable(f.affixed_name, immutable=True),
                                                 ),
                                                 "Predecessor",
                                             ),
-                                            Variable(l.source.affixed_name),
+                                            Variable(l.source.affixed_name, immutable=True),
                                         ),
                                         l.condition.substituted(
                                             substitution(message, embedded=True)
@@ -397,13 +432,24 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                                 *[
                                     Call(
                                         "Invalid",
-                                        [Indexed(Variable("Cursors"), Variable(p.affixed_name))],
+                                        [
+                                            Indexed(
+                                                Variable("Cursors"),
+                                                Variable(p.affixed_name, immutable=True),
+                                            )
+                                        ],
                                     )
                                     for p in message.direct_predecessors(f)
                                 ]
                             ),
                             Call(
-                                "Invalid", [Indexed(Variable("Cursors"), Variable(f.affixed_name))],
+                                "Invalid",
+                                [
+                                    Indexed(
+                                        Variable("Cursors"),
+                                        Variable(f.affixed_name, immutable=True),
+                                    )
+                                ],
                             ),
                         )
                     ]
@@ -485,11 +531,15 @@ def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequen
                     And(
                         Equal(
                             Call(
-                                "Predecessor", [Variable("Ctx"), Variable(l.target.affixed_name)],
+                                "Predecessor",
+                                [Variable("Ctx"), Variable(l.target.affixed_name, immutable=True)],
                             ),
-                            Variable(field.affixed_name),
+                            Variable(field.affixed_name, immutable=True),
                         ),
-                        Call("Valid_Next", [Variable("Ctx"), Variable(l.target.affixed_name)])
+                        Call(
+                            "Valid_Next",
+                            [Variable("Ctx"), Variable(l.target.affixed_name, immutable=True)],
+                        )
                         if l.target != FINAL
                         else TRUE,
                     ),
@@ -510,7 +560,10 @@ def sufficient_space_for_field_condition(field_name: Name) -> Expr:
 
 def initialize_field_statements(message: Message, field: Field, prefix: str) -> Sequence[Statement]:
     return [
-        CallStatement("Reset_Dependent_Fields", [Variable("Ctx"), Variable(field.affixed_name)],),
+        CallStatement(
+            "Reset_Dependent_Fields",
+            [Variable("Ctx"), Variable(field.affixed_name, immutable=True)],
+        ),
         Assignment(
             "Ctx",
             Aggregate(
@@ -528,16 +581,18 @@ def initialize_field_statements(message: Message, field: Field, prefix: str) -> 
         # predicate as assert
         PragmaStatement("Assert", [str(message_structure_invariant(message, prefix))],),
         Assignment(
-            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
+            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name, immutable=True)),
             NamedAggregate(
                 ("State", Variable("S_Structural_Valid")),
                 ("First", Variable("First")),
                 ("Last", Variable("Last")),
-                ("Value", NamedAggregate(("Fld", Variable(field.affixed_name))),),
+                ("Value", NamedAggregate(("Fld", Variable(field.affixed_name, immutable=True))),),
                 (
                     "Predecessor",
                     Selected(
-                        Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name),),
+                        Indexed(
+                            Variable("Ctx.Cursors"), Variable(field.affixed_name, immutable=True),
+                        ),
                         "Predecessor",
                     ),
                 ),
@@ -546,10 +601,11 @@ def initialize_field_statements(message: Message, field: Field, prefix: str) -> 
         Assignment(
             Indexed(
                 Variable("Ctx.Cursors"),
-                Call("Successor", [Variable("Ctx"), Variable(field.affixed_name)]),
+                Call("Successor", [Variable("Ctx"), Variable(field.affixed_name, immutable=True)]),
             ),
             NamedAggregate(
-                ("State", Variable("S_Invalid")), ("Predecessor", Variable(field.affixed_name)),
+                ("State", Variable("S_Invalid")),
+                ("Predecessor", Variable(field.affixed_name, immutable=True)),
             ),
         ),
     ]
