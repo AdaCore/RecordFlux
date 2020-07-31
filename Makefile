@@ -64,7 +64,7 @@ test_python_optimized:
 	python3 -O -m pytest -n$(shell nproc) -vv -m "not hypothesis"
 
 test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing -m "not hypothesis" tests
+	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
 
 test_spark: $(test-files)
 	gprbuild -P$(project)
