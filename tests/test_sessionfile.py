@@ -791,3 +791,52 @@ def test_channel_without_mode() -> None:
                   - name: END
             """,
         )
+
+
+def test_function_used() -> None:
+    f = SessionFile()
+    f.parse_string(
+        "session",
+        """
+            initial: START
+            final: FINAL
+            variables:
+              - "Data : Data_Type"
+            functions:
+              - "Calculate (Input : Data_Type) return Data_Type"
+            states:
+              - name: START
+                actions:
+                  - Data := Calculate (5)
+                transitions:
+                  - target: FINAL
+              - name: FINAL
+        """,
+    )
+    expected = Session(
+        name="session",
+        initial=StateName("START"),
+        final=StateName("FINAL"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[Transition(target=StateName("FINAL"))],
+                declarations={},
+                actions=[Assignment("Data", SubprogramCall("Calculate", [Number(5)]))],
+            ),
+            State(name=StateName("FINAL")),
+        ],
+        declarations={
+            "Calculate": Subprogram([Argument("Input", "Data_Type")], "Data_Type"),
+            "Data": VariableDeclaration("Data_Type"),
+        },
+    )
+    assert f.sessions[0] == expected
+
+
+def test_tls_handshake() -> None:
+    SessionFile().parse("tls_handshake", "tests/client_handshake_states.yml")
+
+
+def test_tls_record() -> None:
+    SessionFile().parse("tls_handshake", "tests/client_record_states.yml")

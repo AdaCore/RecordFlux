@@ -4,7 +4,7 @@ import yaml
 
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, Channel, Declaration
-from rflx.identifier import ID
+from rflx.identifier import ID, StrID
 from rflx.parser.session import action, declaration, expression
 from rflx.session import Session, State, StateName, Transition
 from rflx.statement import Statement
@@ -195,7 +195,7 @@ class SessionFile:
                     except RecordFluxError as e:
                         self.error.extend(e)
                         continue
-            declarations: Dict[ID, Declaration] = {}
+            declarations: Dict[StrID, Declaration] = {}
             if "variables" in s and s["variables"]:
                 for v in s["variables"]:
                     try:
