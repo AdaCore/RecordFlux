@@ -1828,6 +1828,13 @@ class SubprogramCall(Expr):
         raise NotImplementedError
 
     def __validate_channel(self, declarations: Mapping[ID, Declaration]) -> None:
+        if len(self.arguments) < 1:
+            fail(
+                f'no channel argument in call to "{self.name}"',
+                Subsystem.SESSION,
+                Severity.ERROR,
+                self.location,
+            )
         channel_id = self.arguments[0]
         if not isinstance(channel_id, Variable):
             fail(
@@ -1876,13 +1883,6 @@ class SubprogramCall(Expr):
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         if self.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
-            if len(self.arguments) < 1:
-                fail(
-                    f'no channel argument in call to "{self.name}"',
-                    Subsystem.SESSION,
-                    Severity.ERROR,
-                    self.location,
-                )
             self.__validate_channel(declarations)
         else:
             if self.name not in map(ID, ["Append", "Extend"]):
@@ -2103,6 +2103,9 @@ class Binding(Expr):
 
     def variables(self) -> List["Variable"]:
         return self.simplified().variables()
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        self.simplified().validate(declarations)
 
 
 class String(Expr):

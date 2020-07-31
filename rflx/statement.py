@@ -46,7 +46,7 @@ class Assignment(Statement):
         else:
             declarations[self.name].reference()
         try:
-            self.__expression.simplified().validate(declarations)
+            self.__expression.validate(declarations)
         except RecordFluxError as e:
             self.error.extend(e)
         self.error.propagate()

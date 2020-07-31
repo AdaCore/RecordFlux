@@ -54,7 +54,7 @@ class State(Base):
         name: StateName,
         transitions: Sequence[Transition] = None,
         actions: Sequence[Statement] = None,
-        declarations: Dict[ID, Declaration] = None,
+        declarations: Dict[StrID, Declaration] = None,
         location: Location = None,
     ):
         self.__name = name

@@ -238,8 +238,8 @@ def __expression() -> Token:  # pylint: disable=too-many-locals
         | string_literal
         | quantifier
         | comprehension
-        | conversion
         | function_call
+        | conversion
         | aggregate
         | __variable()
     )
