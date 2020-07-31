@@ -49,7 +49,7 @@ from rflx.expression import (
     ValueRange,
     Variable,
 )
-from rflx.identifier import ID
+from rflx.identifier import ID, StrID
 from tests.utils import assert_equal
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
@@ -60,6 +60,15 @@ def multilinestr(string: str) -> str:
         l.startswith(15 * " ") for l in string.split("\n")[1:]
     ), "invalid format of multi-line string"
     return string.replace(15 * " ", "")
+
+
+def test_eq() -> None:
+    class TestVariable(Variable):
+        def __init__(self, ident: StrID, x: int) -> None:
+            super().__init__(ident)
+            self.test_val = x
+
+    assert TestVariable("Test", 1) != Variable("Test")
 
 
 def test_true_neg() -> None:
