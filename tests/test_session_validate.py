@@ -8,6 +8,7 @@ from rflx.expression import (
     And,
     Argument,
     Binding,
+    Call,
     Channel,
     Comprehension,
     Conversion,
@@ -27,7 +28,6 @@ from rflx.expression import (
     Selected,
     String,
     Subprogram,
-    SubprogramCall,
     Valid,
     Variable,
     VariableDeclaration,
@@ -123,10 +123,9 @@ def test_binding_not_contains_right() -> None:
 
 def test_binding_subprogram() -> None:
     binding = Binding(
-        SubprogramCall("Sub", [Variable("A"), Variable("B"), Variable("C")]),
-        {"B": Variable("Baz")},
+        Call("Sub", [Variable("A"), Variable("B"), Variable("C")]), {"B": Variable("Baz")},
     )
-    expected = SubprogramCall("Sub", [Variable("A"), Variable("Baz"), Variable("C")])
+    expected = Call("Sub", [Variable("A"), Variable("Baz"), Variable("C")])
     result = binding.simplified()
     assert result == expected
 
@@ -167,8 +166,8 @@ def test_binding_multiple_bindings() -> None:
 
 
 def test_binding_multiple_variables() -> None:
-    binding = Binding(SubprogramCall("Sub", [Variable("A"), Variable("A")]), {"A": Variable("Baz")})
-    expected = SubprogramCall("Sub", [Variable("Baz"), Variable("Baz")])
+    binding = Binding(Call("Sub", [Variable("A"), Variable("A")]), {"A": Variable("Baz")})
+    expected = Call("Sub", [Variable("Baz"), Variable("Baz")])
     result = binding.simplified()
     assert result == expected
 
@@ -188,10 +187,8 @@ def test_binding_conversion_name_unchanged() -> None:
 
 
 def test_binding_opaque() -> None:
-    binding = Binding(
-        Opaque(SubprogramCall("Sub", [Variable("Bound")])), {"Bound": Variable("Foo")}
-    )
-    expected = Opaque(SubprogramCall("Sub", [Variable("Foo")]))
+    binding = Binding(Opaque(Call("Sub", [Variable("Bound")])), {"Bound": Variable("Foo")})
+    expected = Opaque(Call("Sub", [Variable("Foo")]))
     result = binding.simplified()
     assert result == expected
 
@@ -461,9 +458,7 @@ def test_call_to_undeclared_function() -> None:
                     name=StateName("START"),
                     transitions=[Transition(target=StateName("END"))],
                     declarations={},
-                    actions=[
-                        Assignment("Global", SubprogramCall("UndefSub", [Variable("Global")]))
-                    ],
+                    actions=[Assignment("Global", Call("UndefSub", [Variable("Global")]))],
                 ),
                 State(name=StateName("END")),
             ],
@@ -481,7 +476,7 @@ def test_call_to_builtin_read() -> None:
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("END"))],
                 declarations={},
-                actions=[Assignment("Global", SubprogramCall("Read", [Variable("Some_Channel")]))],
+                actions=[Assignment("Global", Call("Read", [Variable("Some_Channel")]))],
             ),
             State(name=StateName("END")),
         ],
@@ -502,11 +497,7 @@ def test_call_to_builtin_write() -> None:
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("END"))],
                 declarations={},
-                actions=[
-                    Assignment(
-                        "Success", SubprogramCall("Write", [Variable("Some_Channel"), TRUE]),
-                    )
-                ],
+                actions=[Assignment("Success", Call("Write", [Variable("Some_Channel"), TRUE]),)],
             ),
             State(name=StateName("END")),
         ],
@@ -527,9 +518,7 @@ def test_call_to_builtin_call() -> None:
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("END"))],
                 declarations={},
-                actions=[
-                    Assignment("Result", SubprogramCall("Call", [Variable("Some_Channel"), TRUE]))
-                ],
+                actions=[Assignment("Result", Call("Call", [Variable("Some_Channel"), TRUE]))],
             ),
             State(name=StateName("END")),
         ],
@@ -550,11 +539,7 @@ def test_call_to_builtin_data_available() -> None:
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("END"))],
                 declarations={},
-                actions=[
-                    Assignment(
-                        "Result", SubprogramCall("Data_Available", [Variable("Some_Channel")]),
-                    )
-                ],
+                actions=[Assignment("Result", Call("Data_Available", [Variable("Some_Channel")]),)],
             ),
             State(name=StateName("END")),
         ],
@@ -584,7 +569,7 @@ def test_call_to_builtin_read_without_arguments() -> None:
                     name=StateName("START"),
                     transitions=[Transition(target=StateName("END"))],
                     declarations={},
-                    actions=[Assignment("Result", SubprogramCall("Read", []))],
+                    actions=[Assignment("Result", Call("Read", []))],
                 ),
                 State(name=StateName("END")),
             ],
@@ -615,9 +600,7 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
                         )
                     ],
                     declarations={},
-                    actions=[
-                        Assignment("Result", SubprogramCall("Read", [Variable("Undeclared")]))
-                    ],
+                    actions=[Assignment("Result", Call("Read", [Variable("Undeclared")]))],
                 ),
                 State(name=StateName("END")),
             ],
@@ -644,7 +627,7 @@ def test_call_to_builtin_read_invalid_channel_type() -> None:
                     name=StateName("START"),
                     transitions=[Transition(target=StateName("END"))],
                     declarations={},
-                    actions=[Assignment("Result", SubprogramCall("Read", [Variable("Result")]))],
+                    actions=[Assignment("Result", Call("Read", [Variable("Result")]))],
                 ),
                 State(name=StateName("END")),
             ],
@@ -675,9 +658,7 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
                         )
                     ],
                     declarations={},
-                    actions=[
-                        Assignment("Result", SubprogramCall("Write", [Variable("Out_Channel")]))
-                    ],
+                    actions=[Assignment("Result", Call("Write", [Variable("Out_Channel")]))],
                 ),
                 State(name=StateName("END")),
             ],
@@ -708,9 +689,7 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
                     transitions=[Transition(target=StateName("END"))],
                     declarations={},
                     actions=[
-                        Assignment(
-                            "Result", SubprogramCall("Data_Available", [Variable("Out_Channel")]),
-                        )
+                        Assignment("Result", Call("Data_Available", [Variable("Out_Channel")]),)
                     ],
                 ),
                 State(name=StateName("END")),
@@ -741,7 +720,7 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
                     name=StateName("START"),
                     transitions=[Transition(target=StateName("END"))],
                     declarations={},
-                    actions=[Assignment("Result", SubprogramCall("Read", [Variable("Channel")]))],
+                    actions=[Assignment("Result", Call("Read", [Variable("Channel")]))],
                 ),
                 State(name=StateName("END")),
             ],
@@ -771,7 +750,7 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
                     name=StateName("START"),
                     transitions=[Transition(target=StateName("END"))],
                     declarations={},
-                    actions=[Assignment("Result", SubprogramCall("Call", [Variable("Channel")]))],
+                    actions=[Assignment("Result", Call("Call", [Variable("Channel")]))],
                 ),
                 State(name=StateName("END")),
             ],
@@ -801,7 +780,7 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
                     name=StateName("START"),
                     transitions=[Transition(target=StateName("END"))],
                     declarations={},
-                    actions=[Assignment("Result", SubprogramCall("Call", [Variable("Channel")]))],
+                    actions=[Assignment("Result", Call("Call", [Variable("Channel")]))],
                 ),
                 State(name=StateName("END")),
             ],
@@ -822,7 +801,7 @@ def test_subprogram_call() -> None:
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("END"))],
                 declarations={},
-                actions=[Assignment("Result", SubprogramCall("Call", [Variable("Channel")]))],
+                actions=[Assignment("Result", Call("Call", [Variable("Channel")]))],
             ),
             State(name=StateName("END")),
         ],
@@ -856,9 +835,7 @@ def test_undeclared_variable_in_subprogram_call() -> None:
                         )
                     ],
                     declarations={},
-                    actions=[
-                        Assignment("Result", SubprogramCall("SubProg", [Variable("Undefined")]),)
-                    ],
+                    actions=[Assignment("Result", Call("SubProg", [Variable("Undefined")]),)],
                 ),
                 State(name=StateName("END")),
             ],
@@ -1081,7 +1058,7 @@ def test_binding_as_subprogram_parameter() -> None:
                     Assignment(
                         "Result",
                         Binding(
-                            SubprogramCall("SubProg", [Length(Variable("Bound"))]),
+                            Call("SubProg", [Length(Variable("Bound"))]),
                             {"Bound": Variable("Variable")},
                         ),
                     )
@@ -1133,9 +1110,7 @@ def test_append_list_attribute() -> None:
                 transitions=[Transition(target=StateName("END"))],
                 declarations={},
                 actions=[
-                    Assignment(
-                        "List", SubprogramCall("Append", [Variable("List"), Variable("Element")]),
-                    )
+                    Assignment("List", Call("Append", [Variable("List"), Variable("Element")]),)
                 ],
             ),
             State(name=StateName("END")),
@@ -1158,9 +1133,7 @@ def test_extend_list_attribute() -> None:
                 transitions=[Transition(target=StateName("END"))],
                 declarations={},
                 actions=[
-                    Assignment(
-                        "List", SubprogramCall("Extend", [Variable("List"), Variable("Element")]),
-                    )
+                    Assignment("List", Call("Extend", [Variable("List"), Variable("Element")]),)
                 ],
             ),
             State(name=StateName("END")),
@@ -1251,9 +1224,7 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
                 State(
                     name=StateName("START"),
                     transitions=[Transition(target=StateName("END"))],
-                    actions=[
-                        Assignment("Data", Opaque(SubprogramCall("Sub", [Variable("UndefData")]),),)
-                    ],
+                    actions=[Assignment("Data", Opaque(Call("Sub", [Variable("UndefData")]),),)],
                 ),
                 State(name=StateName("END")),
             ],
@@ -1273,7 +1244,7 @@ def test_assignment_opaque_subprogram_result() -> None:
             State(
                 name=StateName("START"),
                 transitions=[Transition(target=StateName("END"))],
-                actions=[Assignment("Data", Opaque(SubprogramCall("Sub", [Variable("Data")]),),)],
+                actions=[Assignment("Data", Opaque(Call("Sub", [Variable("Data")]),),)],
             ),
             State(name=StateName("END")),
         ],
@@ -1297,8 +1268,7 @@ def test_assignment_opaque_subprogram_binding() -> None:
                     Assignment(
                         "Data",
                         Binding(
-                            Opaque(SubprogramCall("Sub", [Variable("Bound")])),
-                            {"Bound": Variable("Data")},
+                            Opaque(Call("Sub", [Variable("Bound")])), {"Bound": Variable("Data")},
                         ),
                     )
                 ],
@@ -1377,7 +1347,7 @@ def test_extract_variables_contains() -> None:
 
 
 def test_extract_variables_subprogramcall() -> None:
-    result = SubprogramCall("Sub", [Variable("A"), Variable("B")]).variables()
+    result = Call("Sub", [Variable("A"), Variable("B")]).variables()
     expected = [Variable("A"), Variable("B")]
     assert result == expected
 

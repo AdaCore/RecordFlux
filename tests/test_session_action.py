@@ -1,4 +1,4 @@
-from rflx.expression import String, SubprogramCall, Variable
+from rflx.expression import Call, String, Variable
 from rflx.parser.session import action
 from rflx.statement import Assignment, Erase, Reset
 
@@ -10,21 +10,21 @@ def test_simple_assignment() -> None:
 
 def test_simple_subprogram_call() -> None:
     result = action().parseString("Sub (Arg)")[0]
-    expected = SubprogramCall("Sub", [Variable("Arg")])
+    expected = Call("Sub", [Variable("Arg")])
     assert result == expected
 
 
 def test_list_append() -> None:
     result = action().parseString("Extensions_List'Append (Foo)")[0]
     expected = Assignment(
-        "Extensions_List", SubprogramCall("Append", [Variable("Extensions_List"), Variable("Foo")]),
+        "Extensions_List", Call("Append", [Variable("Extensions_List"), Variable("Foo")]),
     )
     assert result == expected
 
 
 def test_subprogram_string_argument() -> None:
     result = action().parseString('Sub (Arg1, "String arg", Arg2)')[0]
-    expected = SubprogramCall("Sub", [Variable("Arg1"), String("String arg"), Variable("Arg2")])
+    expected = Call("Sub", [Variable("Arg1"), String("String arg"), Variable("Arg2")])
     assert result == expected
 
 

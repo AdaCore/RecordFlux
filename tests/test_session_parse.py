@@ -4,6 +4,7 @@ from rflx.expression import (
     Add,
     And,
     Binding,
+    Call,
     Comprehension,
     Conversion,
     Div,
@@ -26,7 +27,6 @@ from rflx.expression import (
     Selected,
     String,
     Sub,
-    SubprogramCall,
     Valid,
     Variable,
 )
@@ -199,7 +199,7 @@ def test_type_conversion_simple() -> None:
 
 def test_field_simple() -> None:
     result = expression().parseString("Bar (Foo).Fld")[0]
-    assert result == Selected(SubprogramCall("Bar", [Variable("Foo")]), "Fld")
+    assert result == Selected(Call("Bar", [Variable("Foo")]), "Fld")
 
 
 def test_field_variable() -> None:
@@ -209,7 +209,7 @@ def test_field_variable() -> None:
 
 def test_field_length() -> None:
     result = expression().parseString("Bar (Foo).Fld'Length")[0]
-    assert result == Length(Selected(SubprogramCall("Bar", [Variable("Foo")]), "Fld"))
+    assert result == Length(Selected(Call("Bar", [Variable("Foo")]), "Fld"))
 
 
 def test_type_conversion() -> None:
@@ -257,9 +257,7 @@ def test_length_lt() -> None:
 
 def test_field_length_lt() -> None:
     result = expression().parseString("Bar (Foo).Fld'Length < 100")[0]
-    assert result == Less(
-        Length(Selected(SubprogramCall("Bar", [Variable("Foo")]), "Fld")), Number(100)
-    )
+    assert result == Less(Length(Selected(Call("Bar", [Variable("Foo")]), "Fld")), Number(100))
 
 
 def test_list_comprehension() -> None:
@@ -375,13 +373,13 @@ def test_complex_aggregate() -> None:
 
 def test_simple_function_call() -> None:
     result = expression().parseString("Fun (Parameter)")[0]
-    expected = SubprogramCall("Fun", [Variable("Parameter")])
+    expected = Call("Fun", [Variable("Parameter")])
     assert result == expected
 
 
 def test_complex_function_call() -> None:
     result = expression().parseString("Complex_Function (Param1, Param2, Param3)")[0]
-    expected = SubprogramCall(
+    expected = Call(
         "Complex_Function", [Variable("Param1"), Variable("Param2"), Variable("Param3")],
     )
     assert result == expected
