@@ -131,9 +131,22 @@ def test_main_session() -> None:
     assert cli.main(["rflx", "session", "specs/simple.yaml"]) == 0
 
 
+def test_main_session_with_graph(tmp_path: Path) -> None:
+    assert (
+        cli.main(["rflx", "session", "-d", str(tmp_path), "--format", "svg", "specs/simple.yaml"])
+        == 0
+    )
+
+
 def test_main_session_non_existent_file() -> None:
     assert 'session: error: file not found: "non-existent file"' in str(
         cli.main(["rflx", "session", "non-existent file"])
+    )
+
+
+def test_main_session_non_existent_directory() -> None:
+    assert 'session: error: directory not found: "non-existent directory"' in str(
+        cli.main(["rflx", "session", "-d", "non-existent directory", "specs/simple.yaml"])
     )
 
 

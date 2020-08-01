@@ -1124,11 +1124,10 @@ class Selected(Name):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        if isinstance(expr, Selected):
-            return expr.__class__(
-                expr.prefix.substituted(func), expr.selector_name, location=expr.location
-            )
-        return expr
+        assert isinstance(expr, Selected)
+        return expr.__class__(
+            expr.prefix.substituted(func), expr.selector_name, location=expr.location
+        )
 
 
 class Call(Name):
@@ -1240,11 +1239,8 @@ class Call(Name):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        if isinstance(expr, Call):
-            return expr.__class__(
-                expr.name, [a.substituted(func) for a in expr.args], expr.location
-            )
-        return expr
+        assert isinstance(expr, Call)
+        return expr.__class__(expr.name, [a.substituted(func) for a in expr.args], expr.location)
 
 
 class Slice(Name):
@@ -1724,14 +1720,13 @@ class QuantifiedExpression(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        if isinstance(expr, QuantifiedExpression):
-            return expr.__class__(
-                expr.parameter_name,
-                expr.iterable.substituted(func),
-                expr.predicate.substituted(func),
-                expr.location,
-            )
-        return expr
+        assert isinstance(expr, QuantifiedExpression)
+        return expr.__class__(
+            expr.parameter_name,
+            expr.iterable.substituted(func),
+            expr.predicate.substituted(func),
+            expr.location,
+        )
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         quantifier: Mapping[ID, "Declaration"] = {self.parameter_name: VariableDeclaration()}
@@ -1916,16 +1911,15 @@ class Conversion(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        if isinstance(expr, Conversion):
-            return expr.__class__(self.name, self.argument.substituted(func))
-        return expr
+        assert isinstance(expr, Conversion)
+        return expr.__class__(self.name, self.argument.substituted(func))
 
     def simplified(self) -> Expr:
         return Conversion(self.name, self.argument.simplified(), self.location)
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.undefined
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1973,19 +1967,18 @@ class Comprehension(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        if isinstance(expr, Comprehension):
-            return expr.__class__(
-                expr.iterator,
-                expr.array.substituted(func),
-                expr.selector.substituted(func),
-                expr.condition.substituted(func),
-                expr.location,
-            )
-        return expr
+        assert isinstance(expr, Comprehension)
+        return expr.__class__(
+            expr.iterator,
+            expr.array.substituted(func),
+            expr.selector.substituted(func),
+            expr.condition.substituted(func),
+            expr.location,
+        )
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.undefined
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -2031,15 +2024,14 @@ class MessageAggregate(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        if isinstance(expr, MessageAggregate):
-            return expr.__class__(
-                expr.name, {k: expr.data[k].substituted(func) for k in expr.data}, expr.location,
-            )
-        return expr
+        assert isinstance(expr, MessageAggregate)
+        return expr.__class__(
+            expr.name, {k: expr.data[k].substituted(func) for k in expr.data}, expr.location,
+        )
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.undefined
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -2072,21 +2064,14 @@ class Binding(Expr):
         facts: Mapping[Name, Expr] = {Variable(k): self.data[k].simplified() for k in self.data}
         return self.expr.substituted(mapping=facts).simplified()
 
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, Binding):
-            return expr.__class__(
-                expr.expr, {k: self.data[k].substituted(func) for k in expr.data}, expr.location,
-            )
-        return expr
+        raise NotImplementedError
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.undefined
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -2109,18 +2094,12 @@ class String(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def simplified(self) -> Expr:
-        return self
-
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
-    def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
-    ) -> Expr:
-        return self
-
     @property
     def precedence(self) -> Precedence:
-        return Precedence.undefined
+        raise NotImplementedError
+
+    def simplified(self) -> Expr:
+        return self
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError

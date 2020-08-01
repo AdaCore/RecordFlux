@@ -20,14 +20,14 @@ class SessionFile:
             return
         for index, f in enumerate(doc["functions"]):
             try:
-                name, decl = declaration().parseString(f)[0]
+                name, decl = declaration(f)
             except RecordFluxError as e:
-                self.error.extend(e)
                 self.error.append(
                     f"error parsing global function declaration {index}",
                     Subsystem.SESSION,
                     Severity.ERROR,
                 )
+                self.error.extend(e)
                 continue
             if ID(name) in result:
                 self.error.append(
@@ -41,14 +41,14 @@ class SessionFile:
             return
         for index, f in enumerate(doc["variables"]):
             try:
-                name, decl = declaration().parseString(f)[0]
+                name, decl = declaration(f)
             except RecordFluxError as e:
-                self.error.extend(e)
                 self.error.append(
                     f"error parsing global variable declaration {index}",
                     Subsystem.SESSION,
                     Severity.ERROR,
                 )
+                self.error.extend(e)
                 continue
             if ID(name) in result:
                 self.error.append(
@@ -62,14 +62,14 @@ class SessionFile:
             return
         for index, f in enumerate(doc["types"]):
             try:
-                name, decl = declaration().parseString(f)[0]
+                name, decl = declaration(f)
             except RecordFluxError as e:
-                self.error.extend(e)
                 self.error.append(
                     f"error parsing private variable declaration {index}",
                     Subsystem.SESSION,
                     Severity.ERROR,
                 )
+                self.error.extend(e)
                 continue
             if ID(name) in result:
                 self.error.append(
@@ -119,12 +119,12 @@ class SessionFile:
             return
         for index, f in enumerate(doc["renames"]):
             try:
-                name, decl = declaration().parseString(f)[0]
+                name, decl = declaration(f)
             except RecordFluxError as e:
-                self.error.extend(e)
                 self.error.append(
                     f"error parsing renames declaration {index}", Subsystem.SESSION, Severity.ERROR,
                 )
+                self.error.extend(e)
                 continue
             if name in result:
                 self.error.append(
@@ -158,14 +158,13 @@ class SessionFile:
                     )
                 if "condition" in t:
                     try:
-                        condition = expression().parseString(t["condition"])[0]
+                        condition = expression(t["condition"])
                     except RecordFluxError as e:
                         tname = t["target"]
                         self.error.append(
                             f'invalid condition {index} from state "{sname}" to "{tname}"',
                             Subsystem.SESSION,
                             Severity.ERROR,
-                            None,
                         )
                         self.error.extend(e)
                         condition = TRUE
@@ -178,29 +177,40 @@ class SessionFile:
     def __parse_states(self, doc: Dict[str, Any]) -> List[State]:
         states: List[State] = []
         for s in doc["states"]:
+            sname = s["name"]
             rest = s.keys() - ["name", "actions", "transitions", "variables", "doc"]
             if rest:
                 elements = ", ".join(sorted(rest))
                 self.error.append(
-                    f'unexpected elements in state "{s}": {elements}',
+                    f'unexpected elements in state "{sname}": {elements}',
                     Subsystem.SESSION,
                     Severity.ERROR,
                 )
                 continue
             actions: List[Statement] = []
             if "actions" in s and s["actions"]:
-                for a in s["actions"]:
+                for i, a in enumerate(s["actions"]):
                     try:
-                        actions.append(action().parseString(a)[0])
+                        actions.append(action(a))
                     except RecordFluxError as e:
+                        self.error.append(
+                            f"error parsing action {i} in state {sname}",
+                            Subsystem.SESSION,
+                            Severity.ERROR,
+                        )
                         self.error.extend(e)
                         continue
             declarations: Dict[StrID, Declaration] = {}
             if "variables" in s and s["variables"]:
-                for v in s["variables"]:
+                for i, v in enumerate(s["variables"]):
                     try:
-                        dname, decl = declaration().parseString(v)[0]
+                        dname, decl = declaration(v)
                     except RecordFluxError as e:
+                        self.error.append(
+                            f"error parsing local variable {i} in state {sname}",
+                            Subsystem.SESSION,
+                            Severity.ERROR,
+                        )
                         self.error.extend(e)
                         continue
                     declarations[ID(dname)] = decl
