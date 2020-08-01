@@ -76,6 +76,7 @@ def main(argv: List[str]) -> Union[int, str]:
 
     parser_session = subparsers.add_parser("session", help="load session")
     parser_session.add_argument("files", metavar="FILE", type=str, nargs="+", help="session file")
+    parser_session.add_argument("-d", "--directory", help="output directory", default=".", type=str)
     parser_session.add_argument(
         "-f",
         "--format",
@@ -182,6 +183,10 @@ def graph(args: argparse.Namespace) -> None:
 
 
 def session(args: argparse.Namespace) -> None:
+    directory = Path(args.directory)
+    if not directory.is_dir():
+        fail(f'directory not found: "{directory}"', Subsystem.SESSION)
+
     session_file = SessionFile()
 
     for f in args.files:
@@ -193,5 +198,8 @@ def session(args: argparse.Namespace) -> None:
 
         if args.format:
             for sm in session_file.sessions:
-                Graph(sm).write(Path(f"{sm.name}.{args.format}"), fmt=args.format)
+                filename = (
+                    Path(directory).joinpath(str(sm.name.name)).with_suffix(f".{args.format}")
+                )
+                Graph(sm).write(filename, fmt=args.format)
         print("OK")
