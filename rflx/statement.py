@@ -30,10 +30,10 @@ class Statement(ABC):
 class Assignment(Statement):
     def __init__(self, name: StrID, expression: Expr, location: Location = None) -> None:
         super().__init__(name, location)
-        self.__expression = expression
+        self.expression = expression
 
     def __str__(self) -> str:
-        return f"{self.name} := {self.__expression}"
+        return f"{self.name} := {self.expression}"
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         if self.name not in declarations:
@@ -46,14 +46,10 @@ class Assignment(Statement):
         else:
             declarations[self.name].reference()
         try:
-            self.__expression.validate(declarations)
+            self.expression.validate(declarations)
         except RecordFluxError as e:
             self.error.extend(e)
         self.error.propagate()
-
-    @property
-    def expression(self) -> Expr:
-        return self.__expression
 
 
 class Erase(Statement):
@@ -68,6 +64,7 @@ class Erase(Statement):
                 Severity.ERROR,
                 self.location,
             )
+        declarations[self.name].reference()
 
 
 class Reset(Statement):
@@ -79,6 +76,7 @@ class Reset(Statement):
                 Severity.ERROR,
                 self.location,
             )
+        declarations[self.name].reference()
 
     def __str__(self) -> str:
         return f"{self.name}'Reset"

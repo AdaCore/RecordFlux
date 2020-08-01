@@ -28,8 +28,7 @@ class Graph:
                             self.__degree[s.name.name] += 1
 
     def __target_size(self, link: Link) -> str:
-        if not isinstance(self.__data, Message):
-            raise TypeError(f"Invalid data format {type(self.__data).__name__}")
+        assert isinstance(self.__data, Message)
         return str(self.__data.field_size(link.target))
 
     def __edge_label(self, link: Link) -> str:
@@ -73,8 +72,7 @@ class Graph:
 
     def __add_state(self, state: State, result: Dot, variables: Counter[ID]) -> None:
 
-        if not isinstance(self.__data, Session):
-            raise TypeError(f"Invalid data format {type(self.__data).__name__}")
+        assert isinstance(self.__data, Session)
 
         height = sqrt(self.__degree[state.name.name] + 1)
         width = 1.3 * sqrt(self.__degree[state.name.name] + 1)
@@ -82,14 +80,13 @@ class Graph:
         variables_write: Counter[ID] = collections.Counter()
 
         if state.name == self.__data.initial:
-            result.add_node(Node(name=str(state.name.name), fillcolor="#ffffff", fontcolor="black"))
             result.add_node(
                 Node(
                     name=str(state.name.name),
                     fillcolor="#ffffff",
                     fontcolor="black",
-                    width=str(width),
-                    height=str(height),
+                    width=f"{width:.2f}",
+                    height=f"{height:.2f}",
                 )
             )
         elif state.name == self.__data.final:
@@ -97,12 +94,14 @@ class Graph:
                 Node(
                     name=str(state.name.name),
                     fillcolor="#6f6f6f",
-                    width=str(width),
-                    height=str(height),
+                    width=f"{width:.2f}",
+                    height=f"{height:.2f}",
                 )
             )
         else:
-            result.add_node(Node(name=str(state.name.name), width=str(width), height=str(height)))
+            result.add_node(
+                Node(name=str(state.name.name), width=f"{width:.2f}", height=f"{height:.2f}")
+            )
 
         for index, t in enumerate(state.transitions):
             label = (
@@ -147,8 +146,7 @@ class Graph:
     def __get_session(self) -> Dot:
         """Return pydot graph representation of session."""
 
-        if not isinstance(self.__data, Session):
-            raise TypeError(f"Invalid data format {type(self.__data).__name__}")
+        assert isinstance(self.__data, Session)
 
         variables: Counter[ID] = collections.Counter()
         result = self.__graph_with_defaults("Session")
@@ -159,7 +157,7 @@ class Graph:
             height = sqrt(d + 1)
             width = 1.3 * height
             result.add_node(
-                Node(name=str(v), fillcolor="#7e8ab8", width=str(width), height=str(height))
+                Node(name=str(v), fillcolor="#7e8ab8", width=f"{width:.2f}", height=f"{height:.2f}")
             )
 
         return result
@@ -168,8 +166,7 @@ class Graph:
     def __get_message(self) -> Dot:
         """Return pydot graph representation of message."""
 
-        if not isinstance(self.__data, Message):
-            raise TypeError(f"Invalid data format {type(self.__data).__name__}")
+        assert isinstance(self.__data, Message)
 
         if not self.__data.structure:
             self.__data.structure = [Link(INITIAL, FINAL)]

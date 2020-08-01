@@ -1,10 +1,12 @@
-from typing import Any, List
+from typing import Any, List, Tuple
 
 from pyparsing import (
     Forward,
     Keyword,
     Literal,
     Optional,
+    ParseException,
+    ParseFatalException,
     StringEnd,
     Suppress,
     Token,
@@ -16,7 +18,7 @@ from pyparsing import (
     printables,
 )
 
-from rflx.error import Location
+from rflx.error import Location, Severity, Subsystem, fail, parser_location
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -61,7 +63,7 @@ from rflx.parser.grammar import (
     qualified_identifier,
     unqualified_identifier,
 )
-from rflx.statement import Assignment, Erase, Reset
+from rflx.statement import Assignment, Declaration, Erase, Reset, Statement
 
 
 def __parse_quantifier(tokens: List[Expr]) -> Expr:
@@ -84,8 +86,6 @@ def __parse_call(tokens: List[Expr]) -> Expr:
 
 def __parse_conversion(tokens: List[Expr]) -> Expr:
     assert isinstance(tokens[0], ID)
-    if tokens[0] in map(ID, ["Read", "Write", "Call", "Data_Available"]):
-        return Call(tokens[0], tokens[1:])
     return Conversion(tokens[0], tokens[1])
 
 
@@ -288,11 +288,15 @@ def __expression() -> Token:  # pylint: disable=too-many-locals
     return expr
 
 
-def expression() -> Token:
+def __full_expression() -> Token:
     return __expression() + StringEnd()
 
 
-def action() -> Token:
+def expression(data: str) -> Expr:
+    return __full_expression().parseString(data)[0]
+
+
+def __action() -> Token:
 
     lpar, rpar = map(Suppress, "()")
 
@@ -320,7 +324,15 @@ def action() -> Token:
     return (erase | assignment | list_reset | list_operation | call) + StringEnd()
 
 
-def declaration() -> Token:
+def action(data: str) -> Statement:
+    try:
+        result = __action().parseString(data)[0]
+    except (ParseException, ParseFatalException) as e:
+        fail(e.msg, Subsystem.PARSER, Severity.ERROR, parser_location(e.loc, e.loc, e.pstr))
+    return result
+
+
+def __declaration() -> Token:
 
     lpar, rpar = map(Suppress, "()")
 
@@ -353,3 +365,11 @@ def declaration() -> Token:
     private.setParseAction(lambda t: (t[0], PrivateDeclaration()))
 
     return (private | renames | variable_decl | function_decl) + StringEnd()
+
+
+def declaration(data: str) -> Tuple[ID, Declaration]:
+    try:
+        result = __declaration().parseString(data)[0]
+    except (ParseException, ParseFatalException) as e:
+        fail(e.msg, Subsystem.PARSER, Severity.ERROR, parser_location(e.loc, e.loc, e.pstr))
+    return result

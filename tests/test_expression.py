@@ -12,15 +12,19 @@ from rflx.expression import (
     And,
     AndThen,
     Attribute,
+    Binding,
     Call,
     Case,
+    Comprehension,
     Constrained,
+    Conversion,
     Div,
     Equal,
     Expr,
     First,
     ForAllIn,
     ForAllOf,
+    ForSomeIn,
     Greater,
     GreaterEqual,
     If,
@@ -30,6 +34,7 @@ from rflx.expression import (
     Length,
     Less,
     LessEqual,
+    MessageAggregate,
     Mod,
     Mul,
     NamedAggregate,
@@ -44,6 +49,7 @@ from rflx.expression import (
     Pow,
     Range,
     Result,
+    Selected,
     Size,
     Slice,
     Sub,
@@ -1132,8 +1138,9 @@ def test_quantified_expression_variables() -> None:
 
 
 def test_quantified_expression_str() -> None:
-    assert str(ForAllOf("X", Variable("Y"), Variable("X"))) == "(for all X of Y =>\n    X)"
-    assert str(ForAllIn("X", Variable("Y"), Variable("X"))) == "(for all X in Y =>\n    X)"
+    assert str(ForAllOf("X", Variable("Y"), Variable("Z"))) == "(for all X of Y =>\n    Z)"
+    assert str(ForAllIn("X", Variable("Y"), Variable("Z"))) == "(for all X in Y =>\n    Z)"
+    assert str(ForSomeIn("X", Variable("Y"), Variable("Z"))) == "(for some X in Y =>\n    Z)"
 
 
 def test_expr_contains() -> None:
@@ -1214,6 +1221,20 @@ def test_expr_substituted_pre() -> None:
         Number(1).substituted(lambda x: x, {})
     with pytest.raises(AssertionError):
         Add(Number(1), Number(1)).substituted(lambda x: x, {})
+    with pytest.raises(AssertionError):
+        Selected(Variable("X"), "F").substituted(lambda x: x, {})
+    with pytest.raises(AssertionError):
+        Call("Sub").substituted(lambda x: x, {})
+    with pytest.raises(AssertionError):
+        ForAllOf("X", Variable("Y"), Variable("Z")).substituted(lambda x: x, {})
+    with pytest.raises(AssertionError):
+        Conversion("X", Variable("Y")).substituted(lambda x: x, {})
+    with pytest.raises(AssertionError):
+        Comprehension("X", Variable("Y"), Variable("Z"), Variable("A")).substituted(lambda x: x, {})
+    with pytest.raises(AssertionError):
+        MessageAggregate("X", {"A": Number(5)}).substituted(lambda x: x, {})
+    with pytest.raises(AssertionError):
+        Binding(Variable("X"), {"X": Number(5)}).substituted(lambda x: x, {})
 
 
 def test_length_z3variables() -> None:

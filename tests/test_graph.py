@@ -1,9 +1,11 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from rflx.expression import Greater, Variable
+from rflx.expression import FALSE, TRUE, Equal, Greater, Variable, VariableDeclaration
 from rflx.graph import Graph
 from rflx.model import FINAL, INITIAL, Field, Less, Link, Message, ModularInteger, Number, Pow
+from rflx.session import Session, State, StateName, Transition
+from rflx.statement import Assignment, Erase
 from tests.utils import BASE_TMP_DIR
 
 
@@ -163,3 +165,49 @@ def test_dot_graph_with_double_edge() -> None:
         """
 
     assert_graph(Graph(m), expected)
+
+
+def test_session_graph() -> None:
+    s = Session(
+        name="foo",
+        initial=StateName("START"),
+        final=StateName("END"),
+        states=[
+            State(
+                name=StateName("START"),
+                transitions=[
+                    Transition(
+                        target=StateName("STATE"), condition=Equal(Variable("Global"), TRUE)
+                    ),
+                    Transition(target=StateName("END")),
+                ],
+            ),
+            State(
+                name=StateName("STATE"),
+                transitions=[Transition(target=StateName("END"))],
+                actions=[Assignment("Global", FALSE), Erase("Local")],
+                declarations={"Local": VariableDeclaration("Boolean")},
+            ),
+            State(name=StateName("END")),
+        ],
+        declarations={"Global": VariableDeclaration("Some_Type")},
+    )
+    expected = """
+        digraph Session {
+            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
+            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
+            node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
+                  shape=box, style="rounded,filled", width="1.5"];
+            START [fillcolor="#ffffff", fontcolor=black, height="1.73", width="2.25"];
+            START -> STATE [tooltip="START → STATE\\n\\n[0] Global = True"];
+            START -> END [tooltip=""];
+            Global -> START [tooltip="START: read Global"];
+            STATE [height="1.73", width="2.25"];
+            STATE -> END [tooltip=""];
+            STATE -> Global [tooltip="STATE: write Global"];
+            END [fillcolor="#6f6f6f", height="1.73", width="2.25"];
+            Global [fillcolor="#7e8ab8", height="1.73", width="2.25"];
+        }
+        """
+
+    assert_graph(Graph(s), expected)

@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import pytest
 
 from rflx.error import RecordFluxError
@@ -837,3 +839,245 @@ def test_tls_handshake() -> None:
 
 def test_tls_record() -> None:
     SessionFile().parse("tls_handshake", "tests/client_record_states.yml")
+
+
+def test_invalid_global_variable_declaration() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: error parsing global variable declaration 0\n"
+            '<stdin>:1:8: parser: error: reserved word "and" used as identifier'
+            "$"
+        ),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                variables:
+                    - "Blub : and bar"
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
+
+
+def test_invalid_local_variable_declaration() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: error parsing local variable 0 in state START\n"
+            '<stdin>:1:7: parser: error: reserved word "and" used as identifier'
+            "$"
+        ),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    variables:
+                        - "Foo : and Invalid"
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
+
+
+def test_invalid_action() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: error parsing action 0 in state START\n"
+            "<stdin>:1:9: parser: error: Expected.*"
+            "$"
+        ),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                    actions:
+                      - invalid action
+                  - name: END
+            """,
+        )
+
+
+def test_invalid_section() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=("^" 'session: error: unexpected elements in state "START": invalid' "$"),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                    actions:
+                      - invalid action
+                    invalid: INVALID
+                  - name: END
+            """,
+        )
+
+
+def test_invalid_transition() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^" 'session: error: unexpected elements in transition 0 in state "START": invalid' "$"
+        ),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                        invalid: INVALID
+                  - name: END
+            """,
+        )
+
+
+def test_invalid_renames() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: error parsing renames declaration 0\n"
+            "<stdin>:1:9: parser: error: Expected.*"
+            "$"
+        ),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                renames:
+                    - this is invalid
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
+
+
+def test_conflicting_types() -> None:
+    with pytest.raises(
+        RecordFluxError, match=("^" "session: error: conflicting type Foo" "$"),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                types:
+                    - "Foo: Foo_Type"
+                    - "Foo: Bar_Type"
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
+
+
+def test_invalid_private_variable_declaration() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: error parsing private variable declaration 0\n"
+            "<stdin>:1:9: parser: error: Expected.*"
+            "$"
+        ),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                types:
+                    - this is invalid
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
+
+
+def test_conflicting_functions() -> None:
+    with pytest.raises(
+        RecordFluxError, match=("^" "session: error: conflicting function Foo" "$"),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                functions:
+                    - "Foo (Arg1 : Foo_Type) return Bar_Type"
+                    - "Foo (Arg1 : Boolean; Arg2 : Boolean) return Boolean"
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )
+
+
+def test_invalid_function() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "session: error: error parsing global function declaration 0\n"
+            "<stdin>:1:9: parser: error: Expected.*"
+            "$"
+        ),
+    ):
+        SessionFile().parse_string(
+            "session",
+            """
+                initial: START
+                final: END
+                functions:
+                    - this is invalid
+                states:
+                  - name: START
+                    transitions:
+                      - target: END
+                  - name: END
+            """,
+        )

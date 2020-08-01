@@ -20,10 +20,12 @@ from rflx.expression import (
     Length,
     Less,
     MessageAggregate,
+    Not,
     NotIn,
     Number,
     Opaque,
     Present,
+    PrivateDeclaration,
     Renames,
     Selected,
     String,
@@ -1388,3 +1390,73 @@ def test_extract_variables_binding() -> None:
 def test_extract_variables_string() -> None:
     result = String("Foo").variables()
     assert result == []
+
+
+def test_private_declaration_is_no_builtin_write() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=("^" 'session: error: private declaration shadows builtin subprogram "Write"' "$"),
+    ):
+        Session(
+            name="session",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={"Write": PrivateDeclaration()},
+        )
+
+
+def test_duplicate_states() -> None:
+    with pytest.raises(
+        RecordFluxError, match=("^session: error: duplicate states: FOO$"),
+    ):
+        Session(
+            name="session",
+            initial=StateName("START"),
+            final=StateName("END"),
+            states=[
+                State(
+                    name=StateName("START"),
+                    transitions=[Transition(target=StateName("FOO"))],
+                    declarations={},
+                ),
+                State(
+                    name=StateName("FOO"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                ),
+                State(
+                    name=StateName("FOO"),
+                    transitions=[Transition(target=StateName("END"))],
+                    declarations={},
+                ),
+                State(name=StateName("END")),
+            ],
+            declarations={},
+        )
+
+
+def test_sort_state_name() -> None:
+    assert sorted([StateName("foo"), StateName("bar")]) == [StateName("bar"), StateName("foo")]
+
+
+def test_invalid_channel_id_type() -> None:
+    with pytest.raises(
+        RecordFluxError, match=('^session: error: invalid channel ID type in call to "Read"$')
+    ):
+        Call("Read", [Number(5)]).validate({})
+
+
+def test_validate_not() -> None:
+    Not(TRUE).validate({})
+
+
+def test_validate_builtin_validate() -> None:
+    Variable("Boolean").validate({})

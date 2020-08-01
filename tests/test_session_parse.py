@@ -35,40 +35,40 @@ from rflx.parser.session import expression
 
 
 def test_simple_equation() -> None:
-    result = expression().parseString("Foo.Bar = abc")[0]
+    result = expression("Foo.Bar = abc")
     expected = Equal(Selected(Variable("Foo"), "Bar"), Variable("abc"))
     assert result == expected
 
 
 def test_simple_inequation() -> None:
-    result = expression().parseString("Foo.Bar /= abc")[0]
+    result = expression("Foo.Bar /= abc")
     assert result == NotEqual(Selected(Variable("Foo"), "Bar"), Variable("abc"))
 
 
 def test_valid() -> None:
-    result = expression().parseString("Something'Valid")[0]
+    result = expression("Something'Valid")
     assert result == Valid(Variable("Something"))
 
 
 def test_opaque() -> None:
-    result = expression().parseString("Something'Opaque")[0]
+    result = expression("Something'Opaque")
     assert result == Opaque(Variable("Something"))
 
 
 def test_conjunction() -> None:
-    result = expression().parseString("Foo = Bar and Bar /= Baz")[0]
+    result = expression("Foo = Bar and Bar /= Baz")
     assert result == And(
         Equal(Variable("Foo"), Variable("Bar")), NotEqual(Variable("Bar"), Variable("Baz"))
     )
 
 
 def test_conjunction_valid() -> None:
-    result = expression().parseString("Foo'Valid and Bar'Valid")[0]
+    result = expression("Foo'Valid and Bar'Valid")
     assert result == And(Valid(Variable("Foo")), Valid(Variable("Bar")))
 
 
 def test_disjunction_multi() -> None:
-    result = expression().parseString("Foo = Bar or Bar /= Baz or Baz'Valid = False")[0]
+    result = expression("Foo = Bar or Bar /= Baz or Baz'Valid = False")
     assert result == Or(
         Equal(Variable("Foo"), Variable("Bar")),
         NotEqual(Variable("Bar"), Variable("Baz")),
@@ -77,29 +77,29 @@ def test_disjunction_multi() -> None:
 
 
 def test_not_in_whitespace_operator() -> None:
-    result = expression().parseString("Foo not   in  Bar")[0]
+    result = expression("Foo not   in  Bar")
     assert result == NotIn(Variable("Foo"), Variable("Bar"))
 
 
 def test_disjunction() -> None:
-    result = expression().parseString("Foo = Bar or Bar /= Baz")[0]
+    result = expression("Foo = Bar or Bar /= Baz")
     assert result == Or(
         Equal(Variable("Foo"), Variable("Bar")), NotEqual(Variable("Bar"), Variable("Baz"))
     )
 
 
 def test_in_operator() -> None:
-    result = expression().parseString("Foo in Bar")[0]
+    result = expression("Foo in Bar")
     assert result == In(Variable("Foo"), Variable("Bar"))
 
 
 def test_not_in_operator() -> None:
-    result = expression().parseString("Foo not in Bar")[0]
+    result = expression("Foo not in Bar")
     assert result == NotIn(Variable("Foo"), Variable("Bar"))
 
 
 def test_parenthesized_expression() -> None:
-    result = expression().parseString("Foo = True and (Bar = False or Baz = False)")[0]
+    result = expression("Foo = True and (Bar = False or Baz = False)")
     assert result == And(
         Equal(Variable("Foo"), TRUE),
         Or(Equal(Variable("Bar"), FALSE), Equal(Variable("Baz"), FALSE)),
@@ -107,12 +107,12 @@ def test_parenthesized_expression() -> None:
 
 
 def test_parenthesized_expression2() -> None:
-    result = expression().parseString("Foo'Valid and (Bar'Valid or Baz'Valid)")[0]
+    result = expression("Foo'Valid and (Bar'Valid or Baz'Valid)")
     assert result == And(Valid(Variable("Foo")), Or(Valid(Variable("Bar")), Valid(Variable("Baz"))))
 
 
 def test_numeric_constant_expression() -> None:
-    result = expression().parseString("Keystore_Message.Length = 0")[0]
+    result = expression("Keystore_Message.Length = 0")
     assert result == Equal(Selected(Variable("Keystore_Message"), "Length"), Number(0))
 
 
@@ -124,7 +124,7 @@ def test_complex_expression() -> None:
         "or (Keystore_Message.Length = 0 "
         "    and TLS_Handshake.PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes)"
     )
-    result = expression().parseString(expr)[0]
+    result = expression(expr)
     expected = Or(
         Equal(Valid(Variable("Keystore_Message")), FALSE),
         NotEqual(Selected(Variable("Keystore_Message"), "Tag"), Variable("KEYSTORE_RESPONSE")),
@@ -144,7 +144,7 @@ def test_complex_expression() -> None:
 
 
 def test_existential_quantification() -> None:
-    result = expression().parseString("for some X in Y => X = 3")[0]
+    result = expression("for some X in Y => X = 3")
     assert result == ForSomeIn("X", Variable("Y"), Equal(Variable("X"), Number(3)))
 
 
@@ -154,7 +154,7 @@ def test_complex_existential_quantification() -> None:
         "(E.Tag = TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS and "
         "(GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data).Versions))"
     )
-    result = expression().parseString(expr)[0]
+    result = expression(expr)
     expected = ForSomeIn(
         "E",
         Selected(Variable("Server_Hello_Message"), "Extensions"),
@@ -176,7 +176,7 @@ def test_complex_existential_quantification() -> None:
 
 
 def test_conjunction_multi() -> None:
-    result = expression().parseString("Foo = Bar and Bar /= Baz and Baz = Foo")[0]
+    result = expression("Foo = Bar and Bar /= Baz and Baz = Foo")
     expected = And(
         Equal(Variable("Foo"), Variable("Bar")),
         NotEqual(Variable("Bar"), Variable("Baz")),
@@ -186,35 +186,35 @@ def test_conjunction_multi() -> None:
 
 
 def test_universal_quantification() -> None:
-    result = expression().parseString("for all X in Y => X = Bar")[0]
+    result = expression("for all X in Y => X = Bar")
     assert result == ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar")))
 
 
 def test_type_conversion_simple() -> None:
     expr = "Foo.T (Bar) = 5"
-    result = expression().parseString(expr)[0]
+    result = expression(expr)
     expected = Equal(Conversion("Foo.T", Variable("Bar")), Number(5))
     assert result == expected
 
 
 def test_field_simple() -> None:
-    result = expression().parseString("Bar (Foo).Fld")[0]
+    result = expression("Bar (Foo).Fld")
     assert result == Selected(Call("Bar", [Variable("Foo")]), "Fld")
 
 
 def test_field_variable() -> None:
-    result = expression().parseString("Types.Bar")[0]
+    result = expression("Types.Bar")
     assert result == Selected(Variable("Types"), "Bar")
 
 
 def test_field_length() -> None:
-    result = expression().parseString("Bar (Foo).Fld'Length")[0]
+    result = expression("Bar (Foo).Fld'Length")
     assert result == Length(Selected(Call("Bar", [Variable("Foo")]), "Fld"))
 
 
 def test_type_conversion() -> None:
     expr = "TLS_Handshake.Supported_Versions (E.Data) = 5"
-    result = expression().parseString(expr)[0]
+    result = expression(expr)
     expected = Equal(
         Conversion("TLS_Handshake.Supported_Versions", Selected(Variable("E"), "Data")), Number(5)
     )
@@ -223,7 +223,7 @@ def test_type_conversion() -> None:
 
 def test_use_type_conversion() -> None:
     expr = "GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data).Versions"
-    result = expression().parseString(expr)[0]
+    result = expression(expr)
     expected = NotIn(
         Selected(Variable("GreenTLS"), "TLS_1_3"),
         Selected(
@@ -235,33 +235,33 @@ def test_use_type_conversion() -> None:
 
 
 def test_present() -> None:
-    result = expression().parseString("Something'Present")[0]
+    result = expression("Something'Present")
     assert result == Present(Variable("Something"))
 
 
 def test_list_comprehension_without_condition() -> None:
-    result = expression().parseString("[for K in PSKs => K.Identity]")[0]
+    result = expression("[for K in PSKs => K.Identity]")
     expected = Comprehension("K", Variable("PSKs"), Selected(Variable("K"), "Identity"), TRUE)
     assert result == expected
 
 
 def test_conjunction_present() -> None:
-    result = expression().parseString("Foo'Present and Bar'Present")[0]
+    result = expression("Foo'Present and Bar'Present")
     assert result == And(Present(Variable("Foo")), Present(Variable("Bar")))
 
 
 def test_length_lt() -> None:
-    result = expression().parseString("Foo'Length < 100")[0]
+    result = expression("Foo'Length < 100")
     assert result == Less(Length(Variable("Foo")), Number(100))
 
 
 def test_field_length_lt() -> None:
-    result = expression().parseString("Bar (Foo).Fld'Length < 100")[0]
+    result = expression("Bar (Foo).Fld'Length < 100")
     assert result == Less(Length(Selected(Call("Bar", [Variable("Foo")]), "Fld")), Number(100))
 
 
 def test_list_comprehension() -> None:
-    result = expression().parseString("[for E in List => E.Bar when E.Tag = Foo]")[0]
+    result = expression("[for E in List => E.Bar when E.Tag = Foo]")
     assert result == Comprehension(
         "E",
         Variable("List"),
@@ -271,12 +271,12 @@ def test_list_comprehension() -> None:
 
 
 def test_head_attribute() -> None:
-    result = expression().parseString("Foo'Head")[0]
+    result = expression("Foo'Head")
     assert result == Head(Variable("Foo"))
 
 
 def test_head_attribute_comprehension() -> None:
-    result = expression().parseString("[for E in List => E.Bar when E.Tag = Foo]'Head")[0]
+    result = expression("[for E in List => E.Bar when E.Tag = Foo]'Head")
     assert result == Head(
         Comprehension(
             "E",
@@ -288,17 +288,17 @@ def test_head_attribute_comprehension() -> None:
 
 
 def test_gt() -> None:
-    result = expression().parseString("Server_Name_Extension.Data_Length > 0")[0]
+    result = expression("Server_Name_Extension.Data_Length > 0")
     assert result == Greater(Selected(Variable("Server_Name_Extension"), "Data_Length"), Number(0))
 
 
 def test_list_head_field_simple() -> None:
-    result = expression().parseString("Foo'Head.Data")[0]
+    result = expression("Foo'Head.Data")
     assert result == Selected(Head(Variable("Foo")), "Data")
 
 
 def test_list_head_field() -> None:
-    result = expression().parseString("[for E in List => E.Bar when E.Tag = Foo]'Head.Data")[0]
+    result = expression("[for E in List => E.Bar when E.Tag = Foo]'Head.Data")
     assert result == Selected(
         Head(
             Comprehension(
@@ -313,11 +313,11 @@ def test_list_head_field() -> None:
 
 
 def test_complex() -> None:
-    result = expression().parseString(
+    result = expression(
         "(for some S in TLS_Handshake.Key_Share_CH ([for E in Client_Hello_Message.Extensions "
         "=> E when E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE]'Head.Data).Shares => S.Group = "
         "Selected_Group) = False"
-    )[0]
+    )
     expected = Equal(
         ForSomeIn(
             "S",
@@ -349,21 +349,19 @@ def test_complex() -> None:
 
 
 def test_simple_aggregate() -> None:
-    result = expression().parseString("Message'(Data => Foo)")[0]
+    result = expression("Message'(Data => Foo)")
     expected = MessageAggregate("Message", {ID("Data"): Variable("Foo")})
     assert result == expected
 
 
 def test_null_aggregate() -> None:
-    result = expression().parseString("Message'(null message)")[0]
+    result = expression("Message'(null message)")
     expected = MessageAggregate("Message", {})
     assert result == expected
 
 
 def test_complex_aggregate() -> None:
-    result = expression().parseString("Complex.Message'(Data1 => Foo, Data2 => Bar, Data3 => Baz)")[
-        0
-    ]
+    result = expression("Complex.Message'(Data1 => Foo, Data2 => Bar, Data3 => Baz)")
     expected = MessageAggregate(
         "Complex.Message",
         {ID("Data1"): Variable("Foo"), ID("Data2"): Variable("Bar"), ID("Data3"): Variable("Baz")},
@@ -372,13 +370,13 @@ def test_complex_aggregate() -> None:
 
 
 def test_simple_function_call() -> None:
-    result = expression().parseString("Fun (Parameter)")[0]
+    result = expression("Fun (Parameter)")
     expected = Call("Fun", [Variable("Parameter")])
     assert result == expected
 
 
 def test_complex_function_call() -> None:
-    result = expression().parseString("Complex_Function (Param1, Param2, Param3)")[0]
+    result = expression("Complex_Function (Param1, Param2, Param3)")
     expected = Call(
         "Complex_Function", [Variable("Param1"), Variable("Param2"), Variable("Param3")],
     )
@@ -386,7 +384,7 @@ def test_complex_function_call() -> None:
 
 
 def test_simple_binding() -> None:
-    result = expression().parseString("M1'(Data => B1) where B1 = M2'(Data => B2)")[0]
+    result = expression("M1'(Data => B1) where B1 = M2'(Data => B2)")
     expected = Binding(
         MessageAggregate("M1", {ID("Data"): Variable("B1")}),
         {ID("B1"): MessageAggregate("M2", {ID("Data"): Variable("B2")})},
@@ -395,9 +393,9 @@ def test_simple_binding() -> None:
 
 
 def test_multi_binding() -> None:
-    result = expression().parseString(
+    result = expression(
         "M1'(Data1 => B1, Data2 => B2) where B1 = M2'(Data => B2), B2 = M2'(Data => B3)"
-    )[0]
+    )
     expected = Binding(
         MessageAggregate("M1", {ID("Data1"): Variable("B1"), ID("Data2"): Variable("B2")}),
         {
@@ -409,9 +407,7 @@ def test_multi_binding() -> None:
 
 
 def test_nested_binding() -> None:
-    result = expression().parseString(
-        "M1'(Data => B1) where B1 = M2'(Data => B2) where B2 = M3'(Data => B3)"
-    )[0]
+    result = expression("M1'(Data => B1) where B1 = M2'(Data => B2) where B2 = M3'(Data => B3)")
     expected = Binding(
         MessageAggregate("M1", {ID("Data"): Variable("B1")}),
         {
@@ -425,31 +421,31 @@ def test_nested_binding() -> None:
 
 
 def test_simple_add() -> None:
-    result = expression().parseString("Foo + Bar")[0]
+    result = expression("Foo + Bar")
     expected = Add(Variable("Foo"), Variable("Bar"))
     assert result == expected
 
 
 def test_simple_sub() -> None:
-    result = expression().parseString("Foo - Bar")[0]
+    result = expression("Foo - Bar")
     expected = Sub(Variable("Foo"), Variable("Bar"))
     assert result == expected
 
 
 def test_simple_mul() -> None:
-    result = expression().parseString("Foo * Bar")[0]
+    result = expression("Foo * Bar")
     expected = Mul(Variable("Foo"), Variable("Bar"))
     assert result == expected
 
 
 def test_simple_div() -> None:
-    result = expression().parseString("Foo / Bar")[0]
+    result = expression("Foo / Bar")
     expected = Div(Variable("Foo"), Variable("Bar"))
     assert result == expected
 
 
 def test_arith_expression() -> None:
-    result = expression().parseString("Foo + Bar - Foo2 / Bar * Baz + 3")[0]
+    result = expression("Foo + Bar - Foo2 / Bar * Baz + 3")
     expected = Add(
         Sub(
             Add(Variable("Foo"), Variable("Bar")),
@@ -461,12 +457,12 @@ def test_arith_expression() -> None:
 
 
 def test_string() -> None:
-    result = expression().parseString('"SomeString"')[0]
+    result = expression('"SomeString"')
     expected = String("SomeString")
     assert result == expected
 
 
 def test_string_with_whitespace() -> None:
-    result = expression().parseString('"Some String With Whitespace"')[0]
+    result = expression('"Some String With Whitespace"')
     expected = String("Some String With Whitespace")
     assert result == expected
