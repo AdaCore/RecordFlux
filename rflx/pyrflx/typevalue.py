@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from rflx.common import generic_repr
 from rflx.expression import (
@@ -488,6 +488,7 @@ class ArrayValue(CompositeValue):
 
 
 class MessageValue(TypeValue):
+    # pylint: disable=too-many-instance-attributes
 
     _type: Message
 
@@ -514,11 +515,13 @@ class MessageValue(TypeValue):
             f.typeval.literals for f in self._fields.values() if isinstance(f.typeval, EnumValue)
         ]:
             self.__type_literals.update(t)
+        self.__type_literals_keys = set(self.__type_literals)
         initial = self.Field(OpaqueValue(Opaque()))
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._fields[INITIAL.name] = initial
         self._simplified_mapping: Mapping[Name, Expr] = {}
+        self._simplified_mapping_keys: Set[Name] = set()
         self.accessible_fields: List[str] = []
         self._preset_fields(INITIAL.name)
 
@@ -576,9 +579,9 @@ class MessageValue(TypeValue):
         assert isinstance(typeval, CompositeValue)
         for l in self._type.incoming(Field(fld)):
             if (
-                self.__simplified(l.condition) == TRUE
+                self._fields[l.source.name].set
                 and l.length != UNDEFINED
-                and self._fields[l.source.name].set
+                and self.__simplified(l.condition) == TRUE
             ):
                 length = self.__simplified(l.length)
                 return length if isinstance(length, Number) else None
@@ -586,7 +589,7 @@ class MessageValue(TypeValue):
 
     def _get_first(self, fld: str) -> Optional[Number]:
         for l in self._type.incoming(Field(fld)):
-            if self.__simplified(l.condition) == TRUE and l.first != UNDEFINED:
+            if l.first != UNDEFINED and self.__simplified(l.condition) == TRUE:
                 first = self.__simplified(l.first)
                 return first if isinstance(first, Number) else None
         prv = self._prev_field(fld)
@@ -908,7 +911,7 @@ class MessageValue(TypeValue):
                 or not field_val.first.value <= len(bits)
             ):
                 break
-            bits = bits[: field_val.first.value] + str(self._fields[field].typeval.bitstring)
+            bits = f"{bits[: field_val.first.value]}{str(self._fields[field].typeval.bitstring)}"
             field = self._next_field(field)
 
         return Bitstring(bits)
@@ -938,9 +941,9 @@ class MessageValue(TypeValue):
 
         for l in incoming:
             if (
-                self.__simplified(l.condition) == TRUE
-                and l.length != UNDEFINED
+                l.length != UNDEFINED
                 and self._fields[l.source.name].set
+                and self.__simplified(l.condition) == TRUE
             ):
                 valid_edge = l
                 break
@@ -990,21 +993,29 @@ class MessageValue(TypeValue):
         # ISSUE: Componolit/RecordFlux#240
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
 
-        self._simplified_mapping.update(self.__type_literals)
-
+        self._simplified_mapping_keys = set(self._simplified_mapping)
         pre_final = self._prev_field("Final")
-        if pre_final != "" and self._fields[pre_final].set:
+        if pre_final and self._fields[pre_final].set:
             self._simplified_mapping[Last("Message")] = self._fields[pre_final].last
+            self._simplified_mapping_keys.add(Last("Message"))
 
     def __simplified(self, expr: Expr) -> Expr:
+        if expr in {TRUE, FALSE}:
+            return expr
+
         if not self._simplified_mapping:
             self.__update_simplified_mapping()
 
-        return (
-            expr.substituted(mapping=self._simplified_mapping)
-            .substituted(mapping=self._simplified_mapping)
-            .simplified()
-        )
+        def subst(expression: Expr) -> Expr:
+            if expression in self._simplified_mapping_keys:
+                assert isinstance(expression, Name)
+                return self._simplified_mapping[expression]
+            if expression in self.__type_literals_keys:
+                assert isinstance(expression, Name)
+                return self.__type_literals[expression]
+            return expression
+
+        return expr.substituted(func=subst).substituted(func=subst).simplified()
 
     class Checksum:
         def __init__(self, field_name: str, parameters: Sequence[Expr]):
