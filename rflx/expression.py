@@ -1549,9 +1549,11 @@ class ValueRange(Expr):
     def substituted(
         self, func: Callable[["Expr"], "Expr"] = None, mapping: Mapping["Name", "Expr"] = None
     ) -> "Expr":
-        return self.__class__(
-            self.lower.substituted(mapping=mapping), self.upper.substituted(mapping=mapping)
-        )
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, self.__class__):
+            return self.__class__(self.lower.substituted(func), self.upper.substituted(func),)
+        return expr
 
 
 def substitution(

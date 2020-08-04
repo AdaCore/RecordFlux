@@ -17,6 +17,7 @@ from rflx.expression import (
     Constrained,
     Div,
     Equal,
+    Expr,
     First,
     ForAllIn,
     ForAllOf,
@@ -1076,6 +1077,26 @@ def test_value_range_simplified() -> None:
     assert_equal(
         ValueRange(Number(1), Add(Number(21), Number(21))).simplified(),
         ValueRange(Number(1), Number(42)),
+    )
+
+
+def test_value_range_substituted() -> None:
+    expr = ValueRange(lower=First("Test"), upper=Sub(Last("Test"), Number(1)))
+
+    def func(expr: Expr) -> Expr:
+        if expr == First("Test"):
+            return Number(1)
+        if expr == Last("Test"):
+            return Number(11)
+        return expr
+
+    assert expr.substituted(func) == ValueRange(lower=Number(1), upper=Sub(Number(11), Number(1)))
+
+    assert_equal(
+        ValueRange(lower=Variable("X"), upper=Variable("Y")).substituted(
+            lambda x: Variable("Z") if isinstance(x, ValueRange) else x
+        ),
+        Variable("Z"),
     )
 
 
