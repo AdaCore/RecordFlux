@@ -933,26 +933,19 @@ class MessageValue(TypeValue):
 
     def _is_valid_opaque_field(self, field: str) -> bool:
 
-        typeval = self._fields[field].typeval
-        assert isinstance(typeval, (ScalarValue, CompositeValue))
+        assert isinstance(self._fields[field].typeval, CompositeValue)
         incoming = self._type.incoming(Field(field))
-        if isinstance(typeval, CompositeValue):
-            for l in incoming:
-                if (
-                    self.__simplified(l.condition) == TRUE
-                    and l.length != UNDEFINED
-                    and self._fields[l.source.name].set
-                ):
-                    break
-            else:
-                return False
 
-        for edge in incoming:
-            if self.__simplified(edge.condition) == TRUE:
-                valid_edge = edge
+        for l in incoming:
+            if (
+                self.__simplified(l.condition) == TRUE
+                and l.length != UNDEFINED
+                and self._fields[l.source.name].set
+            ):
+                valid_edge = l
                 break
         else:
-            return True
+            return False
 
         return all(
             (v.name in self._fields and self._fields[v.name].set) or v.name == "Message"
@@ -961,7 +954,6 @@ class MessageValue(TypeValue):
 
     @property
     def valid_fields(self) -> List[str]:
-        # ISSUE: nedbat/coveragepy#515
         return [
             f
             for f in self.accessible_fields
@@ -969,12 +961,7 @@ class MessageValue(TypeValue):
                 self._fields[f].set
                 and self.__simplified(self._type.field_condition(Field(f))) == TRUE
                 and any(
-                    self.__simplified(i.condition) == TRUE
-                    for i in self._type.incoming(Field(f))  # pragma: no cover
-                )
-                and any(
-                    self.__simplified(o.condition) == TRUE
-                    for o in self._type.outgoing(Field(f))  # pragma: no cover
+                    self.__simplified(o.condition) == TRUE for o in self._type.outgoing(Field(f))
                 )
             )
         ]
