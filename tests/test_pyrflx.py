@@ -795,12 +795,17 @@ def test_field_set() -> None:
 
 def test_check_nodes_opaque(tlv: MessageValue, frame: MessageValue) -> None:
     # pylint: disable=protected-access
-    assert tlv._is_valid_opaque_field("Length")
     assert not tlv._is_valid_opaque_field("Value")
+    tlv.set("Tag", "Msg_Data")
+    tlv.set("Length", 1000)
+    assert tlv._is_valid_opaque_field("Value")
     frame.set("Destination", 2 ** 48 - 1)
     frame.set("Source", 0)
     frame.set("Type_Length_TPID", 1501)
     assert not frame._is_valid_opaque_field("Payload")
+    frame.set("Type_Length_TPID", 1500)
+    frame.set("Type_Length", 1500)
+    assert frame._is_valid_opaque_field("Payload")
 
 
 def test_icmp_parse_binary(icmp: MessageValue) -> None:
