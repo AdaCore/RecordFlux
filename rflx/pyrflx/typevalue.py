@@ -1037,8 +1037,26 @@ class MessageValue(TypeValue):
 
     class Field:
         def __init__(self, t: TypeValue):
-            self.typeval = t
+            self.__typeval = t
+            self.__is_scalar = isinstance(self.__typeval, ScalarValue)
             self.first: Expr = UNDEFINED
+
+        def _last(self) -> Expr:
+            return Sub(Add(self.__first, self.__typeval.size), Number(1)).simplified()
+
+        @property
+        def typeval(self) -> TypeValue:
+            return self.__typeval
+
+        @property
+        def first(self) -> Expr:
+            return self.__first
+
+        @first.setter
+        def first(self, first: Expr) -> None:
+            self.__first = first
+            if self.__is_scalar:
+                self.__last = self._last()
 
         def __eq__(self, other: object) -> bool:
             if isinstance(other, MessageValue.Field):
@@ -1063,4 +1081,4 @@ class MessageValue(TypeValue):
 
         @property
         def last(self) -> Expr:
-            return Sub(Add(self.first, self.typeval.size), Number(1)).simplified()
+            return self.__last if self.__is_scalar else self._last()
