@@ -838,6 +838,12 @@ def test_not_in_str() -> None:
     assert str(NotIn(Variable("X"), Variable("Y"))) == "X not in Y"
 
 
+def test_slice_neg() -> None:
+    assert Slice(Variable("X"), Variable("Y"), Variable("Z")) == -Slice(
+        Variable("X"), Variable("Y"), Variable("Z")
+    )
+
+
 def test_slice_substituted() -> None:
     assert_equal(
         Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
@@ -1302,3 +1308,10 @@ def test_expr_str() -> None:
                        3))"""
         ),
     )
+
+
+def test_call_str() -> None:
+    assert str(Add(Number(1), Call("Test", []))) == "1 + Test"
+    assert str(Add(Number(1), -Call("Test", []))) == "1 - Test"
+    assert str(Call("Test", [])) == "Test"
+    assert str(-Call("Test", [])) == "(-Test)"

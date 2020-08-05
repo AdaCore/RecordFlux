@@ -2,7 +2,6 @@
 import itertools
 import operator
 from abc import ABC, abstractmethod
-from copy import copy
 from enum import Enum
 from sys import intern
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
@@ -840,31 +839,23 @@ class Mod(BinExpr):
 class Name(Expr):
     def __init__(self, negative: bool = False, location: Location = None) -> None:
         super().__init__(location)
-        self.__negative = negative
+        self.negative = negative
 
-    @property
-    def negative(self) -> bool:
-        return self.__negative
-
-    @negative.setter
-    def negative(self, negative: bool) -> None:
-        self.__negative = negative
-        self.__str = self._str()
-
-    def _str(self) -> str:
-        return intern(f"(-{self.representation})" if self.negative else self.representation)
+    @abstractmethod
+    def copy(self, negative: bool = False) -> "Name":
+        raise NotImplementedError
 
     def __str__(self) -> str:
         try:
             return self.__str
         except AttributeError:
-            self.__str = self._str()
+            self.__str = intern(
+                f"(-{self.representation})" if self.negative else self.representation
+            )
             return self.__str
 
     def __neg__(self) -> Expr:
-        negated_self = copy(self)
-        negated_self.negative = not self.negative
-        return negated_self
+        return self.copy(not self.negative)
 
     @property
     def precedence(self) -> Precedence:
@@ -879,8 +870,7 @@ class Name(Expr):
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
-        positive_self = copy(self)
-        positive_self.negative = False
+        positive_self = self.copy(False)
         return -func(positive_self) if self.negative else func(positive_self)
 
     def simplified(self) -> Expr:
@@ -900,6 +890,9 @@ class Variable(Name):
     @property
     def name(self) -> str:
         return str(self.identifier)
+
+    def copy(self, negative: bool = False) -> "Variable":
+        return self.__class__(self.identifier, negative, self.location)
 
     @property
     def representation(self) -> str:
@@ -928,6 +921,9 @@ class Attribute(Name):
     def representation(self) -> str:
         return f"{self.prefix}'{self.__class__.__name__}"
 
+    def copy(self, negative: bool = False) -> "Attribute":
+        return self.__class__(self.prefix, negative)
+
     def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
         return [self] if match(self) else self.prefix.findall(match)
 
@@ -935,8 +931,7 @@ class Attribute(Name):
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
-        positive_self = copy(self)
-        positive_self.negative = False
+        positive_self = self.copy(False)
         expr = func(positive_self)
         if isinstance(expr, Attribute):
             expr = expr.__class__(expr.prefix.substituted(func))
@@ -1005,12 +1000,14 @@ class AttributeExpression(Attribute, ABC):
         super().__init__(prefix)
         self.expression = expression
 
+    def copy(self, negative: bool = False) -> "AttributeExpression":
+        return self.__class__(self.prefix, self.expression, negative)
+
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
-        positive_self = copy(self)
-        positive_self.negative = False
+        positive_self = self.copy(False)
         expr = func(positive_self)
         if isinstance(expr, AttributeExpression):
             expr = expr.__class__(expr.prefix.substituted(func), expr.expression.substituted(func))
@@ -1044,6 +1041,9 @@ class Indexed(Name):
         self.prefix = prefix
         self.elements = list(elements)
 
+    def copy(self, negative: bool = False) -> "Indexed":
+        return self.__class__(self.prefix, *self.elements, negative=negative)
+
     @property
     def representation(self) -> str:
         return f"{self.prefix} (" + ", ".join(map(str, self.elements)) + ")"
@@ -1058,6 +1058,9 @@ class Selected(Name):
         self.prefix = prefix
         self.selector_name = ID(selector_name)
 
+    def copy(self, negative: bool = False) -> "Selected":
+        return self.__class__(self.prefix, self.selector_name, negative)
+
     @property
     def representation(self) -> str:
         return f"{self.prefix}.{self.selector_name}"
@@ -1067,10 +1070,13 @@ class Selected(Name):
 
 
 class Call(Name):
-    def __init__(self, name: StrID, args: Sequence[Expr] = None) -> None:
-        super().__init__()
+    def __init__(self, name: StrID, args: Sequence[Expr] = None, negative: bool = False) -> None:
+        super().__init__(negative)
         self.name = name
         self.args = args or []
+
+    def copy(self, negative: bool = False) -> "Call":
+        return self.__class__(self.name, self.args, negative)
 
     @property
     def representation(self) -> str:
@@ -1090,6 +1096,9 @@ class Slice(Name):
         self.prefix = prefix
         self.first = first
         self.last = last
+
+    def copy(self, negative: bool = False) -> "Slice":
+        return self.__class__(self.prefix, self.first, self.last)
 
     @property
     def representation(self) -> str:
@@ -1121,6 +1130,9 @@ class UndefinedExpr(Name):
     @property
     def representation(self) -> str:
         return "__UNDEFINED__"
+
+    def copy(self, negative: bool = False) -> "UndefinedExpr":
+        return self.__class__(negative, self.location)
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
