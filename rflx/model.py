@@ -700,7 +700,7 @@ class AbstractMessage(Type):
             ):
                 if f == INITIAL:
                     fields += "null"
-                fields += "\n" + indent(",\n".join(str(o) for o in outgoing), 3)
+                fields += "\n" + indent("\n".join(str(o) for o in outgoing), 3)
             if fields:
                 fields += ";"
         return f"type {self.name} is\n   message\n{indent(fields, 6)}\n   end message"

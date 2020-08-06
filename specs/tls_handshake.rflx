@@ -134,7 +134,7 @@ package TLS_Handshake is
                with Length => Legacy_Compression_Methods_Length * 8;
          Legacy_Compression_Methods : Opaque
             then null
-               if Message'Last / 8 = Legacy_Compression_Methods'Last / 8,
+               if Message'Last / 8 = Legacy_Compression_Methods'Last / 8
             then Extensions_Length
                if Message'Last / 8 /= Legacy_Compression_Methods'Last / 8;
          Extensions_Length : Client_Hello_Extensions_Length
@@ -165,7 +165,7 @@ package TLS_Handshake is
          Extensions_Length : Server_Hello_Extensions_Length
             then Extensions
                with Length => Extensions_Length * 8
-               if Random /= (16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#, 16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#, 16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#, 16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#),
+               if Random /= (16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#, 16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#, 16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#, 16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#)
             then HRR_Extensions
                with Length => Extensions_Length * 8
                if Random = (16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#, 16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#, 16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#, 16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#);

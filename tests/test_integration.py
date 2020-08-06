@@ -150,7 +150,7 @@ def test_potential_name_conflicts_fields_literals() -> None:
                  message
                     A : E
                        then null
-                          if A = F_A,
+                          if A = F_A
                        then B
                           if A = F_B;
                     B : E;

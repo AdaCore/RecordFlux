@@ -83,7 +83,7 @@ A message type is a collection components. Additional then clauses allow to defi
 *message_definition* ::= __message__ [ *null_component* ] *component* { *component* } __end message__ | __null message__
 
 *component* ::= *component_name* __:__ *component_type*
-                 [ *then_clause* ] { __,__ *then_clause* } __;__
+                   { *then_clause* } __;__
 
 *null_component* ::= __null__
                          *then_clause* __;__
@@ -120,7 +120,7 @@ type Frame is
       EtherType : U16
          then Payload
             with Length => EtherType * 8
-            if EtherType <= 1500,
+            if EtherType <= 1500
          then Payload
             with Length => Message'Last - EtherType'Last
             if EtherType >= 1536;
@@ -230,7 +230,7 @@ package Ethernet is
          EtherType : U16
             then Payload
                with Length => EtherType * 8
-               if EtherType <= 1500,
+               if EtherType <= 1500
             then Payload
                with Length => Message'Last - EtherType'Last
                if EtherType >= 1536;

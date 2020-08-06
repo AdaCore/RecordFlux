@@ -7,7 +7,7 @@ package TLV is
       message
          Tag    : Tag
             then Length
-               if Tag = Msg_Data,
+               if Tag = Msg_Data
             then null
                if Tag = Msg_Error;
          Length : Length

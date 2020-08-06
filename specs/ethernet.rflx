@@ -12,7 +12,7 @@ package Ethernet is
          Type_Length_TPID : Type_Length
             then TPID
                with First => Type_Length_TPID'First
-               if Type_Length_TPID = 16#8100#,
+               if Type_Length_TPID = 16#8100#
             then Type_Length
                with First => Type_Length_TPID'First
                if Type_Length_TPID /= 16#8100#;
@@ -21,7 +21,7 @@ package Ethernet is
          Type_Length : Type_Length
             then Payload
                with Length => Type_Length * 8
-               if Type_Length <= 1500,
+               if Type_Length <= 1500
             then Payload
                with Length => Message'Last - Type_Length'Last
                if Type_Length >= 1536;
