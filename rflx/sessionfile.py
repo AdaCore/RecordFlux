@@ -6,7 +6,7 @@ from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, Channel, Declaration
 from rflx.identifier import ID, StrID
 from rflx.parser.session import action, declaration, expression
-from rflx.session import Session, State, StateName, Transition
+from rflx.session import Session, State, Transition
 from rflx.statement import Statement
 
 
@@ -170,7 +170,7 @@ class SessionFile:
                         condition = TRUE
                 else:
                     condition = TRUE
-                transitions.append(Transition(target=StateName(t["target"]), condition=condition))
+                transitions.append(Transition(target=ID(t["target"]), condition=condition))
         self.error.propagate()
         return transitions
 
@@ -217,7 +217,7 @@ class SessionFile:
 
             states.append(
                 State(
-                    name=StateName(s["name"]),
+                    name=ID(s["name"]),
                     transitions=self.__parse_transitions(s),
                     actions=actions,
                     declarations=declarations,
@@ -249,8 +249,8 @@ class SessionFile:
 
         session = Session(
             name=name,
-            initial=StateName(doc["initial"]),
-            final=StateName(doc["final"]),
+            initial=ID(doc["initial"]),
+            final=ID(doc["final"]),
             states=self.__parse_states(doc),
             declarations={ID(k): v for k, v in self.__parse_declarations(doc).items()},
         )
