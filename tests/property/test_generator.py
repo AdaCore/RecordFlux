@@ -23,7 +23,7 @@ def test_code_compilation(model: Model) -> None:
 @settings(
     deadline=None,
     suppress_health_check=[HealthCheck.too_slow],
-    max_examples=math.ceil(settings.default.max_examples / 100),
+    max_examples=math.ceil(settings.default.max_examples / 200),
 )
 def test_code_verification(model: Model) -> None:
     utils.assert_provable_code(model)
