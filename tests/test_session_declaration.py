@@ -1,16 +1,8 @@
 import pytest
 
+from rflx.declaration import Argument, PrivateDeclaration, Renames, Subprogram, VariableDeclaration
 from rflx.error import RecordFluxError
-from rflx.expression import (
-    FALSE,
-    Argument,
-    PrivateDeclaration,
-    Renames,
-    Selected,
-    Subprogram,
-    Variable,
-    VariableDeclaration,
-)
+from rflx.expression import FALSE, Selected, Variable
 from rflx.identifier import ID
 from rflx.parser.session import declaration
 
