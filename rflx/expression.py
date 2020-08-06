@@ -840,19 +840,14 @@ class Name(Expr):
     def __init__(self, negative: bool = False, location: Location = None) -> None:
         super().__init__(location)
         self.negative = negative
+        self.__str = intern(f"(-{self.representation})" if self.negative else self.representation)
 
     @abstractmethod
     def copy(self, negative: bool = False) -> "Name":
         raise NotImplementedError
 
     def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = intern(
-                f"(-{self.representation})" if self.negative else self.representation
-            )
-            return self.__str
+        return self.__str
 
     def __neg__(self) -> Expr:
         return self.copy(not self.negative)
@@ -884,8 +879,8 @@ class Variable(Name):
     def __init__(
         self, identifier: StrID, negative: bool = False, location: Location = None
     ) -> None:
-        super().__init__(negative, location)
         self.identifier = ID(identifier)
+        super().__init__(negative, location)
 
     @property
     def name(self) -> str:
@@ -997,8 +992,8 @@ class AttributeExpression(Attribute, ABC):
     def __init__(
         self, prefix: Union[StrID, Expr], expression: Expr, negative: bool = False
     ) -> None:
-        super().__init__(prefix)
         self.expression = expression
+        super().__init__(prefix)
 
     def copy(self, negative: bool = False) -> "AttributeExpression":
         return self.__class__(self.prefix, self.expression, negative)
@@ -1037,9 +1032,9 @@ class Pos(AttributeExpression):
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
     def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
-        super().__init__(negative)
         self.prefix = prefix
         self.elements = list(elements)
+        super().__init__(negative)
 
     def copy(self, negative: bool = False) -> "Indexed":
         return self.__class__(self.prefix, *self.elements, negative=negative)
@@ -1054,9 +1049,9 @@ class Indexed(Name):
 
 class Selected(Name):
     def __init__(self, prefix: Expr, selector_name: StrID, negative: bool = False) -> None:
-        super().__init__(negative)
         self.prefix = prefix
         self.selector_name = ID(selector_name)
+        super().__init__(negative)
 
     def copy(self, negative: bool = False) -> "Selected":
         return self.__class__(self.prefix, self.selector_name, negative)
@@ -1071,9 +1066,9 @@ class Selected(Name):
 
 class Call(Name):
     def __init__(self, name: StrID, args: Sequence[Expr] = None, negative: bool = False) -> None:
-        super().__init__(negative)
         self.name = name
         self.args = args or []
+        super().__init__(negative)
 
     def copy(self, negative: bool = False) -> "Call":
         return self.__class__(self.name, self.args, negative)
@@ -1092,10 +1087,10 @@ class Call(Name):
 
 class Slice(Name):
     def __init__(self, prefix: Expr, first: Expr, last: Expr) -> None:
-        super().__init__()
         self.prefix = prefix
         self.first = first
         self.last = last
+        super().__init__()
 
     def copy(self, negative: bool = False) -> "Slice":
         return self.__class__(self.prefix, self.first, self.last)
