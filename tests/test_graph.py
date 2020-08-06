@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 from rflx.expression import FALSE, TRUE, Equal, Greater, Variable, VariableDeclaration
 from rflx.graph import Graph
 from rflx.model import FINAL, INITIAL, Field, Less, Link, Message, ModularInteger, Number, Pow
-from rflx.session import Session, State, StateName, Transition
+from rflx.session import ID, Session, State, Transition
 from rflx.statement import Assignment, Erase
 from tests.utils import BASE_TMP_DIR
 
@@ -170,25 +170,23 @@ def test_dot_graph_with_double_edge() -> None:
 def test_session_graph() -> None:
     s = Session(
         name="foo",
-        initial=StateName("START"),
-        final=StateName("END"),
+        initial=ID("START"),
+        final=ID("END"),
         states=[
             State(
-                name=StateName("START"),
+                name=ID("START"),
                 transitions=[
-                    Transition(
-                        target=StateName("STATE"), condition=Equal(Variable("Global"), TRUE)
-                    ),
-                    Transition(target=StateName("END")),
+                    Transition(target=ID("STATE"), condition=Equal(Variable("Global"), TRUE)),
+                    Transition(target=ID("END")),
                 ],
             ),
             State(
-                name=StateName("STATE"),
-                transitions=[Transition(target=StateName("END"))],
+                name=ID("STATE"),
+                transitions=[Transition(target=ID("END"))],
                 actions=[Assignment("Global", FALSE), Erase("Local")],
                 declarations={"Local": VariableDeclaration("Boolean")},
             ),
-            State(name=StateName("END")),
+            State(name=ID("END")),
         ],
         declarations={"Global": VariableDeclaration("Some_Type")},
     )

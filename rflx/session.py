@@ -16,22 +16,8 @@ from rflx.model import Base
 from rflx.statement import Statement
 
 
-class StateName(Base):
-    def __init__(self, name: str, location: Location = None):
-        self.name = name
-        self.location = location
-
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-    def __lt__(self, other: object) -> bool:
-        if isinstance(other, StateName):
-            return self.name < other.name
-        return NotImplemented
-
-
 class Transition(Base):
-    def __init__(self, target: StateName, condition: Expr = TRUE, location: Location = None):
+    def __init__(self, target: ID, condition: Expr = TRUE, location: Location = None):
         self.target = target
         self.condition = condition
         self.location = location
@@ -43,7 +29,7 @@ class Transition(Base):
 class State(Base):
     def __init__(
         self,
-        name: StateName,
+        name: ID,
         transitions: Sequence[Transition] = None,
         actions: Sequence[Statement] = None,
         declarations: Dict[StrID, Declaration] = None,
@@ -56,7 +42,7 @@ class State(Base):
         self.location = location
 
     @property
-    def name(self) -> StateName:
+    def name(self) -> ID:
         return self.__name
 
     @property
@@ -72,8 +58,8 @@ class Session(Base):
     def __init__(
         self,
         name: StrID,
-        initial: StateName,
-        final: StateName,
+        initial: ID,
+        final: ID,
         states: Sequence[State],
         declarations: Dict[StrID, Declaration],
         location: Location = None,
@@ -151,8 +137,8 @@ class Session(Base):
 
     def __validate_duplicate_states(self) -> None:
         state_names = [s.name for s in self.states]
-        seen: Dict[StateName, int] = {}
-        duplicates: List[str] = []
+        seen: Dict[ID, int] = {}
+        duplicates: List[ID] = []
         for n in state_names:
             if n not in seen:
                 seen[n] = 1
@@ -169,7 +155,7 @@ class Session(Base):
             )
 
     def __validate_state_reachability(self) -> None:
-        inputs: Dict[StateName, List[StateName]] = {}
+        inputs: Dict[ID, List[ID]] = {}
         for s in self.states:
             for t in s.transitions:
                 if t.target in inputs:
@@ -177,7 +163,7 @@ class Session(Base):
                 else:
                     inputs[t.target] = [s.name]
         unreachable = [
-            s.name.name for s in self.states if s.name != self.initial and s.name not in inputs
+            str(s.name) for s in self.states if s.name != self.initial and s.name not in inputs
         ]
         if unreachable:
             self.error.append(
@@ -187,7 +173,7 @@ class Session(Base):
                 self.location,
             )
 
-        detached = [s.name.name for s in self.states if s.name != self.final and not s.transitions]
+        detached = [str(s.name) for s in self.states if s.name != self.final and not s.transitions]
         if detached:
             self.error.append(
                 f'detached states {", ".join(detached)}',
