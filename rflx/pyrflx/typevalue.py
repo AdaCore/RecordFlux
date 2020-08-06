@@ -499,7 +499,8 @@ class MessageValue(TypeValue):
             f.name: self.Field(
                 TypeValue.construct(
                     self._type.types[f], imported=self._type.types[f].package != model.package
-                )
+                ),
+                f.name,
             )
             for f in self._type.fields
         }
@@ -516,7 +517,7 @@ class MessageValue(TypeValue):
         ]:
             self.__type_literals.update(t)
         self.__type_literals_keys = set(self.__type_literals)
-        initial = self.Field(OpaqueValue(Opaque()))
+        initial = self.Field(OpaqueValue(Opaque()), INITIAL.name)
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._fields[INITIAL.name] = initial
@@ -981,14 +982,14 @@ class MessageValue(TypeValue):
 
     def __update_simplified_mapping(self) -> None:
         self._simplified_mapping = {}
-        for k, v in self._fields.items():
+        for v in self._fields.values():
             if not v.set:
                 continue
             if isinstance(v.typeval, ScalarValue):
-                self._simplified_mapping[Variable(k)] = v.typeval.expr
-            self._simplified_mapping[Length(k)] = v.typeval.size
-            self._simplified_mapping[First(k)] = v.first
-            self._simplified_mapping[Last(k)] = v.last
+                self._simplified_mapping[v.name_variable] = v.typeval.expr
+            self._simplified_mapping[v.name_length] = v.typeval.size
+            self._simplified_mapping[v.name_first] = v.first
+            self._simplified_mapping[v.name_last] = v.last
 
         # ISSUE: Componolit/RecordFlux#240
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
@@ -1036,13 +1037,33 @@ class MessageValue(TypeValue):
             self.function = function
 
     class Field:
-        def __init__(self, t: TypeValue):
+        def __init__(self, t: TypeValue, name: str):
             self.__typeval = t
             self.__is_scalar = isinstance(self.__typeval, ScalarValue)
             self.first: Expr = UNDEFINED
+            self.__name_variable = Variable(name)
+            self.__name_first = First(name)
+            self.__name_last = Last(name)
+            self.__name_length = Length(name)
 
         def _last(self) -> Expr:
             return Sub(Add(self.__first, self.__typeval.size), Number(1)).simplified()
+
+        @property
+        def name_variable(self) -> Variable:
+            return self.__name_variable
+
+        @property
+        def name_first(self) -> First:
+            return self.__name_first
+
+        @property
+        def name_last(self) -> Last:
+            return self.__name_last
+
+        @property
+        def name_length(self) -> Length:
+            return self.__name_length
 
         @property
         def typeval(self) -> TypeValue:

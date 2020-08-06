@@ -777,15 +777,15 @@ def test_value_invalid() -> None:
 
 
 def test_field_eq() -> None:
-    f1 = MessageValue.Field(OpaqueValue(Opaque()))
-    assert f1 == MessageValue.Field(OpaqueValue(Opaque()))
+    f1 = MessageValue.Field(OpaqueValue(Opaque()), "f1")
+    assert f1 == MessageValue.Field(OpaqueValue(Opaque()), "f1")
     f1.typeval.parse(b"")
-    assert f1 != MessageValue.Field(OpaqueValue(Opaque()))
+    assert f1 != MessageValue.Field(OpaqueValue(Opaque()), "f2")
     assert f1 is not None
 
 
 def test_field_set() -> None:
-    f = MessageValue.Field(OpaqueValue(Opaque()))
+    f = MessageValue.Field(OpaqueValue(Opaque()), "f")
     assert not f.set
     f.typeval.parse(b"\x01")
     assert not f.set
