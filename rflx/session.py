@@ -1,16 +1,15 @@
 from typing import Dict, List, Sequence
 
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
-from rflx.expression import (
-    TRUE,
+from rflx.declaration import (
     Channel,
     Declaration,
-    Expr,
     PrivateDeclaration,
     Renames,
     Subprogram,
     VariableDeclaration,
 )
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.expression import TRUE, Expr
 from rflx.identifier import ID, StrID
 from rflx.model import Base
 from rflx.statement import Statement

@@ -18,13 +18,13 @@ from pyparsing import (
     printables,
 )
 
+from rflx.declaration import Argument, PrivateDeclaration, Renames, Subprogram, VariableDeclaration
 from rflx.error import Location, Severity, Subsystem, fail, parser_location
 from rflx.expression import (
     FALSE,
     TRUE,
     Add,
     And,
-    Argument,
     Binding,
     Call,
     Comprehension,
@@ -46,15 +46,11 @@ from rflx.expression import (
     Opaque,
     Or,
     Present,
-    PrivateDeclaration,
-    Renames,
     Selected,
     String,
     Sub,
-    Subprogram,
     Valid,
     Variable,
-    VariableDeclaration,
 )
 from rflx.identifier import ID
 from rflx.parser.grammar import (

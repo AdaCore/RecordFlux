@@ -2,19 +2,9 @@
 
 import pytest
 
+from rflx.declaration import Argument, Renames, Subprogram, VariableDeclaration
 from rflx.error import RecordFluxError
-from rflx.expression import (
-    FALSE,
-    Argument,
-    Call,
-    Equal,
-    Greater,
-    Number,
-    Renames,
-    Subprogram,
-    Variable,
-    VariableDeclaration,
-)
+from rflx.expression import FALSE, Call, Equal, Greater, Number, Variable
 from rflx.identifier import ID
 from rflx.session import Channel, Session, State, Transition
 from rflx.sessionfile import SessionFile

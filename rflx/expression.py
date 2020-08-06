@@ -10,6 +10,7 @@ import z3
 
 from rflx.common import generic_repr, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
+from rflx.declaration import Channel, Declaration, VariableDeclaration
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 
@@ -158,7 +159,7 @@ class Expr(DBC):
     def check(self, facts: Optional[Sequence["Expr"]] = None) -> Proof:
         return Proof(self, facts)
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError(f"{self.__class__.__name__}")
 
 
@@ -183,7 +184,7 @@ class BooleanLiteral(Expr):
     def simplified(self) -> Expr:
         return self
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         pass
 
 
@@ -258,7 +259,7 @@ class Not(Expr):
             return z3.Not(z3expr)
         raise TypeError
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.expr.validate(declarations)
 
 
@@ -313,7 +314,7 @@ class BinExpr(Expr):
     def simplified(self) -> Expr:
         return self.__class__(self.left.simplified(), self.right.simplified())
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.left.validate(declarations)
         self.right.validate(declarations)
 
@@ -434,7 +435,7 @@ class AssExpr(Expr):
             return terms[0]
         return self.__class__(*terms, location=self.location)
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         for term in self.terms:
             term.validate(declarations)
 
@@ -666,7 +667,7 @@ class Number(Expr):
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         pass
 
 
@@ -916,7 +917,7 @@ class Variable(Name):
     def variables(self) -> List["Variable"]:
         return [self]
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         builtin_types = map(ID, ["Boolean"])
         if self.identifier in builtin_types:
             return
@@ -975,7 +976,7 @@ class Attribute(Name):
             raise TypeError
         return z3.Int(f"{self.prefix}'{self.__class__.__name__}")
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.prefix.validate(declarations)
 
 
@@ -1112,7 +1113,7 @@ class Selected(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.prefix.validate(declarations)
 
     def variables(self) -> List["Variable"]:
@@ -1151,7 +1152,7 @@ class Call(Name):
         raise NotImplementedError
 
     def __validate_channel(
-        self, declarations: Mapping[ID, "Declaration"], error: RecordFluxError
+        self, declarations: Mapping[ID, Declaration], error: RecordFluxError
     ) -> None:
         if len(self.args) < 1:
             fail(
@@ -1206,7 +1207,7 @@ class Call(Name):
         for a in self.args[1:]:
             a.validate(declarations)
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         error = RecordFluxError()
         if self.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
             self.__validate_channel(declarations, error)
@@ -1728,8 +1729,8 @@ class QuantifiedExpression(Expr):
             expr.location,
         )
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        quantifier: Mapping[ID, "Declaration"] = {self.parameter_name: VariableDeclaration()}
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        quantifier: Mapping[ID, Declaration] = {self.parameter_name: VariableDeclaration()}
         self.iterable.validate({**declarations, **quantifier})
         self.predicate.validate({**declarations, **quantifier})
 
@@ -1803,94 +1804,6 @@ class ValueRange(Expr):
         if isinstance(expr, self.__class__):
             return self.__class__(self.lower.substituted(func), self.upper.substituted(func),)
         return expr
-
-
-class Declaration(ABC):
-    def __init__(self) -> None:
-        self.__refcount = 0
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-
-    def __repr__(self) -> str:
-        args = "\n\t" + ",\n\t".join(f"{k}={v!r}" for k, v in self.__dict__.items())
-        return f"{self.__class__.__name__}({args})".replace("\t", "\t    ")
-
-    def reference(self) -> None:
-        self.__refcount += 1
-
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        raise NotImplementedError(f"Validation not implemented for {type(self).__name__}")
-
-    @property
-    def is_referenced(self) -> bool:
-        return self.__refcount > 0
-
-
-class Argument(Declaration):
-    def __init__(self, name: StrID, typ: StrID):
-        super().__init__()
-        self.__name = ID(name)
-        self.__type = ID(typ)
-
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
-
-
-class VariableDeclaration(Declaration):
-    def __init__(self, typ: StrID = None, init: Expr = None):
-        super().__init__()
-        self.__type = ID(typ) if typ else None
-        self.__init = init
-
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
-
-
-class PrivateDeclaration(Declaration):
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
-
-
-class Subprogram(Declaration):
-    def __init__(self, arguments: List[Argument], return_type: StrID):
-        super().__init__()
-        self.__arguments = arguments
-        self.__return_type = ID(return_type)
-
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        for a in self.__arguments:
-            a.validate(declarations)
-
-
-class Renames(Declaration):
-    def __init__(self, typ: StrID, expr: Expr):
-        super().__init__()
-        self.__type = ID(typ)
-        self.__expr = expr
-
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        self.__expr.validate(declarations)
-
-
-class Channel(Declaration):
-    def __init__(self, read: bool, write: bool):
-        super().__init__()
-        self.__read = read
-        self.__write = write
-
-    @property
-    def readable(self) -> bool:
-        return self.__read
-
-    @property
-    def writable(self) -> bool:
-        return self.__write
-
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
 
 
 class Conversion(Expr):

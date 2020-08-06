@@ -1,15 +1,21 @@
 # pylint: disable=too-many-lines
 import pytest
 
+from rflx.declaration import (
+    Argument,
+    Channel,
+    PrivateDeclaration,
+    Renames,
+    Subprogram,
+    VariableDeclaration,
+)
 from rflx.error import RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
     And,
-    Argument,
     Binding,
     Call,
-    Channel,
     Comprehension,
     Conversion,
     Equal,
@@ -25,14 +31,10 @@ from rflx.expression import (
     Number,
     Opaque,
     Present,
-    PrivateDeclaration,
-    Renames,
     Selected,
     String,
-    Subprogram,
     Valid,
     Variable,
-    VariableDeclaration,
 )
 from rflx.identifier import ID
 from rflx.session import Session, State, Transition
