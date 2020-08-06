@@ -49,11 +49,11 @@ package ICMP is
       message
          Tag : Tag
             then Code_Destination_Unreachable
-               if Tag = Destination_Unreachable,
+               if Tag = Destination_Unreachable
             then Code_Time_Exceeded
-               if Tag = Time_Exceeded,
+               if Tag = Time_Exceeded
             then Code_Redirect
-               if Tag = Redirect,
+               if Tag = Redirect
             then Code_Zero
                if (Tag = Echo_Reply
                    or Tag = Echo_Request
@@ -74,16 +74,16 @@ package ICMP is
             then Unused_32
                if (Tag = Destination_Unreachable
                    or Tag = Source_Quench
-                   or Tag = Time_Exceeded),
+                   or Tag = Time_Exceeded)
             then Identifier
                if (Tag = Echo_Request
                    or Tag = Echo_Reply
                    or Tag = Timestamp_Msg
                    or Tag = Timestamp_Reply
                    or Tag = Information_Request
-                   or Tag = Information_Reply),
+                   or Tag = Information_Reply)
             then Pointer
-               if Tag = Parameter_Problem,
+               if Tag = Parameter_Problem
             then Gateway_Internet_Address
                if Tag = Redirect;
          Gateway_Internet_Address : Gateway_Internet_Address
@@ -99,9 +99,9 @@ package ICMP is
          Identifier : Identifier;
          Sequence_Number : Sequence_Number
             then Originate_Timestamp
-               if Tag = Timestamp_Msg or Tag = Timestamp_Reply,
+               if Tag = Timestamp_Msg or Tag = Timestamp_Reply
             then null
-               if Tag = Information_Request or Tag = Information_Reply,
+               if Tag = Information_Request or Tag = Information_Reply
             then Data
                with Length => Message'Last - Sequence_Number'Last
                if Tag = Echo_Reply or Tag = Echo_Request;

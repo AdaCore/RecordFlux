@@ -307,15 +307,16 @@ def message_type_definition() -> Token:
         - Group(Optional(value_constraint()))
     )
     then.setParseAction(parse_then)
-    then_list = then + ZeroOrMore(comma() - then)
+    then_list = ZeroOrMore(then)
     then_list.setParseAction(lambda t: [t.asList()])
+
     component_item = (
         ~Keyword("end")
         + ~CaselessKeyword("Message")
         - unqualified_identifier()
         + Literal(":")
         - qualified_identifier()
-        - Optional(then_list)
+        - then_list
         - semicolon()
     )
     component_item.setParseAction(

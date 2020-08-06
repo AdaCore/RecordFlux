@@ -6,7 +6,7 @@ package Message_Type is
       message
          Foo : T
             then Bar
-               if Foo <= 16#1E#,
+               if Foo <= 16#1E#
             then Baz
                if Foo > 16#1E#;
          Bar : T;
