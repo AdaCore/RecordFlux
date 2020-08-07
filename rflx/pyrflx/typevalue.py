@@ -1036,38 +1036,27 @@ class MessageValue(TypeValue):
         def set_checksum_function(self, function: Callable) -> None:
             self.function = function
 
+    @dataclass
     class Field:
+        typeval: TypeValue
+        __first: Expr
+        __last: Expr
+        name_variable: Variable
+        name_first: First
+        name_last: Last
+        name_length: Length
+
         def __init__(self, t: TypeValue, name: str):
-            self.__typeval = t
-            self.__is_scalar = isinstance(self.__typeval, ScalarValue)
+            self.typeval = t
+            self.__is_scalar = isinstance(self.typeval, ScalarValue)
             self.first: Expr = UNDEFINED
-            self.__name_variable = Variable(name)
-            self.__name_first = First(name)
-            self.__name_last = Last(name)
-            self.__name_length = Length(name)
+            self.name_variable = Variable(name)
+            self.name_first = First(name)
+            self.name_last = Last(name)
+            self.name_length = Length(name)
 
         def _last(self) -> Expr:
-            return Sub(Add(self.__first, self.__typeval.size), Number(1)).simplified()
-
-        @property
-        def name_variable(self) -> Variable:
-            return self.__name_variable
-
-        @property
-        def name_first(self) -> First:
-            return self.__name_first
-
-        @property
-        def name_last(self) -> Last:
-            return self.__name_last
-
-        @property
-        def name_length(self) -> Length:
-            return self.__name_length
-
-        @property
-        def typeval(self) -> TypeValue:
-            return self.__typeval
+            return Sub(Add(self.__first, self.typeval.size), Number(1)).simplified()
 
         @property
         def first(self) -> Expr:
