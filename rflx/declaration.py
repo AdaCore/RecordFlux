@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Mapping, Sequence
 
 from rflx.common import generic_repr
@@ -23,8 +23,9 @@ class Declaration(ABC):
     def reference(self) -> None:
         self.__refcount += 1
 
+    @abstractmethod
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        raise NotImplementedError(f"Validation not implemented for {type(self).__name__}")
+        raise NotImplementedError
 
     @property
     def is_referenced(self) -> bool:

@@ -159,8 +159,9 @@ class Expr(DBC):
     def check(self, facts: Optional[Sequence["Expr"]] = None) -> Proof:
         return Proof(self, facts)
 
+    @abstractmethod
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        raise NotImplementedError(f"{self.__class__.__name__}")
+        raise NotImplementedError
 
 
 class BooleanLiteral(Expr):
@@ -1094,6 +1095,9 @@ class Indexed(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        raise NotImplementedError
+
 
 class Selected(Name):
     def __init__(
@@ -1113,9 +1117,6 @@ class Selected(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.prefix.validate(declarations)
-
     def variables(self) -> List["Variable"]:
         return self.prefix.variables()
 
@@ -1129,6 +1130,9 @@ class Selected(Name):
         return expr.__class__(
             expr.prefix.substituted(func), expr.selector_name, location=expr.location
         )
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        self.prefix.validate(declarations)
 
 
 class Call(Name):
@@ -1279,6 +1283,9 @@ class Slice(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        raise NotImplementedError
+
 
 class UndefinedExpr(Name):
     @property
@@ -1289,6 +1296,9 @@ class UndefinedExpr(Name):
         raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError
 
 
@@ -1329,6 +1339,9 @@ class Aggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
 
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        raise NotImplementedError
+
 
 class NamedAggregate(Expr):
     def __init__(self, *elements: Tuple[StrID, Expr]) -> None:
@@ -1360,6 +1373,9 @@ class NamedAggregate(Expr):
         return self.__class__(*[(n, e.simplified()) for n, e in self.elements])
 
     def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError
 
 
@@ -1597,6 +1613,9 @@ class If(Expr):
             return elseexpr.z3expr()
         return z3.BoolVal(False)
 
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        raise NotImplementedError
+
 
 class Case(Expr):
     def __init__(
@@ -1668,6 +1687,9 @@ class Case(Expr):
                 Case.caseexpr(control, statements[1:]),
             )
         return z3.BoolVal(False)
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        raise NotImplementedError
 
 
 class QuantifiedExpression(Expr):
@@ -1804,6 +1826,9 @@ class ValueRange(Expr):
         if isinstance(expr, self.__class__):
             return self.__class__(self.lower.substituted(func), self.upper.substituted(func),)
         return expr
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        raise NotImplementedError
 
 
 class Conversion(Expr):
