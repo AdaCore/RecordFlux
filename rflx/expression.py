@@ -842,15 +842,12 @@ class Name(Expr):
         self.negative = negative
         self.__str = intern(f"(-{self.representation})" if self.negative else self.representation)
 
-    @abstractmethod
-    def copy(self, negative: bool = False) -> "Name":
-        raise NotImplementedError
-
     def __str__(self) -> str:
         return self.__str
 
+    @abstractmethod
     def __neg__(self) -> Expr:
-        return self.copy(not self.negative)
+        raise NotImplementedError
 
     @property
     def precedence(self) -> Precedence:
@@ -865,8 +862,7 @@ class Name(Expr):
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
-        positive_self = self.copy(False)
-        return -func(positive_self) if self.negative else func(positive_self)
+        return -func(-self) if self.negative else func(self)
 
     def simplified(self) -> Expr:
         return self
@@ -886,8 +882,8 @@ class Variable(Name):
     def name(self) -> str:
         return str(self.identifier)
 
-    def copy(self, negative: bool = False) -> "Variable":
-        return self.__class__(self.identifier, negative, self.location)
+    def __neg__(self) -> "Variable":
+        return self.__class__(self.identifier, not self.negative, self.location)
 
     @property
     def representation(self) -> str:
@@ -916,8 +912,8 @@ class Attribute(Name):
     def representation(self) -> str:
         return f"{self.prefix}'{self.__class__.__name__}"
 
-    def copy(self, negative: bool = False) -> "Attribute":
-        return self.__class__(self.prefix, negative)
+    def __neg__(self) -> "Attribute":
+        return self.__class__(self.prefix, not self.negative)
 
     def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
         return [self] if match(self) else self.prefix.findall(match)
@@ -926,8 +922,7 @@ class Attribute(Name):
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
-        positive_self = self.copy(False)
-        expr = func(positive_self)
+        expr = func(-self if self.negative else self)
         if isinstance(expr, Attribute):
             expr = expr.__class__(expr.prefix.substituted(func))
         return -expr if self.negative else expr
@@ -995,15 +990,14 @@ class AttributeExpression(Attribute, ABC):
         self.expression = expression
         super().__init__(prefix)
 
-    def copy(self, negative: bool = False) -> "AttributeExpression":
-        return self.__class__(self.prefix, self.expression, negative)
+    def __neg__(self) -> "AttributeExpression":
+        return self.__class__(self.prefix, self.expression, not self.negative)
 
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
-        positive_self = self.copy(False)
-        expr = func(positive_self)
+        expr = func(-self if self.negative else self)
         if isinstance(expr, AttributeExpression):
             expr = expr.__class__(expr.prefix.substituted(func), expr.expression.substituted(func))
         return -expr if self.negative else expr
@@ -1036,8 +1030,8 @@ class Indexed(Name):
         self.elements = list(elements)
         super().__init__(negative)
 
-    def copy(self, negative: bool = False) -> "Indexed":
-        return self.__class__(self.prefix, *self.elements, negative=negative)
+    def __neg__(self) -> "Indexed":
+        return self.__class__(self.prefix, *self.elements, negative=not self.negative)
 
     @property
     def representation(self) -> str:
@@ -1053,8 +1047,8 @@ class Selected(Name):
         self.selector_name = ID(selector_name)
         super().__init__(negative)
 
-    def copy(self, negative: bool = False) -> "Selected":
-        return self.__class__(self.prefix, self.selector_name, negative)
+    def __neg__(self) -> "Selected":
+        return self.__class__(self.prefix, self.selector_name, not self.negative)
 
     @property
     def representation(self) -> str:
@@ -1070,8 +1064,8 @@ class Call(Name):
         self.args = args or []
         super().__init__(negative)
 
-    def copy(self, negative: bool = False) -> "Call":
-        return self.__class__(self.name, self.args, negative)
+    def __neg__(self) -> "Call":
+        return self.__class__(self.name, self.args, not self.negative)
 
     @property
     def representation(self) -> str:
@@ -1092,8 +1086,8 @@ class Slice(Name):
         self.last = last
         super().__init__()
 
-    def copy(self, negative: bool = False) -> "Slice":
-        return self.__class__(self.prefix, self.first, self.last)
+    def __neg__(self) -> "Slice":
+        return self
 
     @property
     def representation(self) -> str:
@@ -1126,8 +1120,8 @@ class UndefinedExpr(Name):
     def representation(self) -> str:
         return "__UNDEFINED__"
 
-    def copy(self, negative: bool = False) -> "UndefinedExpr":
-        return self.__class__(negative, self.location)
+    def __neg__(self) -> "UndefinedExpr":
+        return self.__class__(not self.negative, self.location)
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError

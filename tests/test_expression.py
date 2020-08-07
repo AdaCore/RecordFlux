@@ -25,6 +25,7 @@ from rflx.expression import (
     GreaterEqual,
     If,
     In,
+    Indexed,
     Last,
     Length,
     Less,
@@ -102,6 +103,15 @@ def test_not_neg() -> None:
     y = Variable("Y")
     assert y == y
     assert y != -y
+
+
+def test_neg_indexed() -> None:
+    assert Indexed(Variable("X"), Variable("Y")) == -Indexed(
+        Variable("X"), Variable("Y"), negative=True
+    )
+    assert Indexed(Variable("X"), Variable("Y")) != Indexed(
+        Variable("X"), Variable("Y"), negative=True
+    )
 
 
 def test_not_simplified() -> None:
