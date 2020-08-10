@@ -1119,7 +1119,7 @@ class UndefinedExpr(Name):
         return "__UNDEFINED__"
 
     def __neg__(self) -> "UndefinedExpr":
-        return self.__class__(not self.negative, self.location)
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
