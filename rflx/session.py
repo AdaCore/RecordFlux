@@ -1,11 +1,11 @@
 from typing import Dict, List, Sequence
 
 from rflx.declaration import (
-    Channel,
+    ChannelDeclaration,
     Declaration,
     PrivateDeclaration,
-    Renames,
-    Subprogram,
+    RenamingDeclaration,
+    SubprogramDeclaration,
     VariableDeclaration,
 )
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
@@ -31,13 +31,13 @@ class State(Base):
         name: ID,
         transitions: Sequence[Transition] = None,
         actions: Sequence[Statement] = None,
-        declarations: Dict[StrID, Declaration] = None,
+        declarations: Sequence[Declaration] = None,
         location: Location = None,
     ):
         self.__name = name
         self.__transitions = transitions or []
         self.__actions = actions or []
-        self.declarations = {ID(k): v for k, v in declarations.items()} if declarations else {}
+        self.declarations = {d.identifier: d for d in declarations} if declarations else {}
         self.location = location
 
     @property
@@ -60,14 +60,14 @@ class Session(Base):
         initial: ID,
         final: ID,
         states: Sequence[State],
-        declarations: Dict[StrID, Declaration],
+        declarations: Sequence[Declaration],
         location: Location = None,
     ):  # pylint: disable=too-many-arguments
         self.name = ID(name)
         self.initial = initial
         self.final = final
         self.states = states
-        self.declarations = {ID(k): v for k, v in declarations.items()}
+        self.declarations = {d.identifier: d for d in declarations}
         self.location = location
         self.error = RecordFluxError()
 
@@ -183,13 +183,13 @@ class Session(Base):
 
     @classmethod
     def __entity_name(cls, decl: Declaration) -> str:
-        if isinstance(decl, Subprogram):
+        if isinstance(decl, SubprogramDeclaration):
             return "subprogram"
         if isinstance(decl, VariableDeclaration):
             return "variable"
-        if isinstance(decl, Renames):
+        if isinstance(decl, RenamingDeclaration):
             return "renames"
-        if isinstance(decl, Channel):
+        if isinstance(decl, ChannelDeclaration):
             return "channel"
         if isinstance(decl, PrivateDeclaration):
             return "private"

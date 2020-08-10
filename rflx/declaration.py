@@ -9,7 +9,8 @@ if TYPE_CHECKING:
 
 
 class Declaration(ABC):
-    def __init__(self) -> None:
+    def __init__(self, identifier: StrID) -> None:
+        self.__identifier = ID(identifier)
         self.__refcount = 0
 
     def __eq__(self, other: object) -> bool:
@@ -23,30 +24,24 @@ class Declaration(ABC):
     def reference(self) -> None:
         self.__refcount += 1
 
-    @abstractmethod
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        raise NotImplementedError
+    @property
+    def identifier(self) -> ID:
+        return self.__identifier
 
     @property
     def is_referenced(self) -> bool:
         return self.__refcount > 0
 
-
-class Argument(Declaration):
-    def __init__(self, name: StrID, typ: StrID):
-        super().__init__()
-        self.__name = ID(name)
-        self.__type = ID(typ)
-
+    @abstractmethod
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
+        raise NotImplementedError
 
 
 class VariableDeclaration(Declaration):
-    def __init__(self, typ: StrID = None, init: "Expr" = None):
-        super().__init__()
-        self.__type = ID(typ) if typ else None
-        self.__init = init
+    def __init__(self, identifier: StrID, type_name: StrID = None, expression: "Expr" = None):
+        super().__init__(identifier)
+        self.__type_name = ID(type_name) if type_name else None
+        self.__expression = expression
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         pass
@@ -57,9 +52,27 @@ class PrivateDeclaration(Declaration):
         pass
 
 
-class Subprogram(Declaration):
-    def __init__(self, arguments: Sequence[Argument], return_type: StrID):
+class Argument:
+    def __init__(self, name: StrID, type_name: StrID):
         super().__init__()
+        self.__name = ID(name)
+        self.__type_name = ID(type_name)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return generic_repr(self.__class__.__name__, self.__dict__)
+
+    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+        pass
+
+
+class SubprogramDeclaration(Declaration):
+    def __init__(self, identifier: StrID, arguments: Sequence[Argument], return_type: StrID):
+        super().__init__(identifier)
         self.__arguments = arguments
         self.__return_type = ID(return_type)
 
@@ -68,29 +81,29 @@ class Subprogram(Declaration):
             a.validate(declarations)
 
 
-class Renames(Declaration):
-    def __init__(self, typ: StrID, expr: "Expr"):
-        super().__init__()
-        self.__type = ID(typ)
-        self.__expr = expr
+class RenamingDeclaration(Declaration):
+    def __init__(self, identifier: StrID, type_name: StrID, expression: "Expr"):
+        super().__init__(identifier)
+        self.__type_name = ID(type_name)
+        self.__expression = expression
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        self.__expr.validate(declarations)
+        self.__expression.validate(declarations)
 
 
-class Channel(Declaration):
-    def __init__(self, read: bool, write: bool):
-        super().__init__()
-        self.__read = read
-        self.__write = write
+class ChannelDeclaration(Declaration):
+    def __init__(self, identifier: StrID, readable: bool = False, writable: bool = False):
+        super().__init__(identifier)
+        self.__readable = readable
+        self.__writable = writable
 
     @property
     def readable(self) -> bool:
-        return self.__read
+        return self.__readable
 
     @property
     def writable(self) -> bool:
-        return self.__write
+        return self.__writable
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         pass

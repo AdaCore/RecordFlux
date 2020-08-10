@@ -184,11 +184,11 @@ def test_session_graph() -> None:
                 name=ID("STATE"),
                 transitions=[Transition(target=ID("END"))],
                 actions=[Assignment("Global", FALSE), Erase("Local")],
-                declarations={"Local": VariableDeclaration("Boolean")},
+                declarations=[VariableDeclaration("Local", "Boolean")],
             ),
             State(name=ID("END")),
         ],
-        declarations={"Global": VariableDeclaration("Some_Type")},
+        declarations=[VariableDeclaration("Global", "Some_Type")],
     )
     expected = """
         digraph Session {

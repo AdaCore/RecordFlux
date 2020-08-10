@@ -2,11 +2,16 @@
 
 import pytest
 
-from rflx.declaration import Argument, Renames, Subprogram, VariableDeclaration
+from rflx.declaration import (
+    Argument,
+    RenamingDeclaration,
+    SubprogramDeclaration,
+    VariableDeclaration,
+)
 from rflx.error import RecordFluxError
 from rflx.expression import FALSE, Call, Equal, Greater, Number, Variable
 from rflx.identifier import ID
-from rflx.session import Channel, Session, State, Transition
+from rflx.session import ChannelDeclaration, Session, State, Transition
 from rflx.sessionfile import SessionFile
 from rflx.statement import Assignment
 
@@ -40,7 +45,7 @@ def test_simple_session() -> None:
             State(name=ID("START"), transitions=[Transition(target=ID("END"))]),
             State(name=ID("END")),
         ],
-        declarations={},
+        declarations=[],
     )
     assert f.sessions[0] == expected
 
@@ -95,7 +100,7 @@ def test_empty_states() -> None:
         ),
     ):
         Session(
-            name="session", initial=ID("START"), final=ID("END"), states=[], declarations={},
+            name="session", initial=ID("START"), final=ID("END"), states=[], declarations=[],
         )
 
 
@@ -117,7 +122,7 @@ def test_invalid_initial() -> None:
                 State(name=ID("START"), transitions=[Transition(target=ID("END"))]),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -139,7 +144,7 @@ def test_invalid_final() -> None:
                 State(name=ID("START"), transitions=[Transition(target=ID("END"))]),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -163,7 +168,7 @@ def test_invalid_target_state() -> None:
                 ),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -178,7 +183,7 @@ def test_duplicate_state() -> None:
                 State(name=ID("START"), transitions=[Transition(target=ID("END"))]),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -199,7 +204,7 @@ def test_multiple_duplicate_states() -> None:
                 State(name=ID("BAR"), transitions=[Transition(target=ID("END"))]),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -214,7 +219,7 @@ def test_unreachable_state() -> None:
                 State(name=ID("UNREACHABLE"), transitions=[Transition(target=ID("END"))],),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -232,7 +237,7 @@ def test_multiple_unreachable_states() -> None:
                 State(name=ID("UNREACHABLE2"), transitions=[Transition(target=ID("END"))],),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -250,7 +255,7 @@ def test_detached_state() -> None:
                 State(name=ID("DETACHED")),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -275,7 +280,7 @@ def test_multiple_detached_states() -> None:
                 State(name=ID("DETACHED2")),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -317,7 +322,7 @@ def test_session_with_conditions() -> None:
             State(name=ID("INTERMEDIATE"), transitions=[Transition(target=ID("END"))],),
             State(name=ID("END")),
         ],
-        declarations={"Error": VariableDeclaration("Boolean")},
+        declarations=[VariableDeclaration("Error", "Boolean")],
     )
     assert f.sessions[0] == expected
 
@@ -396,10 +401,10 @@ def test_session_condition_equal() -> None:
             State(name=ID("INTERMEDIATE"), transitions=[Transition(target=ID("END"))],),
             State(name=ID("END")),
         ],
-        declarations={
-            "Error": VariableDeclaration("Boolean"),
-            "Something": VariableDeclaration("Boolean"),
-        },
+        declarations=[
+            VariableDeclaration("Error", "Boolean"),
+            VariableDeclaration("Something", "Boolean"),
+        ],
     )
     assert f.sessions[0] == expected
 
@@ -454,9 +459,9 @@ def test_session_with_function_decl() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            ID("Foo"): Subprogram([Argument("Bar", "T1"), Argument("Baz", "P1.T1")], "P2.T3")
-        },
+        declarations=[
+            SubprogramDeclaration("Foo", [Argument("Bar", "T1"), Argument("Baz", "P1.T1")], "P2.T3")
+        ],
     )
     assert f.sessions[0] == expected
 
@@ -492,11 +497,11 @@ def test_session_with_variable_decl() -> None:
                         target=ID("END"), condition=Equal(Variable("Local"), Variable("Global")),
                     )
                 ],
-                declarations={ID("Local"): VariableDeclaration("Boolean")},
+                declarations=[VariableDeclaration("Local", "Boolean")],
             ),
             State(name=ID("END")),
         ],
-        declarations={"Global": VariableDeclaration("Boolean")},
+        declarations=[VariableDeclaration("Global", "Boolean")],
     )
     assert f.sessions[0] == expected
 
@@ -527,12 +532,12 @@ def test_session_with_actions() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
+                declarations=[],
                 actions=[Assignment("Global", FALSE)],
             ),
             State(name=ID("END")),
         ],
-        declarations={"Global": VariableDeclaration("Boolean")},
+        declarations=[VariableDeclaration("Global", "Boolean")],
     )
     assert f.sessions[0] == expected
 
@@ -625,10 +630,10 @@ def test_session_with_renames() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Foo": Renames("Boolean", Variable("Bar")),
-            "Bar": VariableDeclaration("Boolean"),
-        },
+        declarations=[
+            RenamingDeclaration("Foo", "Boolean", Variable("Bar")),
+            VariableDeclaration("Bar", "Boolean"),
+        ],
     )
     assert f.sessions[0] == expected
 
@@ -667,7 +672,7 @@ def test_channels() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={ID("Local"): VariableDeclaration("Boolean")},
+                declarations=[VariableDeclaration("Local", "Boolean")],
                 actions=[
                     Assignment(
                         "Local",
@@ -686,11 +691,11 @@ def test_channels() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Channel1_Read_Write": Channel(read=True, write=True),
-            "Channel2_Read": Channel(read=True, write=False),
-            "Channel3_Write": Channel(read=False, write=True),
-        },
+        declarations=[
+            ChannelDeclaration("Channel1_Read_Write", readable=True, writable=True),
+            ChannelDeclaration("Channel2_Read", readable=True, writable=False),
+            ChannelDeclaration("Channel3_Write", readable=False, writable=True),
+        ],
     )
     assert f.sessions[0] == expected
 
@@ -787,15 +792,15 @@ def test_function_used() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("FINAL"))],
-                declarations={},
+                declarations=[],
                 actions=[Assignment("Data", Call("Calculate", [Number(5)]))],
             ),
             State(name=ID("FINAL")),
         ],
-        declarations={
-            "Calculate": Subprogram([Argument("Input", "Data_Type")], "Data_Type"),
-            "Data": VariableDeclaration("Data_Type"),
-        },
+        declarations=[
+            SubprogramDeclaration("Calculate", [Argument("Input", "Data_Type")], "Data_Type"),
+            VariableDeclaration("Data", "Data_Type"),
+        ],
     )
     assert f.sessions[0] == expected
 

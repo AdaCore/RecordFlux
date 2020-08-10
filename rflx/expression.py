@@ -10,7 +10,7 @@ import z3
 
 from rflx.common import generic_repr, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
-from rflx.declaration import Channel, Declaration, VariableDeclaration
+from rflx.declaration import ChannelDeclaration, Declaration, VariableDeclaration
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 
@@ -1184,7 +1184,7 @@ class Call(Name):
 
         assert isinstance(channel_id, Variable)
         channel = declarations[channel_id.identifier]
-        if not isinstance(channel, Channel):
+        if not isinstance(channel, ChannelDeclaration):
             fail(
                 f'invalid channel type in call to "{self.name}"',
                 Subsystem.SESSION,
@@ -1192,7 +1192,7 @@ class Call(Name):
                 self.location,
             )
 
-        assert isinstance(channel, Channel)
+        assert isinstance(channel, ChannelDeclaration)
         channel.reference()
         if self.name in map(ID, ["Write", "Call"]) and not channel.writable:
             error.append(
@@ -1752,7 +1752,9 @@ class QuantifiedExpression(Expr):
         )
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        quantifier: Mapping[ID, Declaration] = {self.parameter_name: VariableDeclaration()}
+        quantifier: Mapping[ID, Declaration] = {
+            self.parameter_name: VariableDeclaration(self.parameter_name)
+        }
         self.iterable.validate({**declarations, **quantifier})
         self.predicate.validate({**declarations, **quantifier})
 
@@ -1924,7 +1926,7 @@ class Comprehension(Expr):
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         decls: Mapping[ID, Declaration] = {
             **declarations,
-            self.iterator: VariableDeclaration(),
+            self.iterator: VariableDeclaration(self.iterator),
         }
         self.array.validate(decls)
         self.selector.validate(decls)
