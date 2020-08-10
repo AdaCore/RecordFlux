@@ -593,7 +593,7 @@ def test_field_coverage_1(monkeypatch: Any) -> None:
     ]
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
-    monkeypatch.setattr(Message, "_AbstractMessage__verify_conditions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_conditions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -626,7 +626,7 @@ def test_field_coverage_2(monkeypatch: Any) -> None:
         Field("F3"): MODULAR_INTEGER,
         Field("F4"): MODULAR_INTEGER,
     }
-    monkeypatch.setattr(Message, "_AbstractMessage__verify_conditions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_conditions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -648,7 +648,7 @@ def test_field_after_message_start(monkeypatch: Any) -> None:
     ]
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
-    monkeypatch.setattr(Message, "_AbstractMessage__verify_conditions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_conditions", lambda x: None)
     assert_message_model_error(
         structure,
         types,

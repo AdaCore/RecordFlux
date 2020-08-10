@@ -670,10 +670,8 @@ class AbstractMessage(Type):
                     self._state.field_condition = {
                         f: self.__compute_field_condition(f).simplified() for f in self.all_fields
                     }
-                    self.__verify_conditions()
                 if ID("Checksum") in self.__aspects:
                     self._state.checksums = self.__aspects[ID("Checksum")]
-                    self.__verify_checksums()
             except RecordFluxError:
                 pass
 
@@ -963,7 +961,7 @@ class AbstractMessage(Type):
                             v.location,
                         )
 
-    def __verify_conditions(self) -> None:
+    def _verify_conditions(self) -> None:
         literals = qualified_literals(self.types, self.package)
         variables = {f.identifier for f in self.fields}
         seen = {ID("Message")}
@@ -1205,7 +1203,7 @@ class AbstractMessage(Type):
 
         return [*message_constraints, *aggregate_constraints, *scalar_constraints]
 
-    def __verify_checksums(self) -> None:
+    def _verify_checksums(self) -> None:
         def valid_lower(expression: Expr) -> bool:
             return isinstance(expression, First) or (
                 isinstance(expression, Add)
@@ -1717,6 +1715,8 @@ class Message(AbstractMessage):
         super().__init__(identifier, structure, types, aspects, location, error, state)
 
         if not self.error.check() and (structure or types) and not skip_proof:
+            self._verify_conditions()
+            self._verify_checksums()
             self._prove()
 
         self.error.propagate()
