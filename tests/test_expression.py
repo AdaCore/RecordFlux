@@ -428,6 +428,7 @@ def test_add_ge() -> None:
 def test_add_str() -> None:
     assert str(Add(Number(1), Call("Test", []))) == "1 + Test"
     assert str(Add(Number(1), -Call("Test", []))) == "1 - Test"
+    assert str(Add()) == "0"
 
 
 def test_mul_neg() -> None:
