@@ -440,7 +440,8 @@ class LogExpr(AssExpr):
             return self.__str
         except AttributeError:
             if not self.terms:
-                return str(TRUE)
+                self.__str = str(TRUE)
+                return self.__str
             self.__str = ""
             for i, t in reversed(list(enumerate(self.terms))):
                 if i == 0:
@@ -665,7 +666,8 @@ class Add(AssExpr):
             return self.__str
         except AttributeError:
             if not self.terms:
-                return str(self.neutral_element())
+                self.__str = intern(str(self.neutral_element()))
+                return self.__str
             self.__str = str(self.terms[0])
             for t in self.terms[1:]:
                 if (isinstance(t, Number) and t.value < 0) or (isinstance(t, Name) and t.negative):
@@ -844,10 +846,6 @@ class Name(Expr):
 
     def __str__(self) -> str:
         return self.__str
-
-    @abstractmethod
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
 
     @property
     def precedence(self) -> Precedence:
