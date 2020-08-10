@@ -68,7 +68,7 @@ class Proof:
 
 
 class Expr(DBC):
-    __str: str
+    _str: str
 
     def __init__(self, location: Location = None):
         self.location = location
@@ -77,6 +77,13 @@ class Expr(DBC):
         if isinstance(other, self.__class__):
             return str(self) == str(other)
         return NotImplemented
+
+    def __str__(self) -> str:
+        try:
+            return self._str
+        except AttributeError:
+            self._update_str()
+            return self._str
 
     def __hash__(self) -> int:
         return hash(self.__class__.__name__)
@@ -109,6 +116,10 @@ class Expr(DBC):
 
     @abstractmethod
     def __neg__(self) -> "Expr":
+        raise NotImplementedError
+
+    @abstractmethod
+    def _update_str(self) -> None:
         raise NotImplementedError
 
     @property
@@ -148,9 +159,18 @@ class Expr(DBC):
 
 
 class BooleanLiteral(Expr):
+    _str: str
+
+    def __init__(self, location: Location = None) -> None:
+        super().__init__(location)
+        self._update_str()
+
     @abstractmethod
     def __neg__(self) -> "Expr":
         raise NotImplementedError
+
+    def __str__(self) -> str:
+        return self._str
 
     @property
     def precedence(self) -> Precedence:
@@ -161,15 +181,11 @@ class BooleanLiteral(Expr):
 
 
 class BooleanTrue(BooleanLiteral):
-    def __init__(self, location: Location = None) -> None:
-        super().__init__(location)
-        self.__str = intern("True")
+    def _update_str(self) -> None:
+        self._str = intern("True")
 
     def __repr__(self) -> str:
         return "TRUE"
-
-    def __str__(self) -> str:
-        return self.__str
 
     def __neg__(self) -> Expr:
         return FALSE
@@ -182,15 +198,11 @@ TRUE = BooleanTrue()
 
 
 class BooleanFalse(BooleanLiteral):
-    def __init__(self, location: Location = None) -> None:
-        super().__init__(location)
-        self.__str = intern("False")
+    def _update_str(self) -> None:
+        self._str = intern("False")
 
     def __repr__(self) -> str:
         return "FALSE"
-
-    def __str__(self) -> str:
-        return self.__str
 
     def __neg__(self) -> Expr:
         return TRUE
@@ -207,12 +219,8 @@ class Not(Expr):
         super().__init__()
         self.expr = expr
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = intern(f"not {self.parenthesized(self.expr)}")
-            return self.__str
+    def _update_str(self) -> None:
+        self._str = intern(f"not {self.parenthesized(self.expr)}")
 
     def __neg__(self) -> Expr:
         return self.expr
@@ -257,14 +265,10 @@ class BinExpr(Expr):
             + ")"
         )
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = intern(
-                f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}"
-            )
-            return self.__str
+    def _update_str(self) -> None:
+        self._str = intern(
+            f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}"
+        )
 
     def __neg__(self) -> Expr:
         return self.__class__(-self.left, self.right)
@@ -317,16 +321,12 @@ class AssExpr(Expr):
             + ")"
         )
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = intern(
-                self.symbol.join(map(self.parenthesized, self.terms))
-                if self.terms
-                else str(self.neutral_element())
-            )
-            return self.__str
+    def _update_str(self) -> None:
+        self._str = intern(
+            self.symbol.join(map(self.parenthesized, self.terms))
+            if self.terms
+            else str(self.neutral_element())
+        )
 
     @abstractmethod
     def __neg__(self) -> Expr:
@@ -435,26 +435,22 @@ class AssExpr(Expr):
 
 
 class LogExpr(AssExpr):
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            if not self.terms:
-                self.__str = str(TRUE)
-                return self.__str
-            self.__str = ""
-            for i, t in reversed(list(enumerate(self.terms))):
-                if i == 0:
-                    self.__str = self.parenthesized(t) + self.__str
-                else:
-                    self.__str = (
-                        "\n"
-                        + str(self.symbol)[1:]
-                        + indent_next(self.parenthesized(t), len(self.symbol) - 1)
-                        + self.__str
-                    )
-            self.__str = intern(self.__str)
-            return self.__str
+    def _update_str(self) -> None:
+        if not self.terms:
+            self._str = str(TRUE)
+            return
+        self._str = ""
+        for i, t in reversed(list(enumerate(self.terms))):
+            if i == 0:
+                self._str = self.parenthesized(t) + self._str
+            else:
+                self._str = (
+                    "\n"
+                    + str(self.symbol)[1:]
+                    + indent_next(self.parenthesized(t), len(self.symbol) - 1)
+                    + self._str
+                )
+        self._str = intern(self._str)
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -471,9 +467,6 @@ class LogExpr(AssExpr):
 
 
 class And(LogExpr):
-    def __str__(self) -> str:
-        return super().__str__() if self.terms else str(TRUE)
-
     def __neg__(self) -> Expr:
         return And(*[-term for term in self.terms])
 
@@ -553,25 +546,21 @@ class Number(Expr):
         self.value = value
         self.base = base
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            value = self.value if self.value >= 0 else -self.value
-            if self.base == 0:
-                self.__str = "{}".format(value)
-            elif self.base == 2:
-                self.__str = "2#{:b}#".format(value)
-            elif self.base == 8:
-                self.__str = "8#{:o}#".format(value)
-            elif self.base == 10:
-                self.__str = "10#{}#".format(value)
-            elif self.base == 16:
-                self.__str = "16#{:X}#".format(value)
-            else:
-                raise NotImplementedError(f"unsupported base {self.base}")
-            self.__str = intern(f"(-{self.__str})" if self.value < 0 else self.__str)
-            return self.__str
+    def _update_str(self) -> None:
+        value = self.value if self.value >= 0 else -self.value
+        if self.base == 0:
+            self._str = "{}".format(value)
+        elif self.base == 2:
+            self._str = "2#{:b}#".format(value)
+        elif self.base == 8:
+            self._str = "8#{:o}#".format(value)
+        elif self.base == 10:
+            self._str = "10#{}#".format(value)
+        elif self.base == 16:
+            self._str = "16#{:X}#".format(value)
+        else:
+            raise NotImplementedError(f"unsupported base {self.base}")
+        self._str = intern(f"(-{self._str})" if self.value < 0 else self._str)
 
     def __hash__(self) -> int:
         return hash(self.value)
@@ -661,21 +650,17 @@ class Number(Expr):
 
 
 class Add(AssExpr):
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            if not self.terms:
-                self.__str = intern(str(self.neutral_element()))
-                return self.__str
-            self.__str = str(self.terms[0])
-            for t in self.terms[1:]:
-                if (isinstance(t, Number) and t.value < 0) or (isinstance(t, Name) and t.negative):
-                    self.__str += f" - {self.parenthesized(-t)}"
-                else:
-                    self.__str += f"{self.symbol}{self.parenthesized(t)}"
-            self.__str = intern(self.__str)
-            return self.__str
+    def _update_str(self) -> None:
+        if not self.terms:
+            self._str = intern(str(self.neutral_element()))
+            return
+        self._str = str(self.terms[0])
+        for t in self.terms[1:]:
+            if (isinstance(t, Number) and t.value < 0) or (isinstance(t, Name) and t.negative):
+                self._str += f" - {self.parenthesized(-t)}"
+            else:
+                self._str += f"{self.symbol}{self.parenthesized(t)}"
+        self._str = intern(self._str)
 
     def __neg__(self) -> Expr:
         return Add(*[-term for term in self.terms])
@@ -842,10 +827,13 @@ class Name(Expr):
     def __init__(self, negative: bool = False, location: Location = None) -> None:
         super().__init__(location)
         self.negative = negative
-        self.__str = intern(f"(-{self.representation})" if self.negative else self.representation)
+        self._update_str()
+
+    def _update_str(self) -> None:
+        self._str = intern(f"(-{self.representation})" if self.negative else self.representation)
 
     def __str__(self) -> str:
-        return self.__str
+        return self._str
 
     @property
     def precedence(self) -> Precedence:
@@ -1133,12 +1121,8 @@ class Aggregate(Expr):
         super().__init__(location)
         self.elements = list(elements)
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = intern("(" + ", ".join(map(str, self.elements)) + ")")
-            return self.__str
+    def _update_str(self) -> None:
+        self._str = intern("(" + ", ".join(map(str, self.elements)) + ")")
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1172,14 +1156,10 @@ class NamedAggregate(Expr):
         super().__init__()
         self.elements = [(ID(n), e) for n, e in elements]
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = intern(
-                "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
-            )
-            return self.__str
+    def _update_str(self) -> None:
+        self._str = intern(
+            "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
+        )
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1365,21 +1345,17 @@ class If(Expr):
         self.condition_expressions = condition_expressions
         self.else_expression = else_expression
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = ""
-            for c, e in self.condition_expressions:
-                if not self.__str:
-                    self.__str = f"(if\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
-                else:
-                    self.__str += f"\n elsif\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
-            if self.else_expression:
-                self.__str += f"\n else\n{indent(str(self.else_expression), 4)}"
-            self.__str += ")"
-            self.__str = intern(self.__str)
-            return self.__str
+    def _update_str(self) -> None:
+        self._str = ""
+        for c, e in self.condition_expressions:
+            if not self._str:
+                self._str = f"(if\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
+            else:
+                self._str += f"\n elsif\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
+        if self.else_expression:
+            self._str += f"\n else\n{indent(str(self.else_expression), 4)}"
+        self._str += ")"
+        self._str = intern(self._str)
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1451,25 +1427,18 @@ class Case(Expr):
         self.control_expression = control_expression
         self.case_statements = case_statements
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            grouped_cases = [
-                (" | ".join(str(c) for c, _ in choices), expr)
-                for expr, choices in itertools.groupby(self.case_statements, lambda x: x[1])
-            ]
-            cases = indent(
-                ",".join(
-                    [
-                        f"\nwhen {choice} =>\n{indent(str(expr), 3)}"
-                        for choice, expr in grouped_cases
-                    ]
-                ),
-                4,
-            )
-            self.__str = intern(f"(case {self.control_expression} is{cases})")
-            return self.__str
+    def _update_str(self) -> None:
+        grouped_cases = [
+            (" | ".join(str(c) for c, _ in choices), expr)
+            for expr, choices in itertools.groupby(self.case_statements, lambda x: x[1])
+        ]
+        cases = indent(
+            ",".join(
+                [f"\nwhen {choice} =>\n{indent(str(expr), 3)}" for choice, expr in grouped_cases]
+            ),
+            4,
+        )
+        self._str = intern(f"(case {self.control_expression} is{cases})")
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1529,16 +1498,12 @@ class QuantifiedExpression(Expr):
         self.iterable = iterable
         self.predicate = predicate
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = intern(
-                f"(for {self.quantifier} {self.parameter_name} {self.keyword} {self.iterable} =>\n"
-                + indent(str(self.predicate), 4)
-                + ")"
-            )
-            return self.__str
+    def _update_str(self) -> None:
+        self._str = intern(
+            f"(for {self.quantifier} {self.parameter_name} {self.keyword} {self.iterable} =>\n"
+            + indent(str(self.predicate), 4)
+            + ")"
+        )
 
     @property
     def precedence(self) -> Precedence:
@@ -1598,12 +1563,8 @@ class ValueRange(Expr):
         self.lower = lower
         self.upper = upper
 
-    def __str__(self) -> str:
-        try:
-            return self.__str
-        except AttributeError:
-            self.__str = intern(f"{self.lower} .. {self.upper}")
-            return self.__str
+    def _update_str(self) -> None:
+        self._str = intern(f"{self.lower} .. {self.upper}")
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
