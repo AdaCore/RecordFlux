@@ -814,7 +814,7 @@ class AbstractMessage(Type):
                     **{
                         v: v.__class__(f"{self.package}.{v.name}")
                         for v in expression.variables()
-                        if v.identifier in literals
+                        if v.identifier in literals and v.identifier not in BUILTIN_LITERALS
                     },
                 }
             ).simplified()
@@ -2161,6 +2161,8 @@ BOOLEAN = Enumeration(
 BUILTIN_TYPES = {
     BOOLEAN.identifier: BOOLEAN,
 }
+
+BUILTIN_LITERALS = {l for t in BUILTIN_TYPES.values() for l in t.literals}
 
 
 def is_internal_type(name: StrID) -> bool:
