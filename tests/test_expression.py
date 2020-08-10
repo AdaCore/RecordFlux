@@ -105,15 +105,6 @@ def test_not_neg() -> None:
     assert y != -y
 
 
-def test_neg_indexed() -> None:
-    assert Indexed(Variable("X"), Variable("Y")) == -Indexed(
-        Variable("X"), Variable("Y"), negative=True
-    )
-    assert Indexed(Variable("X"), Variable("Y")) != Indexed(
-        Variable("X"), Variable("Y"), negative=True
-    )
-
-
 def test_not_simplified() -> None:
     assert_equal(
         Not(Less(Variable("X"), Variable("Y"))).simplified(),
@@ -436,6 +427,11 @@ def test_add_ge() -> None:
     assert not Add(Variable("X"), Number(1)) >= Add(Variable("Y"), Number(2))
     assert not Add(Variable("X"), Number(2)) >= Add(Variable("Y"), Number(1))
     assert not Add(Variable("X"), Number(2)) >= Add(Variable("Y"), Variable("Z"), Number(1))
+
+
+def test_add_str() -> None:
+    assert str(Add(Number(1), Call("Test", []))) == "1 + Test"
+    assert str(Add(Number(1), -Call("Test", []))) == "1 - Test"
 
 
 def test_mul_neg() -> None:
@@ -1321,7 +1317,14 @@ def test_expr_str() -> None:
 
 
 def test_call_str() -> None:
-    assert str(Add(Number(1), Call("Test", []))) == "1 + Test"
-    assert str(Add(Number(1), -Call("Test", []))) == "1 - Test"
     assert str(Call("Test", [])) == "Test"
     assert str(-Call("Test", [])) == "(-Test)"
+
+
+def test_indexed_neg() -> None:
+    assert Indexed(Variable("X"), Variable("Y")) == -Indexed(
+        Variable("X"), Variable("Y"), negative=True
+    )
+    assert Indexed(Variable("X"), Variable("Y")) != Indexed(
+        Variable("X"), Variable("Y"), negative=True
+    )
