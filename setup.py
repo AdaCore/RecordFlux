@@ -40,7 +40,7 @@ setup(
         "Topic :: System :: Networking",
     ],
     packages=find_packages(exclude=("tests",)),
-    package_data={"rflx": ["templates/*"]},
+    package_data={"rflx": ["py.typed", "templates/*"]},
     python_requires=">=3.7",
     install_requires=[
         "icontract >=2.3.4, <3",
