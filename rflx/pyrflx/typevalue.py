@@ -594,7 +594,7 @@ class MessageValue(TypeValue):
                 first = self.__simplified(l.first)
                 return first if isinstance(first, Number) else None
         prv = self._prev_field(fld)
-        if prv:
+        if prv and UNDEFINED not in (self._fields[prv].first, self._fields[prv].typeval.size):
             first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
             return first if isinstance(first, Number) else None
         return None
@@ -1056,6 +1056,8 @@ class MessageValue(TypeValue):
             self.name_length = Length(name)
 
         def _last(self) -> Expr:
+            if self.first == UNDEFINED:
+                return UNDEFINED
             return Sub(Add(self.__first, self.typeval.size), Number(1)).simplified()
 
         @property

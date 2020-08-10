@@ -271,10 +271,6 @@ def test_or_str() -> None:
     assert str(Or()) == "True"
 
 
-def test_undefined_neg() -> None:
-    assert -UNDEFINED == -UNDEFINED
-
-
 def test_undefined_simplified() -> None:
     assert UNDEFINED.simplified() == UNDEFINED
 
