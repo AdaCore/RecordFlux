@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List
 
 from pyparsing import (
     Forward,
@@ -18,7 +18,13 @@ from pyparsing import (
     printables,
 )
 
-from rflx.declaration import Argument, PrivateDeclaration, Renames, Subprogram, VariableDeclaration
+from rflx.declaration import (
+    Argument,
+    PrivateDeclaration,
+    RenamingDeclaration,
+    SubprogramDeclaration,
+    VariableDeclaration,
+)
 from rflx.error import Location, Severity, Subsystem, fail, parser_location
 from rflx.expression import (
     FALSE,
@@ -343,27 +349,25 @@ def __declaration() -> Token:
         + Keyword("return").suppress()
         + qualified_identifier()
     )
-    function_decl.setParseAction(lambda t: (t[0], Subprogram(t[1:-1], t[-1])))
+    function_decl.setParseAction(lambda t: SubprogramDeclaration(t[0], t[1:-1], t[-1]))
 
     initializer = Literal(":=").suppress() + __expression()
 
     variable_base_decl = unqualified_identifier() + Literal(":").suppress() + qualified_identifier()
 
     variable_decl = variable_base_decl + Optional(initializer)
-    variable_decl.setParseAction(
-        lambda t: (t[0], VariableDeclaration(t[1], t[2] if t[2:] else None))
-    )
+    variable_decl.setParseAction(lambda t: VariableDeclaration(t[0], t[1], t[2] if t[2:] else None))
 
     renames = variable_base_decl + Keyword("renames").suppress() + __variable()
-    renames.setParseAction(lambda t: (t[0], Renames(t[1], t[2])))
+    renames.setParseAction(lambda t: RenamingDeclaration(t[0], t[1], t[2]))
 
     private = unqualified_identifier() + Keyword("is").suppress() + Keyword("private").suppress()
-    private.setParseAction(lambda t: (t[0], PrivateDeclaration()))
+    private.setParseAction(lambda t: PrivateDeclaration(t[0]))
 
     return (private | renames | variable_decl | function_decl) + StringEnd()
 
 
-def declaration(data: str) -> Tuple[ID, Declaration]:
+def declaration(data: str) -> Declaration:
     try:
         result = __declaration().parseString(data)[0]
     except (ParseException, ParseFatalException) as e:

@@ -3,8 +3,8 @@ from typing import Any, Dict, List
 import yaml
 
 from rflx.error import RecordFluxError, Severity, Subsystem
-from rflx.expression import TRUE, Channel, Declaration
-from rflx.identifier import ID, StrID
+from rflx.expression import TRUE, ChannelDeclaration, Declaration
+from rflx.identifier import ID
 from rflx.parser.session import action, declaration, expression
 from rflx.session import Session, State, Transition
 from rflx.statement import Statement
@@ -20,7 +20,7 @@ class SessionFile:
             return
         for index, f in enumerate(doc["functions"]):
             try:
-                name, decl = declaration(f)
+                decl = declaration(f)
             except RecordFluxError as e:
                 self.error.append(
                     f"error parsing global function declaration {index}",
@@ -29,11 +29,11 @@ class SessionFile:
                 )
                 self.error.extend(e)
                 continue
-            if ID(name) in result:
+            if decl.identifier in result:
                 self.error.append(
-                    f"conflicting function {name}", Subsystem.SESSION, Severity.ERROR,
+                    f"conflicting function {decl.identifier}", Subsystem.SESSION, Severity.ERROR,
                 )
-            result[ID(name)] = decl
+            result[decl.identifier] = decl
         self.error.propagate()
 
     def __parse_variables(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
@@ -41,7 +41,7 @@ class SessionFile:
             return
         for index, f in enumerate(doc["variables"]):
             try:
-                name, decl = declaration(f)
+                decl = declaration(f)
             except RecordFluxError as e:
                 self.error.append(
                     f"error parsing global variable declaration {index}",
@@ -50,11 +50,11 @@ class SessionFile:
                 )
                 self.error.extend(e)
                 continue
-            if ID(name) in result:
+            if decl.identifier in result:
                 self.error.append(
-                    f"conflicting variable {name}", Subsystem.SESSION, Severity.ERROR,
+                    f"conflicting variable {decl.identifier}", Subsystem.SESSION, Severity.ERROR,
                 )
-            result[ID(name)] = decl
+            result[decl.identifier] = decl
         self.error.propagate()
 
     def __parse_types(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
@@ -62,7 +62,7 @@ class SessionFile:
             return
         for index, f in enumerate(doc["types"]):
             try:
-                name, decl = declaration(f)
+                decl = declaration(f)
             except RecordFluxError as e:
                 self.error.append(
                     f"error parsing private variable declaration {index}",
@@ -71,11 +71,11 @@ class SessionFile:
                 )
                 self.error.extend(e)
                 continue
-            if ID(name) in result:
+            if decl.identifier in result:
                 self.error.append(
-                    f"conflicting type {name}", Subsystem.SESSION, Severity.ERROR,
+                    f"conflicting type {decl.identifier}", Subsystem.SESSION, Severity.ERROR,
                 )
-            result[ID(name)] = decl
+            result[decl.identifier] = decl
         self.error.propagate()
 
     def __parse_channels(self, doc: Dict[str, Any], result: Dict[ID, Declaration]) -> None:
@@ -104,7 +104,9 @@ class SessionFile:
                 )
             mode = f["mode"]
             try:
-                result[ID(f["name"])] = Channel(modes[mode]["read"], modes[mode]["write"])
+                result[ID(f["name"])] = ChannelDeclaration(
+                    f["name"], modes[mode]["read"], modes[mode]["write"]
+                )
             except KeyError:
                 self.error.append(
                     f"channel {f['name']} has invalid mode {f['mode']}",
@@ -119,18 +121,18 @@ class SessionFile:
             return
         for index, f in enumerate(doc["renames"]):
             try:
-                name, decl = declaration(f)
+                decl = declaration(f)
             except RecordFluxError as e:
                 self.error.append(
                     f"error parsing renames declaration {index}", Subsystem.SESSION, Severity.ERROR,
                 )
                 self.error.extend(e)
                 continue
-            if name in result:
+            if decl.identifier in result:
                 self.error.append(
-                    f"conflicting renames {name}", Subsystem.SESSION, Severity.ERROR,
+                    f"conflicting renames {decl.identifier}", Subsystem.SESSION, Severity.ERROR,
                 )
-            result[name] = decl
+            result[decl.identifier] = decl
         self.error.propagate()
 
     def __parse_declarations(self, doc: Dict[str, Any]) -> Dict[ID, Declaration]:
@@ -200,11 +202,11 @@ class SessionFile:
                         )
                         self.error.extend(e)
                         continue
-            declarations: Dict[StrID, Declaration] = {}
+            declarations: List[Declaration] = []
             if "variables" in s and s["variables"]:
                 for i, v in enumerate(s["variables"]):
                     try:
-                        dname, decl = declaration(v)
+                        decl = declaration(v)
                     except RecordFluxError as e:
                         self.error.append(
                             f"error parsing local variable {i} in state {sname}",
@@ -213,7 +215,7 @@ class SessionFile:
                         )
                         self.error.extend(e)
                         continue
-                    declarations[ID(dname)] = decl
+                    declarations.append(decl)
 
             states.append(
                 State(
@@ -252,7 +254,7 @@ class SessionFile:
             initial=ID(doc["initial"]),
             final=ID(doc["final"]),
             states=self.__parse_states(doc),
-            declarations={ID(k): v for k, v in self.__parse_declarations(doc).items()},
+            declarations=list(self.__parse_declarations(doc).values()),
         )
         self.error.extend(session.error)
         self.__sessions.append(session)

@@ -3,10 +3,10 @@ import pytest
 
 from rflx.declaration import (
     Argument,
-    Channel,
+    ChannelDeclaration,
     PrivateDeclaration,
-    Renames,
-    Subprogram,
+    RenamingDeclaration,
+    SubprogramDeclaration,
     VariableDeclaration,
 )
 from rflx.error import RecordFluxError
@@ -214,7 +214,7 @@ def test_undeclared_variable() -> None:
                 ),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -232,7 +232,7 @@ def test_declared_variable() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={"Defined": VariableDeclaration("Some_Type")},
+        declarations=[VariableDeclaration("Defined", "Some_Type")],
     )
 
 
@@ -249,11 +249,11 @@ def test_declared_local_variable() -> None:
                         target=ID("END"), condition=Equal(Variable("Local"), Variable("Global")),
                     )
                 ],
-                declarations={ID("Local"): VariableDeclaration("Some_Type")},
+                declarations=[VariableDeclaration("Local", "Some_Type")],
             ),
             State(name=ID("END")),
         ],
-        declarations={"Global": VariableDeclaration("Some_Type")},
+        declarations=[VariableDeclaration("Global", "Some_Type")],
     )
 
 
@@ -269,7 +269,7 @@ def test_undeclared_local_variable() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("STATE"), condition=Variable("Global"))],
-                    declarations={},
+                    declarations=[],
                 ),
                 State(
                     name=ID("STATE"),
@@ -279,11 +279,11 @@ def test_undeclared_local_variable() -> None:
                             condition=Equal(Variable("Local"), Variable("Global")),
                         )
                     ],
-                    declarations={},
+                    declarations=[],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Global": VariableDeclaration("Some_Type")},
+            declarations=[VariableDeclaration("Global", "Some_Type")],
         )
 
 
@@ -296,13 +296,13 @@ def test_declared_local_variable_valid() -> None:
             State(
                 name=ID("START"),
                 transitions=[
-                    Transition(target=ID("END"), condition=Equal(Valid(Variable("Global")), TRUE),)
+                    Transition(target=ID("END"), condition=Equal(Valid(Variable("Global")), TRUE))
                 ],
-                declarations={},
+                declarations=[],
             ),
             State(name=ID("END")),
         ],
-        declarations={"Global": VariableDeclaration("Boolean")},
+        declarations=[VariableDeclaration("Global", "Boolean")],
     )
 
 
@@ -320,11 +320,11 @@ def test_declared_local_variable_field() -> None:
                         condition=Equal(Selected(Variable("Global"), "fld"), TRUE),
                     )
                 ],
-                declarations={},
+                declarations=[],
             ),
             State(name=ID("END")),
         ],
-        declarations={"Global": VariableDeclaration("Boolean")},
+        declarations=[VariableDeclaration("Global", "Boolean")],
     )
 
 
@@ -346,12 +346,12 @@ def test_assignment_to_undeclared_variable() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[Assignment("Undefined", FALSE)],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -373,12 +373,12 @@ def test_assignment_from_undeclared_variable() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[Assignment("Global", Variable("Undefined"))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Global": VariableDeclaration("Boolean")},
+            declarations=[VariableDeclaration("Global", "Boolean")],
         )
 
 
@@ -400,12 +400,12 @@ def test_erasure_of_undeclared_variable() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[Erase("Undefined")],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -427,12 +427,12 @@ def test_reset_of_undeclared_list() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[Reset("Undefined")],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -454,12 +454,12 @@ def test_call_to_undeclared_function() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[Assignment("Global", Call("UndefSub", [Variable("Global")]))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Global": VariableDeclaration("Boolean")},
+            declarations=[VariableDeclaration("Global", "Boolean")],
         )
 
 
@@ -472,15 +472,15 @@ def test_call_to_builtin_read() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
+                declarations=[],
                 actions=[Assignment("Global", Call("Read", [Variable("Some_Channel")]))],
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Global": VariableDeclaration("Boolean"),
-            "Some_Channel": Channel(read=True, write=False),
-        },
+        declarations=[
+            VariableDeclaration("Global", "Boolean"),
+            ChannelDeclaration("Some_Channel", readable=True, writable=False),
+        ],
     )
 
 
@@ -493,15 +493,15 @@ def test_call_to_builtin_write() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
+                declarations=[],
                 actions=[Assignment("Success", Call("Write", [Variable("Some_Channel"), TRUE]),)],
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Success": VariableDeclaration("Boolean"),
-            "Some_Channel": Channel(read=False, write=True),
-        },
+        declarations=[
+            VariableDeclaration("Success", "Boolean"),
+            ChannelDeclaration("Some_Channel", readable=False, writable=True),
+        ],
     )
 
 
@@ -514,15 +514,15 @@ def test_call_to_builtin_call() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
+                declarations=[],
                 actions=[Assignment("Result", Call("Call", [Variable("Some_Channel"), TRUE]))],
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Result": VariableDeclaration("Boolean"),
-            "Some_Channel": Channel(read=True, write=True),
-        },
+        declarations=[
+            VariableDeclaration("Result", "Boolean"),
+            ChannelDeclaration("Some_Channel", readable=True, writable=True),
+        ],
     )
 
 
@@ -535,15 +535,15 @@ def test_call_to_builtin_data_available() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
+                declarations=[],
                 actions=[Assignment("Result", Call("Data_Available", [Variable("Some_Channel")]),)],
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Result": VariableDeclaration("Boolean"),
-            "Some_Channel": Channel(read=True, write=True),
-        },
+        declarations=[
+            VariableDeclaration("Result", "Boolean"),
+            ChannelDeclaration("Some_Channel", readable=True, writable=True),
+        ],
     )
 
 
@@ -565,12 +565,12 @@ def test_call_to_builtin_read_without_arguments() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[Assignment("Result", Call("Read", []))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Result": VariableDeclaration("Boolean")},
+            declarations=[VariableDeclaration("Result", "Boolean")],
         )
 
 
@@ -594,12 +594,12 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
                     transitions=[
                         Transition(target=ID("END"), condition=Equal(Variable("Result"), TRUE))
                     ],
-                    declarations={},
+                    declarations=[],
                     actions=[Assignment("Result", Call("Read", [Variable("Undeclared")]))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Result": VariableDeclaration("Boolean")},
+            declarations=[VariableDeclaration("Result", "Boolean")],
         )
 
 
@@ -621,12 +621,12 @@ def test_call_to_builtin_read_invalid_channel_type() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[Assignment("Result", Call("Read", [Variable("Result")]))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Result": VariableDeclaration("Boolean")},
+            declarations=[VariableDeclaration("Result", "Boolean")],
         )
 
 
@@ -650,15 +650,15 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
                     transitions=[
                         Transition(target=ID("END"), condition=Equal(Variable("Result"), TRUE))
                     ],
-                    declarations={},
+                    declarations=[],
                     actions=[Assignment("Result", Call("Write", [Variable("Out_Channel")]))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={
-                "Result": VariableDeclaration("Boolean"),
-                "Out_Channel": Channel(read=True, write=False),
-            },
+            declarations=[
+                VariableDeclaration("Result", "Boolean"),
+                ChannelDeclaration("Out_Channel", readable=True, writable=False),
+            ],
         )
 
 
@@ -680,17 +680,17 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[
                         Assignment("Result", Call("Data_Available", [Variable("Out_Channel")]),)
                     ],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={
-                "Result": VariableDeclaration("Boolean"),
-                "Out_Channel": Channel(read=False, write=True),
-            },
+            declarations=[
+                VariableDeclaration("Result", "Boolean"),
+                ChannelDeclaration("Out_Channel", readable=False, writable=True),
+            ],
         )
 
 
@@ -700,7 +700,7 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
         match=(
             "^"
             "session: error: invalid action 0 of state START\n"
-            'session: error: channel "Channel" not readable in call to "Read"'
+            'session: error: channel "ChannelDeclaration" not readable in call to "Read"'
             "$"
         ),
     ):
@@ -712,15 +712,15 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
-                    actions=[Assignment("Result", Call("Read", [Variable("Channel")]))],
+                    declarations=[],
+                    actions=[Assignment("Result", Call("Read", [Variable("ChannelDeclaration")]))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={
-                "Result": VariableDeclaration("Boolean"),
-                "Channel": Channel(read=False, write=True),
-            },
+            declarations=[
+                VariableDeclaration("Result", "Boolean"),
+                ChannelDeclaration("ChannelDeclaration", readable=False, writable=True),
+            ],
         )
 
 
@@ -730,7 +730,7 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
         match=(
             "^"
             "session: error: invalid action 0 of state START\n"
-            'session: error: channel "Channel" not readable in call to "Call"'
+            'session: error: channel "ChannelDeclaration" not readable in call to "Call"'
             "$"
         ),
     ):
@@ -742,15 +742,15 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
-                    actions=[Assignment("Result", Call("Call", [Variable("Channel")]))],
+                    declarations=[],
+                    actions=[Assignment("Result", Call("Call", [Variable("ChannelDeclaration")]))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={
-                "Result": VariableDeclaration("Boolean"),
-                "Channel": Channel(read=False, write=True),
-            },
+            declarations=[
+                VariableDeclaration("Result", "Boolean"),
+                ChannelDeclaration("ChannelDeclaration", readable=False, writable=True),
+            ],
         )
 
 
@@ -760,7 +760,7 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
         match=(
             "^"
             "session: error: invalid action 0 of state START\n"
-            'session: error: channel "Channel" not writable in call to "Call"'
+            'session: error: channel "ChannelDeclaration" not writable in call to "Call"'
             "$"
         ),
     ):
@@ -772,15 +772,15 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
-                    actions=[Assignment("Result", Call("Call", [Variable("Channel")]))],
+                    declarations=[],
+                    actions=[Assignment("Result", Call("Call", [Variable("ChannelDeclaration")]))],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={
-                "Result": VariableDeclaration("Boolean"),
-                "Channel": Channel(read=True, write=False),
-            },
+            declarations=[
+                VariableDeclaration("Result", "Boolean"),
+                ChannelDeclaration("ChannelDeclaration", readable=True, writable=False),
+            ],
         )
 
 
@@ -793,15 +793,15 @@ def test_subprogram_call() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
-                actions=[Assignment("Result", Call("Call", [Variable("Channel")]))],
+                declarations=[],
+                actions=[Assignment("Result", Call("Call", [Variable("ChannelDeclaration")]))],
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Result": VariableDeclaration("Boolean"),
-            "Channel": Channel(read=True, write=True),
-        },
+        declarations=[
+            VariableDeclaration("Result", "Boolean"),
+            ChannelDeclaration("ChannelDeclaration", readable=True, writable=True),
+        ],
     )
 
 
@@ -825,15 +825,15 @@ def test_undeclared_variable_in_subprogram_call() -> None:
                     transitions=[
                         Transition(target=ID("END"), condition=Equal(Variable("Result"), TRUE))
                     ],
-                    declarations={},
+                    declarations=[],
                     actions=[Assignment("Result", Call("SubProg", [Variable("Undefined")]),)],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={
-                "Result": VariableDeclaration("Boolean"),
-                "SubProg": Subprogram([], "Boolean"),
-            },
+            declarations=[
+                VariableDeclaration("Result", "Boolean"),
+                SubprogramDeclaration("SubProg", [], "Boolean"),
+            ],
         )
 
 
@@ -853,11 +853,11 @@ def test_function_declaration_is_no_builtin_read() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations={},
+                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Read": Subprogram([], "Boolean")},
+            declarations=[SubprogramDeclaration("Read", [], "Boolean")],
         )
 
 
@@ -877,11 +877,11 @@ def test_function_declaration_is_no_builtin_write() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations={},
+                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Write": Channel(read=True, write=False)},
+            declarations=[ChannelDeclaration("Write", readable=True, writable=False)],
         )
 
 
@@ -901,11 +901,11 @@ def test_function_declaration_is_no_builtin_call() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations={},
+                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Call": VariableDeclaration("Boolean")},
+            declarations=[VariableDeclaration("Call", "Boolean")],
         )
 
 
@@ -925,14 +925,14 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations={},
+                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={
-                "Data_Available": Renames("Boolean", Variable("Foo")),
-                "Foo": VariableDeclaration("Boolean"),
-            },
+            declarations=[
+                RenamingDeclaration("Data_Available", "Boolean", Variable("Foo")),
+                VariableDeclaration("Foo", "Boolean"),
+            ],
         )
 
 
@@ -955,11 +955,11 @@ def test_local_variable_shadows_global() -> None:
                     transitions=[
                         Transition(target=ID("END"), condition=Equal(Variable("Global"), TRUE))
                     ],
-                    declarations={ID("Global"): VariableDeclaration("Boolean")},
+                    declarations=[VariableDeclaration("Global", "Boolean")],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={ID("Global"): VariableDeclaration("Boolean")},
+            declarations=[VariableDeclaration("Global", "Boolean")],
         )
 
 
@@ -973,11 +973,11 @@ def test_unused_global_variable() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations={},
+                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Global": VariableDeclaration("Boolean")},
+            declarations=[VariableDeclaration("Global", "Boolean")],
         )
 
 
@@ -993,11 +993,11 @@ def test_unused_local_variable() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={ID("Data"): VariableDeclaration("Boolean")},
+                    declarations=[VariableDeclaration("Data", "Boolean")],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
@@ -1015,11 +1015,11 @@ def test_renames_references_undefined_variable() -> None:
                     transitions=[
                         Transition(target=ID("END"), condition=Equal(Variable("Ren"), TRUE))
                     ],
-                    declarations={},
+                    declarations=[],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Ren": Renames("Boolean", Variable("Foo"))},
+            declarations=[RenamingDeclaration("Ren", "Boolean", Variable("Foo"))],
         )
 
 
@@ -1032,7 +1032,7 @@ def test_binding_as_subprogram_parameter() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
+                declarations=[],
                 actions=[
                     Assignment(
                         "Result",
@@ -1045,11 +1045,11 @@ def test_binding_as_subprogram_parameter() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Result": VariableDeclaration("Boolean"),
-            "Variable": VariableDeclaration("Boolean"),
-            "SubProg": Subprogram([], "Boolean"),
-        },
+        declarations=[
+            VariableDeclaration("Result", "Boolean"),
+            VariableDeclaration("Variable", "Boolean"),
+            SubprogramDeclaration("SubProg", [], "Boolean"),
+        ],
     )
 
 
@@ -1074,7 +1074,7 @@ def test_for_all() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={"List": VariableDeclaration("Foo")},
+        declarations=[VariableDeclaration("List", "Foo")],
     )
 
 
@@ -1087,17 +1087,17 @@ def test_append_list_attribute() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
+                declarations=[],
                 actions=[
                     Assignment("List", Call("Append", [Variable("List"), Variable("Element")]),)
                 ],
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "List": VariableDeclaration("List_Type"),
-            "Element": VariableDeclaration("Element_Type"),
-        },
+        declarations=[
+            VariableDeclaration("List", "List_Type"),
+            VariableDeclaration("Element", "Element_Type"),
+        ],
     )
 
 
@@ -1110,17 +1110,17 @@ def test_extend_list_attribute() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                declarations={},
+                declarations=[],
                 actions=[
                     Assignment("List", Call("Extend", [Variable("List"), Variable("Element")]),)
                 ],
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "List": VariableDeclaration("List_Type"),
-            "Element": VariableDeclaration("Element_Type"),
-        },
+        declarations=[
+            VariableDeclaration("List", "List_Type"),
+            VariableDeclaration("Element", "Element_Type"),
+        ],
     )
 
 
@@ -1142,7 +1142,7 @@ def test_aggregate_with_undefined_parameter() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    declarations={},
+                    declarations=[],
                     actions=[
                         Assignment(
                             "Data",
@@ -1154,7 +1154,7 @@ def test_aggregate_with_undefined_parameter() -> None:
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Data": VariableDeclaration("Data_Type")},
+            declarations=[VariableDeclaration("Data", "Data_Type")],
         )
 
 
@@ -1181,7 +1181,7 @@ def test_comprehension() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={"Input": VariableDeclaration("Foo")},
+        declarations=[VariableDeclaration("Input", "Foo")],
     )
 
 
@@ -1207,10 +1207,10 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
                 ),
                 State(name=ID("END")),
             ],
-            declarations={
-                "Data": VariableDeclaration("Foo"),
-                "Sub": Subprogram([Argument("Param", "Param_Type")], "Result_Type"),
-            },
+            declarations=[
+                VariableDeclaration("Data", "Foo"),
+                SubprogramDeclaration("Sub", [Argument("Param", "Param_Type")], "Result_Type"),
+            ],
         )
 
 
@@ -1227,10 +1227,10 @@ def test_assignment_opaque_subprogram_result() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Data": VariableDeclaration("Foo"),
-            "Sub": Subprogram([Argument("Param", "Param_Type")], "Result_Type"),
-        },
+        declarations=[
+            VariableDeclaration("Data", "Foo"),
+            SubprogramDeclaration("Sub", [Argument("Param", "Param_Type")], "Result_Type"),
+        ],
     )
 
 
@@ -1254,10 +1254,10 @@ def test_assignment_opaque_subprogram_binding() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations={
-            "Data": VariableDeclaration("Foo"),
-            "Sub": Subprogram([Argument("Param", "Param_Type")], "Result_Type"),
-        },
+        declarations=[
+            VariableDeclaration("Data", "Foo"),
+            SubprogramDeclaration("Sub", [Argument("Param", "Param_Type")], "Result_Type"),
+        ],
     )
 
 
@@ -1380,11 +1380,11 @@ def test_private_declaration_is_no_builtin_write() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations={},
+                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
                 ),
                 State(name=ID("END")),
             ],
-            declarations={"Write": PrivateDeclaration()},
+            declarations=[PrivateDeclaration("Write")],
         )
 
 
@@ -1398,13 +1398,13 @@ def test_duplicate_states() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("FOO"))], declarations={},
+                    name=ID("START"), transitions=[Transition(target=ID("FOO"))], declarations=[]
                 ),
-                State(name=ID("FOO"), transitions=[Transition(target=ID("END"))], declarations={},),
-                State(name=ID("FOO"), transitions=[Transition(target=ID("END"))], declarations={},),
+                State(name=ID("FOO"), transitions=[Transition(target=ID("END"))], declarations=[]),
+                State(name=ID("FOO"), transitions=[Transition(target=ID("END"))], declarations=[]),
                 State(name=ID("END")),
             ],
-            declarations={},
+            declarations=[],
         )
 
 
