@@ -492,8 +492,14 @@ class MessageValue(TypeValue):
 
     _type: Message
 
-    def __init__(self, model: Message, refinements: Sequence[Refinement] = None) -> None:
+    def __init__(
+        self,
+        model: Message,
+        refinements: Sequence[Refinement] = None,
+        skip_verification: bool = False,
+    ) -> None:
         super().__init__(model)
+        self._skip_verification = skip_verification
         self._refinements = refinements or []
         self._fields: Dict[str, MessageValue.Field] = {
             f.name: self.Field(
@@ -521,13 +527,19 @@ class MessageValue(TypeValue):
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._fields[INITIAL.name] = initial
-        self._simplified_mapping: Mapping[Name, Expr] = {}
-        self._simplified_mapping_keys: Set[Name] = set()
+        self._simplified_mapping_keys: Set[Name] = {
+            initial.name_length,
+            initial.name_last,
+            initial.name_first,
+        }
+        self._simplified_mapping: Dict[Name, Expr] = dict.fromkeys(
+            self._simplified_mapping_keys, Number(0)
+        )
         self.accessible_fields: List[str] = []
         self._preset_fields(INITIAL.name)
 
     def __copy__(self) -> "MessageValue":
-        return MessageValue(self._type, self._refinements)
+        return MessageValue(self._type, self._refinements, self._skip_verification)
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
@@ -740,8 +752,11 @@ class MessageValue(TypeValue):
         else:
             raise KeyError(f"cannot access field {field_name}")
 
-        self.__update_simplified_mapping()
-        check_outgoing_condition_satisfied()
+        if self._skip_verification and field.set:
+            self.__update_simplified_mapping(field)
+        else:
+            self.__update_simplified_mapping()
+            check_outgoing_condition_satisfied()
 
         if checksum_calculation:
             self._preset_fields(field_name)
@@ -759,7 +774,10 @@ class MessageValue(TypeValue):
             if first is None:
                 break
 
-            if self.__simplified(self._type.field_condition(Field(nxt))) == TRUE and (
+            if (
+                self._skip_verification
+                or self.__simplified(self._type.field_condition(Field(nxt))) == TRUE
+            ) and (
                 self._is_valid_opaque_field(nxt)
                 if isinstance(self._fields[nxt].typeval, OpaqueValue)
                 else length is not None
@@ -778,6 +796,8 @@ class MessageValue(TypeValue):
                 field.typeval.clear()
                 break
             self._last_field = nxt
+            if self._skip_verification:
+                break
             nxt = self._next_field(nxt)
         try:
             self.accessible_fields = (
@@ -980,7 +1000,19 @@ class MessageValue(TypeValue):
     def valid_message(self) -> bool:
         return bool(self.valid_fields) and self._next_field(self.valid_fields[-1]) == FINAL.name
 
-    def __update_simplified_mapping(self) -> None:
+    def __update_simplified_mapping(self, field: Optional[Field] = None) -> None:
+        if field:
+            if isinstance(field.typeval, ScalarValue):
+                self._simplified_mapping[field.name_variable] = field.typeval.expr
+                self._simplified_mapping_keys.add(field.name_variable)
+            self._simplified_mapping[field.name_length] = field.typeval.size
+            self._simplified_mapping[field.name_first] = field.first
+            self._simplified_mapping[field.name_last] = field.last
+            self._simplified_mapping_keys.update(
+                {field.name_length, field.name_first, field.name_last}
+            )
+            return
+
         self._simplified_mapping = {}
         for v in self._fields.values():
             if not v.set:
@@ -1003,9 +1035,6 @@ class MessageValue(TypeValue):
     def __simplified(self, expr: Expr) -> Expr:
         if expr in {TRUE, FALSE}:
             return expr
-
-        if not self._simplified_mapping:
-            self.__update_simplified_mapping()
 
         def subst(expression: Expr) -> Expr:
             if expression in self._simplified_mapping_keys:

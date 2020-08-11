@@ -24,7 +24,9 @@ class PyRFLX:
         for p in packages:
             self.__packages[p] = Package(p)
             for m in [x for x in model.messages if str(x.package) == p]:
-                self.__packages[p][str(m.name)] = MessageValue(m, model.refinements)
+                self.__packages[p][str(m.name)] = MessageValue(
+                    m, model.refinements, skip_verification
+                )
 
     def __getitem__(self, key: str) -> Package:
         return self.__packages[key]

@@ -1578,3 +1578,45 @@ def test_checksum_value_range(no_conditionals_type: Message) -> None:
     msg.set("Tag", 0)
     msg.set("Data", 0)
     assert not msg._is_checksum_settable(msg._checksums["Checksum"])
+
+
+def test_no_verification_icmp(icmp: MessageValue) -> None:
+    pyrflx = PyRFLX([f"{SPECDIR}/icmp.rflx"], skip_verification=True)
+    icmp_unv = pyrflx["ICMP"]["Message"]
+    icmp.set("Tag", "Echo_Request")
+    icmp.set("Code_Zero", 0)
+    icmp.set("Checksum", 1234)
+    icmp.set("Identifier", 5)
+    icmp.set("Sequence_Number", 1)
+    icmp.set("Data", b"\x00")
+    icmp_unv.set("Tag", "Echo_Request")
+    icmp_unv.set("Code_Zero", 0)
+    icmp_unv.set("Checksum", 1234)
+    icmp_unv.set("Identifier", 5)
+    icmp_unv.set("Sequence_Number", 1)
+    icmp_unv.set("Data", b"\x00")
+    assert icmp.bytestring == icmp_unv.bytestring
+
+
+def test_no_verification_ethernet(frame: MessageValue) -> None:
+    payload = (
+        b"\x45\x00\x00\x2e\x00\x01\x00\x00\x40\x11\x7c\xbc"
+        b"\x7f\x00\x00\x01\x7f\x00\x00\x01\x00\x35\x00\x35"
+        b"\x00\x1a\x01\x4e\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    )
+    frame.set("Destination", int("FFFFFFFFFFFF", 16))
+    frame.set("Source", int("0", 16))
+    frame.set("Type_Length_TPID", int("0800", 16))
+    frame.set("Type_Length", int("0800", 16))
+    frame.set("Payload", payload)
+    assert frame.valid_message
+    pyrflx = PyRFLX([f"{SPECDIR}/ethernet.rflx"], skip_verification=True)
+    frame_unv = pyrflx["Ethernet"]["Frame"]
+    frame_unv.set("Destination", int("FFFFFFFFFFFF", 16))
+    frame_unv.set("Source", int("0", 16))
+    frame_unv.set("Type_Length_TPID", int("0800", 16))
+    frame_unv.set("Type_Length", int("0800", 16))
+    frame_unv.set("Payload", payload)
+    assert frame_unv.valid_message
+    assert frame.bytestring == frame_unv.bytestring
