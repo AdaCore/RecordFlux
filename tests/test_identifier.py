@@ -82,3 +82,7 @@ def test_id_name() -> None:
 
 def test_id_parent() -> None:
     assert ID("A.B.C").parent == ID("A.B")
+
+
+def test_id_sorted() -> None:
+    assert sorted([ID("B"), ID("A")]) == [ID("A"), ID("B")]

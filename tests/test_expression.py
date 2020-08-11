@@ -27,6 +27,7 @@ from rflx.expression import (
     ForSomeIn,
     Greater,
     GreaterEqual,
+    Head,
     If,
     In,
     Indexed,
@@ -43,17 +44,21 @@ from rflx.expression import (
     NotIn,
     Number,
     Old,
+    Opaque,
     Or,
     OrElse,
     Pos,
     Pow,
+    Present,
     Range,
     Result,
     Selected,
     Size,
     Slice,
+    String,
     Sub,
     Val,
+    Valid,
     ValueRange,
     Variable,
 )
@@ -532,7 +537,8 @@ def test_variable_neg() -> None:
     assert -Variable("X") == Variable("X", True)
 
 
-def test_variable_neg_variables() -> None:
+def test_variable_variables() -> None:
+    assert Variable("X").variables() == [Variable("X")]
     assert (-Variable("X")).variables() == [Variable("X", True)]
 
 
@@ -1143,6 +1149,22 @@ def test_quantified_expression_str() -> None:
     assert str(ForSomeIn("X", Variable("Y"), Variable("Z"))) == "(for some X in Y =>\n    Z)"
 
 
+def test_for_all_in_variables() -> None:
+    result = ForAllIn(
+        "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
+    ).variables()
+    expected = [Variable("X"), Variable("List")]
+    assert result == expected
+
+
+def test_for_some_in_variables() -> None:
+    result = ForSomeIn(
+        "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
+    ).variables()
+    expected = [Variable("X"), Variable("List")]
+    assert result == expected
+
+
 def test_expr_contains() -> None:
     assert Variable("X") in Or(
         Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
@@ -1253,6 +1275,22 @@ def test_size_z3variables() -> None:
     assert Size("Z").variables() == [Variable("Z")]
 
 
+def test_valid_variables() -> None:
+    assert Valid(Variable("X")).variables() == [Variable("X")]
+
+
+def test_present_variables() -> None:
+    assert Present(Variable("X")).variables() == [Variable("X")]
+
+
+def test_head_variables() -> None:
+    assert Head(Variable("X")).variables() == [Variable("X")]
+
+
+def test_opaque_variables() -> None:
+    assert Opaque(Variable("X")).variables() == [Variable("X")]
+
+
 def test_not_variables() -> None:
     assert Not(Variable("X")).variables() == [Variable("X")]
 
@@ -1291,6 +1329,216 @@ def test_number_str_neg_oct() -> None:
 
 def test_number_str_bin() -> None:
     assert str(Number(454, 2)) == "2#111000110#"
+
+
+def test_string_variables() -> None:
+    assert String("X").variables() == []
+
+
+def test_string_simplified() -> None:
+    assert String("Test").simplified() == String("Test")
+
+
+def test_selected_variables() -> None:
+    result = Selected(Variable("X"), "Y").variables()
+    expected = [Variable("X")]
+    assert result == expected
+
+
+def test_in_variables() -> None:
+    result = In(Variable("A"), Variable("B")).variables()
+    expected = [Variable("A"), Variable("B")]
+    assert result == expected
+
+
+def test_call_variables() -> None:
+    result = Call("Sub", [Variable("A"), Variable("B")]).variables()
+    expected = [Variable("A"), Variable("B")]
+    assert result == expected
+
+
+def test_conversion_variables() -> None:
+    result = Conversion("Sub", Variable("X")).variables()
+    expected = [Variable("X")]
+    assert result == expected
+
+
+def test_comprehension_variables() -> None:
+    result = Comprehension(
+        "I",
+        Variable("List"),
+        Selected(Variable("I"), "Data"),
+        Less(Selected(Variable("I"), "X"), Variable("Z")),
+    ).variables()
+    expected = [Variable("List"), Variable("Z")]
+    assert result == expected
+
+
+def test_message_aggregate_variables() -> None:
+    result = MessageAggregate(
+        "Aggr", {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")}
+    ).variables()
+    expected = [Variable("A"), Variable("B"), Variable("C")]
+    assert result == expected
+
+
+def test_binding_variables() -> None:
+    result = Binding(
+        Less(Variable("A"), Variable("Bound")), {"Bound": Less(Variable("B"), Variable("C"))}
+    ).variables()
+    expected = [Variable("A"), Variable("B"), Variable("C")]
+    assert result == expected
+
+
+def test_binding_simplified_aggregate() -> None:
+    binding = Binding(
+        MessageAggregate("M1", {"Data": Variable("B1")}),
+        {"B1": MessageAggregate("M2", {"Data": Variable("B2")})},
+    )
+    expected = MessageAggregate("M1", {"Data": MessageAggregate("M2", {"Data": Variable("B2")})})
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_forall_predicate() -> None:
+    binding = Binding(
+        ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))),
+        {"Bar": Variable("Baz")},
+    )
+    expected = ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Baz")))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_length() -> None:
+    binding = Binding(Length(Variable("A")), {"A": Variable("Baz")})
+    expected = Length(Variable("Baz"))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_forall_iterable() -> None:
+    binding = Binding(
+        ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))), {"Y": Variable("Baz")},
+    )
+    expected = ForAllIn("X", Variable("Baz"), Equal(Variable("X"), Variable("Bar")))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_forsome_predicate() -> None:
+    binding = Binding(
+        ForSomeIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))),
+        {"Bar": Variable("Baz")},
+    )
+    expected = ForSomeIn("X", Variable("Y"), Equal(Variable("X"), Variable("Baz")))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_forsome_iterable() -> None:
+    binding = Binding(
+        ForSomeIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))),
+        {"Y": Variable("Baz")},
+    )
+    expected = ForSomeIn("X", Variable("Baz"), Equal(Variable("X"), Variable("Bar")))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_contains_left() -> None:
+    binding = Binding(In(Variable("X"), Variable("Y")), {"X": Variable("Baz")},)
+    expected = In(Variable("Baz"), Variable("Y"))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_contains_right() -> None:
+    binding = Binding(In(Variable("X"), Variable("Y")), {"Y": Variable("Baz")},)
+    expected = In(Variable("X"), Variable("Baz"))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_not_contains_left() -> None:
+    binding = Binding(NotIn(Variable("X"), Variable("Y")), {"X": Variable("Baz")},)
+    expected = NotIn(Variable("Baz"), Variable("Y"))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_not_contains_right() -> None:
+    binding = Binding(NotIn(Variable("X"), Variable("Y")), {"Y": Variable("Baz")},)
+    expected = NotIn(Variable("X"), Variable("Baz"))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_subprogram() -> None:
+    binding = Binding(
+        Call("Sub", [Variable("A"), Variable("B"), Variable("C")]), {"B": Variable("Baz")},
+    )
+    expected = Call("Sub", [Variable("A"), Variable("Baz"), Variable("C")])
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_field() -> None:
+    binding = Binding(Selected(Variable("A"), "fld"), {"A": Variable("Baz")})
+    expected = Selected(Variable("Baz"), "fld")
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_list_comprehension() -> None:
+    binding = Binding(
+        Comprehension(
+            "E", Variable("List"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
+        ),
+        {"List": Variable("Foo")},
+    )
+    expected = Comprehension(
+        "E", Variable("Foo"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
+    )
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_conversion() -> None:
+    binding = Binding(Conversion("Type", Variable("A")), {"A": Variable("Baz")})
+    expected = Conversion("Type", Variable("Baz"))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_conversion_name_unchanged() -> None:
+    binding = Binding(Conversion("Type", Variable("A")), {"Type": Variable("Baz")})
+    expected = Conversion("Type", Variable("A"))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_opaque() -> None:
+    binding = Binding(Opaque(Call("Sub", [Variable("Bound")])), {"Bound": Variable("Foo")})
+    expected = Opaque(Call("Sub", [Variable("Foo")]))
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_multiple_bindings() -> None:
+    binding = Binding(
+        Selected(Variable("A"), "fld"), {"A": Binding(Variable("B"), {"B": Variable("Baz")})}
+    )
+    expected = Selected(Variable("Baz"), "fld")
+    result = binding.simplified()
+    assert result == expected
+
+
+def test_binding_simplified_multiple_variables() -> None:
+    binding = Binding(Call("Sub", [Variable("A"), Variable("A")]), {"A": Variable("Baz")})
+    expected = Call("Sub", [Variable("Baz"), Variable("Baz")])
+    result = binding.simplified()
+    assert result == expected
 
 
 def test_expr_str() -> None:
