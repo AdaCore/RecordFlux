@@ -68,6 +68,9 @@ class Erase(Statement):
 
 
 class Reset(Statement):
+    def __str__(self) -> str:
+        return f"{self.name}'Reset"
+
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         if self.name not in declarations:
             fail(
@@ -77,6 +80,3 @@ class Reset(Statement):
                 self.location,
             )
         declarations[self.name].reference()
-
-    def __str__(self) -> str:
-        return f"{self.name}'Reset"
