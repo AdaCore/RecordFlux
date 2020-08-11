@@ -24,8 +24,10 @@ def test_graph_object() -> None:
     )
     g = Graph(m).get
     assert [(e.get_source(), e.get_destination()) for e in g.get_edges()] == [
-        ("Initial", "X"),
-        ("X", "Final"),
+        ("Initial", "intermediate_0"),
+        ("intermediate_0", "X"),
+        ("X", "intermediate_1"),
+        ("intermediate_1", "Final"),
     ]
     assert [n.get_name() for n in g.get_nodes()] == [
         "graph",
@@ -33,6 +35,8 @@ def test_graph_object() -> None:
         "node",
         "Initial",
         "X",
+        "intermediate_0",
+        "intermediate_1",
         "Final",
     ]
 
@@ -41,12 +45,16 @@ def test_empty_message_graph() -> None:
     m = Message("P.M", [], {})
     expected = """
         digraph "P.M" {
-            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
+            graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
+                   truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
-            Initial -> Final [xlabel="  (⊤, 0, ⋆)  "];
+            intermediate_0 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
+                     label="(⊤, 0, ⋆)", penwidth=0, style="", width=0];
+            Initial -> intermediate_0 [arrowhead=none];
+            intermediate_0 -> Final [minlen=1];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
@@ -63,14 +71,21 @@ def test_dot_graph() -> None:
     )
     expected = """
         digraph "P.M" {
-            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
+            graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
+                   truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
             X;
-            Initial -> X [xlabel="  (⊤, 32, ⋆)  "];
-            X -> Final [xlabel="  (⊤, 0, ⋆)  "];
+            intermediate_0 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
+                            label="(⊤, 32, ⋆)", penwidth=0, style="", width=0];
+            Initial -> intermediate_0 [arrowhead=none];
+            intermediate_0 -> X [minlen=1];
+            intermediate_1 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
+                            label="(⊤, 0, ⋆)", penwidth=0, style="", width=0];
+            X -> intermediate_1 [arrowhead=none];
+            intermediate_1 -> Final [minlen=1];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
@@ -90,14 +105,20 @@ def test_dot_graph_with_condition() -> None:
     )
     expected = """
         digraph "P.M" {
-            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
+            graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true, truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
-                  shape=box, style="rounded,filled", width="1.5"];
+                 shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
             X;
-            Initial -> X [xlabel="  (⊤, 32, ⋆)  "];
-            X -> Final [xlabel="  (X > 100, 0, ⋆)  "];
+            intermediate_0 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
+                            label="(⊤, 32, ⋆)", penwidth=0, style="", width=0];
+            Initial -> intermediate_0 [arrowhead=none];
+            intermediate_0 -> X [minlen=1];
+            intermediate_1 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
+                            label="(X > 100, 0, ⋆)", penwidth=0, style="", width=0];
+            X -> intermediate_1 [arrowhead=none];
+            intermediate_1 -> Final [minlen=1];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
@@ -118,15 +139,25 @@ def test_dot_graph_with_double_edge() -> None:
     )
     expected = """
         digraph "P.M" {
-            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
+            graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
+                   truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
             X;
-            Initial -> X [xlabel="  (⊤, 32, ⋆)  "];
-            X -> Final [xlabel="  (X > 100, 0, ⋆)  "];
-            X -> Final [xlabel="  (X < 50, 0, ⋆)  "];
+            intermediate_0 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
+                            label="(⊤, 32, ⋆)", penwidth=0, style="", width=0];
+            Initial -> intermediate_0 [arrowhead=none];
+            intermediate_0 -> X [minlen=1];
+            intermediate_1 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
+                            label="(X > 100, 0, ⋆)", penwidth=0, style="", width=0];
+            X -> intermediate_1 [arrowhead=none];
+            intermediate_1 -> Final [minlen=1];
+            intermediate_2 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
+                            label="(X < 50, 0, ⋆)", penwidth=0, style="", width=0];
+            X -> intermediate_2 [arrowhead=none];
+            intermediate_2 -> Final [minlen=1];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
