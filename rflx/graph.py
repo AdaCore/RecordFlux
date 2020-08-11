@@ -33,7 +33,7 @@ class Graph:
         """Return pydot graph representation of message."""
         result = Dot(graph_name=self.__message.full_name)
         result.set_graph_defaults(
-            splines="ortho", ranksep="0.8 equally", pad="0.5", truecolor="true", bgcolor="#00000000"
+            splines="true", ranksep="0.1 equally", pad="0.1", truecolor="true", bgcolor="#00000000"
         )
         result.set_edge_defaults(fontname="Fira Code", fontcolor="#6f6f6f", color="#6f6f6f")
         result.set_node_defaults(
@@ -50,9 +50,23 @@ class Graph:
         )
         for f in self.__message.fields:
             result.add_node(Node(name=f.name))
-        for l in self.__message.structure:
-            label = self.__edge_label(l).replace("\n", "  \n  ")
-            result.add_edge(Edge(src=l.source.name, dst=l.target.name, xlabel=f"  {label}  "))
+        for i, l in enumerate(self.__message.structure):
+            intermediate_node = f"intermediate_{i}"
+            result.add_node(
+                Node(
+                    name=intermediate_node,
+                    label=self.__edge_label(l),
+                    style="",
+                    fontname="Fira Code",
+                    fontcolor="#6f6f6f",
+                    color="#6f6f6f",
+                    penwidth="0",
+                    width="0",
+                    height="0",
+                )
+            )
+            result.add_edge(Edge(src=l.source.name, dst=intermediate_node, arrowhead="none"))
+            result.add_edge(Edge(src=intermediate_node, dst=l.target.name, minlen="1"))
         result.add_node(
             Node(name="Final", fillcolor="#6f6f6f", shape="circle", width="0.5", label="")
         )
