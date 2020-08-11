@@ -4,5 +4,6 @@ exclude_lines =
     assert False
     def __repr__
     def __str__
+    if TYPE_CHECKING:
     raise NotImplementedError
     return NotImplemented
