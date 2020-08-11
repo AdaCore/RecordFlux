@@ -181,8 +181,8 @@ class Session(Base):
                 self.location,
             )
 
-    @classmethod
-    def __entity_name(cls, decl: Declaration) -> str:
+    @staticmethod
+    def __entity_name(decl: Declaration) -> str:
         if isinstance(decl, SubprogramDeclaration):
             return "subprogram"
         if isinstance(decl, VariableDeclaration):
@@ -193,7 +193,7 @@ class Session(Base):
             return "channel"
         if isinstance(decl, PrivateDeclaration):
             return "private"
-        assert False, f"Unsupported entity {type(decl).__name__}"
+        assert False, f"unsupported entity {type(decl).__name__}"
 
     def __validate_declarations(self) -> None:
         for s in self.states:
