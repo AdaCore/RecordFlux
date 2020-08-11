@@ -226,8 +226,7 @@ class Session(Base):
             except RecordFluxError as e:
                 self.error.extend(e)
         for k, d in self.declarations.items():
-            # pylint: disable=fixme
-            # FIXME: We do not validate variable declarations at the moment
+            # ISSUE: Componolit/RecordFlux#397
             if isinstance(d, PrivateDeclaration):
                 continue
             if not d.is_referenced:
