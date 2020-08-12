@@ -2057,10 +2057,14 @@ class String(Expr):
         return self
 
     def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
+        return z3.BoolVal(False)
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         pass
+
+    @property
+    def aggregate(self) -> Aggregate:
+        return Aggregate(*[Number(ord(c)) for c in self.data])
 
 
 def substitution(
