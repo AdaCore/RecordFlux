@@ -610,6 +610,12 @@ class MessageValue(TypeValue):
                 first = self.__simplified(l.first)
                 return first if isinstance(first, Number) else None
         prv = self._prev_field(fld)
+        if self._skip_verification and prv:
+            first = self._fields[prv].first
+            length = self._fields[prv].typeval.size
+            assert isinstance(first, Number)
+            assert isinstance(length, Number)
+            return Number(first.value + length.value)
         if prv and UNDEFINED not in (self._fields[prv].first, self._fields[prv].typeval.size):
             first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
             return first if isinstance(first, Number) else None
@@ -734,8 +740,18 @@ class MessageValue(TypeValue):
 
         if field_name in self.accessible_fields:
             field = self._fields[field_name]
-            field_first = self._get_first(field_name)
-            field_length = self._get_length(field_name)
+            f_first = field.first
+            f_length = field.typeval.size
+            field_first = (
+                f_first
+                if self._skip_verification and isinstance(f_first, Number)
+                else self._get_first(field_name)
+            )
+            field_length = (
+                f_length
+                if self._skip_verification and isinstance(f_length, Number)
+                else self._get_length(field_name)
+            )
             assert field_first is not None
             field.first = field_first
             if isinstance(field.typeval, CompositeValue) and field_length is not None:
