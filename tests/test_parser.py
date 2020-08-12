@@ -24,6 +24,7 @@ from rflx.expression import (
     NotEqual,
     Number,
     Pow,
+    String,
     Sub,
     ValueRange,
     Variable,
@@ -186,8 +187,7 @@ def test_mathematical_expression_aggregate_no_number() -> None:
 
 def test_mathematical_expression_string() -> None:
     assert_equal(
-        grammar.mathematical_expression().parseString('"PNG"')[0],
-        Aggregate(Number(80), Number(78), Number(71)),
+        grammar.mathematical_expression().parseString('"PNG"')[0], String("PNG"),
     )
 
 

@@ -54,6 +54,7 @@ from rflx.expression import (
     Or,
     Pow,
     Relation,
+    String,
     Sub,
     ValidChecksum,
     ValueRange,
@@ -143,6 +144,12 @@ def numeric_literal() -> Token:
     )
 
 
+def string_literal() -> Token:
+    return locatedExpr(QuotedString('"')).setParseAction(
+        lambda s, l, t: String(t[0][1], location=parser_location(t[0][0], t[0][2], s))
+    )
+
+
 def logical_expression() -> Token:
     relational_operator = (
         Keyword("<=") | Keyword(">=") | Keyword("=") | Keyword("/=") | Keyword("<") | Keyword(">")
@@ -176,12 +183,9 @@ def mathematical_expression() -> Token:
     )
     array_aggregate.setParseAction(parse_array_aggregate)
 
-    string = QuotedString('"')
-    string.setParseAction(parse_string)
-
     concatenation = (
         infixNotation(
-            array_aggregate | string,
+            array_aggregate | string_literal(),
             [(Suppress(Keyword("&")), 2, opAssoc.LEFT, parse_concatenation)],
             lpar=left_parenthesis(),
             rpar=right_parenthesis(),
@@ -430,13 +434,14 @@ def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> E
 
 
 @fatalexceptions
-def parse_string(string: str, location: int, tokens: ParseResults) -> Expr:
-    return Aggregate(*[Number(ord(c)) for c in tokens[0]])
-
-
-@fatalexceptions
 def parse_concatenation(string: str, location: int, tokens: ParseResults) -> Expr:
-    return Aggregate(*[e for t in tokens[0] for e in t.elements])
+    aggregates = [t.aggregate if isinstance(t, String) else t for t in tokens[0]]
+    return Aggregate(
+        *[e for t in aggregates for e in t.elements],
+        location=Location(
+            tokens[0][0].location.start, tokens[0][0].location.source, tokens[0][-1].location.end
+        ),
+    )
 
 
 @fatalexceptions

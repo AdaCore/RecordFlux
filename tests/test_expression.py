@@ -1339,6 +1339,10 @@ def test_string_simplified() -> None:
     assert String("Test").simplified() == String("Test")
 
 
+def test_string_aggregate() -> None:
+    assert String("Test").aggregate == Aggregate(Number(84), Number(101), Number(115), Number(116))
+
+
 def test_selected_variables() -> None:
     result = Selected(Variable("X"), "Y").variables()
     expected = [Variable("X")]
