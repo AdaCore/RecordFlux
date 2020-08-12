@@ -517,7 +517,6 @@ class MessageValue(TypeValue):
         }
 
         self.__type_literals: Mapping[Name, Expr] = {}
-        self._last_field: str = self._next_field(INITIAL.name)
         for t in [
             f.typeval.literals for f in self._fields.values() if isinstance(f.typeval, EnumValue)
         ]:
@@ -527,6 +526,7 @@ class MessageValue(TypeValue):
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._fields[INITIAL.name] = initial
+        self._last_field: str = self._next_field(INITIAL.name)
         self._simplified_mapping_keys: Set[Name] = {
             initial.name_length,
             initial.name_last,
@@ -558,6 +558,8 @@ class MessageValue(TypeValue):
     def _next_field(self, fld: str) -> str:
         if fld == FINAL.name:
             return ""
+        if self._skip_verification and self._fields[fld].next:
+            return self._fields[fld].next
         if fld == INITIAL.name:
             links = self._type.outgoing(INITIAL)
             if not links:
@@ -572,6 +574,8 @@ class MessageValue(TypeValue):
     def _prev_field(self, fld: str) -> str:
         if fld == INITIAL.name:
             return ""
+        if self._skip_verification:
+            return self._fields[fld].prev
         prev: List[str] = [
             l.source.name
             for l in self._type.incoming(Field(fld))
@@ -741,7 +745,7 @@ class MessageValue(TypeValue):
                 if isinstance(value, Bitstring):
                     field.typeval.parse(value)
                 elif isinstance(value, field.typeval.accepted_type):
-                    field.typeval.assign(value)
+                    field.typeval.assign(value, not self._skip_verification)
                 else:
                     raise TypeError(
                         f"cannot assign different types: {field.typeval.accepted_type.__name__}"
@@ -768,6 +772,8 @@ class MessageValue(TypeValue):
         nxt = self._next_field(fld)
         fields: List[str] = []
         while nxt and nxt != FINAL.name:
+            if self._skip_verification:
+                self._fields[nxt].prev = fld
             field = self._fields[nxt]
             first = self._get_first(nxt)
             length = self._get_length(nxt)
@@ -797,6 +803,7 @@ class MessageValue(TypeValue):
                 break
             self._last_field = nxt
             if self._skip_verification:
+                self._fields[fld].next = nxt
                 break
             nxt = self._next_field(nxt)
         try:
@@ -1074,6 +1081,8 @@ class MessageValue(TypeValue):
         name_first: First
         name_last: Last
         name_length: Length
+        prev: str
+        next: str
 
         def __init__(self, t: TypeValue, name: str):
             self.typeval = t
@@ -1083,6 +1092,8 @@ class MessageValue(TypeValue):
             self.name_first = First(name)
             self.name_last = Last(name)
             self.name_length = Length(name)
+            self.prev = ""
+            self.next = ""
 
         def _last(self) -> Expr:
             if self.first == UNDEFINED:
