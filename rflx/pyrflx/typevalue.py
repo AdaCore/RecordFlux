@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from rflx.common import generic_repr
 from rflx.expression import (
@@ -521,19 +521,13 @@ class MessageValue(TypeValue):
             f.typeval.literals for f in self._fields.values() if isinstance(f.typeval, EnumValue)
         ]:
             self.__type_literals.update(t)
-        self.__type_literals_keys = set(self.__type_literals)
         initial = self.Field(OpaqueValue(Opaque()), INITIAL.name)
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._fields[INITIAL.name] = initial
         self._last_field: str = self._next_field(INITIAL.name)
-        self._simplified_mapping_keys: Set[Name] = {
-            initial.name_length,
-            initial.name_last,
-            initial.name_first,
-        }
         self._simplified_mapping: Dict[Name, Expr] = dict.fromkeys(
-            self._simplified_mapping_keys, Number(0)
+            [initial.name_length, initial.name_last, initial.name_first], Number(0)
         )
         self.accessible_fields: List[str] = []
         self._preset_fields(INITIAL.name)
@@ -1027,13 +1021,9 @@ class MessageValue(TypeValue):
         if field:
             if isinstance(field.typeval, ScalarValue):
                 self._simplified_mapping[field.name_variable] = field.typeval.expr
-                self._simplified_mapping_keys.add(field.name_variable)
             self._simplified_mapping[field.name_length] = field.typeval.size
             self._simplified_mapping[field.name_first] = field.first
             self._simplified_mapping[field.name_last] = field.last
-            self._simplified_mapping_keys.update(
-                {field.name_length, field.name_first, field.name_last}
-            )
             return
 
         self._simplified_mapping = {}
@@ -1049,21 +1039,19 @@ class MessageValue(TypeValue):
         # ISSUE: Componolit/RecordFlux#240
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
 
-        self._simplified_mapping_keys = set(self._simplified_mapping)
         pre_final = self._prev_field("Final")
         if pre_final and self._fields[pre_final].set:
             self._simplified_mapping[Last("Message")] = self._fields[pre_final].last
-            self._simplified_mapping_keys.add(Last("Message"))
 
     def __simplified(self, expr: Expr) -> Expr:
         if expr in {TRUE, FALSE}:
             return expr
 
         def subst(expression: Expr) -> Expr:
-            if expression in self._simplified_mapping_keys:
+            if expression in self._simplified_mapping:
                 assert isinstance(expression, Name)
                 return self._simplified_mapping[expression]
-            if expression in self.__type_literals_keys:
+            if expression in self.__type_literals:
                 assert isinstance(expression, Name)
                 return self.__type_literals[expression]
             return expression
