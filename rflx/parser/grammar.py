@@ -1,3 +1,4 @@
+import traceback
 from typing import Callable, Dict, List, Tuple
 
 from pyparsing import (
@@ -418,7 +419,7 @@ def fatalexceptions(parse_function: Callable) -> Callable:
         except (ParseFatalException, RecordFluxError) as e:
             raise e
         except Exception as e:
-            raise ParseFatalException(string, location, f"implementation error ({e})") from e
+            raise ParseFatalException(string, location, traceback.format_exc()) from e
 
     return wrapper
 
