@@ -131,7 +131,9 @@ def raise_parser_error() -> None:
 
 
 def test_unexpected_exception_in_grammar(monkeypatch: Any) -> None:
-    with pytest.raises(ParseFatalException, match=r"implementation error \(division by zero\)"):
+    with pytest.raises(
+        ParseFatalException, match=r"ZeroDivisionError",
+    ):
         monkeypatch.setattr(
             grammar,
             "parse_mathematical_expression",
