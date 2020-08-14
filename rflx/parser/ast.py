@@ -5,6 +5,7 @@ from rflx.error import Location
 from rflx.expression import TRUE, UNDEFINED, Expr
 from rflx.identifier import ID, StrID
 from rflx.model import Type
+from rflx.session import Session
 
 
 class SyntaxTree:
@@ -53,10 +54,17 @@ class Component(SyntaxTree):
 
 
 class PackageSpec(SyntaxTree):
-    def __init__(self, identifier: StrID, types: List[Type], end_identifier: StrID = None) -> None:
+    def __init__(
+        self,
+        identifier: StrID,
+        types: List[Type],
+        sessions: List[Session],
+        end_identifier: StrID = None,
+    ) -> None:
         self.identifier = ID(identifier)
         self.end_identifier = ID(end_identifier) if end_identifier else self.identifier
         self.types = types
+        self.sessions = sessions
 
 
 class ContextSpec(SyntaxTree):

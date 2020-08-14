@@ -50,7 +50,9 @@ INTERNAL_PACKAGE = ID("__INTERNAL__")
 class Base(ABC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
+            return {k: v for k, v in self.__dict__.items() if k != "location"} == {
+                k: v for k, v in other.__dict__.items() if k != "location"
+            }
         return NotImplemented
 
     def __repr__(self) -> str:
