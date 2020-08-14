@@ -6,14 +6,17 @@ from typing import Any, Dict, Sequence
 
 import pytest
 
+import rflx.declaration as decl
+import rflx.expression as expr
+import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
     UNDEFINED,
     Add,
-    Aggregate,
     And,
     Div,
     Equal,
+    Expr,
     First,
     Greater,
     GreaterEqual,
@@ -24,7 +27,6 @@ from rflx.expression import (
     NotEqual,
     Number,
     Pow,
-    String,
     Sub,
     ValueRange,
     Variable,
@@ -57,6 +59,7 @@ from rflx.parser.ast import (
     Then,
 )
 from rflx.parser.parser import Component, ParseFatalException, Parser
+from rflx.session import Session, State, Transition
 from tests.models import ETHERNET_FRAME
 from tests.utils import assert_equal
 
@@ -131,111 +134,753 @@ def raise_parser_error() -> None:
     fail("TEST", Subsystem.PARSER, Severity.ERROR)
 
 
-def test_unexpected_exception_in_grammar(monkeypatch: Any) -> None:
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("1000", expr.Number(1000)),
+        ("1_000", expr.Number(1000)),
+        ("16#6664#", expr.Number(26212)),
+        ("16#66_64#", expr.Number(26212)),
+    ],
+)
+def test_grammar_expression_numeric_literal(string: str, expected: Expr) -> None:
+    actual = grammar.numeric_literal().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize("string,expected", [("X", Variable("X")), ("X.Y", Variable("X.Y"))])
+def test_grammar_variable(string: str, expected: decl.Declaration) -> None:
+    actual = grammar.variable().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X'First", expr.First(expr.Variable("X"))),
+        ("X'Last", expr.Last(expr.Variable("X"))),
+        ("X'Length", expr.Length(expr.Variable("X"))),
+        ("X'Head", expr.Head(expr.Variable("X"))),
+        ("X'Opaque", expr.Opaque(expr.Variable("X"))),
+        ("X'Present", expr.Present(expr.Variable("X"))),
+        ("X'Valid", expr.Valid(expr.Variable("X"))),
+        ("X'Valid_Checksum", expr.ValidChecksum(expr.Variable("X"))),
+        ("X where X = 42", expr.Binding(expr.Variable("X"), {ID("X"): expr.Number(42)})),
+        ("X'Head.Y", expr.Selected(expr.Head(expr.Variable("X")), "Y")),
+    ],
+)
+def test_grammar_expression_suffix(string: str, expected: Expr) -> None:
+    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        (
+            "A - B * 2**3 - 1",
+            Sub(Sub(Variable("A"), Mul(Variable("B"), Pow(Number(2), Number(3)))), Number(1)),
+        ),
+        (
+            "(A - B) * 2**3 - 1",
+            Sub(Mul(Sub(Variable("A"), Variable("B")), Pow(Number(2), Number(3))), Number(1)),
+        ),
+        (
+            "A - B * 2**(3 - 1)",
+            Sub(Variable("A"), Mul(Variable("B"), Pow(Number(2), Sub(Number(3), Number(1))))),
+        ),
+        (
+            "A - (B * 2)**3 - 1",
+            Sub(Sub(Variable("A"), Pow(Mul(Variable("B"), Number(2)), Number(3))), Number(1)),
+        ),
+        (
+            "A - (B * 2**3 - 1)",
+            Sub(Variable("A"), Sub(Mul(Variable("B"), Pow(Number(2), Number(3))), Number(1))),
+        ),
+    ],
+)
+def test_grammar_expression_mathematical(string: str, expected: Expr) -> None:
+    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X = Y", expr.Equal(expr.Variable("X"), expr.Variable("Y"))),
+        ("X /= Y", expr.NotEqual(expr.Variable("X"), expr.Variable("Y"))),
+        ("42 < X", expr.Less(expr.Number(42), expr.Variable("X"))),
+        ("42 <= X", expr.LessEqual(expr.Number(42), expr.Variable("X"))),
+        ("X > 42", expr.Greater(expr.Variable("X"), expr.Number(42))),
+        ("X >= 42", expr.GreaterEqual(expr.Variable("X"), expr.Number(42))),
+        ("X in Y", expr.In(expr.Variable("X"), expr.Variable("Y"))),
+        ("X not in Y", expr.NotIn(expr.Variable("X"), expr.Variable("Y"))),
+        ("((X = 42))", expr.Equal(expr.Variable("X"), expr.Number(42))),
+    ],
+)
+def test_grammar_expression_relation(string: str, expected: Expr) -> None:
+    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X and Y", expr.And(expr.Variable("X"), expr.Variable("Y"))),
+        ("X or Y", expr.Or(expr.Variable("X"), expr.Variable("Y"))),
+        ("((X or Y))", expr.Or(expr.Variable("X"), expr.Variable("Y"))),
+    ],
+)
+def test_grammar_expression_logical(string: str, expected: Expr) -> None:
+    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X + Y", expr.Add(expr.Variable("X"), expr.Variable("Y"))),
+        ("X + Y (Z)", expr.Add(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
+    ],
+)
+def test_grammar_mathematical_expression(string: str, expected: Expr) -> None:
+    actual = grammar.mathematical_expression().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,error",
+    [
+        ("42 > X", 'unexpected expression type "Greater" .*'),
+        ("X and Y", 'unexpected expression type "And" .*'),
+    ],
+)
+def test_grammar_mathematical_expression_error(string: str, error: Expr) -> None:
+    with pytest.raises(ParseFatalException, match=rf"^{error}$"):
+        grammar.mathematical_expression().parseString(string, parseAll=True)
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X and Y", expr.And(expr.Variable("X"), expr.Variable("Y"))),
+        ("X and Y (Z)", expr.And(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
+    ],
+)
+def test_grammar_logical_expression(string: str, expected: Expr) -> None:
+    actual = grammar.logical_expression().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,error",
+    [
+        ("42", 'unexpected expression type "Number" .*'),
+        ("X", 'unexpected expression type "Variable" .*'),
+    ],
+)
+def test_grammar_logical_expression_error(string: str, error: Expr) -> None:
+    with pytest.raises(ParseFatalException, match=rf"^{error}$"):
+        grammar.logical_expression().parseString(string, parseAll=True)
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("42", expr.Number(42)),
+        ('"Foo Bar"', expr.String("Foo Bar")),
+        ("(1)", expr.Aggregate(expr.Number(1))),
+        ("(1, 2)", expr.Aggregate(expr.Number(1), expr.Number(2))),
+        (
+            '(137) & "PNG" & (13, 10, 26, 10)',
+            expr.Aggregate(
+                Number(137),
+                Number(80),
+                Number(78),
+                Number(71),
+                Number(13),
+                Number(10),
+                Number(26),
+                Number(10),
+            ),
+        ),
+        (
+            "for all X in Y => X = Z",
+            expr.ForAllIn(
+                "X", expr.Variable("Y"), expr.Equal(expr.Variable("X"), expr.Variable("Z"))
+            ),
+        ),
+        (
+            "for some X in Y => X = Z",
+            expr.ForSomeIn(
+                "X", expr.Variable("Y"), expr.Equal(expr.Variable("X"), expr.Variable("Z"))
+            ),
+        ),
+        (
+            "[for X in Y => X.A]",
+            expr.Comprehension("X", expr.Variable("Y"), expr.Variable("X.A"), expr.TRUE),
+        ),
+        (
+            "[for X in Y => X.A when X.B = Z]",
+            expr.Comprehension(
+                "X",
+                expr.Variable("Y"),
+                expr.Variable("X.A"),
+                expr.Equal(expr.Variable("X.B"), expr.Variable("Z")),
+            ),
+        ),
+        (
+            'X (A, "S", 42)',
+            expr.Call("X", [expr.Variable("A"), expr.String("S"), expr.Number(42)]),
+        ),
+        ("X.Y (A)", expr.Conversion("X.Y", expr.Variable("A"))),
+        ("X'(Y => Z)", expr.MessageAggregate("X", {ID("Y"): expr.Variable("Z")})),
+        (
+            "X'(Y => Z, A => B)",
+            expr.MessageAggregate("X", {ID("Y"): expr.Variable("Z"), ID("A"): expr.Variable("B")}),
+        ),
+        ("X'(null message)", expr.MessageAggregate("X", {})),
+        ("X", expr.Variable("X")),
+    ],
+)
+def test_grammar_expression_base(string: str, expected: Expr) -> None:
+    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X'Valid = True", expr.Equal(expr.Valid(expr.Variable("X")), expr.Variable("True"))),
+        ("X.Y /= Z", expr.NotEqual(expr.Variable("X.Y"), expr.Variable("Z"))),
+        (
+            "X = Y and Y /= Z",
+            expr.And(
+                expr.Equal(expr.Variable("X"), expr.Variable("Y")),
+                expr.NotEqual(expr.Variable("Y"), expr.Variable("Z")),
+            ),
+        ),
+        (
+            "X'Valid and Y'Valid",
+            expr.And(expr.Valid(expr.Variable("X")), expr.Valid(expr.Variable("Y"))),
+        ),
+        (
+            "X'Valid = True and (Y'Valid = False or Z'Valid = False)",
+            expr.And(
+                expr.Equal(expr.Valid(expr.Variable("X")), expr.Variable("True")),
+                expr.Or(
+                    expr.Equal(expr.Valid(expr.Variable("Y")), expr.Variable("False")),
+                    expr.Equal(expr.Valid(expr.Variable("Z")), expr.Variable("False")),
+                ),
+            ),
+        ),
+        (
+            "X'Valid = False or X.A /= A or X.B /= B or (X.C = 0 and X.D not in X.E)",
+            expr.Or(
+                expr.Or(
+                    expr.Or(
+                        expr.Equal(expr.Valid(expr.Variable("X")), expr.Variable("False")),
+                        expr.NotEqual(expr.Variable("X.A"), expr.Variable("A")),
+                    ),
+                    expr.NotEqual(expr.Variable("X.B"), expr.Variable("B")),
+                ),
+                And(
+                    expr.Equal(expr.Variable("X.C"), expr.Number(0)),
+                    expr.NotIn(expr.Variable("X.D"), expr.Variable("X.E")),
+                ),
+            ),
+        ),
+        (
+            "for some A in X.B => (A.T = P.E and (G.E not in P.S (A.D).V))",
+            expr.ForSomeIn(
+                "A",
+                expr.Variable("X.B"),
+                And(
+                    expr.Equal(expr.Variable("A.T"), expr.Variable("P.E")),
+                    expr.NotIn(
+                        expr.Variable("G.E"),
+                        expr.Selected(expr.Conversion("P.S", expr.Variable("A.D")), "V"),
+                    ),
+                ),
+            ),
+        ),
+        ("X.Y (Z) = 42", expr.Equal(expr.Conversion("X.Y", expr.Variable("Z")), expr.Number(42))),
+        ("X (Y).Z", expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z")),
+        ("X (Y).Z'Length", Length(expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z"))),
+        (
+            "G.E not in P.S (E.D).V",
+            expr.NotIn(
+                expr.Variable("G.E"),
+                expr.Selected(expr.Conversion("P.S", expr.Variable("E.D")), "V"),
+            ),
+        ),
+        (
+            "[for E in L => E.B when E.T = A]'Head",
+            expr.Head(
+                expr.Comprehension(
+                    "E",
+                    expr.Variable("L"),
+                    expr.Variable("E.B"),
+                    expr.Equal(expr.Variable("E.T"), expr.Variable("A")),
+                )
+            ),
+        ),
+        ("A'Head.D", expr.Selected(expr.Head(expr.Variable("A")), "D")),
+        (
+            "[for E in L => E.B when E.T = A]'Head.D",
+            expr.Selected(
+                expr.Head(
+                    expr.Comprehension(
+                        "E",
+                        expr.Variable("L"),
+                        expr.Variable("E.B"),
+                        expr.Equal(expr.Variable("E.T"), expr.Variable("A")),
+                    )
+                ),
+                "D",
+            ),
+        ),
+        (
+            "(for some S in P.X ([for E in C.A => E when E.T = P.L]'Head.D).H => S.G = G) = False",
+            expr.Equal(
+                expr.ForSomeIn(
+                    "S",
+                    expr.Selected(
+                        expr.Conversion(
+                            "P.X",
+                            expr.Selected(
+                                expr.Head(
+                                    expr.Comprehension(
+                                        "E",
+                                        expr.Variable("C.A"),
+                                        expr.Variable("E"),
+                                        expr.Equal(expr.Variable("E.T"), expr.Variable("P.L")),
+                                    )
+                                ),
+                                "D",
+                            ),
+                        ),
+                        "H",
+                    ),
+                    expr.Equal(expr.Variable("S.G"), expr.Variable("G")),
+                ),
+                expr.Variable("False"),
+            ),
+        ),
+        (
+            "M1'(D => B1) where B1 = M2'(D => B2)",
+            expr.Binding(
+                expr.MessageAggregate("M1", {ID("D"): expr.Variable("B1")}),
+                {ID("B1"): expr.MessageAggregate("M2", {ID("D"): expr.Variable("B2")})},
+            ),
+        ),
+        (
+            "M1'(D1 => B1, D2 => B2) where B1 = M2'(D => B2), B2 = M2'(D => B3)",
+            expr.Binding(
+                expr.MessageAggregate(
+                    "M1", {ID("D1"): expr.Variable("B1"), ID("D2"): expr.Variable("B2")}
+                ),
+                {
+                    ID("B1"): expr.MessageAggregate("M2", {ID("D"): expr.Variable("B2")}),
+                    ID("B2"): expr.MessageAggregate("M2", {ID("D"): expr.Variable("B3")}),
+                },
+            ),
+        ),
+        (
+            "M1'(D => B1) where B1 = M2'(D => B2) where B2 = M3'(D => B3)",
+            expr.Binding(
+                expr.MessageAggregate("M1", {ID("D"): expr.Variable("B1")}),
+                {
+                    ID("B1"): expr.Binding(
+                        expr.MessageAggregate("M2", {ID("D"): expr.Variable("B2")}),
+                        {ID("B2"): expr.MessageAggregate("M3", {ID("D"): expr.Variable("B3")})},
+                    )
+                },
+            ),
+        ),
+    ],
+)
+def test_grammar_expression_complex(string: str, expected: Expr) -> None:
+    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+def test_grammar_private_type_declaration() -> None:
+    string = "type X is private"
+    expected = decl.PrivateDeclaration("X")
+    actual = grammar.private_type_declaration().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X : Channel with Readable", decl.ChannelDeclaration("X", readable=True)),
+        ("X : Channel with Writable", decl.ChannelDeclaration("X", writable=True)),
+        (
+            "X : Channel with Readable, Writable",
+            decl.ChannelDeclaration("X", readable=True, writable=True),
+        ),
+    ],
+)
+def test_grammar_channel_declaration(string: str, expected: decl.Declaration) -> None:
+    actual = grammar.channel_declaration().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("with function X return Y", decl.SubprogramDeclaration("X", [], "Y")),
+        (
+            "with function X (A : B; C : D) return Y",
+            decl.SubprogramDeclaration(
+                "X", [decl.Argument("A", "B"), decl.Argument("C", "D")], "Y"
+            ),
+        ),
+    ],
+)
+def test_grammar_formal_function_declaration(string: str, expected: decl.Declaration) -> None:
+    actual = grammar.formal_function_declaration().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("A : B", decl.VariableDeclaration("A", "B")),
+        ("A : B := C", decl.VariableDeclaration("A", "B", expr.Variable("C"))),
+        ("A : B := 1", decl.VariableDeclaration("A", "B", Number(1))),
+    ],
+)
+def test_grammar_variable_declaration(string: str, expected: decl.Declaration) -> None:
+    actual = grammar.variable_declaration().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("A : B renames C", decl.RenamingDeclaration("A", "B", Variable("C"))),
+        ("A : B renames C.D", decl.RenamingDeclaration("A", "B", Variable("C.D"))),
+    ],
+)
+def test_grammar_renaming_declaration(string: str, expected: decl.Declaration) -> None:
+    actual = grammar.renaming_declaration().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [("A := B", stmt.Assignment("A", expr.Variable("B"))), ("C := null", stmt.Erase("C"))],
+)
+def test_grammar_assignment_statement(string: str, expected: stmt.Statement) -> None:
+    actual = grammar.assignment_statement().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("A'Append (B)", stmt.Append("A", expr.Variable("B"))),
+        ("A'Extend (B)", stmt.Extend("A", expr.Variable("B"))),
+        ("C'Reset", stmt.Reset("C")),
+    ],
+)
+def test_grammar_attribute_statement(string: str, expected: stmt.Statement) -> None:
+    actual = grammar.attribute_statement().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        (
+            """
+               state A is
+               begin
+               transition
+                  then B
+               end A
+         """,
+            State("A", transitions=[Transition("B")]),
+        ),
+        (
+            """
+               state A is
+               begin
+               transition
+                  then B
+                     if X = Y
+                  then C
+               end A
+         """,
+            State(
+                "A",
+                transitions=[Transition("B", Equal(Variable("X"), Variable("Y"))), Transition("C")],
+            ),
+        ),
+        (
+            """
+               state A is
+               begin
+               transition
+                  then B
+                     with Desc => "rfc2549.txt+12:3-45:6"
+                     if X = Y
+                  then C
+                     with Desc => "rfc2549.txt+123:45-678:9"
+               end A
+         """,
+            State(
+                "A",
+                transitions=[
+                    Transition(
+                        "B",
+                        Equal(Variable("X"), Variable("Y")),
+                        description="rfc2549.txt+12:3-45:6",
+                    ),
+                    Transition("C", description="rfc2549.txt+123:45-678:9"),
+                ],
+            ),
+        ),
+        (
+            """
+               state A is
+                  Z : Boolean := Y;
+               begin
+               transition
+                  then B
+               end A
+         """,
+            State(
+                "A",
+                transitions=[Transition("B")],
+                declarations=[decl.VariableDeclaration("Z", "Boolean", Variable("Y"))],
+                actions=[],
+            ),
+        ),
+    ],
+)
+def test_grammar_state(string: str, expected: decl.Declaration) -> None:
+    actual = grammar.state().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,error",
+    [
+        (
+            """
+               state A is
+               begin
+               transition
+                  then B
+               end C
+         """,
+            "inconsistent state identifier: A /= C.*",
+        )
+    ],
+)
+def test_grammar_state_error(string: str, error: str) -> None:
+    with pytest.raises(ParseFatalException, match=rf"^{error}$"):
+        grammar.state().parseString(string, parseAll=True)
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        (
+            """
+               generic
+                  X : Channel with Readable, Writable;
+                  type T is private;
+                  with function F return T;
+               session Session with
+                  Initial => A,
+                  Final => B
+               is
+                  Y : Boolean := 0;
+               begin
+                  state A is
+                     Z : Boolean := Y;
+                  begin
+                     Z := 1;
+                  transition
+                     then B
+                        if Z = 1
+                     then A
+                  end A;
+
+                  state B is null state;
+               end Session;
+         """,
+            Session(
+                "Session",
+                "A",
+                "B",
+                [
+                    State(
+                        "A",
+                        declarations=[decl.VariableDeclaration("Z", "Boolean", Variable("Y"))],
+                        actions=[stmt.Assignment("Z", Number(1))],
+                        transitions=[
+                            Transition("B", condition=Equal(Variable("Z"), Number(1))),
+                            Transition("A"),
+                        ],
+                    ),
+                    State("B"),
+                ],
+                [decl.VariableDeclaration("Y", "Boolean", Number(0))],
+                [
+                    decl.ChannelDeclaration("X", readable=True, writable=True),
+                    decl.PrivateDeclaration("T"),
+                    decl.SubprogramDeclaration("F", [], "T"),
+                ],
+            ),
+        ),
+    ],
+)
+def test_grammar_session_declaration(string: str, expected: decl.Declaration) -> None:
+    actual = grammar.session_declaration().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,error",
+    [
+        (
+            """
+               generic
+               session X with
+                  Initial => A,
+                  Final => A
+               is
+               begin
+                  state A is null state;
+               end Y;
+         """,
+            "inconsistent session identifier: X /= Y.*",
+        )
+    ],
+)
+def test_grammar_session_declaration_error(string: str, error: str) -> None:
+    with pytest.raises(ParseFatalException, match=rf"^{error}$"):
+        grammar.session_declaration().parseString(string, parseAll=True)
+
+
+def test_session() -> None:
+    p = Parser()
+    p.parse_string(
+        """
+           package Test is
+
+               generic
+               session Session with
+                  Initial => A,
+                  Final => C
+               is
+               begin
+                  state A is
+                  begin
+                  transition
+                     then B
+                  end A;
+
+                  state B is
+                  begin
+                  transition
+                     then C
+                  end B;
+
+                  state C is null state;
+               end Session;
+
+            end Test;
+        """
+    )
+    p.create_model()
+
+
+def test_grammar_unexpected_exception(monkeypatch: Any) -> None:
     with pytest.raises(
         ParseFatalException, match=r"ZeroDivisionError",
     ):
         monkeypatch.setattr(
             grammar,
-            "parse_mathematical_expression",
+            "parse_mathematical_operator",
             grammar.fatalexceptions(lambda x, y, z: [1, 1 / 0, 1]),
         )
-        grammar.mathematical_expression().parseString("1 + 1")
+        grammar.expression().parseString("1 + 1")
 
 
-def test_numeric_literal() -> None:
-    assert grammar.numeric_literal().parseString("1000")[0] == Number(1000)
-    assert grammar.numeric_literal().parseString("1_000")[0] == Number(1000)
-    assert grammar.numeric_literal().parseString("16#6664#")[0] == Number(26212)
-    assert grammar.numeric_literal().parseString("16#66_64#")[0] == Number(26212)
-
-
-def test_mathematical_expression_precedence() -> None:
-    assert_equal(
-        grammar.mathematical_expression().parseString("A - B * 2**3 - 1")[0],
-        Sub(Sub(Variable("A"), Mul(Variable("B"), Pow(Number(2), Number(3)))), Number(1)),
-    )
-    assert_equal(
-        grammar.mathematical_expression().parseString("(A - B) * 2**3 - 1")[0],
-        Sub(Mul(Sub(Variable("A"), Variable("B")), Pow(Number(2), Number(3))), Number(1)),
-    )
-    assert_equal(
-        grammar.mathematical_expression().parseString("A - B * 2**(3 - 1)")[0],
-        Sub(Variable("A"), Mul(Variable("B"), Pow(Number(2), Sub(Number(3), Number(1))))),
-    )
-    assert_equal(
-        grammar.mathematical_expression().parseString("A - (B * 2)**3 - 1")[0],
-        Sub(Sub(Variable("A"), Pow(Mul(Variable("B"), Number(2)), Number(3))), Number(1)),
-    )
-    assert_equal(
-        grammar.mathematical_expression().parseString("A - (B * 2**3 - 1)")[0],
-        Sub(Variable("A"), Sub(Mul(Variable("B"), Pow(Number(2), Number(3))), Number(1))),
-    )
-
-
-def test_mathematical_expression_aggregate() -> None:
-    assert_equal(
-        grammar.mathematical_expression().parseString("(1, 2)")[0], Aggregate(Number(1), Number(2))
-    )
-    assert_equal(grammar.mathematical_expression().parseString("(1)")[0], Aggregate(Number(1)))
-
-
-def test_mathematical_expression_aggregate_no_number() -> None:
+def test_grammar_expression_aggregate_no_number() -> None:
     with pytest.raises(ParseFatalException, match=r"^Expected Number"):
-        grammar.mathematical_expression().parseString("(1, Foo)")
+        grammar.expression().parseString("(1, Foo)")
 
 
-def test_mathematical_expression_string() -> None:
-    assert_equal(
-        grammar.mathematical_expression().parseString('"PNG"')[0], String("PNG"),
-    )
+def test_grammar_unexpected_suffix() -> None:
+    with pytest.raises(ParseFatalException, match=r"^unexpected suffix .*$"):
+        grammar.parse_suffix(
+            "", 0, [[Variable(ID("X")), ("X", None)]],
+        )
 
 
-def test_mathematical_expression_concatenation() -> None:
-    assert_equal(
-        grammar.mathematical_expression().parseString('(137) & "PNG" & (13, 10, 26, 10)')[0],
-        Aggregate(
-            Number(137),
-            Number(80),
-            Number(78),
-            Number(71),
-            Number(13),
-            Number(10),
-            Number(26),
-            Number(10),
-        ),
-    )
+def test_grammar_unexpected_relation_operator() -> None:
+    with pytest.raises(ParseFatalException, match=r"^unexpected relation operator .*$"):
+        grammar.parse_relational_operator(
+            "",
+            0,
+            [[Number(1, location=Location((1, 1))), "<>", Number(1, location=Location((1, 1)))]],
+        )
 
 
-def test_unexpected_relation_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected relation operator"):
-        grammar.parse_relation("", 0, [Number(1), "<>", Number(1)])
-
-
-def test_unexpected_logical_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected logical operator"):
-        grammar.parse_logical_expression(
+def test_grammar_unexpected_logical_operator() -> None:
+    with pytest.raises(ParseFatalException, match=r"^unexpected logical operator .*$"):
+        grammar.parse_logical_operator(
             "",
             0,
             [[Number(1, location=Location((1, 8))), "xor", Number(1, location=Location((2, 25)))]],
         )
 
 
-def test_unexpected_mathematical_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected mathematical operator"):
-        grammar.parse_mathematical_expression(
+def test_grammar_unexpected_mathematical_operator() -> None:
+    with pytest.raises(ParseFatalException, match=r"^unexpected mathematical operator .*$"):
+        grammar.parse_mathematical_operator(
             "",
             0,
             [[Number(1, location=Location((1, 1))), "//", Number(1, location=Location((1, 8)))]],
         )
 
 
-def test_unexpected_attribute() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected attribute"):
-        grammar.parse_attribute("", 0, ["V", "'", "Access"])
+def test_grammar_unexpected_quantified_expression(monkeypatch: Any) -> None:
+    monkeypatch.setattr(grammar, "evaluate_located_expression", lambda s, t: (t, Location((1, 1))))
+    with pytest.raises(ParseFatalException, match=r"^unexpected quantified expression"):
+        grammar.parse_quantified_expression(
+            "", 0, [[0, "any", ID("X"), Variable("Y"), Equal(Variable("X"), Variable("Z")), 24]],
+        )
 
 
-def test_unexpected_type() -> None:
+def test_grammar_unexpected_type() -> None:
     with pytest.raises(ParseFatalException, match=r"^unexpected type"):
         grammar.parse_type("type T is X;", 0, [0, "type", "T", "is", "X", 8])
 
@@ -309,7 +954,7 @@ def test_unexpected_exception_in_parser(monkeypatch: Any) -> None:
 def test_package_spec() -> None:
     assert_specifications_files(
         [f"{TESTDIR}/empty_package.rflx"],
-        {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []))},
+        {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [], []))},
     )
 
 
@@ -320,7 +965,8 @@ def test_package_message() -> None:
 def test_duplicate_specifications() -> None:
     files = [f"{TESTDIR}/empty_package.rflx", f"{TESTDIR}/empty_package.rflx"]
     assert_specifications_files(
-        files, {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", []))},
+        files,
+        {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [], []))},
     )
     assert_messages_files(files, [])
 
@@ -330,9 +976,9 @@ def test_context_spec() -> None:
         [f"{TESTDIR}/context.rflx"],
         {
             "Context": Specification(
-                ContextSpec(["Empty_File", "Empty_Package"]), PackageSpec("Context", []),
+                ContextSpec(["Empty_File", "Empty_Package"]), PackageSpec("Context", [], []),
             ),
-            "Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [])),
+            "Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [], [])),
         },
     )
 
@@ -747,6 +1393,7 @@ def test_integer_type_spec() -> None:
                     ModularInteger("__PACKAGE__.Byte", Number(256)),
                     ModularInteger("__PACKAGE__.Hash_Index", Number(64)),
                 ],
+                [],
             ),
         )
     }
@@ -787,6 +1434,7 @@ def test_enumeration_type_spec() -> None:
                         True,
                     ),
                 ],
+                [],
             ),
         )
     }
@@ -815,6 +1463,7 @@ def test_array_type_spec() -> None:
                     ),
                     ArraySpec("__PACKAGE__.Bar", ReferenceSpec("__PACKAGE__.Foo")),
                 ],
+                [],
             ),
         )
     }
@@ -859,6 +1508,7 @@ def test_message_type_spec() -> None:
                     ),
                     MessageSpec("__PACKAGE__.Empty_PDU", []),
                 ],
+                [],
             ),
         )
     }
@@ -987,6 +1637,7 @@ def test_type_refinement_spec() -> None:
                     ),
                     MessageSpec("__PACKAGE__.Empty_PDU", []),
                 ],
+                [],
             ),
         ),
         "Type_Refinement": Specification(
@@ -1002,6 +1653,7 @@ def test_type_refinement_spec() -> None:
                     ),
                     RefinementSpec("Message_Type.PDU", "Bar", "Message_Type.Simple_PDU"),
                 ],
+                [],
             ),
         ),
     }
@@ -1032,6 +1684,7 @@ def test_type_derivation_spec() -> None:
                         MessageSpec("__PACKAGE__.Foo", [Component("N", "T")]),
                         DerivationSpec("__PACKAGE__.Bar", "Foo"),
                     ],
+                    [],
                 ),
             )
         },
@@ -1173,6 +1826,7 @@ def test_ethernet_spec() -> None:
                         ],
                     ),
                 ],
+                [],
             ),
         )
     }

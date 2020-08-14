@@ -1,9 +1,10 @@
 from abc import ABC
-from typing import Mapping
+from typing import Mapping, Sequence
 
 from rflx.common import generic_repr
+from rflx.declaration import Declaration
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
-from rflx.expression import Declaration, Expr
+from rflx.expression import Expr
 from rflx.identifier import ID, StrID
 
 
@@ -67,9 +68,35 @@ class Erase(Statement):
         declarations[self.name].reference()
 
 
-class Reset(Statement):
+class AttributeStatement(Statement):
+    def __init__(
+        self, name: StrID, attribute: str, parameters: Sequence[Expr], location: Location = None
+    ) -> None:
+        super().__init__(name, location)
+        self.attribute = attribute
+        self.parameters = parameters
+
     def __str__(self) -> str:
-        return f"{self.name}'Reset"
+        parameters = ", ".join(str(p) for p in self.parameters)
+        return f"{self.name}'{self.attribute}" + (f" ({parameters})" if parameters else "")
+
+
+class ListAttributeStatement(AttributeStatement, ABC):
+    def __init__(self, name: StrID, parameter: Expr, location: Location = None) -> None:
+        super().__init__(name, self.__class__.__name__, [parameter], location)
+
+
+class Append(ListAttributeStatement):
+    pass
+
+
+class Extend(ListAttributeStatement):
+    pass
+
+
+class Reset(AttributeStatement):
+    def __init__(self, name: StrID, location: Location = None) -> None:
+        super().__init__(name, self.__class__.__name__, [], location)
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         if self.name not in declarations:

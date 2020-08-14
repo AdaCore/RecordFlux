@@ -912,7 +912,7 @@ class Variable(Name):
         return [self]
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        builtin_types = map(ID, ["Boolean"])
+        builtin_types = map(ID, ["Boolean", "True", "False"])
         if self.identifier in builtin_types:
             return
         if self.identifier not in declarations:

@@ -16,10 +16,17 @@ from rflx.statement import Statement
 
 
 class Transition(Base):
-    def __init__(self, target: ID, condition: Expr = TRUE, location: Location = None):
-        self.target = target
+    def __init__(
+        self,
+        target: StrID,
+        condition: Expr = TRUE,
+        description: str = None,
+        location: Location = None,
+    ):
+        self.target = ID(target)
         self.condition = condition
         self.location = location
+        self.description = description
 
     def validate(self, declarations: Dict[ID, Declaration]) -> None:
         self.condition.simplified().validate(declarations)
@@ -28,13 +35,13 @@ class Transition(Base):
 class State(Base):
     def __init__(
         self,
-        name: ID,
+        name: StrID,
         transitions: Sequence[Transition] = None,
         actions: Sequence[Statement] = None,
         declarations: Sequence[Declaration] = None,
         location: Location = None,
     ):
-        self.__name = name
+        self.__name = ID(name)
         self.__transitions = transitions or []
         self.__actions = actions or []
         self.declarations = {d.identifier: d for d in declarations} if declarations else {}
@@ -54,20 +61,23 @@ class State(Base):
 
 
 class Session(Base):
+    # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(
         self,
         name: StrID,
-        initial: ID,
-        final: ID,
+        initial: StrID,
+        final: StrID,
         states: Sequence[State],
         declarations: Sequence[Declaration],
+        parameters: Sequence[Declaration] = None,
         location: Location = None,
-    ):  # pylint: disable=too-many-arguments
+    ):
         self.name = ID(name)
-        self.initial = initial
-        self.final = final
+        self.initial = ID(initial)
+        self.final = ID(final)
         self.states = states
         self.declarations = {d.identifier: d for d in declarations}
+        self.parameters = {p.identifier: p for p in parameters} if parameters else {}
         self.location = location
         self.error = RecordFluxError()
 
@@ -88,7 +98,7 @@ class Session(Base):
             declarations = s.declarations
             for t in s.transitions:
                 try:
-                    t.validate({**self.declarations, **declarations})
+                    t.validate({**self.parameters, **self.declarations, **declarations})
                 except RecordFluxError as e:
                     self.error.extend(e)
 
@@ -97,10 +107,10 @@ class Session(Base):
             declarations = s.declarations
             for index, a in enumerate(s.actions):
                 try:
-                    a.validate({**self.declarations, **declarations})
+                    a.validate({**self.parameters, **self.declarations, **declarations})
                 except RecordFluxError as e:
                     self.error.append(
-                        f"invalid action {index} of state {s.name.name}",
+                        f"invalid action {index} of state {s.name}",
                         Subsystem.MODEL,
                         Severity.ERROR,
                         a.location,
@@ -111,14 +121,14 @@ class Session(Base):
         state_names = [s.name for s in self.states]
         if self.initial not in state_names:
             self.error.append(
-                f'initial state "{self.initial.name}" does not exist in "{self.name}"',
+                f'initial state "{self.initial}" does not exist in "{self.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.initial.location,
             )
         if self.final not in state_names:
             self.error.append(
-                f'final state "{self.final.name}" does not exist in "{self.name}"',
+                f'final state "{self.final}" does not exist in "{self.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.final.location,
@@ -127,8 +137,8 @@ class Session(Base):
             for t in s.transitions:
                 if t.target not in state_names:
                     self.error.append(
-                        f'transition from state "{s.name.name}" to non-existent state'
-                        f' "{t.target.name}" in "{self.name}"',
+                        f'transition from state "{s.name}" to non-existent state'
+                        f' "{t.target}" in "{self.name}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         t.target.location,
@@ -197,22 +207,23 @@ class Session(Base):
 
     def __validate_declarations(self) -> None:
         for s in self.states:
-            for decl in s.declarations:
-                if decl in self.declarations:
+            for k, d in s.declarations.items():
+                if k in self.declarations:
                     self.error.append(
-                        f'local variable "{decl}" shadows global declaration'
+                        f'local variable "{k}" shadows global declaration'
                         f" in state {s.name.name}",
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
                     )
-                if not s.declarations[decl].is_referenced:
+                if not s.declarations[k].is_referenced:
                     self.error.append(
-                        f'unused local variable "{decl}" in state {s.name.name}',
+                        f'unused local variable "{k}" in state {s.name.name}',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
                     )
+                d.validate({**self.parameters, **self.declarations})
         for k, d in self.declarations.items():
             if str(k).upper() in ["READ", "WRITE", "CALL", "DATA_AVAILABLE", "APPEND", "EXTEND"]:
                 self.error.append(
@@ -222,7 +233,7 @@ class Session(Base):
                     self.location,
                 )
             try:
-                d.validate(self.declarations)
+                d.validate({**self.parameters, **self.declarations})
             except RecordFluxError as e:
                 self.error.extend(e)
         for k, d in self.declarations.items():

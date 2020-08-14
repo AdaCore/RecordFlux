@@ -1,12 +1,15 @@
+# pylint: disable=too-many-lines
 import traceback
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple, Union
 
 from pyparsing import (
     CaselessKeyword,
     Combine,
+    Forward,
     Group,
     Keyword,
     Literal,
+    OneOrMore,
     Optional,
     ParseFatalException,
     ParserElement,
@@ -26,9 +29,11 @@ from pyparsing import (
     infixNotation,
     locatedExpr,
     nums,
+    oneOf,
     opAssoc,
 )
 
+from rflx import declaration as decl, statement as stmt
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, parser_location
 from rflx.expression import (
     TRUE,
@@ -37,31 +42,47 @@ from rflx.expression import (
     Aggregate,
     And,
     Attribute,
+    Binding,
     BooleanTrue,
+    Call,
+    Comprehension,
+    Conversion,
     Div,
     Equal,
     Expr,
     First,
+    ForAllIn,
+    ForSomeIn,
     Greater,
     GreaterEqual,
+    Head,
+    In,
     Last,
     Length,
     Less,
     LessEqual,
+    MessageAggregate,
     Mul,
     NotEqual,
+    NotIn,
     Number,
+    Opaque,
     Or,
     Pow,
+    Present,
+    QuantifiedExpression,
     Relation,
+    Selected,
     String,
     Sub,
+    Valid,
     ValidChecksum,
     ValueRange,
     Variable,
 )
 from rflx.identifier import ID
 from rflx.model import Enumeration, ModularInteger, RangeInteger, Type, qualified_type_name
+from rflx.session import Session, State, Transition
 
 from . import const
 from .ast import (
@@ -99,27 +120,24 @@ def right_parenthesis() -> Token:
 def unqualified_identifier() -> Token:
     return (
         locatedExpr(WordStart(alphas) + Word(alphanums + "_") + WordEnd(alphanums + "_"))
-        .setParseAction(verify_identifier)
+        .setParseAction(parse_identifier)
         .setName("Identifier")
     )
 
 
 def qualified_identifier() -> Token:
-    return (
-        Optional(unqualified_identifier() + Literal(".")) + unqualified_identifier()
-    ).setParseAction(
+    return (delimitedList(unqualified_identifier(), ".")).setParseAction(
         lambda t: ID(
-            "".join(map(str, t.asList())),
+            ".".join(map(str, t.asList())),
             Location(start=t[0].location.start, end=t[-1].location.end),
         )
     )
 
 
-def attribute_reference() -> Token:
-    designator = Keyword("First") | Keyword("Last") | Keyword("Length") | Keyword("Valid_Checksum")
-    reference = unqualified_identifier() + Literal("'") - designator
-    reference.setParseAction(parse_attribute)
-    return reference.setName("Attribute")
+def variable() -> Token:
+    return Group(qualified_identifier()).setParseAction(
+        lambda t: Variable(t[0][0], location=t[0][0].location)
+    )
 
 
 def numeric_literal() -> Token:
@@ -151,29 +169,47 @@ def string_literal() -> Token:
 
 
 def logical_expression() -> Token:
-    relational_operator = (
-        Keyword("<=") | Keyword(">=") | Keyword("=") | Keyword("/=") | Keyword("<") | Keyword(">")
-    )
-    logical_operator = Keyword("and") | Keyword("or")
-
-    relation = mathematical_expression() + relational_operator - mathematical_expression()
-    relation.setParseAction(parse_relation)
-    relation.setName("Relation")
-
-    return (
-        infixNotation(
-            relation | attribute_reference(),
-            [(logical_operator, 2, opAssoc.LEFT, parse_logical_expression)],
-            lpar=left_parenthesis(),
-            rpar=right_parenthesis(),
-        )
-    ).setName("LogicalExpression")
+    return Group(expression()).setParseAction(parse_logical_expression).setName("LogicalExpression")
 
 
 def mathematical_expression() -> Token:
-    binary_adding_operator = Literal("+") | Literal("-")
-    multiplying_operator = Literal("*") | Literal("/")
+    return (
+        Group(expression())
+        .setParseAction(parse_mathematical_expression)
+        .setName("MathematicalExpression")
+    )
+
+
+def expression() -> Token:
+    # pylint: disable=too-many-locals
+
+    expr = Forward()
+
     highest_precedence_operator = Literal("**")
+    multiplying_operator = Literal("*") | Literal("/")
+    binary_adding_operator = Literal("+") | Literal("-")
+    relational_operator = (
+        Keyword("=")
+        | Keyword("/=")
+        | Keyword("<=")
+        | Keyword("<")
+        | Keyword(">=")
+        | Keyword(">")
+        | Keyword("in")
+        | Keyword("not in")
+    )
+    logical_operator = Keyword("and") | Keyword("or")
+
+    designator = (
+        Keyword("First")
+        | Keyword("Last")
+        | Keyword("Length")
+        | Keyword("Head")
+        | Keyword("Opaque")
+        | Keyword("Present")
+        | Keyword("Valid")
+        | Keyword("Valid_Checksum")
+    )
 
     array_aggregate = (
         Literal("(").setParseAction(lambda s, l, t: l)
@@ -192,25 +228,112 @@ def mathematical_expression() -> Token:
         )
     ).setName("Concatenation")
 
-    term = numeric_literal() | attribute_reference() | qualified_identifier() | concatenation
-    term.setParseAction(parse_term)
+    quantified_expression = locatedExpr(
+        Keyword("for").suppress()
+        - oneOf(["all", "some"])
+        - unqualified_identifier()
+        - Keyword("in").suppress()
+        - expr
+        - Keyword("=>").suppress()
+        - expr
+    )
+    quantified_expression.setParseAction(parse_quantified_expression)
 
-    return (
-        infixNotation(
-            term,
-            [
-                (highest_precedence_operator, 2, opAssoc.LEFT, parse_mathematical_expression),
-                (multiplying_operator, 2, opAssoc.LEFT, parse_mathematical_expression),
-                (binary_adding_operator, 2, opAssoc.LEFT, parse_mathematical_expression),
-            ],
-            lpar=left_parenthesis(),
-            rpar=right_parenthesis(),
+    comprehension = locatedExpr(
+        Literal("[").suppress()
+        - Keyword("for").suppress()
+        - unqualified_identifier()
+        - Keyword("in").suppress()
+        - expr
+        - Keyword("=>").suppress()
+        - expr
+        - Optional(Keyword("when").suppress() + expr)
+        - Literal("]").suppress()
+    )
+    comprehension.setParseAction(parse_comprehension)
+
+    null_message = Keyword("null") + Keyword("message")
+    null_message.setParseAction(lambda t: {})
+
+    components = delimitedList(unqualified_identifier() + Keyword("=>").suppress() + expr)
+    components.setParseAction(lambda t: dict(zip(t[0::2], t[1::2])))
+
+    message_aggregate = locatedExpr(
+        qualified_identifier()
+        + Literal("'").suppress()
+        + left_parenthesis()
+        + (null_message | components)
+        + right_parenthesis()
+    )
+    message_aggregate.setParseAction(
+        lambda s, l, t: MessageAggregate(
+            t[0][1], t[0][2], location=parser_location(t[0][0], t[0][3], s)
         )
-    ).setName("MathematicalExpression")
+    )
+
+    call = locatedExpr(
+        unqualified_identifier() + left_parenthesis() + delimitedList(expr) + right_parenthesis()
+    )
+    call.setParseAction(
+        lambda s, l, t: Call(t[0][1], t[0][2:-1], location=parser_location(t[0][0], t[0][-1], s))
+    )
+
+    conversion = locatedExpr(
+        qualified_identifier() + left_parenthesis() + expr + right_parenthesis()
+    )
+    conversion.setParseAction(
+        lambda s, l, t: Conversion(t[0][1], t[0][2], location=parser_location(t[0][0], t[0][-1], s))
+    )
+
+    attribute = Literal("'").suppress() - designator
+    attribute.setParseAction(lambda t: (t[0], None))
+
+    terms = delimitedList(unqualified_identifier() - Keyword("=").suppress() - expr)
+    terms.setParseAction(lambda t: dict(zip(t[0::2], t[1::2])))
+
+    binding = Keyword("where").suppress() - terms
+    binding.setParseAction(lambda t: ("Binding", t[0]))
+
+    selector = Literal(".").suppress() + unqualified_identifier()
+    selector.setParseAction(lambda t: ("Selected", t[0]))
+
+    suffix = attribute | binding | selector
+
+    base = (
+        concatenation
+        | numeric_literal()
+        | string_literal()
+        | quantified_expression
+        | comprehension
+        | call
+        | conversion
+        | message_aggregate
+        | variable()
+    )
+
+    expr <<= infixNotation(
+        base,
+        [
+            (suffix, 1, opAssoc.LEFT, parse_suffix),
+            (highest_precedence_operator, 2, opAssoc.LEFT, parse_mathematical_operator),
+            (multiplying_operator, 2, opAssoc.LEFT, parse_mathematical_operator),
+            (binary_adding_operator, 2, opAssoc.LEFT, parse_mathematical_operator),
+            (relational_operator, 2, opAssoc.LEFT, parse_relational_operator),
+            (logical_operator, 2, opAssoc.LEFT, parse_logical_operator),
+        ],
+        lpar=left_parenthesis(),
+        rpar=right_parenthesis(),
+    )
+
+    return expr
 
 
-def value_constraint() -> Token:
-    return (Keyword("if") - logical_expression()).setParseAction(lambda t: t[1])
+def with_aspects(aspects: Token) -> Token:
+    return (Keyword("with") - aspects).setParseAction(parse_aspects)
+
+
+def if_condition() -> Token:
+    return (Keyword("if") - logical_expression()).setParseAction(parse_condition)
 
 
 def type_derivation_definition() -> Token:
@@ -224,15 +347,12 @@ def size_aspect() -> Token:
 
 
 def integer_type_definition() -> Token:
-    range_type_aspects = Keyword("with") - size_aspect()
-    range_type_aspects.setParseAction(parse_aspects)
-
     range_type_definition = (
         Keyword("range")
         - mathematical_expression()
         - Suppress(Literal(".."))
         - mathematical_expression()
-        - range_type_aspects
+        - with_aspects(size_aspect())
     )
     range_type_definition.setName("RangeInteger")
     modular_type_definition = Keyword("mod") - mathematical_expression()
@@ -263,14 +383,12 @@ def enumeration_type_definition() -> Token:
     boolean_aspect_definition.setParseAction(lambda t: (t if t else ["=>", True]))
     always_valid_aspect = Literal("Always_Valid") - boolean_aspect_definition
     always_valid_aspect.setParseAction(parse_aspect)
-    enumeration_aspects = Keyword("with") - delimitedList(size_aspect() | always_valid_aspect)
-    enumeration_aspects.setParseAction(parse_aspects)
 
     return (
         Literal("(")
         - (named_enumeration | positional_enumeration)
         - Literal(")")
-        - enumeration_aspects
+        - with_aspects(delimitedList(size_aspect() | always_valid_aspect))
     ).setName("Enumeration")
 
 
@@ -308,14 +426,12 @@ def message_type_definition() -> Token:
     first_aspect.setParseAction(parse_aspect)
     length_aspect = Keyword("Length") - Keyword("=>") - mathematical_expression()
     length_aspect.setParseAction(parse_aspect)
-    component_aspects = Keyword("with") - delimitedList(first_aspect | length_aspect)
-    component_aspects.setParseAction(parse_aspects)
 
     then = locatedExpr(
         Keyword("then")
         - (Keyword("null") | unqualified_identifier())
-        - Group(Optional(component_aspects))
-        - Group(Optional(value_constraint()))
+        - Group(Optional(with_aspects(delimitedList(first_aspect | length_aspect))))
+        - Group(Optional(if_condition()))
     )
     then.setParseAction(parse_then)
     then_list = ZeroOrMore(then)
@@ -380,7 +496,7 @@ def type_refinement() -> Token:
             - Suppress(Keyword("=>"))
             - qualified_identifier()
             - right_parenthesis()
-            - Optional(value_constraint())("constraint")
+            - Optional(if_condition())("condition")
             - semicolon().setParseAction(lambda s, l, t: l)
         )
         .setParseAction(parse_refinement)
@@ -388,8 +504,175 @@ def type_refinement() -> Token:
     )
 
 
+def private_type_declaration() -> Token:
+    return locatedExpr(
+        Keyword("type").suppress()
+        + unqualified_identifier()
+        + Keyword("is").suppress()
+        + Keyword("private").suppress()
+    ).setParseAction(parse_private_declaration)
+
+
+def channel_declaration() -> Token:
+    return locatedExpr(
+        unqualified_identifier()
+        + Keyword(":").suppress()
+        - Keyword("Channel").suppress()
+        - Keyword("with").suppress()
+        - delimitedList(Keyword("Readable") | Keyword("Writable")).setParseAction(
+            lambda t: [t.asList()]
+        )
+    ).setParseAction(parse_channel_declaration)
+
+
+def formal_function_declaration() -> Token:
+    parameter = unqualified_identifier() + Keyword(":").suppress() + qualified_identifier()
+    parameter.setParseAction(lambda t: decl.Argument(t[0], t[1]))
+
+    parameter_list = left_parenthesis() + delimitedList(parameter, delim=";") + right_parenthesis()
+
+    return locatedExpr(
+        Keyword("with function").suppress()
+        - unqualified_identifier()
+        - Optional(parameter_list)
+        - Keyword("return").suppress()
+        - qualified_identifier()
+    ).setParseAction(parse_formal_function_declaration)
+
+
+def variable_base_declaration() -> Token:
+    return unqualified_identifier() + Keyword(":").suppress() + qualified_identifier()
+
+
+def variable_declaration() -> Token:
+    initializer = Literal(":=").suppress() - expression()
+
+    return locatedExpr(variable_base_declaration() - Optional(initializer)).setParseAction(
+        parse_variable_declaration
+    )
+
+
+def renaming_declaration() -> Token:
+    return locatedExpr(
+        variable_base_declaration() + Keyword("renames").suppress() + variable()
+    ).setParseAction(parse_renaming_declaration)
+
+
+def assignment_statement() -> Token:
+    erase = locatedExpr(unqualified_identifier() + Keyword(":=").suppress() + Keyword("null"))
+    erase.setParseAction(parse_erase)
+
+    assignment = locatedExpr(unqualified_identifier() + Keyword(":=").suppress() + expression())
+    assignment.setParseAction(parse_assignment)
+
+    return erase | assignment
+
+
+def attribute_statement() -> Token:
+    designator = Keyword("Append") | Keyword("Extend")
+
+    parameter = left_parenthesis() + expression() + right_parenthesis()
+
+    list_attribute = locatedExpr(
+        unqualified_identifier() + Literal("'").suppress() + designator + parameter
+    )
+    list_attribute.setParseAction(parse_list_attribute)
+
+    reset = locatedExpr(unqualified_identifier() + Literal("'").suppress() + Keyword("Reset"))
+    reset.setParseAction(parse_reset)
+
+    return list_attribute | reset
+
+
+def state() -> Token:
+    declarations = OneOrMore(
+        ~Keyword("begin") + (variable_declaration() | renaming_declaration()) - semicolon()
+    )
+
+    actions = ZeroOrMore((assignment_statement() | attribute_statement()) - semicolon())
+
+    description_aspect = Keyword("Desc") - Keyword("=>") - QuotedString('"')
+    description_aspect.setParseAction(parse_aspect)
+
+    conditional_transition = locatedExpr(
+        Suppress(Keyword("then"))
+        + unqualified_identifier()
+        + Optional(with_aspects(description_aspect), {})
+        + if_condition()
+    ).setParseAction(parse_transition)
+    transition = locatedExpr(
+        Suppress(Keyword("then"))
+        - unqualified_identifier()
+        - Optional(with_aspects(description_aspect), {})
+    ).setParseAction(parse_transition)
+    transitions = (ZeroOrMore(conditional_transition) + transition).setParseAction(
+        lambda t: [t.asList()]
+    )
+
+    return (
+        locatedExpr(
+            Suppress(Keyword("state"))
+            - unqualified_identifier()("identifier")
+            + Suppress(Keyword("is"))
+            + (
+                Keyword("null state")
+                | Optional(declarations, [])("declarations")
+                + Suppress(Keyword("begin"))
+                + Optional(actions, [])("actions")
+                + Suppress(Keyword("transition"))
+                + transitions("transitions")
+                + Suppress(Keyword("end"))
+                + unqualified_identifier()("end_identifier")
+            )
+        )
+        .setParseAction(parse_state)
+        .setName("State")
+    )
+
+
+def session_declaration() -> Token:
+    parameters = OneOrMore(
+        (private_type_declaration() | formal_function_declaration() | channel_declaration())
+        + semicolon()
+    )
+    parameters.setParseAction(lambda t: [t.asList()])
+
+    declarations = OneOrMore(
+        ~Keyword("begin") + (renaming_declaration() | variable_declaration()) - semicolon()
+    )
+    declarations.setParseAction(lambda t: [t.asList()])
+
+    initial_aspect = (
+        Suppress(Keyword("Initial")) - Suppress(Keyword("=>")) - unqualified_identifier()
+    )
+    final_aspect = Suppress(Keyword("Final")) - Suppress(Keyword("=>")) - unqualified_identifier()
+    session_aspects = Suppress(Keyword("with")) - initial_aspect - comma() - final_aspect
+    session_aspects.setParseAction(lambda t: [t.asList()])
+
+    states = ZeroOrMore(state() - semicolon()).setParseAction(lambda t: [t])
+
+    return (
+        locatedExpr(
+            Suppress(Keyword("generic"))
+            - Optional(parameters, [])
+            - Suppress(Keyword("session"))
+            - unqualified_identifier()
+            - session_aspects
+            - Suppress(Keyword("is"))
+            - Optional(declarations, [])
+            - Suppress(Keyword("begin"))
+            - states
+            - Suppress(Keyword("end"))
+            - unqualified_identifier()
+            - semicolon()
+        )
+        .setParseAction(parse_session)
+        .setName("Session")
+    )
+
+
 def package_declaration() -> Token:
-    basic_declaration = type_declaration() | type_refinement()
+    basic_declaration = type_declaration() | type_refinement() | session_declaration()
 
     return (
         Keyword("package")
@@ -399,7 +682,7 @@ def package_declaration() -> Token:
         - Keyword("end")
         - unqualified_identifier()
         - semicolon()
-    ).setParseAction(lambda t: PackageSpec(t[1], t[3].asList(), t[5]))
+    ).setParseAction(parse_package)
 
 
 def context_clause() -> Token:
@@ -445,81 +728,138 @@ def parse_concatenation(string: str, location: int, tokens: ParseResults) -> Exp
 
 
 @fatalexceptions
-def parse_term(string: str, location: int, tokens: ParseResults) -> Expr:
-    if isinstance(tokens[0], ID):
-        return Variable(tokens[0], negative=False, location=tokens[0].location)
-    return tokens[0]
+def parse_quantified_expression(
+    string: str, location: int, tokens: ParseResults
+) -> QuantifiedExpression:
+    tokens, locn = evaluate_located_expression(string, tokens)
+
+    if tokens[0] == "all":
+        return ForAllIn(tokens[1], tokens[2], tokens[3], location=locn)
+    if tokens[0] == "some":
+        return ForSomeIn(tokens[1], tokens[2], tokens[3], location=locn)
+
+    raise ParseFatalException(string, location, "unexpected quantified expression")
 
 
 @fatalexceptions
-def parse_relation(string: str, location: int, tokens: ParseResults) -> Relation:
-    def locn() -> Location:
-        return Location(tokens[0].location.start, tokens[0].location.source, tokens[2].location.end)
+def parse_comprehension(string: str, location: int, tokens: ParseResults) -> Comprehension:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    condition = tokens[3] if len(tokens) > 3 else TRUE
+    return Comprehension(tokens[0], tokens[1], tokens[2], condition, location=locn)
 
-    if tokens[1] == "<":
-        return Less(tokens[0], tokens[2], locn())
-    if tokens[1] == "<=":
-        return LessEqual(tokens[0], tokens[2], locn())
-    if tokens[1] == "=":
-        return Equal(tokens[0], tokens[2], locn())
-    if tokens[1] == ">=":
-        return GreaterEqual(tokens[0], tokens[2], locn())
-    if tokens[1] == ">":
-        return Greater(tokens[0], tokens[2], locn())
-    if tokens[1] == "/=":
-        return NotEqual(tokens[0], tokens[2], locn())
-    raise ParseFatalException(string, location, "unexpected relation operator")
+
+@fatalexceptions
+def parse_relational_operator(string: str, location: int, tokens: ParseResults) -> Relation:
+    result: List[Relation] = tokens[0]
+    while len(result) > 1:
+        left = result.pop(0)
+        operator = result.pop(0)
+        right = result.pop(0)
+
+        assert left.location
+        assert right.location
+        assert left.location.source == right.location.source
+
+        locn = Location(left.location.start, left.location.source, right.location.end)
+
+        relation: Relation
+        if operator == "=":
+            relation = Equal(left, right, location=locn)
+        elif operator == "/=":
+            relation = NotEqual(left, right, location=locn)
+        elif operator == "<":
+            relation = Less(left, right, location=locn)
+        elif operator == "<=":
+            relation = LessEqual(left, right, location=locn)
+        elif operator == ">=":
+            relation = GreaterEqual(left, right, location=locn)
+        elif operator == ">":
+            relation = Greater(left, right, location=locn)
+        elif operator == "in":
+            relation = In(left, right, location=locn)
+        elif operator == "not in":
+            relation = NotIn(left, right, location=locn)
+        else:
+            raise ParseFatalException(string, location, "unexpected relation operator")
+        result.insert(0, relation)
+    return result[0]
+
+
+@fatalexceptions
+def parse_logical_operator(string: str, location: int, tokens: ParseResults) -> Expr:
+    result: List[Expr] = tokens[0]
+    while len(result) > 1:
+        left = result.pop(0)
+        operator = result.pop(0)
+        right = result.pop(0)
+
+        assert left.location
+        assert right.location
+        assert left.location.source == right.location.source
+
+        locn = Location(left.location.start, left.location.source, right.location.end)
+
+        log_expr: Expr
+        if operator == "and":
+            log_expr = And(left, right, location=locn)
+        elif operator == "or":
+            log_expr = Or(left, right, location=locn)
+        else:
+            raise ParseFatalException(string, location, "unexpected logical operator")
+        result.insert(0, log_expr)
+    return result[0]
+
+
+def parse_mathematical_operator(string: str, location: int, tokens: ParseResults) -> Expr:
+    result: List[Expr] = tokens[0]
+    while len(result) > 1:
+        left = result.pop(0)
+        operator = result.pop(0)
+        right = result.pop(0)
+
+        assert left.location
+        assert right.location
+        assert left.location.source == right.location.source
+
+        locn = Location(left.location.start, left.location.source, left.location.end)
+
+        math_expr: Expr
+        if operator == "+":
+            math_expr = Add(left, right)
+            math_expr.location = locn
+        elif operator == "-":
+            math_expr = Sub(left, right, locn)
+        elif operator == "*":
+            math_expr = Mul(left, right)
+            math_expr.location = locn
+        elif operator == "/":
+            math_expr = Div(left, right, locn)
+        elif operator == "**":
+            math_expr = Pow(left, right, locn)
+        else:
+            raise ParseFatalException(string, location, "unexpected mathematical operator")
+        result.insert(0, math_expr)
+    return result[0]
 
 
 @fatalexceptions
 def parse_logical_expression(string: str, location: int, tokens: ParseResults) -> Expr:
-    result: List[Expr] = tokens[0]
-    while len(result) > 1:
-        left = result.pop(0)
-        operator = result.pop(0)
-        right = result.pop(0)
-        expression: Expr
-        assert left.location
-        assert right.location
-        locn = Location(left.location.start, left.location.source, right.location.end)
-        if operator == "and":
-            expression = And(left, right, location=locn)
-        elif operator == "or":
-            expression = Or(left, right, location=locn)
-        else:
-            raise ParseFatalException(string, location, "unexpected logical operator")
-        result.insert(0, expression)
-    return result[0]
+    log_expr = tokens[0][0]
+    if isinstance(log_expr, (And, Or, Relation, Valid, ValidChecksum)):
+        return log_expr
+    raise ParseFatalException(
+        string, location, f'unexpected expression type "{type(log_expr).__name__}"'
+    )
 
 
 @fatalexceptions
 def parse_mathematical_expression(string: str, location: int, tokens: ParseResults) -> Expr:
-    result: List[Expr] = tokens[0]
-    while len(result) > 1:
-        left = result.pop(0)
-        operator = result.pop(0)
-        right = result.pop(0)
-        assert left.location, f'expression "{left}" without location'
-        assert right.location, f'expression "{right}" without location'
-        assert left.location.source == right.location.source, "expression with different source"
-        locn = Location(left.location.start, left.location.source, left.location.end)
-        expression: Expr
-        if operator == "+":
-            expression = Add(left, right)
-            expression.location = locn
-        elif operator == "-":
-            expression = Sub(left, right, locn)
-        elif operator == "*":
-            expression = Mul(left, right)
-            expression.location = locn
-        elif operator == "/":
-            expression = Div(left, right, locn)
-        elif operator == "**":
-            expression = Pow(left, right, locn)
-        else:
-            raise ParseFatalException(string, location, "unexpected mathematical operator")
-        result.insert(0, expression)
-    return result[0]
+    math_expr = tokens[0][0]
+    if isinstance(math_expr, (Number, Variable, Add, Sub, Mul, Div, Pow, First, Last, Length)):
+        return math_expr
+    raise ParseFatalException(
+        string, location, f'unexpected expression type "{type(math_expr).__name__}"'
+    )
 
 
 @fatalexceptions
@@ -537,10 +877,8 @@ def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
 
 
 @fatalexceptions
-def verify_identifier(string: str, location: int, tokens: ParseResults) -> ID:
-    data = tokens[0].asDict()
-    tokens = data["value"]
-    locn = parser_location(data["locn_start"], data["locn_end"], string)
+def parse_identifier(string: str, location: int, tokens: ParseResults) -> ID:
+    tokens, locn = evaluate_located_expression(string, tokens)
 
     if tokens[0].lower() in const.RESERVED_WORDS:
         fail(
@@ -554,17 +892,34 @@ def verify_identifier(string: str, location: int, tokens: ParseResults) -> ID:
 
 
 @fatalexceptions
-def parse_attribute(string: str, location: int, tokens: ParseResults) -> Attribute:
-    if tokens[2] == "First":
-        return First(tokens[0])
-    if tokens[2] == "Last":
-        return Last(tokens[0])
-    if tokens[2] == "Length":
-        return Length(tokens[0])
-    if tokens[2] == "Valid_Checksum":
-        return ValidChecksum(tokens[0])
+def parse_suffix(string: str, location: int, tokens: ParseResults) -> Attribute:
+    result = tokens[0][0]
 
-    raise ParseFatalException(string, location, "unexpected attribute")
+    for suffix in tokens[0][1:]:
+        if suffix[0] == "First":
+            result = First(result)
+        elif suffix[0] == "Last":
+            result = Last(result)
+        elif suffix[0] == "Length":
+            result = Length(result)
+        elif suffix[0] == "Head":
+            result = Head(result)
+        elif suffix[0] == "Opaque":
+            result = Opaque(result)
+        elif suffix[0] == "Present":
+            result = Present(result)
+        elif suffix[0] == "Valid":
+            result = Valid(result)
+        elif suffix[0] == "Valid_Checksum":
+            result = ValidChecksum(result)
+        elif suffix[0] == "Selected":
+            result = Selected(result, suffix[1], location=result.location)
+        elif suffix[0] == "Binding":
+            result = Binding(result, suffix[1], location=result.location)
+        else:
+            raise ParseFatalException(string, location, "unexpected suffix")
+
+    return result
 
 
 @fatalexceptions
@@ -575,6 +930,11 @@ def parse_aspect(string: str, location: int, tokens: ParseResults) -> Tuple[str,
 @fatalexceptions
 def parse_aspects(string: str, location: int, tokens: ParseResults) -> Dict[str, Expr]:
     return dict(tokens[1:])
+
+
+@fatalexceptions
+def parse_condition(string: str, location: int, tokens: ParseResults) -> Expr:
+    return tokens[1]
 
 
 @fatalexceptions
@@ -619,9 +979,154 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
 
 @fatalexceptions
 def parse_refinement(string: str, location: int, tokens: ParseResults) -> RefinementSpec:
-    constraint = tokens[4] if "constraint" in tokens else TRUE
+    condition = tokens[4] if "condition" in tokens else TRUE
     locn = parser_location(tokens[0], tokens[-1], string)
-    return RefinementSpec(tokens[1], tokens[2], tokens[3], constraint, locn)
+    return RefinementSpec(tokens[1], tokens[2], tokens[3], condition, locn)
+
+
+@fatalexceptions
+def parse_private_declaration(
+    string: str, location: int, tokens: ParseResults
+) -> decl.PrivateDeclaration:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return decl.PrivateDeclaration(tokens[0], location=locn)
+
+
+@fatalexceptions
+def parse_channel_declaration(
+    string: str, location: int, tokens: ParseResults
+) -> decl.ChannelDeclaration:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return decl.ChannelDeclaration(
+        tokens[0], readable="Readable" in tokens[1], writable="Writable" in tokens[1], location=locn
+    )
+
+
+@fatalexceptions
+def parse_formal_function_declaration(
+    string: str, location: int, tokens: ParseResults
+) -> decl.SubprogramDeclaration:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return decl.SubprogramDeclaration(tokens[0], tokens[1:-1], tokens[-1], location=locn)
+
+
+@fatalexceptions
+def parse_variable_declaration(
+    string: str, location: int, tokens: ParseResults
+) -> decl.VariableDeclaration:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return decl.VariableDeclaration(
+        tokens[0], tokens[1], tokens[2] if len(tokens) > 2 else None, location=locn
+    )
+
+
+@fatalexceptions
+def parse_renaming_declaration(
+    string: str, location: int, tokens: ParseResults
+) -> decl.RenamingDeclaration:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return decl.RenamingDeclaration(tokens[0], tokens[1], tokens[2], location=locn)
+
+
+@fatalexceptions
+def parse_erase(string: str, location: int, tokens: ParseResults) -> stmt.Erase:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return stmt.Erase(tokens[0], location=locn)
+
+
+@fatalexceptions
+def parse_assignment(string: str, location: int, tokens: ParseResults) -> stmt.Assignment:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return stmt.Assignment(tokens[0], tokens[1], location=locn)
+
+
+@fatalexceptions
+def parse_list_attribute(
+    string: str, location: int, tokens: ParseResults
+) -> Union[stmt.Append, stmt.Extend]:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    if tokens[1] == "Append":
+        return stmt.Append(tokens[0], tokens[2], location=locn)
+    return stmt.Extend(tokens[0], tokens[2], location=locn)
+
+
+@fatalexceptions
+def parse_reset(string: str, location: int, tokens: ParseResults) -> stmt.Reset:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return stmt.Reset(tokens[0], location=locn)
+
+
+@fatalexceptions
+def parse_transition(string: str, location: int, tokens: ParseResults) -> Transition:
+    tokens, locn = evaluate_located_expression(string, tokens)
+    return Transition(
+        tokens[0],
+        condition=tokens[2] if len(tokens) > 2 else TRUE,
+        description=tokens[1]["desc"] if "desc" in tokens[1] else None,
+        location=locn,
+    )
+
+
+@fatalexceptions
+def parse_state(string: str, location: int, tokens: ParseResults) -> State:
+    tokens, locn = evaluate_located_expression(string, tokens)
+
+    if "end_identifier" not in tokens:
+        return State(tokens["identifier"], location=locn)
+
+    identifier = tokens["identifier"]
+    end_identifier = tokens["end_identifier"]
+
+    if identifier != end_identifier:
+        raise ParseFatalException(
+            string, location, f"inconsistent state identifier: {identifier} /= {end_identifier}"
+        )
+
+    return State(
+        tokens["identifier"],
+        declarations=tokens["declarations"],
+        actions=tokens["actions"],
+        transitions=tokens["transitions"],
+        location=locn,
+    )
+
+
+@fatalexceptions
+def parse_session(string: str, location: int, tokens: ParseResults) -> object:
+    tokens, locn = evaluate_located_expression(string, tokens)
+
+    identifier = tokens[1]
+    end_identifier = tokens[-1]
+
+    if identifier != end_identifier:
+        raise ParseFatalException(
+            string, location, f"inconsistent session identifier: {identifier} /= {end_identifier}"
+        )
+
+    return Session(
+        identifier,
+        initial=tokens[2][0],
+        final=tokens[2][1],
+        parameters=tokens[0],
+        declarations=tokens[3],
+        states=tokens[4],
+        location=locn,
+    )
+
+
+@fatalexceptions
+def parse_package(string: str, location: int, tokens: ParseResults) -> object:
+    declarations = tokens[3].asList()
+    types = [d for d in declarations if isinstance(d, Type)]
+    sessions = [d for d in declarations if isinstance(d, Session)]
+    assert len(declarations) == len(types) + len(sessions)
+    return PackageSpec(tokens[1], types, sessions, tokens[5])
+
+
+def evaluate_located_expression(string: str, tokens: ParseResults) -> Tuple[ParseResults, Location]:
+    data = tokens[0].asDict()
+    location = parser_location(data["locn_start"], data["locn_end"], string)
+    return (data["value"] if len(data) == 3 else data, location)
 
 
 def unit() -> Token:
