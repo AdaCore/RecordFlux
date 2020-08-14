@@ -168,19 +168,23 @@ def string_literal() -> Token:
     )
 
 
-def logical_expression() -> Token:
-    return Group(expression()).setParseAction(parse_logical_expression).setName("LogicalExpression")
-
-
-def mathematical_expression() -> Token:
+def logical_expression(restricted: bool = False) -> Token:
     return (
-        Group(expression())
+        Group(expression(restricted))
+        .setParseAction(parse_logical_expression)
+        .setName("LogicalExpression")
+    )
+
+
+def mathematical_expression(restricted: bool = False) -> Token:
+    return (
+        Group(expression(restricted))
         .setParseAction(parse_mathematical_expression)
         .setName("MathematicalExpression")
     )
 
 
-def expression() -> Token:
+def expression(restricted: bool = False) -> Token:
     # pylint: disable=too-many-locals
 
     expr = Forward()
@@ -189,27 +193,15 @@ def expression() -> Token:
     multiplying_operator = Literal("*") | Literal("/")
     binary_adding_operator = Literal("+") | Literal("-")
     relational_operator = (
-        Keyword("=")
-        | Keyword("/=")
-        | Keyword("<=")
-        | Keyword("<")
-        | Keyword(">=")
-        | Keyword(">")
-        | Keyword("in")
-        | Keyword("not in")
+        Keyword("=") | Keyword("/=") | Keyword("<=") | Keyword("<") | Keyword(">=") | Keyword(">")
     )
+    if not restricted:
+        relational_operator |= Keyword("in") | Keyword("not in")
     logical_operator = Keyword("and") | Keyword("or")
 
-    designator = (
-        Keyword("First")
-        | Keyword("Last")
-        | Keyword("Length")
-        | Keyword("Head")
-        | Keyword("Opaque")
-        | Keyword("Present")
-        | Keyword("Valid")
-        | Keyword("Valid_Checksum")
-    )
+    designator = Keyword("First") | Keyword("Last") | Keyword("Length") | Keyword("Valid_Checksum")
+    if not restricted:
+        designator |= Keyword("Head") | Keyword("Opaque") | Keyword("Present") | Keyword("Valid")
 
     array_aggregate = (
         Literal("(").setParseAction(lambda s, l, t: l)
@@ -297,19 +289,14 @@ def expression() -> Token:
     selector = Literal(".").suppress() + unqualified_identifier()
     selector.setParseAction(lambda t: ("Selected", t[0]))
 
-    suffix = attribute | binding | selector
+    suffix = attribute
+    if not restricted:
+        suffix |= binding | selector
 
-    base = (
-        concatenation
-        | numeric_literal()
-        | string_literal()
-        | quantified_expression
-        | comprehension
-        | call
-        | conversion
-        | message_aggregate
-        | variable()
-    )
+    base = concatenation | numeric_literal() | string_literal()
+    if not restricted:
+        base |= quantified_expression | comprehension | call | conversion | message_aggregate
+    base |= variable()
 
     expr <<= infixNotation(
         base,
@@ -332,8 +319,8 @@ def with_aspects(aspects: Token) -> Token:
     return (Keyword("with") - aspects).setParseAction(parse_aspects)
 
 
-def if_condition() -> Token:
-    return (Keyword("if") - logical_expression()).setParseAction(parse_condition)
+def if_condition(restricted: bool = False) -> Token:
+    return (Keyword("if") - logical_expression(restricted)).setParseAction(parse_condition)
 
 
 def type_derivation_definition() -> Token:
@@ -341,21 +328,21 @@ def type_derivation_definition() -> Token:
 
 
 def size_aspect() -> Token:
-    return (Keyword("Size") - Keyword("=>") - mathematical_expression()).setParseAction(
-        parse_aspect
-    )
+    return (
+        Keyword("Size") - Keyword("=>") - mathematical_expression(restricted=True)
+    ).setParseAction(parse_aspect)
 
 
 def integer_type_definition() -> Token:
     range_type_definition = (
         Keyword("range")
-        - mathematical_expression()
+        - mathematical_expression(restricted=True)
         - Suppress(Literal(".."))
-        - mathematical_expression()
+        - mathematical_expression(restricted=True)
         - with_aspects(size_aspect())
     )
     range_type_definition.setName("RangeInteger")
-    modular_type_definition = Keyword("mod") - mathematical_expression()
+    modular_type_definition = Keyword("mod") - mathematical_expression(restricted=True)
     modular_type_definition.setName("ModularInteger")
 
     return range_type_definition | modular_type_definition
@@ -397,9 +384,11 @@ def array_type_definition() -> Token:
 
 
 def value_range() -> Token:
-    return (mathematical_expression() + Keyword("..") - mathematical_expression()).setParseAction(
-        lambda t: ValueRange(t[0], t[2], location=t[0].location)
-    )
+    return (
+        mathematical_expression(restricted=True)
+        + Keyword("..")
+        - mathematical_expression(restricted=True)
+    ).setParseAction(lambda t: ValueRange(t[0], t[2], location=t[0].location))
 
 
 def checksum_aspect() -> Token:
@@ -408,7 +397,7 @@ def checksum_aspect() -> Token:
         - Keyword("=>")
         - (
             left_parenthesis()
-            - delimitedList(value_range() | mathematical_expression())
+            - delimitedList(value_range() | mathematical_expression(restricted=True))
             + right_parenthesis()
         ).setParseAction(lambda t: [t.asList()])
     ).setParseAction(lambda t: (t[0], t[2]))
@@ -422,16 +411,16 @@ def checksum_aspect() -> Token:
 
 
 def message_type_definition() -> Token:
-    first_aspect = Keyword("First") - Keyword("=>") - mathematical_expression()
+    first_aspect = Keyword("First") - Keyword("=>") - mathematical_expression(restricted=True)
     first_aspect.setParseAction(parse_aspect)
-    length_aspect = Keyword("Length") - Keyword("=>") - mathematical_expression()
+    length_aspect = Keyword("Length") - Keyword("=>") - mathematical_expression(restricted=True)
     length_aspect.setParseAction(parse_aspect)
 
     then = locatedExpr(
         Keyword("then")
         - (Keyword("null") | unqualified_identifier())
         - Group(Optional(with_aspects(delimitedList(first_aspect | length_aspect))))
-        - Group(Optional(if_condition()))
+        - Group(Optional(if_condition(restricted=True)))
     )
     then.setParseAction(parse_then)
     then_list = ZeroOrMore(then)
@@ -496,7 +485,7 @@ def type_refinement() -> Token:
             - Suppress(Keyword("=>"))
             - qualified_identifier()
             - right_parenthesis()
-            - Optional(if_condition())("condition")
+            - Optional(if_condition(restricted=True))("condition")
             - semicolon().setParseAction(lambda s, l, t: l)
         )
         .setParseAction(parse_refinement)
