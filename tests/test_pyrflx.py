@@ -1620,3 +1620,33 @@ def test_no_verification_ethernet(frame: MessageValue) -> None:
     frame_unv.set("Payload", payload)
     assert frame_unv.valid_message
     assert frame.bytestring == frame_unv.bytestring
+
+
+def test_no_verification_array_nested_messages(
+    array_message_package: Package, array_message: MessageValue
+) -> None:
+    array_message_one = array_message_package["Foo"]
+    array_message_one.set("Byte", 5)
+    array_message_two = array_message_package["Foo"]
+    array_message_two.set("Byte", 6)
+    foos: List[TypeValue] = [array_message_one, array_message_two]
+    array_message.set("Length", 2)
+    array_message.set("Bar", foos)
+    assert array_message.valid_message
+
+    pyrflx = PyRFLX([f"{TESTDIR}/array_message.rflx"], skip_verification=True)
+    array_message_package_unv = pyrflx["Array_Message"]
+    array_message_unv = array_message_package_unv["Message"]
+    array_message_one_unv = array_message_package_unv["Foo"]
+    array_message_one_unv.set("Byte", 5)
+    array_message_two_unv = array_message_package_unv["Foo"]
+    array_message_two_unv.set("Byte", 6)
+    foos_unv: List[TypeValue] = [array_message_one_unv, array_message_two_unv]
+    array_message_unv.set("Length", 2)
+    array_message_unv.set("Bar", foos_unv)
+    assert array_message_unv.valid_message
+    assert array_message.bytestring == array_message_unv.bytestring
+
+    array_message_unv = array_message_package_unv["Message"]
+    array_message_unv.parse(b"\x02\x05\x06")
+    assert array_message_unv.bytestring == b"\x02\x05\x06"
