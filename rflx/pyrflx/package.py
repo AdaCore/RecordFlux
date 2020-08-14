@@ -1,4 +1,3 @@
-from copy import copy
 from typing import Dict, Iterator
 
 from rflx.common import generic_repr
@@ -18,7 +17,7 @@ class Package:
         return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __getitem__(self, key: str) -> MessageValue:
-        return copy(self.__messages[key])
+        return self.__messages[key].clone()
 
     def __setitem__(self, key: str, value: MessageValue) -> None:
         self.__messages[key] = value

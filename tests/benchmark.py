@@ -24,9 +24,9 @@ class Benchmark:
     def generate(self, count: int = 2 ** 16) -> Generator[bytes, None, None]:
         if count > 2 ** 16:
             raise ValueError
-        msg = self.__icmp["Message"]
-        pkt = self.__ipv4["Packet"]
         for ident in range(0, count):
+            msg = self.__icmp["Message"]
+            pkt = self.__ipv4["Packet"]
             msg.set("Tag", "Echo_Request")
             msg.set("Code_Zero", 0)
             msg.set("Checksum", 0)

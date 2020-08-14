@@ -115,6 +115,9 @@ class TypeValue(ABC):
     def accepted_type(self) -> type:
         raise NotImplementedError
 
+    def clone(self) -> "TypeValue":
+        return self.__class__(self._type)
+
     @classmethod
     def construct(
         cls, vtype: Type, imported: bool = False, refinements: Sequence[Refinement] = None
@@ -166,7 +169,7 @@ class IntegerValue(ScalarValue):
         return self._type.last.value
 
     def assign(self, value: int, check: bool = True) -> None:
-        if (
+        if check and (
             And(*self._type.constraints("__VALUE__", check))
             .substituted(
                 mapping={Variable("__VALUE__"): Number(value), Length("__VALUE__"): self._type.size}
@@ -228,15 +231,19 @@ class EnumValue(ScalarValue):
         if Variable(prefixed_value) not in self.literals:
             raise KeyError(f"{value} is not a valid enum value")
         r = (
-            And(*self._type.constraints("__VALUE__", check, not self.__imported))
-            .substituted(
-                mapping={
-                    **self.literals,
-                    **{Variable("__VALUE__"): self._type.literals[prefixed_value.name]},
-                    **{Length("__VALUE__"): self._type.size},
-                }
+            (
+                And(*self._type.constraints("__VALUE__", check, not self.__imported))
+                .substituted(
+                    mapping={
+                        **self.literals,
+                        **{Variable("__VALUE__"): self._type.literals[prefixed_value.name]},
+                        **{Length("__VALUE__"): self._type.size},
+                    }
+                )
+                .simplified()
             )
-            .simplified()
+            if check
+            else TRUE
         )
         assert r == TRUE
         self._value = (
@@ -264,6 +271,9 @@ class EnumValue(ScalarValue):
                         str(k.identifier) if self.__imported else str(k.identifier.name),
                         v,
                     )
+
+    def clone(self) -> "TypeValue":
+        return self.__class__(self._type, self.__imported)
 
     @property
     def value(self) -> str:
@@ -497,34 +507,44 @@ class MessageValue(TypeValue):
         model: Message,
         refinements: Sequence[Refinement] = None,
         skip_verification: bool = False,
+        fields: Mapping[str, "MessageValue.Field"] = None,
+        checksums: Mapping[str, "MessageValue.Checksum"] = None,
+        type_literals: Mapping[Name, Expr] = None,
     ) -> None:
+        # pylint: disable=too-many-arguments
         super().__init__(model)
         self._skip_verification = skip_verification
         self._refinements = refinements or []
-        self._fields: Dict[str, MessageValue.Field] = {
+
+        self._fields: Mapping[str, MessageValue.Field] = fields if fields else {
             f.name: self.Field(
                 TypeValue.construct(
-                    self._type.types[f], imported=self._type.types[f].package != model.package
+                    self._type.types[f] if f in self._type.types else Opaque(),
+                    imported=f in self._type.types and self._type.types[f].package != model.package,
                 ),
                 f.name,
             )
-            for f in self._type.fields
+            for f in (INITIAL,) + self._type.fields
         }
 
-        self._checksums: Mapping[str, MessageValue.Checksum] = {
+        self._checksums: Mapping[str, MessageValue.Checksum] = checksums if checksums else {
             str(field_name): MessageValue.Checksum(str(field_name), parameters)
             for field_name, parameters in self._type.checksums.items()
         }
 
-        self.__type_literals: Mapping[Name, Expr] = {}
-        for t in [
-            f.typeval.literals for f in self._fields.values() if isinstance(f.typeval, EnumValue)
-        ]:
-            self.__type_literals.update(t)
-        initial = self.Field(OpaqueValue(Opaque()), INITIAL.name)
+        self.__type_literals: Mapping[Name, Expr] = type_literals if type_literals else {}
+        if not self.__type_literals:
+            assert isinstance(self.__type_literals, dict)
+            for t in [
+                f.typeval.literals
+                for f in self._fields.values()
+                if isinstance(f.typeval, EnumValue)
+            ]:
+                self.__type_literals.update(t)
+
+        initial = self._fields[INITIAL.name]
         initial.first = Number(0)
         initial.typeval.assign(bytes())
-        self._fields[INITIAL.name] = initial
         self._last_field: str = self._next_field(INITIAL.name)
         self._simplified_mapping: Dict[Name, Expr] = dict.fromkeys(
             [initial.name_length, initial.name_last, initial.name_first], Number(0)
@@ -532,8 +552,20 @@ class MessageValue(TypeValue):
         self.accessible_fields: List[str] = []
         self._preset_fields(INITIAL.name)
 
-    def __copy__(self) -> "MessageValue":
-        return MessageValue(self._type, self._refinements, self._skip_verification)
+    def clone(self) -> "MessageValue":
+        return MessageValue(
+            self._type,
+            self._refinements,
+            self._skip_verification,
+            {
+                k: MessageValue.Field(
+                    v.typeval.clone(), k, v.name_variable, v.name_first, v.name_last, v.name_length
+                )
+                for k, v in self._fields.items()
+            },
+            self._checksums,
+            self.__type_literals,
+        )
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
@@ -556,9 +588,7 @@ class MessageValue(TypeValue):
             return self._fields[fld].next
         if fld == INITIAL.name:
             links = self._type.outgoing(INITIAL)
-            if not links:
-                return FINAL.name
-            return links[0].target.name
+            return links[0].target.name if links else FINAL.name
 
         for l in self._type.outgoing(Field(fld)):
             if self.__simplified(l.condition) == TRUE:
@@ -600,7 +630,9 @@ class MessageValue(TypeValue):
 
     def _get_first(self, fld: str) -> Optional[Number]:
         for l in self._type.incoming(Field(fld)):
-            if l.first != UNDEFINED and self.__simplified(l.condition) == TRUE:
+            if l.first != UNDEFINED and (
+                self._skip_verification or self.__simplified(l.condition) == TRUE
+            ):
                 first = self.__simplified(l.first)
                 return first if isinstance(first, Number) else None
         prv = self._prev_field(fld)
@@ -1088,14 +1120,24 @@ class MessageValue(TypeValue):
         prev: str
         next: str
 
-        def __init__(self, t: TypeValue, name: str):
+        def __init__(
+            self,
+            t: TypeValue,
+            name: str = "",
+            name_variable: Variable = None,
+            name_first: First = None,
+            name_last: Last = None,
+            name_length: Length = None,
+        ):
+            # pylint: disable=too-many-arguments
+            assert name or (name_variable and name_first and name_last and name_length)
             self.typeval = t
             self.__is_scalar = isinstance(self.typeval, ScalarValue)
             self.first: Expr = UNDEFINED
-            self.name_variable = Variable(name)
-            self.name_first = First(name)
-            self.name_last = Last(name)
-            self.name_length = Length(name)
+            self.name_variable = name_variable if name_variable else Variable(name)
+            self.name_first = name_first if name_first else First(name)
+            self.name_last = name_last if name_last else Last(name)
+            self.name_length = name_length if name_length else Length(name)
             self.prev = ""
             self.next = ""
 
