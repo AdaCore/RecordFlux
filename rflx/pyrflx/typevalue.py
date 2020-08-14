@@ -92,7 +92,7 @@ class TypeValue(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def parse(self, value: Union[Bitstring, bytes]) -> None:
+    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
         raise NotImplementedError
 
     @property
@@ -180,10 +180,10 @@ class IntegerValue(ScalarValue):
             raise ValueError(f"value {value} not in type range {self._first} .. {self._last}")
         self._value = value
 
-    def parse(self, value: Union[Bitstring, bytes]) -> None:
+    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
-        self.assign(int(value))
+        self.assign(int(value), check)
 
     @property
     def expr(self) -> Number:
@@ -253,7 +253,7 @@ class EnumValue(ScalarValue):
             self._type.literals[prefixed_value.name],
         )
 
-    def parse(self, value: Union[Bitstring, bytes]) -> None:
+    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         value_as_number = Number(int(value))
@@ -345,14 +345,15 @@ class OpaqueValue(CompositeValue):
         self._all_refinements: Sequence[Refinement] = []
 
     def assign(self, value: bytes, check: bool = True) -> None:
-        self.parse(value)
+        self.parse(value, check)
 
-    def parse(self, value: Union[Bitstring, bytes]) -> None:
-        self._check_length_of_assigned_value(value)
+    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+        if check:
+            self._check_length_of_assigned_value(value)
         if self._refinement_message is not None:
             nested_msg = MessageValue(self._refinement_message, self._all_refinements)
             try:
-                nested_msg.parse(value)
+                nested_msg.parse(value, check)
             except (IndexError, ValueError, KeyError) as e:
                 raise ValueError(
                     f"Error while parsing nested message "
@@ -437,8 +438,9 @@ class ArrayValue(CompositeValue):
 
         self._value = value
 
-    def parse(self, value: Union[Bitstring, bytes]) -> None:
-        self._check_length_of_assigned_value(value)
+    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+        if check:
+            self._check_length_of_assigned_value(value)
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         if self._is_message_array:
@@ -447,7 +449,7 @@ class ArrayValue(CompositeValue):
                 nested_message = TypeValue.construct(self._element_type)
                 assert isinstance(nested_message, MessageValue)
                 try:
-                    nested_message.parse(value)
+                    nested_message.parse(value, check)
                 except (IndexError, ValueError, KeyError) as e:
                     raise ValueError(
                         f"cannot parse nested messages in array of type "
@@ -467,7 +469,7 @@ class ArrayValue(CompositeValue):
                 nested_value = TypeValue.construct(
                     self._element_type, imported=self._element_type.package != self._type.package
                 )
-                nested_value.parse(Bitstring(value_str[:type_size_int]))
+                nested_value.parse(Bitstring(value_str[:type_size_int]), check)
                 new_value.append(nested_value)
                 value_str = value_str[type_size_int:]
 
@@ -545,7 +547,6 @@ class MessageValue(TypeValue):
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
         initial.typeval.assign(bytes())
-        self._last_field: str = self._next_field(INITIAL.name)
         self._simplified_mapping: Dict[Name, Expr] = dict.fromkeys(
             [initial.name_length, initial.name_last, initial.name_first], Number(0)
         )
@@ -622,7 +623,7 @@ class MessageValue(TypeValue):
             if (
                 self._fields[l.source.name].set
                 and l.length != UNDEFINED
-                and self.__simplified(l.condition) == TRUE
+                and (self._skip_verification or self.__simplified(l.condition) == TRUE)
             ):
                 length = self.__simplified(l.length)
                 return length if isinstance(length, Number) else None
@@ -658,7 +659,7 @@ class MessageValue(TypeValue):
     def assign(self, value: bytes, check: bool = True) -> None:
         raise NotImplementedError
 
-    def parse(self, value: Union[Bitstring, bytes]) -> None:
+    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         current_field_name = self._next_field(INITIAL.name)
@@ -785,7 +786,7 @@ class MessageValue(TypeValue):
             set_refinement(field, field_name)
             try:
                 if isinstance(value, Bitstring):
-                    field.typeval.parse(value)
+                    field.typeval.parse(value, not self._skip_verification)
                 elif isinstance(value, field.typeval.accepted_type):
                     field.typeval.assign(value, not self._skip_verification)
                 else:
@@ -813,6 +814,9 @@ class MessageValue(TypeValue):
     def _preset_fields(self, fld: str) -> None:
         nxt = self._next_field(fld)
         fields: List[str] = []
+        if self._skip_verification and nxt == FINAL.name:
+            self._fields[fld].next = nxt
+            return
         while nxt and nxt != FINAL.name:
             if self._skip_verification:
                 self._fields[nxt].prev = fld
@@ -831,6 +835,8 @@ class MessageValue(TypeValue):
                 else length is not None
             ):
                 fields.append(nxt)
+                if self._skip_verification and nxt != FINAL.name:
+                    self._fields[fld].next = nxt
 
             if length is None:
                 break
@@ -845,7 +851,6 @@ class MessageValue(TypeValue):
                 break
             self._last_field = nxt
             if self._skip_verification:
-                self._fields[fld].next = nxt
                 break
             nxt = self._next_field(nxt)
         try:
