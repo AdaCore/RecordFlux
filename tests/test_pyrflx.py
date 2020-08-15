@@ -215,6 +215,24 @@ def test_package_iterator(tlv_package: Package) -> None:
     assert [m.name for m in tlv_package] == ["Message"]
 
 
+def test_pyrflx_iterator(pyrflx: PyRFLX) -> None:
+    assert {p.name for p in pyrflx} == {
+        "Ethernet",
+        "ICMP",
+        "IPv4",
+        "TLS_Alert",
+        "TLS_Record",
+        "TLV",
+        "UDP",
+        "Array_Message",
+        "Array_Type",
+        "Message_Odd_Length",
+        "Null_Message",
+        "TLV_With_Checksum",
+        "No_Conditionals",
+    }
+
+
 def test_message_identifier(frame: MessageValue) -> None:
     assert frame.identifier == ID("Ethernet.Frame")
     assert frame.package == ID("Ethernet")
