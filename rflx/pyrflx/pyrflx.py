@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Iterator, List
 
 from rflx.parser import Parser
 from rflx.pyrflx.typevalue import MessageValue
@@ -28,3 +28,6 @@ class PyRFLX:
 
     def __getitem__(self, key: str) -> Package:
         return self.__packages[key]
+
+    def __iter__(self) -> Iterator[Package]:
+        return self.__packages.values().__iter__()
