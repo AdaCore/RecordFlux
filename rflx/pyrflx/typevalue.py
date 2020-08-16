@@ -374,13 +374,13 @@ class OpaqueValue(CompositeValue):
     @property
     def value(self) -> bytes:
         self._raise_initialized()
-        assert self._value
+        assert self._value is not None
         return self._value
 
     @property
     def bitstring(self) -> Bitstring:
         self._raise_initialized()
-        assert self._value
+        assert self._value is not None
         return Bitstring(format(int.from_bytes(self._value, "big"), f"0{self.size}b"))
 
     @property
