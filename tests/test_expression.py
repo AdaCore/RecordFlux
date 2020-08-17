@@ -63,16 +63,9 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID
-from tests.utils import assert_equal
+from tests.utils import assert_equal, multilinestr
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
-
-
-def multilinestr(string: str) -> str:
-    assert all(
-        l.startswith(15 * " ") for l in string.split("\n")[1:]
-    ), "invalid format of multi-line string"
-    return string.replace(15 * " ", "")
 
 
 def test_true_neg() -> None:

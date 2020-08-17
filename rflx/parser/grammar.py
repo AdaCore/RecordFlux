@@ -840,7 +840,7 @@ def parse_mathematical_operator(string: str, location: int, tokens: ParseResults
 @fatalexceptions
 def parse_logical_expression(string: str, location: int, tokens: ParseResults) -> Expr:
     log_expr = tokens[0][0]
-    if isinstance(log_expr, (And, Or, Relation, Valid, ValidChecksum)):
+    if isinstance(log_expr, (And, Or, Relation, Valid, ValidChecksum, QuantifiedExpression)):
         return log_expr
     raise ParseFatalException(
         string, location, f'unexpected expression type "{type(log_expr).__name__}"'

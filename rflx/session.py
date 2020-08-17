@@ -1,5 +1,6 @@
 from typing import Dict, List, Sequence
 
+from rflx.common import indent, indent_next
 from rflx.declaration import (
     ChannelDeclaration,
     Declaration,
@@ -28,6 +29,22 @@ class Transition(Base):
         self.location = location
         self.description = description
 
+    def __repr__(self) -> str:
+        return (
+            f"\n{self.__class__.__name__}(\n"
+            f"{indent(repr(self.target), 4)},\n"
+            f"{indent(repr(self.condition), 4)},\n"
+            f"{indent(repr(self.description), 4)},\n"
+            f"\n)" + self._prefixed_str
+        )
+
+    def __str__(self) -> str:
+        with_aspects = f'\n   with Desc => "{self.description}"' if self.description else ""
+        if_condition = (
+            f"\n   if {indent_next(str(self.condition), 6)}" if self.condition != TRUE else ""
+        )
+        return f"then {self.target}{with_aspects}{if_condition}"
+
     def validate(self, declarations: Dict[ID, Declaration]) -> None:
         self.condition.simplified().validate(declarations)
 
@@ -46,6 +63,27 @@ class State(Base):
         self.__actions = actions or []
         self.declarations = {d.identifier: d for d in declarations} if declarations else {}
         self.location = location
+
+    def __repr__(self) -> str:
+        return (
+            f"\n{self.__class__.__name__}(\n"
+            f"{indent(repr(self.name), 4)},\n"
+            f"{indent(repr(self.transitions), 4)},\n"
+            f"{indent(repr(self.actions), 4)},\n"
+            f"{indent(repr(self.declarations), 4)},\n"
+            f"\n)" + self._prefixed_str
+        )
+
+    def __str__(self) -> str:
+        if not self.declarations and not self.actions and not self.transitions:
+            return f"state {self.name} is null state"
+        declarations = "".join(f"{d};\n" for d in self.declarations.values())
+        actions = "".join(f"{a};\n" for a in self.actions)
+        transitions = "\n".join(f"{p}" for p in self.transitions)
+        return (
+            f"state {self.name} is\n{indent(declarations, 3)}begin\n{indent(actions, 3)}"
+            f"transition\n{indent(transitions, 3)}\nend {self.name}"
+        )
 
     @property
     def name(self) -> ID:
@@ -92,6 +130,28 @@ class Session(Base):
         self.__validate_actions()
         self.__validate_declarations()
         self.error.propagate()
+
+    def __repr__(self) -> str:
+        return (
+            f"\n{self.__class__.__name__}(\n"
+            f"{indent(repr(self.name), 4)},\n"
+            f"{indent(repr(self.initial), 4)},\n"
+            f"{indent(repr(self.final), 4)},\n"
+            f"{indent(repr(self.states), 4)},\n"
+            f"{indent(repr(self.declarations), 4)},\n"
+            f"{indent(repr(self.parameters), 4)},\n"
+            f"\n)" + self._prefixed_str
+        )
+
+    def __str__(self) -> str:
+        parameters = "".join(f"{p};\n" for p in self.parameters.values())
+        declarations = "".join(f"{d};\n" for d in self.declarations.values())
+        states = "\n\n".join(f"{s};" for s in self.states)
+        return (
+            f"generic\n{indent(parameters, 3)}session {self.name} with\n"
+            f"   Initial => {self.initial},\n   Final => {self.final}\n"
+            f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.name}"
+        )
 
     def __validate_conditions(self) -> None:
         for s in self.states:

@@ -1962,7 +1962,9 @@ class MessageAggregate(Expr):
         self.data = {ID(k): v for k, v in data.items()}
 
     def _update_str(self) -> None:
-        data = ", ".join([f"{k} => {self.data[k]}" for k in self.data])
+        data = (
+            ", ".join(f"{k} => {self.data[k]}" for k in self.data) if self.data else "null message"
+        )
         self._str = intern(f"{self.name}'({data})")
 
     def __neg__(self) -> Expr:
@@ -2009,8 +2011,8 @@ class Binding(Expr):
         self.data = {ID(k): v for k, v in data.items()}
 
     def _update_str(self) -> None:
-        data = ", ".join(["{k} = {v}".format(k=k, v=self.data[k]) for k in self.data])
-        self._str = intern(f"{self.expr} where {data}")
+        data = ",\n".join("{k} = {v}".format(k=k, v=self.data[k]) for k in self.data)
+        self._str = intern(f"{self.expr}\n   where {indent_next(data, 9)}")
 
     def __neg__(self) -> Expr:
         raise NotImplementedError

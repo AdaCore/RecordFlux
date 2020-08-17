@@ -89,3 +89,11 @@ def _create_files(tmp_path: pathlib.Path, model: Model, prefix: str = None) -> N
     generator.write_units(tmp_path)
     generator.write_library_files(tmp_path)
     generator.write_top_level_package(tmp_path)
+
+
+def multilinestr(string: str) -> str:
+    correct_indentation = [not l or l.startswith(15 * " ") for l in string.split("\n")[1:]]
+    assert all(
+        correct_indentation
+    ), f"invalid indentation of line {correct_indentation.index(False) + 2}"
+    return string.replace(15 * " ", "")
