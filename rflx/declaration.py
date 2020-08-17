@@ -53,12 +53,19 @@ class VariableDeclaration(Declaration):
         self.__type_name = ID(type_name) if type_name else None
         self.__expression = expression
 
+    def __str__(self) -> str:
+        expression = f" := {self.__expression}" if self.__expression else ""
+        return f"{self.identifier} : {self.__type_name}{expression}"
+
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         if self.__expression:
             self.__expression.validate(declarations)
 
 
 class PrivateDeclaration(Declaration):
+    def __str__(self) -> str:
+        return f"type {self.identifier} is private"
+
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         pass
 
@@ -77,6 +84,9 @@ class Argument:
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
 
+    def __str__(self) -> str:
+        return f"{self.__name} : {self.__type_name}"
+
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         pass
 
@@ -93,6 +103,10 @@ class SubprogramDeclaration(Declaration):
         self.__arguments = arguments
         self.__return_type = ID(return_type)
 
+    def __str__(self) -> str:
+        arguments = (" (" + "; ".join(map(str, self.__arguments)) + ")") if self.__arguments else ""
+        return f"with function {self.identifier}{arguments} return {self.__return_type}"
+
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         for a in self.__arguments:
             a.validate(declarations)
@@ -105,6 +119,9 @@ class RenamingDeclaration(Declaration):
         super().__init__(identifier, location)
         self.__type_name = ID(type_name)
         self.__expression = expression
+
+    def __str__(self) -> str:
+        return f"{self.identifier} : {self.__type_name} renames {self.__expression}"
 
     def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
         self.__expression.validate(declarations)
@@ -122,6 +139,15 @@ class ChannelDeclaration(Declaration):
         super().__init__(identifier, location)
         self.__readable = readable
         self.__writable = writable
+
+    def __str__(self) -> str:
+        aspects = []
+        if self.__readable:
+            aspects.append("Readable")
+        if self.__writable:
+            aspects.append("Writable")
+        with_aspects = " with " + ", ".join(aspects)
+        return f"{self.identifier} : Channel{with_aspects}"
 
     @property
     def readable(self) -> bool:
