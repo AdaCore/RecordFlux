@@ -37,7 +37,7 @@ def test_undeclared_variable() -> None:
         RecordFluxError, match='^model: error: undeclared variable "Undefined"$',
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -55,7 +55,7 @@ def test_undeclared_variable() -> None:
 
 def test_declared_variable() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -73,7 +73,7 @@ def test_declared_variable() -> None:
 
 def test_declared_local_variable() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -97,7 +97,7 @@ def test_undeclared_local_variable() -> None:
         RecordFluxError, match=('^model: error: undeclared variable "Local"$'),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -124,7 +124,7 @@ def test_undeclared_local_variable() -> None:
 
 def test_declared_local_variable_valid() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -143,7 +143,7 @@ def test_declared_local_variable_valid() -> None:
 
 def test_declared_local_variable_field() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -174,7 +174,7 @@ def test_assignment_to_undeclared_variable() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -201,7 +201,7 @@ def test_assignment_from_undeclared_variable() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -228,7 +228,7 @@ def test_erasure_of_undeclared_variable() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -255,7 +255,7 @@ def test_reset_of_undeclared_list() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -282,7 +282,7 @@ def test_call_to_undeclared_function() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -300,7 +300,7 @@ def test_call_to_undeclared_function() -> None:
 
 def test_call_to_builtin_read() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -321,7 +321,7 @@ def test_call_to_builtin_read() -> None:
 
 def test_call_to_builtin_write() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -342,7 +342,7 @@ def test_call_to_builtin_write() -> None:
 
 def test_call_to_builtin_call() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -363,7 +363,7 @@ def test_call_to_builtin_call() -> None:
 
 def test_call_to_builtin_data_available() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -393,7 +393,7 @@ def test_call_to_builtin_read_without_arguments() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -420,7 +420,7 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -449,7 +449,7 @@ def test_call_to_builtin_read_invalid_channel_type() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -476,7 +476,7 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -508,7 +508,7 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -540,7 +540,7 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -570,7 +570,7 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -600,7 +600,7 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -621,7 +621,7 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
 
 def test_subprogram_call() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -651,7 +651,7 @@ def test_undeclared_variable_in_subprogram_call() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -683,7 +683,7 @@ def test_function_declaration_is_no_builtin_read() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -707,7 +707,7 @@ def test_function_declaration_is_no_builtin_write() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -731,7 +731,7 @@ def test_function_declaration_is_no_builtin_call() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -755,7 +755,7 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -781,7 +781,7 @@ def test_local_variable_shadows_global() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -803,7 +803,7 @@ def test_unused_global_variable() -> None:
         RecordFluxError, match='^model: error: unused variable "Global"$',
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -821,7 +821,7 @@ def test_unused_local_variable() -> None:
         RecordFluxError, match='^model: error: unused local variable "Data" in state START$',
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -841,7 +841,7 @@ def test_renames_references_undefined_variable() -> None:
         RecordFluxError, match='^model: error: undeclared variable "Foo"$',
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -860,7 +860,7 @@ def test_renames_references_undefined_variable() -> None:
 
 def test_binding_as_subprogram_parameter() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -890,7 +890,7 @@ def test_binding_as_subprogram_parameter() -> None:
 
 def test_for_all() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -915,7 +915,7 @@ def test_for_all() -> None:
 
 def test_append_list_attribute() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -938,7 +938,7 @@ def test_append_list_attribute() -> None:
 
 def test_extend_list_attribute() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -970,7 +970,7 @@ def test_aggregate_with_undefined_parameter() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -995,7 +995,7 @@ def test_aggregate_with_undefined_parameter() -> None:
 
 def test_comprehension() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -1031,7 +1031,7 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -1051,7 +1051,7 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
 
 def test_assignment_opaque_subprogram_result() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -1071,7 +1071,7 @@ def test_assignment_opaque_subprogram_result() -> None:
 
 def test_assignment_opaque_subprogram_binding() -> None:
     Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -1102,7 +1102,7 @@ def test_private_declaration_is_no_builtin_write() -> None:
         match=("^" 'model: error: private declaration shadows builtin subprogram "Write"' "$"),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -1120,7 +1120,7 @@ def test_duplicate_states() -> None:
         RecordFluxError, match=("^model: error: duplicate states: FOO$"),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[

@@ -1399,6 +1399,27 @@ def test_reserved_word_in_message_component() -> None:
     )
 
 
+def test_session_name_conflict() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type X is mod 2**8;
+
+               generic
+               session X with
+                  Initial => A,
+                  Final => A
+               is
+               begin
+                  state A is null state;
+               end X;
+            end Test;
+        """,
+        r'^<stdin>:5:16: parser: error: name conflict for session "Test.X"\n'
+        r'<stdin>:3:16: parser: info: previous occurrence of "Test.X"$',
+    )
+
+
 def test_integer_type_spec() -> None:
     spec = {
         "Integer_Type": Specification(

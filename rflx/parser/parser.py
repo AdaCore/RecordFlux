@@ -36,6 +36,7 @@ from rflx.model import (
     is_builtin_type,
     qualified_type_name,
 )
+from rflx.session import Session
 
 from . import grammar
 from .ast import (
@@ -57,6 +58,7 @@ class Parser:
         self.__specifications: Deque[Specification] = deque()
         self.__evaluated_specifications: Set[ID] = set()
         self.__types: Dict[ID, Type] = {**BUILTIN_TYPES, **INTERNAL_TYPES}
+        self.__sessions: Dict[ID, Session] = {}
 
     def parse(self, specfile: Path) -> None:
         self.__parse(specfile)
@@ -132,7 +134,7 @@ class Parser:
             except RecordFluxError as e:
                 error.extend(e)
         try:
-            result = Model(list(self.__types.values()))
+            result = Model(list(self.__types.values()), list(self.__sessions.values()))
         except RecordFluxError as e:
             error.extend(e)
         error.propagate()
@@ -147,6 +149,7 @@ class Parser:
 
         error = RecordFluxError()
         self.__evaluate_types(specification, error)
+        self.__evaluate_sessions(specification, error)
         error.propagate()
 
     def __evaluate_types(self, spec: Specification, error: RecordFluxError) -> None:
@@ -194,6 +197,31 @@ class Parser:
 
             except RecordFluxError as e:
                 error.extend(e)
+
+    def __evaluate_sessions(self, spec: Specification, error: RecordFluxError) -> None:
+        for s in spec.package.sessions:
+            s.identifier = ID(
+                f"{spec.package.identifier}.{s.identifier.name}", s.identifier.location
+            )
+
+            if s.identifier in self.__types or s.identifier in self.__sessions:
+                error.append(
+                    f'name conflict for session "{s.identifier}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    s.location,
+                )
+                error.append(
+                    f'previous occurrence of "{s.identifier}"',
+                    Subsystem.PARSER,
+                    Severity.INFO,
+                    self.__types[s.identifier].location
+                    if s.identifier in self.__types
+                    else self.__sessions[s.identifier].location,
+                )
+                continue
+
+            self.__sessions[s.identifier] = s
 
 
 def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:

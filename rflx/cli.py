@@ -196,7 +196,7 @@ def session(args: argparse.Namespace) -> None:
         if args.format:
             for sm in session_file.sessions:
                 filename = (
-                    Path(directory).joinpath(str(sm.name.name)).with_suffix(f".{args.format}")
+                    Path(directory).joinpath(str(sm.identifier.name)).with_suffix(f".{args.format}")
                 )
                 Graph(sm).write(filename, fmt=args.format)
         print("OK")

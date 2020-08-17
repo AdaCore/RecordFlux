@@ -248,7 +248,7 @@ class SessionFile:
             )
 
         session = Session(
-            name=name,
+            identifier=name,
             initial=ID(doc["initial"]),
             final=ID(doc["final"]),
             states=self.__parse_states(doc),
