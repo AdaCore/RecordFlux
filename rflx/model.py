@@ -5,7 +5,7 @@ from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from rflx.common import flat_name, generic_repr, indent, indent_next
 from rflx.contract import ensure, invariant
@@ -42,6 +42,10 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID, StrID
+
+if TYPE_CHECKING:
+    from rflx.session import Session  # noqa: F401
+
 
 BUILTINS_PACKAGE = ID("__BUILTINS__")
 INTERNAL_PACKAGE = ID("__INTERNAL__")
@@ -2071,8 +2075,9 @@ class Refinement(Type):
 
 
 class Model(Base):
-    def __init__(self, types: Sequence[Type]) -> None:
+    def __init__(self, types: Sequence[Type], sessions: Sequence["Session"] = None) -> None:
         self.types = types
+        self.sessions = sessions or []
         self.__check_types()
 
     def __repr__(self) -> str:

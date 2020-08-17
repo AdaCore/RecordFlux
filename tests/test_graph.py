@@ -169,7 +169,7 @@ def test_dot_graph_with_double_edge() -> None:
 
 def test_session_graph() -> None:
     s = Session(
-        name="foo",
+        identifier="foo",
         initial=ID("START"),
         final=ID("END"),
         states=[

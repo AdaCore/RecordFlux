@@ -38,7 +38,7 @@ def test_simple_session() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -100,7 +100,7 @@ def test_empty_states() -> None:
         ),
     ):
         Session(
-            name="session", initial=ID("START"), final=ID("END"), states=[], declarations=[],
+            identifier="session", initial=ID("START"), final=ID("END"), states=[], declarations=[],
         )
 
 
@@ -115,7 +115,7 @@ def test_invalid_initial() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("NONEXISTENT"),
             final=ID("END"),
             states=[
@@ -137,7 +137,7 @@ def test_invalid_final() -> None:
         ),
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("NONEXISTENT"),
             states=[
@@ -155,7 +155,7 @@ def test_invalid_target_state() -> None:
         ' state "NONEXISTENT" in "session"$',
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -175,7 +175,7 @@ def test_invalid_target_state() -> None:
 def test_duplicate_state() -> None:
     with pytest.raises(RecordFluxError, match="^model: error: duplicate states: START$"):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -192,7 +192,7 @@ def test_multiple_duplicate_states() -> None:
         RecordFluxError, match=("^model: error: duplicate states: BAR, FOO, START$")
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -211,7 +211,7 @@ def test_multiple_duplicate_states() -> None:
 def test_unreachable_state() -> None:
     with pytest.raises(RecordFluxError, match="^model: error: unreachable states UNREACHABLE$"):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -228,7 +228,7 @@ def test_multiple_unreachable_states() -> None:
         RecordFluxError, match="^model: error: unreachable states UNREACHABLE1, UNREACHABLE2$"
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -244,7 +244,7 @@ def test_multiple_unreachable_states() -> None:
 def test_detached_state() -> None:
     with pytest.raises(RecordFluxError, match="^model: error: detached states DETACHED$"):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -264,7 +264,7 @@ def test_multiple_detached_states() -> None:
         RecordFluxError, match="^model: error: detached states DETACHED1, DETACHED2$"
     ):
         Session(
-            name="session",
+            identifier="session",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -306,7 +306,7 @@ def test_session_with_conditions() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -384,7 +384,7 @@ def test_session_condition_equal() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -444,7 +444,7 @@ def test_session_with_function_decl() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -486,7 +486,7 @@ def test_session_with_variable_decl() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -525,7 +525,7 @@ def test_session_with_actions() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -620,7 +620,7 @@ def test_session_with_renames() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -665,7 +665,7 @@ def test_channels() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -785,7 +785,7 @@ def test_function_used() -> None:
         """,
     )
     expected = Session(
-        name="session",
+        identifier="session",
         initial=ID("START"),
         final=ID("FINAL"),
         states=[

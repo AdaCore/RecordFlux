@@ -102,7 +102,7 @@ class Session(Base):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(
         self,
-        name: StrID,
+        identifier: StrID,
         initial: StrID,
         final: StrID,
         states: Sequence[State],
@@ -110,7 +110,7 @@ class Session(Base):
         parameters: Sequence[Declaration] = None,
         location: Location = None,
     ):
-        self.name = ID(name)
+        self.identifier = ID(identifier)
         self.initial = ID(initial)
         self.final = ID(final)
         self.states = states
@@ -134,7 +134,7 @@ class Session(Base):
     def __repr__(self) -> str:
         return (
             f"\n{self.__class__.__name__}(\n"
-            f"{indent(repr(self.name), 4)},\n"
+            f"{indent(repr(self.identifier), 4)},\n"
             f"{indent(repr(self.initial), 4)},\n"
             f"{indent(repr(self.final), 4)},\n"
             f"{indent(repr(self.states), 4)},\n"
@@ -148,9 +148,9 @@ class Session(Base):
         declarations = "".join(f"{d};\n" for d in self.declarations.values())
         states = "\n\n".join(f"{s};" for s in self.states)
         return (
-            f"generic\n{indent(parameters, 3)}session {self.name} with\n"
+            f"generic\n{indent(parameters, 3)}session {self.identifier.name} with\n"
             f"   Initial => {self.initial},\n   Final => {self.final}\n"
-            f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.name}"
+            f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.identifier.name}"
         )
 
     def __validate_conditions(self) -> None:
@@ -181,14 +181,14 @@ class Session(Base):
         state_names = [s.name for s in self.states]
         if self.initial not in state_names:
             self.error.append(
-                f'initial state "{self.initial}" does not exist in "{self.name}"',
+                f'initial state "{self.initial}" does not exist in "{self.identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.initial.location,
             )
         if self.final not in state_names:
             self.error.append(
-                f'final state "{self.final}" does not exist in "{self.name}"',
+                f'final state "{self.final}" does not exist in "{self.identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.final.location,
@@ -198,7 +198,7 @@ class Session(Base):
                 if t.target not in state_names:
                     self.error.append(
                         f'transition from state "{s.name}" to non-existent state'
-                        f' "{t.target}" in "{self.name}"',
+                        f' "{t.target}" in "{self.identifier}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         t.target.location,
