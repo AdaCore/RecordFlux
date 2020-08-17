@@ -135,6 +135,10 @@ def qualified_identifier() -> Token:
 
 
 def variable() -> Token:
+    return delimitedList(unqualified_identifier(), delim=".").setParseAction(parse_variable)
+
+
+def qualified_variable() -> Token:
     return Group(qualified_identifier()).setParseAction(
         lambda t: Variable(t[0][0], location=t[0][0].location)
     )
@@ -296,7 +300,9 @@ def expression(restricted: bool = False) -> Token:
     base = concatenation | numeric_literal() | string_literal()
     if not restricted:
         base |= quantified_expression | comprehension | call | conversion | message_aggregate
-    base |= variable()
+        base |= variable()
+    else:
+        base |= qualified_variable()
 
     expr <<= infixNotation(
         base,
@@ -878,6 +884,20 @@ def parse_identifier(string: str, location: int, tokens: ParseResults) -> ID:
         )
 
     return ID(tokens[0], locn)
+
+
+@fatalexceptions
+def parse_variable(string: str, location: int, tokens: ParseResults) -> Union[Variable, Selected]:
+    assert 1 <= len(tokens) <= 2
+    assert tokens[0].location
+    assert tokens[-1].location
+
+    locn = Location(start=tokens[0].location.start, end=tokens[-1].location.end)
+
+    if len(tokens) == 2:
+        return Selected(Variable(tokens[0], location=locn), tokens[1], location=locn)
+
+    return Variable(tokens[0], location=locn)
 
 
 @fatalexceptions
