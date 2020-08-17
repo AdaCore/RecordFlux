@@ -149,7 +149,9 @@ def test_grammar_expression_numeric_literal(string: str, expected: Expr) -> None
     assert actual.location
 
 
-@pytest.mark.parametrize("string,expected", [("X", Variable("X")), ("X.Y", Variable("X.Y"))])
+@pytest.mark.parametrize(
+    "string,expected", [("X", expr.Variable("X")), ("X.Y", expr.Selected(expr.Variable("X"), "Y"))]
+)
 def test_grammar_variable(string: str, expected: decl.Declaration) -> None:
     actual = grammar.variable().parseString(string, parseAll=True)[0]
     assert actual == expected
@@ -326,15 +328,17 @@ def test_grammar_logical_expression_error(string: str, error: Expr) -> None:
         ),
         (
             "[for X in Y => X.A]",
-            expr.Comprehension("X", expr.Variable("Y"), expr.Variable("X.A"), expr.TRUE),
+            expr.Comprehension(
+                "X", expr.Variable("Y"), expr.Selected(expr.Variable("X"), "A"), expr.TRUE,
+            ),
         ),
         (
             "[for X in Y => X.A when X.B = Z]",
             expr.Comprehension(
                 "X",
                 expr.Variable("Y"),
-                expr.Variable("X.A"),
-                expr.Equal(expr.Variable("X.B"), expr.Variable("Z")),
+                expr.Selected(expr.Variable("X"), "A"),
+                expr.Equal(expr.Selected(expr.Variable("X"), "B"), expr.Variable("Z")),
             ),
         ),
         (
@@ -361,7 +365,7 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
     "string,expected",
     [
         ("X'Valid = True", expr.Equal(expr.Valid(expr.Variable("X")), expr.Variable("True"))),
-        ("X.Y /= Z", expr.NotEqual(expr.Variable("X.Y"), expr.Variable("Z"))),
+        ("X.Y /= Z", expr.NotEqual(expr.Selected(expr.Variable("X"), "Y"), expr.Variable("Z"))),
         (
             "X = Y and Y /= Z",
             expr.And(
@@ -389,13 +393,16 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
                 expr.Or(
                     expr.Or(
                         expr.Equal(expr.Valid(expr.Variable("X")), expr.Variable("False")),
-                        expr.NotEqual(expr.Variable("X.A"), expr.Variable("A")),
+                        expr.NotEqual(expr.Selected(expr.Variable("X"), "A"), expr.Variable("A")),
                     ),
-                    expr.NotEqual(expr.Variable("X.B"), expr.Variable("B")),
+                    expr.NotEqual(expr.Selected(expr.Variable("X"), "B"), expr.Variable("B")),
                 ),
                 And(
-                    expr.Equal(expr.Variable("X.C"), expr.Number(0)),
-                    expr.NotIn(expr.Variable("X.D"), expr.Variable("X.E")),
+                    expr.Equal(expr.Selected(expr.Variable("X"), "C"), expr.Number(0)),
+                    expr.NotIn(
+                        expr.Selected(expr.Variable("X"), "D"),
+                        expr.Selected(expr.Variable("X"), "E"),
+                    ),
                 ),
             ),
         ),
@@ -403,12 +410,17 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
             "for some A in X.B => (A.T = P.E and (G.E not in P.S (A.D).V))",
             expr.ForSomeIn(
                 "A",
-                expr.Variable("X.B"),
+                expr.Selected(expr.Variable("X"), "B"),
                 And(
-                    expr.Equal(expr.Variable("A.T"), expr.Variable("P.E")),
+                    expr.Equal(
+                        expr.Selected(expr.Variable("A"), "T"),
+                        expr.Selected(expr.Variable("P"), "E"),
+                    ),
                     expr.NotIn(
                         expr.Variable("G.E"),
-                        expr.Selected(expr.Conversion("P.S", expr.Variable("A.D")), "V"),
+                        expr.Selected(
+                            expr.Conversion("P.S", expr.Selected(expr.Variable("A"), "D")), "V",
+                        ),
                     ),
                 ),
             ),
@@ -420,7 +432,7 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
             "G.E not in P.S (E.D).V",
             expr.NotIn(
                 expr.Variable("G.E"),
-                expr.Selected(expr.Conversion("P.S", expr.Variable("E.D")), "V"),
+                expr.Selected(expr.Conversion("P.S", expr.Selected(expr.Variable("E"), "D")), "V"),
             ),
         ),
         (
@@ -429,8 +441,8 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
                 expr.Comprehension(
                     "E",
                     expr.Variable("L"),
-                    expr.Variable("E.B"),
-                    expr.Equal(expr.Variable("E.T"), expr.Variable("A")),
+                    expr.Selected(expr.Variable("E"), "B"),
+                    expr.Equal(expr.Selected(expr.Variable("E"), "T"), expr.Variable("A")),
                 )
             ),
         ),
@@ -442,8 +454,8 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
                     expr.Comprehension(
                         "E",
                         expr.Variable("L"),
-                        expr.Variable("E.B"),
-                        expr.Equal(expr.Variable("E.T"), expr.Variable("A")),
+                        expr.Selected(expr.Variable("E"), "B"),
+                        expr.Equal(expr.Selected(expr.Variable("E"), "T"), expr.Variable("A")),
                     )
                 ),
                 "D",
@@ -461,9 +473,12 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
                                 expr.Head(
                                     expr.Comprehension(
                                         "E",
-                                        expr.Variable("C.A"),
+                                        expr.Selected(expr.Variable("C"), "A"),
                                         expr.Variable("E"),
-                                        expr.Equal(expr.Variable("E.T"), expr.Variable("P.L")),
+                                        expr.Equal(
+                                            expr.Selected(expr.Variable("E"), "T"),
+                                            expr.Selected(expr.Variable("P"), "L"),
+                                        ),
                                     )
                                 ),
                                 "D",
@@ -471,7 +486,7 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
                         ),
                         "H",
                     ),
-                    expr.Equal(expr.Variable("S.G"), expr.Variable("G")),
+                    expr.Equal(expr.Selected(expr.Variable("S"), "G"), expr.Variable("G")),
                 ),
                 expr.Variable("False"),
             ),
@@ -575,8 +590,11 @@ def test_grammar_variable_declaration(string: str, expected: decl.Declaration) -
 @pytest.mark.parametrize(
     "string,expected",
     [
-        ("A : B renames C", decl.RenamingDeclaration("A", "B", Variable("C"))),
-        ("A : B renames C.D", decl.RenamingDeclaration("A", "B", Variable("C.D"))),
+        ("A : B renames C", decl.RenamingDeclaration("A", "B", expr.Variable("C"))),
+        (
+            "A : B renames C.D",
+            decl.RenamingDeclaration("A", "B", expr.Selected(expr.Variable("C"), "D")),
+        ),
     ],
 )
 def test_grammar_renaming_declaration(string: str, expected: decl.Declaration) -> None:
