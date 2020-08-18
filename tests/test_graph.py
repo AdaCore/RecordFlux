@@ -49,7 +49,7 @@ def test_empty_message_graph() -> None:
         digraph "P.M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
-            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
+            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
@@ -75,7 +75,7 @@ def test_dot_graph() -> None:
         digraph "P.M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
-            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
+            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
@@ -108,7 +108,7 @@ def test_dot_graph_with_condition() -> None:
     expected = """
         digraph "P.M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true, truecolor=true];
-            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
+            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                  shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
@@ -143,7 +143,7 @@ def test_dot_graph_with_double_edge() -> None:
         digraph "P.M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
-            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code"];
+            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             Initial [fillcolor="#ffffff", label="", shape=circle, width="0.5"];
@@ -192,7 +192,8 @@ def test_session_graph() -> None:
     )
     expected = """
         digraph Session {
-            graph [bgcolor="#00000000", pad="0.5", ranksep="0.8 equally", splines=ortho, truecolor=true];
+            graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
+                   truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
