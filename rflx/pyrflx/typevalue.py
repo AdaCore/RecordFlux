@@ -534,15 +534,15 @@ class MessageValue(TypeValue):
             for field_name, parameters in self._type.checksums.items()
         }
 
-        self.__type_literals: Mapping[Name, Expr] = type_literals if type_literals else {}
-        if not self.__type_literals:
-            assert isinstance(self.__type_literals, dict)
-            for t in [
+        self.__type_literals: Mapping[Name, Expr] = type_literals if type_literals else {
+            k: v
+            for t in (
                 f.typeval.literals
                 for f in self._fields.values()
                 if isinstance(f.typeval, EnumValue)
-            ]:
-                self.__type_literals.update(t)
+            )
+            for k, v in t.items()
+        }
 
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
