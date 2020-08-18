@@ -286,7 +286,6 @@ def __expression() -> Token:  # pylint: disable=too-many-locals
         ],
     )
 
-    expr.enablePackrat()
     return expr
 
 
