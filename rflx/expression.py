@@ -174,9 +174,6 @@ class BooleanLiteral(Expr):
     def __neg__(self) -> "Expr":
         raise NotImplementedError
 
-    def __str__(self) -> str:
-        return self._str
-
     @property
     def precedence(self) -> Precedence:
         return Precedence.literal
@@ -857,9 +854,6 @@ class Name(Expr):
     def _update_str(self) -> None:
         self._str = intern(f"(-{self.representation})" if self.negative else self.representation)
 
-    def __str__(self) -> str:
-        return self._str
-
     @property
     def precedence(self) -> Precedence:
         return Precedence.literal
@@ -892,8 +886,8 @@ class Variable(Name):
         immutable: bool = False,
         location: Location = None,
     ) -> None:
-        super().__init__(negative, immutable, location)
         self.identifier = ID(identifier)
+        super().__init__(negative, immutable, location)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -908,7 +902,7 @@ class Variable(Name):
         return str(self.identifier)
 
     def __neg__(self) -> "Variable":
-        return self.__class__(self.identifier, not self.negative, self.location)
+        return self.__class__(self.identifier, not self.negative, self.immutable, self.location)
 
     @property
     def representation(self) -> str:
@@ -1100,11 +1094,16 @@ class Indexed(Name):
 
 class Selected(Name):
     def __init__(
-        self, prefix: Expr, selector_name: StrID, negative: bool = False, location: Location = None
+        self,
+        prefix: Expr,
+        selector_name: StrID,
+        negative: bool = False,
+        immutable: bool = False,
+        location: Location = None,
     ) -> None:
-        super().__init__(negative, location=location)
         self.prefix = prefix
         self.selector_name = ID(selector_name)
+        super().__init__(negative, immutable, location)
 
     def __neg__(self) -> "Selected":
         return self.__class__(self.prefix, self.selector_name, not self.negative)
@@ -1135,10 +1134,17 @@ class Selected(Name):
 
 
 class Call(Name):
-    def __init__(self, name: StrID, args: Sequence[Expr] = None, negative: bool = False, location: Location = None) -> None:
-        super().__init__(negative, location)
+    def __init__(
+        self,
+        name: StrID,
+        args: Sequence[Expr] = None,
+        negative: bool = False,
+        immutable: bool = False,
+        location: Location = None,
+    ) -> None:
         self.name = ID(name)
         self.args = args or []
+        super().__init__(negative, immutable, location)
 
     def __neg__(self) -> "Call":
         return self.__class__(self.name, self.args, not self.negative)
@@ -1244,7 +1250,13 @@ class Call(Name):
         func = substitution(mapping or {}, func)
         expr = func(self)
         assert isinstance(expr, Call)
-        return expr.__class__(expr.name, [a.substituted(func) for a in expr.args], expr.location)
+        return expr.__class__(
+            expr.name,
+            [a.substituted(func) for a in expr.args],
+            expr.negative,
+            expr.immutable,
+            expr.location,
+        )
 
 
 class Slice(Name):
@@ -1838,8 +1850,8 @@ class Conversion(Expr):
         self.name = ID(name)
         self.argument = argument
 
-    def __str__(self) -> str:
-        return f"{self.name} ({self.argument})"
+    def _update_str(self) -> None:
+        self._str = intern(f"{self.name} ({self.argument})")
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1858,7 +1870,7 @@ class Conversion(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        raise NotImplementedError
+        return Precedence.literal
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1885,8 +1897,10 @@ class Comprehension(Expr):
         self.selector = selector
         self.condition = condition
 
-    def __str__(self) -> str:
-        return f"[for {self.iterator} in {self.array} => {self.selector} when {self.condition}]"
+    def _update_str(self) -> None:
+        self._str = intern(
+            f"[for {self.iterator} in {self.array} => {self.selector} when {self.condition}]"
+        )
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1945,9 +1959,9 @@ class MessageAggregate(Expr):
         self.name = ID(name)
         self.data = {ID(k): v for k, v in data.items()}
 
-    def __str__(self) -> str:
+    def _update_str(self) -> None:
         data = ", ".join([f"{k} => {self.data[k]}" for k in self.data])
-        return f"{self.name}'({data})"
+        self._str = intern(f"{self.name}'({data})")
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1992,9 +2006,9 @@ class Binding(Expr):
         self.expr = expr
         self.data = {ID(k): v for k, v in data.items()}
 
-    def __str__(self) -> str:
+    def _update_str(self) -> None:
         data = ", ".join(["{k} = {v}".format(k=k, v=self.data[k]) for k in self.data])
-        return f"{self.expr} where {data}"
+        self._str = intern(f"{self.expr} where {data}")
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -2027,8 +2041,8 @@ class String(Expr):
         super().__init__(location)
         self.data = data
 
-    def __str__(self) -> str:
-        return f'"{self.data}"'
+    def _update_str(self) -> None:
+        self._str = intern(f'"{self.data}"')
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
