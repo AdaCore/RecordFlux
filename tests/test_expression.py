@@ -1139,7 +1139,7 @@ def test_quantified_expression_variables() -> None:
         ForAllOf(
             "A", Variable("List"), Add(Variable("X"), Add(Variable("Y"), Variable("Z")))
         ).variables(),
-        [Variable("X"), Variable("Y"), Variable("Z"), Variable("List")],
+        [Variable("List"), Variable("X"), Variable("Y"), Variable("Z")],
     )
 
 
@@ -1153,7 +1153,7 @@ def test_for_all_in_variables() -> None:
     result = ForAllIn(
         "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
     ).variables()
-    expected = [Variable("X"), Variable("List")]
+    expected = [Variable("List"), Variable("X")]
     assert result == expected
 
 
@@ -1161,7 +1161,7 @@ def test_for_some_in_variables() -> None:
     result = ForSomeIn(
         "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
     ).variables()
-    expected = [Variable("X"), Variable("List")]
+    expected = [Variable("List"), Variable("X")]
     assert result == expected
 
 

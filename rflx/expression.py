@@ -1739,11 +1739,13 @@ class QuantifiedExpression(Expr):
         raise NotImplementedError
 
     def variables(self) -> List["Variable"]:
-        return [
-            v
-            for v in self.predicate.variables() + self.iterable.variables()
-            if v.identifier != self.parameter_name
-        ]
+        return list(
+            unique(
+                v
+                for v in self.iterable.variables() + self.predicate.variables()
+                if v.identifier != self.parameter_name
+            )
+        )
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
