@@ -642,7 +642,7 @@ class MessageValue(TypeValue):
             length = self._fields[prv].typeval.size
             assert isinstance(first, Number)
             assert isinstance(length, Number)
-            return Number(first.value + length.value)
+            return first + length
         if prv and UNDEFINED not in (self._fields[prv].first, self._fields[prv].typeval.size):
             first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
             return first if isinstance(first, Number) else None

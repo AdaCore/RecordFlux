@@ -1595,7 +1595,7 @@ def test_no_verification_icmp(icmp: MessageValue) -> None:
     icmp_unv.set("Identifier", 5)
     icmp_unv.set("Sequence_Number", 1)
     icmp_unv.set("Data", b"\x00")
-    assert icmp.bytestring == icmp_unv.bytestring
+    assert icmp_unv.bytestring == icmp.bytestring
 
 
 def test_no_verification_ethernet(frame: MessageValue) -> None:
@@ -1619,7 +1619,7 @@ def test_no_verification_ethernet(frame: MessageValue) -> None:
     frame_unv.set("Type_Length", int("0800", 16))
     frame_unv.set("Payload", payload)
     assert frame_unv.valid_message
-    assert frame.bytestring == frame_unv.bytestring
+    assert frame_unv.bytestring == frame.bytestring
 
 
 def test_no_verification_array_nested_messages(
@@ -1645,7 +1645,7 @@ def test_no_verification_array_nested_messages(
     array_message_unv.set("Length", 2)
     array_message_unv.set("Bar", foos_unv)
     assert array_message_unv.valid_message
-    assert array_message.bytestring == array_message_unv.bytestring
+    assert array_message_unv.bytestring == array_message.bytestring
 
     array_message_unv = array_message_package_unv["Message"]
     array_message_unv.parse(b"\x02\x05\x06")
