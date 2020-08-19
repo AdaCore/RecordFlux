@@ -238,7 +238,7 @@ def test_grammar_expression_relation(string: str, expected: Expr) -> None:
         ("((X or Y))", expr.Or(expr.Variable("X"), expr.Variable("Y"))),
     ],
 )
-def test_grammar_expression_logical(string: str, expected: Expr) -> None:
+def test_grammar_expression_boolean(string: str, expected: Expr) -> None:
     actual = grammar.expression().parseString(string, parseAll=True)[0]
     assert actual == expected
     assert actual.location
@@ -276,8 +276,8 @@ def test_grammar_mathematical_expression_error(string: str, error: Expr) -> None
         ("X and Y (Z)", expr.And(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
     ],
 )
-def test_grammar_logical_expression(string: str, expected: Expr) -> None:
-    actual = grammar.logical_expression().parseString(string, parseAll=True)[0]
+def test_grammar_boolean_expression(string: str, expected: Expr) -> None:
+    actual = grammar.boolean_expression().parseString(string, parseAll=True)[0]
     assert actual == expected
     assert actual.location
 
@@ -289,9 +289,9 @@ def test_grammar_logical_expression(string: str, expected: Expr) -> None:
         ("X", 'unexpected expression type "Variable" .*'),
     ],
 )
-def test_grammar_logical_expression_error(string: str, error: Expr) -> None:
+def test_grammar_boolean_expression_error(string: str, error: Expr) -> None:
     with pytest.raises(ParseFatalException, match=rf"^{error}$"):
-        grammar.logical_expression().parseString(string, parseAll=True)
+        grammar.boolean_expression().parseString(string, parseAll=True)
 
 
 @pytest.mark.parametrize(
@@ -872,9 +872,9 @@ def test_grammar_unexpected_relation_operator() -> None:
         )
 
 
-def test_grammar_unexpected_logical_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected logical operator .*$"):
-        grammar.parse_logical_operator(
+def test_grammar_unexpected_boolean_operator() -> None:
+    with pytest.raises(ParseFatalException, match=r"^unexpected boolean operator .*$"):
+        grammar.parse_boolean_operator(
             "",
             0,
             [[Number(1, location=Location((1, 8))), "xor", Number(1, location=Location((2, 25)))]],

@@ -8,7 +8,7 @@ The specification language describes protocol message formats based on types. Fo
 
 *mathematical_expression*: A mathematical expression consists of numbers and names combined by mathematical operators (addition __+__, subtraction __-__, multiplication __\*__, division __/__, exponentiation __\*\*__).
 
-*logical_expression*: A logical expression consists of relations (__<__, __<=__, __=__, __/=__, __>=__, __>__) between names and numbers combined by logical operators (conjunction __and__, disjunction __or__).
+*boolean_expression*: A boolean expression consists of relations (__<__, __<=__, __=__, __/=__, __>=__, __>__) between names and numbers combined by boolean operators (conjunction __and__, disjunction __or__).
 
 ## Scalar Types
 
@@ -104,7 +104,7 @@ A message type is a collection components. Additional then clauses allow to defi
 
 *length_aspect* ::= __Length__ __=>__ *mathematical_expression*
 
-*condition* ::= *logical_expression*
+*condition* ::= *boolean_expression*
 
 #### Static Semantics
 
@@ -148,7 +148,7 @@ A type refinement describes the relation of a component in a message type to ano
 
 *qualified_name* ::= *name* { __.__ *name* }
 
-*condition* ::= *logical_expression*
+*condition* ::= *boolean_expression*
 
 #### Static Semantics
 

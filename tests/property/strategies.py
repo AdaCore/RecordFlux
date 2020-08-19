@@ -374,11 +374,11 @@ def relations(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Re
 
 
 @st.composite
-def logical_expressions(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
+def boolean_expressions(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
     operation = draw(st.sampled_from([expr.And, expr.Or]))
     return draw(
         st.one_of(
             relations(elements),
-            st.builds(operation, logical_expressions(elements), logical_expressions(elements)),
+            st.builds(operation, boolean_expressions(elements), boolean_expressions(elements)),
         )
     )
