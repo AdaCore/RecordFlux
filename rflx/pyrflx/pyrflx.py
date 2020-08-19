@@ -11,8 +11,13 @@ log = logging.getLogger(__name__)
 
 
 class PyRFLX:
-    def __init__(self, files: List[str], skip_verification: bool = False) -> None:
-        parser = Parser(skip_verification)
+    def __init__(
+        self,
+        files: List[str],
+        skip_model_verification: bool = False,
+        skip_message_verification: bool = False,
+    ) -> None:
+        parser = Parser(skip_model_verification)
         self.__packages: Dict[str, Package] = {}
 
         for f in files:
@@ -25,7 +30,7 @@ class PyRFLX:
             self.__packages[p] = Package(p)
             for m in [x for x in model.messages if str(x.package) == p]:
                 self.__packages[p][str(m.name)] = MessageValue(
-                    m, model.refinements, skip_verification
+                    m, model.refinements, skip_message_verification
                 )
 
     def __getitem__(self, key: str) -> Package:
