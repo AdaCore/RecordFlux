@@ -260,8 +260,8 @@ def test_grammar_mathematical_expression(string: str, expected: Expr) -> None:
 @pytest.mark.parametrize(
     "string,error",
     [
-        ("42 > X", 'unexpected expression type "Greater" .*'),
-        ("X and Y", 'unexpected expression type "And" .*'),
+        ("42 > X", 'unexpected expression type "Greater".*'),
+        ("X and Y", 'unexpected expression type "And".*'),
     ],
 )
 def test_grammar_mathematical_expression_error(string: str, error: Expr) -> None:
@@ -285,8 +285,8 @@ def test_grammar_boolean_expression(string: str, expected: Expr) -> None:
 @pytest.mark.parametrize(
     "string,error",
     [
-        ("42", 'unexpected expression type "Number" .*'),
-        ("X", 'unexpected expression type "Variable" .*'),
+        ("42", 'unexpected expression type "Number".*'),
+        ("X", 'unexpected expression type "Variable".*'),
     ],
 )
 def test_grammar_boolean_expression_error(string: str, error: Expr) -> None:
