@@ -60,7 +60,7 @@ def test_missing_initial() -> None:
                   - target: END
               - name: END
         """,
-        '^session: error: missing initial state in "session"$',
+        '^model: error: missing initial state in "session"$',
     )
 
 
@@ -74,7 +74,7 @@ def test_missing_final() -> None:
                   - target: END
               - name: END
         """,
-        '^session: error: missing final state in "session"$',
+        '^model: error: missing final state in "session"$',
     )
 
 
@@ -84,7 +84,7 @@ def test_missing_states() -> None:
             initial: START
             final: END
         """,
-        '^session: error: missing states section in "session"$',
+        '^model: error: missing states section in "session"$',
     )
 
 
@@ -93,9 +93,9 @@ def test_empty_states() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: empty states\n"
-            'session: error: initial state "START" does not exist in "session"\n'
-            'session: error: final state "END" does not exist in "session"'
+            "model: error: empty states\n"
+            'model: error: initial state "START" does not exist in "session"\n'
+            'model: error: final state "END" does not exist in "session"'
             "$"
         ),
     ):
@@ -109,8 +109,8 @@ def test_invalid_initial() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: initial state "NONEXISTENT" does not exist in "session"\n'
-            "session: error: unreachable states START"
+            'model: error: initial state "NONEXISTENT" does not exist in "session"\n'
+            "model: error: unreachable states START"
             "$"
         ),
     ):
@@ -131,8 +131,8 @@ def test_invalid_final() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: final state "NONEXISTENT" does not exist in "session"\n'
-            "session: error: detached states END"
+            'model: error: final state "NONEXISTENT" does not exist in "session"\n'
+            "model: error: detached states END"
             "$"
         ),
     ):
@@ -151,7 +151,7 @@ def test_invalid_final() -> None:
 def test_invalid_target_state() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^session: error: transition from state "START" to non-existent'
+        match='^model: error: transition from state "START" to non-existent'
         ' state "NONEXISTENT" in "session"$',
     ):
         Session(
@@ -173,7 +173,7 @@ def test_invalid_target_state() -> None:
 
 
 def test_duplicate_state() -> None:
-    with pytest.raises(RecordFluxError, match="^session: error: duplicate states: START$"):
+    with pytest.raises(RecordFluxError, match="^model: error: duplicate states: START$"):
         Session(
             name="session",
             initial=ID("START"),
@@ -189,7 +189,7 @@ def test_duplicate_state() -> None:
 
 def test_multiple_duplicate_states() -> None:
     with pytest.raises(
-        RecordFluxError, match=("^session: error: duplicate states: BAR, FOO, START$")
+        RecordFluxError, match=("^model: error: duplicate states: BAR, FOO, START$")
     ):
         Session(
             name="session",
@@ -209,7 +209,7 @@ def test_multiple_duplicate_states() -> None:
 
 
 def test_unreachable_state() -> None:
-    with pytest.raises(RecordFluxError, match="^session: error: unreachable states UNREACHABLE$"):
+    with pytest.raises(RecordFluxError, match="^model: error: unreachable states UNREACHABLE$"):
         Session(
             name="session",
             initial=ID("START"),
@@ -225,7 +225,7 @@ def test_unreachable_state() -> None:
 
 def test_multiple_unreachable_states() -> None:
     with pytest.raises(
-        RecordFluxError, match="^session: error: unreachable states UNREACHABLE1, UNREACHABLE2$"
+        RecordFluxError, match="^model: error: unreachable states UNREACHABLE1, UNREACHABLE2$"
     ):
         Session(
             name="session",
@@ -242,7 +242,7 @@ def test_multiple_unreachable_states() -> None:
 
 
 def test_detached_state() -> None:
-    with pytest.raises(RecordFluxError, match="^session: error: detached states DETACHED$"):
+    with pytest.raises(RecordFluxError, match="^model: error: detached states DETACHED$"):
         Session(
             name="session",
             initial=ID("START"),
@@ -261,7 +261,7 @@ def test_detached_state() -> None:
 
 def test_multiple_detached_states() -> None:
     with pytest.raises(
-        RecordFluxError, match="^session: error: detached states DETACHED1, DETACHED2$"
+        RecordFluxError, match="^model: error: detached states DETACHED1, DETACHED2$"
     ):
         Session(
             name="session",
@@ -332,7 +332,7 @@ def test_session_with_invalid_condition() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: invalid condition 0 from state "START" to "INTERMEDIATE"\n'
+            'model: error: invalid condition 0 from state "START" to "INTERMEDIATE"\n'
             '<stdin>:1:1: parser: error: reserved word "and" used as identifier'
             "$"
         ),
@@ -422,7 +422,7 @@ def test_unexpected_elements() -> None:
                   - target: END
               - name: END
         """,
-        r"^session: error: unexpected elements: invalid1, invalid2$",
+        r"^model: error: unexpected elements: invalid1, invalid2$",
     )
 
 
@@ -556,7 +556,7 @@ def test_duplicate_variable() -> None:
                   - target: END
               - name: END
         """,
-        r"^session: error: conflicting variable Foo$",
+        r"^model: error: conflicting variable Foo$",
     )
 
 
@@ -576,7 +576,7 @@ def test_variable_shadowing_channel_name() -> None:
                   - target: END
               - name: END
         """,
-        r'^session: error: conflicting channel "Foo"$',
+        r'^model: error: conflicting channel "Foo"$',
     )
 
 
@@ -596,7 +596,7 @@ def test_channel_shadowing_rename() -> None:
                   - target: END
               - name: END
         """,
-        r"^session: error: conflicting renames Foo$",
+        r"^model: error: conflicting renames Foo$",
     )
 
 
@@ -703,7 +703,7 @@ def test_channels() -> None:
 def test_channel_with_invalid_mode() -> None:
     with pytest.raises(
         RecordFluxError,
-        match="^session: error: channel Channel1_Read_Write has invalid mode Invalid",
+        match="^model: error: channel Channel1_Read_Write has invalid mode Invalid",
     ):
         SessionFile().parse_string(
             "session",
@@ -727,7 +727,7 @@ def test_channel_with_invalid_mode() -> None:
 
 
 def test_channel_without_name() -> None:
-    with pytest.raises(RecordFluxError, match="^session: error: channel 0 has no name"):
+    with pytest.raises(RecordFluxError, match="^model: error: channel 0 has no name"):
         SessionFile().parse_string(
             "session",
             """
@@ -746,7 +746,7 @@ def test_channel_without_name() -> None:
 
 def test_channel_without_mode() -> None:
     with pytest.raises(
-        RecordFluxError, match="^session: error: channel Channel_Without_Mode has no mode"
+        RecordFluxError, match="^model: error: channel Channel_Without_Mode has no mode"
     ):
         SessionFile().parse_string(
             "session",
@@ -818,7 +818,7 @@ def test_invalid_global_variable_declaration() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: error parsing global variable declaration 0\n"
+            "model: error: error parsing global variable declaration 0\n"
             '<stdin>:1:8: parser: error: reserved word "and" used as identifier'
             "$"
         ),
@@ -844,7 +844,7 @@ def test_invalid_local_variable_declaration() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: error parsing local variable 0 in state START\n"
+            "model: error: error parsing local variable 0 in state START\n"
             '<stdin>:1:7: parser: error: reserved word "and" used as identifier'
             "$"
         ),
@@ -870,7 +870,7 @@ def test_invalid_action() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: error parsing action 0 in state START\n"
+            "model: error: error parsing action 0 in state START\n"
             "<stdin>:1:9: parser: error: Expected.*"
             "$"
         ),
@@ -894,7 +894,7 @@ def test_invalid_action() -> None:
 def test_invalid_section() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=("^" 'session: error: unexpected elements in state "START": invalid' "$"),
+        match=("^" 'model: error: unexpected elements in state "START": invalid' "$"),
     ):
         SessionFile().parse_string(
             "session",
@@ -917,7 +917,7 @@ def test_invalid_transition() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            "^" 'session: error: unexpected elements in transition 0 in state "START": invalid' "$"
+            "^" 'model: error: unexpected elements in transition 0 in state "START": invalid' "$"
         ),
     ):
         SessionFile().parse_string(
@@ -940,7 +940,7 @@ def test_invalid_renames() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: error parsing renames declaration 0\n"
+            "model: error: error parsing renames declaration 0\n"
             "<stdin>:1:9: parser: error: Expected.*"
             "$"
         ),
@@ -963,7 +963,7 @@ def test_invalid_renames() -> None:
 
 def test_conflicting_types() -> None:
     with pytest.raises(
-        RecordFluxError, match=("^" "session: error: conflicting type Foo" "$"),
+        RecordFluxError, match=("^" "model: error: conflicting type Foo" "$"),
     ):
         SessionFile().parse_string(
             "session",
@@ -987,7 +987,7 @@ def test_invalid_private_variable_declaration() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: error parsing private variable declaration 0\n"
+            "model: error: error parsing private variable declaration 0\n"
             "<stdin>:1:9: parser: error: Expected.*"
             "$"
         ),
@@ -1010,7 +1010,7 @@ def test_invalid_private_variable_declaration() -> None:
 
 def test_conflicting_functions() -> None:
     with pytest.raises(
-        RecordFluxError, match=("^" "session: error: conflicting function Foo" "$"),
+        RecordFluxError, match=("^" "model: error: conflicting function Foo" "$"),
     ):
         SessionFile().parse_string(
             "session",
@@ -1034,7 +1034,7 @@ def test_invalid_function() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: error parsing global function declaration 0\n"
+            "model: error: error parsing global function declaration 0\n"
             "<stdin>:1:9: parser: error: Expected.*"
             "$"
         ),

@@ -24,14 +24,14 @@ class SessionFile:
             except RecordFluxError as e:
                 self.error.append(
                     f"error parsing global function declaration {index}",
-                    Subsystem.SESSION,
+                    Subsystem.MODEL,
                     Severity.ERROR,
                 )
                 self.error.extend(e)
                 continue
             if decl.identifier in result:
                 self.error.append(
-                    f"conflicting function {decl.identifier}", Subsystem.SESSION, Severity.ERROR,
+                    f"conflicting function {decl.identifier}", Subsystem.MODEL, Severity.ERROR,
                 )
             result[decl.identifier] = decl
         self.error.propagate()
@@ -45,14 +45,14 @@ class SessionFile:
             except RecordFluxError as e:
                 self.error.append(
                     f"error parsing global variable declaration {index}",
-                    Subsystem.SESSION,
+                    Subsystem.MODEL,
                     Severity.ERROR,
                 )
                 self.error.extend(e)
                 continue
             if decl.identifier in result:
                 self.error.append(
-                    f"conflicting variable {decl.identifier}", Subsystem.SESSION, Severity.ERROR,
+                    f"conflicting variable {decl.identifier}", Subsystem.MODEL, Severity.ERROR,
                 )
             result[decl.identifier] = decl
         self.error.propagate()
@@ -66,14 +66,14 @@ class SessionFile:
             except RecordFluxError as e:
                 self.error.append(
                     f"error parsing private variable declaration {index}",
-                    Subsystem.SESSION,
+                    Subsystem.MODEL,
                     Severity.ERROR,
                 )
                 self.error.extend(e)
                 continue
             if decl.identifier in result:
                 self.error.append(
-                    f"conflicting type {decl.identifier}", Subsystem.SESSION, Severity.ERROR,
+                    f"conflicting type {decl.identifier}", Subsystem.MODEL, Severity.ERROR,
                 )
             result[decl.identifier] = decl
         self.error.propagate()
@@ -84,12 +84,12 @@ class SessionFile:
         for index, f in enumerate(doc["channels"]):
             if "name" not in f:
                 self.error.append(
-                    f"channel {index} has no name", Subsystem.SESSION, Severity.ERROR,
+                    f"channel {index} has no name", Subsystem.MODEL, Severity.ERROR,
                 )
                 continue
             if "mode" not in f:
                 self.error.append(
-                    f"channel {f['name']} has no mode", Subsystem.SESSION, Severity.ERROR,
+                    f"channel {f['name']} has no mode", Subsystem.MODEL, Severity.ERROR,
                 )
                 continue
             modes = {
@@ -100,7 +100,7 @@ class SessionFile:
             if ID(f["name"]) in result:
                 name = ID(f["name"])
                 self.error.append(
-                    f'conflicting channel "{name}"', Subsystem.SESSION, Severity.ERROR,
+                    f'conflicting channel "{name}"', Subsystem.MODEL, Severity.ERROR,
                 )
             mode = f["mode"]
             try:
@@ -110,7 +110,7 @@ class SessionFile:
             except KeyError:
                 self.error.append(
                     f"channel {f['name']} has invalid mode {f['mode']}",
-                    Subsystem.SESSION,
+                    Subsystem.MODEL,
                     Severity.ERROR,
                 )
                 continue
@@ -124,13 +124,13 @@ class SessionFile:
                 decl = declaration(f)
             except RecordFluxError as e:
                 self.error.append(
-                    f"error parsing renames declaration {index}", Subsystem.SESSION, Severity.ERROR,
+                    f"error parsing renames declaration {index}", Subsystem.MODEL, Severity.ERROR,
                 )
                 self.error.extend(e)
                 continue
             if decl.identifier in result:
                 self.error.append(
-                    f"conflicting renames {decl.identifier}", Subsystem.SESSION, Severity.ERROR,
+                    f"conflicting renames {decl.identifier}", Subsystem.MODEL, Severity.ERROR,
                 )
             result[decl.identifier] = decl
         self.error.propagate()
@@ -155,7 +155,7 @@ class SessionFile:
                     self.error.append(
                         f"unexpected elements in transition {index}"
                         f' in state "{sname}": {elements}',
-                        Subsystem.SESSION,
+                        Subsystem.MODEL,
                         Severity.ERROR,
                     )
                 if "condition" in t:
@@ -165,7 +165,7 @@ class SessionFile:
                         tname = t["target"]
                         self.error.append(
                             f'invalid condition {index} from state "{sname}" to "{tname}"',
-                            Subsystem.SESSION,
+                            Subsystem.MODEL,
                             Severity.ERROR,
                         )
                         self.error.extend(e)
@@ -185,7 +185,7 @@ class SessionFile:
                 elements = ", ".join(sorted(rest))
                 self.error.append(
                     f'unexpected elements in state "{sname}": {elements}',
-                    Subsystem.SESSION,
+                    Subsystem.MODEL,
                     Severity.ERROR,
                 )
                 continue
@@ -197,7 +197,7 @@ class SessionFile:
                     except RecordFluxError as e:
                         self.error.append(
                             f"error parsing action {i} in state {sname}",
-                            Subsystem.SESSION,
+                            Subsystem.MODEL,
                             Severity.ERROR,
                         )
                         self.error.extend(e)
@@ -210,7 +210,7 @@ class SessionFile:
                     except RecordFluxError as e:
                         self.error.append(
                             f"error parsing local variable {i} in state {sname}",
-                            Subsystem.SESSION,
+                            Subsystem.MODEL,
                             Severity.ERROR,
                         )
                         self.error.extend(e)
@@ -229,14 +229,12 @@ class SessionFile:
 
     def __parse(self, name: str, doc: Dict[str, Any]) -> None:
         if "initial" not in doc:
-            self.error.append(
-                f'missing initial state in "{name}"', Subsystem.SESSION, Severity.ERROR
-            )
+            self.error.append(f'missing initial state in "{name}"', Subsystem.MODEL, Severity.ERROR)
         if "final" not in doc:
-            self.error.append(f'missing final state in "{name}"', Subsystem.SESSION, Severity.ERROR)
+            self.error.append(f'missing final state in "{name}"', Subsystem.MODEL, Severity.ERROR)
         if "states" not in doc:
             self.error.append(
-                f'missing states section in "{name}"', Subsystem.SESSION, Severity.ERROR
+                f'missing states section in "{name}"', Subsystem.MODEL, Severity.ERROR
             )
 
         self.error.propagate()
@@ -246,7 +244,7 @@ class SessionFile:
         )
         if rest:
             self.error.append(
-                f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.SESSION, Severity.ERROR
+                f'unexpected elements: {", ".join(sorted(rest))}', Subsystem.MODEL, Severity.ERROR
             )
 
         session = Session(

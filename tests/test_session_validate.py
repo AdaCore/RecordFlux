@@ -168,7 +168,7 @@ def test_assignment_to_undeclared_variable() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
+            "model: error: invalid action 0 of state START\n"
             'model: error: assignment to undeclared variable "Undefined"'
             "$"
         ),
@@ -195,7 +195,7 @@ def test_assignment_from_undeclared_variable() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
+            "model: error: invalid action 0 of state START\n"
             'model: error: undeclared variable "Undefined"'
             "$"
         ),
@@ -222,7 +222,7 @@ def test_erasure_of_undeclared_variable() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
+            "model: error: invalid action 0 of state START\n"
             'model: error: erasure of undeclared variable "Undefined"'
             "$"
         ),
@@ -249,7 +249,7 @@ def test_reset_of_undeclared_list() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
+            "model: error: invalid action 0 of state START\n"
             'model: error: reset of undeclared variable "Undefined"'
             "$"
         ),
@@ -276,8 +276,8 @@ def test_call_to_undeclared_function() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: undeclared subprogram "UndefSub" called'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: undeclared subprogram "UndefSub" called'
             "$"
         ),
     ):
@@ -387,8 +387,8 @@ def test_call_to_builtin_read_without_arguments() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: no channel argument in call to "Read"'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: no channel argument in call to "Read"'
             "$"
         ),
     ):
@@ -414,8 +414,8 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: undeclared channel "Undeclared" in call to "Read"'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: undeclared channel "Undeclared" in call to "Read"'
             "$"
         ),
     ):
@@ -443,8 +443,8 @@ def test_call_to_builtin_read_invalid_channel_type() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: invalid channel type in call to "Read"'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: invalid channel type in call to "Read"'
             "$"
         ),
     ):
@@ -470,8 +470,8 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: channel "Out_Channel" not writable in call to "Write"'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: channel "Out_Channel" not writable in call to "Write"'
             "$"
         ),
     ):
@@ -502,8 +502,8 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: channel "Out_Channel" not readable in call to "Data_Available"'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: channel "Out_Channel" not readable in call to "Data_Available"'
             "$"
         ),
     ):
@@ -534,8 +534,8 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: channel "ChannelDeclaration" not readable in call to "Read"'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: channel "ChannelDeclaration" not readable in call to "Read"'
             "$"
         ),
     ):
@@ -564,8 +564,8 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: channel "ChannelDeclaration" not readable in call to "Call"'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: channel "ChannelDeclaration" not readable in call to "Call"'
             "$"
         ),
     ):
@@ -594,8 +594,8 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
-            'session: error: channel "ChannelDeclaration" not writable in call to "Call"'
+            "model: error: invalid action 0 of state START\n"
+            'model: error: channel "ChannelDeclaration" not writable in call to "Call"'
             "$"
         ),
     ):
@@ -645,7 +645,7 @@ def test_undeclared_variable_in_subprogram_call() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
+            "model: error: invalid action 0 of state START\n"
             'model: error: undeclared variable "Undefined"'
             "$"
         ),
@@ -677,8 +677,8 @@ def test_function_declaration_is_no_builtin_read() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: subprogram declaration shadows builtin subprogram "Read"\n'
-            'session: error: unused subprogram "Read"'
+            'model: error: subprogram declaration shadows builtin subprogram "Read"\n'
+            'model: error: unused subprogram "Read"'
             "$"
         ),
     ):
@@ -701,8 +701,8 @@ def test_function_declaration_is_no_builtin_write() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: channel declaration shadows builtin subprogram "Write"\n'
-            'session: error: unused channel "Write"'
+            'model: error: channel declaration shadows builtin subprogram "Write"\n'
+            'model: error: unused channel "Write"'
             "$"
         ),
     ):
@@ -725,8 +725,8 @@ def test_function_declaration_is_no_builtin_call() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: variable declaration shadows builtin subprogram "Call"\n'
-            'session: error: unused variable "Call"'
+            'model: error: variable declaration shadows builtin subprogram "Call"\n'
+            'model: error: unused variable "Call"'
             "$"
         ),
     ):
@@ -749,8 +749,8 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: renames declaration shadows builtin subprogram "Data_Available"\n'
-            'session: error: unused renames "Data_Available"'
+            'model: error: renames declaration shadows builtin subprogram "Data_Available"\n'
+            'model: error: unused renames "Data_Available"'
             "$"
         ),
     ):
@@ -776,8 +776,8 @@ def test_local_variable_shadows_global() -> None:
         RecordFluxError,
         match=(
             "^"
-            'session: error: local variable "Global" shadows global declaration in state START\n'
-            'session: error: unused variable "Global"'
+            'model: error: local variable "Global" shadows global declaration in state START\n'
+            'model: error: unused variable "Global"'
         ),
     ):
         Session(
@@ -800,7 +800,7 @@ def test_local_variable_shadows_global() -> None:
 
 def test_unused_global_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match='^session: error: unused variable "Global"$',
+        RecordFluxError, match='^model: error: unused variable "Global"$',
     ):
         Session(
             name="session",
@@ -818,7 +818,7 @@ def test_unused_global_variable() -> None:
 
 def test_unused_local_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match='^session: error: unused local variable "Data" in state START$',
+        RecordFluxError, match='^model: error: unused local variable "Data" in state START$',
     ):
         Session(
             name="session",
@@ -964,7 +964,7 @@ def test_aggregate_with_undefined_parameter() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
+            "model: error: invalid action 0 of state START\n"
             'model: error: undeclared variable "Undef"'
             "$"
         ),
@@ -1025,7 +1025,7 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
         RecordFluxError,
         match=(
             "^"
-            "session: error: invalid action 0 of state START\n"
+            "model: error: invalid action 0 of state START\n"
             'model: error: undeclared variable "UndefData"'
             "$"
         ),
@@ -1099,7 +1099,7 @@ def test_assignment_opaque_subprogram_binding() -> None:
 def test_private_declaration_is_no_builtin_write() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=("^" 'session: error: private declaration shadows builtin subprogram "Write"' "$"),
+        match=("^" 'model: error: private declaration shadows builtin subprogram "Write"' "$"),
     ):
         Session(
             name="session",
@@ -1117,7 +1117,7 @@ def test_private_declaration_is_no_builtin_write() -> None:
 
 def test_duplicate_states() -> None:
     with pytest.raises(
-        RecordFluxError, match=("^session: error: duplicate states: FOO$"),
+        RecordFluxError, match=("^model: error: duplicate states: FOO$"),
     ):
         Session(
             name="session",
@@ -1137,7 +1137,7 @@ def test_duplicate_states() -> None:
 
 def test_invalid_channel_id_type() -> None:
     with pytest.raises(
-        RecordFluxError, match=('^session: error: invalid channel ID type in call to "Read"$')
+        RecordFluxError, match=('^model: error: invalid channel ID type in call to "Read"$')
     ):
         Call("Read", [Number(5)]).validate({})
 
