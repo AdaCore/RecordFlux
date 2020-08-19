@@ -1584,7 +1584,7 @@ def test_checksum_value_range(no_conditionals_type: Message) -> None:
 
 
 def test_no_verification_icmp(icmp: MessageValue) -> None:
-    pyrflx = PyRFLX([f"{SPECDIR}/icmp.rflx"], skip_verification=True)
+    pyrflx = PyRFLX([f"{SPECDIR}/icmp.rflx"], True, True)
     icmp_unv = pyrflx["ICMP"]["Message"]
     icmp.set("Tag", "Echo_Request")
     icmp.set("Code_Zero", 0)
@@ -1614,7 +1614,7 @@ def test_no_verification_ethernet(frame: MessageValue) -> None:
     frame.set("Type_Length", int("0800", 16))
     frame.set("Payload", payload)
     assert frame.valid_message
-    pyrflx = PyRFLX([f"{SPECDIR}/ethernet.rflx"], skip_verification=True)
+    pyrflx = PyRFLX([f"{SPECDIR}/ethernet.rflx"], True, True)
     frame_unv = pyrflx["Ethernet"]["Frame"]
     frame_unv.set("Destination", int("FFFFFFFFFFFF", 16))
     frame_unv.set("Source", int("0", 16))
@@ -1637,7 +1637,7 @@ def test_no_verification_array_nested_messages(
     array_message.set("Bar", foos)
     assert array_message.valid_message
 
-    pyrflx = PyRFLX([f"{TESTDIR}/array_message.rflx"], skip_verification=True)
+    pyrflx = PyRFLX([f"{TESTDIR}/array_message.rflx"], True, True)
     array_message_package_unv = pyrflx["Array_Message"]
     array_message_unv = array_message_package_unv["Message"]
     array_message_one_unv = array_message_package_unv["Foo"]

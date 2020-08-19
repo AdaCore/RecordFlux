@@ -801,8 +801,6 @@ class MessageValue(TypeValue):
             self._set_unchecked(field_name, value)
             return
 
-        assert not self._skip_verification
-
         if field_name in self.accessible_fields:
             field = self._fields[field_name]
             f_first = field.first
@@ -1212,16 +1210,6 @@ class MessageValue(TypeValue):
 
     @dataclass
     class State:
-        fields: Optional[Mapping[str, "MessageValue.Field"]]
-        checksums: Optional[Mapping[str, "MessageValue.Checksum"]]
-        type_literals: Optional[Mapping[Name, Expr]]
-
-        def __init__(
-            self,
-            fields: Mapping[str, "MessageValue.Field"] = None,
-            checksums: Mapping[str, "MessageValue.Checksum"] = None,
-            type_literals: Mapping[Name, Expr] = None,
-        ):
-            self.fields = fields
-            self.checksums = checksums
-            self.type_literals = type_literals
+        fields: Optional[Mapping[str, "MessageValue.Field"]] = None
+        checksums: Optional[Mapping[str, "MessageValue.Checksum"]] = None
+        type_literals: Optional[Mapping[Name, Expr]] = None
