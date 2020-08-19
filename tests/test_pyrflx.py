@@ -934,6 +934,9 @@ def test_array_parse_from_bytes(array_message: MessageValue, array_type_foo: Mes
     assert array_message.bytestring == b"\x02\x05\x06"
     array_type_foo.parse(b"\x03\x05\x06\x07")
     assert array_type_foo.bytestring == b"\x03\x05\x06\x07"
+    array_message = array_message.clone()
+    array_message.parse(b"\x02\x05\x06", False)
+    assert array_message.bytestring == b"\x02\x05\x06"
 
 
 def test_array_assign_incorrect_values(
@@ -1646,7 +1649,3 @@ def test_no_verification_array_nested_messages(
     array_message_unv.set("Bar", foos_unv)
     assert array_message_unv.valid_message
     assert array_message_unv.bytestring == array_message.bytestring
-
-    array_message_unv = array_message_package_unv["Message"]
-    array_message_unv.parse(b"\x02\x05\x06")
-    assert array_message_unv.bytestring == b"\x02\x05\x06"

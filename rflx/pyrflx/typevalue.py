@@ -410,7 +410,8 @@ class ArrayValue(CompositeValue):
         self._value = []
 
     def assign(self, value: List[TypeValue], check: bool = True) -> None:
-        self._check_length_of_assigned_value(value)
+        if check:
+            self._check_length_of_assigned_value(value)
         for v in value:
             if self._is_message_array:
                 if isinstance(v, MessageValue):
@@ -439,8 +440,7 @@ class ArrayValue(CompositeValue):
         self._value = value
 
     def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
-        if check:
-            self._check_length_of_assigned_value(value)
+        self._check_length_of_assigned_value(value)
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         if self._is_message_array:
@@ -551,7 +551,10 @@ class MessageValue(TypeValue):
             [initial.name_length, initial.name_last, initial.name_first], Number(0)
         )
         self.accessible_fields: List[str] = []
-        self._preset_fields(INITIAL.name)
+        if self._skip_verification:
+            self._last_field = INITIAL.name
+        else:
+            self._preset_fields(INITIAL.name)
 
     def clone(self) -> "MessageValue":
         return MessageValue(
@@ -660,6 +663,7 @@ class MessageValue(TypeValue):
         raise NotImplementedError
 
     def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+        assert not self._skip_verification
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         current_field_name = self._next_field(INITIAL.name)
@@ -737,6 +741,23 @@ class MessageValue(TypeValue):
                     )
             current_field_name = self._next_field(current_field_name)
 
+    def _set_unchecked(
+        self, field_name: str, value: Union[bytes, int, str, Sequence[TypeValue]]
+    ) -> None:
+        field = self._fields[field_name]
+        field.prev = self._last_field
+        self._fields[self._last_field].next = field_name
+        self._last_field = field_name
+        f_first = self._get_first(field_name)
+        f_length = self._get_length(field_name)
+        assert isinstance(f_first, Number)
+        field.first = f_first
+        if isinstance(field.typeval, CompositeValue) and f_length is not None:
+            field.typeval.set_expected_size(f_length)
+        field.typeval.assign(value, not self._skip_verification)
+        self.__update_simplified_mapping(field)
+        self.accessible_fields.append(field_name)
+
     def set(
         self,
         field_name: str,
@@ -765,6 +786,13 @@ class MessageValue(TypeValue):
                     f" for field {field_name} have been met by the assigned value: {value!s}"
                 )
 
+        if self._skip_verification:
+            assert not isinstance(value, Bitstring)
+            self._set_unchecked(field_name, value)
+            return
+
+        assert not self._skip_verification
+
         if field_name in self.accessible_fields:
             field = self._fields[field_name]
             f_first = field.first
@@ -786,9 +814,9 @@ class MessageValue(TypeValue):
             set_refinement(field, field_name)
             try:
                 if isinstance(value, Bitstring):
-                    field.typeval.parse(value, not self._skip_verification)
+                    field.typeval.parse(value)
                 elif isinstance(value, field.typeval.accepted_type):
-                    field.typeval.assign(value, not self._skip_verification)
+                    field.typeval.assign(value)
                 else:
                     raise TypeError(
                         f"cannot assign different types: {field.typeval.accepted_type.__name__}"
@@ -799,11 +827,8 @@ class MessageValue(TypeValue):
         else:
             raise KeyError(f"cannot access field {field_name}")
 
-        if self._skip_verification and field.set:
-            self.__update_simplified_mapping(field)
-        else:
-            self.__update_simplified_mapping()
-            check_outgoing_condition_satisfied()
+        self.__update_simplified_mapping()
+        check_outgoing_condition_satisfied()
 
         if checksum_calculation:
             self._preset_fields(field_name)
@@ -812,31 +837,22 @@ class MessageValue(TypeValue):
                     self._calculate_checksum(checksum)
 
     def _preset_fields(self, fld: str) -> None:
+        assert not self._skip_verification
         nxt = self._next_field(fld)
         fields: List[str] = []
-        if self._skip_verification and nxt == FINAL.name:
-            self._fields[fld].next = nxt
-            return
         while nxt and nxt != FINAL.name:
-            if self._skip_verification:
-                self._fields[nxt].prev = fld
             field = self._fields[nxt]
             first = self._get_first(nxt)
             length = self._get_length(nxt)
             if first is None:
                 break
 
-            if (
-                self._skip_verification
-                or self.__simplified(self._type.field_condition(Field(nxt))) == TRUE
-            ) and (
+            if (self.__simplified(self._type.field_condition(Field(nxt))) == TRUE) and (
                 self._is_valid_opaque_field(nxt)
                 if isinstance(self._fields[nxt].typeval, OpaqueValue)
                 else length is not None
             ):
                 fields.append(nxt)
-                if self._skip_verification and nxt != FINAL.name:
-                    self._fields[fld].next = nxt
 
             if length is None:
                 break
@@ -850,8 +866,6 @@ class MessageValue(TypeValue):
                 field.typeval.clear()
                 break
             self._last_field = nxt
-            if self._skip_verification:
-                break
             nxt = self._next_field(nxt)
         try:
             self.accessible_fields = (
