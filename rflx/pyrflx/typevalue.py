@@ -509,16 +509,15 @@ class MessageValue(TypeValue):
         model: Message,
         refinements: Sequence[Refinement] = None,
         skip_verification: bool = False,
-        fields: Mapping[str, "MessageValue.Field"] = None,
-        checksums: Mapping[str, "MessageValue.Checksum"] = None,
-        type_literals: Mapping[Name, Expr] = None,
+        state: "MessageValue.State" = None,
     ) -> None:
-        # pylint: disable=too-many-arguments
         super().__init__(model)
         self._skip_verification = skip_verification
         self._refinements = refinements or []
 
-        self._fields: Mapping[str, MessageValue.Field] = fields if fields else {
+        self._fields: Mapping[
+            str, MessageValue.Field
+        ] = state.fields if state and state.fields else {
             f.name: self.Field(
                 TypeValue.construct(
                     self._type.types[f] if f in self._type.types else Opaque(),
@@ -529,12 +528,16 @@ class MessageValue(TypeValue):
             for f in (INITIAL,) + self._type.fields
         }
 
-        self._checksums: Mapping[str, MessageValue.Checksum] = checksums if checksums else {
+        self._checksums: Mapping[
+            str, MessageValue.Checksum
+        ] = state.checksums if state and state.checksums else {
             str(field_name): MessageValue.Checksum(str(field_name), parameters)
             for field_name, parameters in self._type.checksums.items()
         }
 
-        self.__type_literals: Mapping[Name, Expr] = type_literals if type_literals else {
+        self.__type_literals: Mapping[
+            Name, Expr
+        ] = state.type_literals if state and state.type_literals else {
             k: v
             for t in (
                 f.typeval.literals
@@ -561,14 +564,21 @@ class MessageValue(TypeValue):
             self._type,
             self._refinements,
             self._skip_verification,
-            {
-                k: MessageValue.Field(
-                    v.typeval.clone(), k, v.name_variable, v.name_first, v.name_last, v.name_length
-                )
-                for k, v in self._fields.items()
-            },
-            self._checksums,
-            self.__type_literals,
+            MessageValue.State(
+                {
+                    k: MessageValue.Field(
+                        v.typeval.clone(),
+                        k,
+                        v.name_variable,
+                        v.name_first,
+                        v.name_last,
+                        v.name_length,
+                    )
+                    for k, v in self._fields.items()
+                },
+                self._checksums,
+                self.__type_literals,
+            ),
         )
 
     def __repr__(self) -> str:
@@ -1199,3 +1209,19 @@ class MessageValue(TypeValue):
         @property
         def last(self) -> Expr:
             return self.__last if self.__is_scalar else self._last()
+
+    @dataclass
+    class State:
+        fields: Optional[Mapping[str, "MessageValue.Field"]]
+        checksums: Optional[Mapping[str, "MessageValue.Checksum"]]
+        type_literals: Optional[Mapping[Name, Expr]]
+
+        def __init__(
+            self,
+            fields: Mapping[str, "MessageValue.Field"] = None,
+            checksums: Mapping[str, "MessageValue.Checksum"] = None,
+            type_literals: Mapping[Name, Expr] = None,
+        ):
+            self.fields = fields
+            self.checksums = checksums
+            self.type_literals = type_literals
