@@ -185,13 +185,13 @@ def graph(args: argparse.Namespace) -> None:
 def session(args: argparse.Namespace) -> None:
     directory = Path(args.directory)
     if not directory.is_dir():
-        fail(f'directory not found: "{directory}"', Subsystem.SESSION)
+        fail(f'directory not found: "{directory}"', Subsystem.MODEL)
 
     session_file = SessionFile()
 
     for f in args.files:
         if not Path(f).is_file():
-            fail(f'file not found: "{f}"', Subsystem.SESSION)
+            fail(f'file not found: "{f}"', Subsystem.MODEL)
 
         print(f"Loading Session {f}... ", end="")
         session_file.parse(f, f)

@@ -139,13 +139,13 @@ def test_main_session_with_graph(tmp_path: Path) -> None:
 
 
 def test_main_session_non_existent_file() -> None:
-    assert 'session: error: file not found: "non-existent file"' in str(
+    assert 'model: error: file not found: "non-existent file"' in str(
         cli.main(["rflx", "session", "non-existent file"])
     )
 
 
 def test_main_session_non_existent_directory() -> None:
-    assert 'session: error: directory not found: "non-existent directory"' in str(
+    assert 'model: error: directory not found: "non-existent directory"' in str(
         cli.main(["rflx", "session", "-d", "non-existent directory", "tests/simple.yml"])
     )
 

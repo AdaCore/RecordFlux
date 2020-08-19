@@ -73,7 +73,7 @@ class Session(Base):
 
         if not states:
             self.error.append(
-                "empty states", Subsystem.SESSION, Severity.ERROR, location,
+                "empty states", Subsystem.MODEL, Severity.ERROR, location,
             )
         self.__validate_state_existence()
         self.__validate_duplicate_states()
@@ -101,7 +101,7 @@ class Session(Base):
                 except RecordFluxError as e:
                     self.error.append(
                         f"invalid action {index} of state {s.name.name}",
-                        Subsystem.SESSION,
+                        Subsystem.MODEL,
                         Severity.ERROR,
                         a.location,
                     )
@@ -112,14 +112,14 @@ class Session(Base):
         if self.initial not in state_names:
             self.error.append(
                 f'initial state "{self.initial.name}" does not exist in "{self.name}"',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.initial.location,
             )
         if self.final not in state_names:
             self.error.append(
                 f'final state "{self.final.name}" does not exist in "{self.name}"',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.final.location,
             )
@@ -129,7 +129,7 @@ class Session(Base):
                     self.error.append(
                         f'transition from state "{s.name.name}" to non-existent state'
                         f' "{t.target.name}" in "{self.name}"',
-                        Subsystem.SESSION,
+                        Subsystem.MODEL,
                         Severity.ERROR,
                         t.target.location,
                     )
@@ -148,7 +148,7 @@ class Session(Base):
         if duplicates:
             self.error.append(
                 f'duplicate states: {", ".join(map(str, sorted(duplicates)))}',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -167,7 +167,7 @@ class Session(Base):
         if unreachable:
             self.error.append(
                 f'unreachable states {", ".join(unreachable)}',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -176,7 +176,7 @@ class Session(Base):
         if detached:
             self.error.append(
                 f'detached states {", ".join(detached)}',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -202,14 +202,14 @@ class Session(Base):
                     self.error.append(
                         f'local variable "{decl}" shadows global declaration'
                         f" in state {s.name.name}",
-                        Subsystem.SESSION,
+                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
                     )
                 if not s.declarations[decl].is_referenced:
                     self.error.append(
                         f'unused local variable "{decl}" in state {s.name.name}',
-                        Subsystem.SESSION,
+                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
                     )
@@ -217,7 +217,7 @@ class Session(Base):
             if str(k).upper() in ["READ", "WRITE", "CALL", "DATA_AVAILABLE", "APPEND", "EXTEND"]:
                 self.error.append(
                     f'{self.__entity_name(d)} declaration shadows builtin subprogram "{k}"',
-                    Subsystem.SESSION,
+                    Subsystem.MODEL,
                     Severity.ERROR,
                     self.location,
                 )
@@ -232,7 +232,7 @@ class Session(Base):
             if not d.is_referenced:
                 self.error.append(
                     f'unused {self.__entity_name(d)} "{k}"',
-                    Subsystem.SESSION,
+                    Subsystem.MODEL,
                     Severity.ERROR,
                     self.location,
                 )

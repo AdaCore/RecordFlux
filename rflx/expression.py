@@ -1166,7 +1166,7 @@ class Call(Name):
         if len(self.args) < 1:
             fail(
                 f'no channel argument in call to "{self.name}"',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -1174,7 +1174,7 @@ class Call(Name):
         if not isinstance(channel_id, Variable):
             fail(
                 f'invalid channel ID type in call to "{self.name}"',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -1182,7 +1182,7 @@ class Call(Name):
         if channel_id.identifier not in declarations:
             fail(
                 f'undeclared channel "{channel_id}" in call to "{self.name}"',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -1192,7 +1192,7 @@ class Call(Name):
         if not isinstance(channel, ChannelDeclaration):
             fail(
                 f'invalid channel type in call to "{self.name}"',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -1202,14 +1202,14 @@ class Call(Name):
         if self.name in map(ID, ["Write", "Call"]) and not channel.writable:
             error.append(
                 f'channel "{channel_id}" not writable in call to "{self.name}"',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
         if self.name in map(ID, ["Call", "Read", "Data_Available"]) and not channel.readable:
             error.append(
                 f'channel "{channel_id}" not readable in call to "{self.name}"',
-                Subsystem.SESSION,
+                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -1225,7 +1225,7 @@ class Call(Name):
                 if self.name not in declarations:
                     fail(
                         f'undeclared subprogram "{self.name}" called',
-                        Subsystem.SESSION,
+                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
                     )
