@@ -17,7 +17,7 @@ from rflx.identifier import ID, StrID
 
 class Precedence(Enum):
     undefined = 0
-    logical_operator = 1
+    boolean_operator = 1
     relational_operator = 2
     binary_adding_operator = 3
     unary_adding_operator = 4
@@ -450,7 +450,7 @@ class AssExpr(Expr):
         raise NotImplementedError
 
 
-class LogExpr(AssExpr):
+class BoolAssExpr(AssExpr):
     def _update_str(self) -> None:
         if not self.terms:
             self._str = str(TRUE)
@@ -482,13 +482,13 @@ class LogExpr(AssExpr):
         raise NotImplementedError
 
 
-class And(LogExpr):
+class And(BoolAssExpr):
     def __neg__(self) -> Expr:
         return And(*[-term for term in self.terms])
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.logical_operator
+        return Precedence.boolean_operator
 
     def simplified(self) -> Expr:
         simplified_expr = super().simplified()
@@ -519,13 +519,13 @@ class AndThen(And):
         return " and then "
 
 
-class Or(LogExpr):
+class Or(BoolAssExpr):
     def __neg__(self) -> Expr:
         return Or(*[-term for term in self.terms])
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.logical_operator
+        return Precedence.boolean_operator
 
     def simplified(self) -> Expr:
         simplified_expr = super().simplified()

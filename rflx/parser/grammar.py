@@ -172,11 +172,11 @@ def string_literal() -> Token:
     )
 
 
-def logical_expression(restricted: bool = False) -> Token:
+def boolean_expression(restricted: bool = False) -> Token:
     return (
         Group(expression(restricted))
-        .setParseAction(parse_logical_expression)
-        .setName("LogicalExpression")
+        .setParseAction(parse_boolean_expression)
+        .setName("BooleanExpression")
     )
 
 
@@ -201,7 +201,7 @@ def expression(restricted: bool = False) -> Token:
     )
     if not restricted:
         relational_operator |= Keyword("in") | Keyword("not in")
-    logical_operator = Keyword("and") | Keyword("or")
+    boolean_operator = Keyword("and") | Keyword("or")
 
     designator = Keyword("First") | Keyword("Last") | Keyword("Length") | Keyword("Valid_Checksum")
     if not restricted:
@@ -312,7 +312,7 @@ def expression(restricted: bool = False) -> Token:
             (multiplying_operator, 2, opAssoc.LEFT, parse_mathematical_operator),
             (binary_adding_operator, 2, opAssoc.LEFT, parse_mathematical_operator),
             (relational_operator, 2, opAssoc.LEFT, parse_relational_operator),
-            (logical_operator, 2, opAssoc.LEFT, parse_logical_operator),
+            (boolean_operator, 2, opAssoc.LEFT, parse_boolean_operator),
         ],
         lpar=left_parenthesis(),
         rpar=right_parenthesis(),
@@ -326,7 +326,7 @@ def with_aspects(aspects: Token) -> Token:
 
 
 def if_condition(restricted: bool = False) -> Token:
-    return (Keyword("if") - logical_expression(restricted)).setParseAction(parse_condition)
+    return (Keyword("if") - boolean_expression(restricted)).setParseAction(parse_condition)
 
 
 def type_derivation_definition() -> Token:
@@ -781,7 +781,7 @@ def parse_relational_operator(string: str, location: int, tokens: ParseResults) 
 
 
 @fatalexceptions
-def parse_logical_operator(string: str, location: int, tokens: ParseResults) -> Expr:
+def parse_boolean_operator(string: str, location: int, tokens: ParseResults) -> Expr:
     result: List[Expr] = tokens[0]
     while len(result) > 1:
         left = result.pop(0)
@@ -794,14 +794,14 @@ def parse_logical_operator(string: str, location: int, tokens: ParseResults) -> 
 
         locn = Location(left.location.start, left.location.source, right.location.end)
 
-        log_expr: Expr
+        bool_expr: Expr
         if operator == "and":
-            log_expr = And(left, right, location=locn)
+            bool_expr = And(left, right, location=locn)
         elif operator == "or":
-            log_expr = Or(left, right, location=locn)
+            bool_expr = Or(left, right, location=locn)
         else:
-            raise ParseFatalException(string, location, "unexpected logical operator")
-        result.insert(0, log_expr)
+            raise ParseFatalException(string, location, "unexpected boolean operator")
+        result.insert(0, bool_expr)
     return result[0]
 
 
@@ -838,12 +838,12 @@ def parse_mathematical_operator(string: str, location: int, tokens: ParseResults
 
 
 @fatalexceptions
-def parse_logical_expression(string: str, location: int, tokens: ParseResults) -> Expr:
-    log_expr = tokens[0][0]
-    if isinstance(log_expr, (And, Or, Relation, Valid, ValidChecksum, QuantifiedExpression)):
-        return log_expr
+def parse_boolean_expression(string: str, location: int, tokens: ParseResults) -> Expr:
+    bool_expr = tokens[0][0]
+    if isinstance(bool_expr, (And, Or, Relation, Valid, ValidChecksum, QuantifiedExpression)):
+        return bool_expr
     raise ParseFatalException(
-        string, location, f'unexpected expression type "{type(log_expr).__name__}"'
+        string, location, f'unexpected expression type "{type(bool_expr).__name__}"'
     )
 
 

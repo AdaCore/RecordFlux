@@ -25,7 +25,7 @@ def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
 
 
 @given(
-    strategies.logical_expressions(
+    strategies.boolean_expressions(
         st.one_of(
             strategies.numbers()
             | strategies.variables(strategies.identifiers())
@@ -35,8 +35,8 @@ def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
     )
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
-def test_parsing_logical_expressions(expression: expr.Expr) -> None:
-    parsed_expression = grammar.logical_expression().parseString(str(expression))[0]
+def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
+    parsed_expression = grammar.boolean_expression().parseString(str(expression))[0]
     assert parsed_expression == expression
 
 

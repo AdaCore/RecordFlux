@@ -201,7 +201,7 @@ def test_ass_expr_substituted() -> None:
     )
 
 
-def test_log_expr_str() -> None:
+def test_bool_expr_str() -> None:
     assert_equal(
         str(And(Variable("A"), Or(Variable("B"), Variable("C")), Variable("D"))),
         multilinestr(
