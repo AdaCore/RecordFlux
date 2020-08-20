@@ -841,9 +841,7 @@ class AbstractMessage(Type):
             conditions = [l.condition for l in p if l.condition != TRUE]
             lengths = [Equal(Length(l.target.name), l.length) for l in p if l.length != UNDEFINED]
             empty_field = Equal(Length(field.name), Number(0))
-            proof = empty_field.check(
-                [*self.__type_constraints(empty_field), *conditions, *lengths]
-            )
+            proof = empty_field.check([*self.type_constraints(empty_field), *conditions, *lengths])
             if proof.result == ProofResult.sat:
                 return True
 
@@ -1159,7 +1157,7 @@ class AbstractMessage(Type):
                     link.target.identifier.location,
                 )
 
-    def __type_constraints(self, expr: Expr) -> Sequence[Expr]:
+    def type_constraints(self, expr: Expr) -> Sequence[Expr]:
         def get_constraints(aggregate: Aggregate, field: Variable) -> Sequence[Expr]:
             comp = self.types[Field(field.name)]
             assert isinstance(comp, Composite)
@@ -1301,7 +1299,7 @@ class AbstractMessage(Type):
                 for i2, c2 in enumerate(self.outgoing(f)):
                     if i1 < i2:
                         conflict = And(c1.condition, c2.condition)
-                        proof = conflict.check(self.__type_constraints(conflict))
+                        proof = conflict.check(self.type_constraints(conflict))
                         if proof.result == ProofResult.sat:
                             c1_message = str(c1.condition).replace("\n", " ")
                             c2_message = str(c2.condition).replace("\n", " ")
@@ -1388,7 +1386,7 @@ class AbstractMessage(Type):
                 for c in self.outgoing(f):
                     paths += 1
                     contradiction = c.condition
-                    constraints = self.__type_constraints(contradiction)
+                    constraints = self.type_constraints(contradiction)
                     proof = contradiction.check([*constraints, *facts])
                     if proof.result == ProofResult.sat:
                         continue
@@ -1477,8 +1475,8 @@ class AbstractMessage(Type):
                         Or(*[o.condition for o in outgoing], location=f.identifier.location)
                     )
 
-                facts.extend(self.__type_constraints(negative))
-                facts.extend(self.__type_constraints(start))
+                facts.extend(self.type_constraints(negative))
+                facts.extend(self.type_constraints(start))
 
                 proof = TRUE.check(facts)
 
@@ -1524,7 +1522,7 @@ class AbstractMessage(Type):
                             Mod(self.__target_first(last), element_size), Number(1), last.location
                         )
                     )
-                    proof = start_aligned.check([*facts, *self.__type_constraints(start_aligned)])
+                    proof = start_aligned.check([*facts, *self.type_constraints(start_aligned)])
                     if proof.result != ProofResult.unsat:
                         path_message = " -> ".join([p.target.name for p in path])
                         self.error.append(
@@ -1542,7 +1540,7 @@ class AbstractMessage(Type):
                         )
                     )
                     proof = length_multiple_element_size.check(
-                        [*facts, *self.__type_constraints(length_multiple_element_size)]
+                        [*facts, *self.type_constraints(length_multiple_element_size)]
                     )
                     if proof.result != ProofResult.unsat:
                         path_message = " -> ".join([p.target.name for p in path])
@@ -1822,6 +1820,25 @@ class UnprovenMessage(AbstractMessage):
 
     @ensure(lambda result: valid_message_field_types(result))
     def merged(self) -> "UnprovenMessage":
+        def prune_dangling_states(
+            structure: List[Link], types: Dict[Field, Type]
+        ) -> Tuple[List[Link], Dict[Field, Type]]:
+            dangling = []
+            progress = True
+            while progress:
+                progress = False
+                states = {x for l in structure for x in (l.source, l.target) if x != FINAL}
+                for s in states:
+                    if not [l for l in structure if l.source == s]:
+                        dangling.append(s)
+                        progress = True
+                structure = [l for l in structure if l.target not in dangling]
+
+            return (
+                structure,
+                {k: v for k, v in types.items() if k not in dangling},
+            )
+
         message = self
 
         while True:
@@ -1877,16 +1894,24 @@ class UnprovenMessage(AbstractMessage):
                     )
                 elif link.source == field:
                     for final_link in inner_message.incoming(FINAL):
-                        structure.append(
-                            Link(
-                                final_link.source,
-                                link.target,
-                                And(link.condition, final_link.condition).simplified(),
-                                link.length,
-                                link.first,
-                                link.location,
-                            )
+                        merged_condition = And(link.condition, final_link.condition)
+                        proof = merged_condition.check(
+                            [
+                                *inner_message.type_constraints(merged_condition),
+                                inner_message.field_condition(final_link.source),
+                            ]
                         )
+                        if proof.result != ProofResult.unsat:
+                            structure.append(
+                                Link(
+                                    final_link.source,
+                                    link.target,
+                                    merged_condition.simplified(),
+                                    link.length,
+                                    link.first,
+                                    link.location,
+                                )
+                            )
                 else:
                     structure.append(link)
 
@@ -1899,6 +1924,7 @@ class UnprovenMessage(AbstractMessage):
                 **inner_message.types,
             }
 
+            structure, types = prune_dangling_states(structure, types)
             message = message.copy(structure=structure, types=types)
 
         return message
