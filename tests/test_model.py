@@ -1321,6 +1321,53 @@ def test_merge_message_simple_derived() -> None:
     )
 
 
+def test_merge_message_constrained() -> None:
+    m1 = UnprovenMessage(
+        "P.M1",
+        [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F3"), Equal(Variable("F1"), Variable("True"))),
+            Link(Field("F1"), Field("F2")),
+            Link(Field("F2"), FINAL, Equal(Variable("F1"), Variable("False"))),
+            Link(Field("F3"), FINAL),
+        ],
+        {Field("F1"): BOOLEAN, Field("F2"): BOOLEAN, Field("F3"): BOOLEAN},
+    )
+    m2 = UnprovenMessage(
+        "P.M2",
+        [
+            Link(INITIAL, Field("F4")),
+            Link(
+                Field("F4"),
+                FINAL,
+                And(
+                    Equal(Variable("F4_F1"), Variable("True")),
+                    Equal(Variable("F4_F3"), Variable("False")),
+                ),
+            ),
+        ],
+        {Field("F4"): m1},
+    )
+    expected = UnprovenMessage(
+        "P.M2",
+        [
+            Link(INITIAL, Field("F4_F1"),),
+            Link(Field("F4_F1"), Field("F4_F3"), Equal(Variable("F4_F1"), Variable("True"))),
+            Link(
+                Field("F4_F3"),
+                FINAL,
+                And(
+                    Equal(Variable("F4_F1"), Variable("True")),
+                    Equal(Variable("F4_F3"), Variable("False")),
+                ),
+            ),
+        ],
+        {Field("F4_F1"): BOOLEAN, Field("F4_F3"): BOOLEAN},
+    )
+    merged = m2.merged()
+    assert merged == expected
+
+
 def test_merge_message_error_name_conflict() -> None:
     m2_f2 = Field(ID("F2", Location((10, 5))))
 
