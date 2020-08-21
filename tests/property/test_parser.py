@@ -14,7 +14,6 @@ from tests.property import strategies
             strategies.numbers()
             | strategies.variables(strategies.identifiers())
             | strategies.attributes(strategies.identifiers())
-            | strategies.aggregates(strategies.numbers())
         )
     )
 )
