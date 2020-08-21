@@ -28,6 +28,7 @@ def main(argv: List[str]) -> Union[int, str]:
     parser.add_argument("--version", action="version", version=__version__)
 
     subparsers = parser.add_subparsers(dest="subcommand")
+    subparsers.required = True
 
     parser_check = subparsers.add_parser("check", help="check specification")
     parser_check.add_argument(
@@ -87,10 +88,6 @@ def main(argv: List[str]) -> Union[int, str]:
     parser_session.set_defaults(func=session)
 
     args = parser.parse_args(argv[1:])
-
-    if not args.subcommand:
-        parser.print_usage()
-        return 2
 
     if args.quiet:
         logging.disable(logging.CRITICAL)
