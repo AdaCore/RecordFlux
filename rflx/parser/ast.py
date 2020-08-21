@@ -1,6 +1,6 @@
 from typing import List, Mapping
 
-from rflx.common import flat_name, generic_eq, generic_repr
+from rflx.common import Base, flat_name
 from rflx.error import Location
 from rflx.expression import TRUE, UNDEFINED, Expr
 from rflx.identifier import ID, StrID
@@ -8,12 +8,8 @@ from rflx.model import Type
 from rflx.session import Session
 
 
-class SyntaxTree:
-    def __eq__(self, other: object) -> bool:
-        return generic_eq(self, other)
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
+class SyntaxTree(Base):
+    pass
 
 
 class Then(SyntaxTree):

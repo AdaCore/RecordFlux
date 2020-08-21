@@ -1,10 +1,10 @@
 from typing import Dict, Iterator
 
-from rflx.common import generic_repr
+from rflx.common import Base
 from rflx.pyrflx.typevalue import MessageValue
 
 
-class Package:
+class Package(Base):
     def __init__(self, name: str) -> None:
         self.__name = name
         self.__messages: Dict[str, MessageValue] = {}
@@ -12,9 +12,6 @@ class Package:
     @property
     def name(self) -> str:
         return self.__name
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __getitem__(self, key: str) -> MessageValue:
         return self.__messages[key].clone()

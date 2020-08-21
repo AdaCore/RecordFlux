@@ -1,31 +1,23 @@
 # pylint: disable=too-many-lines
 import itertools
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections import OrderedDict
 from dataclasses import dataclass, field as dataclass_field
 from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
-from rflx.common import file_name, generic_eq, generic_repr, indent, indent_next, unique
+from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
 from rflx.expression import Case, Expr, Number, Variable
 from rflx.identifier import ID, StrID
 
 
-class Ada(ABC):
-    def __eq__(self, other: object) -> bool:
-        return generic_eq(self, other)
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
-
-
-class Declaration(Ada):
+class Declaration(Base):
     @abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError
 
 
-class ContextItem(Ada):
+class ContextItem(Base):
     def __init__(self, *names: StrID) -> None:
         self.names = list(map(ID, names))
 
@@ -55,7 +47,7 @@ class UseTypeClause(ContextItem, Declaration):
         return f"use type {names};"
 
 
-class Aspect(Ada):
+class Aspect(Base):
     def __str__(self) -> str:
         if self.definition:
             return f"{self.mark} =>\n{indent(self.definition, 2)}"
@@ -218,7 +210,7 @@ class Annotate(Aspect):
         return f"({args})"
 
 
-class FormalDeclaration(Ada):
+class FormalDeclaration(Base):
     @abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError
@@ -337,7 +329,7 @@ class ObjectDeclaration(Declaration):
         )
 
 
-class Discriminant(Ada):
+class Discriminant(Base):
     def __init__(
         self, identifiers: Sequence[StrID], type_name: StrID, default: Expr = None
     ) -> None:
@@ -510,7 +502,7 @@ class AccessType(TypeDeclaration):
         return f" access {self.object_name}"
 
 
-class Component(Ada):
+class Component(Base):
     def __init__(self, name: StrID, type_name: StrID, default: Expr = None) -> None:
         self.name = ID(name)
         self.type_name = ID(type_name)
@@ -529,7 +521,7 @@ class NullComponent(Component):
         return "null;"
 
 
-class Variant(Ada):
+class Variant(Base):
     def __init__(self, discrete_choices: Sequence[Expr], components: Sequence[Component]) -> None:
         self.discrete_choices = discrete_choices
         self.components = components
@@ -540,7 +532,7 @@ class Variant(Ada):
         return f"   when {choices} =>\n{components}"
 
 
-class VariantPart(Ada):
+class VariantPart(Base):
     def __init__(self, discriminant_name: StrID, variants: Sequence[Variant]) -> None:
         self.discriminant_name = ID(discriminant_name)
         self.variants = variants
@@ -573,7 +565,7 @@ class RecordType(TypeDeclaration):
         return f"\n" f"   record\n" f"{components}" f"{variant_part}" f"   end record"
 
 
-class Statement(Ada):
+class Statement(Base):
     @abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError
@@ -682,7 +674,7 @@ class CaseStatement(Statement):
         return f"case {self.control_expression} is{indent(cases, 3)}\nend case;"
 
 
-class Parameter(Ada):
+class Parameter(Base):
     def __init__(
         self, identifiers: Sequence[StrID], type_name: StrID, default: Expr = None
     ) -> None:
@@ -728,7 +720,7 @@ class AccessParameter(Parameter):
         return "access constant " if self.constant else "access "
 
 
-class SubprogramSpecification(Ada):
+class SubprogramSpecification(Base):
     def __init__(self, identifier: StrID, parameters: Sequence[Parameter] = None) -> None:
         self.identifier = ID(identifier)
         self.parameters = parameters or []
@@ -896,7 +888,7 @@ class Pragma(Declaration, ContextItem):
         return f"pragma {self.identifier}{parameters};"
 
 
-class Unit(Ada):
+class Unit(Base):
     @abstractmethod
     def __iadd__(self, other: object) -> "Unit":
         raise NotImplementedError

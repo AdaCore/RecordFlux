@@ -8,7 +8,7 @@ from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import z3
 
-from rflx.common import generic_repr, indent, indent_next, unique
+from rflx.common import Base, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
 from rflx.declaration import ChannelDeclaration, Declaration, VariableDeclaration
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
@@ -68,7 +68,7 @@ class Proof:
         ]
 
 
-class Expr(DBC):
+class Expr(DBC, Base):
     _str: str
 
     def __init__(self, location: Location = None):
@@ -88,9 +88,6 @@ class Expr(DBC):
 
     def __hash__(self) -> int:
         return hash(self.__class__.__name__)
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, Expr):
