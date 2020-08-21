@@ -5,7 +5,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field as dataclass_field
 from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
-from rflx.common import file_name, generic_repr, indent, indent_next, unique
+from rflx.common import file_name, generic_eq, generic_repr, indent, indent_next, unique
 from rflx.contract import invariant
 from rflx.expression import Case, Expr, Number, Variable
 from rflx.identifier import ID, StrID
@@ -13,9 +13,7 @@ from rflx.identifier import ID, StrID
 
 class Ada(ABC):
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
+        return generic_eq(self, other)
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)

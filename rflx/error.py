@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Union
 
 from pyparsing import col, lineno
 
-from rflx.common import generic_repr, indent_next
+from rflx.common import generic_eq, generic_repr, indent_next
 
 __current_source: List[Path] = []
 
@@ -46,9 +46,7 @@ class Location:
         return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
+        return generic_eq(self, other)
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -115,9 +113,7 @@ class RecordFluxError(Exception):
             return self.__location
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
+        return generic_eq(self, other)
 
     def __init__(self) -> None:
         super().__init__()

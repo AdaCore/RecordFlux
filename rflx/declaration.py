@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Mapping, Sequence
 
-from rflx.common import generic_repr
+from rflx.common import generic_eq, generic_repr
 from rflx.error import Location
 from rflx.identifier import ID, StrID
 
@@ -16,11 +16,7 @@ class Declaration(ABC):
         self.__refcount = 0
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return {k: v for k, v in self.__dict__.items() if k != "location"} == {
-                k: v for k, v in other.__dict__.items() if k != "location"
-            }
-        return NotImplemented
+        return generic_eq(self, other)
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
@@ -77,9 +73,7 @@ class Argument:
         self.__type_name = ID(type_name)
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
+        return generic_eq(self, other)
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
