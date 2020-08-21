@@ -1118,7 +1118,6 @@ class Selected(Name):
     def variables(self) -> List["Variable"]:
         return self.prefix.variables()
 
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
@@ -1243,7 +1242,6 @@ class Call(Name):
             result.extend(t.variables())
         return result
 
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
@@ -1782,7 +1780,6 @@ class QuantifiedExpression(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
@@ -1890,7 +1887,6 @@ class Conversion(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
@@ -1948,7 +1944,6 @@ class Comprehension(Expr):
             self.location,
         )
 
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
@@ -2007,7 +2002,6 @@ class MessageAggregate(Expr):
             self.name, {k: self.data[k].simplified() for k in self.data}, self.location
         )
 
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
