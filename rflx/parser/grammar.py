@@ -1,6 +1,7 @@
 # pylint: disable=too-many-lines
 import traceback
-from typing import Callable, Dict, List, Tuple, Union
+import typing
+from typing import Callable, Dict, List, Mapping, Tuple, Union
 
 from pyparsing import (
     CaselessKeyword,
@@ -41,8 +42,10 @@ from rflx.expression import (
     Add,
     Aggregate,
     And,
+    AssExpr,
     Attribute,
     Binding,
+    BinExpr,
     BooleanTrue,
     Call,
     Comprehension,
@@ -744,96 +747,69 @@ def parse_comprehension(string: str, location: int, tokens: ParseResults) -> Com
 
 
 @fatalexceptions
-def parse_relational_operator(string: str, location: int, tokens: ParseResults) -> Relation:
-    result: List[Relation] = tokens[0]
-    while len(result) > 1:
-        left = result.pop(0)
-        operator = result.pop(0)
-        right = result.pop(0)
-
-        assert left.location
-        assert right.location
-        assert left.location.source == right.location.source
-
-        locn = Location(left.location.start, left.location.source, right.location.end)
-
-        relation: Relation
-        if operator == "=":
-            relation = Equal(left, right, location=locn)
-        elif operator == "/=":
-            relation = NotEqual(left, right, location=locn)
-        elif operator == "<":
-            relation = Less(left, right, location=locn)
-        elif operator == "<=":
-            relation = LessEqual(left, right, location=locn)
-        elif operator == ">=":
-            relation = GreaterEqual(left, right, location=locn)
-        elif operator == ">":
-            relation = Greater(left, right, location=locn)
-        elif operator == "in":
-            relation = In(left, right, location=locn)
-        elif operator == "not in":
-            relation = NotIn(left, right, location=locn)
-        else:
-            raise ParseFatalException(string, location, "unexpected relation operator")
-        result.insert(0, relation)
-    return result[0]
+def parse_relational_operator(string: str, location: int, tokens: ParseResults) -> Expr:
+    operators: Mapping[str, typing.Type[Union[BinExpr, AssExpr]]] = {
+        "=": Equal,
+        "/=": NotEqual,
+        "<": Less,
+        "<=": LessEqual,
+        ">=": GreaterEqual,
+        ">": Greater,
+        "in": In,
+        "not in": NotIn,
+    }
+    return parse_operator(operators, string, location, tokens)
 
 
 @fatalexceptions
 def parse_boolean_operator(string: str, location: int, tokens: ParseResults) -> Expr:
-    result: List[Expr] = tokens[0]
-    while len(result) > 1:
-        left = result.pop(0)
-        operator = result.pop(0)
-        right = result.pop(0)
-
-        assert left.location
-        assert right.location
-        assert left.location.source == right.location.source
-
-        locn = Location(left.location.start, left.location.source, right.location.end)
-
-        bool_expr: Expr
-        if operator == "and":
-            bool_expr = And(left, right, location=locn)
-        elif operator == "or":
-            bool_expr = Or(left, right, location=locn)
-        else:
-            raise ParseFatalException(string, location, "unexpected boolean operator")
-        result.insert(0, bool_expr)
-    return result[0]
+    operators: Mapping[str, typing.Type[AssExpr]] = {
+        "and": And,
+        "or": Or,
+    }
+    return parse_operator(operators, string, location, tokens)
 
 
+@fatalexceptions
 def parse_mathematical_operator(string: str, location: int, tokens: ParseResults) -> Expr:
-    result: List[Expr] = tokens[0]
+    operators: Mapping[str, typing.Type[Union[BinExpr, AssExpr]]] = {
+        "+": Add,
+        "-": Sub,
+        "*": Mul,
+        "/": Div,
+        "**": Pow,
+    }
+    return parse_operator(operators, string, location, tokens)
+
+
+def parse_operator(
+    operators: Mapping[str, typing.Type[Union[BinExpr, AssExpr]]],
+    string: str,
+    location: int,
+    tokens: ParseResults,
+) -> Expr:
+    result: List[object] = tokens[0]
     while len(result) > 1:
         left = result.pop(0)
         operator = result.pop(0)
         right = result.pop(0)
 
+        assert isinstance(left, Expr)
+        assert isinstance(operator, str)
+        assert isinstance(right, Expr)
         assert left.location
         assert right.location
         assert left.location.source == right.location.source
 
         locn = Location(left.location.start, left.location.source, left.location.end)
 
-        math_expr: Expr
-        if operator == "+":
-            math_expr = Add(left, right)
-            math_expr.location = locn
-        elif operator == "-":
-            math_expr = Sub(left, right, locn)
-        elif operator == "*":
-            math_expr = Mul(left, right)
-            math_expr.location = locn
-        elif operator == "/":
-            math_expr = Div(left, right, locn)
-        elif operator == "**":
-            math_expr = Pow(left, right, locn)
-        else:
-            raise ParseFatalException(string, location, "unexpected mathematical operator")
-        result.insert(0, math_expr)
+        try:
+            result_expr = operators[operator](left, right, location=locn)
+        except KeyError:
+            raise ParseFatalException(string, location, "unexpected operator") from None
+        result.insert(0, result_expr)
+
+    assert isinstance(result[0], Expr)
     return result[0]
 
 
@@ -904,29 +880,27 @@ def parse_variable(string: str, location: int, tokens: ParseResults) -> Union[Va
 def parse_suffix(string: str, location: int, tokens: ParseResults) -> Attribute:
     result = tokens[0][0]
 
+    suffixes = {
+        "First": First,
+        "Last": Last,
+        "Length": Length,
+        "Head": Head,
+        "Opaque": Opaque,
+        "Present": Present,
+        "Valid": Valid,
+        "Valid_Checksum": ValidChecksum,
+        "Selected": Selected,
+        "Binding": Binding,
+    }
     for suffix in tokens[0][1:]:
-        if suffix[0] == "First":
-            result = First(result)
-        elif suffix[0] == "Last":
-            result = Last(result)
-        elif suffix[0] == "Length":
-            result = Length(result)
-        elif suffix[0] == "Head":
-            result = Head(result)
-        elif suffix[0] == "Opaque":
-            result = Opaque(result)
-        elif suffix[0] == "Present":
-            result = Present(result)
-        elif suffix[0] == "Valid":
-            result = Valid(result)
-        elif suffix[0] == "Valid_Checksum":
-            result = ValidChecksum(result)
-        elif suffix[0] == "Selected":
-            result = Selected(result, suffix[1], location=result.location)
-        elif suffix[0] == "Binding":
-            result = Binding(result, suffix[1], location=result.location)
-        else:
-            raise ParseFatalException(string, location, "unexpected suffix")
+        try:
+            s = suffix[0]
+            if s in ("Selected", "Binding"):
+                result = suffixes[s](result, suffix[1], location=result.location)
+            else:
+                result = suffixes[s](result)
+        except KeyError:
+            raise ParseFatalException(string, location, "unexpected suffix") from None
 
     return result
 

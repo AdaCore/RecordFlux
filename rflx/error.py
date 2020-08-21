@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Union
 
 from pyparsing import col, lineno
 
-from rflx.common import generic_eq, generic_repr, indent_next, verbose_repr
+from rflx.common import generic_eq, generic_repr, verbose_repr
 
 __current_source: List[Path] = []
 

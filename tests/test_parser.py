@@ -864,7 +864,7 @@ def test_grammar_unexpected_suffix() -> None:
 
 
 def test_grammar_unexpected_relation_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected relation operator .*$"):
+    with pytest.raises(ParseFatalException, match=r"^unexpected operator .*$"):
         grammar.parse_relational_operator(
             "",
             0,
@@ -873,7 +873,7 @@ def test_grammar_unexpected_relation_operator() -> None:
 
 
 def test_grammar_unexpected_boolean_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected boolean operator .*$"):
+    with pytest.raises(ParseFatalException, match=r"^unexpected operator .*$"):
         grammar.parse_boolean_operator(
             "",
             0,
@@ -882,7 +882,7 @@ def test_grammar_unexpected_boolean_operator() -> None:
 
 
 def test_grammar_unexpected_mathematical_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected mathematical operator .*$"):
+    with pytest.raises(ParseFatalException, match=r"^unexpected operator .*$"):
         grammar.parse_mathematical_operator(
             "",
             0,
