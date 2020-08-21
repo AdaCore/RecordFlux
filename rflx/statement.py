@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Mapping, Sequence
 
-from rflx.common import generic_repr
+from rflx.common import generic_eq, generic_repr
 from rflx.declaration import Declaration
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import Expr
@@ -15,11 +15,7 @@ class Statement(ABC):
         self.error = RecordFluxError()
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return {k: v for k, v in self.__dict__.items() if k != "location"} == {
-                k: v for k, v in other.__dict__.items() if k != "location"
-            }
-        return NotImplemented
+        return generic_eq(self, other)
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)

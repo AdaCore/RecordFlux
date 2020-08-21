@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from rflx.common import flat_name, generic_repr, indent, indent_next
+from rflx.common import flat_name, generic_eq, generic_repr, indent, indent_next
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
@@ -53,11 +53,7 @@ INTERNAL_PACKAGE = ID("__INTERNAL__")
 
 class Base(ABC):
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return {k: v for k, v in self.__dict__.items() if k != "location"} == {
-                k: v for k, v in other.__dict__.items() if k != "location"
-            }
-        return NotImplemented
+        return generic_eq(self, other)
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
@@ -84,17 +80,6 @@ class Type(Base):
 
         self.identifier = identifier
         self.location = location
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            for k in other.__dict__:
-                if k != "location" and k not in self.__dict__:
-                    return False
-            for k, v in self.__dict__.items():
-                if k != "location" and (k not in other.__dict__ or v != other.__dict__[k]):
-                    return False
-            return True
-        return NotImplemented
 
     @property
     def full_name(self) -> str:

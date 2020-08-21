@@ -1,6 +1,18 @@
 from typing import Iterable, Iterator, Set, TypeVar
 
 
+def generic_eq(self: object, other: object) -> bool:
+    if isinstance(other, self.__class__):
+        for k in other.__dict__:
+            if k != "location" and k not in self.__dict__:
+                return False
+        for k, v in self.__dict__.items():
+            if k != "location" and (k not in other.__dict__ or v != other.__dict__[k]):
+                return False
+        return True
+    return NotImplemented
+
+
 def generic_repr(class_name: str, obj_dict: dict) -> str:
     args = "\n" + ",\n".join(f"{k}={v!r}" for k, v in obj_dict.items() if k != "location")
     return indent_next(f"\n{class_name}({indent(args, 4)})", 4)

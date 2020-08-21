@@ -1,6 +1,6 @@
 from typing import List, Mapping
 
-from rflx.common import flat_name, generic_repr
+from rflx.common import flat_name, generic_eq, generic_repr
 from rflx.error import Location
 from rflx.expression import TRUE, UNDEFINED, Expr
 from rflx.identifier import ID, StrID
@@ -10,9 +10,7 @@ from rflx.session import Session
 
 class SyntaxTree:
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
+        return generic_eq(self, other)
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
