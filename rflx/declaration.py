@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Mapping, Sequence
 
-from rflx.common import generic_eq, generic_repr
+from rflx.common import Base
 from rflx.error import Location
 from rflx.identifier import ID, StrID
 
@@ -9,17 +9,11 @@ if TYPE_CHECKING:
     from rflx.expression import Expr
 
 
-class Declaration(ABC):
+class Declaration(Base):
     def __init__(self, identifier: StrID, location: Location = None):
         self.__identifier = ID(identifier)
         self.location = location
         self.__refcount = 0
-
-    def __eq__(self, other: object) -> bool:
-        return generic_eq(self, other)
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def reference(self) -> None:
         self.__refcount += 1
@@ -66,17 +60,11 @@ class PrivateDeclaration(Declaration):
         pass
 
 
-class Argument:
+class Argument(Base):
     def __init__(self, name: StrID, type_name: StrID):
         super().__init__()
         self.__name = ID(name)
         self.__type_name = ID(type_name)
-
-    def __eq__(self, other: object) -> bool:
-        return generic_eq(self, other)
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __str__(self) -> str:
         return f"{self.__name} : {self.__type_name}"

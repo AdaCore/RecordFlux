@@ -1,6 +1,6 @@
 from typing import Dict, List, Sequence
 
-from rflx.common import indent, indent_next, verbose_repr
+from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.declaration import (
     ChannelDeclaration,
     Declaration,
@@ -12,7 +12,6 @@ from rflx.declaration import (
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, Expr
 from rflx.identifier import ID, StrID
-from rflx.model import Base
 from rflx.statement import Statement
 
 

@@ -1,10 +1,10 @@
 # pylint: disable=too-many-lines
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
-from rflx.common import generic_repr
+from rflx.common import Base
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -46,15 +46,12 @@ class NotInitializedError(Exception):
     pass
 
 
-class TypeValue(ABC):
+class TypeValue(Base):
 
     _value: Any = None
 
     def __init__(self, vtype: Type) -> None:
         self._type = vtype
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -580,9 +577,6 @@ class MessageValue(TypeValue):
                 self.__type_literals,
             ),
         )
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -1136,7 +1130,7 @@ class MessageValue(TypeValue):
             self.function = function
 
     @dataclass
-    class Field:
+    class Field(Base):
         typeval: TypeValue
         __first: Expr
         __last: Expr
@@ -1191,9 +1185,6 @@ class MessageValue(TypeValue):
                     and self.typeval == other.typeval
                 )
             return NotImplemented
-
-        def __repr__(self) -> str:
-            return generic_repr(self.__class__.__name__, self.__dict__)
 
         @property
         def set(self) -> bool:

@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Union
 
 from pyparsing import col, lineno
 
-from rflx.common import generic_eq, generic_repr, verbose_repr
+from rflx.common import Base, verbose_repr
 
 __current_source: List[Path] = []
 
@@ -15,7 +15,7 @@ def current_source() -> Optional[Path]:
     return None
 
 
-class Location:
+class Location(Base):
     def __init__(
         self,
         start: Tuple[int, int],
@@ -41,12 +41,6 @@ class Location:
         start = f":{linecol_str(self.__start)}"
         end = f"-{linecol_str(self.__end)}" if self.__end and self.__verbose else ""
         return f"{self.__source if self.__source else '<stdin>'}{start}{end}"
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
-
-    def __eq__(self, other: object) -> bool:
-        return generic_eq(self, other)
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -86,8 +80,8 @@ class Severity(Enum):
         return str.lower(self.name)
 
 
-class RecordFluxError(Exception):
-    class Entry:
+class RecordFluxError(Exception, Base):
+    class Entry(Base):
         def __init__(
             self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
         ):
@@ -111,9 +105,6 @@ class RecordFluxError(Exception):
         @property
         def location(self) -> Optional[Location]:
             return self.__location
-
-    def __eq__(self, other: object) -> bool:
-        return generic_eq(self, other)
 
     def __init__(self) -> None:
         super().__init__()

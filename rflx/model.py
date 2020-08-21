@@ -1,13 +1,13 @@
 # pylint: disable=too-many-lines
 import itertools
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from rflx.common import flat_name, generic_eq, generic_repr, indent, indent_next, verbose_repr
+from rflx.common import Base, flat_name, indent, indent_next, verbose_repr
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
@@ -42,21 +42,10 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID, StrID
-
-if TYPE_CHECKING:
-    from rflx.session import Session  # noqa: F401
-
+from rflx.session import Session
 
 BUILTINS_PACKAGE = ID("__BUILTINS__")
 INTERNAL_PACKAGE = ID("__INTERNAL__")
-
-
-class Base(ABC):
-    def __eq__(self, other: object) -> bool:
-        return generic_eq(self, other)
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
 
 
 class Type(Base):
@@ -548,16 +537,13 @@ FINAL = Field("Final")
 
 
 @dataclass(order=True)
-class Link:
+class Link(Base):
     source: Field
     target: Field
     condition: Expr = TRUE
     length: Expr = UNDEFINED
     first: Expr = UNDEFINED
     location: Optional[Location] = None
-
-    def __repr__(self) -> str:
-        return generic_repr(self.__class__.__name__, self.__dict__)
 
     def __str__(self) -> str:
         condition = indent_next(
@@ -2031,7 +2017,7 @@ class Refinement(Type):
 
 
 class Model(Base):
-    def __init__(self, types: Sequence[Type], sessions: Sequence["Session"] = None) -> None:
+    def __init__(self, types: Sequence[Type], sessions: Sequence[Session] = None) -> None:
         self.types = types
         self.sessions = sessions or []
         self.__check_types()
