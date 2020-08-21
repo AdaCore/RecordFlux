@@ -1316,6 +1316,7 @@ class UndefinedExpr(Name):
 UNDEFINED = UndefinedExpr()
 
 
+@invariant(lambda self: len(self.elements) > 0)
 class Aggregate(Expr):
     def __init__(self, *elements: Expr, location: Location = None) -> None:
         super().__init__(location)
@@ -1352,6 +1353,37 @@ class Aggregate(Expr):
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError
+
+
+class String(Aggregate):
+    def __init__(self, data: str, location: Location = None) -> None:
+        super().__init__(*[Number(ord(d)) for d in data], location=location)
+        self.data = data
+
+    def _update_str(self) -> None:
+        self._str = intern(f'"{self.data}"')
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        return func(self)
+
+    def simplified(self) -> Expr:
+        return self
+
+    def z3expr(self) -> z3.ExprRef:
+        return z3.BoolVal(False)
+
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+        pass
 
 
 class NamedAggregate(Expr):
@@ -2038,35 +2070,6 @@ class Binding(Expr):
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.simplified().validate(declarations)
-
-
-class String(Expr):
-    def __init__(self, data: str, location: Location = None) -> None:
-        super().__init__(location)
-        self.data = data
-
-    def _update_str(self) -> None:
-        self._str = intern(f'"{self.data}"')
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        raise NotImplementedError
-
-    def simplified(self) -> Expr:
-        return self
-
-    def z3expr(self) -> z3.ExprRef:
-        return z3.BoolVal(False)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        pass
-
-    @property
-    def aggregate(self) -> Aggregate:
-        return Aggregate(*[Number(ord(c)) for c in self.data])
 
 
 def substitution(

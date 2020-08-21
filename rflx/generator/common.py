@@ -1,4 +1,4 @@
-from typing import Callable, Mapping, Sequence, Union
+from typing import Callable, Mapping, Sequence
 
 from rflx.ada import (
     Assignment,
@@ -39,7 +39,6 @@ from rflx.expression import (
     Relation,
     Selected,
     Size,
-    String,
     Sub,
     Val,
     ValidChecksum,
@@ -74,8 +73,7 @@ def substitution(
     facts = substitution_facts(message, embedded, public, target_type)
 
     def func(expression: Expr) -> Expr:
-        def byte_aggregate(expression: Union[Aggregate, String]) -> Aggregate:
-            aggregate = expression.aggregate if isinstance(expression, String) else expression
+        def byte_aggregate(aggregate: Aggregate) -> Aggregate:
             return Aggregate(*[Val(const.TYPES_BYTE, e) for e in aggregate.elements])
 
         if isinstance(expression, Name) and expression in facts:
@@ -84,14 +82,10 @@ def substitution(
         if isinstance(expression, (Equal, NotEqual)):
             field = None
             aggregate = None
-            if isinstance(expression.left, Variable) and isinstance(
-                expression.right, (Aggregate, String)
-            ):
+            if isinstance(expression.left, Variable) and isinstance(expression.right, Aggregate):
                 field = Field(expression.left.name)
                 aggregate = byte_aggregate(expression.right)
-            elif isinstance(expression.left, (Aggregate, String)) and isinstance(
-                expression.right, Variable
-            ):
+            elif isinstance(expression.left, Aggregate) and isinstance(expression.right, Variable):
                 field = Field(expression.right.name)
                 aggregate = byte_aggregate(expression.left)
             if field and aggregate:
