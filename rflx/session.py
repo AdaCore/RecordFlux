@@ -1,6 +1,6 @@
 from typing import Dict, List, Sequence
 
-from rflx.common import indent, indent_next
+from rflx.common import indent, indent_next, verbose_repr
 from rflx.declaration import (
     ChannelDeclaration,
     Declaration,
@@ -30,13 +30,7 @@ class Transition(Base):
         self.description = description
 
     def __repr__(self) -> str:
-        return (
-            f"\n{self.__class__.__name__}(\n"
-            f"{indent(repr(self.target), 4)},\n"
-            f"{indent(repr(self.condition), 4)},\n"
-            f"{indent(repr(self.description), 4)},\n"
-            f"\n)" + self._prefixed_str
-        )
+        return verbose_repr(self, ["target", "condition", "description"])
 
     def __str__(self) -> str:
         with_aspects = f'\n   with Desc => "{self.description}"' if self.description else ""
@@ -65,14 +59,7 @@ class State(Base):
         self.location = location
 
     def __repr__(self) -> str:
-        return (
-            f"\n{self.__class__.__name__}(\n"
-            f"{indent(repr(self.name), 4)},\n"
-            f"{indent(repr(self.transitions), 4)},\n"
-            f"{indent(repr(self.actions), 4)},\n"
-            f"{indent(repr(self.declarations), 4)},\n"
-            f"\n)" + self._prefixed_str
-        )
+        return verbose_repr(self, ["name", "transitions", "actions", "declarations"])
 
     def __str__(self) -> str:
         if not self.declarations and not self.actions and not self.transitions:
@@ -132,16 +119,7 @@ class Session(Base):
         self.error.propagate()
 
     def __repr__(self) -> str:
-        return (
-            f"\n{self.__class__.__name__}(\n"
-            f"{indent(repr(self.identifier), 4)},\n"
-            f"{indent(repr(self.initial), 4)},\n"
-            f"{indent(repr(self.final), 4)},\n"
-            f"{indent(repr(self.states), 4)},\n"
-            f"{indent(repr(self.declarations), 4)},\n"
-            f"{indent(repr(self.parameters), 4)},\n"
-            f"\n)" + self._prefixed_str
-        )
+        return verbose_repr(self, ["identifier", "initial", "states", "declarations", "parameters"])
 
     def __str__(self) -> str:
         parameters = "".join(f"{p};\n" for p in self.parameters.values())
