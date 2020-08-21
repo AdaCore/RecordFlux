@@ -716,9 +716,8 @@ def parse_array_aggregate(string: str, location: int, tokens: ParseResults) -> E
 
 @fatalexceptions
 def parse_concatenation(string: str, location: int, tokens: ParseResults) -> Expr:
-    aggregates = [t.aggregate if isinstance(t, String) else t for t in tokens[0]]
     return Aggregate(
-        *[e for t in aggregates for e in t.elements],
+        *[e for t in tokens[0] for e in t.elements],
         location=Location(
             tokens[0][0].location.start, tokens[0][0].location.source, tokens[0][-1].location.end
         ),
