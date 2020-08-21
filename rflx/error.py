@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Union
 
 from pyparsing import col, lineno
 
-from rflx.common import generic_eq, generic_repr, indent_next
+from rflx.common import generic_eq, generic_repr, indent_next, verbose_repr
 
 __current_source: List[Path] = []
 
@@ -120,10 +120,7 @@ class RecordFluxError(Exception):
         self.__errors: List[RecordFluxError.Entry] = []
 
     def __repr__(self) -> str:
-        prefixed_str = (
-            ("\n".join(f"# {l}" for l in str(self).split("\n")) + "\n") if self.__errors else ""
-        )
-        return indent_next(f"\nRecordFluxError({self.__errors})\n{prefixed_str}", 4)
+        return verbose_repr(self, ["errors"])
 
     def __str__(self) -> str:
         def locn(entry: RecordFluxError.Entry) -> str:

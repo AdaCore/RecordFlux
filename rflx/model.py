@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from rflx.common import flat_name, generic_eq, generic_repr, indent, indent_next
+from rflx.common import flat_name, generic_eq, generic_repr, indent, indent_next, verbose_repr
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
@@ -57,10 +57,6 @@ class Base(ABC):
 
     def __repr__(self) -> str:
         return generic_repr(self.__class__.__name__, self.__dict__)
-
-    @property
-    def _prefixed_str(self) -> str:
-        return "\n" + "\n".join(f"# {l}" if l else "#" for l in str(self).split("\n")) + "\n"
 
 
 class Type(Base):
@@ -164,10 +160,7 @@ class ModularInteger(Integer):
         self._size = Number((modulus_int - 1).bit_length())
 
     def __repr__(self) -> str:
-        return (
-            f"\nModularInteger(\n{indent(repr(self.identifier), 4)},{self.modulus!r}\n)"
-            + self._prefixed_str
-        )
+        return verbose_repr(self, ["identifier", "modulus"])
 
     def __str__(self) -> str:
         return f"type {self.name} is mod {self.modulus}"
@@ -274,14 +267,7 @@ class RangeInteger(Integer):
         self.__last = last_num
 
     def __repr__(self) -> str:
-        return (
-            "\nRangeInteger(\n"
-            f"{indent(repr(self.identifier), 4)},"
-            f"{self.first_expr!r},"
-            f"{self.last_expr!r},"
-            f"{self.size_expr!r}"
-            "\n)" + self._prefixed_str
-        )
+        return verbose_repr(self, ["identifier", "first_expr", "last_expr", "size_expr"])
 
     def __str__(self) -> str:
         return (
@@ -434,14 +420,7 @@ class Enumeration(Scalar):
         self.always_valid = always_valid
 
     def __repr__(self) -> str:
-        return (
-            "\nEnumeration(\n"
-            f"{indent(repr(self.identifier), 4)},\n"
-            f"{indent(repr(list(self.literals.items())), 4)},"
-            f"{self.size_expr!r},\n"
-            f"{indent(repr(self.always_valid), 4)}"
-            "\n)" + self._prefixed_str
-        )
+        return verbose_repr(self, ["identifier", "literals", "size_expr", "always_valid"])
 
     def __str__(self) -> str:
         literals = ", ".join(f"{l} => {v}" for l, v in self.literals.items())
@@ -517,12 +496,7 @@ class Array(Composite):
                 )
 
     def __repr__(self) -> str:
-        return (
-            "\nArray(\n"
-            f"{indent(repr(self.identifier), 4)},"
-            f"{indent(repr(self.element_type), 4)}"
-            "\n)" + self._prefixed_str
-        )
+        return verbose_repr(self, ["identifier", "element_type"])
 
     def __str__(self) -> str:
         return f"type {self.name} is array of {self.element_type.name}"
@@ -537,7 +511,10 @@ class Opaque(Composite):
         super().__init__(INTERNAL_PACKAGE * "Opaque", location)
 
     def __repr__(self) -> str:
-        return "\nOpaque()"
+        return verbose_repr(self, [])
+
+    def __str__(self) -> str:
+        return ""
 
     @property
     def element_size(self) -> Expr:
@@ -668,13 +645,7 @@ class AbstractMessage(Type):
                 pass
 
     def __repr__(self) -> str:
-        return (
-            f"\n{self.__class__.__name__}(\n"
-            f"{indent(repr(self.identifier), 4)},\n"
-            f"{indent(repr(self.structure), 4)},\n"
-            f"{indent(repr(self.types), 4)},\n"
-            f"\n)" + self._prefixed_str
-        )
+        return verbose_repr(self, ["identifier", "structure", "types"])
 
     def __str__(self) -> str:
         if not self.structure or not self.types:
@@ -2066,7 +2037,7 @@ class Model(Base):
         self.__check_types()
 
     def __repr__(self) -> str:
-        return "\nModel(\n" f"{indent(repr(self.types), 4)},\n)" + self._prefixed_str
+        return verbose_repr(self, ["types"])
 
     def __str__(self) -> str:
         return "\n\n".join(
