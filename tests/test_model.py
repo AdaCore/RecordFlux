@@ -1368,6 +1368,38 @@ def test_merge_message_constrained() -> None:
     assert merged == expected
 
 
+def test_merge_message_constrained_empty() -> None:
+    m1 = UnprovenMessage(
+        "P.M1",
+        [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2"), Equal(Variable("F1"), Variable("True"))),
+            Link(Field("F1"), FINAL, Equal(Variable("F1"), Variable("False"))),
+            Link(Field("F2"), FINAL, Equal(Variable("F2"), Variable("True"))),
+        ],
+        {Field("F1"): BOOLEAN, Field("F2"): BOOLEAN},
+    )
+    m2 = UnprovenMessage(
+        "P.M2",
+        [
+            Link(INITIAL, Field("F3")),
+            Link(
+                Field("F3"),
+                FINAL,
+                And(
+                    Equal(Variable("F3_F1"), Variable("True")),
+                    Equal(Variable("F3_F2"), Variable("False")),
+                ),
+            ),
+        ],
+        {Field("F3"): m1},
+    )
+    with pytest.raises(
+        RecordFluxError, match=r'^model: error: empty message type when merging field "F3"$',
+    ):
+        m2.merged()
+
+
 def test_merge_message_error_name_conflict() -> None:
     m2_f2 = Field(ID("F2", Location((10, 5))))
 
