@@ -9,7 +9,7 @@ from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from rflx.common import flat_name, generic_repr, indent, indent_next
 from rflx.contract import ensure, invariant
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import (
     TRUE,
     UNDEFINED,
@@ -1925,6 +1925,14 @@ class UnprovenMessage(AbstractMessage):
             }
 
             structure, types = prune_dangling_states(structure, types)
+            if not structure or not types:
+                fail(
+                    f'empty message type when merging field "{field.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    field.identifier.location,
+                )
+
             message = message.copy(structure=structure, types=types)
 
         return message
