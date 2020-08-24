@@ -1829,7 +1829,7 @@ class UnprovenMessage(AbstractMessage):
                 progress = False
                 states = {x for l in structure for x in (l.source, l.target) if x != FINAL}
                 for s in states:
-                    if not [l for l in structure if l.source == s]:
+                    if all(l.source != s for l in structure):
                         dangling.append(s)
                         progress = True
                 structure = [l for l in structure if l.target not in dangling]
