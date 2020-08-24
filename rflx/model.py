@@ -1820,15 +1820,15 @@ class UnprovenMessage(AbstractMessage):
 
     @ensure(lambda result: valid_message_field_types(result))
     def merged(self) -> "UnprovenMessage":
-        def prune_dangling_states(
+        def prune_dangling_fields(
             structure: List[Link], types: Dict[Field, Type]
         ) -> Tuple[List[Link], Dict[Field, Type]]:
             dangling = []
             progress = True
             while progress:
                 progress = False
-                states = {x for l in structure for x in (l.source, l.target) if x != FINAL}
-                for s in states:
+                fields = {x for l in structure for x in (l.source, l.target) if x != FINAL}
+                for s in fields:
                     if all(l.source != s for l in structure):
                         dangling.append(s)
                         progress = True
@@ -1924,7 +1924,7 @@ class UnprovenMessage(AbstractMessage):
                 **inner_message.types,
             }
 
-            structure, types = prune_dangling_states(structure, types)
+            structure, types = prune_dangling_fields(structure, types)
             if not structure or not types:
                 fail(
                     f'empty message type when merging field "{field.identifier}"',
