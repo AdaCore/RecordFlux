@@ -13,6 +13,11 @@ def raise_model_error() -> None:
     fail("TEST", Subsystem.MODEL, Severity.ERROR, Location((8, 22)))
 
 
+def test_main_noarg() -> None:
+    with pytest.raises(SystemExit, match="^2$"):
+        cli.main(["rflx"])
+
+
 def test_main_help() -> None:
     with pytest.raises(SystemExit):
         cli.main(["rflx", "-h"])
