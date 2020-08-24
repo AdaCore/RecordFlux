@@ -418,7 +418,7 @@ def fatalexceptions(parse_function: Callable) -> Callable:
         except (ParseFatalException, RecordFluxError) as e:
             raise e
         except Exception as e:
-            raise ParseFatalException(string, location, f"implementation error ({e})")
+            raise ParseFatalException(string, location, f"implementation error ({e})") from e
 
     return wrapper
 
