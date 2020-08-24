@@ -358,7 +358,7 @@ class OpaqueValue(CompositeValue):
                 raise ValueError(
                     f"Error while parsing nested message "
                     f"{self._refinement_message.identifier}: {e}"
-                )
+                ) from e
             assert nested_msg.valid_message
             self._nested_message = nested_msg
             self._value = nested_msg.bytestring
@@ -454,7 +454,7 @@ class ArrayValue(CompositeValue):
                     raise ValueError(
                         f"cannot parse nested messages in array of type "
                         f"{self._element_type.full_name}: {e}"
-                    )
+                    ) from e
                 assert nested_message.valid_message
                 self._value.append(nested_message)
                 value = value[len(nested_message.bitstring) :]
@@ -748,7 +748,7 @@ class MessageValue(TypeValue):
                     raise IndexError(
                         f"Bitstring representing the message is too short - "
                         f"stopped while parsing field: {current_field_name}"
-                    )
+                    ) from None
             current_field_name = self._next_field(current_field_name)
 
     def _set_unchecked(
@@ -831,7 +831,7 @@ class MessageValue(TypeValue):
                         f" != {type(value).__name__}"
                     )
             except (ValueError, KeyError, TypeError) as e:
-                raise ValueError(f"Error while setting value for field {field_name}: {e}")
+                raise ValueError(f"Error while setting value for field {field_name}: {e}") from e
         else:
             raise KeyError(f"cannot access field {field_name}")
 
