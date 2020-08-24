@@ -5,7 +5,6 @@ from typing import Callable, Dict, List, Mapping, Tuple, Union
 
 from pyparsing import (
     CaselessKeyword,
-    Combine,
     Forward,
     Group,
     Keyword,
@@ -20,16 +19,10 @@ from pyparsing import (
     StringEnd,
     Suppress,
     Token,
-    Word,
-    WordEnd,
-    WordStart,
     ZeroOrMore,
-    alphanums,
-    alphas,
     delimitedList,
     infixNotation,
     locatedExpr,
-    nums,
     oneOf,
     opAssoc,
 )
@@ -121,24 +114,19 @@ def right_parenthesis() -> Token:
 
 
 def unqualified_identifier() -> Token:
-    return (
-        locatedExpr(WordStart(alphas) + Word(alphanums + "_") + WordEnd(alphanums + "_"))
-        .setParseAction(parse_identifier)
-        .setName("Identifier")
-    )
+    return locatedExpr(Regex(r"[a-zA-Z]\w*")).setParseAction(parse_identifier).setName("Identifier")
 
 
 def qualified_identifier() -> Token:
-    return (delimitedList(unqualified_identifier(), ".")).setParseAction(
-        lambda t: ID(
-            ".".join(map(str, t.asList())),
-            Location(start=t[0].location.start, end=t[-1].location.end),
-        )
+    return (
+        locatedExpr(Regex(r"[a-zA-Z]\w*(\.[a-zA-Z]\w*)*"))
+        .setParseAction(parse_identifier)
+        .setName("QualifiedIdentifier")
     )
 
 
 def variable() -> Token:
-    return delimitedList(unqualified_identifier(), delim=".").setParseAction(parse_variable)
+    return Group(qualified_identifier()).setParseAction(parse_variable)
 
 
 def qualified_variable() -> Token:
@@ -148,14 +136,13 @@ def qualified_variable() -> Token:
 
 
 def numeric_literal() -> Token:
-    numeral = Combine(Word(nums) + ZeroOrMore(Optional(Word("_")) + Word(nums)))
+    numeral = Regex(r"\d+(_?\d+)*")
     numeral.setParseAction(lambda t: t[0].replace("_", ""))
 
     decimal_literal = Group(numeral)
     decimal_literal.setParseAction(lambda t: (int(t[0][0]), 0))
 
-    extended_digit = Word(nums + "ABCDEF")
-    based_numeral = Combine(extended_digit + ZeroOrMore(Optional("_") + extended_digit))
+    based_numeral = Regex(r"[0-9A-F]+(_?[0-9A-F]+)*")
     based_numeral.setParseAction(lambda t: t[0].replace("_", ""))
 
     based_literal = numeral + Literal("#") - based_numeral - Literal("#")
@@ -850,29 +837,29 @@ def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
 def parse_identifier(string: str, location: int, tokens: ParseResults) -> ID:
     tokens, locn = evaluate_located_expression(string, tokens)
 
-    if tokens[0].lower() in const.RESERVED_WORDS:
+    if tokens.lower() in const.RESERVED_WORDS:
         fail(
-            f'reserved word "{tokens[0]}" used as identifier',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            locn,
+            f'reserved word "{tokens}" used as identifier', Subsystem.PARSER, Severity.ERROR, locn,
         )
 
-    return ID(tokens[0], locn)
+    return ID(tokens, locn)
 
 
 @fatalexceptions
 def parse_variable(string: str, location: int, tokens: ParseResults) -> Union[Variable, Selected]:
-    assert 1 <= len(tokens) <= 2
-    assert tokens[0].location
-    assert tokens[-1].location
+    identifier = tokens[0][0]
 
-    locn = Location(start=tokens[0].location.start, end=tokens[-1].location.end)
+    assert 1 <= len(identifier.parts) <= 2
+    assert identifier.location
 
-    if len(tokens) == 2:
-        return Selected(Variable(tokens[0], location=locn), tokens[1], location=locn)
+    if len(identifier.parts) == 2:
+        return Selected(
+            Variable(identifier.parent, location=identifier.location),
+            identifier.name,
+            location=identifier.location,
+        )
 
-    return Variable(tokens[0], location=locn)
+    return Variable(identifier, location=identifier.location)
 
 
 @fatalexceptions
