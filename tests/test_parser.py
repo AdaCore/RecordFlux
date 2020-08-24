@@ -136,6 +136,36 @@ def raise_parser_error() -> None:
 
 @pytest.mark.parametrize(
     "string,expected",
+    [("X", ID("X")), ("X2", ID("X2")), ("X_Y", ID("X_Y")), ("X_Y_3", ID("X_Y_3"))],
+)
+def test_grammar_unqualified_identifier(string: str, expected: ID) -> None:
+    actual = grammar.unqualified_identifier().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X", ID("X")),
+        ("X2", ID("X2")),
+        ("X_Y", ID("X_Y")),
+        ("X_Y_3", ID("X_Y_3")),
+        ("X.Y", ID("X.Y")),
+        ("X2.Y2", ID("X2.Y2")),
+        ("X_Y.Z", ID("X_Y.Z")),
+        ("X_Y_3.Z_4", ID("X_Y_3.Z_4")),
+        ("X.Y.Z", ID("X.Y.Z")),
+    ],
+)
+def test_grammar_qualified_identifier(string: str, expected: ID) -> None:
+    actual = grammar.qualified_identifier().parseString(string, parseAll=True)[0]
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
     [
         ("1000", expr.Number(1000)),
         ("1_000", expr.Number(1000)),
