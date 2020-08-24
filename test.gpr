@@ -17,6 +17,10 @@ project Test is
       for Spec_Suffix ("RecordFlux") use ".rflx";
    end Naming;
 
+   package RecordFlux is
+      for Output_Dir use "generated";
+   end RecordFlux;
+
    case AUnit is
       when "yes" =>
          for Source_Dirs use ("generated", "tests", "specs");
