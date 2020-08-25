@@ -9,8 +9,7 @@ from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, Link, Message
-from rflx.session import Session, State
+from rflx.model import FINAL, INITIAL, Link, Message, Session, State
 from rflx.statement import Assignment
 
 log = logging.getLogger(__name__)

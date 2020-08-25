@@ -30,13 +30,13 @@ from rflx.model import (
     Model,
     Refinement,
     Scalar,
+    Session,
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
     is_builtin_type,
     qualified_type_name,
 )
-from rflx.session import Session
 
 from . import grammar
 from .ast import (
