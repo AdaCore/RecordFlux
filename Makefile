@@ -87,7 +87,7 @@ install_gnatstudio:
 	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
 
 clean:
-	rm -rf $(build-dir) .hypothesis .mypy_cache .pytest_cache
+	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
 
 remove-prefix = $(VERBOSE) \
 	mkdir -p $(dir $@) && \
