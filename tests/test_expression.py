@@ -1591,6 +1591,7 @@ def test_expr_str() -> None:
                        3))"""
         ),
     )
+    assert str(Equal(String("S"), Variable("X"))) == '"S" = X'
 
 
 def test_call_str() -> None:

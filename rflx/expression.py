@@ -1363,7 +1363,7 @@ class String(Aggregate):
 
     @property
     def precedence(self) -> Precedence:
-        raise NotImplementedError
+        return Precedence.literal
 
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
