@@ -1,9 +1,19 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from rflx.expression import FALSE, TRUE, Equal, Greater, Variable, VariableDeclaration
+from rflx.expression import (
+    FALSE,
+    TRUE,
+    Equal,
+    Greater,
+    Less,
+    Number,
+    Pow,
+    Variable,
+    VariableDeclaration,
+)
 from rflx.graph import Graph
-from rflx.model import FINAL, INITIAL, Field, Less, Link, Message, ModularInteger, Number, Pow
+from rflx.model import FINAL, INITIAL, Field, Link, Message, ModularInteger
 from rflx.session import ID, Session, State, Transition
 from rflx.statement import Assignment, Erase
 from tests.utils import BASE_TMP_DIR

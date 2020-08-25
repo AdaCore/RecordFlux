@@ -4,509 +4,15 @@ from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
+from rflx import expression as expr
 from rflx.common import Base, flat_name, indent, indent_next, verbose_repr
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
-from rflx.expression import (
-    TRUE,
-    UNDEFINED,
-    Add,
-    Aggregate,
-    And,
-    Attribute,
-    Equal,
-    Expr,
-    First,
-    Greater,
-    GreaterEqual,
-    Last,
-    Length,
-    Less,
-    LessEqual,
-    Mod,
-    Mul,
-    Not,
-    NotEqual,
-    Number,
-    Or,
-    Pow,
-    ProofResult,
-    Relation,
-    Sub,
-    ValidChecksum,
-    ValueRange,
-    Variable,
-)
 from rflx.identifier import ID, StrID
-from rflx.session import Session
 
-BUILTINS_PACKAGE = ID("__BUILTINS__")
-INTERNAL_PACKAGE = ID("__INTERNAL__")
-
-
-class Type(Base):
-    def __init__(
-        self, identifier: StrID, location: Location = None, error: RecordFluxError = None
-    ) -> None:
-        identifier = ID(identifier)
-        self.error = error or RecordFluxError()
-
-        if len(identifier.parts) != 2:
-            self.error.append(
-                f'unexpected format of type name "{identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                location,
-            )
-
-        self.identifier = identifier
-        self.location = location
-
-    @property
-    def full_name(self) -> str:
-        return str(self.identifier)
-
-    @property
-    def name(self) -> str:
-        return str(self.identifier.name)
-
-    @property
-    def package(self) -> ID:
-        return self.identifier.parent
-
-
-class Scalar(Type):
-    def __init__(self, identifier: StrID, size: Expr, location: Location = None) -> None:
-        super().__init__(identifier, location)
-        self._size = size
-
-    @property
-    def size(self) -> Number:
-        size_num = self._size.simplified()
-        assert isinstance(size_num, Number)
-        return size_num
-
-    @property
-    def size_expr(self) -> Expr:
-        return self._size
-
-    @abstractmethod
-    def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True
-    ) -> Sequence[Expr]:
-        raise NotImplementedError
-
-
-class Integer(Scalar):
-    @property
-    @abstractmethod
-    def first(self) -> Number:
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def last(self) -> Number:
-        raise NotImplementedError
-
-
-class ModularInteger(Integer):
-    def __init__(self, identifier: StrID, modulus: Expr, location: Location = None) -> None:
-        super().__init__(identifier, UNDEFINED, location)
-
-        modulus_num = modulus.simplified()
-
-        if not isinstance(modulus_num, Number):
-            self.error.append(
-                f'modulus of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-            return
-
-        modulus_int = int(modulus_num)
-
-        if modulus_int > 2 ** 64:
-            self.error.append(
-                f'modulus of "{self.name}" exceeds limit (2**64)',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                modulus.location,
-            )
-        if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
-            self.error.append(
-                f'modulus of "{self.name}" not power of two',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-
-        self.__modulus = modulus
-        self._size = Number((modulus_int - 1).bit_length())
-
-    def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier", "modulus"])
-
-    def __str__(self) -> str:
-        return f"type {self.name} is mod {self.modulus}"
-
-    @property
-    def modulus(self) -> Expr:
-        return self.__modulus
-
-    @property
-    def first(self) -> Number:
-        return Number(0)
-
-    @property
-    def last(self) -> Number:
-        modulus = self.modulus.simplified()
-        assert isinstance(modulus, Number)
-        return modulus - Number(1)
-
-    def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True
-    ) -> Sequence[Expr]:
-        if proof:
-            return [
-                Less(Variable(name), self.__modulus, location=self.location),
-                GreaterEqual(Variable(name), Number(0), location=self.location),
-                Equal(Length(name), self.size, location=self.location),
-            ]
-        return [TRUE]
-
-
-class RangeInteger(Integer):
-    def __init__(
-        self, identifier: StrID, first: Expr, last: Expr, size: Expr, location: Location = None
-    ) -> None:
-        super().__init__(identifier, size, location)
-
-        first_num = first.simplified()
-        last_num = last.simplified()
-        size_num = size.simplified()
-
-        if not isinstance(first_num, Number):
-            self.error.append(
-                f'first of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-
-        if not isinstance(last_num, Number):
-            self.error.append(
-                f'last of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-            return
-        if int(last_num) >= 2 ** 63:
-            self.error.append(
-                f'last of "{self.name}" exceeds limit (2**63 - 1)',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-
-        if not isinstance(size_num, Number):
-            self.error.append(
-                f'size of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-
-        if self.error.check():
-            return
-
-        assert isinstance(first_num, Number)
-        assert isinstance(last_num, Number)
-        assert isinstance(size_num, Number)
-
-        if first_num < Number(0):
-            self.error.append(
-                f'first of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
-            )
-        if first_num > last_num:
-            self.error.append(
-                f'range of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
-            )
-
-        if int(last_num).bit_length() > int(size_num):
-            self.error.append(
-                f'size of "{self.name}" too small', Subsystem.MODEL, Severity.ERROR, self.location,
-            )
-        if int(size_num) > 64:
-            self.error.append(
-                f'size of "{self.name}" exceeds limit (2**64)',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-
-        self.__first_expr = first
-        self.__first = first_num
-        self.__last_expr = last
-        self.__last = last_num
-
-    def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier", "first_expr", "last_expr", "size_expr"])
-
-    def __str__(self) -> str:
-        return (
-            f"type {self.name} is range {self.first_expr} .. {self.last_expr}"
-            f" with Size => {self.size_expr}"
-        )
-
-    @property
-    def first(self) -> Number:
-        return self.__first
-
-    @property
-    def first_expr(self) -> Expr:
-        return self.__first_expr
-
-    @property
-    def last(self) -> Number:
-        return self.__last
-
-    @property
-    def last_expr(self) -> Expr:
-        return self.__last_expr
-
-    def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True
-    ) -> Sequence[Expr]:
-        if proof:
-            return [
-                GreaterEqual(Variable(name), self.first, location=self.location),
-                LessEqual(Variable(name), self.last, location=self.location),
-                Equal(Length(name), self.size, location=self.location),
-            ]
-
-        if self.first.simplified() == self.last.simplified():
-            return [Equal(Variable(name), self.first)]
-
-        c: Expr = TRUE
-        if self.first.simplified() != self.base_first.simplified():
-            c = GreaterEqual(Variable(name), self.first)
-        if self.last.simplified() != self.base_last.simplified():
-            c = And(c, LessEqual(Variable(name), self.last))
-        return [c.simplified()]
-
-    @property
-    def base_first(self) -> Expr:
-        return Number(0)
-
-    @property
-    def base_last(self) -> Expr:
-        return Sub(Pow(Number(2), self.size), Number(1))
-
-
-class Enumeration(Scalar):
-    def __init__(
-        self,
-        identifier: StrID,
-        literals: Sequence[Tuple[StrID, Number]],
-        size: Expr,
-        always_valid: bool,
-        location: Location = None,
-    ) -> None:
-        # pylint: disable=too-many-branches, too-many-locals
-        super().__init__(identifier, size, location)
-
-        for i1, e1 in enumerate(literals):
-            for i2, e2 in enumerate(literals):
-                if i2 < i1 and e1[0] == e2[0]:
-                    self.error.append(
-                        f'duplicate literal "{e1[0]}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        e1[0].location if isinstance(e1[0], ID) else self.location,
-                    )
-                    self.error.append(
-                        "previous occurrence",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        e2[0].location if isinstance(e2[0], ID) else self.location,
-                    )
-
-        self.literals = {}
-        for k, v in literals:
-            if " " in str(k) or "." in str(k):
-                self.error.append(
-                    f'invalid literal name "{k}" in "{self.name}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
-                )
-                continue
-            self.literals[ID(k)] = v
-
-        size_num = size.simplified()
-
-        if not isinstance(size_num, Number):
-            self.error.append(
-                f'size of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-            return
-
-        if self.literals.values():
-            min_literal_value = min(map(int, self.literals.values()))
-            max_literal_value = max(map(int, self.literals.values()))
-            if min_literal_value < 0 or max_literal_value > 2 ** 63 - 1:
-                self.error.append(
-                    f'enumeration value of "{self.name}"'
-                    " outside of permitted range (0 .. 2**63 - 1)",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
-                )
-            if max_literal_value.bit_length() > int(size_num):
-                self.error.append(
-                    f'size of "{self.name}" too small',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
-                )
-        if int(size_num) > 64:
-            self.error.append(
-                f'size of "{self.name}" exceeds limit (2**64)',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-        for i1, v1 in enumerate(self.literals.values()):
-            for i2, v2 in enumerate(self.literals.values()):
-                if i1 < i2 and v1 == v2:
-                    self.error.append(
-                        f'duplicate enumeration value "{v1}" in "{self.name}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        v2.location,
-                    )
-                    self.error.append(
-                        "previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location
-                    )
-
-        if always_valid and len(self.literals) == 2 ** int(size_num):
-            self.error.append(
-                f'unnecessary always-valid aspect on "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-
-        self.always_valid = always_valid
-
-    def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier", "literals", "size_expr", "always_valid"])
-
-    def __str__(self) -> str:
-        literals = ", ".join(f"{l} => {v}" for l, v in self.literals.items())
-        always_valid = f", Always_Valid => {self.always_valid}" if self.always_valid else ""
-        return f"type {self.name} is ({literals}) with Size => {self.size_expr}{always_valid}"
-
-    def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True
-    ) -> Sequence[Expr]:
-        if proof:
-            prefixed_literals = {self.package * l: v for l, v in self.literals.items()}
-            if self.package == BUILTINS_PACKAGE:
-                literals = self.literals
-            elif same_package:
-                literals = {**self.literals, **prefixed_literals}
-            else:
-                literals = prefixed_literals
-            result: List[Expr] = [
-                Or(
-                    *[Equal(Variable(name), Variable(l), self.location) for l in literals],
-                    location=self.location,
-                )
-            ]
-            result.extend([Equal(Variable(l), v, self.location) for l, v in literals.items()])
-            result.append(Equal(Length(name), self.size, self.location))
-            return result
-        return [TRUE]
-
-
-class Composite(Type):
-    @property
-    @abstractmethod
-    def element_size(self) -> Expr:
-        raise NotImplementedError
-
-
-class Array(Composite):
-    def __init__(self, identifier: StrID, element_type: Type, location: Location = None) -> None:
-        super().__init__(identifier, location)
-        self.element_type = element_type
-
-        if not isinstance(element_type, Scalar) and not (
-            isinstance(element_type, Message) and element_type.structure
-        ):
-            self.error.append(
-                f'invalid element type of array "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                location,
-            )
-            self.error.append(
-                f'type "{element_type.name}" must be scalar or non-null message',
-                Subsystem.MODEL,
-                Severity.INFO,
-                element_type.location,
-            )
-
-        if isinstance(element_type, Scalar):
-            element_type_size = element_type.size.simplified()
-            if not isinstance(element_type_size, Number) or int(element_type_size) % 8 != 0:
-                self.error.append(
-                    f'unsupported element type size of array "{self.name}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    location,
-                )
-                self.error.append(
-                    f'type "{element_type.name}" has size {element_type_size},'
-                    r" must be multiple of 8",
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    element_type.location,
-                )
-
-    def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier", "element_type"])
-
-    def __str__(self) -> str:
-        return f"type {self.name} is array of {self.element_type.name}"
-
-    @property
-    def element_size(self) -> Expr:
-        return Length(self.element_type.name)
-
-
-class Opaque(Composite):
-    def __init__(self, location: Location = None) -> None:
-        super().__init__(INTERNAL_PACKAGE * "Opaque", location)
-
-    def __repr__(self) -> str:
-        return verbose_repr(self, [])
-
-    def __str__(self) -> str:
-        return ""
-
-    @property
-    def element_size(self) -> Expr:
-        return Number(8)
+from . import const, type_
 
 
 class Field(Base):
@@ -539,19 +45,19 @@ FINAL = Field("Final")
 class Link(Base):
     source: Field
     target: Field
-    condition: Expr = TRUE
-    length: Expr = UNDEFINED
-    first: Expr = UNDEFINED
+    condition: expr.Expr = expr.TRUE
+    length: expr.Expr = expr.UNDEFINED
+    first: expr.Expr = expr.UNDEFINED
     location: Optional[Location] = None
 
     def __str__(self) -> str:
         condition = indent_next(
-            f"\nif {indent_next(str(self.condition), 3)}" if self.condition != TRUE else "", 3
+            f"\nif {indent_next(str(self.condition), 3)}" if self.condition != expr.TRUE else "", 3
         )
         aspects = []
-        if self.length != UNDEFINED:
+        if self.length != expr.UNDEFINED:
             aspects.append(f"Length => {self.length}")
-        if self.first != UNDEFINED:
+        if self.first != expr.UNDEFINED:
             aspects.append(f"First => {self.first}")
         with_clause = indent_next("\nwith " + ", ".join(aspects) if aspects else "", 3)
         target_name = self.target.name if self.target != FINAL else "null"
@@ -574,7 +80,7 @@ class Link(Base):
 
 def valid_message_field_types(message: "AbstractMessage") -> bool:
     for t in message.types.values():
-        if not isinstance(t, (Scalar, Composite, AbstractMessage)):
+        if not isinstance(t, (type_.Scalar, type_.Composite, AbstractMessage)):
             return False
     return True
 
@@ -583,20 +89,20 @@ class MessageState(Base):
     fields: Optional[Tuple[Field, ...]] = ()
     paths: Mapping[Field, Set[Tuple[Link, ...]]] = {}
     definite_predecessors: Mapping[Field, Tuple[Field, ...]] = {}
-    field_condition: Mapping[Field, Expr] = {}
-    checksums: Mapping[ID, Sequence[Expr]] = {}
+    field_condition: Mapping[Field, expr.Expr] = {}
+    checksums: Mapping[ID, Sequence[expr.Expr]] = {}
 
 
 @invariant(lambda self: valid_message_field_types(self))
 @invariant(lambda self: not self.types if not self.structure else True)
-class AbstractMessage(Type):
+class AbstractMessage(type_.Type):
     # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
         structure: Sequence[Link],
-        types: Mapping[Field, Type],
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type],
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
@@ -644,9 +150,9 @@ class AbstractMessage(Type):
             outgoing = self.outgoing(f)
             if not (
                 len(outgoing) == 1
-                and outgoing[0].condition == TRUE
-                and outgoing[0].length == UNDEFINED
-                and outgoing[0].first == UNDEFINED
+                and outgoing[0].condition == expr.TRUE
+                and outgoing[0].length == expr.UNDEFINED
+                and outgoing[0].first == expr.UNDEFINED
             ):
                 if f == INITIAL:
                     fields += "null"
@@ -660,8 +166,8 @@ class AbstractMessage(Type):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "AbstractMessage":
@@ -686,16 +192,16 @@ class AbstractMessage(Type):
         return self._state.definite_predecessors[FINAL]
 
     @property
-    def types(self) -> Mapping[Field, Type]:
+    def types(self) -> Mapping[Field, type_.Type]:
         """Return fields and corresponding types topologically sorted."""
         return self.__types
 
     @property
-    def aspects(self) -> Mapping[ID, Mapping[ID, Sequence[Expr]]]:
+    def aspects(self) -> Mapping[ID, Mapping[ID, Sequence[expr.Expr]]]:
         return self.__aspects
 
     @property
-    def checksums(self) -> Mapping[ID, Sequence[Expr]]:
+    def checksums(self) -> Mapping[ID, Sequence[expr.Expr]]:
         return self._state.checksums or {}
 
     def incoming(self, field: Field) -> Sequence[Link]:
@@ -728,17 +234,17 @@ class AbstractMessage(Type):
         """Return preceding fields which are part of all possible paths."""
         return self._state.definite_predecessors[field]
 
-    def field_condition(self, field: Field) -> Expr:
+    def field_condition(self, field: Field) -> expr.Expr:
         return self._state.field_condition[field]
 
-    def field_size(self, field: Field) -> Expr:
+    def field_size(self, field: Field) -> expr.Expr:
         if field == FINAL:
-            return Number(0)
+            return expr.Number(0)
 
         assert field in self.fields, f'field "{field.name}" not found'
 
         field_type = self.types[field]
-        if isinstance(field_type, Scalar):
+        if isinstance(field_type, type_.Scalar):
             return field_type.size
 
         raise NotImplementedError
@@ -746,7 +252,7 @@ class AbstractMessage(Type):
     def prefixed(self, prefix: str) -> "AbstractMessage":
         fields = {f.identifier for f in self.fields}
 
-        def prefixed_expression(expression: Expr) -> Expr:
+        def prefixed_expression(expression: expr.Expr) -> expr.Expr:
             variables = {v.identifier for v in expression.variables()}
             literals = {l for l in variables - fields if len(l.parts) == 1}
 
@@ -760,7 +266,7 @@ class AbstractMessage(Type):
                     **{
                         v: v.__class__(f"{self.package}.{v.name}")
                         for v in expression.variables()
-                        if v.identifier in literals and v.identifier not in BUILTIN_LITERALS
+                        if v.identifier in literals and v.identifier not in type_.BUILTIN_LITERALS
                     },
                 }
             ).simplified()
@@ -780,17 +286,21 @@ class AbstractMessage(Type):
         return self.copy(structure=structure, types=types)
 
     def is_possibly_empty(self, field: Field) -> bool:
-        if isinstance(self.types[field], Scalar):
+        if isinstance(self.types[field], type_.Scalar):
             return False
 
         for p in self._state.paths[FINAL]:
             if not any(l.target == field for l in p):
                 continue
-            conditions = [l.condition for l in p if l.condition != TRUE]
-            lengths = [Equal(Length(l.target.name), l.length) for l in p if l.length != UNDEFINED]
-            empty_field = Equal(Length(field.name), Number(0))
+            conditions = [l.condition for l in p if l.condition != expr.TRUE]
+            lengths = [
+                expr.Equal(expr.Length(l.target.name), l.length)
+                for l in p
+                if l.length != expr.UNDEFINED
+            ]
+            empty_field = expr.Equal(expr.Length(field.name), expr.Number(0))
             proof = empty_field.check([*self.type_constraints(empty_field), *conditions, *lengths])
-            if proof.result == ProofResult.sat:
+            if proof.result == expr.ProofResult.sat:
                 return True
 
         return False
@@ -886,12 +396,12 @@ class AbstractMessage(Type):
                 )
 
         for l in self.structure:
-            exponentiations = And(l.condition, l.first, l.length).findall(
-                lambda x: isinstance(x, Pow)
+            exponentiations = expr.And(l.condition, l.first, l.length).findall(
+                lambda x: isinstance(x, expr.Pow)
             )
             for e in exponentiations:
-                assert isinstance(e, Pow)
-                variables = e.right.findall(lambda x: isinstance(x, Variable))
+                assert isinstance(e, expr.Pow)
+                variables = e.right.findall(lambda x: isinstance(x, expr.Variable))
                 if variables:
                     self.error.append(
                         f'unsupported expression in "{self.identifier}"',
@@ -926,8 +436,8 @@ class AbstractMessage(Type):
 
     def __check_vars(
         self,
-        expression: Expr,
-        state: Tuple[Set[ID], Dict[ID, Enumeration], Set[ID]],
+        expression: expr.Expr,
+        state: Tuple[Set[ID], Dict[ID, type_.Enumeration], Set[ID]],
         location: Location = None,
     ) -> None:
         variables, literals, seen = state
@@ -939,15 +449,15 @@ class AbstractMessage(Type):
                     message = f'undefined variable "{v}" referenced'
                 self.error.append(message, Subsystem.MODEL, Severity.ERROR, location or v.location)
 
-    def __check_attributes(self, expression: Expr, location: Location = None) -> None:
-        for a in expression.findall(lambda x: isinstance(x, Attribute)):
-            if isinstance(a, Length) and not (
-                isinstance(a.prefix, Variable)
+    def __check_attributes(self, expression: expr.Expr, location: Location = None) -> None:
+        for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
+            if isinstance(a, expr.Length) and not (
+                isinstance(a.prefix, expr.Variable)
                 and (
                     a.prefix.name == "Message"
                     or (
                         Field(a.prefix.name) in self.fields
-                        and isinstance(self.types[Field(a.prefix.name)], Composite)
+                        and isinstance(self.types[Field(a.prefix.name)], type_.Composite)
                     )
                 )
             ):
@@ -958,21 +468,22 @@ class AbstractMessage(Type):
                     location,
                 )
 
-    def __check_relations(self, expression: Expr, literals: Dict[ID, Enumeration]) -> None:
-
-        TypeExpr = Union[Type, Expr]
+    def __check_relations(
+        self, expression: expr.Expr, literals: Dict[ID, type_.Enumeration]
+    ) -> None:
+        TypeExpr = Union[type_.Type, expr.Expr]
 
         def check_composite_element_range(
-            relation: Relation, aggregate: Aggregate, composite: Composite
+            relation: expr.Relation, aggregate: expr.Aggregate, composite: type_.Composite
         ) -> None:
-            first: Expr
-            last: Expr
-            if isinstance(composite, Opaque):
-                first = Number(0)
-                last = Number(255)
+            first: expr.Expr
+            last: expr.Expr
+            if isinstance(composite, type_.Opaque):
+                first = expr.Number(0)
+                last = expr.Number(255)
 
-            if isinstance(composite, Array):
-                if not isinstance(composite.element_type, Integer):
+            if isinstance(composite, type_.Array):
+                if not isinstance(composite.element_type, type_.Integer):
                     self.error.append(
                         f'invalid array element type "{composite.element_type.identifier}"'
                         " for aggregate comparison",
@@ -993,7 +504,9 @@ class AbstractMessage(Type):
                         element.location,
                     )
 
-        def check_enumeration(relation: Relation, left: Enumeration, right: Enumeration) -> None:
+        def check_enumeration(
+            relation: expr.Relation, left: type_.Enumeration, right: type_.Enumeration
+        ) -> None:
             if left != right:
                 self.error.append(
                     "comparison of incompatible enumeration literals",
@@ -1011,7 +524,7 @@ class AbstractMessage(Type):
                     right.location,
                 )
 
-        def relation_error(relation: Relation, left: TypeExpr, right: TypeExpr) -> None:
+        def relation_error(relation: expr.Relation, left: TypeExpr, right: TypeExpr) -> None:
             self.error.append(
                 f'invalid relation "{relation.symbol}" between {left.__class__.__name__} '
                 f"and {right.__class__.__name__}",
@@ -1021,15 +534,15 @@ class AbstractMessage(Type):
             )
 
         def resolve_types(
-            left: Expr, right: Expr, literals: Dict[ID, Enumeration],
+            left: expr.Expr, right: expr.Expr, literals: Dict[ID, type_.Enumeration],
         ) -> Tuple[TypeExpr, TypeExpr]:
-            def resolve_type(expr: Expr) -> Optional[TypeExpr]:
-                if not isinstance(expr, Variable):
-                    return expr
-                if expr.identifier in literals:
-                    return literals[expr.identifier]
-                if Field(expr.name) in self.types:
-                    return self.types[Field(expr.name)]
+            def resolve_type(expression: expr.Expr) -> Optional[TypeExpr]:
+                if not isinstance(expression, expr.Variable):
+                    return expression
+                if expression.identifier in literals:
+                    return literals[expression.identifier]
+                if Field(expression.name) in self.types:
+                    return self.types[Field(expression.name)]
                 return None
 
             lefttype = resolve_type(left)
@@ -1041,37 +554,43 @@ class AbstractMessage(Type):
 
         def invalid_relation(left: TypeExpr, right: TypeExpr) -> bool:
             return (
-                (isinstance(left, Opaque) and not isinstance(right, (Opaque, Aggregate)))
-                or (isinstance(left, Array) and not isinstance(right, (Array, Aggregate)))
-                or (isinstance(left, Aggregate) and not isinstance(right, Composite))
+                (
+                    isinstance(left, type_.Opaque)
+                    and not isinstance(right, (type_.Opaque, expr.Aggregate))
+                )
+                or (
+                    isinstance(left, type_.Array)
+                    and not isinstance(right, (type_.Array, expr.Aggregate))
+                )
+                or (isinstance(left, expr.Aggregate) and not isinstance(right, type_.Composite))
             )
 
-        for relation in expression.findall(lambda x: isinstance(x, Relation)):
-            assert isinstance(relation, Relation)
+        for relation in expression.findall(lambda x: isinstance(x, expr.Relation)):
+            assert isinstance(relation, expr.Relation)
             left, right = resolve_types(
                 relation.left.simplified(), relation.right.simplified(), literals
             )
-            if isinstance(relation, (Less, LessEqual, Greater, GreaterEqual)):
-                if (isinstance(left, Aggregate) and isinstance(right, Type)) or (
-                    isinstance(right, Aggregate) and isinstance(left, Type)
+            if isinstance(relation, (expr.Less, expr.LessEqual, expr.Greater, expr.GreaterEqual)):
+                if (isinstance(left, expr.Aggregate) and isinstance(right, type_.Type)) or (
+                    isinstance(right, expr.Aggregate) and isinstance(left, type_.Type)
                 ):
                     relation_error(relation, left, right)
-            elif isinstance(relation, (Equal, NotEqual)):
+            elif isinstance(relation, (expr.Equal, expr.NotEqual)):
                 if invalid_relation(left, right):
                     relation_error(relation, left, right)
                 elif invalid_relation(left=right, right=left):
                     relation_error(relation, left=right, right=left)
-                elif isinstance(left, Aggregate) and isinstance(right, Composite):
+                elif isinstance(left, expr.Aggregate) and isinstance(right, type_.Composite):
                     check_composite_element_range(relation, left, right)
-                elif isinstance(left, Composite) and isinstance(right, Aggregate):
+                elif isinstance(left, type_.Composite) and isinstance(right, expr.Aggregate):
                     check_composite_element_range(relation, right, left)
-                elif isinstance(left, Enumeration) and isinstance(right, Enumeration):
+                elif isinstance(left, type_.Enumeration) and isinstance(right, type_.Enumeration):
                     check_enumeration(relation, left, right)
             else:
                 assert False, f'unexpected relation type "{type(relation).__name__}"'
 
     def __check_first_expression(self, link: Link, location: Location = None) -> None:
-        if link.first != UNDEFINED and not isinstance(link.first, First):
+        if link.first != expr.UNDEFINED and not isinstance(link.first, expr.First):
             self.error.append(
                 f'invalid First for field "{link.target.name}"',
                 Subsystem.MODEL,
@@ -1080,7 +599,7 @@ class AbstractMessage(Type):
             )
 
     def __check_length_expression(self, link: Link) -> None:
-        if link.target == FINAL and link.length != UNDEFINED:
+        if link.target == FINAL and link.length != expr.UNDEFINED:
             self.error.append(
                 f'length attribute for final field in "{self.identifier}"',
                 Subsystem.MODEL,
@@ -1089,15 +608,15 @@ class AbstractMessage(Type):
             )
         if link.target != FINAL and link.target in self.types:
             t = self.types[link.target]
-            unconstrained = isinstance(t, (Opaque, Array))
-            if not unconstrained and link.length != UNDEFINED:
+            unconstrained = isinstance(t, (type_.Opaque, type_.Array))
+            if not unconstrained and link.length != expr.UNDEFINED:
                 self.error.append(
                     f'fixed size field "{link.target.name}" with length expression',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     link.target.identifier.location,
                 )
-            if unconstrained and link.length == UNDEFINED:
+            if unconstrained and link.length == expr.UNDEFINED:
                 self.error.append(
                     f'unconstrained field "{link.target.name}" without length expression',
                     Subsystem.MODEL,
@@ -1105,14 +624,16 @@ class AbstractMessage(Type):
                     link.target.identifier.location,
                 )
 
-    def type_constraints(self, expr: Expr) -> Sequence[Expr]:
-        def get_constraints(aggregate: Aggregate, field: Variable) -> Sequence[Expr]:
+    def type_constraints(self, expression: expr.Expr) -> Sequence[expr.Expr]:
+        def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
             comp = self.types[Field(field.name)]
-            assert isinstance(comp, Composite)
-            result = Equal(
-                Mul(aggregate.length, comp.element_size), Length(field), location=expr.location
+            assert isinstance(comp, type_.Composite)
+            result = expr.Equal(
+                expr.Mul(aggregate.length, comp.element_size),
+                expr.Length(field),
+                location=expression.location,
             )
-            if isinstance(comp, Array) and isinstance(comp.element_type, Scalar):
+            if isinstance(comp, type_.Array) and isinstance(comp.element_type, type_.Scalar):
                 return [
                     result,
                     *comp.element_type.constraints(name=comp.element_type.name, proof=True),
@@ -1123,22 +644,22 @@ class AbstractMessage(Type):
         scalar_types = [
             (f.name, t)
             for f, t in self.types.items()
-            if isinstance(t, Scalar)
+            if isinstance(t, type_.Scalar)
             and ID(f.name) not in literals
             and f.name not in ["Message", "Final"]
         ]
 
-        aggregate_constraints: List[Expr] = []
-        for r in expr.findall(lambda x: isinstance(x, (Equal, NotEqual))):
-            assert isinstance(r, (Equal, NotEqual))
-            if isinstance(r.left, Aggregate) and isinstance(r.right, Variable):
+        aggregate_constraints: List[expr.Expr] = []
+        for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
+            assert isinstance(r, (expr.Equal, expr.NotEqual))
+            if isinstance(r.left, expr.Aggregate) and isinstance(r.right, expr.Variable):
                 aggregate_constraints.extend(get_constraints(r.left, r.right))
-            if isinstance(r.left, Variable) and isinstance(r.right, Aggregate):
+            if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
                 aggregate_constraints.extend(get_constraints(r.right, r.left))
 
-        message_constraints: List[Expr] = [
-            Equal(Mod(First("Message"), Number(8)), Number(1)),
-            Equal(Mod(Length("Message"), Number(8)), Number(0)),
+        message_constraints: List[expr.Expr] = [
+            expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
+            expr.Equal(expr.Mod(expr.Length("Message"), expr.Number(8)), expr.Number(0)),
         ]
 
         scalar_constraints = [
@@ -1150,19 +671,19 @@ class AbstractMessage(Type):
         return [*message_constraints, *aggregate_constraints, *scalar_constraints]
 
     def _verify_checksums(self) -> None:
-        def valid_lower(expression: Expr) -> bool:
-            return isinstance(expression, First) or (
-                isinstance(expression, Add)
+        def valid_lower(expression: expr.Expr) -> bool:
+            return isinstance(expression, expr.First) or (
+                isinstance(expression, expr.Add)
                 and len(expression.terms) == 2
-                and isinstance(expression.terms[0], Last)
-                and expression.terms[1] == Number(1)
+                and isinstance(expression.terms[0], expr.Last)
+                and expression.terms[1] == expr.Number(1)
             )
 
-        def valid_upper(expression: Expr) -> bool:
-            return isinstance(expression, Last) or (
-                isinstance(expression, Sub)
-                and isinstance(expression.left, First)
-                and expression.right == Number(1)
+        def valid_upper(expression: expr.Expr) -> bool:
+            return isinstance(expression, expr.Last) or (
+                isinstance(expression, expr.Sub)
+                and isinstance(expression.left, expr.First)
+                and expression.right == expr.Number(1)
             )
 
         for name, expressions in self.checksums.items():  # pylint: disable=too-many-nested-blocks
@@ -1176,8 +697,12 @@ class AbstractMessage(Type):
 
             for e in expressions:
                 if not (
-                    isinstance(e, (Variable, Length))
-                    or (isinstance(e, ValueRange) and valid_lower(e.lower) and valid_upper(e.upper))
+                    isinstance(e, (expr.Variable, expr.Length))
+                    or (
+                        isinstance(e, expr.ValueRange)
+                        and valid_lower(e.lower)
+                        and valid_upper(e.upper)
+                    )
                 ):
                     self.error.append(
                         f'unsupported expression "{e}" in definition of checksum "{name}"',
@@ -1186,8 +711,8 @@ class AbstractMessage(Type):
                         e.location,
                     )
 
-                for v in e.findall(lambda x: isinstance(x, Variable)):
-                    assert isinstance(v, Variable)
+                for v in e.findall(lambda x: isinstance(x, expr.Variable)):
+                    assert isinstance(v, expr.Variable)
 
                     if Field(v.name) not in self.fields:
                         self.error.append(
@@ -1198,12 +723,12 @@ class AbstractMessage(Type):
                             v.location,
                         )
 
-                if isinstance(e, ValueRange):
-                    lower = e.lower.findall(lambda x: isinstance(x, Variable))[0]
-                    upper = e.upper.findall(lambda x: isinstance(x, Variable))[0]
+                if isinstance(e, expr.ValueRange):
+                    lower = e.lower.findall(lambda x: isinstance(x, expr.Variable))[0]
+                    upper = e.upper.findall(lambda x: isinstance(x, expr.Variable))[0]
 
-                    assert isinstance(lower, Variable)
-                    assert isinstance(upper, Variable)
+                    assert isinstance(lower, expr.Variable)
+                    assert isinstance(upper, expr.Variable)
 
                     if lower != upper:
                         upper_field = (
@@ -1223,8 +748,10 @@ class AbstractMessage(Type):
 
         checked = {
             e.prefix.identifier
-            for e in self.field_condition(FINAL).findall(lambda x: isinstance(x, ValidChecksum))
-            if isinstance(e, ValidChecksum) and isinstance(e.prefix, Variable)
+            for e in self.field_condition(FINAL).findall(
+                lambda x: isinstance(x, expr.ValidChecksum)
+            )
+            if isinstance(e, expr.ValidChecksum) and isinstance(e.prefix, expr.Variable)
         }
         for name in set(self.checksums) - checked:
             self.error.append(
@@ -1246,9 +773,9 @@ class AbstractMessage(Type):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
                     if i1 < i2:
-                        conflict = And(c1.condition, c2.condition)
+                        conflict = expr.And(c1.condition, c2.condition)
                         proof = conflict.check(self.type_constraints(conflict))
-                        if proof.result == ProofResult.sat:
+                        if proof.result == expr.ProofResult.sat:
                             c1_message = str(c1.condition).replace("\n", " ")
                             c2_message = str(c2.condition).replace("\n", " ")
                             self.error.append(
@@ -1297,10 +824,10 @@ class AbstractMessage(Type):
                 outgoing = self.outgoing(f)
                 if f != FINAL and outgoing:
                     facts.append(
-                        Or(*[o.condition for o in outgoing], location=f.identifier.location)
+                        expr.Or(*[o.condition for o in outgoing], location=f.identifier.location)
                     )
-                proof = TRUE.check(facts)
-                if proof.result == ProofResult.sat:
+                proof = expr.TRUE.check(facts)
+                if proof.result == expr.ProofResult.sat:
                     break
 
                 paths.append((path, proof.error))
@@ -1336,7 +863,7 @@ class AbstractMessage(Type):
                     contradiction = c.condition
                     constraints = self.type_constraints(contradiction)
                     proof = contradiction.check([*constraints, *facts])
-                    if proof.result == ProofResult.sat:
+                    if proof.result == expr.ProofResult.sat:
                         continue
 
                     contradictions.append((path, c.condition, proof.error))
@@ -1368,40 +895,40 @@ class AbstractMessage(Type):
                     )
 
     @staticmethod
-    def __target_first(link: Link) -> Expr:
+    def __target_first(link: Link) -> expr.Expr:
         if link.source == INITIAL:
-            return First("Message")
-        if link.first != UNDEFINED:
+            return expr.First("Message")
+        if link.first != expr.UNDEFINED:
             return link.first
-        return Add(Last(link.source.name), Number(1), location=link.location)
+        return expr.Add(expr.Last(link.source.name), expr.Number(1), location=link.location)
 
-    def __target_length(self, link: Link) -> Expr:
-        if link.length != UNDEFINED:
+    def __target_length(self, link: Link) -> expr.Expr:
+        if link.length != expr.UNDEFINED:
             return link.length
         return self.field_size(link.target)
 
-    def __target_last(self, link: Link) -> Expr:
-        return Sub(
-            Add(self.__target_first(link), self.__target_length(link)),
-            Number(1),
+    def __target_last(self, link: Link) -> expr.Expr:
+        return expr.Sub(
+            expr.Add(self.__target_first(link), self.__target_length(link)),
+            expr.Number(1),
             link.target.identifier.location,
         )
 
-    def __link_expression(self, link: Link) -> Sequence[Expr]:
+    def __link_expression(self, link: Link) -> Sequence[expr.Expr]:
         name = link.target.name
         target_first = self.__target_first(link)
         target_length = self.__target_length(link)
         target_last = self.__target_last(link)
         return [
-            Equal(First(name), target_first, target_first.location or self.location),
-            Equal(Length(name), target_length, target_length.location or self.location),
-            Equal(Last(name), target_last, target_last.location or self.location),
-            GreaterEqual(First("Message"), Number(0), self.location),
-            GreaterEqual(Last("Message"), Last(name), self.location),
-            GreaterEqual(Last("Message"), First("Message"), self.location),
-            Equal(
-                Length("Message"),
-                Add(Sub(Last("Message"), First("Message")), Number(1)),
+            expr.Equal(expr.First(name), target_first, target_first.location or self.location),
+            expr.Equal(expr.Length(name), target_length, target_length.location or self.location),
+            expr.Equal(expr.Last(name), target_last, target_last.location or self.location),
+            expr.GreaterEqual(expr.First("Message"), expr.Number(0), self.location),
+            expr.GreaterEqual(expr.Last("Message"), expr.Last(name), self.location),
+            expr.GreaterEqual(expr.Last("Message"), expr.First("Message"), self.location),
+            expr.Equal(
+                expr.Length("Message"),
+                expr.Add(expr.Sub(expr.Last("Message"), expr.First("Message")), expr.Number(1)),
                 self.location,
             ),
             *expression_list(link.condition),
@@ -1412,28 +939,32 @@ class AbstractMessage(Type):
             for path in self._state.paths[f]:
 
                 last = path[-1]
-                negative = Less(self.__target_length(last), Number(0), last.length.location)
-                start = GreaterEqual(self.__target_first(last), First("Message"), last.location)
+                negative = expr.Less(
+                    self.__target_length(last), expr.Number(0), last.length.location
+                )
+                start = expr.GreaterEqual(
+                    self.__target_first(last), expr.First("Message"), last.location
+                )
 
                 facts = [fact for link in path for fact in self.__link_expression(link)]
 
                 outgoing = self.outgoing(f)
                 if f != FINAL and outgoing:
                     facts.append(
-                        Or(*[o.condition for o in outgoing], location=f.identifier.location)
+                        expr.Or(*[o.condition for o in outgoing], location=f.identifier.location)
                     )
 
                 facts.extend(self.type_constraints(negative))
                 facts.extend(self.type_constraints(start))
 
-                proof = TRUE.check(facts)
+                proof = expr.TRUE.check(facts)
 
                 # Only check positions of reachable paths
-                if proof.result != ProofResult.sat:
+                if proof.result != expr.ProofResult.sat:
                     continue
 
                 proof = negative.check(facts)
-                if proof.result != ProofResult.unsat:
+                if proof.result != expr.ProofResult.unsat:
                     path_message = " -> ".join([l.target.name for l in path])
                     self.error.append(
                         f'negative length for field "{f.name}" ({path_message})',
@@ -1444,7 +975,7 @@ class AbstractMessage(Type):
                     return
 
                 proof = start.check(facts)
-                if proof.result != ProofResult.sat:
+                if proof.result != expr.ProofResult.sat:
                     path_message = " -> ".join([last.target.name for last in path])
                     self.error.append(
                         f'negative start for field "{f.name}" ({path_message})',
@@ -1462,16 +993,18 @@ class AbstractMessage(Type):
 
                 if f in self.__types:
                     t = self.__types[f]
-                    if not isinstance(t, Opaque):
+                    if not isinstance(t, type_.Opaque):
                         continue
                     element_size = t.element_size
-                    start_aligned = Not(
-                        Equal(
-                            Mod(self.__target_first(last), element_size), Number(1), last.location
+                    start_aligned = expr.Not(
+                        expr.Equal(
+                            expr.Mod(self.__target_first(last), element_size),
+                            expr.Number(1),
+                            last.location,
                         )
                     )
                     proof = start_aligned.check([*facts, *self.type_constraints(start_aligned)])
-                    if proof.result != ProofResult.unsat:
+                    if proof.result != expr.ProofResult.unsat:
                         path_message = " -> ".join([p.target.name for p in path])
                         self.error.append(
                             f'opaque field "{f.name}" not aligned to {element_size} bit boundary'
@@ -1482,15 +1015,17 @@ class AbstractMessage(Type):
                         )
                         return
 
-                    length_multiple_element_size = Not(
-                        Equal(
-                            Mod(self.__target_length(last), element_size), Number(0), last.location
+                    length_multiple_element_size = expr.Not(
+                        expr.Equal(
+                            expr.Mod(self.__target_length(last), element_size),
+                            expr.Number(0),
+                            last.location,
                         )
                     )
                     proof = length_multiple_element_size.check(
                         [*facts, *self.type_constraints(length_multiple_element_size)]
                     )
-                    if proof.result != ProofResult.unsat:
+                    if proof.result != expr.ProofResult.unsat:
                         path_message = " -> ".join([p.target.name for p in path])
                         self.error.append(
                             f'length of opaque field "{f.name}" not multiple of {element_size} bit'
@@ -1515,20 +1050,20 @@ class AbstractMessage(Type):
         """
         for path in [p[:-1] for p in self._state.paths[FINAL] if p]:
 
-            facts: Sequence[Expr]
+            facts: Sequence[expr.Expr]
 
             # Calculate (1)
             facts = [
-                GreaterEqual(Variable("f"), First("Message")),
-                LessEqual(Variable("f"), Last("Message")),
+                expr.GreaterEqual(expr.Variable("f"), expr.First("Message")),
+                expr.LessEqual(expr.Variable("f"), expr.Last("Message")),
             ]
             # Calculate (2) for all fields
             facts.extend(
                 [
-                    Not(
-                        And(
-                            GreaterEqual(Variable("f"), self.__target_first(l)),
-                            LessEqual(Variable("f"), self.__target_last(l)),
+                    expr.Not(
+                        expr.And(
+                            expr.GreaterEqual(expr.Variable("f"), self.__target_first(l)),
+                            expr.LessEqual(expr.Variable("f"), self.__target_last(l)),
                             location=l.location,
                         )
                     )
@@ -1537,14 +1072,16 @@ class AbstractMessage(Type):
             )
 
             # Define that the end of the last field of a path is the end of the message
-            facts.append(Equal(self.__target_last(path[-1]), Last("Message"), self.location))
+            facts.append(
+                expr.Equal(self.__target_last(path[-1]), expr.Last("Message"), self.location)
+            )
 
             # Constraints for links and types
             facts.extend([f for l in path for f in self.__link_expression(l)])
 
             # Coverage expression must be False, i.e. no bits left
-            proof = TRUE.check(facts)
-            if proof.result == ProofResult.sat:
+            proof = expr.TRUE.check(facts)
+            if proof.result == expr.ProofResult.sat:
                 self.error.append(
                     "path does not cover whole message",
                     Subsystem.MODEL,
@@ -1567,11 +1104,13 @@ class AbstractMessage(Type):
     def __prove_overlays(self) -> None:
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self._state.paths[f] if p]:
-                if l.first != UNDEFINED and isinstance(l.first, First):
+                if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
                     facts = [f for l in p for f in self.__link_expression(l)]
-                    overlaid = Equal(self.__target_last(l), Last(l.first.prefix), l.location)
+                    overlaid = expr.Equal(
+                        self.__target_last(l), expr.Last(l.first.prefix), l.location
+                    )
                     proof = overlaid.check(facts)
-                    if proof.result != ProofResult.sat:
+                    if proof.result != expr.ProofResult.sat:
                         self.error.append(
                             f'field "{f.name}" not congruent with'
                             f' overlaid field "{l.first.prefix}"',
@@ -1633,12 +1172,12 @@ class AbstractMessage(Type):
             if all(any(f == pf.source for pf in p) for p in self._state.paths[final])
         )
 
-    def __compute_field_condition(self, final: Field) -> Expr:
+    def __compute_field_condition(self, final: Field) -> expr.Expr:
         if final == INITIAL:
-            return TRUE
-        return Or(
+            return expr.TRUE
+        return expr.Or(
             *[
-                And(self.__compute_field_condition(l.source), l.condition)
+                expr.And(self.__compute_field_condition(l.source), l.condition)
                 for l in self.incoming(final)
             ],
             location=final.identifier.location,
@@ -1651,8 +1190,8 @@ class Message(AbstractMessage):
         self,
         identifier: StrID,
         structure: Sequence[Link],
-        types: Mapping[Field, Type],
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type],
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
@@ -1671,8 +1210,8 @@ class Message(AbstractMessage):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "Message":
@@ -1696,8 +1235,8 @@ class DerivedMessage(Message):
         identifier: StrID,
         base: AbstractMessage,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -1716,8 +1255,8 @@ class DerivedMessage(Message):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "DerivedMessage":
@@ -1741,8 +1280,8 @@ class UnprovenMessage(AbstractMessage):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "UnprovenMessage":
@@ -1769,8 +1308,8 @@ class UnprovenMessage(AbstractMessage):
     @ensure(lambda result: valid_message_field_types(result))
     def merged(self) -> "UnprovenMessage":
         def prune_dangling_fields(
-            structure: List[Link], types: Dict[Field, Type]
-        ) -> Tuple[List[Link], Dict[Field, Type]]:
+            structure: List[Link], types: Dict[Field, type_.Type]
+        ) -> Tuple[List[Link], Dict[Field, type_.Type]]:
             dangling = []
             progress = True
             while progress:
@@ -1842,14 +1381,14 @@ class UnprovenMessage(AbstractMessage):
                     )
                 elif link.source == field:
                     for final_link in inner_message.incoming(FINAL):
-                        merged_condition = And(link.condition, final_link.condition)
+                        merged_condition = expr.And(link.condition, final_link.condition)
                         proof = merged_condition.check(
                             [
                                 *inner_message.type_constraints(merged_condition),
                                 inner_message.field_condition(final_link.source),
                             ]
                         )
-                        if proof.result != ProofResult.unsat:
+                        if proof.result != expr.ProofResult.unsat:
                             structure.append(
                                 Link(
                                     final_link.source,
@@ -1893,8 +1432,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
         identifier: StrID,
         base: AbstractMessage,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -1914,8 +1453,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+        types: Mapping[Field, type_.Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "UnprovenDerivedMessage":
@@ -1941,7 +1480,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         )
 
 
-class Refinement(Type):
+class Refinement(type_.Type):
     # pylint: disable=too-many-arguments
     def __init__(
         self,
@@ -1949,7 +1488,7 @@ class Refinement(Type):
         pdu: Message,
         field: Field,
         sdu: Message,
-        condition: Expr = TRUE,
+        condition: expr.Expr = expr.TRUE,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -1973,7 +1512,7 @@ class Refinement(Type):
 
         for f, t in pdu.types.items():
             if f == field:
-                if not isinstance(t, Opaque):
+                if not isinstance(t, type_.Opaque):
                     self.error.append(
                         f'invalid type of field "{field.name}" in refinement of "{pdu.identifier}"',
                         Subsystem.MODEL,
@@ -2001,7 +1540,7 @@ class Refinement(Type):
         self.condition = condition
 
     def __str__(self) -> str:
-        condition = f"\n   if {self.condition}" if self.condition != TRUE else ""
+        condition = f"\n   if {self.condition}" if self.condition != expr.TRUE else ""
         return f"for {self.pdu.name} use ({self.field.name} => {self.sdu.name}){condition}"
 
     def __eq__(self, other: object) -> bool:
@@ -2015,150 +1554,23 @@ class Refinement(Type):
         return NotImplemented
 
 
-class Model(Base):
-    def __init__(self, types: Sequence[Type], sessions: Sequence[Session] = None) -> None:
-        self.types = types
-        self.sessions = sessions or []
-        self.__check_types()
-
-    def __repr__(self) -> str:
-        return verbose_repr(self, ["types"])
-
-    def __str__(self) -> str:
-        return "\n\n".join(
-            f"{t};"
-            for t in self.types
-            if not is_builtin_type(t.name) and not is_internal_type(t.name)
-        )
-
-    @property
-    def messages(self) -> Sequence[Message]:
-        return [m for m in self.types if isinstance(m, Message)]
-
-    @property
-    def refinements(self) -> Sequence[Refinement]:
-        return [m for m in self.types if isinstance(m, Refinement)]
-
-    def __check_types(self) -> None:
-        error = RecordFluxError()
-        for e1, e2 in [
-            (e1, e2)
-            for i1, e1 in enumerate(self.types)
-            for i2, e2 in enumerate(self.types)
-            if (
-                isinstance(e1, Enumeration)
-                and isinstance(e2, Enumeration)
-                and i1 < i2
-                and (
-                    e1.package == e2.package
-                    or e1.package == BUILTINS_PACKAGE
-                    or e2.package == BUILTINS_PACKAGE
-                )
-            )
-        ]:
-            identical_literals = set(e2.literals) & set(e1.literals)
-
-            if identical_literals:
-                literals_message = ", ".join([f"{l}" for l in sorted(identical_literals)])
-                error.append(
-                    f"conflicting literals: {literals_message}",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    e2.location,
-                )
-                error.extend(
-                    [
-                        (
-                            f'previous occurrence of "{l}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            l.location,
-                        )
-                        for l in sorted(identical_literals)
-                    ]
-                )
-
-        literals = {l: t for t in self.types if isinstance(t, Enumeration) for l in t.literals}
-        type_set = {t.identifier.name for t in self.types}
-        name_conflicts = [n for n in literals.keys() if n in type_set]
-        for name in sorted(name_conflicts):
-            error.append(
-                f'literal conflicts with type "{name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                name.location,
-            )
-            type_location = [t.location for t in self.types if t.identifier.name == name][0]
-            error.append(
-                "conflicting type declaration", Subsystem.MODEL, Severity.INFO, type_location,
-            )
-
-        error.propagate()
-
-
-def qualified_literals(types: Mapping[Field, Type], package: ID) -> Dict[ID, Enumeration]:
+def qualified_literals(
+    types: Mapping[Field, type_.Type], package: ID
+) -> Dict[ID, type_.Enumeration]:
     literals = {}
 
     for t in types.values():
-        if isinstance(t, Enumeration):
+        if isinstance(t, type_.Enumeration):
             for l in t.literals:
-                if t.package == BUILTINS_PACKAGE or t.package == package:
+                if t.package == const.BUILTINS_PACKAGE or t.package == package:
                     literals[l] = t
-                if t.package != BUILTINS_PACKAGE:
+                if t.package != const.BUILTINS_PACKAGE:
                     literals[t.package * l] = t
 
     return literals
 
 
-def qualified_type_name(name: ID, package: ID) -> ID:
-
-    if is_builtin_type(name):
-        return BUILTINS_PACKAGE * name
-
-    if is_internal_type(name):
-        return INTERNAL_PACKAGE * name
-
-    if len(name.parts) == 1:
-        return package * name
-
-    return name
-
-
-OPAQUE = Opaque(location=Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0)))
-
-INTERNAL_TYPES = {
-    OPAQUE.identifier: OPAQUE,
-}
-
-BOOLEAN = Enumeration(
-    BUILTINS_PACKAGE * "Boolean",
-    [
-        (ID("False", Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0))), Number(0)),
-        (ID("True", Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0))), Number(1)),
-    ],
-    Number(1),
-    False,
-    Location((0, 0), Path(str(BUILTINS_PACKAGE)), (0, 0)),
-)
-
-BUILTIN_TYPES = {
-    BOOLEAN.identifier: BOOLEAN,
-}
-
-BUILTIN_LITERALS = {l for t in BUILTIN_TYPES.values() for l in t.literals}
-
-
-def is_internal_type(name: StrID) -> bool:
-    return ID(name) in INTERNAL_TYPES or any(
-        ID(name) == ID(t.name) for t in INTERNAL_TYPES.values()
-    )
-
-
-def is_builtin_type(name: StrID) -> bool:
-    return ID(name) in BUILTIN_TYPES or any(ID(name) == ID(t.name) for t in BUILTIN_TYPES.values())
-
-
-def expression_list(expr: Expr) -> Sequence[Expr]:
-    if isinstance(expr, And):
-        return expr.terms
-    return [expr]
+def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:
+    if isinstance(expression, expr.And):
+        return expression.terms
+    return [expression]

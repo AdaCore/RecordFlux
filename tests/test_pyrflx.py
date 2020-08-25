@@ -6,7 +6,18 @@ from typing import List
 
 import pytest
 
-from rflx.expression import Add, And, First, Last, Length, Sub, ValidChecksum, ValueRange, Variable
+from rflx.expression import (
+    Add,
+    And,
+    First,
+    Last,
+    Length,
+    Number,
+    Sub,
+    ValidChecksum,
+    ValueRange,
+    Variable,
+)
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -17,7 +28,6 @@ from rflx.model import (
     Link,
     Message,
     ModularInteger,
-    Number,
     Opaque,
     RangeInteger,
     Type,
