@@ -842,8 +842,10 @@ class MessageValue(TypeValue):
         if checksum_calculation:
             self._preset_fields(field_name)
             for checksum in self._checksums.values():
-                if self._is_checksum_settable(checksum):
-                    self._calculate_checksum(checksum)
+                if not self._fields[checksum.field_name].set and self._is_checksum_settable(
+                    checksum
+                ):
+                    self._set_checksum(checksum)
 
     def _preset_fields(self, fld: str) -> None:
         assert not self._skip_verification
@@ -921,7 +923,7 @@ class MessageValue(TypeValue):
                 upper_field_name = "Final"
             while field != upper_field_name:
                 field = self._next_field(field)
-                if field == "Final":
+                if field == "Final" or field in self._checksums:
                     continue
                 if field == "" or not self._fields[field].set:
                     break
@@ -936,8 +938,8 @@ class MessageValue(TypeValue):
                 isinstance(expr_tuple.evaluated_expression, ValueRange)
                 and isinstance(expr_tuple.expression, ValueRange)
                 and (
-                    not isinstance(expr_tuple.evaluated_expression.lower, Number)
-                    or not isinstance(expr_tuple.evaluated_expression.upper, Number)
+                    not isinstance(expr_tuple.evaluated_expression.lower.simplified(), Number)
+                    or not isinstance(expr_tuple.evaluated_expression.upper.simplified(), Number)
                     or not valid_path(expr_tuple.expression)
                 )
             ):
@@ -954,7 +956,14 @@ class MessageValue(TypeValue):
                 return False
         return True
 
-    def _calculate_checksum(self, checksum: "MessageValue.Checksum") -> None:
+    def _set_checksum(self, checksum: "MessageValue.Checksum") -> None:
+        self._fields[checksum.field_name].typeval.assign(0)
+        checksum_value = self._calculate_checksum(checksum)
+        self.set(checksum.field_name, checksum_value, False)
+
+    def _calculate_checksum(
+        self, checksum: "MessageValue.Checksum"
+    ) -> Union[bytes, int, str, Sequence[TypeValue], Bitstring]:
         if not checksum.function:
             raise AttributeError(
                 f"cannot calculate checksum for {checksum.field_name}: "
@@ -982,12 +991,7 @@ class MessageValue(TypeValue):
             else:
                 assert isinstance(expr_tuple.evaluated_expression, Number)
                 arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.value
-
-        self.set(
-            checksum.field_name,
-            checksum.function(self.bytestring, **arguments),
-            checksum_calculation=False,
-        )
+        return checksum.function(self.bytestring, **arguments)
 
     def get(self, field_name: str) -> Union["MessageValue", Sequence[TypeValue], int, str, bytes]:
         if field_name not in self.valid_fields:
@@ -1075,7 +1079,15 @@ class MessageValue(TypeValue):
 
     @property
     def valid_message(self) -> bool:
-        return bool(self.valid_fields) and self._next_field(self.valid_fields[-1]) == FINAL.name
+        return (
+            bool(self.valid_fields)
+            and self._next_field(self.valid_fields[-1]) == FINAL.name
+            and all(
+                self._is_checksum_settable(checksum)
+                and self._calculate_checksum(checksum) == self.get(checksum.field_name)
+                for checksum in self._checksums.values()
+            )
+        )
 
     def __update_simplified_mapping(self, field: Optional[Field] = None) -> None:
         if field:
@@ -1088,13 +1100,14 @@ class MessageValue(TypeValue):
 
         self._simplified_mapping = {}
         for v in self._fields.values():
-            if not v.set:
-                continue
-            if isinstance(v.typeval, ScalarValue):
+            if isinstance(v.typeval, ScalarValue) and v.set:
                 self._simplified_mapping[v.name_variable] = v.typeval.expr
-            self._simplified_mapping[v.name_length] = v.typeval.size
-            self._simplified_mapping[v.name_first] = v.first
-            self._simplified_mapping[v.name_last] = v.last
+            if isinstance(v.typeval, ScalarValue) or v.set:
+                self._simplified_mapping[v.name_length] = v.typeval.size
+            if isinstance(v.first, Number):
+                self._simplified_mapping[v.name_first] = v.first
+            if isinstance(v.last, Number):
+                self._simplified_mapping[v.name_last] = v.last
 
         # ISSUE: Componolit/RecordFlux#240
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
