@@ -45,6 +45,9 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
+    Session,
+    State,
+    Transition,
 )
 from rflx.parser import grammar, parser
 from rflx.parser.ast import (
@@ -59,7 +62,6 @@ from rflx.parser.ast import (
     Then,
 )
 from rflx.parser.parser import Component, ParseFatalException, Parser
-from rflx.session import Session, State, Transition
 from tests.models import ETHERNET_FRAME
 from tests.utils import assert_equal
 

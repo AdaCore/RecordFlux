@@ -13,8 +13,18 @@ from rflx.expression import (
     VariableDeclaration,
 )
 from rflx.graph import Graph
-from rflx.model import FINAL, INITIAL, Field, Link, Message, ModularInteger
-from rflx.session import ID, Session, State, Transition
+from rflx.identifier import ID
+from rflx.model import (
+    FINAL,
+    INITIAL,
+    Field,
+    Link,
+    Message,
+    ModularInteger,
+    Session,
+    State,
+    Transition,
+)
 from rflx.statement import Assignment, Erase
 from tests.utils import BASE_TMP_DIR
 

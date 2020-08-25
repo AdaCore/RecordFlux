@@ -2,13 +2,14 @@ from typing import Sequence
 
 from rflx.common import Base, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
-from rflx.session import Session
 
-from . import const, message, type_
+from . import const, message, session, type_
 
 
 class Model(Base):
-    def __init__(self, types: Sequence[type_.Type], sessions: Sequence[Session] = None) -> None:
+    def __init__(
+        self, types: Sequence[type_.Type], sessions: Sequence[session.Session] = None
+    ) -> None:
         self.types = types
         self.sessions = sessions or []
         self.__check_types()

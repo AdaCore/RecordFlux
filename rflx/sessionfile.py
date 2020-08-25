@@ -5,8 +5,8 @@ import yaml
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, ChannelDeclaration, Declaration
 from rflx.identifier import ID
+from rflx.model import Session, State, Transition
 from rflx.parser.session import action, declaration, expression
-from rflx.session import Session, State, Transition
 from rflx.statement import Statement
 
 

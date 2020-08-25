@@ -4,8 +4,7 @@ from rflx.common import Base, flat_name
 from rflx.error import Location
 from rflx.expression import TRUE, UNDEFINED, Expr
 from rflx.identifier import ID, StrID
-from rflx.model import Type
-from rflx.session import Session
+from rflx.model import Session, Type
 
 
 class SyntaxTree(Base):

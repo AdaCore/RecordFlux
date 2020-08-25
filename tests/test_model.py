@@ -51,11 +51,13 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
+    Session,
+    State,
+    Transition,
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
-from rflx.session import Session, State, Transition
 from tests.models import ENUMERATION, ETHERNET_FRAME, MODULAR_INTEGER, RANGE_INTEGER
 from tests.utils import assert_equal, assert_message_model_error, multilinestr
 

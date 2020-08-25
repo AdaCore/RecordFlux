@@ -4,6 +4,7 @@ import pytest
 
 from rflx.declaration import (
     Argument,
+    ChannelDeclaration,
     RenamingDeclaration,
     SubprogramDeclaration,
     VariableDeclaration,
@@ -11,7 +12,7 @@ from rflx.declaration import (
 from rflx.error import RecordFluxError
 from rflx.expression import FALSE, Call, Equal, Greater, Number, Variable
 from rflx.identifier import ID
-from rflx.session import ChannelDeclaration, Session, State, Transition
+from rflx.model import Session, State, Transition
 from rflx.sessionfile import SessionFile
 from rflx.statement import Assignment
 

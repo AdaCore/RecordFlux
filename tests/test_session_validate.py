@@ -28,7 +28,7 @@ from rflx.expression import (
     Variable,
 )
 from rflx.identifier import ID
-from rflx.session import Session, State, Transition
+from rflx.model import Session, State, Transition
 from rflx.statement import Assignment, Erase, Reset
 
 

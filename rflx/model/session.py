@@ -1,25 +1,16 @@
 from typing import Dict, List, Sequence
 
+from rflx import declaration as decl, expression as expr, statement as stmt
 from rflx.common import Base, indent, indent_next, verbose_repr
-from rflx.declaration import (
-    ChannelDeclaration,
-    Declaration,
-    PrivateDeclaration,
-    RenamingDeclaration,
-    SubprogramDeclaration,
-    VariableDeclaration,
-)
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
-from rflx.expression import TRUE, Expr
 from rflx.identifier import ID, StrID
-from rflx.statement import Statement
 
 
 class Transition(Base):
     def __init__(
         self,
         target: StrID,
-        condition: Expr = TRUE,
+        condition: expr.Expr = expr.TRUE,
         description: str = None,
         location: Location = None,
     ):
@@ -34,11 +25,11 @@ class Transition(Base):
     def __str__(self) -> str:
         with_aspects = f'\n   with Desc => "{self.description}"' if self.description else ""
         if_condition = (
-            f"\n   if {indent_next(str(self.condition), 6)}" if self.condition != TRUE else ""
+            f"\n   if {indent_next(str(self.condition), 6)}" if self.condition != expr.TRUE else ""
         )
         return f"then {self.target}{with_aspects}{if_condition}"
 
-    def validate(self, declarations: Dict[ID, Declaration]) -> None:
+    def validate(self, declarations: Dict[ID, decl.Declaration]) -> None:
         self.condition.simplified().validate(declarations)
 
 
@@ -47,8 +38,8 @@ class State(Base):
         self,
         name: StrID,
         transitions: Sequence[Transition] = None,
-        actions: Sequence[Statement] = None,
-        declarations: Sequence[Declaration] = None,
+        actions: Sequence[stmt.Statement] = None,
+        declarations: Sequence[decl.Declaration] = None,
         location: Location = None,
     ):
         self.__name = ID(name)
@@ -80,7 +71,7 @@ class State(Base):
         return self.__transitions or []
 
     @property
-    def actions(self) -> Sequence[Statement]:
+    def actions(self) -> Sequence[stmt.Statement]:
         return self.__actions
 
 
@@ -92,8 +83,8 @@ class Session(Base):
         initial: StrID,
         final: StrID,
         states: Sequence[State],
-        declarations: Sequence[Declaration],
-        parameters: Sequence[Declaration] = None,
+        declarations: Sequence[decl.Declaration],
+        parameters: Sequence[decl.Declaration] = None,
         location: Location = None,
     ):
         self.identifier = ID(identifier)
@@ -229,16 +220,16 @@ class Session(Base):
             )
 
     @staticmethod
-    def __entity_name(decl: Declaration) -> str:
-        if isinstance(decl, SubprogramDeclaration):
+    def __entity_name(declaration: decl.Declaration) -> str:
+        if isinstance(declaration, decl.SubprogramDeclaration):
             return "subprogram"
-        if isinstance(decl, VariableDeclaration):
+        if isinstance(declaration, decl.VariableDeclaration):
             return "variable"
-        if isinstance(decl, RenamingDeclaration):
+        if isinstance(declaration, decl.RenamingDeclaration):
             return "renames"
-        if isinstance(decl, ChannelDeclaration):
+        if isinstance(declaration, decl.ChannelDeclaration):
             return "channel"
-        if isinstance(decl, PrivateDeclaration):
+        if isinstance(declaration, decl.PrivateDeclaration):
             return "private"
         assert False, f"unsupported entity {type(decl).__name__}"
 
@@ -275,7 +266,7 @@ class Session(Base):
                 self.error.extend(e)
         for k, d in self.declarations.items():
             # ISSUE: Componolit/RecordFlux#397
-            if isinstance(d, PrivateDeclaration):
+            if isinstance(d, decl.PrivateDeclaration):
                 continue
             if not d.is_referenced:
                 self.error.append(
