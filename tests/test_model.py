@@ -1557,7 +1557,7 @@ class NewType(Type):
 
 @pytest.mark.skipif(not __debug__, reason="depends on contract")
 def test_invalid_message_field_type() -> None:
-    with pytest.raises(AssertionError, match=r"rflx/model.py"):
+    with pytest.raises(AssertionError, match=r"rflx/model/message.py"):
         Message(
             "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): NewType("T")},
         )
