@@ -348,13 +348,29 @@ def variables(draw: Callable, elements: st.SearchStrategy[str]) -> expr.Variable
 
 @st.composite
 def attributes(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
-    attribute = draw(st.sampled_from([expr.Length, expr.First, expr.Length]))
+    attribute = draw(st.sampled_from([expr.Length, expr.First, expr.Last]))
     return attribute(draw(elements))
+
+
+@st.composite
+def calls(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Call:
+    return draw(st.builds(expr.Call, identifiers(), st.lists(elements, min_size=1)))
 
 
 @st.composite
 def aggregates(draw: Callable, elements: st.SearchStrategy[str]) -> expr.Aggregate:
     return expr.Aggregate(*draw(st.lists(elements, min_size=1)))
+
+
+@st.composite
+def strings(draw: Callable) -> expr.String:
+    return expr.String(draw(st.text(string.ascii_letters + string.digits, min_size=1)))
+
+
+@st.composite
+def quantified_expressions(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
+    operation = draw(st.sampled_from([expr.ForAllIn, expr.ForSomeIn]))
+    return draw(st.builds(operation, identifiers(), elements, elements))
 
 
 @st.composite
@@ -367,7 +383,16 @@ def mathematical_expressions(draw: Callable, elements: st.SearchStrategy[expr.Ex
 def relations(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Relation:
     relation = draw(
         st.sampled_from(
-            [expr.Less, expr.LessEqual, expr.Equal, expr.GreaterEqual, expr.Greater, expr.NotEqual]
+            [
+                expr.Less,
+                expr.LessEqual,
+                expr.Equal,
+                expr.GreaterEqual,
+                expr.Greater,
+                expr.NotEqual,
+                expr.In,
+                expr.NotIn,
+            ]
         )
     )
     return relation(*draw(st.lists(elements, min_size=2, max_size=2)))

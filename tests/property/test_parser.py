@@ -19,23 +19,74 @@ from tests.property import strategies
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
-    parsed_expression = grammar.mathematical_expression().parseString(str(expression))[0]
+    parsed_expression = grammar.mathematical_expression().parseString(
+        str(expression), parseAll=True
+    )[0]
     assert parsed_expression == expression
 
 
 @given(
     strategies.boolean_expressions(
         st.one_of(
-            strategies.numbers()
-            | strategies.variables(strategies.identifiers())
-            | strategies.attributes(strategies.identifiers())
-            | strategies.aggregates(strategies.numbers())
+            strategies.aggregates(strategies.numbers())
+            | strategies.strings()
+            | strategies.mathematical_expressions(
+                st.one_of(
+                    strategies.numbers()
+                    | strategies.variables(strategies.identifiers())
+                    | strategies.attributes(strategies.identifiers())
+                )
+            )
         )
     )
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
-    parsed_expression = grammar.boolean_expression().parseString(str(expression))[0]
+    parsed_expression = grammar.boolean_expression().parseString(str(expression), parseAll=True)[0]
+    assert parsed_expression == expression
+
+
+@given(
+    st.one_of(
+        strategies.mathematical_expressions(
+            st.one_of(
+                strategies.numbers()
+                | strategies.variables(strategies.identifiers())
+                | strategies.attributes(strategies.identifiers())
+            )
+        ),
+        strategies.boolean_expressions(
+            st.one_of(
+                strategies.aggregates(strategies.numbers())
+                | strategies.strings()
+                | strategies.mathematical_expressions(
+                    st.one_of(
+                        strategies.numbers()
+                        | strategies.variables(strategies.identifiers())
+                        | strategies.attributes(strategies.identifiers())
+                    )
+                )
+            )
+        ),
+        strategies.calls(
+            st.one_of(
+                strategies.numbers()
+                | strategies.variables(strategies.identifiers())
+                | strategies.attributes(strategies.identifiers())
+            )
+        ),
+        strategies.quantified_expressions(
+            st.one_of(
+                strategies.numbers()
+                | strategies.variables(strategies.identifiers())
+                | strategies.attributes(strategies.identifiers())
+            )
+        ),
+    )
+)
+@settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
+def test_parsing_expressions(expression: expr.Expr) -> None:
+    parsed_expression = grammar.expression().parseString(str(expression), parseAll=True)[0]
     assert parsed_expression == expression
 
 
