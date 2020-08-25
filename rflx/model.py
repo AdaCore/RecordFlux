@@ -35,7 +35,6 @@ from rflx.expression import (
     Pow,
     ProofResult,
     Relation,
-    String,
     Sub,
     ValidChecksum,
     ValueRange,
@@ -1042,7 +1041,7 @@ class AbstractMessage(Type):
 
         def invalid_relation(left: TypeExpr, right: TypeExpr) -> bool:
             return (
-                (isinstance(left, Opaque) and not isinstance(right, (Opaque, Aggregate, String)))
+                (isinstance(left, Opaque) and not isinstance(right, (Opaque, Aggregate)))
                 or (isinstance(left, Array) and not isinstance(right, (Array, Aggregate)))
                 or (isinstance(left, Aggregate) and not isinstance(right, Composite))
             )
