@@ -1535,7 +1535,6 @@ def test_checksum_field_not_defined(icmp_checksum: MessageValue) -> None:
 def test_checksum_function_not_set(icmp_checksum: MessageValue) -> None:
     icmp_checksum.set("Tag", "Echo_Request")
     icmp_checksum.set("Code_Zero", 0)
-    icmp_checksum.set("Checksum", 1234)
     icmp_checksum.set("Identifier", 5)
     icmp_checksum.set("Sequence_Number", 1)
     with pytest.raises(
@@ -1545,7 +1544,7 @@ def test_checksum_function_not_set(icmp_checksum: MessageValue) -> None:
         icmp_checksum.set("Data", b"\x00")
 
 
-def test_checksum_icmp(icmp_checksum: MessageValue) -> None:
+def test_checksum_manual_icmp(icmp_checksum: MessageValue) -> None:
     test_data = (
         b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
         b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
@@ -1559,8 +1558,49 @@ def test_checksum_icmp(icmp_checksum: MessageValue) -> None:
     icmp_checksum.set("Identifier", 5)
     icmp_checksum.set("Sequence_Number", 1)
     icmp_checksum.set("Data", test_data)
+    assert icmp_checksum.get("Checksum") == 1234
+    assert icmp_checksum.bytestring == b"\x08\x00\x04\xd2\x00\x05\x00\x01" + test_data
+
+
+def test_checksum_auto_icmp(icmp_checksum: MessageValue) -> None:
+    test_data = (
+        b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
+        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
+        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+    icmp_checksum.set_checksum_function({"Checksum": icmp_checksum_function})
+    icmp_checksum.set("Tag", "Echo_Request")
+    icmp_checksum.set("Code_Zero", 0)
+    icmp_checksum.set("Identifier", 5)
+    icmp_checksum.set("Sequence_Number", 1)
+    icmp_checksum.set("Data", test_data)
     assert icmp_checksum.get("Checksum") == 12824
     assert icmp_checksum.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
+
+
+def test_checksum_parse_icmp(icmp_checksum: MessageValue) -> None:
+    test_data = (
+        b"\x08\x00\x32\x18\x00\x05\x00\x01\x47\xb4\x67\x5e\x00\x00\x00\x00"
+        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
+        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+    icmp_checksum.set_checksum_function({"Checksum": icmp_checksum_function})
+    icmp_checksum.parse(test_data)
+    assert icmp_checksum.valid_message
+
+
+def test_invalid_checksum_parse_icmp(icmp_checksum: MessageValue) -> None:
+    test_data = (
+        b"\x08\x00\x35\x19\x00\x05\x00\x01\x47\xb4\x67\x5e\x00\x00\x00\x00"
+        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
+        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+    icmp_checksum.set_checksum_function({"Checksum": icmp_checksum_function})
+    icmp_checksum.parse(test_data)
+    assert not icmp_checksum.valid_message
 
 
 def test_checksum_is_checksum_settable(tlv_checksum_type: Message) -> None:
