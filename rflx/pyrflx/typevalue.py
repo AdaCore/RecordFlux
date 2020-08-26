@@ -842,9 +842,9 @@ class MessageValue(TypeValue):
         if checksum_calculation:
             self._preset_fields(field_name)
             for checksum in self._checksums.values():
-                if not self._fields[checksum.field_name].set and self._is_checksum_settable(
-                    checksum
-                ):
+                if (
+                    not self._fields[checksum.field_name].set or checksum.calculated
+                ) and self._is_checksum_settable(checksum):
                     self._set_checksum(checksum)
 
     def _preset_fields(self, fld: str) -> None:
@@ -893,7 +893,7 @@ class MessageValue(TypeValue):
                 )
             for field_name, checksum in self._checksums.items():
                 if field_name == checksum_field_name:
-                    checksum.set_checksum_function(checksum_function)
+                    checksum.function = checksum_function
                 else:
                     raise KeyError(
                         f"cannot set checksum function: field {checksum_field_name} "
@@ -958,6 +958,7 @@ class MessageValue(TypeValue):
 
     def _set_checksum(self, checksum: "MessageValue.Checksum") -> None:
         self._fields[checksum.field_name].typeval.assign(0)
+        checksum.calculated = True
         checksum_value = self._calculate_checksum(checksum)
         self.set(checksum.field_name, checksum_value, False)
 
@@ -1135,6 +1136,7 @@ class MessageValue(TypeValue):
         def __init__(self, field_name: str, parameters: Sequence[Expr]):
             self.field_name = field_name
             self.function: Optional[Callable] = None
+            self.calculated = False
 
             @dataclass
             class ExpressionTuple:
@@ -1145,9 +1147,6 @@ class MessageValue(TypeValue):
             for expr in parameters:
                 assert isinstance(expr, (ValueRange, Attribute, Variable))
                 self.parameters.append(ExpressionTuple(expr))
-
-        def set_checksum_function(self, function: Callable) -> None:
-            self.function = function
 
     @dataclass
     class Field(Base):
