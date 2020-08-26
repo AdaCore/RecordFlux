@@ -1,3 +1,4 @@
+import pytest
 import z3
 
 from rflx.expression import (
@@ -8,9 +9,13 @@ from rflx.expression import (
     Case,
     Div,
     Equal,
+    Expr,
+    First,
     Greater,
     GreaterEqual,
     If,
+    Last,
+    Length,
     Less,
     LessEqual,
     Mod,
@@ -18,8 +23,11 @@ from rflx.expression import (
     Not,
     NotEqual,
     Number,
+    Old,
     Or,
     Pow,
+    Range,
+    Size,
     Sub,
     Variable,
 )
@@ -153,3 +161,19 @@ def test_case() -> None:
             z3.If(z3.Int("x") == z3.IntVal(10), z3.IntVal(2), z3.BoolVal(False)),
         ),
     )
+
+
+@pytest.mark.parametrize(
+    "attribute,z3name",
+    [
+        (Size("X"), "X'Size"),
+        (Length("X"), "X'Length"),
+        (First("X"), "X'First"),
+        (Last("X"), "X'Last"),
+        (Range("X"), "X'Range"),
+        (Old("X"), "X'Old"),
+    ],
+)
+def test_attribute(attribute: Expr, z3name: str) -> None:
+    assert attribute.z3expr() == z3.Int(z3name)
+    assert (-attribute).z3expr() == -z3.Int(z3name)

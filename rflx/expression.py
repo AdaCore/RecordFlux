@@ -965,7 +965,10 @@ class Attribute(Name):
     def z3expr(self) -> z3.ExprRef:
         if not isinstance(self.prefix, Variable):
             raise TypeError
-        return z3.Int(f"{self.prefix}'{self.__class__.__name__}")
+        name = f"{self.prefix}'{self.__class__.__name__}"
+        if self.negative:
+            return -z3.Int(name)
+        return z3.Int(name)
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.prefix.validate(declarations)
