@@ -1675,6 +1675,7 @@ def test_no_verification_icmp(icmp: MessageValue) -> None:
     icmp_unv.set("Sequence_Number", 1)
     icmp_unv.set("Data", b"\x00")
     assert icmp_unv.bytestring == icmp.bytestring
+    assert icmp_unv.valid_message
 
 
 def test_no_verification_ethernet(frame: MessageValue) -> None:
@@ -1725,3 +1726,49 @@ def test_no_verification_array_nested_messages(
     array_message_unv.set("Bar", foos_unv)
     assert array_message_unv.valid_message
     assert array_message_unv.bytestring == array_message.bytestring
+
+
+def test_no_verification_icmp_checksum(icmp_checksum: MessageValue, icmp_type: Message) -> None:
+    test_data = (
+        b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
+        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
+        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+    icmp_checksum_unv = MessageValue(
+        icmp_type.copy(
+            structure=[
+                Link(l.source, l.target, condition=And(l.condition, ValidChecksum("Checksum")))
+                if l.target == FINAL
+                else l
+                for l in icmp_type.structure
+            ],
+            aspects={
+                ID("Checksum"): {
+                    ID("Checksum"): [
+                        ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
+                        Length("Checksum"),
+                        ValueRange(Add(Last("Checksum"), Number(1)), Last("Message")),
+                    ]
+                }
+            },
+        ),
+        skip_verification=True,
+    )
+    icmp_checksum.set_checksum_function({"Checksum": icmp_checksum_function})
+    icmp_checksum.set("Tag", "Echo_Request")
+    icmp_checksum.set("Code_Zero", 0)
+    icmp_checksum.set("Identifier", 5)
+    icmp_checksum.set("Sequence_Number", 1)
+    icmp_checksum.set("Data", test_data)
+    icmp_checksum_unv.set_checksum_function({"Checksum": icmp_checksum_function})
+    icmp_checksum_unv.set("Tag", "Echo_Request")
+    icmp_checksum_unv.set("Code_Zero", 0)
+    icmp_checksum_unv.set("Checksum", 0)
+    icmp_checksum_unv.set("Identifier", 5)
+    icmp_checksum_unv.set("Sequence_Number", 1)
+    icmp_checksum_unv.set("Data", test_data)
+    icmp_checksum_unv.update_checksums()
+    assert icmp_checksum_unv.valid_message
+    assert icmp_checksum_unv.get("Checksum") == icmp_checksum.get("Checksum")
+    assert icmp_checksum_unv.bytestring == icmp_checksum.bytestring

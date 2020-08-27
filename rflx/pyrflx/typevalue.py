@@ -562,6 +562,7 @@ class MessageValue(TypeValue):
             self._last_field = INITIAL.name
         else:
             self._preset_fields(INITIAL.name)
+        self.message_last_name = state.last_name if state else Last("Message")
 
     def clone(self) -> "MessageValue":
         return MessageValue(
@@ -956,6 +957,14 @@ class MessageValue(TypeValue):
                 return False
         return True
 
+    def update_checksums(self) -> None:
+        # ISSUE: Componolit/RecordFlux#240
+        self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
+        for checksum in self._checksums.values():
+            self._is_checksum_settable(checksum)
+            checksum_value = self._calculate_checksum(checksum)
+            self._fields[checksum.field_name].typeval.assign(checksum_value)
+
     def _set_checksum(self, checksum: "MessageValue.Checksum") -> None:
         self._fields[checksum.field_name].typeval.assign(0)
         checksum.calculated = True
@@ -1084,7 +1093,7 @@ class MessageValue(TypeValue):
             bool(self.valid_fields)
             and self._next_field(self.valid_fields[-1]) == FINAL.name
             and all(
-                self._is_checksum_settable(checksum)
+                (self._is_checksum_settable(checksum) or self._skip_verification)
                 and self._calculate_checksum(checksum) == self.get(checksum.field_name)
                 for checksum in self._checksums.values()
             )
@@ -1097,6 +1106,7 @@ class MessageValue(TypeValue):
             self._simplified_mapping[field.name_length] = field.typeval.size
             self._simplified_mapping[field.name_first] = field.first
             self._simplified_mapping[field.name_last] = field.last
+            self._simplified_mapping[self.message_last_name] = field.last
             return
 
         self._simplified_mapping = {}
@@ -1115,7 +1125,7 @@ class MessageValue(TypeValue):
 
         pre_final = self._prev_field("Final")
         if pre_final and self._fields[pre_final].set:
-            self._simplified_mapping[Last("Message")] = self._fields[pre_final].last
+            self._simplified_mapping[self.message_last_name] = self._fields[pre_final].last
 
     def __simplified(self, expr: Expr) -> Expr:
         if expr in {TRUE, FALSE}:
@@ -1223,3 +1233,4 @@ class MessageValue(TypeValue):
         fields: Optional[Mapping[str, "MessageValue.Field"]] = None
         checksums: Optional[Mapping[str, "MessageValue.Checksum"]] = None
         type_literals: Optional[Mapping[Name, Expr]] = None
+        last_name: Last = Last("Message")
