@@ -93,6 +93,7 @@ class MessageState(Base):
     checksums: Mapping[ID, Sequence[expr.Expr]] = {}
 
 
+# pylint: disable=too-many-public-methods
 @invariant(lambda self: valid_message_field_types(self))
 @invariant(lambda self: not self.types if not self.structure else True)
 class AbstractMessage(type_.Type):
@@ -248,6 +249,9 @@ class AbstractMessage(type_.Type):
             return field_type.size
 
         raise NotImplementedError
+
+    def paths(self, field: Field) -> Set[Tuple[Link, ...]]:
+        return self._state.paths[field]
 
     def prefixed(self, prefix: str) -> "AbstractMessage":
         fields = {f.identifier for f in self.fields}
