@@ -1816,3 +1816,26 @@ def test_opaque_length_valid_multiple_of_8_dynamic_cond() -> None:
         ],
         {Field("L"): MODULAR_INTEGER, Field("O"): Opaque()},
     )
+
+
+def test_paths() -> None:
+    message = Message(
+        "P.M",
+        [
+            Link(INITIAL, Field("L")),
+            Link(Field("L"), Field("O"), condition=Greater(Variable("L"), Number(100))),
+            Link(Field("L"), Field("O"), condition=LessEqual(Variable("L"), Number(100))),
+            Link(Field("O"), FINAL),
+        ],
+        {Field("L"): MODULAR_INTEGER, Field("O"): MODULAR_INTEGER},
+    )
+    assert message.paths(Field("O")) == {
+        (
+            Link(INITIAL, Field("L")),
+            Link(Field("L"), Field("O"), condition=Greater(Variable("L"), Number(100))),
+        ),
+        (
+            Link(INITIAL, Field("L")),
+            Link(Field("L"), Field("O"), condition=LessEqual(Variable("L"), Number(100))),
+        ),
+    }
