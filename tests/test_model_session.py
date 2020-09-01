@@ -77,7 +77,11 @@ def test_empty_states() -> None:
         ),
     ):
         Session(
-            identifier="session", initial=ID("START"), final=ID("END"), states=[], declarations=[],
+            identifier="session",
+            initial=ID("START"),
+            final=ID("END"),
+            states=[],
+            declarations=[],
         )
 
 
@@ -193,7 +197,10 @@ def test_unreachable_state() -> None:
             final=ID("END"),
             states=[
                 State(name=ID("START"), transitions=[Transition(target=ID("END"))]),
-                State(name=ID("UNREACHABLE"), transitions=[Transition(target=ID("END"))],),
+                State(
+                    name=ID("UNREACHABLE"),
+                    transitions=[Transition(target=ID("END"))],
+                ),
                 State(name=ID("END")),
             ],
             declarations=[],
@@ -210,8 +217,14 @@ def test_multiple_unreachable_states() -> None:
             final=ID("END"),
             states=[
                 State(name=ID("START"), transitions=[Transition(target=ID("END"))]),
-                State(name=ID("UNREACHABLE1"), transitions=[Transition(target=ID("END"))],),
-                State(name=ID("UNREACHABLE2"), transitions=[Transition(target=ID("END"))],),
+                State(
+                    name=ID("UNREACHABLE1"),
+                    transitions=[Transition(target=ID("END"))],
+                ),
+                State(
+                    name=ID("UNREACHABLE2"),
+                    transitions=[Transition(target=ID("END"))],
+                ),
                 State(name=ID("END")),
             ],
             declarations=[],

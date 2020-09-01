@@ -63,7 +63,10 @@ M_NO_REF = UnprovenMessage(
         Link(Field("F1"), Field("F2")),
         Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2")),
         Link(
-            Field("F2"), Field("F4"), GreaterEqual(Variable("F2"), Number(200)), first=First("F2"),
+            Field("F2"),
+            Field("F4"),
+            GreaterEqual(Variable("F2"), Number(200)),
+            first=First("F2"),
         ),
         Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("ONE"))),
         Link(Field("F4"), FINAL),
@@ -122,7 +125,10 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
         Link(Field("F1"), Field("F2")),
         Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2")),
         Link(
-            Field("F2"), Field("F4"), GreaterEqual(Variable("F2"), Number(200)), first=First("F2"),
+            Field("F2"),
+            Field("F4"),
+            GreaterEqual(Variable("F2"), Number(200)),
+            first=First("F2"),
         ),
         Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("ONE"))),
         Link(Field("F4"), FINAL),
@@ -214,7 +220,8 @@ def test_modular_invalid_modulus_limit() -> None:
 
 def test_range_size() -> None:
     assert_equal(
-        RangeInteger("P.T", Number(16), Number(128), Pow(Number(2), Number(5))).size, Number(32),
+        RangeInteger("P.T", Number(16), Number(128), Pow(Number(2), Number(5))).size,
+        Number(32),
     )
     assert_equal(
         RangeInteger("P.T", Number(16), Number(128), Pow(Number(2), Number(5))).size_expr,
@@ -408,7 +415,9 @@ def test_message_missing_type() -> None:
     structure = [Link(INITIAL, x), Link(x, FINAL)]
 
     assert_message_model_error(
-        structure, {}, '^<stdin>:5:6: model: error: missing type for field "X" in "P.M"$',
+        structure,
+        {},
+        '^<stdin>:5:6: model: error: missing type for field "X" in "P.M"$',
     )
 
 
@@ -562,7 +571,9 @@ def test_message_unreachable_field() -> None:
     types = {Field("X"): BOOLEAN, Field("Y"): BOOLEAN, Field("Z"): BOOLEAN}
 
     assert_message_model_error(
-        structure, types, '^<stdin>:20:3: model: error: unreachable field "Y" in "P.M"$',
+        structure,
+        types,
+        '^<stdin>:20:3: model: error: unreachable field "Y" in "P.M"$',
     )
 
 
@@ -804,7 +815,9 @@ def test_message_nonexistent_variable() -> None:
 
     types = {Field("F1"): enum_type, Field("F2"): mod_type}
     assert_message_model_error(
-        structure, types, '^<stdin>:444:55: model: error: undefined variable "Val3" referenced$',
+        structure,
+        types,
+        '^<stdin>:444:55: model: error: undefined variable "Val3" referenced$',
     )
 
 
@@ -820,7 +833,9 @@ def test_message_subsequent_variable() -> None:
 
     types = {Field("F1"): t, Field("F2"): t}
     assert_message_model_error(
-        structure, types, '^<stdin>:1024:57: model: error: subsequent field "F2" referenced',
+        structure,
+        types,
+        '^<stdin>:1024:57: model: error: subsequent field "F2" referenced',
     )
 
 
@@ -995,7 +1010,9 @@ def test_message_field_size() -> None:
 
 def test_message_copy() -> None:
     message = Message(
-        "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): MODULAR_INTEGER},
+        "P.M",
+        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+        {Field("F"): MODULAR_INTEGER},
     )
     assert_equal(
         message.copy(identifier="A.B"),
@@ -1020,7 +1037,9 @@ def test_message_copy() -> None:
 
 def test_message_proven() -> None:
     message = Message(
-        "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): MODULAR_INTEGER},
+        "P.M",
+        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+        {Field("F"): MODULAR_INTEGER},
     )
     assert message.proven() == message
 
@@ -1351,7 +1370,10 @@ def test_merge_message_constrained() -> None:
     expected = UnprovenMessage(
         "P.M2",
         [
-            Link(INITIAL, Field("F4_F1"),),
+            Link(
+                INITIAL,
+                Field("F4_F1"),
+            ),
             Link(Field("F4_F1"), Field("F4_F3"), Equal(Variable("F4_F1"), Variable("True"))),
             Link(
                 Field("F4_F3"),
@@ -1395,7 +1417,8 @@ def test_merge_message_constrained_empty() -> None:
         {Field("F3"): m1},
     )
     with pytest.raises(
-        RecordFluxError, match=r'^model: error: empty message type when merging field "F3"$',
+        RecordFluxError,
+        match=r'^model: error: empty message type when merging field "F3"$',
     ):
         m2.merged()
 
@@ -1520,7 +1543,9 @@ def test_array_aggregate_out_of_range() -> None:
 
 def test_array_aggregate_invalid_element_type() -> None:
     inner = Message(
-        "P.I", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): MODULAR_INTEGER},
+        "P.I",
+        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+        {Field("F"): MODULAR_INTEGER},
     )
     array_type = Array("P.Array", inner)
 
@@ -1556,7 +1581,9 @@ class NewType(Type):
 def test_invalid_message_field_type() -> None:
     with pytest.raises(AssertionError, match=r"rflx/model/message.py"):
         Message(
-            "P.M", [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)], {Field("F"): NewType("T")},
+            "P.M",
+            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+            {Field("F"): NewType("T")},
         )
 
 
@@ -1754,7 +1781,9 @@ def test_opaque_length_not_multiple_of_8() -> None:
     ):
         o = Field(ID("O", location=Location((44, 3))))
         Message(
-            "P.M", [Link(INITIAL, o, length=Number(68)), Link(o, FINAL)], {o: Opaque()},
+            "P.M",
+            [Link(INITIAL, o, length=Number(68)), Link(o, FINAL)],
+            {o: Opaque()},
         )
 
 

@@ -154,7 +154,10 @@ class ParserGenerator:
                             )
                         ),
                         Postcondition(
-                            Equal(Selected(Result("Get_Field_Value"), "Fld"), Variable("Fld"),)
+                            Equal(
+                                Selected(Result("Get_Field_Value"), "Fld"),
+                                Variable("Fld"),
+                            )
                         ),
                     ],
                 ),
@@ -169,7 +172,10 @@ class ParserGenerator:
         )
 
         valid_field_condition = And(
-            Call("Valid_Value", [Variable("Value")],),
+            Call(
+                "Valid_Value",
+                [Variable("Value")],
+            ),
             Call(
                 "Field_Condition",
                 [
@@ -575,7 +581,8 @@ class ParserGenerator:
         return UnitPart(
             [
                 SubprogramDeclaration(
-                    specification, [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
+                    specification,
+                    [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
                 )
             ],
             [
@@ -597,7 +604,8 @@ class ParserGenerator:
         return UnitPart(
             [
                 SubprogramDeclaration(
-                    specification, [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
+                    specification,
+                    [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
                 )
             ],
             [

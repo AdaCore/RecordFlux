@@ -402,7 +402,10 @@ class RangeType(TypeDeclaration):
 
 class EnumerationType(TypeDeclaration):
     def __init__(
-        self, identifier: StrID, literals: Mapping[ID, Optional[Number]], size: Expr = None,
+        self,
+        identifier: StrID,
+        literals: Mapping[ID, Optional[Number]],
+        size: Expr = None,
     ) -> None:
         super().__init__(identifier, aspects=([Size(size)] if size else []))
         self.literals = (
@@ -827,7 +830,10 @@ class ExpressionFunctionDeclaration(Subprogram):
 
 class GenericProcedureInstantiation(Subprogram):
     def __init__(
-        self, name: StrID, specification: ProcedureSpecification, associations: List[StrID] = None,
+        self,
+        name: StrID,
+        specification: ProcedureSpecification,
+        associations: List[StrID] = None,
     ) -> None:
         super().__init__(specification)
         self.name = ID(name)
@@ -843,7 +849,10 @@ class GenericProcedureInstantiation(Subprogram):
 
 class GenericFunctionInstantiation(Subprogram):
     def __init__(
-        self, name: StrID, specification: FunctionSpecification, associations: List[StrID] = None,
+        self,
+        name: StrID,
+        specification: FunctionSpecification,
+        associations: List[StrID] = None,
     ) -> None:
         super().__init__(specification)
         self.name = ID(name)

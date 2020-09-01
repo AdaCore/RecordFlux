@@ -98,7 +98,10 @@ class Session(Base):
 
         if not states:
             self.error.append(
-                "empty states", Subsystem.MODEL, Severity.ERROR, location,
+                "empty states",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                location,
             )
         self.__validate_state_existence()
         self.__validate_duplicate_states()

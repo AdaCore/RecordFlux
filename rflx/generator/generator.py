@@ -148,14 +148,16 @@ class GeneratorGenerator:
                                                     "Structural_Valid",
                                                     [
                                                         Indexed(
-                                                            Variable("Ctx.Cursors"), Variable("F"),
+                                                            Variable("Ctx.Cursors"),
+                                                            Variable("F"),
                                                         )
                                                     ],
                                                 ),
                                                 LessEqual(
                                                     Selected(
                                                         Indexed(
-                                                            Variable("Ctx.Cursors"), Variable("F"),
+                                                            Variable("Ctx.Cursors"),
+                                                            Variable("F"),
                                                         ),
                                                         "Last",
                                                     ),
@@ -197,14 +199,16 @@ class GeneratorGenerator:
                                                     "Structural_Valid",
                                                     [
                                                         Indexed(
-                                                            Variable("Ctx.Cursors"), Variable("F"),
+                                                            Variable("Ctx.Cursors"),
+                                                            Variable("F"),
                                                         )
                                                     ],
                                                 ),
                                                 LessEqual(
                                                     Selected(
                                                         Indexed(
-                                                            Variable("Ctx.Cursors"), Variable("F"),
+                                                            Variable("Ctx.Cursors"),
+                                                            Variable("F"),
                                                         ),
                                                         "Last",
                                                     ),
@@ -531,12 +535,15 @@ class GeneratorGenerator:
             return [
                 FormalSubprogramDeclaration(
                     ProcedureSpecification(
-                        f"Process_{field.name}", [OutParameter([field.name], const.TYPES_BYTES)],
+                        f"Process_{field.name}",
+                        [OutParameter([field.name], const.TYPES_BYTES)],
                     )
                 ),
                 FormalSubprogramDeclaration(
                     FunctionSpecification(
-                        "Valid_Length", "Boolean", [Parameter(["Length"], const.TYPES_LENGTH)],
+                        "Valid_Length",
+                        "Boolean",
+                        [Parameter(["Length"], const.TYPES_LENGTH)],
                     )
                 ),
             ]
@@ -574,7 +581,11 @@ class GeneratorGenerator:
                                 ),
                             )
                         ),
-                        Postcondition(And(*self.composite_setter_postconditions(message, f),)),
+                        Postcondition(
+                            And(
+                                *self.composite_setter_postconditions(message, f),
+                            )
+                        ),
                     ],
                     formal_parameters(f),
                 )
@@ -600,7 +611,11 @@ class GeneratorGenerator:
                                 ),
                             )
                         ),
-                        Postcondition(And(*self.composite_setter_postconditions(message, f),)),
+                        Postcondition(
+                            And(
+                                *self.composite_setter_postconditions(message, f),
+                            )
+                        ),
                     ],
                     formal_parameters(f),
                 )
@@ -712,7 +727,11 @@ class GeneratorGenerator:
                                 *self.unbounded_composite_setter_preconditions(message, f),
                             )
                         ),
-                        Postcondition(And(*self.composite_setter_postconditions(message, f),)),
+                        Postcondition(
+                            And(
+                                *self.composite_setter_postconditions(message, f),
+                            )
+                        ),
                     ],
                 )
                 for f, t in message.types.items()
@@ -728,7 +747,7 @@ class GeneratorGenerator:
                                 *self.bounded_composite_setter_preconditions(message, f),
                             )
                         ),
-                        Postcondition(And(*self.composite_setter_postconditions(message, f),)),
+                        Postcondition(And(*self.composite_setter_postconditions(message, f))),
                     ],
                 )
                 for f, t in message.types.items()
@@ -931,7 +950,10 @@ class GeneratorGenerator:
                 ),
                 Number(1),
             ),
-            Equal(Mod(Variable("Length"), Size(const.TYPES_BYTE)), Number(0),),
+            Equal(
+                Mod(Variable("Length"), Size(const.TYPES_BYTE)),
+                Number(0),
+            ),
         ]
 
 

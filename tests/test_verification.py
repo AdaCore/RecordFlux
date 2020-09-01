@@ -74,7 +74,10 @@ def test_exclusive_prefixed_enum_valid() -> None:
     types = {
         Field("F1"): ENUMERATION,
         Field("F2"): Enumeration(
-            "P2.Enumeration", [("ONE", Number(2)), ("TWO", Number(1))], Number(8), False,
+            "P2.Enumeration",
+            [("ONE", Number(2)), ("TWO", Number(1))],
+            Number(8),
+            False,
         ),
     }
     Message("P.M", structure, types)
@@ -407,7 +410,9 @@ def test_invalid_fixed_size_field_with_length() -> None:
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure, types, r'^model: error: fixed size field "F2" with length expression$',
+        structure,
+        types,
+        r'^model: error: fixed size field "F2" with length expression$',
     )
 
 
@@ -437,7 +442,9 @@ def test_invalid_first() -> None:
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure, types, r'^<stdin>:5:14: model: error: invalid First for field "F2"$',
+        structure,
+        types,
+        r'^<stdin>:5:14: model: error: invalid First for field "F2"$',
     )
 
 
@@ -452,7 +459,9 @@ def test_invalid_first_is_last() -> None:
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure, types, r'^<stdin>:11:20: model: error: invalid First for field "F2"$',
+        structure,
+        types,
+        r'^<stdin>:11:20: model: error: invalid First for field "F2"$',
     )
 
 
@@ -508,7 +517,9 @@ def test_invalid_negative_field_length_modular() -> None:
         Field("F2"): Opaque(),
     }
     assert_message_model_error(
-        structure, types, r'^model: error: negative length for field "F2" [(]F1 -> F2[)]$',
+        structure,
+        types,
+        r'^model: error: negative length for field "F2" [(]F1 -> F2[)]$',
     )
 
 
@@ -516,7 +527,11 @@ def test_invalid_negative_field_length_range_integer() -> None:
     o = Field(ID("O", location=Location((44, 3))))
     structure = [
         Link(INITIAL, Field("L")),
-        Link(Field("L"), o, length=Mul(Number(8), Sub(Variable("L"), Number(50))),),
+        Link(
+            Field("L"),
+            o,
+            length=Mul(Number(8), Sub(Variable("L"), Number(50))),
+        ),
         Link(o, FINAL),
     ]
     types = {Field("L"): RANGE_INTEGER, o: Opaque()}
@@ -977,7 +992,8 @@ def test_aggregate_equal_valid_length() -> None:
             Field("Magic"),
             FINAL,
             condition=Equal(
-                Variable("Magic"), Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
+                Variable("Magic"),
+                Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
             ),
         ),
     ]
@@ -1040,7 +1056,8 @@ def test_aggregate_inequal_valid_length() -> None:
             Field("Magic"),
             FINAL,
             condition=NotEqual(
-                Variable("Magic"), Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
+                Variable("Magic"),
+                Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
             ),
         ),
     ]

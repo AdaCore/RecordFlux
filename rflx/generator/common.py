@@ -207,7 +207,8 @@ def substitution_facts(
         if isinstance(field_type, Enumeration):
             if public:
                 return Call(
-                    target_type, [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
+                    target_type,
+                    [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
                 )
             return Call(
                 target_type,
@@ -579,19 +580,26 @@ def initialize_field_statements(message: Message, field: Field, prefix: str) -> 
         # Limitation of GNAT Community 2019 / SPARK Pro 20.0
         # Provability of predicate is increased by adding part of
         # predicate as assert
-        PragmaStatement("Assert", [str(message_structure_invariant(message, prefix))],),
+        PragmaStatement(
+            "Assert",
+            [str(message_structure_invariant(message, prefix))],
+        ),
         Assignment(
             Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name, immutable=True)),
             NamedAggregate(
                 ("State", Variable("S_Structural_Valid")),
                 ("First", Variable("First")),
                 ("Last", Variable("Last")),
-                ("Value", NamedAggregate(("Fld", Variable(field.affixed_name, immutable=True))),),
+                (
+                    "Value",
+                    NamedAggregate(("Fld", Variable(field.affixed_name, immutable=True))),
+                ),
                 (
                     "Predecessor",
                     Selected(
                         Indexed(
-                            Variable("Ctx.Cursors"), Variable(field.affixed_name, immutable=True),
+                            Variable("Ctx.Cursors"),
+                            Variable(field.affixed_name, immutable=True),
                         ),
                         "Predecessor",
                     ),

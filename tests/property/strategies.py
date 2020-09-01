@@ -53,7 +53,11 @@ def identifiers(draw: Callable) -> ID:
 
 
 @st.composite
-def sizes(draw: Callable, multiple_of_8: bool = False, align_to_8: int = 0,) -> int:
+def sizes(
+    draw: Callable,
+    multiple_of_8: bool = False,
+    align_to_8: int = 0,
+) -> int:
     assert 0 <= align_to_8 < 8
     assert not (multiple_of_8 and align_to_8)
     if multiple_of_8:
@@ -175,7 +179,9 @@ def composites(draw: Callable, unique_identifiers: Generator[ID, None, None]) ->
 
 @st.composite
 def messages(
-    draw: Callable, unique_identifiers: Generator[ID, None, None], not_null: bool = False,
+    draw: Callable,
+    unique_identifiers: Generator[ID, None, None],
+    not_null: bool = False,
 ) -> Message:
     # pylint: disable=too-many-locals
 
@@ -247,7 +253,10 @@ def messages(
         for i, target in enumerate(fields_):
             source = fields_[i - 1] if i > 0 else INITIAL
             pair = FieldPair(
-                source, target, types_[source] if source != INITIAL else None, types_[target],
+                source,
+                target,
+                types_[source] if source != INITIAL else None,
+                types_[target],
             )
             structure.append(Link(source, target, condition=condition(pair), length=length(pair)))
 

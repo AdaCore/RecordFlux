@@ -65,7 +65,8 @@ def test_or() -> None:
         z3.Or(z3.BoolVal(True), z3.BoolVal(False), z3.BoolVal(True)),
     )
     assert_equal(
-        Or(TRUE, TRUE, TRUE).z3expr(), z3.Or(z3.BoolVal(True), z3.BoolVal(True), z3.BoolVal(True)),
+        Or(TRUE, TRUE, TRUE).z3expr(),
+        z3.Or(z3.BoolVal(True), z3.BoolVal(True), z3.BoolVal(True)),
     )
     assert_equal(Or(TRUE, TRUE).z3expr(), z3.Or(z3.BoolVal(True), z3.BoolVal(True)))
 

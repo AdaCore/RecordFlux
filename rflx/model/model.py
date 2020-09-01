@@ -85,7 +85,10 @@ class Model(Base):
             )
             type_location = [t.location for t in self.types if t.identifier.name == name][0]
             error.append(
-                "conflicting type declaration", Subsystem.MODEL, Severity.INFO, type_location,
+                "conflicting type declaration",
+                Subsystem.MODEL,
+                Severity.INFO,
+                type_location,
             )
 
         error.propagate()

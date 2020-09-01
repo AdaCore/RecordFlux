@@ -392,7 +392,15 @@ class AbstractMessage(type_.Type):
                     links[0].source.identifier.location,
                 )
                 self.error.extend(
-                    [("duplicate link", Subsystem.MODEL, Severity.INFO, l.location,) for l in links]
+                    [
+                        (
+                            "duplicate link",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            l.location,
+                        )
+                        for l in links
+                    ]
                 )
 
         for l in self.structure:
@@ -515,7 +523,10 @@ class AbstractMessage(type_.Type):
                     relation.location,
                 )
                 self.error.append(
-                    f'of type "{left.identifier}"', Subsystem.MODEL, Severity.INFO, left.location,
+                    f'of type "{left.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    left.location,
                 )
                 self.error.append(
                     f'and type "{right.identifier}"',
@@ -534,7 +545,9 @@ class AbstractMessage(type_.Type):
             )
 
         def resolve_types(
-            left: expr.Expr, right: expr.Expr, literals: Dict[ID, type_.Enumeration],
+            left: expr.Expr,
+            right: expr.Expr,
+            literals: Dict[ID, type_.Enumeration],
         ) -> Tuple[TypeExpr, TypeExpr]:
             def resolve_type(expression: expr.Expr) -> Optional[TypeExpr]:
                 if not isinstance(expression, expr.Variable):

@@ -119,7 +119,10 @@ class Parser:
                 check_naming(error, specification.package)
         except (ParseException, ParseFatalException) as e:
             error.append(
-                e.msg, Subsystem.PARSER, Severity.ERROR, parser_location(e.loc, e.loc, e.pstr),
+                e.msg,
+                Subsystem.PARSER,
+                Severity.ERROR,
+                parser_location(e.loc, e.loc, e.pstr),
             )
         error.propagate()
 

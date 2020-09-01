@@ -51,7 +51,7 @@ setup(
     ],
     extras_require={
         "devel": [
-            "black ==19.10b0",
+            "black ==20.8b1",
             "flake8 >=3, <4",
             "hypothesis >=5, <6",
             "isort >=5, <6",

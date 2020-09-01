@@ -34,7 +34,8 @@ from rflx.statement import Assignment, Erase, Reset
 
 def test_undeclared_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match='^model: error: undeclared variable "Undefined"$',
+        RecordFluxError,
+        match='^model: error: undeclared variable "Undefined"$',
     ):
         Session(
             identifier="session",
@@ -44,7 +45,10 @@ def test_undeclared_variable() -> None:
                 State(
                     name=ID("START"),
                     transitions=[
-                        Transition(target=ID("END"), condition=Equal(Variable("Undefined"), TRUE),)
+                        Transition(
+                            target=ID("END"),
+                            condition=Equal(Variable("Undefined"), TRUE),
+                        )
                     ],
                 ),
                 State(name=ID("END")),
@@ -81,7 +85,8 @@ def test_declared_local_variable() -> None:
                 name=ID("START"),
                 transitions=[
                     Transition(
-                        target=ID("END"), condition=Equal(Variable("Local"), Variable("Global")),
+                        target=ID("END"),
+                        condition=Equal(Variable("Local"), Variable("Global")),
                     )
                 ],
                 declarations=[VariableDeclaration("Local", "Some_Type")],
@@ -94,7 +99,8 @@ def test_declared_local_variable() -> None:
 
 def test_undeclared_local_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match=('^model: error: undeclared variable "Local"$'),
+        RecordFluxError,
+        match=('^model: error: undeclared variable "Local"$'),
     ):
         Session(
             identifier="session",
@@ -329,7 +335,12 @@ def test_call_to_builtin_write() -> None:
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
                 declarations=[],
-                actions=[Assignment("Success", Call("Write", [Variable("Some_Channel"), TRUE]),)],
+                actions=[
+                    Assignment(
+                        "Success",
+                        Call("Write", [Variable("Some_Channel"), TRUE]),
+                    )
+                ],
             ),
             State(name=ID("END")),
         ],
@@ -371,7 +382,12 @@ def test_call_to_builtin_data_available() -> None:
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
                 declarations=[],
-                actions=[Assignment("Result", Call("Data_Available", [Variable("Some_Channel")]),)],
+                actions=[
+                    Assignment(
+                        "Result",
+                        Call("Data_Available", [Variable("Some_Channel")]),
+                    )
+                ],
             ),
             State(name=ID("END")),
         ],
@@ -517,7 +533,10 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
                     transitions=[Transition(target=ID("END"))],
                     declarations=[],
                     actions=[
-                        Assignment("Result", Call("Data_Available", [Variable("Out_Channel")]),)
+                        Assignment(
+                            "Result",
+                            Call("Data_Available", [Variable("Out_Channel")]),
+                        )
                     ],
                 ),
                 State(name=ID("END")),
@@ -661,7 +680,12 @@ def test_undeclared_variable_in_subprogram_call() -> None:
                         Transition(target=ID("END"), condition=Equal(Variable("Result"), TRUE))
                     ],
                     declarations=[],
-                    actions=[Assignment("Result", Call("SubProg", [Variable("Undefined")]),)],
+                    actions=[
+                        Assignment(
+                            "Result",
+                            Call("SubProg", [Variable("Undefined")]),
+                        )
+                    ],
                 ),
                 State(name=ID("END")),
             ],
@@ -688,7 +712,9 @@ def test_function_declaration_is_no_builtin_read() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
+                    name=ID("START"),
+                    transitions=[Transition(target=ID("END"))],
+                    declarations=[],
                 ),
                 State(name=ID("END")),
             ],
@@ -712,7 +738,9 @@ def test_function_declaration_is_no_builtin_write() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
+                    name=ID("START"),
+                    transitions=[Transition(target=ID("END"))],
+                    declarations=[],
                 ),
                 State(name=ID("END")),
             ],
@@ -736,7 +764,9 @@ def test_function_declaration_is_no_builtin_call() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
+                    name=ID("START"),
+                    transitions=[Transition(target=ID("END"))],
+                    declarations=[],
                 ),
                 State(name=ID("END")),
             ],
@@ -760,7 +790,9 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
+                    name=ID("START"),
+                    transitions=[Transition(target=ID("END"))],
+                    declarations=[],
                 ),
                 State(name=ID("END")),
             ],
@@ -800,7 +832,8 @@ def test_local_variable_shadows_global() -> None:
 
 def test_unused_global_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match='^model: error: unused variable "Global"$',
+        RecordFluxError,
+        match='^model: error: unused variable "Global"$',
     ):
         Session(
             identifier="session",
@@ -808,7 +841,9 @@ def test_unused_global_variable() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
+                    name=ID("START"),
+                    transitions=[Transition(target=ID("END"))],
+                    declarations=[],
                 ),
                 State(name=ID("END")),
             ],
@@ -818,7 +853,8 @@ def test_unused_global_variable() -> None:
 
 def test_unused_local_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match='^model: error: unused local variable "Data" in state START$',
+        RecordFluxError,
+        match='^model: error: unused local variable "Data" in state START$',
     ):
         Session(
             identifier="session",
@@ -838,7 +874,8 @@ def test_unused_local_variable() -> None:
 
 def test_renames_references_undefined_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match='^model: error: undeclared variable "Foo"$',
+        RecordFluxError,
+        match='^model: error: undeclared variable "Foo"$',
     ):
         Session(
             identifier="session",
@@ -924,7 +961,10 @@ def test_append_list_attribute() -> None:
                 transitions=[Transition(target=ID("END"))],
                 declarations=[],
                 actions=[
-                    Assignment("List", Call("Append", [Variable("List"), Variable("Element")]),)
+                    Assignment(
+                        "List",
+                        Call("Append", [Variable("List"), Variable("Element")]),
+                    )
                 ],
             ),
             State(name=ID("END")),
@@ -947,7 +987,10 @@ def test_extend_list_attribute() -> None:
                 transitions=[Transition(target=ID("END"))],
                 declarations=[],
                 actions=[
-                    Assignment("List", Call("Extend", [Variable("List"), Variable("Element")]),)
+                    Assignment(
+                        "List",
+                        Call("Extend", [Variable("List"), Variable("Element")]),
+                    )
                 ],
             ),
             State(name=ID("END")),
@@ -982,7 +1025,8 @@ def test_aggregate_with_undefined_parameter() -> None:
                         Assignment(
                             "Data",
                             MessageAggregate(
-                                "Data_Type", {"Foo": Variable("Data"), "Bar": Variable("Undef")},
+                                "Data_Type",
+                                {"Foo": Variable("Data"), "Bar": Variable("Undef")},
                             ),
                         )
                     ],
@@ -1038,7 +1082,14 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
                 State(
                     name=ID("START"),
                     transitions=[Transition(target=ID("END"))],
-                    actions=[Assignment("Data", Opaque(Call("Sub", [Variable("UndefData")]),),)],
+                    actions=[
+                        Assignment(
+                            "Data",
+                            Opaque(
+                                Call("Sub", [Variable("UndefData")]),
+                            ),
+                        )
+                    ],
                 ),
                 State(name=ID("END")),
             ],
@@ -1058,7 +1109,14 @@ def test_assignment_opaque_subprogram_result() -> None:
             State(
                 name=ID("START"),
                 transitions=[Transition(target=ID("END"))],
-                actions=[Assignment("Data", Opaque(Call("Sub", [Variable("Data")]),),)],
+                actions=[
+                    Assignment(
+                        "Data",
+                        Opaque(
+                            Call("Sub", [Variable("Data")]),
+                        ),
+                    )
+                ],
             ),
             State(name=ID("END")),
         ],
@@ -1082,7 +1140,8 @@ def test_assignment_opaque_subprogram_binding() -> None:
                     Assignment(
                         "Data",
                         Binding(
-                            Opaque(Call("Sub", [Variable("Bound")])), {"Bound": Variable("Data")},
+                            Opaque(Call("Sub", [Variable("Bound")])),
+                            {"Bound": Variable("Data")},
                         ),
                     )
                 ],
@@ -1107,7 +1166,9 @@ def test_private_declaration_is_no_builtin_write() -> None:
             final=ID("END"),
             states=[
                 State(
-                    name=ID("START"), transitions=[Transition(target=ID("END"))], declarations=[],
+                    name=ID("START"),
+                    transitions=[Transition(target=ID("END"))],
+                    declarations=[],
                 ),
                 State(name=ID("END")),
             ],
@@ -1117,7 +1178,8 @@ def test_private_declaration_is_no_builtin_write() -> None:
 
 def test_duplicate_states() -> None:
     with pytest.raises(
-        RecordFluxError, match=("^model: error: duplicate states: FOO$"),
+        RecordFluxError,
+        match=("^model: error: duplicate states: FOO$"),
     ):
         Session(
             identifier="session",

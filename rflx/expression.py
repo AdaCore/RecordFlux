@@ -1866,7 +1866,10 @@ class ValueRange(Expr):
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, self.__class__):
-            return self.__class__(self.lower.substituted(func), self.upper.substituted(func),)
+            return self.__class__(
+                self.lower.substituted(func),
+                self.upper.substituted(func),
+            )
         return expr
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
@@ -2007,7 +2010,9 @@ class MessageAggregate(Expr):
         expr = func(self)
         assert isinstance(expr, MessageAggregate)
         return expr.__class__(
-            expr.name, {k: expr.data[k].substituted(func) for k in expr.data}, expr.location,
+            expr.name,
+            {k: expr.data[k].substituted(func) for k in expr.data},
+            expr.location,
         )
 
     @property

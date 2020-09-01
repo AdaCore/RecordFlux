@@ -198,16 +198,25 @@ class RangeInteger(Integer):
 
         if first_num < expr.Number(0):
             self.error.append(
-                f'first of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
+                f'first of "{self.name}" negative',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
             )
         if first_num > last_num:
             self.error.append(
-                f'range of "{self.name}" negative', Subsystem.MODEL, Severity.ERROR, self.location,
+                f'range of "{self.name}" negative',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
             )
 
         if int(last_num).bit_length() > int(size_num):
             self.error.append(
-                f'size of "{self.name}" too small', Subsystem.MODEL, Severity.ERROR, self.location,
+                f'size of "{self.name}" too small',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
             )
         if int(size_num) > 64:
             self.error.append(

@@ -361,7 +361,10 @@ def test_grammar_boolean_expression_error(string: str, error: Expr) -> None:
         (
             "[for X in Y => X.A]",
             expr.Comprehension(
-                "X", expr.Variable("Y"), expr.Selected(expr.Variable("X"), "A"), expr.TRUE,
+                "X",
+                expr.Variable("Y"),
+                expr.Selected(expr.Variable("X"), "A"),
+                expr.TRUE,
             ),
         ),
         (
@@ -451,7 +454,8 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
                     expr.NotIn(
                         expr.Variable("G.E"),
                         expr.Selected(
-                            expr.Conversion("P.S", expr.Selected(expr.Variable("A"), "D")), "V",
+                            expr.Conversion("P.S", expr.Selected(expr.Variable("A"), "D")),
+                            "V",
                         ),
                     ),
                 ),
@@ -873,7 +877,8 @@ def test_session() -> None:
 
 def test_grammar_unexpected_exception(monkeypatch: Any) -> None:
     with pytest.raises(
-        ParseFatalException, match=r"ZeroDivisionError",
+        ParseFatalException,
+        match=r"ZeroDivisionError",
     ):
         monkeypatch.setattr(
             grammar,
@@ -891,7 +896,9 @@ def test_grammar_expression_aggregate_no_number() -> None:
 def test_grammar_unexpected_suffix() -> None:
     with pytest.raises(ParseFatalException, match=r"^unexpected suffix .*$"):
         grammar.parse_suffix(
-            "", 0, [[Variable(ID("X")), ("X", None)]],
+            "",
+            0,
+            [[Variable(ID("X")), ("X", None)]],
         )
 
 
@@ -926,7 +933,9 @@ def test_grammar_unexpected_quantified_expression(monkeypatch: Any) -> None:
     monkeypatch.setattr(grammar, "evaluate_located_expression", lambda s, t: (t, Location((1, 1))))
     with pytest.raises(ParseFatalException, match=r"^unexpected quantified expression"):
         grammar.parse_quantified_expression(
-            "", 0, [[0, "any", ID("X"), Variable("Y"), Equal(Variable("X"), Variable("Z")), 24]],
+            "",
+            0,
+            [[0, "any", ID("X"), Variable("Y"), Equal(Variable("X"), Variable("Z")), 24]],
         )
 
 
@@ -1026,7 +1035,8 @@ def test_context_spec() -> None:
         [f"{TESTDIR}/context.rflx"],
         {
             "Context": Specification(
-                ContextSpec(["Empty_File", "Empty_Package"]), PackageSpec("Context", [], []),
+                ContextSpec(["Empty_File", "Empty_Package"]),
+                PackageSpec("Context", [], []),
             ),
             "Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [], [])),
         },
@@ -1575,7 +1585,8 @@ def test_message_type_spec() -> None:
                         ],
                     ),
                     MessageSpec(
-                        "__PACKAGE__.Simple_PDU", [Component("Bar", "T"), Component("Baz", "T")],
+                        "__PACKAGE__.Simple_PDU",
+                        [Component("Bar", "T"), Component("Baz", "T")],
                     ),
                     MessageSpec("__PACKAGE__.Empty_PDU", []),
                 ],
@@ -1704,7 +1715,8 @@ def test_type_refinement_spec() -> None:
                         ],
                     ),
                     MessageSpec(
-                        "__PACKAGE__.Simple_PDU", [Component("Bar", "T"), Component("Baz", "T")],
+                        "__PACKAGE__.Simple_PDU",
+                        [Component("Bar", "T"), Component("Baz", "T")],
                     ),
                     MessageSpec("__PACKAGE__.Empty_PDU", []),
                 ],
@@ -1885,10 +1897,12 @@ def test_ethernet_spec() -> None:
                                     Then(
                                         condition=And(
                                             GreaterEqual(
-                                                Div(Length("Payload"), Number(8)), Number(46),
+                                                Div(Length("Payload"), Number(8)),
+                                                Number(46),
                                             ),
                                             LessEqual(
-                                                Div(Length("Payload"), Number(8)), Number(1500),
+                                                Div(Length("Payload"), Number(8)),
+                                                Number(1500),
                                             ),
                                         ),
                                     )

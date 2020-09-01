@@ -254,7 +254,10 @@ class Generator:
         return unit
 
     def __create_instantiation_unit(
-        self, name: ID, context: List[ContextItem], instantiation: GenericPackageInstantiation,
+        self,
+        name: ID,
+        context: List[ContextItem],
+        instantiation: GenericPackageInstantiation,
     ) -> InstantiationUnit:
         for p in reversed(CONFIGURATION_PRAGMAS):
             context.insert(0, p)
@@ -632,7 +635,10 @@ class Generator:
                                 Not(Constrained("Ctx")),
                                 NotEqual(Variable("Buffer"), NULL),
                                 Greater(Length("Buffer"), Number(0)),
-                                LessEqual(Last("Buffer"), Div(Last(const.TYPES_INDEX), Number(2)),),
+                                LessEqual(
+                                    Last("Buffer"),
+                                    Div(Last(const.TYPES_INDEX), Number(2)),
+                                ),
                             )
                         ),
                         Postcondition(
@@ -705,7 +711,8 @@ class Generator:
                                 ),
                                 LessEqual(Variable("First"), Variable("Last")),
                                 LessEqual(
-                                    Variable("Last"), Div(Last(const.TYPES_BIT_INDEX), Number(2)),
+                                    Variable("Last"),
+                                    Div(Last(const.TYPES_BIT_INDEX), Number(2)),
                                 ),
                             )
                         ),
@@ -801,7 +808,8 @@ class Generator:
                             ),
                             Add(
                                 Call(
-                                    const.TYPES * "Last_Bit_Index", [Variable("Ctx.Buffer_Last")],
+                                    const.TYPES * "Last_Bit_Index",
+                                    [Variable("Ctx.Buffer_Last")],
                                 ),
                                 -Variable("Ctx.First"),
                                 Number(1),
@@ -888,7 +896,9 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),)
+                            And(
+                                Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
+                            )
                         )
                     ],
                 )
@@ -954,7 +964,13 @@ class Generator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [Precondition(And(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),))],
+                    [
+                        Precondition(
+                            And(
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                            )
+                        )
+                    ],
                 )
             ],
             [
@@ -1020,7 +1036,13 @@ class Generator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [Precondition(And(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),))],
+                    [
+                        Precondition(
+                            And(
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                            )
+                        )
+                    ],
                 )
             ],
             [
@@ -1049,7 +1071,13 @@ class Generator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [Precondition(And(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),))],
+                    [
+                        Precondition(
+                            And(
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                            )
+                        )
+                    ],
                 )
             ],
             [
@@ -1338,7 +1366,11 @@ class Generator:
                         ),
                     ],
                     [
-                        Precondition(And(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),),),
+                        Precondition(
+                            And(
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                            ),
+                        ),
                         Postcondition(
                             And(
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
@@ -1576,7 +1608,8 @@ class Generator:
                     And(
                         NotEqual(Variable("Ctx.Buffer"), Variable("null")),
                         LessEqual(
-                            Variable("Ctx.First"), Div(Last(const.TYPES_BIT_INDEX), Number(2)),
+                            Variable("Ctx.First"),
+                            Div(Last(const.TYPES_BIT_INDEX), Number(2)),
                         ),
                         LessEqual(
                             Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
@@ -1619,7 +1652,8 @@ class Generator:
 
     @staticmethod
     def __create_equal_function(
-        scalar_fields: Mapping[Field, Type], composite_fields: Sequence[Field],
+        scalar_fields: Mapping[Field, Type],
+        composite_fields: Sequence[Field],
     ) -> UnitPart:
         specification = FunctionSpecification(
             "Equal",
@@ -2699,7 +2733,9 @@ class Generator:
     @staticmethod
     def __create_valid_next_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Valid_Next", "Boolean", [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
+            "Valid_Next",
+            "Boolean",
+            [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
         return UnitPart(
@@ -2728,7 +2764,11 @@ class Generator:
         self.__check_template_file(filename)
         with open(self.template_dir.joinpath(filename)) as license_file:
             today = date.today()
-            return license_file.read().format(version=__version__, date=today, year=today.year,)
+            return license_file.read().format(
+                version=__version__,
+                date=today,
+                year=today.year,
+            )
 
     def __type_validation_function(
         self, scalar_type: Scalar, validation_expression: Expr

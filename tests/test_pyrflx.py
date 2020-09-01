@@ -604,7 +604,8 @@ def test_icmp_echo_request(icmp: MessageValue) -> None:
     icmp.set("Identifier", 5)
     icmp.set("Sequence_Number", 1)
     icmp.set(
-        "Data", test_data,
+        "Data",
+        test_data,
     )
     assert icmp.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
     assert icmp.valid_message
@@ -1519,7 +1520,8 @@ def fixture_icmp_checksum(icmp_type: Message) -> MessageValue:
 
 def test_checksum_field_not_defined(icmp_checksum: MessageValue) -> None:
     with pytest.raises(
-        KeyError, match="cannot set checksum function: field NonExistingField is not defined",
+        KeyError,
+        match="cannot set checksum function: field NonExistingField is not defined",
     ):
         icmp_checksum.set_checksum_function({"NonExistingField": icmp_checksum_function})
 
