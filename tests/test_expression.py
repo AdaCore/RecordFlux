@@ -614,9 +614,7 @@ def test_attribute_str() -> None:
 
 def test_attribute_variables() -> None:
     assert First("X").variables() == [Variable("X")]
-    assert First("X").variables() == [Variable("X")]
-    with pytest.raises(TypeError):
-        First(Call("X")).variables()
+    assert First(Call("X", [Variable("Y")])).variables() == [Variable("Y")]
 
 
 def test_attribute_z3expr() -> None:

@@ -958,8 +958,6 @@ class Attribute(Name):
         return -expr if self.negative else expr
 
     def variables(self) -> List[Variable]:
-        if not isinstance(self.prefix, Variable):
-            raise TypeError
         return self.prefix.variables()
 
     def z3expr(self) -> z3.ExprRef:
