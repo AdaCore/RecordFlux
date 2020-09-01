@@ -4,8 +4,6 @@ from typing import Mapping, Sequence
 
 import pytest
 
-import rflx.declaration as decl
-import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.expression import (
     TRUE,
@@ -51,15 +49,12 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
-    Session,
-    State,
-    Transition,
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
 from tests.models import ENUMERATION, ETHERNET_FRAME, MODULAR_INTEGER, RANGE_INTEGER
-from tests.utils import assert_equal, assert_message_model_error, multilinestr
+from tests.utils import assert_equal, assert_message_model_error
 
 M_NO_REF = UnprovenMessage(
     "P.No_Ref",
@@ -1791,58 +1786,4 @@ def test_opaque_length_valid_multiple_of_8_dynamic_cond() -> None:
             Link(Field("O"), FINAL),
         ],
         {Field("L"): MODULAR_INTEGER, Field("O"): Opaque()},
-    )
-
-
-def test_session_str() -> None:
-    assert_equal(
-        str(
-            Session(
-                "Session",
-                "A",
-                "B",
-                [
-                    State(
-                        "A",
-                        declarations=[decl.VariableDeclaration("Z", "Boolean", Variable("Y"))],
-                        actions=[stmt.Assignment("Z", Number(1))],
-                        transitions=[
-                            Transition("B", condition=Equal(Variable("Z"), Number(1))),
-                            Transition("A"),
-                        ],
-                    ),
-                    State("B"),
-                ],
-                [decl.VariableDeclaration("Y", "Boolean", Number(0))],
-                [
-                    decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.PrivateDeclaration("T"),
-                    decl.SubprogramDeclaration("F", [], "T"),
-                ],
-            )
-        ),
-        multilinestr(
-            """generic
-                  X : Channel with Readable, Writable;
-                  type T is private;
-                  with function F return T;
-               session Session with
-                  Initial => A,
-                  Final => B
-               is
-                  Y : Boolean := 0;
-               begin
-                  state A is
-                     Z : Boolean := Y;
-                  begin
-                     Z := 1;
-                  transition
-                     then B
-                        if Z = 1
-                     then A
-                  end A;
-
-                  state B is null state;
-               end Session"""
-        ),
     )
