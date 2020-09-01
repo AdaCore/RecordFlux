@@ -588,7 +588,8 @@ def test_attribute_substituted() -> None:
         -First("X").substituted(lambda x: Number(42) if x == First("X") else x), Number(-42)
     )
     assert_equal(
-        First("X").substituted(lambda x: Call("Y") if x == Variable("X") else x), First(Call("Y")),
+        First("X").substituted(lambda x: Call("Y") if x == Variable("X") else x),
+        First(Call("Y")),
     )
     assert_equal(
         -First("X").substituted(lambda x: Call("Y") if x == Variable("X") else x),
@@ -752,7 +753,8 @@ def test_relation_simplified() -> None:
         Equal(Number(2), Variable("X")),
     )
     assert_equal(
-        Equal(Add(Number(1), Number(1)), Add(Number(1), Number(1))).simplified(), TRUE,
+        Equal(Add(Number(1), Number(1)), Add(Number(1), Number(1))).simplified(),
+        TRUE,
     )
 
 
@@ -831,7 +833,8 @@ def test_in_neg() -> None:
 
 def test_in_simplified() -> None:
     assert_equal(
-        In(Variable("X"), Add(Number(21), Number(21))).simplified(), In(Variable("X"), Number(42)),
+        In(Variable("X"), Add(Number(21), Number(21))).simplified(),
+        In(Variable("X"), Number(42)),
     )
 
 
@@ -892,7 +895,9 @@ def test_slice_substituted() -> None:
 def test_slice_simplified() -> None:
     assert_equal(
         Slice(
-            Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Add(Number(21), Number(21))),
+            Variable("Buffer"),
+            First("Buffer"),
+            Add(Last("Buffer"), Add(Number(21), Number(21))),
         ).simplified(),
         Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42))),
     )
@@ -950,7 +955,8 @@ def test_if_substituted() -> None:
         ),
     )
     assert_equal(
-        if_expr.substituted(lambda x: Variable("Z") if isinstance(x, If) else x), Variable("Z"),
+        if_expr.substituted(lambda x: Variable("Z") if isinstance(x, If) else x),
+        Variable("Z"),
     )
 
 
@@ -1204,7 +1210,8 @@ def test_expr_variables_duplicates() -> None:
         [Variable("X"), Variable("Y")],
     )
     assert_equal(
-        Or(Variable("X"), Variable("Y"), Variable("X")).variables(), [Variable("X"), Variable("Y")],
+        Or(Variable("X"), Variable("Y"), Variable("X")).variables(),
+        [Variable("X"), Variable("Y")],
     )
     assert_equal(
         Add(Variable("X"), Variable("Y"), Variable("X")).variables(),
@@ -1418,7 +1425,8 @@ def test_binding_simplified_length() -> None:
 
 def test_binding_simplified_forall_iterable() -> None:
     binding = Binding(
-        ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))), {"Y": Variable("Baz")},
+        ForAllIn("X", Variable("Y"), Equal(Variable("X"), Variable("Bar"))),
+        {"Y": Variable("Baz")},
     )
     expected = ForAllIn("X", Variable("Baz"), Equal(Variable("X"), Variable("Bar")))
     result = binding.simplified()
@@ -1446,28 +1454,40 @@ def test_binding_simplified_forsome_iterable() -> None:
 
 
 def test_binding_simplified_contains_left() -> None:
-    binding = Binding(In(Variable("X"), Variable("Y")), {"X": Variable("Baz")},)
+    binding = Binding(
+        In(Variable("X"), Variable("Y")),
+        {"X": Variable("Baz")},
+    )
     expected = In(Variable("Baz"), Variable("Y"))
     result = binding.simplified()
     assert result == expected
 
 
 def test_binding_simplified_contains_right() -> None:
-    binding = Binding(In(Variable("X"), Variable("Y")), {"Y": Variable("Baz")},)
+    binding = Binding(
+        In(Variable("X"), Variable("Y")),
+        {"Y": Variable("Baz")},
+    )
     expected = In(Variable("X"), Variable("Baz"))
     result = binding.simplified()
     assert result == expected
 
 
 def test_binding_simplified_not_contains_left() -> None:
-    binding = Binding(NotIn(Variable("X"), Variable("Y")), {"X": Variable("Baz")},)
+    binding = Binding(
+        NotIn(Variable("X"), Variable("Y")),
+        {"X": Variable("Baz")},
+    )
     expected = NotIn(Variable("Baz"), Variable("Y"))
     result = binding.simplified()
     assert result == expected
 
 
 def test_binding_simplified_not_contains_right() -> None:
-    binding = Binding(NotIn(Variable("X"), Variable("Y")), {"Y": Variable("Baz")},)
+    binding = Binding(
+        NotIn(Variable("X"), Variable("Y")),
+        {"Y": Variable("Baz")},
+    )
     expected = NotIn(Variable("X"), Variable("Baz"))
     result = binding.simplified()
     assert result == expected
@@ -1475,7 +1495,8 @@ def test_binding_simplified_not_contains_right() -> None:
 
 def test_binding_simplified_subprogram() -> None:
     binding = Binding(
-        Call("Sub", [Variable("A"), Variable("B"), Variable("C")]), {"B": Variable("Baz")},
+        Call("Sub", [Variable("A"), Variable("B"), Variable("C")]),
+        {"B": Variable("Baz")},
     )
     expected = Call("Sub", [Variable("A"), Variable("Baz"), Variable("C")])
     result = binding.simplified()
@@ -1492,12 +1513,18 @@ def test_binding_simplified_field() -> None:
 def test_binding_simplified_list_comprehension() -> None:
     binding = Binding(
         Comprehension(
-            "E", Variable("List"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
+            "E",
+            Variable("List"),
+            Variable("E.Bar"),
+            Equal(Variable("E.Tag"), Variable("Foo")),
         ),
         {"List": Variable("Foo")},
     )
     expected = Comprehension(
-        "E", Variable("Foo"), Variable("E.Bar"), Equal(Variable("E.Tag"), Variable("Foo")),
+        "E",
+        Variable("Foo"),
+        Variable("E.Bar"),
+        Equal(Variable("E.Tag"), Variable("Foo")),
     )
     result = binding.simplified()
     assert result == expected

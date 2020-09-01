@@ -512,37 +512,44 @@ class MessageValue(TypeValue):
         self._skip_verification = skip_verification
         self._refinements = refinements or []
 
-        self._fields: Mapping[
-            str, MessageValue.Field
-        ] = state.fields if state and state.fields else {
-            f.name: self.Field(
-                TypeValue.construct(
-                    self._type.types[f] if f in self._type.types else Opaque(),
-                    imported=f in self._type.types and self._type.types[f].package != model.package,
-                ),
-                f.name,
-            )
-            for f in (INITIAL,) + self._type.fields
-        }
+        self._fields: Mapping[str, MessageValue.Field] = (
+            state.fields
+            if state and state.fields
+            else {
+                f.name: self.Field(
+                    TypeValue.construct(
+                        self._type.types[f] if f in self._type.types else Opaque(),
+                        imported=f in self._type.types
+                        and self._type.types[f].package != model.package,
+                    ),
+                    f.name,
+                )
+                for f in (INITIAL,) + self._type.fields
+            }
+        )
 
-        self._checksums: Mapping[
-            str, MessageValue.Checksum
-        ] = state.checksums if state and state.checksums else {
-            str(field_name): MessageValue.Checksum(str(field_name), parameters)
-            for field_name, parameters in self._type.checksums.items()
-        }
+        self._checksums: Mapping[str, MessageValue.Checksum] = (
+            state.checksums
+            if state and state.checksums
+            else {
+                str(field_name): MessageValue.Checksum(str(field_name), parameters)
+                for field_name, parameters in self._type.checksums.items()
+            }
+        )
 
-        self.__type_literals: Mapping[
-            Name, Expr
-        ] = state.type_literals if state and state.type_literals else {
-            k: v
-            for t in (
-                f.typeval.literals
-                for f in self._fields.values()
-                if isinstance(f.typeval, EnumValue)
-            )
-            for k, v in t.items()
-        }
+        self.__type_literals: Mapping[Name, Expr] = (
+            state.type_literals
+            if state and state.type_literals
+            else {
+                k: v
+                for t in (
+                    f.typeval.literals
+                    for f in self._fields.values()
+                    if isinstance(f.typeval, EnumValue)
+                )
+                for k, v in t.items()
+            }
+        )
 
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)

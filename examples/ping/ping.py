@@ -25,7 +25,8 @@ def ping(target: str) -> None:
     seq = 0
     while True:
         sock_out.sendto(
-            create_request(0, int(ipaddress.IPv4Address(target_ip)), seq), (target, 0),
+            create_request(0, int(ipaddress.IPv4Address(target_ip)), seq),
+            (target, 0),
         )
 
         packet = parse_reply(sock_in.recv(4096))

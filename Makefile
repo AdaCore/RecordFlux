@@ -25,7 +25,7 @@ check_dependencies:
 	tools/check_dependencies.py
 
 check_black:
-	black -l 100 --check $(python-packages) ide/gnatstudio
+	black --check --diff --line-length 100 $(python-packages) ide/gnatstudio
 
 check_isort:
 	isort --check --diff $(python-packages) ide/gnatstudio

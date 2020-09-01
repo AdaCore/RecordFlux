@@ -847,7 +847,10 @@ def parse_identifier(string: str, location: int, tokens: ParseResults) -> ID:
 
     if tokens.lower() in const.RESERVED_WORDS:
         fail(
-            f'reserved word "{tokens}" used as identifier', Subsystem.PARSER, Severity.ERROR, locn,
+            f'reserved word "{tokens}" used as identifier',
+            Subsystem.PARSER,
+            Severity.ERROR,
+            locn,
         )
 
     return ID(tokens, locn)
