@@ -11,9 +11,8 @@ from rflx.common import flat_name
 from rflx.error import RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
 from rflx.graph import Graph
-from rflx.model import Model
+from rflx.model import Message, Model, Session
 from rflx.parser import Parser
-from rflx.sessionfile import SessionFile
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -74,18 +73,6 @@ def main(argv: List[str]) -> Union[int, str]:
         help=("skip time-consuming verification of model"),
     )
     parser_graph.set_defaults(func=graph)
-
-    parser_session = subparsers.add_parser("session", help="load session")
-    parser_session.add_argument("files", metavar="FILE", type=str, nargs="+", help="session file")
-    parser_session.add_argument("-d", "--directory", help="output directory", default=".", type=str)
-    parser_session.add_argument(
-        "-f",
-        "--format",
-        type=str,
-        choices=["dot", "jpg", "pdf", "png", "raw", "svg"],
-        help=("output graph with specified format"),
-    )
-    parser_session.set_defaults(func=session)
 
     args = parser.parse_args(argv[1:])
 
@@ -157,9 +144,10 @@ def graph(args: argparse.Namespace) -> None:
     model = parse(args.files, args.no_verification)
     locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = defaultdict(dict)
 
-    for m in model.messages:
-        message = flat_name(m.full_name)
-        filename = Path(directory).joinpath(message).with_suffix(f".{args.format}")
+    for m in [*model.messages, *model.sessions]:
+        assert isinstance(m, (Message, Session))
+        name = flat_name(str(m.identifier))
+        filename = Path(directory).joinpath(name).with_suffix(f".{args.format}")
         Graph(m).write(filename, fmt=args.format)
 
         assert m.location
@@ -169,7 +157,7 @@ def graph(args: argparse.Namespace) -> None:
 
         source = str(m.location.source.name)
 
-        locations[source][message] = {
+        locations[source][name] = {
             "start": {"line": m.location.start[0], "column": m.location.start[1]},
             "end": {"line": m.location.end[0], "column": m.location.end[1]},
         }
@@ -177,26 +165,3 @@ def graph(args: argparse.Namespace) -> None:
     filename = Path(directory).joinpath("locations.json")
     with open(filename, "w") as f:
         json.dump(locations, f)
-
-
-def session(args: argparse.Namespace) -> None:
-    directory = Path(args.directory)
-    if not directory.is_dir():
-        fail(f'directory not found: "{directory}"', Subsystem.MODEL)
-
-    session_file = SessionFile()
-
-    for f in args.files:
-        if not Path(f).is_file():
-            fail(f'file not found: "{f}"', Subsystem.MODEL)
-
-        print(f"Loading Session {f}... ", end="")
-        session_file.parse(f, f)
-
-        if args.format:
-            for sm in session_file.sessions:
-                filename = (
-                    Path(directory).joinpath(str(sm.identifier.name)).with_suffix(f".{args.format}")
-                )
-                Graph(sm).write(filename, fmt=args.format)
-        print("OK")
