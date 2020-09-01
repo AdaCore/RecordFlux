@@ -939,8 +939,8 @@ class MessageValue(TypeValue):
                 isinstance(expr_tuple.evaluated_expression, ValueRange)
                 and isinstance(expr_tuple.expression, ValueRange)
                 and (
-                    not isinstance(expr_tuple.evaluated_expression.lower.simplified(), Number)
-                    or not isinstance(expr_tuple.evaluated_expression.upper.simplified(), Number)
+                    not isinstance(expr_tuple.evaluated_expression.lower, Number)
+                    or not isinstance(expr_tuple.evaluated_expression.upper, Number)
                     or not valid_path(expr_tuple.expression)
                 )
             ):
@@ -958,9 +958,8 @@ class MessageValue(TypeValue):
         return True
 
     def update_checksums(self) -> None:
-        # ISSUE: Componolit/RecordFlux#240
-        self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
         for checksum in self._checksums.values():
+            self._simplified_mapping[ValidChecksum(checksum.field_name)] = TRUE
             self._is_checksum_settable(checksum)
             checksum_value = self._calculate_checksum(checksum)
             self._fields[checksum.field_name].typeval.assign(checksum_value)
@@ -1120,7 +1119,7 @@ class MessageValue(TypeValue):
             if isinstance(v.last, Number):
                 self._simplified_mapping[v.name_last] = v.last
 
-        # ISSUE: Componolit/RecordFlux#240
+        # ISSUE: Componolit/RecordFlux#422
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
 
         pre_final = self._prev_field("Final")
