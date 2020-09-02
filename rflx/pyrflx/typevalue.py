@@ -562,7 +562,7 @@ class MessageValue(TypeValue):
             self._last_field = INITIAL.name
         else:
             self._preset_fields(INITIAL.name)
-        self.message_last_name = state.last_name if state else Last("Message")
+        self.__message_last_name = Last("Message")
 
     def clone(self) -> "MessageValue":
         return MessageValue(
@@ -1105,7 +1105,7 @@ class MessageValue(TypeValue):
             self._simplified_mapping[field.name_length] = field.typeval.size
             self._simplified_mapping[field.name_first] = field.first
             self._simplified_mapping[field.name_last] = field.last
-            self._simplified_mapping[self.message_last_name] = field.last
+            self._simplified_mapping[self.__message_last_name] = field.last
             return
 
         self._simplified_mapping = {}
@@ -1124,7 +1124,7 @@ class MessageValue(TypeValue):
 
         pre_final = self._prev_field("Final")
         if pre_final and self._fields[pre_final].set:
-            self._simplified_mapping[self.message_last_name] = self._fields[pre_final].last
+            self._simplified_mapping[self.__message_last_name] = self._fields[pre_final].last
 
     def __simplified(self, expr: Expr) -> Expr:
         if expr in {TRUE, FALSE}:
@@ -1232,4 +1232,3 @@ class MessageValue(TypeValue):
         fields: Optional[Mapping[str, "MessageValue.Field"]] = None
         checksums: Optional[Mapping[str, "MessageValue.Checksum"]] = None
         type_literals: Optional[Mapping[Name, Expr]] = None
-        last_name: Last = Last("Message")
