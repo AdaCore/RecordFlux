@@ -1000,7 +1000,7 @@ class MessageValue(TypeValue):
             else:
                 assert isinstance(expr_tuple.evaluated_expression, Number)
                 arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.value
-        return checksum.function(self.bytestring, **arguments)
+        return checksum.function(self._unchecked_bytestring(), **arguments)
 
     def get(self, field_name: str) -> Union["MessageValue", Sequence[TypeValue], int, str, bytes]:
         if field_name not in self.valid_fields:
@@ -1031,8 +1031,7 @@ class MessageValue(TypeValue):
     def value(self) -> Any:
         raise NotImplementedError
 
-    @property
-    def bytestring(self) -> bytes:
+    def _unchecked_bytestring(self) -> bytes:
         bits = str(self.bitstring)
         if len(bits) < 8:
             bits = bits.ljust(8, "0")
@@ -1040,6 +1039,12 @@ class MessageValue(TypeValue):
         return b"".join(
             [int(bits[i : i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)]
         )
+
+    @property
+    def bytestring(self) -> bytes:
+        if not self._skip_verification and not self.valid_message:
+            raise RuntimeError("cannot create bytestring of invalid message")
+        return self._unchecked_bytestring()
 
     @property
     def fields(self) -> List[str]:
