@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines,too-many-ancestors
+# pylint: disable=too-many-lines,too-many-ancestors,too-many-arguments
 import operator
 from abc import abstractmethod
 from enum import Enum
@@ -7,7 +7,8 @@ from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import z3
 
-from rflx import ada
+import rflx.ada as ada
+import rflx.typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
 from rflx.declaration import ChannelDeclaration, Declaration, VariableDeclaration
@@ -71,8 +72,15 @@ class Proof:
 class Expr(DBC, Base):
     _str: str
 
-    def __init__(self, location: Location = None):
+    def __init__(
+        self,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+        error: RecordFluxError = None,
+    ):
+        self.type_ = type_
         self.location = location
+        self.error = error or RecordFluxError()
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -168,7 +176,7 @@ class BooleanLiteral(Expr):
     _str: str
 
     def __init__(self, location: Location = None) -> None:
-        super().__init__(location)
+        super().__init__(rty.BOOLEAN, location)
         self._update_str()
 
     @abstractmethod
@@ -228,8 +236,10 @@ FALSE = BooleanFalse()
 
 class Not(Expr):
     def __init__(self, expr: Expr) -> None:
-        super().__init__()
+        super().__init__(rty.BOOLEAN)
         self.expr = expr
+
+        check_type(self.error, expr, rty.BOOLEAN)
 
     def _update_str(self) -> None:
         self._str = intern(f"not {self.parenthesized(self.expr)}")
@@ -271,8 +281,10 @@ class Not(Expr):
 
 
 class BinExpr(Expr):
-    def __init__(self, left: Expr, right: Expr, location: Location = None) -> None:
-        super().__init__(location)
+    def __init__(
+        self, left: Expr, right: Expr, type_: rty.Type = rty.Undefined(), location: Location = None
+    ) -> None:
+        super().__init__(type_, location)
         self.left = left
         self.right = right
 
@@ -333,7 +345,7 @@ class BinExpr(Expr):
 
 class AssExpr(Expr):
     def __init__(self, *terms: Expr, location: Location = None) -> None:
-        super().__init__(location)
+        super().__init__(rty.Undefined(), location)
         self.terms = list(terms)
 
     def __repr__(self) -> str:
@@ -461,6 +473,13 @@ class AssExpr(Expr):
 
 
 class BoolAssExpr(AssExpr):
+    def __init__(self, *terms: Expr, location: Location = None) -> None:
+        super().__init__(*terms, location=location)
+        self.type_ = rty.BOOLEAN
+
+        for t in terms:
+            check_type(self.error, t, rty.BOOLEAN)
+
     def _update_str(self) -> None:
         if not self.terms:
             self._str = str(TRUE)
@@ -580,7 +599,7 @@ class OrElse(Or):
 
 class Number(Expr):
     def __init__(self, value: int, base: int = 0, location: Location = None) -> None:
-        super().__init__(location)
+        super().__init__(rty.UniversalInteger(rty.Bounds(value, value)), location)
         self.value = value
         self.base = base
 
@@ -693,7 +712,17 @@ class Number(Expr):
         pass
 
 
-class Add(AssExpr):
+class MathAssExpr(AssExpr):
+    def __init__(self, *terms: Expr, location: Location = None) -> None:
+        super().__init__(*terms, location=location)
+        common_type = rty.common_type([t.type_ for t in terms])
+        self.type_ = common_type if common_type != rty.Undefined() else rty.UndefinedInteger()
+
+        for t in terms:
+            check_type(self.error, t, rty.AnyInteger())
+
+
+class Add(MathAssExpr):
     def _update_str(self) -> None:
         if not self.terms:
             self._str = intern(str(self.neutral_element()))
@@ -750,7 +779,7 @@ class Add(AssExpr):
         return z3.Sum(*terms)
 
 
-class Mul(AssExpr):
+class Mul(MathAssExpr):
     def __neg__(self) -> Expr:
         return Mul(*list(self.terms) + [Number(-1)]).simplified()
 
@@ -777,7 +806,15 @@ class Mul(AssExpr):
         return z3.Product(*terms)
 
 
-class Sub(BinExpr):
+class MathBinExpr(BinExpr):
+    def __init__(self, left: Expr, right: Expr, location: Location = None) -> None:
+        super().__init__(left, right, rty.common_type([left.type_, right.type_]), location)
+
+        for e in [left, right]:
+            check_type(self.error, e, rty.AnyInteger())
+
+
+class Sub(MathBinExpr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.binary_adding_operator
@@ -803,7 +840,7 @@ class Sub(BinExpr):
         return left - right
 
 
-class Div(BinExpr):
+class Div(MathBinExpr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.multiplying_operator
@@ -829,7 +866,7 @@ class Div(BinExpr):
         return left / right
 
 
-class Pow(BinExpr):
+class Pow(MathBinExpr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.highest_precedence_operator
@@ -855,7 +892,7 @@ class Pow(BinExpr):
         return left ** right
 
 
-class Mod(BinExpr):
+class Mod(MathBinExpr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.multiplying_operator
@@ -883,9 +920,13 @@ class Mod(BinExpr):
 
 class Name(Expr):
     def __init__(
-        self, negative: bool = False, immutable: bool = False, location: Location = None
+        self,
+        negative: bool = False,
+        immutable: bool = False,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
     ) -> None:
-        super().__init__(location)
+        super().__init__(type_, location)
         self.negative = negative
         self.immutable = immutable
         self._update_str()
@@ -927,10 +968,11 @@ class Variable(Name):
         identifier: StrID,
         negative: bool = False,
         immutable: bool = False,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
         self.identifier = ID(identifier)
-        super().__init__(negative, immutable, location)
+        super().__init__(negative, immutable, type_, location)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -945,7 +987,9 @@ class Variable(Name):
         return str(self.identifier)
 
     def __neg__(self) -> "Variable":
-        return self.__class__(self.identifier, not self.negative, self.immutable, self.location)
+        return self.__class__(
+            self.identifier, not self.negative, self.immutable, self.type_, self.location
+        )
 
     @property
     def representation(self) -> str:
@@ -982,6 +1026,12 @@ class Attribute(Name):
 
         self.prefix: Expr = prefix
         super().__init__(negative, location=prefix.location)
+        self._init_type()
+        check_type(self.error, self.prefix, rty.Any())
+
+    @abstractmethod
+    def _init_type(self) -> None:
+        raise NotImplementedError
 
     @property
     def representation(self) -> str:
@@ -1025,22 +1075,29 @@ class Attribute(Name):
 
 
 class Size(Attribute):
-    pass
+    def _init_type(self) -> None:
+        self.type_ = rty.UniversalInteger()
 
 
 class Length(Attribute):
-    pass
+    def _init_type(self) -> None:
+        self.type_ = rty.UniversalInteger()
 
 
 class First(Attribute):
-    pass
+    def _init_type(self) -> None:
+        self.type_ = rty.UniversalInteger()
 
 
 class Last(Attribute):
-    pass
+    def _init_type(self) -> None:
+        self.type_ = rty.UniversalInteger()
 
 
 class ValidChecksum(Attribute):
+    def _init_type(self) -> None:
+        self.type_ = rty.BOOLEAN
+
     def z3expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
 
@@ -1050,19 +1107,23 @@ class ValidChecksum(Attribute):
 
 
 class Valid(Attribute):
-    pass
+    def _init_type(self) -> None:
+        self.type_ = rty.BOOLEAN
 
 
 class Present(Attribute):
-    pass
+    def _init_type(self) -> None:
+        self.type_ = rty.BOOLEAN
 
 
 class Head(Attribute):
-    pass
+    def _init_type(self) -> None:
+        self.type_ = rty.Undefined()
 
 
 class Opaque(Attribute):
-    pass
+    def _init_type(self) -> None:
+        self.type_ = rty.Aggregate(rty.UniversalInteger(rty.Bounds(0, 255)))
 
 
 class Val(Attribute):
@@ -1076,6 +1137,9 @@ class Val(Attribute):
 
     def __neg__(self) -> "Val":
         return self.__class__(self.prefix, self.expression, not self.negative)
+
+    def _init_type(self) -> None:
+        self.type_ = rty.Any()
 
     def variables(self) -> List[Variable]:
         raise NotImplementedError
@@ -1137,11 +1201,12 @@ class Selected(Name):
         selector_name: StrID,
         negative: bool = False,
         immutable: bool = False,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
         self.prefix = prefix
         self.selector_name = ID(selector_name)
-        super().__init__(negative, immutable, location)
+        super().__init__(negative, immutable, type_, location)
 
     def __neg__(self) -> "Selected":
         return self.__class__(self.prefix, self.selector_name, not self.negative)
@@ -1180,11 +1245,12 @@ class Call(Name):
         args: Sequence[Expr] = None,
         negative: bool = False,
         immutable: bool = False,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
         self.name = ID(name)
         self.args = args or []
-        super().__init__(negative, immutable, location)
+        super().__init__(negative, immutable, type_, location)
 
     def __neg__(self) -> "Call":
         return self.__class__(self.name, self.args, not self.negative)
@@ -1297,6 +1363,7 @@ class Call(Name):
             [a.substituted(func) for a in expr.args],
             expr.negative,
             expr.immutable,
+            expr.type_,
             expr.location,
         )
 
@@ -1325,7 +1392,7 @@ UNDEFINED = UndefinedExpr()
 @invariant(lambda self: len(self.elements) > 0)
 class Aggregate(Expr):
     def __init__(self, *elements: Expr, location: Location = None) -> None:
-        super().__init__(location)
+        super().__init__(rty.Aggregate(rty.common_type([e.type_ for e in elements])), location)
         self.elements = list(elements)
 
     def _update_str(self) -> None:
@@ -1399,6 +1466,14 @@ class String(Aggregate):
 
 
 class Relation(BinExpr):
+    def __init__(self, left: Expr, right: Expr, location: Location = None) -> None:
+        super().__init__(left, right, rty.BOOLEAN, location)
+        self._check_type()
+
+    @abstractmethod
+    def _check_type(self) -> None:
+        raise NotImplementedError
+
     @abstractmethod
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1418,6 +1493,10 @@ class Relation(BinExpr):
 
 
 class Less(Relation):
+    def _check_type(self) -> None:
+        for e in [self.left, self.right]:
+            check_type(self.error, e, rty.AnyInteger())
+
     def __neg__(self) -> Expr:
         return GreaterEqual(self.left, self.right)
 
@@ -1439,6 +1518,10 @@ class Less(Relation):
 
 
 class LessEqual(Relation):
+    def _check_type(self) -> None:
+        for e in [self.left, self.right]:
+            check_type(self.error, e, rty.AnyInteger())
+
     def __neg__(self) -> Expr:
         return Greater(self.left, self.right)
 
@@ -1460,6 +1543,10 @@ class LessEqual(Relation):
 
 
 class Equal(Relation):
+    def _check_type(self) -> None:
+        check_type(self.error, self.left, rty.Any())
+        check_type(self.error, self.right, self.left.type_)
+
     def __neg__(self) -> Expr:
         return NotEqual(self.left, self.right)
 
@@ -1482,6 +1569,10 @@ class Equal(Relation):
 
 
 class GreaterEqual(Relation):
+    def _check_type(self) -> None:
+        for e in [self.left, self.right]:
+            check_type(self.error, e, rty.AnyInteger())
+
     def __neg__(self) -> Expr:
         return Less(self.left, self.right)
 
@@ -1503,6 +1594,10 @@ class GreaterEqual(Relation):
 
 
 class Greater(Relation):
+    def _check_type(self) -> None:
+        for e in [self.left, self.right]:
+            check_type(self.error, e, rty.AnyInteger())
+
     def __neg__(self) -> Expr:
         return LessEqual(self.left, self.right)
 
@@ -1524,6 +1619,10 @@ class Greater(Relation):
 
 
 class NotEqual(Relation):
+    def _check_type(self) -> None:
+        check_type(self.error, self.left, rty.Any())
+        check_type(self.error, self.right, self.left.type_)
+
     def __neg__(self) -> Expr:
         return Equal(self.left, self.right)
 
@@ -1546,6 +1645,9 @@ class NotEqual(Relation):
 
 
 class In(Relation):
+    def _check_type(self) -> None:
+        check_type(self.error, self.right, rty.Aggregate(self.left.type_))
+
     def __neg__(self) -> Expr:
         return NotIn(self.left, self.right)
 
@@ -1561,6 +1663,9 @@ class In(Relation):
 
 
 class NotIn(Relation):
+    def _check_type(self) -> None:
+        check_type(self.error, self.right, rty.Aggregate(self.left.type_))
+
     def __neg__(self) -> Expr:
         return In(self.left, self.right)
 
@@ -1577,12 +1682,19 @@ class NotIn(Relation):
 
 class QuantifiedExpression(Expr):
     def __init__(
-        self, parameter_name: StrID, iterable: Expr, predicate: Expr, location: Location = None
+        self,
+        parameter_name: StrID,
+        iterable: Expr,
+        predicate: Expr,
+        location: Location = None,
     ) -> None:
-        super().__init__(location)
+        super().__init__(rty.BOOLEAN, location)
         self.parameter_name = ID(parameter_name)
         self.iterable = iterable
         self.predicate = predicate
+
+        check_type(self.error, iterable, rty.Aggregate(rty.Any()))
+        check_type(self.error, predicate, rty.BOOLEAN)
 
     def _update_str(self) -> None:
         self._str = intern(
@@ -1688,8 +1800,10 @@ class ForSomeIn(QuantifiedExpression):
 
 
 class ValueRange(Expr):
-    def __init__(self, lower: Expr, upper: Expr, location: Location = None):
-        super().__init__(location)
+    def __init__(
+        self, lower: Expr, upper: Expr, type_: rty.Type = rty.Undefined(), location: Location = None
+    ):
+        super().__init__(type_, location)
         self.lower = lower
         self.upper = upper
 
@@ -1729,8 +1843,14 @@ class ValueRange(Expr):
 
 
 class Conversion(Expr):
-    def __init__(self, name: StrID, argument: Expr, location: Location = None) -> None:
-        super().__init__(location)
+    def __init__(
+        self,
+        name: StrID,
+        argument: Expr,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        super().__init__(type_, location)
         self.name = ID(name)
         self.argument = argument
 
@@ -1749,7 +1869,7 @@ class Conversion(Expr):
         return expr.__class__(self.name, self.argument.substituted(func))
 
     def simplified(self) -> Expr:
-        return Conversion(self.name, self.argument.simplified(), self.location)
+        return Conversion(self.name, self.argument.simplified(), self.type_, self.location)
 
     @property
     def precedence(self) -> Precedence:
@@ -1775,9 +1895,10 @@ class Comprehension(Expr):
         array: Expr,
         selector: Expr,
         condition: Expr,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
-        super().__init__(location)
+        super().__init__(type_, location)
         self.iterator = ID(iterator)
         self.array = array
         self.selector = selector
@@ -1797,6 +1918,7 @@ class Comprehension(Expr):
             self.array.simplified(),
             self.selector.simplified(),
             self.condition.simplified(),
+            self.type_,
             self.location,
         )
 
@@ -1811,6 +1933,7 @@ class Comprehension(Expr):
             expr.array.substituted(func),
             expr.selector.substituted(func),
             expr.condition.substituted(func),
+            expr.type_,
             expr.location,
         )
 
@@ -1842,8 +1965,14 @@ class Comprehension(Expr):
 
 
 class MessageAggregate(Expr):
-    def __init__(self, name: StrID, data: Mapping[StrID, Expr], location: Location = None) -> None:
-        super().__init__(location)
+    def __init__(
+        self,
+        name: StrID,
+        data: Mapping[StrID, Expr],
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        super().__init__(type_, location)
         self.name = ID(name)
         self.data = {ID(k): v for k, v in data.items()}
 
@@ -1858,7 +1987,7 @@ class MessageAggregate(Expr):
 
     def simplified(self) -> Expr:
         return MessageAggregate(
-            self.name, {k: self.data[k].simplified() for k in self.data}, self.location
+            self.name, {k: self.data[k].simplified() for k in self.data}, self.type_, self.location
         )
 
     def substituted(
@@ -1870,6 +1999,7 @@ class MessageAggregate(Expr):
         return expr.__class__(
             expr.name,
             {k: expr.data[k].substituted(func) for k in expr.data},
+            expr.type_,
             expr.location,
         )
 
@@ -1895,8 +2025,14 @@ class MessageAggregate(Expr):
 
 
 class Binding(Expr):
-    def __init__(self, expr: Expr, data: Mapping[StrID, Expr], location: Location = None) -> None:
-        super().__init__(location)
+    def __init__(
+        self,
+        expr: Expr,
+        data: Mapping[StrID, Expr],
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        super().__init__(type_, location)
         self.expr = expr
         self.data = {ID(k): v for k, v in data.items()}
 
@@ -1943,3 +2079,29 @@ def substitution(
         if isinstance(expression, Name) and expression in mapping
         else expression
     )
+
+
+def check_type(error: RecordFluxError, expression: Expr, expected: rty.Type) -> None:
+    if expression.type_ == rty.Undefined():
+        details = f' variable "{expression.name}"' if isinstance(expression, Variable) else ""
+        error.append(
+            f"undefined{details}",
+            Subsystem.MODEL,
+            Severity.ERROR,
+            expression.location,
+        )
+        return
+
+    if expected != rty.Undefined() and not expression.type_.is_compatible(expected):
+        error.append(
+            f"expected {expected}",
+            Subsystem.MODEL,
+            Severity.ERROR,
+            expression.location,
+        )
+        error.append(
+            f"found {expression.type_}",
+            Subsystem.MODEL,
+            Severity.INFO,
+            expression.location,
+        )
