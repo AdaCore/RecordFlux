@@ -314,15 +314,24 @@ def test_accessible_fields_fields_complex(tlv: MessageValue) -> None:
 
 
 def test_valid_message(tlv: MessageValue) -> None:
+    # pylint: disable=pointless-statement
     assert not tlv.valid_message
+    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
+        tlv.bytestring
     tlv.set("Tag", "Msg_Error")
     assert tlv.valid_message
+    assert tlv.bytestring == b"\xc0"
     tlv.set("Tag", "Msg_Data")
     assert not tlv.valid_message
+    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
+        tlv.bytestring
     tlv.set("Length", 1)
     assert not tlv.valid_message
+    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
+        tlv.bytestring
     tlv.set("Value", b"\x01")
     assert tlv.valid_message
+    assert tlv.bytestring == b"\x40\x01\x01"
 
 
 def test_valid_fields(tlv: MessageValue) -> None:
@@ -372,7 +381,8 @@ def test_change_field(tlv: MessageValue) -> None:
 def test_binary_length(tlv: MessageValue) -> None:
     tlv.set("Tag", "Msg_Data")
     tlv.set("Length", 8)
-    assert tlv.bytestring == b"\x40\x08"
+    tlv.set("Value", bytes(8))
+    assert tlv.bytestring == b"\x40\x08\x00\x00\x00\x00\x00\x00\x00\x00"
 
 
 def test_set_get_value(tlv: MessageValue) -> None:
@@ -1463,11 +1473,9 @@ def test_tlv_generating_tlv_data(tlv: MessageValue) -> None:
 
 
 def test_tlv_generating_tlv_data_zero(tlv: MessageValue) -> None:
-    expected = b"\x40\x00"
     tlv.set("Tag", "Msg_Data")
     tlv.set("Length", 0)
     assert not tlv.valid_message
-    assert tlv.bytestring == expected
 
 
 def test_tlv_generating_tlv_error(tlv: MessageValue) -> None:
@@ -1558,8 +1566,17 @@ def test_checksum_manual_icmp(icmp_checksum: MessageValue) -> None:
     icmp_checksum.set("Identifier", 5)
     icmp_checksum.set("Sequence_Number", 1)
     icmp_checksum.set("Data", test_data)
+    assert not icmp_checksum.valid_message
     assert icmp_checksum.get("Checksum") == 1234
-    assert icmp_checksum.bytestring == b"\x08\x00\x04\xd2\x00\x05\x00\x01" + test_data
+    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
+        assert icmp_checksum.bytestring == b"\x08\x00\x04\xd2\x00\x05\x00\x01" + test_data
+    icmp_checksum.set("Checksum", 12824)
+    icmp_checksum.set("Identifier", 5)
+    icmp_checksum.set("Sequence_Number", 1)
+    icmp_checksum.set("Data", test_data)
+    assert icmp_checksum.valid_message
+    assert icmp_checksum.get("Checksum") == 12824
+    assert icmp_checksum.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
 
 
 def test_checksum_auto_icmp(icmp_checksum: MessageValue) -> None:
