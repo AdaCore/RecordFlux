@@ -494,7 +494,7 @@ class BoolAssExpr(AssExpr):
 
 class And(BoolAssExpr):
     def __neg__(self) -> Expr:
-        return And(*[-term for term in self.terms])
+        raise NotImplementedError
 
     @property
     def precedence(self) -> Precedence:
@@ -537,7 +537,7 @@ class AndThen(And):
 
 class Or(BoolAssExpr):
     def __neg__(self) -> Expr:
-        return Or(*[-term for term in self.terms])
+        raise NotImplementedError
 
     @property
     def precedence(self) -> Precedence:

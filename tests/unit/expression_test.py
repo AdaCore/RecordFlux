@@ -167,7 +167,7 @@ def test_bin_expr_substituted() -> None:
 
 def test_ass_expr_findall() -> None:
     assert_equal(
-        And(Equal(Variable("X"), Number(1)), Variable("Y"), Number(2)).findall(
+        And(Equal(Variable("X"), Number(1)), Less(Variable("Y"), Number(2))).findall(
             lambda x: isinstance(x, Number)
         ),
         [Number(1), Number(2)],
@@ -226,7 +226,8 @@ def test_bool_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
 
 
 def test_and_neg() -> None:
-    assert -And(Variable("X"), Number(1)) == And(-Variable("X"), Number(-1))
+    with pytest.raises(NotImplementedError):
+        -And(Variable("X"), TRUE)  # pylint: disable=expression-not-assigned
 
 
 def test_and_variables() -> None:
@@ -267,7 +268,8 @@ def test_and_str() -> None:
 
 
 def test_or_neg() -> None:
-    assert -Or(Variable("X"), Number(1)) == Or(-Variable("X"), Number(-1))
+    with pytest.raises(NotImplementedError):
+        -Or(Variable("X"), TRUE)  # pylint: disable=expression-not-assigned
 
 
 def test_or_variables() -> None:
@@ -902,13 +904,13 @@ def test_not_equal_z3expr() -> None:
 
 
 def test_in_neg() -> None:
-    assert -In(Variable("X"), Number(1)) == NotIn(Variable("X"), Number(1))
+    assert -In(Number(1), Variable("X")) == NotIn(Number(1), Variable("X"))
 
 
 def test_in_simplified() -> None:
     assert_equal(
-        In(Variable("X"), Add(Number(21), Number(21))).simplified(),
-        In(Variable("X"), Number(42)),
+        In(Add(Number(21), Number(21)), Variable("X")).simplified(),
+        In(Number(42), Variable("X")),
     )
 
 
@@ -917,13 +919,13 @@ def test_in_str() -> None:
 
 
 def test_not_in_neg() -> None:
-    assert -NotIn(Variable("X"), Number(1)) == In(Variable("X"), Number(1))
+    assert -NotIn(Number(1), Variable("X")) == In(Number(1), Variable("X"))
 
 
 def test_not_in_simplified() -> None:
     assert_equal(
-        NotIn(Variable("X"), Add(Number(21), Number(21))).simplified(),
-        NotIn(Variable("X"), Number(42)),
+        NotIn(Add(Number(21), Number(21)), Variable("X")).simplified(),
+        NotIn(Number(42), Variable("X")),
     )
 
 
@@ -1244,7 +1246,7 @@ def test_message_aggregate_variables() -> None:
 
 def test_binding_variables() -> None:
     result = Binding(
-        Less(Variable("A"), Variable("Bound")), {"Bound": Less(Variable("B"), Variable("C"))}
+        And(Variable("A"), Variable("Bound")), {"Bound": Less(Variable("B"), Variable("C"))}
     ).variables()
     expected = [Variable("A"), Variable("B"), Variable("C")]
     assert result == expected
