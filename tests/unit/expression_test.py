@@ -6,6 +6,8 @@ import pytest
 import z3
 
 import rflx.ada as ada
+import rflx.typing_ as rty
+from rflx.error import Location, RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -16,6 +18,7 @@ from rflx.expression import (
     AndThen,
     Attribute,
     Binding,
+    BooleanTrue,
     Call,
     Comprehension,
     Conversion,
@@ -54,6 +57,7 @@ from rflx.expression import (
     Sub,
     Val,
     Valid,
+    ValidChecksum,
     ValueRange,
     Variable,
 )
@@ -61,6 +65,20 @@ from rflx.identifier import ID
 from tests.utils import assert_equal, multilinestr
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
+
+
+def assert_type(expr: Expr, type_: rty.Type) -> None:
+    assert expr.type_ == type_
+    assert not expr.error.check()
+
+
+def assert_type_error(expr: Expr, regex: str) -> None:
+    with pytest.raises(RecordFluxError, match=regex):
+        expr.error.propagate()
+
+
+def test_true_type() -> None:
+    assert TRUE.type_ == rty.BOOLEAN
 
 
 def test_true_neg() -> None:
@@ -79,6 +97,10 @@ def test_true_z3expr() -> None:
     assert TRUE.z3expr() == z3.BoolVal(True)
 
 
+def test_false_type() -> None:
+    assert FALSE.type_ == rty.BOOLEAN
+
+
 def test_false_neg() -> None:
     assert -FALSE == TRUE
 
@@ -93,6 +115,10 @@ def test_false_variables() -> None:
 
 def test_false_z3expr() -> None:
     assert FALSE.z3expr() == z3.BoolVal(False)
+
+
+def test_not_type() -> None:
+    assert Not(Variable("X")).type_ == rty.BOOLEAN
 
 
 def test_not_neg() -> None:
@@ -218,6 +244,28 @@ def test_bool_expr_str() -> None:
     )
 
 
+@pytest.mark.parametrize("operation", [And, Or])
+def test_bool_expr_type(operation: Callable[[Expr, Expr], Expr]) -> None:
+    assert_type(
+        operation(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=rty.BOOLEAN)),
+        rty.BOOLEAN,
+    )
+
+
+@pytest.mark.parametrize("operation", [And, Or])
+def test_bool_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
+    assert_type_error(
+        operation(
+            Variable("X", type_=rty.Integer("A", rty.Bounds(0, 100)), location=Location((10, 20))),
+            Number(1, location=Location((10, 30))),
+        ),
+        r'^<stdin>:10:20: model: error: expected enumeration type "Boolean"\n'
+        r'<stdin>:10:20: model: info: found integer type "A" \(0 .. 100\)\n'
+        r'<stdin>:10:30: model: error: expected enumeration type "Boolean"\n'
+        r"<stdin>:10:30: model: info: found type universal integer \(1\)$",
+    )
+
+
 @pytest.mark.parametrize("expression", [And, AndThen, Or, OrElse])
 def test_bool_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
     result = expression(Variable("X"), Variable("Y")).ada_expr()
@@ -312,6 +360,13 @@ def test_undefined_str() -> None:
     assert str(UNDEFINED) == "__UNDEFINED__"
 
 
+def test_number_type() -> None:
+    assert_type(
+        Number(1),
+        rty.UniversalInteger(rty.Bounds(1, 1)),
+    )
+
+
 def test_number_neg() -> None:
     assert -Number(42) == Number(-42)
 
@@ -396,6 +451,32 @@ def test_number_ge() -> None:
 
 def test_number_hashable() -> None:
     assert {Number(1), Number(2)}
+
+
+@pytest.mark.parametrize("operation", [Add, Mul, Sub, Div, Pow])
+def test_math_expr_type(operation: Callable[[Expr, Expr], Expr]) -> None:
+    assert_type(
+        operation(Variable("X", type_=rty.AnyInteger()), Variable("Y", type_=rty.AnyInteger())),
+        rty.AnyInteger(),
+    )
+    assert_type(
+        operation(Variable("X", type_=rty.Integer("A")), Variable("Y", type_=rty.Integer("A"))),
+        rty.Integer("A"),
+    )
+
+
+@pytest.mark.parametrize("operation", [Add, Mul, Sub, Div, Pow])
+def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
+    assert_type_error(
+        operation(
+            Variable("X", type_=rty.BOOLEAN, location=Location((10, 20))),
+            BooleanTrue(location=Location((10, 30))),
+        ),
+        r"^<stdin>:10:20: model: error: expected integer type\n"
+        r'<stdin>:10:20: model: info: found enumeration type "Boolean"\n'
+        r"<stdin>:10:30: model: error: expected integer type\n"
+        r'<stdin>:10:30: model: info: found enumeration type "Boolean"$',
+    )
 
 
 @pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod])
@@ -595,6 +676,21 @@ def test_variable_invalid_name() -> None:
         Variable("Foo (Bar)")
 
 
+def test_variable_type() -> None:
+    assert_type(
+        Variable("X"),
+        rty.Undefined(),
+    )
+    assert_type(
+        Variable("X", type_=rty.BOOLEAN),
+        rty.BOOLEAN,
+    )
+    assert_type(
+        Variable("X", type_=rty.Integer("A")),
+        rty.Integer("A"),
+    )
+
+
 def test_variable_neg() -> None:
     assert -Variable("X") == Variable("X", True)
 
@@ -638,6 +734,27 @@ def test_attribute() -> None:
     assert First("X") == First(Variable("X"))
     assert First("X") == First(ID("X"))
     assert First("X") == First(Variable(ID("X")))
+
+
+@pytest.mark.parametrize(
+    "attribute,type_",
+    [
+        (Size, rty.UniversalInteger()),
+        (Length, rty.UniversalInteger()),
+        (First, rty.UniversalInteger()),
+        (Last, rty.UniversalInteger()),
+        (ValidChecksum, rty.BOOLEAN),
+        (Valid, rty.BOOLEAN),
+        (Present, rty.BOOLEAN),
+        (Head, rty.Undefined()),
+        (Opaque, rty.Aggregate(rty.UniversalInteger(rty.Bounds(0, 255)))),
+    ],
+)
+def test_attribute_type(attribute: Callable[[Expr], Expr], type_: rty.Type) -> None:
+    assert_type(
+        attribute(Variable("X", type_=rty.AnyInteger())),
+        type_,
+    )
 
 
 def test_attribute_neg() -> None:
@@ -726,6 +843,13 @@ def test_val_str() -> None:
     assert str(Val("X", Number(1))) == "X'Val (1)"
 
 
+def test_aggregate_type() -> None:
+    assert_type(
+        Aggregate(Number(0), Number(1)),
+        rty.Aggregate(rty.UniversalInteger(rty.Bounds(0, 1))),
+    )
+
+
 def test_aggregate_substituted() -> None:
     assert_equal(
         Aggregate(First("X")).substituted(
@@ -758,6 +882,56 @@ def test_aggregate_str() -> None:
 
 def test_aggregate_precedence() -> None:
     assert Aggregate(Number(1), Number(2)).precedence == Precedence.literal
+
+
+@pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
+def test_relation_integer_type(relation: Callable[[Expr, Expr], Expr]) -> None:
+    assert_type(
+        relation(Variable("X", type_=rty.AnyInteger()), Variable("Y", type_=rty.AnyInteger())),
+        rty.BOOLEAN,
+    )
+
+
+@pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
+def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> None:
+    assert_type_error(
+        relation(Variable("X", type_=rty.AnyInteger()), TRUE),
+        r'^model: error: expected integer type\nmodel: info: found enumeration type "Boolean"$',
+    )
+
+
+@pytest.mark.parametrize("relation", [In, NotIn])
+def test_relation_composite_type(relation: Callable[[Expr, Expr], Expr]) -> None:
+    assert_type(
+        relation(
+            Variable("X", type_=rty.AnyInteger()),
+            Variable("Y", type_=rty.Composite("A", rty.AnyInteger())),
+        ),
+        rty.BOOLEAN,
+    )
+
+
+@pytest.mark.parametrize("relation", [In, NotIn])
+def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -> None:
+    assert_type_error(
+        relation(
+            Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
+            BooleanTrue(location=Location((10, 30))),
+        ),
+        r"^<stdin>:10:30: model: error: expected aggregate"
+        r" with element integer type\n"
+        r'<stdin>:10:30: model: info: found enumeration type "Boolean"$',
+    )
+    assert_type_error(
+        relation(
+            Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
+            Variable("Y", type_=rty.Composite("A", rty.BOOLEAN), location=Location((10, 30))),
+        ),
+        r"^<stdin>:10:30: model: error: expected aggregate"
+        r" with element integer type\n"
+        r'<stdin>:10:30: model: info: found composite type "A"'
+        r' with element enumeration type "Boolean"$',
+    )
 
 
 def test_relation_substituted() -> None:

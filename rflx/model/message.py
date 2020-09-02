@@ -411,8 +411,9 @@ class AbstractMessage(type_.Type):
                 )
 
         for l in self.structure:
-            exponentiations = expr.And(l.condition, l.first, l.length).findall(
-                lambda x: isinstance(x, expr.Pow)
+            exponentiations = itertools.chain.from_iterable(
+                e.findall(lambda x: isinstance(x, expr.Pow))
+                for e in [l.condition, l.first, l.length]
             )
             for e in exponentiations:
                 assert isinstance(e, expr.Pow)
