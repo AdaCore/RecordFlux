@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 from copy import deepcopy
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence, Tuple
 
 import pytest
 
@@ -590,24 +590,67 @@ def test_invalid_message_field_type() -> None:
         )
 
 
-def test_nonexistent_variable() -> None:
+@pytest.mark.parametrize(
+    "condition",
+    [
+        (Variable("F1"), Variable("X", location=Location((10, 20)))),
+        (Variable("X", location=Location((10, 20))), Variable("F1")),
+    ],
+)
+@pytest.mark.parametrize(
+    "operation",
+    [
+        Equal,
+        NotEqual,
+    ],
+)
+def test_undefined_variable(
+    operation: Callable[[Expr, Expr], Expr], condition: Tuple[Expr, Expr]
+) -> None:
     mod_type = ModularInteger("P.MT", Pow(Number(2), Number(32)))
     enum_type = Enumeration("P.ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), True)
+
     structure = [
         Link(INITIAL, Field("F1")),
         Link(
             Field("F1"),
             Field("F2"),
-            Equal(Variable("F1"), Variable("Val3", location=Location((444, 55)))),
+            operation(*condition),
         ),
         Link(Field("F2"), FINAL),
     ]
 
     types = {Field("F1"): enum_type, Field("F2"): mod_type}
+
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:444:55: model: error: undefined variable "Val3" referenced$',
+        r'^<stdin>:10:20: model: error: undefined variable "X"\nmodel: info: on path F1 -> F2$',
+    )
+
+
+def test_undefined_variables() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            Equal(
+                Variable("X", location=Location((10, 20))),
+                Variable("Y", location=Location((10, 30))),
+            ),
+        ),
+        Link(Field("F2"), FINAL),
+    ]
+
+    types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: undefined variable "X"\n'
+        r'<stdin>:10:30: model: error: undefined variable "Y"\n'
+        r"model: info: on path F1 -> F2$",
     )
 
 
@@ -625,7 +668,8 @@ def test_subsequent_variable() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:1024:57: model: error: subsequent field "F2" referenced',
+        '^<stdin>:1024:57: model: error: undefined variable "F2"\n'
+        r"model: info: on path F1 -> F2$",
     )
 
 
@@ -642,20 +686,50 @@ def test_invalid_use_of_length_attribute() -> None:
     )
 
 
+def test_invalid_relation_to_opaque() -> None:
+    structure = [
+        Link(INITIAL, Field("Length")),
+        Link(Field("Length"), Field("Data"), length=Variable("Length")),
+        Link(
+            Field("Data"),
+            FINAL,
+            condition=Equal(Variable("Data"), Number(42, location=Location((10, 20)))),
+        ),
+    ]
+    types = {Field("Length"): RANGE_INTEGER, Field("Data"): Opaque()}
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: expected composite type "Bytes"'
+        r' with element integer type "Byte" \(0 .. 255\)\n'
+        r"<stdin>:10:20: model: info: found type universal integer \(42\)\n"
+        r"model: info: on path Length -> Data -> Final$",
+    )
+
+
 def test_invalid_relation_to_aggregate() -> None:
     structure = [
         Link(INITIAL, Field("F1"), length=Number(16)),
         Link(
             Field("F1"),
             FINAL,
-            LessEqual(Variable("F1"), Aggregate(Number(1), Number(2)), Location((100, 20))),
+            LessEqual(
+                Variable("F1", location=Location((10, 20))),
+                Aggregate(Number(1), Number(2), location=Location((10, 30))),
+            ),
         ),
     ]
     types = {Field("F1"): Opaque()}
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:100:20: model: error: invalid relation " <= " between Opaque and Aggregate$',
+        r"^<stdin>:10:20: model: error: expected integer type\n"
+        r'<stdin>:10:20: model: info: found composite type "Bytes"'
+        r' with element integer type "Byte" \(0 .. 255\)\n'
+        r"<stdin>:10:30: model: error: expected integer type\n"
+        r"<stdin>:10:30: model: info: found aggregate"
+        r" with element type universal integer \(1 .. 2\)\n"
+        r"model: info: on path F1 -> Final$",
     )
 
 
@@ -665,64 +739,76 @@ def test_invalid_element_in_relation_to_aggregate() -> None:
         Link(
             Field("F1"),
             FINAL,
-            Equal(Variable("F1"), Aggregate(Number(1), Number(2)), Location((14, 7))),
+            Equal(Variable("F1"), Aggregate(Number(1), Number(2), location=Location((10, 20)))),
         ),
     ]
+
     types = {Field("F1"): MODULAR_INTEGER}
+
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:14:7: model: error: invalid relation " = " '
-        r"between Aggregate and ModularInteger$",
+        r'^<stdin>:10:20: model: error: expected integer type "P.Modular" \(0 .. 255\)\n'
+        r"<stdin>:10:20: model: info: found aggregate with element type universal integer"
+        r" \(1 .. 2\)\n"
+        r"model: info: on path F1 -> Final$",
     )
 
 
 def test_opaque_aggregate_out_of_range() -> None:
     f = Field("F")
-    with pytest.raises(
-        RecordFluxError,
-        match=r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 255",
-    ):
-        Message(
-            "P.M",
-            [
-                Link(INITIAL, f, length=Number(24)),
-                Link(
-                    f,
-                    FINAL,
-                    condition=Equal(
-                        Variable("F"),
-                        Aggregate(Number(1), Number(2), Number(256, location=Location((44, 3)))),
-                    ),
-                ),
-            ],
-            {Field("F"): Opaque()},
-        )
+
+    structure = [
+        Link(INITIAL, f, length=Number(24)),
+        Link(
+            f,
+            FINAL,
+            condition=Equal(
+                Variable("F"),
+                Aggregate(Number(1), Number(2), Number(256), location=Location((10, 20))),
+            ),
+        ),
+    ]
+
+    types = {Field("F"): Opaque()}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: expected composite type "Bytes"'
+        r' with element integer type "Byte" \(0 .. 255\)\n'
+        r"<stdin>:10:20: model: info: found aggregate"
+        r" with element type universal integer \(1 .. 256\)\n"
+        r"model: info: on path F -> Final$",
+    )
 
 
 def test_array_aggregate_out_of_range() -> None:
-    array_type = Array("P.Array", ModularInteger("P.Element", Number(64)))
-
     f = Field("F")
-    with pytest.raises(
-        RecordFluxError,
-        match=r"^<stdin>:44:3: model: error: aggregate element out of range 0 .. 63",
-    ):
-        Message(
-            "P.M",
-            [
-                Link(INITIAL, f, length=Number(18)),
-                Link(
-                    f,
-                    FINAL,
-                    condition=Equal(
-                        Variable("F"),
-                        Aggregate(Number(1), Number(2), Number(64, location=Location((44, 3)))),
-                    ),
-                ),
-            ],
-            {Field("F"): array_type},
-        )
+
+    structure = [
+        Link(INITIAL, f, length=Number(18)),
+        Link(
+            f,
+            FINAL,
+            condition=Equal(
+                Variable("F"),
+                Aggregate(Number(1), Number(2), Number(64), location=Location((10, 20))),
+            ),
+        ),
+    ]
+
+    types = {Field("F"): Array("P.Array", ModularInteger("P.Element", Number(64)))}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: expected composite type "P.Array"'
+        r' with element integer type "P.Element" \(0 .. 63\)\n'
+        r"<stdin>:10:20: model: info: found aggregate"
+        r" with element type universal integer \(1 .. 64\)\n"
+        r"model: info: on path F -> Final$",
+    )
 
 
 def test_array_aggregate_invalid_element_type() -> None:
@@ -732,29 +818,31 @@ def test_array_aggregate_invalid_element_type() -> None:
         {Field("F"): MODULAR_INTEGER},
     )
     array_type = Array("P.Array", inner)
-
     f = Field("F")
-    with pytest.raises(
-        RecordFluxError,
-        match=r"^<stdin>:90:10: model: error: invalid array element type"
-        ' "P.I" for aggregate comparison$',
-    ):
-        Message(
-            "P.M",
-            [
-                Link(INITIAL, f, length=Number(18)),
-                Link(
-                    f,
-                    FINAL,
-                    condition=Equal(
-                        Variable("F"),
-                        Aggregate(Number(1), Number(2), Number(64)),
-                        Location((90, 10)),
-                    ),
-                ),
-            ],
-            {Field("F"): array_type},
-        )
+
+    structure = [
+        Link(INITIAL, f, length=Number(18)),
+        Link(
+            f,
+            FINAL,
+            condition=Equal(
+                Variable("F"),
+                Aggregate(Number(1), Number(2), Number(64), location=Location((10, 20))),
+            ),
+        ),
+    ]
+
+    types = {f: array_type}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: expected composite type "P.Array"'
+        r' with element message type "P.I"\n'
+        r"<stdin>:10:20: model: info: found aggregate with element type universal integer"
+        r" \(1 .. 64\)\n"
+        r"model: info: on path F -> Final$",
+    )
 
 
 def test_opaque_not_byte_aligned() -> None:
@@ -1244,7 +1332,11 @@ def test_invalid_type_condition_enum() -> None:
         Link(
             Field("F1"),
             Field("F2"),
-            condition=Equal(Variable("F1"), Variable("E4"), location=Location((22, 10))),
+            condition=Equal(
+                Variable("F1"),
+                Variable("E4", location=Location((10, 20))),
+                location=Location((10, 10)),
+            ),
         ),
         Link(Field("F2"), FINAL),
     ]
@@ -1269,11 +1361,9 @@ def test_invalid_type_condition_enum() -> None:
     assert_message_model_error(
         structure,
         types,
-        r"^"
-        r"<stdin>:22:10: model: error: comparison of incompatible enumeration literals\n"
-        r'<stdin>:10:4: model: info: of type "P.E1"\n'
-        r'<stdin>:11:4: model: info: and type "P.E2"'
-        r"$",
+        r'^<stdin>:10:20: model: error: expected enumeration type "P.E1"\n'
+        r'<stdin>:10:20: model: info: found enumeration type "P.E2"\n'
+        r"<stdin>:10:10: model: info: on path F1 -> F2$",
     )
 
 
@@ -1368,7 +1458,7 @@ def test_invalid_first_is_last() -> None:
 def test_invalid_first_forward_reference() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), first=First("F3")),
+        Link(Field("F1"), Field("F2"), first=First(Variable("F3", location=Location((10, 20))))),
         Link(Field("F2"), Field("F3")),
         Link(Field("F3"), FINAL),
     ]
@@ -1377,7 +1467,12 @@ def test_invalid_first_forward_reference() -> None:
         Field("F2"): MODULAR_INTEGER,
         Field("F3"): MODULAR_INTEGER,
     }
-    assert_message_model_error(structure, types, '^model: error: subsequent field "F3" referenced$')
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:10:20: model: error: undefined variable "F3"\n'
+        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+    )
 
 
 def test_valid_length_reference() -> None:
@@ -1396,14 +1491,19 @@ def test_valid_length_reference() -> None:
 def test_invalid_length_forward_reference() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), length=Variable("F2")),
+        Link(Field("F1"), Field("F2"), length=Variable("F2", location=Location((10, 20)))),
         Link(Field("F2"), FINAL),
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): Opaque(),
     }
-    assert_message_model_error(structure, types, '^model: error: subsequent field "F2" referenced$')
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:10:20: model: error: undefined variable "F2"\n'
+        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+    )
 
 
 def test_invalid_negative_field_length_modular() -> None:
@@ -1508,7 +1608,7 @@ def test_field_coverage_1(monkeypatch: Any) -> None:
     ]
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
-    monkeypatch.setattr(Message, "_verify_conditions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1541,7 +1641,7 @@ def test_field_coverage_2(monkeypatch: Any) -> None:
         Field("F3"): MODULAR_INTEGER,
         Field("F4"): MODULAR_INTEGER,
     }
-    monkeypatch.setattr(Message, "_verify_conditions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1563,7 +1663,7 @@ def test_field_after_message_start(monkeypatch: Any) -> None:
     ]
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
-    monkeypatch.setattr(Message, "_verify_conditions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -2091,20 +2191,6 @@ def test_no_contradiction_multi() -> None:
         Field("F5"): RANGE_INTEGER,
     }
     Message("P.M", structure, types)
-
-
-def test_opaque_equal_scalar() -> None:
-    structure = [
-        Link(INITIAL, Field("Length")),
-        Link(Field("Length"), Field("Data"), length=Variable("Length")),
-        Link(Field("Data"), FINAL, condition=Equal(Variable("Data"), Number(42))),
-    ]
-    types = {Field("Length"): RANGE_INTEGER, Field("Data"): Opaque()}
-    assert_message_model_error(
-        structure,
-        types,
-        r"^" r'model: error: invalid relation " = " between Opaque and Number' r"$",
-    )
 
 
 @pytest.mark.parametrize(

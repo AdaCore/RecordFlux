@@ -2,6 +2,7 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import List, Sequence, Tuple
 
+import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, verbose_repr
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
@@ -40,6 +41,10 @@ class Type(Base):
     def package(self) -> ID:
         return self.identifier.parent
 
+    @property
+    def type_(self) -> rty.Type:
+        return rty.Undefined()
+
 
 class Scalar(Type):
     def __init__(self, identifier: StrID, size: expr.Expr, location: Location = None) -> None:
@@ -64,6 +69,10 @@ class Scalar(Type):
 
 
 class Integer(Scalar):
+    @property
+    def type_(self) -> rty.Type:
+        return rty.Integer(self.full_name, rty.Bounds(self.first.value, self.last.value))
+
     @property
     @abstractmethod
     def first(self) -> expr.Number:
@@ -392,6 +401,10 @@ class Enumeration(Scalar):
         always_valid = f", Always_Valid => {self.always_valid}" if self.always_valid else ""
         return f"type {self.name} is ({literals}) with Size => {self.size_expr}{always_valid}"
 
+    @property
+    def type_(self) -> rty.Type:
+        return rty.Enumeration(self.full_name)
+
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
     ) -> Sequence[expr.Expr]:
@@ -472,6 +485,10 @@ class Array(Composite):
         return f"type {self.name} is array of {self.element_type.name}"
 
     @property
+    def type_(self) -> rty.Type:
+        return rty.Composite(self.full_name, self.element_type.type_)
+
+    @property
     def element_size(self) -> expr.Expr:
         return expr.Length(self.element_type.name)
 
@@ -485,6 +502,10 @@ class Opaque(Composite):
 
     def __str__(self) -> str:
         return ""
+
+    @property
+    def type_(self) -> rty.Type:
+        return rty.Composite("Bytes", rty.Integer("Byte", rty.Bounds(0, 255)))
 
     @property
     def element_size(self) -> expr.Expr:
