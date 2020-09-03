@@ -27,6 +27,11 @@ def assert_message_model_error(
         Message("P.M", structure, types, aspects=aspects, location=location)
 
 
+def assert_type_model_error(instance: Type, regex: str) -> None:
+    with pytest.raises(RecordFluxError, match=regex):
+        instance.error.propagate()
+
+
 def assert_compilable_code(model: Model, tmp_path: pathlib.Path, prefix: str = None) -> None:
     _create_files(tmp_path, model, prefix)
 
