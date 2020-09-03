@@ -4,15 +4,16 @@ from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
+import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, flat_name, indent, indent_next, verbose_repr
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 
-from . import const, type_
+from . import const, type_ as mty
 
 
 class Field(Base):
@@ -80,7 +81,7 @@ class Link(Base):
 
 def valid_message_field_types(message: "AbstractMessage") -> bool:
     for t in message.types.values():
-        if not isinstance(t, (type_.Scalar, type_.Composite, AbstractMessage)):
+        if not isinstance(t, (mty.Scalar, mty.Composite, AbstractMessage)):
             return False
     return True
 
@@ -95,13 +96,13 @@ class MessageState(Base):
 
 @invariant(lambda self: valid_message_field_types(self))
 @invariant(lambda self: not self.types if not self.structure else True)
-class AbstractMessage(type_.Type):
+class AbstractMessage(mty.Type):
     # pylint: disable=too-many-arguments,too-many-public-methods
     def __init__(
         self,
         identifier: StrID,
         structure: Sequence[Link],
-        types: Mapping[Field, type_.Type],
+        types: Mapping[Field, mty.Type],
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -163,12 +164,16 @@ class AbstractMessage(type_.Type):
                 fields += ";"
         return f"type {self.name} is\n   message\n{indent(fields, 6)}\n   end message"
 
+    @property
+    def type_(self) -> rty.Type:
+        return rty.Message(self.full_name)
+
     @abstractmethod
     def copy(
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, type_.Type] = None,
+        types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -194,7 +199,7 @@ class AbstractMessage(type_.Type):
         return self._state.definite_predecessors[FINAL]
 
     @property
-    def types(self) -> Mapping[Field, type_.Type]:
+    def types(self) -> Mapping[Field, mty.Type]:
         """Return fields and corresponding types topologically sorted."""
         return self.__types
 
@@ -246,7 +251,7 @@ class AbstractMessage(type_.Type):
         assert field in self.fields, f'field "{field.name}" not found'
 
         field_type = self.types[field]
-        if isinstance(field_type, type_.Scalar):
+        if isinstance(field_type, mty.Scalar):
             return field_type.size
 
         raise NotImplementedError
@@ -272,7 +277,7 @@ class AbstractMessage(type_.Type):
                         v: v.__class__(f"{self.package}.{v.name}")
                         for v in expression.variables()
                         if v.identifier in literals
-                        and v.identifier not in type_.BUILTIN_LITERALS
+                        and v.identifier not in mty.BUILTIN_LITERALS
                         and v.identifier != ID("Message")
                     },
                 }
@@ -293,7 +298,7 @@ class AbstractMessage(type_.Type):
         return self.copy(structure=structure, types=types)
 
     def is_possibly_empty(self, field: Field) -> bool:
-        if isinstance(self.types[field], type_.Scalar):
+        if isinstance(self.types[field], mty.Scalar):
             return False
 
         for p in self._state.paths[FINAL]:
@@ -433,37 +438,53 @@ class AbstractMessage(type_.Type):
                             v.location,
                         )
 
-    def _verify_conditions(self) -> None:
+    def _verify_expression_types(self) -> None:
         literals = qualified_literals(self.types, self.package)
-        variables = {f.identifier for f in self.fields}
-        seen = {ID("Message")}
+        types: Dict[ID, mty.Type] = {}
+
+        def typed_variable(expression: expr.Expr) -> expr.Expr:
+            if isinstance(expression, expr.Variable):
+                if expression.name.lower() == "message":
+                    expression.type_ = rty.UniversalInteger()
+                if ID(expression.name) in types:
+                    expression.type_ = types[ID(expression.name)].type_
+                if ID(expression.name) in literals:
+                    expression.type_ = literals[ID(expression.name)].type_
+            return expression
+
+        for p in self._state.paths[FINAL]:
+            types = {}
+            path = []
+            for l in p:
+                path.append(l.target)
+
+                if l.source in self.types:
+                    types[l.source.identifier] = self.types[l.source]
+
+                l.condition = l.condition.substituted(typed_variable)
+                l.length = l.length.substituted(typed_variable)
+                l.first = l.first.substituted(typed_variable)
+
+                for t in [l.condition, l.length, l.first]:
+                    if t != expr.UNDEFINED and not t.error.check():
+                        expr.check_type(t.error, t, rty.Any())
+
+                    self.error.extend(t.error)
+
+                    if t.error.check():
+                        self.error.append(
+                            "on path " + " -> ".join(f.name for f in path),
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            t.location,
+                        )
+
+    def _verify_expressions(self) -> None:
         for f in (INITIAL, *self.fields):
-            seen.add(f.identifier)
             for l in self.outgoing(f):
-                state = (variables, literals, seen)
-                self.__check_vars(l.condition, state, l.condition.location)
-                self.__check_vars(l.length, state, l.length.location)
-                self.__check_vars(l.first, state, l.first.location)
                 self.__check_attributes(l.condition, l.condition.location)
-                self.__check_relations(l.condition, literals)
                 self.__check_first_expression(l, l.first.location)
                 self.__check_length_expression(l)
-        self.error.propagate()
-
-    def __check_vars(
-        self,
-        expression: expr.Expr,
-        state: Tuple[Set[ID], Dict[ID, type_.Enumeration], Set[ID]],
-        location: Location = None,
-    ) -> None:
-        variables, literals, seen = state
-        for v in expression.variables():
-            if v.identifier not in literals and v.identifier not in seen:
-                if v.identifier in variables:
-                    message = f'subsequent field "{v}" referenced'
-                else:
-                    message = f'undefined variable "{v}" referenced'
-                self.error.append(message, Subsystem.MODEL, Severity.ERROR, location or v.location)
 
     def __check_attributes(self, expression: expr.Expr, location: Location = None) -> None:
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
@@ -473,7 +494,7 @@ class AbstractMessage(type_.Type):
                     a.prefix.name == "Message"
                     or (
                         Field(a.prefix.name) in self.fields
-                        and isinstance(self.types[Field(a.prefix.name)], type_.Composite)
+                        and isinstance(self.types[Field(a.prefix.name)], mty.Composite)
                     )
                 )
             ):
@@ -483,132 +504,6 @@ class AbstractMessage(type_.Type):
                     Severity.ERROR,
                     location,
                 )
-
-    def __check_relations(
-        self, expression: expr.Expr, literals: Dict[ID, type_.Enumeration]
-    ) -> None:
-        TypeExpr = Union[type_.Type, expr.Expr]
-
-        def check_composite_element_range(
-            relation: expr.Relation, aggregate: expr.Aggregate, composite: type_.Composite
-        ) -> None:
-            first: expr.Expr
-            last: expr.Expr
-            if isinstance(composite, type_.Opaque):
-                first = expr.Number(0)
-                last = expr.Number(255)
-
-            if isinstance(composite, type_.Array):
-                if not isinstance(composite.element_type, type_.Integer):
-                    self.error.append(
-                        f'invalid array element type "{composite.element_type.identifier}"'
-                        " for aggregate comparison",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        relation.location,
-                    )
-                    return
-                first = composite.element_type.first.simplified()
-                last = composite.element_type.last.simplified()
-
-            for element in aggregate.elements:
-                if not first <= element <= last:
-                    self.error.append(
-                        f"aggregate element out of range {first} .. {last}",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        element.location,
-                    )
-
-        def check_enumeration(
-            relation: expr.Relation, left: type_.Enumeration, right: type_.Enumeration
-        ) -> None:
-            if left != right:
-                self.error.append(
-                    "comparison of incompatible enumeration literals",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    relation.location,
-                )
-                self.error.append(
-                    f'of type "{left.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    left.location,
-                )
-                self.error.append(
-                    f'and type "{right.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    right.location,
-                )
-
-        def relation_error(relation: expr.Relation, left: TypeExpr, right: TypeExpr) -> None:
-            self.error.append(
-                f'invalid relation "{relation.symbol}" between {left.__class__.__name__} '
-                f"and {right.__class__.__name__}",
-                Subsystem.MODEL,
-                Severity.ERROR,
-                relation.location,
-            )
-
-        def resolve_types(
-            left: expr.Expr,
-            right: expr.Expr,
-            literals: Dict[ID, type_.Enumeration],
-        ) -> Tuple[TypeExpr, TypeExpr]:
-            def resolve_type(expression: expr.Expr) -> Optional[TypeExpr]:
-                if not isinstance(expression, expr.Variable):
-                    return expression
-                if expression.identifier in literals:
-                    return literals[expression.identifier]
-                if Field(expression.name) in self.types:
-                    return self.types[Field(expression.name)]
-                return None
-
-            lefttype = resolve_type(left)
-            righttype = resolve_type(right)
-            self.error.propagate()
-            assert lefttype
-            assert righttype
-            return (lefttype, righttype)
-
-        def invalid_relation(left: TypeExpr, right: TypeExpr) -> bool:
-            return (
-                (
-                    isinstance(left, type_.Opaque)
-                    and not isinstance(right, (type_.Opaque, expr.Aggregate))
-                )
-                or (
-                    isinstance(left, type_.Array)
-                    and not isinstance(right, (type_.Array, expr.Aggregate))
-                )
-                or (isinstance(left, expr.Aggregate) and not isinstance(right, type_.Composite))
-            )
-
-        for relation in expression.findall(lambda x: isinstance(x, expr.Relation)):
-            assert isinstance(relation, expr.Relation)
-            left, right = resolve_types(
-                relation.left.simplified(), relation.right.simplified(), literals
-            )
-            if isinstance(relation, (expr.Less, expr.LessEqual, expr.Greater, expr.GreaterEqual)):
-                if (isinstance(left, expr.Aggregate) and isinstance(right, type_.Type)) or (
-                    isinstance(right, expr.Aggregate) and isinstance(left, type_.Type)
-                ):
-                    relation_error(relation, left, right)
-            elif isinstance(relation, (expr.Equal, expr.NotEqual)):
-                if invalid_relation(left, right):
-                    relation_error(relation, left, right)
-                elif invalid_relation(left=right, right=left):
-                    relation_error(relation, left=right, right=left)
-                elif isinstance(left, expr.Aggregate) and isinstance(right, type_.Composite):
-                    check_composite_element_range(relation, left, right)
-                elif isinstance(left, type_.Composite) and isinstance(right, expr.Aggregate):
-                    check_composite_element_range(relation, right, left)
-                elif isinstance(left, type_.Enumeration) and isinstance(right, type_.Enumeration):
-                    check_enumeration(relation, left, right)
-            else:
-                assert False, f'unexpected relation type "{type(relation).__name__}"'
 
     def __check_first_expression(self, link: Link, location: Location = None) -> None:
         if link.first != expr.UNDEFINED and not isinstance(link.first, expr.First):
@@ -629,7 +524,7 @@ class AbstractMessage(type_.Type):
             )
         if link.target != FINAL and link.target in self.types:
             t = self.types[link.target]
-            unconstrained = isinstance(t, (type_.Opaque, type_.Array))
+            unconstrained = isinstance(t, (mty.Opaque, mty.Array))
             if not unconstrained and link.length != expr.UNDEFINED:
                 self.error.append(
                     f'fixed size field "{link.target.name}" with length expression',
@@ -648,13 +543,13 @@ class AbstractMessage(type_.Type):
     def type_constraints(self, expression: expr.Expr) -> Sequence[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
             comp = self.types[Field(field.name)]
-            assert isinstance(comp, type_.Composite)
+            assert isinstance(comp, mty.Composite)
             result = expr.Equal(
                 expr.Mul(aggregate.length, comp.element_size),
                 expr.Length(field),
                 location=expression.location,
             )
-            if isinstance(comp, type_.Array) and isinstance(comp.element_type, type_.Scalar):
+            if isinstance(comp, mty.Array) and isinstance(comp.element_type, mty.Scalar):
                 return [
                     result,
                     *comp.element_type.constraints(name=comp.element_type.name, proof=True),
@@ -665,7 +560,7 @@ class AbstractMessage(type_.Type):
         scalar_types = [
             (f.name, t)
             for f, t in self.types.items()
-            if isinstance(t, type_.Scalar)
+            if isinstance(t, mty.Scalar)
             and ID(f.name) not in literals
             and f.name not in ["Message", "Final"]
         ]
@@ -1014,7 +909,7 @@ class AbstractMessage(type_.Type):
 
                 if f in self.__types:
                     t = self.__types[f]
-                    if not isinstance(t, type_.Opaque):
+                    if not isinstance(t, mty.Opaque):
                         continue
                     element_size = t.element_size
                     start_aligned = expr.Not(
@@ -1211,7 +1106,7 @@ class Message(AbstractMessage):
         self,
         identifier: StrID,
         structure: Sequence[Link],
-        types: Mapping[Field, type_.Type],
+        types: Mapping[Field, mty.Type],
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -1221,8 +1116,10 @@ class Message(AbstractMessage):
         super().__init__(identifier, structure, types, aspects, location, error, state)
 
         if not self.error.check() and (structure or types) and not skip_proof:
-            self._verify_conditions()
+            self._verify_expression_types()
+            self._verify_expressions()
             self._verify_checksums()
+            self.error.propagate()
             self._prove()
 
         self.error.propagate()
@@ -1231,7 +1128,7 @@ class Message(AbstractMessage):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, type_.Type] = None,
+        types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -1256,7 +1153,7 @@ class DerivedMessage(Message):
         identifier: StrID,
         base: AbstractMessage,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, type_.Type] = None,
+        types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -1276,7 +1173,7 @@ class DerivedMessage(Message):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, type_.Type] = None,
+        types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -1301,7 +1198,7 @@ class UnprovenMessage(AbstractMessage):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, type_.Type] = None,
+        types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -1329,8 +1226,8 @@ class UnprovenMessage(AbstractMessage):
     @ensure(lambda result: valid_message_field_types(result))
     def merged(self) -> "UnprovenMessage":
         def prune_dangling_fields(
-            structure: List[Link], types: Dict[Field, type_.Type]
-        ) -> Tuple[List[Link], Dict[Field, type_.Type]]:
+            structure: List[Link], types: Dict[Field, mty.Type]
+        ) -> Tuple[List[Link], Dict[Field, mty.Type]]:
             dangling = []
             progress = True
             while progress:
@@ -1453,7 +1350,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         identifier: StrID,
         base: AbstractMessage,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, type_.Type] = None,
+        types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -1474,7 +1371,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         self,
         identifier: StrID = None,
         structure: Sequence[Link] = None,
-        types: Mapping[Field, type_.Type] = None,
+        types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
         location: Location = None,
         error: RecordFluxError = None,
@@ -1501,7 +1398,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         )
 
 
-class Refinement(type_.Type):
+class Refinement(mty.Type):
     # pylint: disable=too-many-arguments
     def __init__(
         self,
@@ -1533,7 +1430,7 @@ class Refinement(type_.Type):
 
         for f, t in pdu.types.items():
             if f == field:
-                if not isinstance(t, type_.Opaque):
+                if not isinstance(t, mty.Opaque):
                     self.error.append(
                         f'invalid type of field "{field.name}" in refinement of "{pdu.identifier}"',
                         Subsystem.MODEL,
@@ -1575,13 +1472,11 @@ class Refinement(type_.Type):
         return NotImplemented
 
 
-def qualified_literals(
-    types: Mapping[Field, type_.Type], package: ID
-) -> Dict[ID, type_.Enumeration]:
+def qualified_literals(types: Mapping[Field, mty.Type], package: ID) -> Dict[ID, mty.Enumeration]:
     literals = {}
 
     for t in types.values():
-        if isinstance(t, type_.Enumeration):
+        if isinstance(t, mty.Enumeration):
             for l in t.literals:
                 if t.package == const.BUILTINS_PACKAGE or t.package == package:
                     literals[l] = t

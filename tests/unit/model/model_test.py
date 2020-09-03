@@ -2,6 +2,7 @@ from typing import Sequence
 
 import pytest
 
+import rflx.typing_ as rty
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Add, Number, Pow, Sub, Variable
 from rflx.identifier import ID
@@ -38,6 +39,13 @@ def test_type_name() -> None:
         ModularInteger("X.Y.Z", Number(256), Location((10, 20))),
         '^<stdin>:10:20: model: error: unexpected format of type name "X.Y.Z"$',
     )
+
+
+def test_type_type() -> None:
+    class NewType(Type):
+        pass
+
+    assert NewType("P.T").type_ == rty.Undefined()
 
 
 def test_modular_size() -> None:
