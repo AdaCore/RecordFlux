@@ -211,6 +211,12 @@ def fixture_tlv_checksum_type(tlv_checksum: MessageValue) -> Message:
     return tlv_checksum._type
 
 
+def assert_bytestring_error(msg: MessageValue) -> None:
+    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
+        # pylint: disable=pointless-statement
+        msg.bytestring
+
+
 def test_file_not_found(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         PyRFLX([f"{tmp_path}/test.rflx"])
@@ -314,21 +320,17 @@ def test_accessible_fields_fields_complex(tlv: MessageValue) -> None:
 
 
 def test_valid_message(tlv: MessageValue) -> None:
-    # pylint: disable=pointless-statement
     assert not tlv.valid_message
-    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
-        tlv.bytestring
+    assert_bytestring_error(tlv)
     tlv.set("Tag", "Msg_Error")
     assert tlv.valid_message
     assert tlv.bytestring == b"\xc0"
     tlv.set("Tag", "Msg_Data")
     assert not tlv.valid_message
-    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
-        tlv.bytestring
+    assert_bytestring_error(tlv)
     tlv.set("Length", 1)
     assert not tlv.valid_message
-    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
-        tlv.bytestring
+    assert_bytestring_error(tlv)
     tlv.set("Value", b"\x01")
     assert tlv.valid_message
     assert tlv.bytestring == b"\x40\x01\x01"
@@ -1568,8 +1570,7 @@ def test_checksum_manual_icmp(icmp_checksum: MessageValue) -> None:
     icmp_checksum.set("Data", test_data)
     assert not icmp_checksum.valid_message
     assert icmp_checksum.get("Checksum") == 1234
-    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
-        assert icmp_checksum.bytestring == b"\x08\x00\x04\xd2\x00\x05\x00\x01" + test_data
+    assert_bytestring_error(icmp_checksum)
     icmp_checksum.set("Checksum", 12824)
     icmp_checksum.set("Identifier", 5)
     icmp_checksum.set("Sequence_Number", 1)
