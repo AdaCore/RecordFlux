@@ -8,7 +8,11 @@ jobs=0
 
 # Enable/disable the message, report, category or checker with the given id(s).
 enable=useless-suppression
-disable=missing-docstring, bad-continuation, unnecessary-lambda, inconsistent-return-statements
+disable=missing-docstring,
+        bad-continuation,
+        unnecessary-lambda,
+        inconsistent-return-statements,
+        unsubscriptable-object  # ISSUE: PyCQA/pylint#3045
 
 [BASIC]
 
