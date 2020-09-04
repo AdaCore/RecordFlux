@@ -54,7 +54,7 @@ from rflx.model import (
     UnprovenMessage,
 )
 from tests.models import ENUMERATION, ETHERNET_FRAME, MODULAR_INTEGER, RANGE_INTEGER
-from tests.utils import assert_equal, assert_message_model_error
+from tests.utils import assert_equal, assert_message_model_error, multilinestr
 
 M_NO_REF = UnprovenMessage(
     "P.No_Ref",
@@ -1839,3 +1839,33 @@ def test_paths() -> None:
             Link(Field("L"), Field("O"), condition=LessEqual(Variable("L"), Number(100))),
         ),
     }
+
+
+def test_message_str() -> None:
+    message = Message(
+        "P.M",
+        [
+            Link(INITIAL, Field("L")),
+            Link(Field("L"), Field("O"), condition=Greater(Variable("L"), Number(100))),
+            Link(Field("L"), Field("P"), condition=LessEqual(Variable("L"), Number(100))),
+            Link(Field("P"), FINAL),
+            Link(Field("O"), FINAL),
+        ],
+        {Field("L"): MODULAR_INTEGER, Field("O"): MODULAR_INTEGER, Field("P"): MODULAR_INTEGER},
+    )
+    assert_equal(
+        str(message),
+        multilinestr(
+            """type M is
+                  message
+                     L : Modular
+                        then O
+                           if L > 100
+                        then P
+                           if L <= 100;
+                     O : Modular
+                        then null;
+                     P : Modular;
+                  end message"""
+        ),
+    )
