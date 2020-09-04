@@ -144,7 +144,8 @@ class AbstractMessage(type_.Type):
             return f"type {self.name} is null message"
 
         fields = ""
-        for f in [INITIAL, *self.fields]:
+        field_list = [INITIAL, *self.fields]
+        for i, f in enumerate(field_list):
             if f != INITIAL:
                 fields += "\n" if fields else ""
                 fields += f"{f.name} : {self.types[f].name}"
@@ -154,6 +155,7 @@ class AbstractMessage(type_.Type):
                 and outgoing[0].condition == expr.TRUE
                 and outgoing[0].length == expr.UNDEFINED
                 and outgoing[0].first == expr.UNDEFINED
+                and (i >= len(field_list) - 1 or field_list[i + 1] == outgoing[0].target)
             ):
                 if f == INITIAL:
                     fields += "null"
