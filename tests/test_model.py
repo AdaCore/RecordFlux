@@ -1146,6 +1146,66 @@ def test_prefixed_message() -> None:
     )
 
 
+def test_prefixed_message_attribute() -> None:
+    result = Message(
+        "P.M",
+        [
+            Link(INITIAL, Field("F1")),
+            Link(
+                Field("F1"),
+                Field("F2"),
+                LessEqual(Variable("F1"), Number(100)),
+                first=First("F1"),
+            ),
+            Link(
+                Field("F1"),
+                Field("F3"),
+                GreaterEqual(Variable("F1"), Number(200)),
+                first=First("F1"),
+            ),
+            Link(Field("F2"), FINAL, Equal(Variable("F2"), Number(42))),
+            Link(Field("F3"), Field("F4"), length=Sub(Last("Message"), Last("F3"))),
+            Link(Field("F4"), FINAL),
+        ],
+        {
+            Field("F1"): deepcopy(MODULAR_INTEGER),
+            Field("F2"): deepcopy(MODULAR_INTEGER),
+            Field("F3"): deepcopy(RANGE_INTEGER),
+            Field("F4"): Opaque(),
+        },
+    ).prefixed("X_")
+
+    expected = Message(
+        "P.M",
+        [
+            Link(INITIAL, Field("X_F1")),
+            Link(
+                Field("X_F1"),
+                Field("X_F2"),
+                LessEqual(Variable("X_F1"), Number(100)),
+                first=First("X_F1"),
+            ),
+            Link(
+                Field("X_F1"),
+                Field("X_F3"),
+                GreaterEqual(Variable("X_F1"), Number(200)),
+                first=First("X_F1"),
+            ),
+            Link(Field("X_F2"), FINAL, Equal(Variable("X_F2"), Number(42))),
+            Link(Field("X_F3"), Field("X_F4"), length=Add(Last("Message"), -Last("X_F3"))),
+            Link(Field("X_F4"), FINAL),
+        ],
+        {
+            Field("X_F1"): deepcopy(MODULAR_INTEGER),
+            Field("X_F2"): deepcopy(MODULAR_INTEGER),
+            Field("X_F3"): deepcopy(RANGE_INTEGER),
+            Field("X_F4"): Opaque(),
+        },
+    )
+
+    assert result == expected
+
+
 def test_merge_message_simple() -> None:
     assert_equal(
         deepcopy(M_SMPL_REF).merged(),
