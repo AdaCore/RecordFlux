@@ -327,7 +327,9 @@ class BinExpr(Expr):
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, BinExpr):
-            return expr.__class__(expr.left.substituted(func), expr.right.substituted(func))
+            return expr.__class__(
+                expr.left.substituted(func), expr.right.substituted(func), location=expr.location
+            )
         return expr
 
     def simplified(self) -> Expr:
@@ -421,7 +423,9 @@ class AssExpr(Expr):
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, AssExpr):
-            return expr.__class__(*[t.substituted(func) for t in expr.terms])
+            return expr.__class__(
+                *[t.substituted(func) for t in expr.terms], location=expr.location
+            )
         return expr
 
     def simplified(self) -> Expr:
@@ -1411,7 +1415,9 @@ class Aggregate(Expr):
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, self.__class__):
-            return expr.__class__(*[e.substituted(func) for e in expr.elements])
+            return expr.__class__(
+                *[e.substituted(func) for e in expr.elements], location=expr.location
+            )
         return expr
 
     def simplified(self) -> Expr:
@@ -1707,11 +1713,6 @@ class QuantifiedExpression(Expr):
     def precedence(self) -> Precedence:
         return Precedence.literal
 
-    def simplified(self) -> Expr:
-        return self.__class__(
-            self.parameter_name, self.iterable.simplified(), self.predicate.simplified()
-        )
-
     @property
     @abstractmethod
     def quantifier(self) -> str:
@@ -1749,7 +1750,12 @@ class QuantifiedExpression(Expr):
             expr.parameter_name,
             expr.iterable.substituted(func),
             expr.predicate.substituted(func),
-            expr.location,
+            location=expr.location,
+        )
+
+    def simplified(self) -> Expr:
+        return self.__class__(
+            self.parameter_name, self.iterable.simplified(), self.predicate.simplified()
         )
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
@@ -1817,9 +1823,6 @@ class ValueRange(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def simplified(self) -> Expr:
-        return self.__class__(self.lower.simplified(), self.upper.simplified())
-
     def substituted(
         self, func: Callable[["Expr"], "Expr"] = None, mapping: Mapping["Name", "Expr"] = None
     ) -> "Expr":
@@ -1831,6 +1834,9 @@ class ValueRange(Expr):
                 self.upper.substituted(func),
             )
         return expr
+
+    def simplified(self) -> Expr:
+        return self.__class__(self.lower.simplified(), self.upper.simplified())
 
     def ada_expr(self) -> ada.Expr:
         return ada.ValueRange(self.lower.ada_expr(), self.upper.ada_expr())
@@ -1860,20 +1866,23 @@ class Conversion(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
+
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        assert isinstance(expr, Conversion)
-        return expr.__class__(self.name, self.argument.substituted(func))
+        if isinstance(expr, Conversion):
+            return expr.__class__(
+                self.name, self.argument.substituted(func), location=expr.location
+            )
+        return expr
 
     def simplified(self) -> Expr:
         return Conversion(self.name, self.argument.simplified(), self.type_, self.location)
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.literal
 
     def ada_expr(self) -> ada.Expr:
         return ada.Conversion(self.name, self.argument.ada_expr())
@@ -1927,15 +1936,16 @@ class Comprehension(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        assert isinstance(expr, Comprehension)
-        return expr.__class__(
-            expr.iterator,
-            expr.array.substituted(func),
-            expr.selector.substituted(func),
-            expr.condition.substituted(func),
-            expr.type_,
-            expr.location,
-        )
+        if isinstance(expr, Comprehension):
+            return expr.__class__(
+                expr.iterator,
+                expr.array.substituted(func),
+                expr.selector.substituted(func),
+                expr.condition.substituted(func),
+                expr.type_,
+                expr.location,
+            )
+        return expr
 
     @property
     def precedence(self) -> Precedence:
@@ -1995,13 +2005,14 @@ class MessageAggregate(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        assert isinstance(expr, MessageAggregate)
-        return expr.__class__(
-            expr.name,
-            {k: expr.data[k].substituted(func) for k in expr.data},
-            expr.type_,
-            expr.location,
-        )
+        if isinstance(expr, MessageAggregate):
+            return expr.__class__(
+                expr.name,
+                {k: expr.data[k].substituted(func) for k in expr.data},
+                expr.type_,
+                location=expr.location,
+            )
+        return expr
 
     @property
     def precedence(self) -> Precedence:

@@ -191,6 +191,11 @@ def test_bin_expr_substituted() -> None:
     )
 
 
+def test_bin_expr_substituted_location() -> None:
+    expr = Less(Variable("X"), Number(1), location=Location((1, 2))).substituted(lambda x: x)
+    assert expr.location
+
+
 def test_ass_expr_findall() -> None:
     assert_equal(
         And(Equal(Variable("X"), Number(1)), Less(Variable("Y"), Number(2))).findall(
@@ -221,6 +226,13 @@ def test_ass_expr_substituted() -> None:
         ),
         Or(Equal(Variable("P_X"), Number(1)), Variable("P_Y")),
     )
+
+
+def test_ass_expr_substituted_location() -> None:
+    expr = And(
+        Equal(Variable("X"), Number(1)), Variable("Y"), location=Location((1, 2))
+    ).substituted(lambda x: x)
+    assert expr.location
 
 
 def test_bool_expr_str() -> None:
@@ -379,7 +391,7 @@ def test_number_add() -> None:
     assert Number(5) + Number(3) == Number(8)
 
 
-def test_number_substituted() -> None:
+def test_number_sub() -> None:
     assert Number(5) - Number(3) == Number(2)
 
 
@@ -788,6 +800,11 @@ def test_attribute_substituted() -> None:
     )
 
 
+def test_attribute_substituted_location() -> None:
+    expr = First(Variable("X", location=Location((1, 2)))).substituted(lambda x: x)
+    assert expr.location
+
+
 def test_attribute_simplified() -> None:
     assert First("X").simplified() == First("X")
 
@@ -869,6 +886,11 @@ def test_aggregate_substituted() -> None:
         ),
         Aggregate(Variable("P_X"), Variable("P_Y")),
     )
+
+
+def test_aggregate_substituted_location() -> None:
+    expr = Aggregate(Number(0), location=Location((1, 2))).substituted(lambda x: x)
+    assert expr.location
 
 
 def test_aggregate_simplified() -> None:
@@ -953,6 +975,11 @@ def test_relation_substituted() -> None:
         ),
         Number(1),
     )
+
+
+def test_relation_substituted_location() -> None:
+    expr = Equal(Variable("X"), Variable("Y"), location=Location((1, 2))).substituted(lambda x: x)
+    assert expr.location
 
 
 def test_relation_simplified() -> None:
@@ -1132,6 +1159,20 @@ def test_value_range_substituted() -> None:
         ),
         Variable("Z"),
     )
+
+
+def test_quantified_expression_substituted() -> None:
+    assert_equal(
+        ForAllOf("X", Variable("Y"), Add(Last("Z"), Add(Number(21), Number(21)))).substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        ),
+        ForAllOf("X", Variable("P_Y"), Add(Last("P_Z"), Add(Number(21), Number(21)))),
+    )
+
+
+def test_quantified_expression_substituted_location() -> None:
+    expr = ForAllOf("X", Variable("Y"), TRUE, location=Location((1, 2))).substituted(lambda x: x)
+    assert expr.location
 
 
 def test_quantified_expression_simplified() -> None:
@@ -1389,6 +1430,26 @@ def test_call_variables() -> None:
     assert result == expected
 
 
+def test_conversion_substituted() -> None:
+    assert_equal(
+        Conversion("X", Variable("Y")).substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        ),
+        Conversion("X", Variable("P_Y")),
+    )
+    assert_equal(
+        Conversion("X", Variable("Y")).substituted(
+            lambda x: Variable("Z") if isinstance(x, Conversion) else x
+        ),
+        Variable("Z"),
+    )
+
+
+def test_conversion_substituted_location() -> None:
+    expr = Conversion("X", Variable("Y"), location=Location((1, 2))).substituted(lambda x: x)
+    assert expr.location
+
+
 def test_conversion_variables() -> None:
     result = Conversion("Sub", Variable("X")).variables()
     expected = [Variable("X")]
@@ -1397,6 +1458,28 @@ def test_conversion_variables() -> None:
 
 def test_conversion_ada_expr() -> None:
     assert Conversion("X", Variable("Y")).ada_expr() == ada.Conversion("X", ada.Variable("Y"))
+
+
+def test_comprehension_substituted() -> None:
+    assert_equal(
+        Comprehension("X", Variable("Y"), Variable("Z"), TRUE).substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        ),
+        Comprehension("X", Variable("P_Y"), Variable("P_Z"), TRUE),
+    )
+    assert_equal(
+        Comprehension("X", Variable("Y"), Variable("Z"), TRUE).substituted(
+            lambda x: Variable("Z") if isinstance(x, Comprehension) else x
+        ),
+        Variable("Z"),
+    )
+
+
+def test_comprehension_substituted_location() -> None:
+    expr = Comprehension(
+        "X", Variable("Y"), Variable("Z"), TRUE, location=Location((1, 2))
+    ).substituted(lambda x: x)
+    assert expr.location
 
 
 def test_comprehension_variables() -> None:
@@ -1408,6 +1491,28 @@ def test_comprehension_variables() -> None:
     ).variables()
     expected = [Variable("List"), Variable("Z")]
     assert result == expected
+
+
+def test_message_aggregate_substituted() -> None:
+    assert_equal(
+        MessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        ),
+        MessageAggregate("X", {"Y": Variable("P_A"), "Z": Variable("P_B")}),
+    )
+    assert_equal(
+        MessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
+            lambda x: Variable("Z") if isinstance(x, MessageAggregate) else x
+        ),
+        Variable("Z"),
+    )
+
+
+def test_message_aggregate_substituted_location() -> None:
+    expr = MessageAggregate(
+        "X", {"Y": Variable("A"), "Z": Variable("B")}, location=Location((1, 2))
+    ).substituted(lambda x: x)
+    assert expr.location
 
 
 def test_message_aggregate_variables() -> None:
