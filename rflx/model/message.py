@@ -272,7 +272,9 @@ class AbstractMessage(type_.Type):
                     **{
                         v: v.__class__(f"{self.package}.{v.name}")
                         for v in expression.variables()
-                        if v.identifier in literals and v.identifier not in type_.BUILTIN_LITERALS
+                        if v.identifier in literals
+                        and v.identifier not in type_.BUILTIN_LITERALS
+                        and v.identifier != ID("Message")
                     },
                 }
             ).simplified()
