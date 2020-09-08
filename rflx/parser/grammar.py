@@ -156,11 +156,16 @@ def numeric_literal() -> Token:
     based_literal = numeral + Literal("#") - based_numeral - Literal("#")
     based_literal.setParseAction(lambda t: (int(t[2], int(t[0])), int(t[0])))
 
+    sign = Literal("-")
+    sign.setParseAction(lambda t: -1)
+
     num_literal = based_literal | decimal_literal
     num_literal.setName("Number")
 
-    return locatedExpr(num_literal).setParseAction(
-        lambda s, l, t: Number(t[0][1][0], t[0][1][1], parser_location(t[0][0], t[0][2], s))
+    return locatedExpr(Optional(sign, 1) + num_literal).setParseAction(
+        lambda s, l, t: Number(
+            t[0][1] * t[0][2][0], t[0][2][1], parser_location(t[0][0], t[0][-1], s)
+        )
     )
 
 
