@@ -173,6 +173,10 @@ def test_grammar_qualified_identifier(string: str, expected: ID) -> None:
         ("1_000", expr.Number(1000)),
         ("16#6664#", expr.Number(26212)),
         ("16#66_64#", expr.Number(26212)),
+        ("-1000", expr.Number(-1000)),
+        ("-1_000", expr.Number(-1000)),
+        ("-16#6664#", expr.Number(-26212)),
+        ("-16#66_64#", expr.Number(-26212)),
     ],
 )
 def test_grammar_expression_numeric_literal(string: str, expected: Expr) -> None:
@@ -233,6 +237,10 @@ def test_grammar_expression_suffix(string: str, expected: Expr) -> None:
         (
             "A - (B * 2**3 - 1)",
             Sub(Variable("A"), Sub(Mul(Variable("B"), Pow(Number(2), Number(3))), Number(1))),
+        ),
+        (
+            "A + B * -8",
+            Add(Variable("A"), Mul(Variable("B"), Number(-8))),
         ),
     ],
 )
