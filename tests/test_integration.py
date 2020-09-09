@@ -143,11 +143,11 @@ def test_comparison_big_integers(condition: str) -> None:
     "condition",
     [
         'A = "Foo Bar"',
-        "A /= (0, 1, 2, 3, 4, 5, 6)",
-        'A = "Foo" & (0) & "Bar"',
+        "A /= [0, 1, 2, 3, 4, 5, 6]",
+        'A = "Foo" & [0] & "Bar"',
         '"Foo Bar" /= A',
-        "(0, 1, 2, 3, 4, 5, 6) = A",
-        '"Foo" & (0) & "Bar" /= A',
+        "[0, 1, 2, 3, 4, 5, 6] = A",
+        '"Foo" & [0] & "Bar" /= A',
     ],
 )
 def test_comparison_opaque(condition: str) -> None:

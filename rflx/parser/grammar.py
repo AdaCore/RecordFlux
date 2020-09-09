@@ -211,10 +211,10 @@ def expression(restricted: bool = False) -> Token:
         designator |= Keyword("Head") | Keyword("Opaque") | Keyword("Present") | Keyword("Valid")
 
     array_aggregate = (
-        Literal("(").setParseAction(lambda s, l, t: l)
+        Literal("[").setParseAction(lambda s, l, t: l)
         + numeric_literal()
         + (comma() - numeric_literal()) * (0,)
-        + Literal(")").setParseAction(lambda s, l, t: l)
+        + Literal("]").setParseAction(lambda s, l, t: l)
     )
     array_aggregate.setParseAction(parse_array_aggregate)
 
