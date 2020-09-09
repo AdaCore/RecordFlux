@@ -1333,7 +1333,7 @@ class Aggregate(Expr):
         self.elements = list(elements)
 
     def _update_str(self) -> None:
-        self._str = intern("(" + ", ".join(map(str, self.elements)) + ")")
+        self._str = intern("[" + ", ".join(map(str, self.elements)) + "]")
 
     def __neg__(self) -> Expr:
         raise NotImplementedError

@@ -678,8 +678,8 @@ def test_aggregate_simplified() -> None:
 
 
 def test_aggregate_str() -> None:
-    assert str(Aggregate(Number(1))) == "(1)"
-    assert str(Aggregate(Number(1), Number(2))) == "(1, 2)"
+    assert str(Aggregate(Number(1))) == "[1]"
+    assert str(Aggregate(Number(1), Number(2))) == "[1, 2]"
 
 
 def test_aggregate_precedence() -> None:

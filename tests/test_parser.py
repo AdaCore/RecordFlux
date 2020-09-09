@@ -239,7 +239,7 @@ def test_grammar_expression_suffix(string: str, expected: Expr) -> None:
             Sub(Variable("A"), Sub(Mul(Variable("B"), Pow(Number(2), Number(3))), Number(1))),
         ),
         (
-            "A + B * -8",
+            "A + B * (-8)",
             Add(Variable("A"), Mul(Variable("B"), Number(-8))),
         ),
     ],
@@ -339,10 +339,10 @@ def test_grammar_boolean_expression_error(string: str, error: Expr) -> None:
     [
         ("42", expr.Number(42)),
         ('"Foo Bar"', expr.String("Foo Bar")),
-        ("(1)", expr.Aggregate(expr.Number(1))),
-        ("(1, 2)", expr.Aggregate(expr.Number(1), expr.Number(2))),
+        ("[1]", expr.Aggregate(expr.Number(1))),
+        ("[1, 2]", expr.Aggregate(expr.Number(1), expr.Number(2))),
         (
-            '(137) & "PNG" & (13, 10, 26, 10)',
+            '[137] & "PNG" & [13, 10, 26, 10]',
             expr.Aggregate(
                 Number(137),
                 Number(80),
@@ -898,7 +898,7 @@ def test_grammar_unexpected_exception(monkeypatch: Any) -> None:
 
 def test_grammar_expression_aggregate_no_number() -> None:
     with pytest.raises(ParseFatalException, match=r"^Expected Number"):
-        grammar.expression().parseString("(1, Foo)")
+        grammar.expression().parseString("[1, Foo]")
 
 
 def test_grammar_unexpected_suffix() -> None:
