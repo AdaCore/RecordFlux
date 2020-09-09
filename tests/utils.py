@@ -1,8 +1,6 @@
-import os
 import pathlib
 import shutil
 import subprocess
-import tempfile
 from typing import Any, Mapping, Sequence
 
 import pytest
@@ -12,8 +10,6 @@ from rflx.expression import Expr
 from rflx.generator import Generator
 from rflx.identifier import ID
 from rflx.model import Field, Link, Message, Model, Type
-
-BASE_TMP_DIR = os.environ.get("BASE_TMP_DIR")
 
 
 def assert_equal(left: Any, right: Any) -> None:
@@ -31,34 +27,24 @@ def assert_message_model_error(
         Message("P.M", structure, types, aspects=aspects, location=location)
 
 
-def assert_compilable_code(model: Model, prefix: str = None) -> None:
-    with tempfile.TemporaryDirectory(dir=BASE_TMP_DIR) as tmpdir:
-        tmp_path = pathlib.Path(tmpdir)
+def assert_compilable_code(model: Model, tmp_path: pathlib.Path, prefix: str = None) -> None:
+    _create_files(tmp_path, model, prefix)
 
-        _create_files(tmp_path, model, prefix)
-
-        p = subprocess.run(
-            ["gprbuild", "-Ptest"], cwd=tmp_path, check=False, stderr=subprocess.PIPE
+    p = subprocess.run(["gprbuild", "-Ptest"], cwd=tmp_path, check=False, stderr=subprocess.PIPE)
+    if p.returncode:
+        raise AssertionError(
+            f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
         )
-        if p.returncode:
-            raise AssertionError(
-                f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
-            )
 
 
-def assert_provable_code(model: Model, prefix: str = None) -> None:
-    with tempfile.TemporaryDirectory(dir=BASE_TMP_DIR) as tmpdir:
-        tmp_path = pathlib.Path(tmpdir)
+def assert_provable_code(model: Model, tmp_path: pathlib.Path, prefix: str = None) -> None:
+    _create_files(tmp_path, model, prefix)
 
-        _create_files(tmp_path, model, prefix)
-
-        p = subprocess.run(
-            ["gnatprove", "-Ptest"], cwd=tmp_path, check=False, stderr=subprocess.PIPE
+    p = subprocess.run(["gnatprove", "-Ptest"], cwd=tmp_path, check=False, stderr=subprocess.PIPE)
+    if p.returncode:
+        raise AssertionError(
+            f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
         )
-        if p.returncode:
-            raise AssertionError(
-                f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
-            )
 
 
 def _create_files(tmp_path: pathlib.Path, model: Model, prefix: str = None) -> None:

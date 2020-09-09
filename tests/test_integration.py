@@ -33,20 +33,20 @@ def assert_equal_code(spec_files: List[str]) -> None:
                 assert unit.adb == f.read(), filename
 
 
-def assert_compilable_code(spec_files: List[str], prefix: str = None) -> None:
+def assert_compilable_code(spec_files: List[str], tmp_path: Path, prefix: str = None) -> None:
     parser = Parser()
 
     for spec_file in spec_files:
         parser.parse(Path(spec_file))
 
-    utils.assert_compilable_code(parser.create_model(), prefix)
+    utils.assert_compilable_code(parser.create_model(), tmp_path, prefix)
 
 
-def assert_compilable_code_string(specification: str, prefix: str = None) -> None:
+def assert_compilable_code_string(specification: str, tmp_path: Path, prefix: str = None) -> None:
     parser = Parser()
     parser.parse_string(specification)
 
-    utils.assert_compilable_code(parser.create_model(), prefix)
+    utils.assert_compilable_code(parser.create_model(), tmp_path, prefix)
 
 
 def test_ethernet() -> None:
@@ -75,29 +75,39 @@ def test_tlv() -> None:
     assert_equal_code([f"{SPECDIR}/tlv.rflx"])
 
 
-def test_tls() -> None:
+def test_tls(tmp_path: Path) -> None:
     assert_compilable_code(
         [
             f"{SPECDIR}/tls_alert.rflx",
             f"{SPECDIR}/tls_handshake.rflx",
             f"{SPECDIR}/tls_record.rflx",
-        ]
+        ],
+        tmp_path,
     )
 
 
-def test_icmp() -> None:
-    assert_compilable_code([f"{SPECDIR}/icmp.rflx"])
+def test_icmp(tmp_path: Path) -> None:
+    assert_compilable_code([f"{SPECDIR}/icmp.rflx"], tmp_path)
 
 
-def test_feature_integeration() -> None:
-    assert_compilable_code([f"{TESTDIR}/feature_integration.rflx"])
+def test_feature_integeration(tmp_path: Path) -> None:
+    assert_compilable_code([f"{TESTDIR}/feature_integration.rflx"], tmp_path)
 
 
-def test_no_prefix() -> None:
-    assert_compilable_code([f"{SPECDIR}/tlv.rflx"], prefix="")
+def test_no_prefix(tmp_path: Path) -> None:
+    assert_compilable_code([f"{SPECDIR}/tlv.rflx"], tmp_path, prefix="")
 
 
-def test_type_name_equals_package_name() -> None:
+@pytest.mark.parametrize(
+    "definition",
+    [
+        "mod 2**32",
+        "range 1 .. 2**32 - 1 with Size => 32",
+        "(A, B, C) with Size => 32",
+        "(A, B, C) with Size => 32, Always_Valid",
+    ],
+)
+def test_type_name_equals_package_name(definition: str, tmp_path: Path) -> None:
     spec = """
            package Test is
 
@@ -110,14 +120,11 @@ def test_type_name_equals_package_name() -> None:
 
            end Test;
         """
-    assert_compilable_code_string(spec.format("mod 2**32"))
-    assert_compilable_code_string(spec.format("range 1 .. 2**32 - 1 with Size => 32"))
-    assert_compilable_code_string(spec.format("(A, B, C) with Size => 32"))
-    assert_compilable_code_string(spec.format("(A, B, C) with Size => 32, Always_Valid"))
+    assert_compilable_code_string(spec.format(definition), tmp_path)
 
 
 @pytest.mark.parametrize("condition", ["A + 1 = 17179869178", "A = B - 1"])
-def test_comparison_big_integers(condition: str) -> None:
+def test_comparison_big_integers(condition: str, tmp_path: Path) -> None:
     assert_compilable_code_string(
         f"""
            package Test is
@@ -135,7 +142,8 @@ def test_comparison_big_integers(condition: str) -> None:
                  end message;
 
            end Test;
-        """
+        """,
+        tmp_path,
     )
 
 
@@ -150,7 +158,7 @@ def test_comparison_big_integers(condition: str) -> None:
         '"Foo" & [0] & "Bar" /= A',
     ],
 )
-def test_comparison_opaque(condition: str) -> None:
+def test_comparison_opaque(condition: str, tmp_path: Path) -> None:
     assert_compilable_code_string(
         f"""
            package Test is
@@ -166,11 +174,12 @@ def test_comparison_opaque(condition: str) -> None:
                  end message;
 
            end Test;
-        """
+        """,
+        tmp_path,
     )
 
 
-def test_potential_name_conflicts_fields_literals() -> None:
+def test_potential_name_conflicts_fields_literals(tmp_path: Path) -> None:
     assert_compilable_code_string(
         """
            package Test is
@@ -188,11 +197,12 @@ def test_potential_name_conflicts_fields_literals() -> None:
                  end message;
 
            end Test;
-        """
+        """,
+        tmp_path,
     )
 
 
-def test_array_with_imported_element_type_scalar() -> None:
+def test_array_with_imported_element_type_scalar(tmp_path: Path) -> None:
     p = Parser()
     p.parse_string(
         """
@@ -209,10 +219,10 @@ def test_array_with_imported_element_type_scalar() -> None:
            end Test;
         """
     )
-    utils.assert_compilable_code(p.create_model())
+    utils.assert_compilable_code(p.create_model(), tmp_path)
 
 
-def test_array_with_imported_element_type_message() -> None:
+def test_array_with_imported_element_type_message(tmp_path: Path) -> None:
     p = Parser()
     p.parse_string(
         """
@@ -235,10 +245,10 @@ def test_array_with_imported_element_type_message() -> None:
            end Test;
         """
     )
-    utils.assert_compilable_code(p.create_model())
+    utils.assert_compilable_code(p.create_model(), tmp_path)
 
 
-def test_unbounded_message() -> None:
+def test_unbounded_message(tmp_path: Path) -> None:
     assert_compilable_code_string(
         """
            package Test is
@@ -252,5 +262,6 @@ def test_unbounded_message() -> None:
                  end message;
 
            end Test;
-        """
+        """,
+        tmp_path,
     )
