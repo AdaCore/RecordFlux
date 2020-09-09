@@ -1,49 +1,48 @@
 from typing import List, Mapping, Sequence, Tuple
 
+import rflx.expression as expr
 from rflx.ada import (
-    Assignment,
-    CallStatement,
-    Case,
-    ExpressionFunctionDeclaration,
-    FormalSubprogramDeclaration,
-    FunctionSpecification,
-    GenericFunctionInstantiation,
-    IfStatement,
-    InOutParameter,
-    ObjectDeclaration,
-    Parameter,
-    Postcondition,
-    PragmaStatement,
-    Precondition,
-    ProcedureSpecification,
-    ReturnStatement,
-    Subprogram,
-    SubprogramBody,
-    SubprogramDeclaration,
-    UnitPart,
-)
-from rflx.common import unique
-from rflx.expression import (
     FALSE,
     TRUE,
     Add,
     And,
     AndThen,
+    Assignment,
     Call,
+    CallStatement,
+    Case,
     Equal,
     Expr,
+    ExpressionFunctionDeclaration,
+    FormalSubprogramDeclaration,
+    FunctionSpecification,
+    GenericFunctionInstantiation,
     If,
+    IfStatement,
     Indexed,
+    InOutParameter,
     Less,
     NamedAggregate,
     Number,
+    ObjectDeclaration,
     Old,
     Or,
+    Parameter,
+    Postcondition,
+    PragmaStatement,
+    Precondition,
+    ProcedureSpecification,
     Result,
+    ReturnStatement,
     Selected,
     Slice,
+    Subprogram,
+    SubprogramBody,
+    SubprogramDeclaration,
+    UnitPart,
     Variable,
 )
+from rflx.common import unique
 from rflx.identifier import ID
 from rflx.model import BUILTINS_PACKAGE, FINAL, INITIAL, Composite, Field, Message, Scalar, Type
 
@@ -75,9 +74,7 @@ class ParserGenerator:
         composite_fields: Sequence[Field],
     ) -> UnitPart:
         def result(field: Field, message: Message) -> NamedAggregate:
-            aggregate: List[Tuple[str, Expr]] = [
-                ("Fld", Variable(field.affixed_name, immutable=True))
-            ]
+            aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
             if field in message.fields and isinstance(message.types[field], Scalar):
                 aggregate.append(
                     (
@@ -108,7 +105,7 @@ class ParserGenerator:
                         Variable("Fld"),
                         [
                             (
-                                Variable(f.affixed_name, immutable=True),
+                                Variable(f.affixed_name),
                                 TRUE if f in composite_fields else FALSE,
                             )
                             for f in message.fields
@@ -137,7 +134,7 @@ class ParserGenerator:
                             Case(
                                 Variable("Fld"),
                                 [
-                                    (Variable(f.affixed_name, immutable=True), result(f, message))
+                                    (Variable(f.affixed_name), result(f, message))
                                     for f in message.fields
                                 ],
                             )
@@ -243,9 +240,7 @@ class ParserGenerator:
             # Limitation of GNAT Community 2019 / SPARK Pro 20.0
             # Provability of predicate is increased by adding part of
             # predicate as assert
-            PragmaStatement(
-                "Assert", [str(common.message_structure_invariant(message, self.prefix))]
-            ),
+            PragmaStatement("Assert", [common.message_structure_invariant(message, self.prefix)]),
             # WORKAROUND:
             # Limitation of GNAT Community 2019 / SPARK Pro 20.0
             # Provability of predicate is increased by splitting
@@ -253,7 +248,7 @@ class ParserGenerator:
             IfStatement(
                 [
                     (
-                        Equal(Variable("Fld"), Variable(f.affixed_name, immutable=True)),
+                        Equal(Variable("Fld"), Variable(f.affixed_name)),
                         [
                             Assignment(
                                 Indexed(
@@ -346,7 +341,6 @@ class ParserGenerator:
                                                                             "Predecessor",
                                                                             Variable(
                                                                                 FINAL.affixed_name,
-                                                                                immutable=True,
                                                                             ),
                                                                         ),
                                                                     ),
@@ -365,9 +359,7 @@ class ParserGenerator:
                                                         ("State", Variable("S_Incomplete")),
                                                         (
                                                             "Predecessor",
-                                                            Variable(
-                                                                FINAL.affixed_name, immutable=True
-                                                            ),
+                                                            Variable(FINAL.affixed_name),
                                                         ),
                                                     ),
                                                 )
@@ -412,9 +404,7 @@ class ParserGenerator:
                     specification,
                     [],
                     [
-                        CallStatement(
-                            "Verify", [Variable("Ctx"), Variable(f.affixed_name, immutable=True)]
-                        )
+                        CallStatement("Verify", [Variable("Ctx"), Variable(f.affixed_name)])
                         for f in message.fields
                     ],
                 )
@@ -588,9 +578,7 @@ class ParserGenerator:
             [
                 ExpressionFunctionDeclaration(
                     specification,
-                    valid_message_condition(message, structural=True)
-                    .substituted(common.substitution(message))
-                    .simplified(),
+                    valid_message_condition(message, structural=True),
                 )
             ],
         )
@@ -611,9 +599,7 @@ class ParserGenerator:
             [
                 ExpressionFunctionDeclaration(
                     specification,
-                    valid_message_condition(message)
-                    .substituted(common.substitution(message))
-                    .simplified(),
+                    valid_message_condition(message),
                 )
             ],
         )
@@ -633,7 +619,7 @@ class ParserGenerator:
                         *[
                             Call(
                                 "Incomplete",
-                                [Variable("Ctx"), Variable(f.affixed_name, immutable=True)],
+                                [Variable("Ctx"), Variable(f.affixed_name)],
                             )
                             for f in message.fields
                         ]
@@ -658,9 +644,7 @@ class ParserGenerator:
                 "To_Actual",
                 [
                     Selected(
-                        Indexed(
-                            Variable("Ctx.Cursors"), Variable(field.affixed_name, immutable=True)
-                        ),
+                        Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
                         f"Value.{field.name}_Value",
                     )
                 ],
@@ -672,9 +656,7 @@ class ParserGenerator:
                     specification(f, t),
                     [
                         Precondition(
-                            Call(
-                                "Valid", [Variable("Ctx"), Variable(f.affixed_name, immutable=True)]
-                            ),
+                            Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
                         )
                     ],
                 )
@@ -701,7 +683,7 @@ class ParserGenerator:
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call(
                                     "Present",
-                                    [Variable("Ctx"), Variable(f.affixed_name, immutable=True)],
+                                    [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
                             )
                         )
@@ -729,7 +711,7 @@ class ParserGenerator:
                                     Selected(
                                         Indexed(
                                             Variable("Ctx.Cursors"),
-                                            Variable(f.affixed_name, immutable=True),
+                                            Variable(f.affixed_name),
                                         ),
                                         "First",
                                     )
@@ -746,7 +728,7 @@ class ParserGenerator:
                                     Selected(
                                         Indexed(
                                             Variable("Ctx.Cursors"),
-                                            Variable(f.affixed_name, immutable=True),
+                                            Variable(f.affixed_name),
                                         ),
                                         "Last",
                                     )
@@ -774,20 +756,31 @@ class ParserGenerator:
 def valid_message_condition(
     message: Message, field: Field = INITIAL, structural: bool = False
 ) -> Expr:
-    return Or(
-        *[
-            l.condition
-            if l.target == FINAL
-            else AndThen(
-                Call(
-                    "Structural_Valid"
-                    if structural and isinstance(message.types[l.target], Composite)
-                    else "Valid",
-                    [Variable("Ctx"), Variable(l.target.affixed_name, immutable=True)],
-                ),
-                l.condition,
-                valid_message_condition(message, l.target, structural),
-            )
-            for l in message.outgoing(field)
-        ]
+    def condition(message: Message, field: Field, structural: bool) -> expr.Expr:
+        return expr.Or(
+            *[
+                l.condition
+                if l.target == FINAL
+                else expr.AndThen(
+                    expr.Call(
+                        "Structural_Valid"
+                        if structural and isinstance(message.types[l.target], Composite)
+                        else "Valid",
+                        [
+                            expr.Variable("Ctx"),
+                            expr.Variable(l.target.affixed_name, immutable=True),
+                        ],
+                    ),
+                    l.condition,
+                    condition(message, l.target, structural),
+                )
+                for l in message.outgoing(field)
+            ]
+        )
+
+    return (
+        condition(message, field, structural)
+        .substituted(common.substitution(message))
+        .simplified()
+        .ada_expr()
     )
