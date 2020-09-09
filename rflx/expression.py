@@ -1,13 +1,13 @@
 # pylint: disable=too-many-lines,too-many-ancestors
-import itertools
 import operator
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from enum import Enum
 from sys import intern
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
 import z3
 
+from rflx import ada
 from rflx.common import Base, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
 from rflx.declaration import ChannelDeclaration, Declaration, VariableDeclaration
@@ -149,6 +149,10 @@ class Expr(DBC, Base):
         return str(expr)
 
     @abstractmethod
+    def ada_expr(self) -> ada.Expr:
+        raise NotImplementedError
+
+    @abstractmethod
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -192,6 +196,9 @@ class BooleanTrue(BooleanLiteral):
     def __neg__(self) -> Expr:
         return FALSE
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.TRUE
+
     def z3expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
 
@@ -208,6 +215,9 @@ class BooleanFalse(BooleanLiteral):
 
     def __neg__(self) -> Expr:
         return TRUE
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.FALSE
 
     def z3expr(self) -> z3.BoolRef:
         return z3.BoolVal(False)
@@ -246,6 +256,9 @@ class Not(Expr):
             if isinstance(self.expr, relation):
                 return inverse_relation(self.expr.left.simplified(), self.expr.right.simplified())
         return self.__class__(self.expr.simplified())
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Not(self.expr.ada_expr())
 
     def z3expr(self) -> z3.BoolRef:
         z3expr = self.expr.z3expr()
@@ -503,6 +516,9 @@ class And(BoolAssExpr):
     def symbol(self) -> str:
         return " and "
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.And(*[t.ada_expr() for t in self.terms])
+
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
         boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
@@ -514,6 +530,9 @@ class AndThen(And):
     @property
     def symbol(self) -> str:
         return " and then "
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.AndThen(*[t.ada_expr() for t in self.terms])
 
 
 class Or(BoolAssExpr):
@@ -540,6 +559,9 @@ class Or(BoolAssExpr):
     def symbol(self) -> str:
         return " or "
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.Or(*[t.ada_expr() for t in self.terms])
+
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
         boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
@@ -547,10 +569,13 @@ class Or(BoolAssExpr):
         return z3.Or(*boolexprs)
 
 
-class OrElse(And):
+class OrElse(Or):
     @property
     def symbol(self) -> str:
         return " or else "
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.OrElse(*[t.ada_expr() for t in self.terms])
 
 
 class Number(Expr):
@@ -658,6 +683,9 @@ class Number(Expr):
     def simplified(self) -> Expr:
         return self
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.Number(self.value, self.base)
+
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
 
@@ -713,6 +741,9 @@ class Add(AssExpr):
     def symbol(self) -> str:
         return " + "
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.Add(*[t.ada_expr() for t in self.terms])
+
     def z3expr(self) -> z3.ArithRef:
         z3expr = sum(t.z3expr() for t in self.terms)
         assert isinstance(z3expr, z3.ArithRef)
@@ -736,6 +767,9 @@ class Mul(AssExpr):
     @property
     def symbol(self) -> str:
         return " * "
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Mul(*[t.ada_expr() for t in self.terms])
 
     def z3expr(self) -> z3.ArithRef:
         z3expr = self.terms[0].z3expr()
@@ -763,6 +797,9 @@ class Sub(BinExpr):
     def symbol(self) -> str:
         return " - "
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.Sub(self.left.ada_expr(), self.right.ada_expr())
+
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -785,6 +822,9 @@ class Div(BinExpr):
     @property
     def symbol(self) -> str:
         return " / "
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Div(self.left.ada_expr(), self.right.ada_expr())
 
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
@@ -809,6 +849,9 @@ class Pow(BinExpr):
     def symbol(self) -> str:
         return "**"
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.Pow(self.left.ada_expr(), self.right.ada_expr())
+
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -831,6 +874,9 @@ class Mod(BinExpr):
     @property
     def symbol(self) -> str:
         return " mod "
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Mod(self.left.ada_expr(), self.right.ada_expr())
 
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
@@ -870,6 +916,10 @@ class Name(Expr):
 
     def simplified(self) -> Expr:
         return self
+
+    @abstractmethod
+    def ada_expr(self) -> ada.Expr:
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -918,6 +968,9 @@ class Variable(Name):
             )
         declarations[self.identifier].reference()
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.Variable(self.identifier, self.negative)
+
     def z3expr(self) -> z3.ArithRef:
         if self.negative:
             return -z3.Int(self.name)
@@ -960,6 +1013,9 @@ class Attribute(Name):
     def variables(self) -> List[Variable]:
         return self.prefix.variables()
 
+    def ada_expr(self) -> ada.Expr:
+        return getattr(ada, self.__class__.__name__)(self.prefix, self.negative)
+
     def z3expr(self) -> z3.ExprRef:
         if not isinstance(self.prefix, Variable):
             raise TypeError
@@ -988,22 +1044,6 @@ class Last(Attribute):
     pass
 
 
-class Range(Attribute):
-    pass
-
-
-class Old(Attribute):
-    pass
-
-
-class Result(Attribute):
-    pass
-
-
-class Constrained(Attribute):
-    pass
-
-
 class ValidChecksum(Attribute):
     def z3expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
@@ -1029,44 +1069,43 @@ class Opaque(Attribute):
     pass
 
 
-class AttributeExpression(Attribute, ABC):
+class Val(Attribute):
+    """Only used by code generator and therefore provides minimum functionality"""
+
     def __init__(
         self, prefix: Union[StrID, Expr], expression: Expr, negative: bool = False
     ) -> None:
         self.expression = expression
         super().__init__(prefix)
 
-    def __neg__(self) -> "AttributeExpression":
+    def __neg__(self) -> "Val":
         return self.__class__(self.prefix, self.expression, not self.negative)
+
+    def variables(self) -> List[Variable]:
+        raise NotImplementedError
+
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+        raise NotImplementedError
 
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(-self if self.negative else self)
-        if isinstance(expr, AttributeExpression):
-            expr = expr.__class__(expr.prefix.substituted(func), expr.expression.substituted(func))
-        return -expr if self.negative else expr
+        return self
 
     def simplified(self) -> Expr:
-        prefix = self.prefix.simplified()
-        return (
-            -self.__class__(prefix, self.expression.simplified())
-            if self.negative
-            else self.__class__(prefix, self.expression.simplified())
-        )
+        return self
 
     @property
     def representation(self) -> str:
         return f"{self.prefix}'{self.__class__.__name__} ({self.expression})"
 
+    def ada_expr(self) -> ada.Expr:
+        return getattr(ada, self.__class__.__name__)(
+            self.prefix.ada_expr(), self.expression.ada_expr(), self.negative
+        )
 
-class Val(AttributeExpression):
-    pass
-
-
-class Pos(AttributeExpression):
-    pass
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
 
 
 @invariant(lambda self: len(self.elements) > 0)
@@ -1083,10 +1122,15 @@ class Indexed(Name):
     def representation(self) -> str:
         return f"{self.prefix} (" + ", ".join(map(str, self.elements)) + ")"
 
-    def z3expr(self) -> z3.ExprRef:
+    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
+    def ada_expr(self) -> ada.Expr:
+        return ada.Indexed(
+            self.prefix.ada_expr(), *[e.ada_expr() for e in self.elements], negative=self.negative
+        )
+
+    def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
@@ -1110,9 +1154,6 @@ class Selected(Name):
     def representation(self) -> str:
         return f"{self.prefix}.{self.selector_name}"
 
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
     def variables(self) -> List["Variable"]:
         return self.prefix.variables()
 
@@ -1125,6 +1166,12 @@ class Selected(Name):
         return expr.__class__(
             expr.prefix.substituted(func), expr.selector_name, location=expr.location
         )
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Selected(self.prefix.ada_expr(), self.selector_name, self.negative)
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.prefix.validate(declarations)
@@ -1153,6 +1200,9 @@ class Call(Name):
             args = f" ({args})"
         call = f"{self.name}{args}"
         return call
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Call(self.name, [a.ada_expr() for a in self.args], self.negative)
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1255,51 +1305,15 @@ class Call(Name):
         )
 
 
-class Slice(Name):
-    def __init__(self, prefix: Expr, first: Expr, last: Expr) -> None:
-        self.prefix = prefix
-        self.first = first
-        self.last = last
-        super().__init__()
-
-    def __neg__(self) -> "Slice":
-        return self
-
-    @property
-    def representation(self) -> str:
-        return f"{self.prefix} ({self.first} .. {self.last})"
-
-    def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, self.__class__):
-            return expr.__class__(
-                expr.prefix.substituted(func),
-                expr.first.substituted(func),
-                expr.last.substituted(func),
-            )
-        return expr
-
-    def simplified(self) -> Expr:
-        return self.__class__(
-            self.prefix.simplified(), self.first.simplified(), self.last.simplified()
-        )
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        raise NotImplementedError
-
-
 class UndefinedExpr(Name):
     @property
     def representation(self) -> str:
         return "__UNDEFINED__"
 
     def __neg__(self) -> "UndefinedExpr":
+        raise NotImplementedError
+
+    def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
@@ -1344,6 +1358,9 @@ class Aggregate(Expr):
     def length(self) -> Expr:
         return Number(len(self.elements))
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.Aggregate(*[e.ada_expr() for e in self.elements])
+
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
 
@@ -1375,47 +1392,14 @@ class String(Aggregate):
     def simplified(self) -> Expr:
         return self
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.String(self.data)
+
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         pass
-
-
-class NamedAggregate(Expr):
-    def __init__(self, *elements: Tuple[StrID, Expr]) -> None:
-        super().__init__()
-        self.elements = [(ID(n), e) for n, e in elements]
-
-    def _update_str(self) -> None:
-        self._str = intern(
-            "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
-        )
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        raise NotImplementedError
-
-    def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, self.__class__):
-            return expr.__class__(*[(n, e.substituted(func)) for n, e in expr.elements])
-        return expr
-
-    def simplified(self) -> Expr:
-        return self.__class__(*[(n, e.simplified()) for n, e in self.elements])
-
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        raise NotImplementedError
 
 
 class Relation(BinExpr):
@@ -1448,6 +1432,9 @@ class Less(Relation):
     def simplified(self) -> Expr:
         return self._simplified(operator.lt)
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.Less(self.left.ada_expr(), self.right.ada_expr())
+
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1466,6 +1453,9 @@ class LessEqual(Relation):
     def simplified(self) -> Expr:
         return self._simplified(operator.le)
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.LessEqual(self.left.ada_expr(), self.right.ada_expr())
+
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1483,6 +1473,9 @@ class Equal(Relation):
 
     def simplified(self) -> Expr:
         return self._simplified(operator.eq)
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Equal(self.left.ada_expr(), self.right.ada_expr())
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -1503,6 +1496,9 @@ class GreaterEqual(Relation):
     def simplified(self) -> Expr:
         return self._simplified(operator.ge)
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.GreaterEqual(self.left.ada_expr(), self.right.ada_expr())
+
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1520,6 +1516,9 @@ class Greater(Relation):
 
     def simplified(self) -> Expr:
         return self._simplified(operator.gt)
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Greater(self.left.ada_expr(), self.right.ada_expr())
 
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
@@ -1539,6 +1538,9 @@ class NotEqual(Relation):
     def simplified(self) -> Expr:
         return self._simplified(operator.ne)
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.NotEqual(self.left.ada_expr(), self.right.ada_expr())
+
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1555,6 +1557,9 @@ class In(Relation):
     def symbol(self) -> str:
         return " in "
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.In(self.left.ada_expr(), self.right.ada_expr())
+
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
@@ -1567,167 +1572,10 @@ class NotIn(Relation):
     def symbol(self) -> str:
         return " not in "
 
+    def ada_expr(self) -> ada.Expr:
+        return ada.NotIn(self.left.ada_expr(), self.right.ada_expr())
+
     def z3expr(self) -> z3.BoolRef:
-        raise NotImplementedError
-
-
-class If(Expr):
-    def __init__(
-        self, condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None
-    ) -> None:
-        super().__init__()
-        self.condition_expressions = condition_expressions
-        self.else_expression = else_expression
-
-    def _update_str(self) -> None:
-        self._str = ""
-        for c, e in self.condition_expressions:
-            if not self._str:
-                self._str = f"(if\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
-            else:
-                self._str += f"\n elsif\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
-        if self.else_expression:
-            self._str += f"\n else\n{indent(str(self.else_expression), 4)}"
-        self._str += ")"
-        self._str = intern(self._str)
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.literal
-
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
-        return [
-            *([self] if match(self) else []),
-            *[
-                m
-                for c, e in self.condition_expressions
-                for m in itertools.chain(c.findall(match), e.findall(match))
-            ],
-        ]
-
-    def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, self.__class__):
-            return expr.__class__(
-                [(c.substituted(func), e.substituted(func)) for c, e in expr.condition_expressions],
-                expr.else_expression.substituted(func) if expr.else_expression else None,
-            )
-        return expr
-
-    def simplified(self) -> Expr:
-        simplified_ce = [(c.simplified(), e.simplified()) for c, e in self.condition_expressions]
-
-        if len(simplified_ce) == 1 and simplified_ce[0][0] == TRUE:
-            return simplified_ce[0][1]
-
-        return If(simplified_ce, self.else_expression)
-
-    def variables(self) -> List["Variable"]:
-        variables = []
-        for ce in self.condition_expressions:
-            variables.extend(ce[0].variables())
-            variables.extend(ce[1].variables())
-        if self.else_expression:
-            variables.extend(self.else_expression.variables())
-        return list(unique(variables))
-
-    def z3expr(self) -> z3.ExprRef:
-        return If.ifexpr(self.condition_expressions, self.else_expression)
-
-    @staticmethod
-    def ifexpr(conditions: Sequence[Tuple[Expr, Expr]], elseexpr: Optional[Expr]) -> z3.ExprRef:
-        if conditions:
-            c = conditions[0][0].z3expr()
-            e = conditions[0][1].z3expr()
-            r = If.ifexpr(conditions[1:], elseexpr)
-            assert isinstance(c, z3.BoolRef)
-            return z3.If(c, e, r)
-        if elseexpr:
-            return elseexpr.z3expr()
-        return z3.BoolVal(False)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        raise NotImplementedError
-
-
-class Case(Expr):
-    def __init__(
-        self, control_expression: Expr, case_statements: Sequence[Tuple[Expr, Expr]]
-    ) -> None:
-        super().__init__()
-        self.control_expression = control_expression
-        self.case_statements = case_statements
-
-    def _update_str(self) -> None:
-        grouped_cases = [
-            (" | ".join(str(c) for c, _ in choices), expr)
-            for expr, choices in itertools.groupby(self.case_statements, lambda x: x[1])
-        ]
-        cases = indent(
-            ",".join(
-                [f"\nwhen {choice} =>\n{indent(str(expr), 3)}" for choice, expr in grouped_cases]
-            ),
-            4,
-        )
-        self._str = intern(f"(case {self.control_expression} is{cases})")
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.literal
-
-    def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, self.__class__):
-            return expr.__class__(
-                expr.control_expression.substituted(func),
-                [(c.substituted(func), e.substituted(func)) for c, e in expr.case_statements],
-            )
-        return expr
-
-    def simplified(self) -> Expr:
-        if len(self.case_statements) == 1 and self.case_statements[0][0] == Variable("others"):
-            return self.case_statements[0][1]
-        return Case(
-            self.control_expression.simplified(),
-            [(c.simplified(), e.simplified()) for c, e in self.case_statements],
-        )
-
-    def variables(self) -> List["Variable"]:
-        variables = self.control_expression.variables()
-        for cs in self.case_statements:
-            variables.extend(cs[0].variables())
-            variables.extend(cs[1].variables())
-        return list(unique(variables))
-
-    def z3expr(self) -> Union[z3.BoolRef, z3.ExprRef]:
-        return Case.caseexpr(self.control_expression, self.case_statements)
-
-    @staticmethod
-    def caseexpr(
-        control: Expr, statements: Sequence[Tuple[Expr, Expr]]
-    ) -> Union[z3.ExprRef, z3.BoolRef]:
-        if statements:
-            condition, expression = statements[0]
-            return z3.If(
-                control.z3expr() == condition.z3expr(),
-                expression.z3expr(),
-                Case.caseexpr(control, statements[1:]),
-            )
-        return z3.BoolVal(False)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError
 
 
@@ -1773,6 +1621,11 @@ class QuantifiedExpression(Expr):
                 for v in self.iterable.variables() + self.predicate.variables()
                 if v.identifier != self.parameter_name
             )
+        )
+
+    def ada_expr(self) -> ada.Expr:
+        return getattr(ada, self.__class__.__name__)(
+            self.parameter_name, self.iterable.ada_expr(), self.predicate.ada_expr()
         )
 
     def z3expr(self) -> z3.ExprRef:
@@ -1857,9 +1710,6 @@ class ValueRange(Expr):
     def simplified(self) -> Expr:
         return self.__class__(self.lower.simplified(), self.upper.simplified())
 
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
     def substituted(
         self, func: Callable[["Expr"], "Expr"] = None, mapping: Mapping["Name", "Expr"] = None
     ) -> "Expr":
@@ -1871,6 +1721,12 @@ class ValueRange(Expr):
                 self.upper.substituted(func),
             )
         return expr
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.ValueRange(self.lower.ada_expr(), self.upper.ada_expr())
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError
@@ -1902,6 +1758,9 @@ class Conversion(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.literal
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Conversion(self.name, self.argument.ada_expr())
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1963,6 +1822,9 @@ class Comprehension(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
+    def ada_expr(self) -> ada.Expr:
+        raise NotImplementedError
+
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -2019,6 +1881,9 @@ class MessageAggregate(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
+    def ada_expr(self) -> ada.Expr:
+        raise NotImplementedError
+
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -2057,6 +1922,9 @@ class Binding(Expr):
 
     @property
     def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:

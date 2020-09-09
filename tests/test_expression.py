@@ -1,8 +1,11 @@
 # pylint: disable=too-many-lines
 
+from typing import Callable
+
 import pytest
 import z3
 
+import rflx.ada as ada
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -14,9 +17,7 @@ from rflx.expression import (
     Attribute,
     Binding,
     Call,
-    Case,
     Comprehension,
-    Constrained,
     Conversion,
     Div,
     Equal,
@@ -28,7 +29,6 @@ from rflx.expression import (
     Greater,
     GreaterEqual,
     Head,
-    If,
     In,
     Indexed,
     Last,
@@ -38,23 +38,18 @@ from rflx.expression import (
     MessageAggregate,
     Mod,
     Mul,
-    NamedAggregate,
     Not,
     NotEqual,
     NotIn,
     Number,
-    Old,
     Opaque,
     Or,
     OrElse,
-    Pos,
     Pow,
+    Precedence,
     Present,
-    Range,
-    Result,
     Selected,
     Size,
-    Slice,
     String,
     Sub,
     Val,
@@ -222,6 +217,13 @@ def test_bool_expr_str() -> None:
     )
 
 
+@pytest.mark.parametrize("expression", [And, AndThen, Or, OrElse])
+def test_bool_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
+    result = expression(Variable("X"), Variable("Y")).ada_expr()
+    expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
+    assert result == expected
+
+
 def test_and_neg() -> None:
     assert -And(Variable("X"), Number(1)) == And(-Variable("X"), Number(-1))
 
@@ -367,6 +369,13 @@ def test_number_ge() -> None:
 
 def test_number_hashable() -> None:
     assert {Number(1), Number(2)}
+
+
+@pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod])
+def test_math_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
+    result = expression(Variable("X"), Variable("Y")).ada_expr()
+    expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
+    assert result == expected
 
 
 def test_add_neg() -> None:
@@ -565,10 +574,6 @@ def test_attribute() -> None:
     assert isinstance(Length("X"), Attribute)
     assert isinstance(First("X"), Attribute)
     assert isinstance(Last("X"), Attribute)
-    assert isinstance(Range("X"), Attribute)
-    assert isinstance(Old("X"), Attribute)
-    assert isinstance(Result("X"), Attribute)
-    assert isinstance(Constrained("X"), Attribute)
     assert First("X") == First(Variable("X"))
     assert First("X") == First(ID("X"))
     assert First("X") == First(Variable(ID("X")))
@@ -624,42 +629,26 @@ def test_attribute_z3expr() -> None:
         First(Call("X")).z3expr()
 
 
-def test_attribute_expression_substituted() -> None:
+def test_val_substituted() -> None:
     assert_equal(
         Val("X", Variable("Y")).substituted(
             lambda x: Number(42) if x == Val("X", Variable("Y")) else x
         ),
-        Number(42),
+        Val("X", Variable("Y")),
     )
     assert_equal(
         -Val("X", Variable("Y")).substituted(
             lambda x: Number(42) if x == Val("X", Variable("Y")) else x
         ),
-        Number(-42),
-    )
-    assert_equal(
-        Val("X", Variable("Y")).substituted(lambda x: Call("Y") if x == Variable("Y") else x),
-        Val("X", Call("Y")),
-    )
-    assert_equal(
-        -Val("X", Variable("Y")).substituted(lambda x: Call("Y") if x == Variable("Y") else x),
-        -Val("X", Call("Y")),
-    )
-    assert_equal(
-        -Val("X", Variable("Y")).substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (Pos(x.prefix, x.expression) if isinstance(x, Val) else x)
-        ),
-        -Pos("P_X", Variable("P_Y")),
+        -Val("X", Variable("Y")),
     )
 
 
-def test_attribute_expression_simplified() -> None:
-    assert Val("X", Add(Number(1), Number(1))).simplified() == Val("X", Number(2))
+def test_val_simplified() -> None:
+    assert Val("X", Add(Number(1), Number(1))).simplified() == Val("X", Add(Number(1), Number(1)))
 
 
-def test_attribute_expression_str() -> None:
+def test_val_str() -> None:
     assert str(Val("X", Number(1))) == "X'Val (1)"
 
 
@@ -688,38 +677,13 @@ def test_aggregate_simplified() -> None:
     assert Aggregate(Add(Number(1), Number(1))).simplified() == Aggregate(Number(2))
 
 
-def test_named_aggregate_substituted() -> None:
-    assert_equal(
-        NamedAggregate(("First", First("X"))).substituted(
-            lambda x: Number(42) if x == NamedAggregate(("First", First("X"))) else x
-        ),
-        Number(42),
-    )
-    assert_equal(
-        NamedAggregate(("First", First("X"))).substituted(
-            lambda x: Number(42) if x == First("X") else x
-        ),
-        NamedAggregate(("First", Number(42))),
-    )
-    assert_equal(
-        NamedAggregate(("First", First("X"))).substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (
-                NamedAggregate(*[*x.elements, (ID("Last"), Last("Y"))])
-                if isinstance(x, NamedAggregate)
-                else x
-            )
-        ),
-        NamedAggregate(("First", First("P_X")), ("Last", Last("P_Y"))),
-    )
+def test_aggregate_str() -> None:
+    assert str(Aggregate(Number(1))) == "(1)"
+    assert str(Aggregate(Number(1), Number(2))) == "(1, 2)"
 
 
-def test_named_aggregate_simplified() -> None:
-    assert_equal(
-        NamedAggregate(("First", Add(Number(1), Number(1)))).simplified(),
-        NamedAggregate(("First", Number(2))),
-    )
+def test_aggregate_precedence() -> None:
+    assert Aggregate(Number(1), Number(2)).precedence == Precedence.literal
 
 
 def test_relation_substituted() -> None:
@@ -765,6 +729,20 @@ def test_relation_contains() -> None:
 def test_relation_variables() -> None:
     assert Less(Variable("X"), Call("Y")).variables() == [Variable("X")]
     assert Less(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
+
+
+@pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
+def test_math_relation_ada_expr(relation: Callable[[Expr, Expr], Expr]) -> None:
+    result = relation(Variable("X"), Variable("Y")).ada_expr()
+    expected = getattr(ada, relation.__name__)(ada.Variable("X"), ada.Variable("Y"))
+    assert result == expected
+
+
+@pytest.mark.parametrize("relation", [In, NotIn])
+def test_composite_relation_ada_expr(relation: Callable[[Expr, Expr], Expr]) -> None:
+    result = relation(Variable("X"), Variable("Y")).ada_expr()
+    expected = getattr(ada, relation.__name__)(ada.Variable("X"), ada.Variable("Y"))
+    assert result == expected
 
 
 def test_less_neg() -> None:
@@ -857,246 +835,6 @@ def test_not_in_str() -> None:
     assert str(NotIn(Variable("X"), Variable("Y"))) == "X not in Y"
 
 
-def test_slice_neg() -> None:
-    assert Slice(Variable("X"), Variable("Y"), Variable("Z")) == -Slice(
-        Variable("X"), Variable("Y"), Variable("Z")
-    )
-
-
-def test_slice_substituted() -> None:
-    assert_equal(
-        Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
-            lambda x: Variable("Z") if x == Variable("X") else x
-        ),
-        Slice(Variable("Z"), Variable("Y"), Variable("Y")),
-    )
-    assert_equal(
-        Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
-            lambda x: Variable("Z") if x == Variable("Y") else x
-        ),
-        Slice(Variable("X"), Variable("Z"), Variable("Z")),
-    )
-    assert_equal(
-        Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (Slice(Variable("X"), Variable("Y"), Variable("Z")) if isinstance(x, Slice) else x)
-        ),
-        Slice(Variable("P_X"), Variable("P_Y"), Variable("P_Z")),
-    )
-    assert_equal(
-        Slice(Variable("X"), Variable("Y"), Variable("Y")).substituted(
-            lambda x: Variable("Z") if isinstance(x, Slice) else x
-        ),
-        Variable("Z"),
-    )
-
-
-def test_slice_simplified() -> None:
-    assert_equal(
-        Slice(
-            Variable("Buffer"),
-            First("Buffer"),
-            Add(Last("Buffer"), Add(Number(21), Number(21))),
-        ).simplified(),
-        Slice(Variable("Buffer"), First("Buffer"), Add(Last("Buffer"), Number(42))),
-    )
-
-
-def test_if_findall() -> None:
-    assert_equal(
-        If(
-            [
-                (Equal(Variable("X"), Number(42)), Number(21)),
-                (Variable("Y"), Number(42)),
-                (Number(42), Variable("Z")),
-            ]
-        ).findall(lambda x: isinstance(x, Number)),
-        [Number(42), Number(21), Number(42), Number(42)],
-    )
-
-
-def test_if_substituted() -> None:
-    if_expr = If(
-        [
-            (Equal(Variable("X"), Number(42)), Number(21)),
-            (Variable("Y"), Number(42)),
-            (Number(42), Variable("Z")),
-        ]
-    )
-
-    assert_equal(
-        if_expr.substituted(lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x),
-        If(
-            [
-                (Equal(Variable("P_X"), Number(42)), Number(21)),
-                (Variable("P_Y"), Number(42)),
-                (Number(42), Variable("P_Z")),
-            ]
-        ),
-    )
-    assert_equal(
-        if_expr.substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (
-                If([*x.condition_expressions, (Variable("Z"), Number(1))], x.else_expression)
-                if isinstance(x, If)
-                else x
-            )
-        ),
-        If(
-            [
-                (Equal(Variable("P_X"), Number(42)), Number(21)),
-                (Variable("P_Y"), Number(42)),
-                (Number(42), Variable("P_Z")),
-                (Variable("P_Z"), Number(1)),
-            ]
-        ),
-    )
-    assert_equal(
-        if_expr.substituted(lambda x: Variable("Z") if isinstance(x, If) else x),
-        Variable("Z"),
-    )
-
-
-def test_if_simplified() -> None:
-    assert_equal(
-        If(
-            [
-                (Variable("X"), Number(21)),
-                (Variable("Y"), Add(Number(21), Number(21))),
-                (Add(Number(21), Number(21)), Variable("Z")),
-            ]
-        ).simplified(),
-        If([(Variable("X"), Number(21)), (Variable("Y"), Number(42)), (Number(42), Variable("Z"))]),
-    )
-    assert If([(TRUE, Variable("X"))]).simplified() == Variable("X")
-
-
-def test_if_variables() -> None:
-    assert_equal(
-        If(
-            [
-                (Variable("X"), Number(21)),
-                (Variable("Y"), Add(Number(21), Number(21))),
-                (Add(Number(21), Number(21)), Variable("Z")),
-            ],
-        ).variables(),
-        [Variable("X"), Variable("Y"), Variable("Z")],
-    )
-    assert_equal(
-        If([(Variable("X"), Number(21))], Variable("Z")).variables(),
-        [Variable("X"), Variable("Z")],
-    )
-
-
-def test_if_z3expr() -> None:
-    assert If([]).z3expr() == z3.BoolVal(False)
-
-
-def test_if_str() -> None:
-    assert_equal(
-        str(If([(Variable("X"), Number(1)), (Variable("Y"), Number(2))], Number(3))),
-        multilinestr(
-            """(if
-                   X
-                then
-                   1
-                elsif
-                   Y
-                then
-                   2
-                else
-                   3)"""
-        ),
-    )
-
-
-def test_case_substituted() -> None:
-    assert_equal(
-        Case(Variable("X"), [(Variable("Y"), Variable("Z"))]).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
-        ),
-        Case(Variable("P_X"), [(Variable("P_Y"), Variable("P_Z"))]),
-    )
-    assert_equal(
-        Case(Variable("X"), [(Variable("Y"), Number(0))]).substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (
-                Case(x.control_expression, [*x.case_statements, (Variable("Z"), Number(1))])
-                if isinstance(x, Case)
-                else x
-            )
-        ),
-        Case(Variable("P_X"), [(Variable("P_Y"), Number(0)), (Variable("P_Z"), Number(1))]),
-    )
-    assert_equal(
-        Case(Variable("X"), [(Variable("Y"), Variable("Z"))]).substituted(
-            lambda x: Variable("Z") if isinstance(x, Case) else x
-        ),
-        Variable("Z"),
-    )
-
-
-def test_case_simplified() -> None:
-    assert_equal(
-        Case(
-            Add(Number(21), Number(21)),
-            [
-                (Variable("X"), Number(21)),
-                (Variable("Y"), Add(Number(21), Number(21))),
-                (Add(Number(21), Number(21)), Variable("Z")),
-            ],
-        ).simplified(),
-        Case(
-            Number(42),
-            [
-                (Variable("X"), Number(21)),
-                (Variable("Y"), Number(42)),
-                (Number(42), Variable("Z")),
-            ],
-        ),
-    )
-
-
-def test_case_variables() -> None:
-    assert_equal(
-        Case(
-            Add(Number(21), Number(21)),
-            [
-                (Variable("X"), Number(21)),
-                (Variable("Y"), Add(Number(21), Number(21))),
-                (Add(Number(21), Number(21)), Variable("Z")),
-            ],
-        ).variables(),
-        [Variable("X"), Variable("Y"), Variable("Z")],
-    )
-
-
-def test_case_str() -> None:
-    assert_equal(
-        str(
-            Case(
-                Variable("X"),
-                [
-                    (Variable("Y"), Number(1)),
-                    (Variable("Z"), Number(1)),
-                    (Variable("others"), Number(2)),
-                ],
-            )
-        ),
-        multilinestr(
-            """(case X is
-                   when Y | Z =>
-                      1,
-                   when others =>
-                      2)"""
-        ),
-    )
-
-
 def test_value_range_simplified() -> None:
     assert_equal(
         ValueRange(Number(1), Add(Number(21), Number(21))).simplified(),
@@ -1144,6 +882,13 @@ def test_quantified_expression_str() -> None:
     assert str(ForAllOf("X", Variable("Y"), Variable("Z"))) == "(for all X of Y =>\n    Z)"
     assert str(ForAllIn("X", Variable("Y"), Variable("Z"))) == "(for all X in Y =>\n    Z)"
     assert str(ForSomeIn("X", Variable("Y"), Variable("Z"))) == "(for some X in Y =>\n    Z)"
+
+
+@pytest.mark.parametrize("expression", [ForAllOf, ForAllIn, ForSomeIn])
+def test_quantified_expression_ada_expr(expression: Callable[[str, Expr, Expr], Expr]) -> None:
+    result = expression("X", Variable("Y"), Variable("Z")).ada_expr()
+    result = expected = getattr(ada, expression.__name__)("X", ada.Variable("Y"), ada.Variable("Z"))
+    assert result == expected
 
 
 def test_for_all_in_variables() -> None:
@@ -1343,6 +1088,11 @@ def test_string_elements() -> None:
 
 def test_string_str() -> None:
     assert str(String("X Y")) == '"X Y"'
+    assert str(Equal(String("S"), Variable("X"))) == '"S" = X'
+
+
+def test_string_ada_expr() -> None:
+    assert String("X Y").ada_expr() == ada.String("X Y")
 
 
 def test_selected_variables() -> None:
@@ -1367,6 +1117,10 @@ def test_conversion_variables() -> None:
     result = Conversion("Sub", Variable("X")).variables()
     expected = [Variable("X")]
     assert result == expected
+
+
+def test_conversion_ada_expr() -> None:
+    assert Conversion("X", Variable("Y")).ada_expr() == ada.Conversion("X", ada.Variable("Y"))
 
 
 def test_comprehension_variables() -> None:
@@ -1565,58 +1319,6 @@ def test_binding_simplified_multiple_variables() -> None:
     expected = Call("Sub", [Variable("Baz"), Variable("Baz")])
     result = binding.simplified()
     assert result == expected
-
-
-def test_expr_str() -> None:
-    assert_equal(
-        str(
-            And(
-                If([(Variable("X"), Number(1)), (Variable("Y"), Number(2))], Number(3)),
-                Variable("A"),
-                Or(Variable("B"), Variable("C")),
-                Variable("D"),
-            )
-        ),
-        multilinestr(
-            """(if
-                   X
-                then
-                   1
-                elsif
-                   Y
-                then
-                   2
-                else
-                   3)
-               and A
-               and (B
-                    or C)
-               and D"""
-        ),
-    )
-    assert_equal(
-        str(
-            ForAllOf(
-                "X",
-                Variable("Z"),
-                If([(Variable("X"), Number(1)), (Variable("Y"), Number(2))], Number(3)),
-            )
-        ),
-        multilinestr(
-            """(for all X of Z =>
-                   (if
-                       X
-                    then
-                       1
-                    elsif
-                       Y
-                    then
-                       2
-                    else
-                       3))"""
-        ),
-    )
-    assert str(Equal(String("S"), Variable("X"))) == '"S" = X'
 
 
 def test_call_str() -> None:

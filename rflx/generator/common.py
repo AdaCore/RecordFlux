@@ -1,50 +1,7 @@
 from typing import Callable, Mapping, Sequence
 
-from rflx.ada import (
-    Assignment,
-    CallStatement,
-    Declaration,
-    ExpressionFunctionDeclaration,
-    FunctionSpecification,
-    ObjectDeclaration,
-    PragmaStatement,
-    Statement,
-)
-from rflx.expression import (
-    TRUE,
-    UNDEFINED,
-    Add,
-    Aggregate,
-    And,
-    AndThen,
-    Call,
-    Div,
-    Equal,
-    Expr,
-    First,
-    ForAllIn,
-    GreaterEqual,
-    If,
-    Indexed,
-    Last,
-    Length,
-    LessEqual,
-    Mod,
-    Name,
-    NamedAggregate,
-    Not,
-    NotEqual,
-    Number,
-    Or,
-    Relation,
-    Selected,
-    Size,
-    Sub,
-    Val,
-    ValidChecksum,
-    ValueRange,
-    Variable,
-)
+import rflx.ada as ada
+import rflx.expression as expr
 from rflx.identifier import ID
 from rflx.model import (
     BUILTINS_PACKAGE,
@@ -69,51 +26,55 @@ def substitution(
     embedded: bool = False,
     public: bool = False,
     target_type: ID = const.TYPES_U64,
-) -> Callable[[Expr], Expr]:
+) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, embedded, public, target_type)
 
-    def func(expression: Expr) -> Expr:
-        def byte_aggregate(aggregate: Aggregate) -> Aggregate:
-            return Aggregate(*[Val(const.TYPES_BYTE, e) for e in aggregate.elements])
+    def func(expression: expr.Expr) -> expr.Expr:
+        def byte_aggregate(aggregate: expr.Aggregate) -> expr.Aggregate:
+            return expr.Aggregate(*[expr.Val(const.TYPES_BYTE, e) for e in aggregate.elements])
 
-        if isinstance(expression, Name) and expression in facts:
+        if isinstance(expression, expr.Name) and expression in facts:
             return facts[expression]
 
-        if isinstance(expression, (Equal, NotEqual)):
+        if isinstance(expression, (expr.Equal, expr.NotEqual)):
             field = None
             aggregate = None
-            if isinstance(expression.left, Variable) and isinstance(expression.right, Aggregate):
+            if isinstance(expression.left, expr.Variable) and isinstance(
+                expression.right, expr.Aggregate
+            ):
                 field = Field(expression.left.name)
                 aggregate = byte_aggregate(expression.right)
-            elif isinstance(expression.left, Aggregate) and isinstance(expression.right, Variable):
+            elif isinstance(expression.left, expr.Aggregate) and isinstance(
+                expression.right, expr.Variable
+            ):
                 field = Field(expression.right.name)
                 aggregate = byte_aggregate(expression.left)
             if field and aggregate:
                 assert field in message.fields
                 if embedded:
-                    return Equal(
-                        Indexed(
-                            Variable("Buffer.all"),
-                            ValueRange(
-                                Call(
+                    return expr.Equal(
+                        expr.Indexed(
+                            expr.Variable("Buffer.all"),
+                            expr.ValueRange(
+                                expr.Call(
                                     const.TYPES_BYTE_INDEX,
                                     [
-                                        Selected(
-                                            Indexed(
-                                                Variable("Cursors"),
-                                                Variable(field.affixed_name, immutable=True),
+                                        expr.Selected(
+                                            expr.Indexed(
+                                                expr.Variable("Cursors"),
+                                                expr.Variable(field.affixed_name),
                                             ),
                                             "First",
                                         )
                                     ],
                                 ),
-                                Call(
+                                expr.Call(
                                     const.TYPES_BYTE_INDEX,
                                     [
-                                        Selected(
-                                            Indexed(
-                                                Variable("Cursors"),
-                                                Variable(field.affixed_name, immutable=True),
+                                        expr.Selected(
+                                            expr.Indexed(
+                                                expr.Variable("Cursors"),
+                                                expr.Variable(field.affixed_name),
                                             ),
                                             "Last",
                                         )
@@ -123,36 +84,36 @@ def substitution(
                         ),
                         aggregate,
                     )
-                equal_call = Call(
+                equal_call = expr.Call(
                     "Equal",
-                    [Variable("Ctx"), Variable(field.affixed_name, immutable=True), aggregate],
+                    [expr.Variable("Ctx"), expr.Variable(field.affixed_name), aggregate],
                 )
-                return equal_call if isinstance(expression, Equal) else Not(equal_call)
+                return equal_call if isinstance(expression, expr.Equal) else expr.Not(equal_call)
 
-        def field_value(field: Field) -> Expr:
+        def field_value(field: Field) -> expr.Expr:
             if public:
-                return Call(f"Get_{field.name}", [Variable("Ctx")])
-            return Selected(
-                Indexed(
-                    Variable("Ctx.Cursors" if not embedded else "Cursors"),
-                    Variable(field.affixed_name, immutable=True),
+                return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
+            return expr.Selected(
+                expr.Indexed(
+                    expr.Variable("Ctx.Cursors" if not embedded else "Cursors"),
+                    expr.Variable(field.affixed_name),
                 ),
                 f"Value.{field.name}_Value",
             )
 
-        if isinstance(expression, Relation):
+        if isinstance(expression, expr.Relation):
             if (
-                isinstance(expression.left, Variable)
+                isinstance(expression.left, expr.Variable)
                 and Field(expression.left.name) in message.fields
-                and isinstance(expression.right, Number)
+                and isinstance(expression.right, expr.Number)
             ):
                 return expression.__class__(
                     field_value(Field(expression.left.name)), expression.right
                 )
             if (
-                isinstance(expression.right, Variable)
+                isinstance(expression.right, expr.Variable)
                 and Field(expression.right.name) in message.fields
-                and isinstance(expression.left, Number)
+                and isinstance(expression.left, expr.Number)
             ):
                 return expression.__class__(
                     expression.left, field_value(Field(expression.right.name))
@@ -168,104 +129,112 @@ def substitution_facts(
     embedded: bool = False,
     public: bool = False,
     target_type: ID = const.TYPES_U64,
-) -> Mapping[Name, Expr]:
-    def prefixed(name: str) -> Expr:
-        return Variable(f"Ctx.{name}") if not embedded else Variable(name)
+) -> Mapping[expr.Name, expr.Expr]:
+    def prefixed(name: str) -> expr.Expr:
+        return expr.Variable(f"Ctx.{name}") if not embedded else expr.Variable(name)
 
     first = prefixed("First")
     last = prefixed("Last")
     cursors = prefixed("Cursors")
 
-    def field_first(field: Field) -> Expr:
+    def field_first(field: Field) -> expr.Expr:
         if public:
-            return Call(
-                "Field_First", [Variable("Ctx"), Variable(field.affixed_name, immutable=True)]
+            return expr.Call(
+                "Field_First", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
             )
-        return Selected(Indexed(cursors, Variable(field.affixed_name, immutable=True)), "First")
+        return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First")
 
-    def field_last(field: Field) -> Expr:
+    def field_last(field: Field) -> expr.Expr:
         if public:
-            return Call(
-                "Field_Last", [Variable("Ctx"), Variable(field.affixed_name, immutable=True)]
+            return expr.Call(
+                "Field_Last", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
             )
-        return Selected(Indexed(cursors, Variable(field.affixed_name, immutable=True)), "Last")
+        return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last")
 
-    def field_length(field: Field) -> Expr:
+    def field_length(field: Field) -> expr.Expr:
         if public:
-            return Call(
-                "Field_Length", [Variable("Ctx"), Variable(field.affixed_name, immutable=True)]
+            return expr.Call(
+                "Field_Length", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
             )
-        return Add(
-            Sub(
-                Selected(Indexed(cursors, Variable(field.affixed_name, immutable=True)), "Last"),
-                Selected(Indexed(cursors, Variable(field.affixed_name, immutable=True)), "First"),
+        return expr.Add(
+            expr.Sub(
+                expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last"),
+                expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First"),
             ),
-            Number(1),
+            expr.Number(1),
         )
 
-    def field_value(field: Field, field_type: Type) -> Expr:
+    def field_value(field: Field, field_type: Type) -> expr.Expr:
         if isinstance(field_type, Enumeration):
             if public:
-                return Call(
+                return expr.Call(
                     target_type,
-                    [Call("To_Base", [Call(f"Get_{field.name}", [Variable("Ctx")])])],
+                    [
+                        expr.Call(
+                            "To_Base", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
+                        )
+                    ],
                 )
-            return Call(
+            return expr.Call(
                 target_type,
                 [
-                    Selected(
-                        Indexed(cursors, Variable(field.affixed_name, immutable=True)),
+                    expr.Selected(
+                        expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                         f"Value.{field.name}_Value",
                     )
                 ],
             )
         if isinstance(field_type, Scalar):
             if public:
-                return Call(target_type, [Call(f"Get_{field.name}", [Variable("Ctx")])])
-            return Call(
+                return expr.Call(
+                    target_type, [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
+                )
+            return expr.Call(
                 target_type,
                 [
-                    Selected(
-                        Indexed(cursors, Variable(field.affixed_name, immutable=True)),
+                    expr.Selected(
+                        expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                         f"Value.{field.name}_Value",
                     )
                 ],
             )
         if isinstance(field_type, Composite):
-            return Variable(field.name)
+            return expr.Variable(field.name)
 
         assert False, f'unexpected type "{type(field_type).__name__}"'
 
     return {
-        **{First("Message"): first},
-        **{Last("Message"): last},
-        **{Length("Message"): Add(last, -first, Number(1))},
-        **{First(f.name): field_first(f) for f in message.fields},
-        **{Last(f.name): field_last(f) for f in message.fields},
-        **{Length(f.name): field_length(f) for f in message.fields},
-        **{Variable(f.name): field_value(f, t) for f, t in message.types.items()},
+        **{expr.First("Message"): first},
+        **{expr.Last("Message"): last},
+        **{expr.Length("Message"): expr.Add(last, -first, expr.Number(1))},
+        **{expr.First(f.name): field_first(f) for f in message.fields},
+        **{expr.Last(f.name): field_last(f) for f in message.fields},
+        **{expr.Length(f.name): field_length(f) for f in message.fields},
+        **{expr.Variable(f.name): field_value(f, t) for f, t in message.types.items()},
         **{
-            Variable(l): Call(target_type, [Call("To_Base", [Variable(l)])])
+            expr.Variable(l): expr.Call(target_type, [expr.Call("To_Base", [expr.Variable(l)])])
             for t in message.types.values()
             if isinstance(t, Enumeration)
             for l in t.literals.keys()
         },
         **{
-            Variable(t.package * l): Call(target_type, [Call("To_Base", [Variable(t.package * l)])])
+            expr.Variable(t.package * l): expr.Call(
+                target_type, [expr.Call("To_Base", [expr.Variable(t.package * l)])]
+            )
             for t in message.types.values()
             if isinstance(t, Enumeration)
             for l in t.literals.keys()
         },
         # ISSUE: Componolit/RecordFlux#276
-        **{ValidChecksum(f): TRUE for f in message.checksums},
+        **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
     }
 
 
 def message_structure_invariant(
     message: Message, prefix: str, link: Link = None, embedded: bool = False
-) -> Expr:
-    def prefixed(name: str) -> Expr:
-        return Selected(Variable("Ctx"), name) if not embedded else Variable(name)
+) -> ada.Expr:
+    def prefixed(name: str) -> expr.Expr:
+        return expr.Selected(expr.Variable("Ctx"), name) if not embedded else expr.Variable(name)
 
     if not link:
         return message_structure_invariant(message, prefix, message.outgoing(INITIAL)[0], embedded)
@@ -274,12 +243,12 @@ def message_structure_invariant(
     target = link.target
 
     if target is FINAL:
-        return TRUE
+        return ada.TRUE
 
     field_type = message.types[target]
     condition = link.condition.substituted(substitution(message, embedded)).simplified()
     length = (
-        Size(prefix * full_base_type_name(field_type))
+        expr.Size(prefix * full_base_type_name(field_type))
         if isinstance(field_type, Scalar)
         else link.length.substituted(
             substitution(message, embedded, target_type=const.TYPES_BIT_LENGTH)
@@ -291,127 +260,131 @@ def message_structure_invariant(
         else link.first.substituted(substitution(message, embedded))
         .substituted(
             mapping={
-                UNDEFINED: Add(
-                    Selected(
-                        Indexed(prefixed("Cursors"), Variable(source.affixed_name, immutable=True)),
+                expr.UNDEFINED: expr.Add(
+                    expr.Selected(
+                        expr.Indexed(prefixed("Cursors"), expr.Variable(source.affixed_name)),
                         "Last",
                     ),
-                    Number(1),
+                    expr.Number(1),
                 )
             }
         )
         .simplified()
     )
+    invariant = [
+        message_structure_invariant(message, prefix, l, embedded) for l in message.outgoing(target)
+    ]
 
-    return If(
+    return ada.If(
         [
             (
-                AndThen(
-                    Call(
+                ada.AndThen(
+                    ada.Call(
                         "Structural_Valid",
                         [
-                            Indexed(
-                                prefixed("Cursors"), Variable(target.affixed_name, immutable=True)
+                            ada.Indexed(
+                                prefixed("Cursors").ada_expr(), ada.Variable(target.affixed_name)
                             )
                         ],
                     ),
-                    condition,
+                    *([condition.ada_expr()] if condition != expr.TRUE else []),
                 ),
-                AndThen(
-                    Equal(
-                        Add(
-                            Sub(
-                                Selected(
-                                    Indexed(
-                                        prefixed("Cursors"),
-                                        Variable(target.affixed_name, immutable=True),
+                ada.AndThen(
+                    ada.Equal(
+                        ada.Add(
+                            ada.Sub(
+                                ada.Selected(
+                                    ada.Indexed(
+                                        prefixed("Cursors").ada_expr(),
+                                        ada.Variable(target.affixed_name),
                                     ),
                                     "Last",
                                 ),
-                                Selected(
-                                    Indexed(
-                                        prefixed("Cursors"),
-                                        Variable(target.affixed_name, immutable=True),
+                                ada.Selected(
+                                    ada.Indexed(
+                                        prefixed("Cursors").ada_expr(),
+                                        ada.Variable(target.affixed_name),
                                     ),
                                     "First",
                                 ),
                             ),
-                            Number(1),
+                            ada.Number(1),
                         ),
-                        length,
+                        length.ada_expr(),
                     ),
-                    Equal(
-                        Selected(
-                            Indexed(
-                                prefixed("Cursors"), Variable(target.affixed_name, immutable=True)
+                    ada.Equal(
+                        ada.Selected(
+                            ada.Indexed(
+                                prefixed("Cursors").ada_expr(),
+                                ada.Variable(target.affixed_name),
                             ),
                             "Predecessor",
                         ),
-                        Variable(source.affixed_name, immutable=True),
+                        ada.Variable(source.affixed_name),
                     ),
-                    Equal(
-                        Selected(
-                            Indexed(
-                                prefixed("Cursors"), Variable(target.affixed_name, immutable=True)
+                    ada.Equal(
+                        ada.Selected(
+                            ada.Indexed(
+                                prefixed("Cursors").ada_expr(),
+                                ada.Variable(target.affixed_name),
                             ),
                             "First",
                         ),
-                        first,
+                        first.ada_expr(),
                     ),
-                    *[
-                        message_structure_invariant(message, prefix, l, embedded)
-                        for l in message.outgoing(target)
-                    ],
+                    *[i for i in invariant if i != ada.TRUE],
                 ),
             )
         ]
-    ).simplified()
+    )
 
 
-def context_predicate(message: Message, composite_fields: Sequence[Field], prefix: str) -> Expr:
-    def valid_predecessors_invariant() -> Expr:
-        return AndThen(
+def context_predicate(message: Message, composite_fields: Sequence[Field], prefix: str) -> ada.Expr:
+    def valid_predecessors_invariant() -> ada.Expr:
+        return ada.AndThen(
             *[
-                If(
+                ada.If(
                     [
                         (
-                            Call(
+                            ada.Call(
                                 "Structural_Valid",
                                 [
-                                    Indexed(
-                                        Variable("Cursors"),
-                                        Variable(f.affixed_name, immutable=True),
+                                    ada.Indexed(
+                                        ada.Variable("Cursors"),
+                                        ada.Variable(f.affixed_name),
                                     )
                                 ],
                             ),
-                            Or(
+                            ada.Or(
                                 *[
-                                    AndThen(
-                                        Call(
+                                    expr.AndThen(
+                                        expr.Call(
                                             "Structural_Valid"
                                             if l.source in composite_fields
                                             else "Valid",
                                             [
-                                                Indexed(
-                                                    Variable("Cursors"),
-                                                    Variable(l.source.affixed_name, immutable=True),
+                                                expr.Indexed(
+                                                    expr.Variable("Cursors"),
+                                                    expr.Variable(l.source.affixed_name),
                                                 )
                                             ],
                                         ),
-                                        Equal(
-                                            Selected(
-                                                Indexed(
-                                                    Variable("Cursors"),
-                                                    Variable(f.affixed_name, immutable=True),
+                                        expr.Equal(
+                                            expr.Selected(
+                                                expr.Indexed(
+                                                    expr.Variable("Cursors"),
+                                                    expr.Variable(f.affixed_name),
                                                 ),
                                                 "Predecessor",
                                             ),
-                                            Variable(l.source.affixed_name, immutable=True),
+                                            expr.Variable(l.source.affixed_name),
                                         ),
                                         l.condition.substituted(
                                             substitution(message, embedded=True)
                                         ),
-                                    ).simplified()
+                                    )
+                                    .simplified()
+                                    .ada_expr()
                                     for l in message.incoming(f)
                                 ]
                             ),
@@ -423,32 +396,32 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
             ]
         )
 
-    def invalid_successors_invariant() -> Expr:
-        return AndThen(
+    def invalid_successors_invariant() -> ada.Expr:
+        return ada.AndThen(
             *[
-                If(
+                ada.If(
                     [
                         (
-                            AndThen(
+                            ada.AndThen(
                                 *[
-                                    Call(
+                                    ada.Call(
                                         "Invalid",
                                         [
-                                            Indexed(
-                                                Variable("Cursors"),
-                                                Variable(p.affixed_name, immutable=True),
+                                            ada.Indexed(
+                                                ada.Variable("Cursors"),
+                                                ada.Variable(p.affixed_name),
                                             )
                                         ],
                                     )
                                     for p in message.direct_predecessors(f)
                                 ]
                             ),
-                            Call(
+                            ada.Call(
                                 "Invalid",
                                 [
-                                    Indexed(
-                                        Variable("Cursors"),
-                                        Variable(f.affixed_name, immutable=True),
+                                    ada.Indexed(
+                                        ada.Variable("Cursors"),
+                                        ada.Variable(f.affixed_name),
                                     )
                                 ],
                             ),
@@ -460,48 +433,63 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
             ]
         )
 
-    return AndThen(
-        If(
+    return ada.AndThen(
+        ada.If(
             [
                 (
-                    NotEqual(Variable("Buffer"), Variable("null")),
-                    And(
-                        Equal(First("Buffer"), Variable("Buffer_First")),
-                        Equal(Last("Buffer"), Variable("Buffer_Last")),
+                    ada.NotEqual(ada.Variable("Buffer"), ada.Variable("null")),
+                    ada.And(
+                        ada.Equal(ada.First("Buffer"), ada.Variable("Buffer_First")),
+                        ada.Equal(ada.Last("Buffer"), ada.Variable("Buffer_Last")),
                     ),
                 )
             ]
         ),
         public_context_predicate(),
-        ForAllIn(
+        ada.ForAllIn(
             "F",
-            ValueRange(First("Field"), Last("Field")),
-            If(
+            ada.ValueRange(ada.First("Field"), ada.Last("Field")),
+            ada.If(
                 [
                     (
-                        Call("Structural_Valid", [Indexed(Variable("Cursors"), Variable("F"))]),
-                        And(
-                            GreaterEqual(
-                                Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
-                                Variable("First"),
+                        ada.Call(
+                            "Structural_Valid",
+                            [ada.Indexed(ada.Variable("Cursors"), ada.Variable("F"))],
+                        ),
+                        ada.And(
+                            ada.GreaterEqual(
+                                ada.Selected(
+                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "First"
+                                ),
+                                ada.Variable("First"),
                             ),
-                            LessEqual(
-                                Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
-                                Variable("Last"),
+                            ada.LessEqual(
+                                ada.Selected(
+                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "Last"
+                                ),
+                                ada.Variable("Last"),
                             ),
-                            LessEqual(
-                                Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
-                                Add(
-                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
-                                    Number(1),
+                            ada.LessEqual(
+                                ada.Selected(
+                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "First"
+                                ),
+                                ada.Add(
+                                    ada.Selected(
+                                        ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")),
+                                        "Last",
+                                    ),
+                                    ada.Number(1),
                                 ),
                             ),
-                            Equal(
-                                Selected(
-                                    Selected(Indexed(Variable("Cursors"), Variable("F")), "Value"),
+                            ada.Equal(
+                                ada.Selected(
+                                    ada.Selected(
+                                        ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")),
+                                        "Value",
+                                    ),
                                     "Fld",
                                 ),
-                                Variable("F"),
+                                ada.Variable("F"),
                             ),
                         ),
                     )
@@ -514,143 +502,161 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
     )
 
 
-def public_context_predicate() -> Expr:
-    return And(
-        GreaterEqual(Call(const.TYPES_BYTE_INDEX, [Variable("First")]), Variable("Buffer_First")),
-        LessEqual(Call(const.TYPES_BYTE_INDEX, [Variable("Last")]), Variable("Buffer_Last")),
-        LessEqual(Variable("First"), Variable("Last")),
-        LessEqual(Variable("Last"), Div(Last(const.TYPES_BIT_INDEX), Number(2))),
+def public_context_predicate() -> ada.Expr:
+    return ada.And(
+        ada.GreaterEqual(
+            ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("First")]), ada.Variable("Buffer_First")
+        ),
+        ada.LessEqual(
+            ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("Last")]), ada.Variable("Buffer_Last")
+        ),
+        ada.LessEqual(ada.Variable("First"), ada.Variable("Last")),
+        ada.LessEqual(
+            ada.Variable("Last"), ada.Div(ada.Last(const.TYPES_BIT_INDEX), ada.Number(2))
+        ),
     )
 
 
-def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequence[Expr]:
+def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequence[ada.Expr]:
     return [
-        If(
+        ada.If(
             [
                 (
-                    l.condition.substituted(substitution(message, public=True)),
-                    And(
-                        Equal(
-                            Call(
+                    l.condition.substituted(substitution(message, public=True))
+                    .simplified()
+                    .ada_expr(),
+                    ada.And(
+                        ada.Equal(
+                            ada.Call(
                                 "Predecessor",
-                                [Variable("Ctx"), Variable(l.target.affixed_name, immutable=True)],
+                                [ada.Variable("Ctx"), ada.Variable(l.target.affixed_name)],
                             ),
-                            Variable(field.affixed_name, immutable=True),
+                            ada.Variable(field.affixed_name),
                         ),
-                        Call(
+                        ada.Call(
                             "Valid_Next",
-                            [Variable("Ctx"), Variable(l.target.affixed_name, immutable=True)],
+                            [ada.Variable("Ctx"), ada.Variable(l.target.affixed_name)],
                         )
                         if l.target != FINAL
-                        else TRUE,
+                        else ada.TRUE,
                     ),
                 )
             ]
-        ).simplified()
+        )
         for l in message.outgoing(field)
         if l.target != FINAL
     ]
 
 
-def sufficient_space_for_field_condition(field_name: Name) -> Expr:
-    return GreaterEqual(
-        Call("Available_Space", [Variable("Ctx"), field_name]),
-        Call("Field_Length", [Variable("Ctx"), field_name]),
+def sufficient_space_for_field_condition(field_name: ada.Name) -> ada.Expr:
+    return ada.GreaterEqual(
+        ada.Call("Available_Space", [ada.Variable("Ctx"), field_name]),
+        ada.Call("Field_Length", [ada.Variable("Ctx"), field_name]),
     )
 
 
-def initialize_field_statements(message: Message, field: Field, prefix: str) -> Sequence[Statement]:
+def initialize_field_statements(
+    message: Message, field: Field, prefix: str
+) -> Sequence[ada.Statement]:
     return [
-        CallStatement(
+        ada.CallStatement(
             "Reset_Dependent_Fields",
-            [Variable("Ctx"), Variable(field.affixed_name, immutable=True)],
+            [ada.Variable("Ctx"), ada.Variable(field.affixed_name)],
         ),
-        Assignment(
+        ada.Assignment(
             "Ctx",
-            Aggregate(
-                Variable("Ctx.Buffer_First"),
-                Variable("Ctx.Buffer_Last"),
-                Variable("Ctx.First"),
-                Variable("Last"),
-                Variable("Ctx.Buffer"),
-                Variable("Ctx.Cursors"),
+            ada.Aggregate(
+                ada.Variable("Ctx.Buffer_First"),
+                ada.Variable("Ctx.Buffer_Last"),
+                ada.Variable("Ctx.First"),
+                ada.Variable("Last"),
+                ada.Variable("Ctx.Buffer"),
+                ada.Variable("Ctx.Cursors"),
             ),
         ),
         # WORKAROUND:
         # Limitation of GNAT Community 2019 / SPARK Pro 20.0
         # Provability of predicate is increased by adding part of
         # predicate as assert
-        PragmaStatement(
+        ada.PragmaStatement(
             "Assert",
-            [str(message_structure_invariant(message, prefix))],
+            [message_structure_invariant(message, prefix)],
         ),
-        Assignment(
-            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name, immutable=True)),
-            NamedAggregate(
-                ("State", Variable("S_Structural_Valid")),
-                ("First", Variable("First")),
-                ("Last", Variable("Last")),
+        ada.Assignment(
+            ada.Indexed(ada.Variable("Ctx.Cursors"), ada.Variable(field.affixed_name)),
+            ada.NamedAggregate(
+                ("State", ada.Variable("S_Structural_Valid")),
+                ("First", ada.Variable("First")),
+                ("Last", ada.Variable("Last")),
                 (
                     "Value",
-                    NamedAggregate(("Fld", Variable(field.affixed_name, immutable=True))),
+                    ada.NamedAggregate(("Fld", ada.Variable(field.affixed_name))),
                 ),
                 (
                     "Predecessor",
-                    Selected(
-                        Indexed(
-                            Variable("Ctx.Cursors"),
-                            Variable(field.affixed_name, immutable=True),
+                    ada.Selected(
+                        ada.Indexed(
+                            ada.Variable("Ctx.Cursors"),
+                            ada.Variable(field.affixed_name),
                         ),
                         "Predecessor",
                     ),
                 ),
             ),
         ),
-        Assignment(
-            Indexed(
-                Variable("Ctx.Cursors"),
-                Call("Successor", [Variable("Ctx"), Variable(field.affixed_name, immutable=True)]),
+        ada.Assignment(
+            ada.Indexed(
+                ada.Variable("Ctx.Cursors"),
+                ada.Call(
+                    "Successor",
+                    [ada.Variable("Ctx"), ada.Variable(field.affixed_name)],
+                ),
             ),
-            NamedAggregate(
-                ("State", Variable("S_Invalid")),
-                ("Predecessor", Variable(field.affixed_name, immutable=True)),
+            ada.NamedAggregate(
+                ("State", ada.Variable("S_Invalid")),
+                ("Predecessor", ada.Variable(field.affixed_name)),
             ),
         ),
     ]
 
 
-def field_bit_location_declarations(field_name: Name) -> Sequence[Declaration]:
+def field_bit_location_declarations(field_name: ada.Name) -> Sequence[ada.Declaration]:
     return [
-        ObjectDeclaration(
+        ada.ObjectDeclaration(
             ["First"],
             const.TYPES_BIT_INDEX,
-            Call("Field_First", [Variable("Ctx"), field_name]),
+            ada.Call("Field_First", [ada.Variable("Ctx"), field_name]),
             True,
         ),
-        ObjectDeclaration(
+        ada.ObjectDeclaration(
             ["Last"],
             const.TYPES_BIT_INDEX,
-            Call("Field_Last", [Variable("Ctx"), field_name]),
+            ada.Call("Field_Last", [ada.Variable("Ctx"), field_name]),
             True,
         ),
     ]
 
 
-def field_byte_location_declarations() -> Sequence[Declaration]:
+def field_byte_location_declarations() -> Sequence[ada.Declaration]:
     return [
-        ExpressionFunctionDeclaration(
-            FunctionSpecification("Buffer_First", const.TYPES_INDEX),
-            Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
+        ada.ExpressionFunctionDeclaration(
+            ada.FunctionSpecification("Buffer_First", const.TYPES_INDEX),
+            ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("First")]),
         ),
-        ExpressionFunctionDeclaration(
-            FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
-            Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
+        ada.ExpressionFunctionDeclaration(
+            ada.FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
+            ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("Last")]),
         ),
-        ExpressionFunctionDeclaration(
-            FunctionSpecification("Offset", const.TYPES_OFFSET),
-            Call(
+        ada.ExpressionFunctionDeclaration(
+            ada.FunctionSpecification("Offset", const.TYPES_OFFSET),
+            ada.Call(
                 const.TYPES_OFFSET,
-                [Mod(Sub(Number(8), Mod(Variable("Last"), Number(8))), Number(8))],
+                [
+                    ada.Mod(
+                        ada.Sub(ada.Number(8), ada.Mod(ada.Variable("Last"), ada.Number(8))),
+                        ada.Number(8),
+                    )
+                ],
             ),
         ),
     ]
@@ -698,7 +704,7 @@ def length_dependent_condition(message: Message) -> bool:
             [
                 l
                 for link in message.structure
-                for l in link.condition.findall(lambda x: isinstance(x, Length))
+                for l in link.condition.findall(lambda x: isinstance(x, expr.Length))
             ]
         )
         > 0

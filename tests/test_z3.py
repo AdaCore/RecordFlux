@@ -6,14 +6,12 @@ from rflx.expression import (
     TRUE,
     Add,
     And,
-    Case,
     Div,
     Equal,
     Expr,
     First,
     Greater,
     GreaterEqual,
-    If,
     Last,
     Length,
     Less,
@@ -23,10 +21,8 @@ from rflx.expression import (
     Not,
     NotEqual,
     Number,
-    Old,
     Or,
     Pow,
-    Range,
     Size,
     Sub,
     Variable,
@@ -136,34 +132,6 @@ def test_not_equal() -> None:
     assert NotEqual(Number(100), Number(1)).z3expr() == (z3.IntVal(100) != z3.IntVal(1))
 
 
-def test_if() -> None:
-    assert_equal(
-        If(
-            [
-                (Greater(Variable("a"), Number(5)), Number(1)),
-                (Greater(Variable("b"), Number(100)), Number(10)),
-            ],
-            Number(100),
-        ).z3expr(),
-        z3.If(
-            z3.Int("a") > z3.IntVal(5),
-            z3.IntVal(1),
-            z3.If(z3.Int("b") > z3.IntVal(100), z3.IntVal(10), z3.IntVal(100)),
-        ),
-    )
-
-
-def test_case() -> None:
-    assert_equal(
-        Case(Variable("x"), [(Number(5), Number(1)), (Number(10), Number(2))]).z3expr(),
-        z3.If(
-            z3.Int("x") == z3.IntVal(5),
-            z3.IntVal(1),
-            z3.If(z3.Int("x") == z3.IntVal(10), z3.IntVal(2), z3.BoolVal(False)),
-        ),
-    )
-
-
 @pytest.mark.parametrize(
     "attribute,z3name",
     [
@@ -171,8 +139,6 @@ def test_case() -> None:
         (Length("X"), "X'Length"),
         (First("X"), "X'First"),
         (Last("X"), "X'Last"),
-        (Range("X"), "X'Range"),
-        (Old("X"), "X'Old"),
     ],
 )
 def test_attribute(attribute: Expr, z3name: str) -> None:

@@ -3,12 +3,697 @@ import itertools
 from abc import abstractmethod
 from collections import OrderedDict
 from dataclasses import dataclass, field as dataclass_field
+from enum import Enum
+from sys import intern
 from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
-from rflx.expression import Case, Expr, Number, Variable
 from rflx.identifier import ID, StrID
+
+
+class Precedence(Enum):
+    undefined = 0
+    boolean_operator = 1
+    relational_operator = 2
+    binary_adding_operator = 3
+    unary_adding_operator = 4
+    multiplying_operator = 5
+    highest_precedence_operator = 6
+    literal = 7
+
+
+class Expr(Base):
+    _str: str
+
+    def __str__(self) -> str:
+        try:
+            return self._str
+        except AttributeError:
+            self._update_str()
+            return self._str
+
+    def __neg__(self) -> "Expr":
+        raise NotImplementedError
+
+    @abstractmethod
+    def _update_str(self) -> None:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def parenthesized(self, expr: "Expr") -> str:
+        if expr.precedence.value <= self.precedence.value:
+            return "(" + indent_next(str(expr), 1) + ")"
+        return str(expr)
+
+
+class Not(Expr):
+    def __init__(self, expr: Expr) -> None:
+        super().__init__()
+        self.expr = expr
+
+    def _update_str(self) -> None:
+        self._str = intern(f"not {self.parenthesized(self.expr)}")
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.highest_precedence_operator
+
+
+class BinExpr(Expr):
+    def __init__(self, left: Expr, right: Expr) -> None:
+        super().__init__()
+        self.left = left
+        self.right = right
+
+    def _update_str(self) -> None:
+        self._str = intern(
+            f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}"
+        )
+
+    @property
+    @abstractmethod
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def symbol(self) -> str:
+        raise NotImplementedError
+
+
+class AssExpr(Expr):
+    def __init__(self, *terms: Expr) -> None:
+        super().__init__()
+        self.terms = list(terms)
+
+    def _update_str(self) -> None:
+        self._str = intern(self.symbol.join(map(self.parenthesized, self.terms)))
+
+    @property
+    @abstractmethod
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def symbol(self) -> str:
+        raise NotImplementedError
+
+
+class BoolAssExpr(AssExpr):
+    def _update_str(self) -> None:
+        if not self.terms:
+            self._str = str(TRUE)
+            return
+        self._str = ""
+        for i, t in reversed(list(enumerate(self.terms))):
+            if i == 0:
+                self._str = self.parenthesized(t) + self._str
+            else:
+                self._str = (
+                    "\n"
+                    + str(self.symbol)[1:]
+                    + indent_next(self.parenthesized(t), len(self.symbol) - 1)
+                    + self._str
+                )
+        self._str = intern(self._str)
+
+    @property
+    @abstractmethod
+    def symbol(self) -> str:
+        raise NotImplementedError
+
+
+class And(BoolAssExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.boolean_operator
+
+    @property
+    def symbol(self) -> str:
+        return " and "
+
+
+class AndThen(And):
+    @property
+    def symbol(self) -> str:
+        return " and then "
+
+
+class Or(BoolAssExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.boolean_operator
+
+    @property
+    def symbol(self) -> str:
+        return " or "
+
+
+class OrElse(Or):
+    @property
+    def symbol(self) -> str:
+        return " or else "
+
+
+class Number(Expr):
+    def __init__(self, value: int, base: int = 0) -> None:
+        super().__init__()
+        self.value = value
+        self.base = base
+
+    def __neg__(self) -> "Number":
+        return Number(-self.value)
+
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, Number):
+            return self.value < other.value
+        return NotImplemented
+
+    def _update_str(self) -> None:
+        value = self.value if self.value >= 0 else -self.value
+        if self.base == 0:
+            self._str = "{}".format(value)
+        elif self.base == 2:
+            self._str = "2#{:b}#".format(value)
+        elif self.base == 8:
+            self._str = "8#{:o}#".format(value)
+        elif self.base == 10:
+            self._str = "10#{}#".format(value)
+        elif self.base == 16:
+            self._str = "16#{:X}#".format(value)
+        else:
+            raise NotImplementedError(f"unsupported base {self.base}")
+        self._str = intern(f"(-{self._str})" if self.value < 0 else self._str)
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
+
+
+class Add(AssExpr):
+    def _update_str(self) -> None:
+        self._str = str(self.terms[0])
+        for t in self.terms[1:]:
+            if (isinstance(t, Number) and t.value < 0) or (isinstance(t, Name) and t.negative):
+                self._str += f" - {self.parenthesized(-t)}"
+            else:
+                self._str += f"{self.symbol}{self.parenthesized(t)}"
+        self._str = intern(self._str)
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.binary_adding_operator
+
+    @property
+    def symbol(self) -> str:
+        return " + "
+
+
+class Mul(AssExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.multiplying_operator
+
+    @property
+    def symbol(self) -> str:
+        return " * "
+
+
+class Sub(BinExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.binary_adding_operator
+
+    @property
+    def symbol(self) -> str:
+        return " - "
+
+
+class Div(BinExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.multiplying_operator
+
+    @property
+    def symbol(self) -> str:
+        return " / "
+
+
+class Pow(BinExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.highest_precedence_operator
+
+    @property
+    def symbol(self) -> str:
+        return "**"
+
+
+class Mod(BinExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.multiplying_operator
+
+    @property
+    def symbol(self) -> str:
+        return " mod "
+
+
+class Name(Expr):
+    def __init__(self, negative: bool = False) -> None:
+        super().__init__()
+        self.negative = negative
+        self._update_str()
+
+    def _update_str(self) -> None:
+        self._str = intern(f"(-{self._representation})" if self.negative else self._representation)
+
+    @property
+    @abstractmethod
+    def _representation(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
+
+
+class Variable(Name):
+    def __init__(self, identifier: StrID, negative: bool = False) -> None:
+        self.identifier = ID(identifier)
+        super().__init__(negative)
+
+    def __neg__(self) -> "Variable":
+        return self.__class__(self.identifier, not self.negative)
+
+    @property
+    def _representation(self) -> str:
+        return str(self.name)
+
+    @property
+    def name(self) -> str:
+        return str(self.identifier)
+
+
+TRUE = Variable("True")
+FALSE = Variable("False")
+
+
+class Attribute(Name):
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        if isinstance(prefix, ID):
+            prefix = Variable(prefix)
+        if isinstance(prefix, str):
+            prefix = Variable(prefix)
+
+        self.prefix: Expr = prefix
+        super().__init__(negative)
+
+    def __neg__(self) -> "Attribute":
+        return self.__class__(self.prefix, not self.negative)
+
+    @property
+    def _representation(self) -> str:
+        return f"{self.prefix}'{self.__class__.__name__}"
+
+
+class Size(Attribute):
+    pass
+
+
+class Length(Attribute):
+    pass
+
+
+class First(Attribute):
+    pass
+
+
+class Last(Attribute):
+    pass
+
+
+class Range(Attribute):
+    pass
+
+
+class Old(Attribute):
+    pass
+
+
+class Result(Attribute):
+    pass
+
+
+class Constrained(Attribute):
+    pass
+
+
+class Valid(Attribute):
+    pass
+
+
+class AttributeExpr(Attribute):
+    def __init__(
+        self, prefix: Union[StrID, Expr], expression: Expr, negative: bool = False
+    ) -> None:
+        self.expression = expression
+        super().__init__(prefix)
+
+    @property
+    def _representation(self) -> str:
+        return f"{self.prefix}'{self.__class__.__name__} ({self.expression})"
+
+
+class Val(AttributeExpr):
+    pass
+
+
+class Pos(AttributeExpr):
+    pass
+
+
+@invariant(lambda self: len(self.elements) > 0)
+class Indexed(Name):
+    def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
+        self.prefix = prefix
+        self.elements = list(elements)
+        super().__init__(negative)
+
+    def __neg__(self) -> "Indexed":
+        return self.__class__(self.prefix, *self.elements, negative=not self.negative)
+
+    @property
+    def _representation(self) -> str:
+        return f"{self.prefix} (" + ", ".join(map(str, self.elements)) + ")"
+
+
+class Selected(Name):
+    def __init__(
+        self,
+        prefix: Expr,
+        selector_name: StrID,
+        negative: bool = False,
+    ) -> None:
+        self.prefix = prefix
+        self.selector_name = ID(selector_name)
+        super().__init__(negative)
+
+    def __neg__(self) -> "Selected":
+        return self.__class__(self.prefix, self.selector_name, not self.negative)
+
+    @property
+    def _representation(self) -> str:
+        return f"{self.prefix}.{self.selector_name}"
+
+
+class Call(Name):
+    def __init__(
+        self,
+        name: StrID,
+        args: Sequence[Expr] = None,
+        negative: bool = False,
+    ) -> None:
+        self.name = ID(name)
+        self.args = args or []
+        super().__init__(negative)
+
+    def __neg__(self) -> "Call":
+        return self.__class__(self.name, self.args, not self.negative)
+
+    @property
+    def _representation(self) -> str:
+        args = ", ".join(map(str, self.args))
+        if args:
+            args = f" ({args})"
+        call = f"{self.name}{args}"
+        return call
+
+
+class Slice(Name):
+    def __init__(self, prefix: Expr, first: Expr, last: Expr) -> None:
+        self.prefix = prefix
+        self.first = first
+        self.last = last
+        super().__init__()
+
+    @property
+    def _representation(self) -> str:
+        return f"{self.prefix} ({self.first} .. {self.last})"
+
+
+@invariant(lambda self: len(self.elements) > 0)
+class Aggregate(Expr):
+    def __init__(self, *elements: Expr) -> None:
+        super().__init__()
+        self.elements = list(elements)
+
+    def _update_str(self) -> None:
+        self._str = intern("(" + ", ".join(map(str, self.elements)) + ")")
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
+
+
+class String(Aggregate):
+    def __init__(self, data: str) -> None:
+        super().__init__(*[Number(ord(d)) for d in data])
+        self.data = data
+
+    def _update_str(self) -> None:
+        self._str = intern(f'"{self.data}"')
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
+
+
+class NamedAggregate(Expr):
+    def __init__(self, *elements: Tuple[StrID, Expr]) -> None:
+        super().__init__()
+        self.elements = [(ID(n), e) for n, e in elements]
+
+    def _update_str(self) -> None:
+        self._str = intern(
+            "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
+        )
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+
+class Relation(BinExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.relational_operator
+
+
+class Less(Relation):
+    @property
+    def symbol(self) -> str:
+        return " < "
+
+
+class LessEqual(Relation):
+    @property
+    def symbol(self) -> str:
+        return " <= "
+
+
+class Equal(Relation):
+    @property
+    def symbol(self) -> str:
+        return " = "
+
+
+class GreaterEqual(Relation):
+    @property
+    def symbol(self) -> str:
+        return " >= "
+
+
+class Greater(Relation):
+    @property
+    def symbol(self) -> str:
+        return " > "
+
+
+class NotEqual(Relation):
+    @property
+    def symbol(self) -> str:
+        return " /= "
+
+
+class In(Relation):
+    @property
+    def symbol(self) -> str:
+        return " in "
+
+
+class NotIn(Relation):
+    @property
+    def symbol(self) -> str:
+        return " not in "
+
+
+def If(condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None) -> Expr:
+    # pylint: disable=invalid-name
+    if len(condition_expressions) == 1 and condition_expressions[0][0] == TRUE:
+        return condition_expressions[0][1]
+    return IfExpr(condition_expressions, else_expression)
+
+
+class IfExpr(Expr):
+    def __init__(
+        self, condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None
+    ) -> None:
+        super().__init__()
+        self.condition_expressions = condition_expressions
+        self.else_expression = else_expression
+
+    def _update_str(self) -> None:
+        self._str = ""
+        for c, e in self.condition_expressions:
+            if not self._str:
+                self._str = f"(if\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
+            else:
+                self._str += f"\n elsif\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
+        if self.else_expression:
+            self._str += f"\n else\n{indent(str(self.else_expression), 4)}"
+        self._str += ")"
+        self._str = intern(self._str)
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
+
+
+def Case(control_expression: Expr, case_expressions: Sequence[Tuple[Expr, Expr]]) -> Expr:
+    # pylint: disable=invalid-name
+    if len(case_expressions) == 1 and case_expressions[0][0] == Variable("others"):
+        return case_expressions[0][1]
+    return CaseExpr(control_expression, case_expressions)
+
+
+class CaseExpr(Expr):
+    def __init__(
+        self, control_expression: Expr, case_expressions: Sequence[Tuple[Expr, Expr]]
+    ) -> None:
+        super().__init__()
+        self.control_expression = control_expression
+        self.case_expressions = case_expressions
+
+    def _update_str(self) -> None:
+        grouped_cases = [
+            (" | ".join(str(c) for c, _ in choices), expr)
+            for expr, choices in itertools.groupby(self.case_expressions, lambda x: x[1])
+        ]
+        cases = indent(
+            ",".join(
+                [f"\nwhen {choice} =>\n{indent(str(expr), 3)}" for choice, expr in grouped_cases]
+            ),
+            4,
+        )
+        self._str = intern(f"(case {self.control_expression} is{cases})")
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
+
+
+class QuantifiedExpr(Expr):
+    def __init__(self, parameter_name: StrID, iterable: Expr, predicate: Expr) -> None:
+        super().__init__()
+        self.parameter_name = ID(parameter_name)
+        self.iterable = iterable
+        self.predicate = predicate
+
+    def _update_str(self) -> None:
+        self._str = intern(
+            f"(for {self.quantifier} {self.parameter_name} {self.keyword} {self.iterable} =>\n"
+            + indent(str(self.predicate), 4)
+            + ")"
+        )
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
+
+    @property
+    @abstractmethod
+    def quantifier(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def keyword(self) -> str:
+        raise NotImplementedError
+
+
+class ForAllOf(QuantifiedExpr):
+    @property
+    def quantifier(self) -> str:
+        return "all"
+
+    @property
+    def keyword(self) -> str:
+        return "of"
+
+
+class ForAllIn(QuantifiedExpr):
+    @property
+    def quantifier(self) -> str:
+        return "all"
+
+    @property
+    def keyword(self) -> str:
+        return "in"
+
+
+class ForSomeIn(QuantifiedExpr):
+    @property
+    def quantifier(self) -> str:
+        return "some"
+
+    @property
+    def keyword(self) -> str:
+        return "in"
+
+
+class ValueRange(Expr):
+    def __init__(self, lower: Expr, upper: Expr):
+        super().__init__()
+        self.lower = lower
+        self.upper = upper
+
+    def _update_str(self) -> None:
+        self._str = intern(f"{self.lower} .. {self.upper}")
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+
+class Conversion(Expr):
+    def __init__(self, name: StrID, argument: Expr) -> None:
+        super().__init__()
+        self.name = ID(name)
+        self.argument = argument
+
+    def _update_str(self) -> None:
+        self._str = intern(f"{self.name} ({self.argument})")
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.literal
 
 
 class Declaration(Base):
@@ -140,7 +825,7 @@ class DynamicPredicate(Aspect):
         return str(self.expr)
 
 
-class Size(Aspect):
+class SizeAspect(Aspect):
     def __init__(self, expr: Expr) -> None:
         self.expr = expr
 
@@ -389,7 +1074,11 @@ class ModularType(TypeDeclaration):
 
 class RangeType(TypeDeclaration):
     def __init__(
-        self, identifier: StrID, first: Expr, last: Expr, aspects: Sequence[Aspect] = None
+        self,
+        identifier: StrID,
+        first: Expr,
+        last: Expr,
+        aspects: Sequence[Aspect] = None,
     ) -> None:
         super().__init__(identifier, aspects=aspects or [])
         self.first = first
@@ -407,7 +1096,7 @@ class EnumerationType(TypeDeclaration):
         literals: Mapping[ID, Optional[Number]],
         size: Expr = None,
     ) -> None:
-        super().__init__(identifier, aspects=([Size(size)] if size else []))
+        super().__init__(identifier, aspects=([SizeAspect(size)] if size else []))
         self.literals = (
             OrderedDict(sorted(literals.items(), key=lambda t: t[1]))
             if None not in literals.values()
@@ -602,14 +1291,14 @@ class CallStatement(Statement):
 
 
 class PragmaStatement(Statement):
-    def __init__(self, identifier: StrID, parameters: Sequence[str]) -> None:
+    def __init__(self, identifier: StrID, parameters: Sequence[Expr]) -> None:
         self.identifier = ID(identifier)
         self.pragma_parameters = parameters
 
     def __str__(self) -> str:
         parameters = ""
         if self.pragma_parameters:
-            parameters = ", ".join(self.pragma_parameters)
+            parameters = ", ".join(map(str, self.pragma_parameters))
             parameters = " (" + indent_next(str(parameters), len(str(self.identifier)) + 9) + ")"
         return f"pragma {self.identifier}{parameters};"
 
@@ -619,7 +1308,7 @@ class ReturnStatement(Statement):
         self.expression = expression
 
     def __str__(self) -> str:
-        if isinstance(self.expression, Case):
+        if isinstance(self.expression, CaseExpr):
             return "return (" + indent_next(str(self.expression), 8) + ");"
         return "return " + indent_next(str(self.expression), 7) + ";"
 
@@ -657,7 +1346,9 @@ class IfStatement(Statement):
 
 class CaseStatement(Statement):
     def __init__(
-        self, control_expression: Expr, case_statements: Sequence[Tuple[Expr, Sequence[Statement]]]
+        self,
+        control_expression: Expr,
+        case_statements: Sequence[Tuple[Expr, Sequence[Statement]]],
     ) -> None:
         self.control_expression = control_expression
         self.case_statements = case_statements
@@ -817,7 +1508,10 @@ class SubprogramBody(Subprogram):
 
 class ExpressionFunctionDeclaration(Subprogram):
     def __init__(
-        self, specification: FunctionSpecification, expression: Expr, aspects: List[Aspect] = None
+        self,
+        specification: FunctionSpecification,
+        expression: Expr,
+        aspects: List[Aspect] = None,
     ) -> None:
         super().__init__(specification)
         self.expression = expression
@@ -876,7 +1570,7 @@ class SubprogramRenamingDeclaration(Subprogram):
 
 
 class Pragma(Declaration, ContextItem):
-    def __init__(self, identifier: StrID, parameters: List[str] = None) -> None:
+    def __init__(self, identifier: StrID, parameters: List[Expr] = None) -> None:
         super().__init__()
         self.identifier = ID(identifier)
         self.pragma_parameters = parameters or []
@@ -892,7 +1586,7 @@ class Pragma(Declaration, ContextItem):
     def __str__(self) -> str:
         parameters = ""
         if self.pragma_parameters:
-            parameters = ", ".join(self.pragma_parameters)
+            parameters = ", ".join(map(str, self.pragma_parameters))
             parameters = f" ({parameters})"
         return f"pragma {self.identifier}{parameters};"
 
