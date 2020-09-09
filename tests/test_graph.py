@@ -26,11 +26,10 @@ from rflx.model import (
     Transition,
 )
 from rflx.statement import Assignment, Erase
-from tests.utils import BASE_TMP_DIR
 
 
 def assert_graph(graph: Graph, expected: str) -> None:
-    with TemporaryDirectory(dir=BASE_TMP_DIR) as directory:
+    with TemporaryDirectory() as directory:
         path = Path(directory) / Path("test.dot")
         graph.write(path, fmt="raw")
         with open(path) as f:
