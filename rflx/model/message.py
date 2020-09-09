@@ -93,11 +93,10 @@ class MessageState(Base):
     checksums: Mapping[ID, Sequence[expr.Expr]] = {}
 
 
-# pylint: disable=too-many-public-methods
 @invariant(lambda self: valid_message_field_types(self))
 @invariant(lambda self: not self.types if not self.structure else True)
 class AbstractMessage(type_.Type):
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-public-methods
     def __init__(
         self,
         identifier: StrID,
