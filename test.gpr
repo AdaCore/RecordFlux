@@ -71,6 +71,8 @@ project Test is
       for Proof_Switches ("rflx-ethernet.ads") use ("--prover=Z3", "--steps=1");
       for Proof_Switches ("rflx-expression-message.ads") use ("--prover=Z3", "--steps=1");
       for Proof_Switches ("rflx-expression-tests.adb") use ("--prover=Z3", "--steps=1");
+      for Proof_Switches ("rflx-icmp-message.ads") use ("--prover=Z3,altergo,CVC4", "--steps=37511");
+      for Proof_Switches ("rflx-icmp.ads") use ("--prover=CVC4", "--steps=1");
       for Proof_Switches ("rflx-in_ethernet-contains.ads") use ("--prover=CVC4,Z3", "--steps=514");
       for Proof_Switches ("rflx-in_ethernet-tests.adb") use ("--prover=Z3,altergo,CVC4", "--steps=132596");
       for Proof_Switches ("rflx-in_ipv4-contains.ads") use ("--prover=CVC4,Z3", "--steps=4900");
