@@ -45,7 +45,6 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
-    Session,
     State,
     Transition,
 )
@@ -58,6 +57,7 @@ from rflx.parser.ast import (
     PackageSpec,
     ReferenceSpec,
     RefinementSpec,
+    SessionSpec,
     Specification,
     Then,
 )
@@ -795,10 +795,10 @@ def test_grammar_state_error(string: str, error: str) -> None:
                   state B is null state;
                end Session;
          """,
-            Session(
-                "Session",
-                "A",
-                "B",
+            SessionSpec(
+                ID("Session"),
+                ID("A"),
+                ID("B"),
                 [
                     State(
                         "A",
@@ -817,6 +817,7 @@ def test_grammar_state_error(string: str, error: str) -> None:
                     decl.PrivateDeclaration("T"),
                     decl.SubprogramDeclaration("F", [], "T"),
                 ],
+                Location((2, 16), None, (23, 27)),
             ),
         ),
     ],
