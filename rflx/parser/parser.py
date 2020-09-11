@@ -227,7 +227,15 @@ class Parser:
                 )
                 continue
 
-            self.__sessions[s.identifier] = s
+            self.__sessions[s.identifier] = Session(
+                s.identifier,
+                s.initial,
+                s.final,
+                s.states,
+                s.declarations,
+                s.parameters,
+                s.location,
+            )
 
 
 def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:

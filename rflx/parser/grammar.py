@@ -81,7 +81,6 @@ from rflx.model import (
     Enumeration,
     ModularInteger,
     RangeInteger,
-    Session,
     State,
     Transition,
     Type,
@@ -98,6 +97,7 @@ from .ast import (
     PackageSpec,
     ReferenceSpec,
     RefinementSpec,
+    SessionSpec,
     Specification,
     Then,
 )
@@ -1087,7 +1087,7 @@ def parse_session(string: str, location: int, tokens: ParseResults) -> object:
             string, location, f"inconsistent session identifier: {identifier} /= {end_identifier}"
         )
 
-    return Session(
+    return SessionSpec(
         identifier,
         initial=tokens[2][0],
         final=tokens[2][1],
@@ -1102,7 +1102,7 @@ def parse_session(string: str, location: int, tokens: ParseResults) -> object:
 def parse_package(string: str, location: int, tokens: ParseResults) -> object:
     declarations = tokens[3].asList()
     types = [d for d in declarations if isinstance(d, Type)]
-    sessions = [d for d in declarations if isinstance(d, Session)]
+    sessions = [d for d in declarations if isinstance(d, SessionSpec)]
     assert len(declarations) == len(types) + len(sessions)
     return PackageSpec(tokens[1], types, sessions, tokens[5])
 

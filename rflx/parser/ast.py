@@ -1,10 +1,12 @@
-from typing import List, Mapping
+from dataclasses import dataclass
+from typing import List, Mapping, Optional, Sequence
 
+import rflx.declaration as decl
 from rflx.common import Base, flat_name
 from rflx.error import Location
 from rflx.expression import TRUE, UNDEFINED, Expr
 from rflx.identifier import ID, StrID
-from rflx.model import Session, Type
+from rflx.model import State, Type
 
 
 class SyntaxTree(Base):
@@ -46,12 +48,23 @@ class Component(SyntaxTree):
         self.thens = thens or []
 
 
+@dataclass
+class SessionSpec:
+    identifier: ID
+    initial: ID
+    final: ID
+    states: Sequence[State]
+    declarations: Sequence[decl.Declaration]
+    parameters: Optional[Sequence[decl.Declaration]] = None
+    location: Optional[Location] = None
+
+
 class PackageSpec(SyntaxTree):
     def __init__(
         self,
         identifier: StrID,
         types: List[Type],
-        sessions: List[Session],
+        sessions: List[SessionSpec],
         end_identifier: StrID = None,
     ) -> None:
         self.identifier = ID(identifier)
