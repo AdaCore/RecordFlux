@@ -745,9 +745,9 @@ class Add(AssExpr):
         return ada.Add(*[t.ada_expr() for t in self.terms])
 
     def z3expr(self) -> z3.ArithRef:
-        z3expr = sum(t.z3expr() for t in self.terms)
-        assert isinstance(z3expr, z3.ArithRef)
-        return z3expr
+        terms = [t for t in map(lambda e: e.z3expr(), self.terms) if isinstance(t, z3.ArithRef)]
+        assert len(terms) == len(self.terms), "Adding non-arithmetic terms"
+        return z3.Sum(*terms)
 
 
 class Mul(AssExpr):
@@ -772,13 +772,9 @@ class Mul(AssExpr):
         return ada.Mul(*[t.ada_expr() for t in self.terms])
 
     def z3expr(self) -> z3.ArithRef:
-        z3expr = self.terms[0].z3expr()
-        for t in self.terms[1:]:
-            tmp = t.z3expr()
-            assert isinstance(z3expr, z3.ArithRef) and isinstance(tmp, z3.ArithRef)
-            z3expr = z3expr * tmp
-        assert isinstance(z3expr, z3.ArithRef)
-        return z3expr
+        terms = [t for t in map(lambda e: e.z3expr(), self.terms) if isinstance(t, z3.ArithRef)]
+        assert len(terms) == len(self.terms), "Multiplying non-arithmetic terms"
+        return z3.Product(*terms)
 
 
 class Sub(BinExpr):
