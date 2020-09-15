@@ -1,20 +1,12 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from rflx.expression import (
-    FALSE,
-    TRUE,
-    Equal,
-    Greater,
-    Less,
-    Number,
-    Pow,
-    Variable,
-    VariableDeclaration,
-)
+from rflx.declaration import VariableDeclaration
+from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Variable
 from rflx.graph import Graph
 from rflx.identifier import ID
 from rflx.model import (
+    BOOLEAN,
     FINAL,
     INITIAL,
     Field,
@@ -188,7 +180,7 @@ def test_dot_graph_with_double_edge() -> None:
 
 def test_session_graph() -> None:
     s = Session(
-        identifier="foo",
+        identifier="P::S",
         initial=ID("START"),
         final=ID("END"),
         states=[
@@ -207,7 +199,9 @@ def test_session_graph() -> None:
             ),
             State(name=ID("END")),
         ],
-        declarations=[VariableDeclaration("Global", "Some_Type")],
+        declarations=[VariableDeclaration("Global", "Boolean")],
+        parameters=[],
+        types=[BOOLEAN],
     )
     expected = """
         digraph "Session" {

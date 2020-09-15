@@ -291,9 +291,7 @@ def test_and_neg() -> None:
 
 
 def test_and_variables() -> None:
-    assert_equal(
-        And(Variable("X"), Variable("Y"), Call("Z")).variables(), [Variable("X"), Variable("Y")]
-    )
+    assert_equal(And(Variable("X"), Variable("Y")).variables(), [Variable("X"), Variable("Y")])
 
 
 def test_and_contains() -> None:
@@ -333,7 +331,7 @@ def test_or_neg() -> None:
 
 
 def test_or_variables() -> None:
-    assert Or(Variable("X"), Variable("Y"), Call("Z")).variables() == [Variable("X"), Variable("Y")]
+    assert Or(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
 
 
 def test_or_contains() -> None:
@@ -503,9 +501,7 @@ def test_add_neg() -> None:
 
 
 def test_add_variables() -> None:
-    assert_equal(
-        Add(Variable("X"), Variable("Y"), Call("Z")).variables(), [Variable("X"), Variable("Y")]
-    )
+    assert_equal(Add(Variable("X"), Variable("Y")).variables(), [Variable("X"), Variable("Y")])
 
 
 def test_add_simplified() -> None:
@@ -577,9 +573,7 @@ def test_mul_neg() -> None:
 
 
 def test_mul_variables() -> None:
-    assert_equal(
-        Mul(Variable("X"), Variable("Y"), Call("Z")).variables(), [Variable("X"), Variable("Y")]
-    )
+    assert_equal(Mul(Variable("X"), Variable("Y")).variables(), [Variable("X"), Variable("Y")])
 
 
 def test_mul_simplified() -> None:
@@ -601,7 +595,7 @@ def test_sub_neg() -> None:
 
 
 def test_sub_variables() -> None:
-    assert Sub(Variable("X"), Call("Y")).variables() == [Variable("X")]
+    assert Sub(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
 
 
 def test_sub_simplified() -> None:
@@ -627,7 +621,6 @@ def test_div_neg() -> None:
 
 
 def test_div_variables() -> None:
-    assert Div(Variable("X"), Call("Y")).variables() == [Variable("X")]
     assert Div(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
 
 
@@ -815,7 +808,7 @@ def test_attribute_str() -> None:
 
 def test_attribute_variables() -> None:
     assert First("X").variables() == [Variable("X")]
-    assert First(Call("X", [Variable("Y")])).variables() == [Variable("Y")]
+    assert First(Call("X", [Variable("Y")])).variables() == [Variable("X"), Variable("Y")]
 
 
 @pytest.mark.parametrize(
@@ -1002,7 +995,6 @@ def test_relation_contains() -> None:
 
 
 def test_relation_variables() -> None:
-    assert Less(Variable("X"), Call("Y")).variables() == [Variable("X")]
     assert Less(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
 
 
@@ -1426,7 +1418,7 @@ def test_in_variables() -> None:
 
 def test_call_variables() -> None:
     result = Call("Sub", [Variable("A"), Variable("B")]).variables()
-    expected = [Variable("A"), Variable("B")]
+    expected = [Variable("Sub"), Variable("A"), Variable("B")]
     assert result == expected
 
 

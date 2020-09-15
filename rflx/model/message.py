@@ -13,7 +13,7 @@ from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 
-from . import const, type_ as mty
+from . import type_ as mty
 
 
 class Field(Base):
@@ -376,7 +376,7 @@ class AbstractMessage(mty.Type):
         name_conflicts = [
             (f, l)
             for f in type_fields
-            for l in qualified_literals(self.types, self.package)
+            for l in mty.qualified_literals(self.types.values(), self.package)
             if f.identifier == l
         ]
 
@@ -459,7 +459,7 @@ class AbstractMessage(mty.Type):
                         )
 
     def _verify_expression_types(self) -> None:
-        literals = qualified_literals(self.types, self.package)
+        literals = mty.qualified_literals(self.types.values(), self.package)
         types: Dict[ID, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
@@ -576,7 +576,7 @@ class AbstractMessage(mty.Type):
                 ]
             return [result]
 
-        literals = qualified_literals(self.types, self.package)
+        literals = mty.qualified_literals(self.types.values(), self.package)
         scalar_types = [
             (f.name, t)
             for f, t in self.types.items()
@@ -1481,20 +1481,6 @@ class Refinement(mty.Type):
                 and self.sdu == other.sdu
             )
         return NotImplemented
-
-
-def qualified_literals(types: Mapping[Field, mty.Type], package: ID) -> Dict[ID, mty.Enumeration]:
-    literals = {}
-
-    for t in types.values():
-        if isinstance(t, mty.Enumeration):
-            for l in t.literals:
-                if t.package == const.BUILTINS_PACKAGE or t.package == package:
-                    literals[l] = t
-                if t.package != const.BUILTINS_PACKAGE:
-                    literals[t.package * l] = t
-
-    return literals
 
 
 def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:

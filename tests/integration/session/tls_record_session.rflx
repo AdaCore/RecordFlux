@@ -1,4 +1,10 @@
+with GreenTLS;
+with TLS_Alert;
+with TLS_Record;
+
 package TLS_Record_Session is
+
+   type Sequence_Number is mod 2**16;
 
    generic
       Network_Channel : Channel with Readable, Writable;
@@ -7,61 +13,35 @@ package TLS_Record_Session is
       Handshake_Control_Channel : Channel with Readable;
       Handshake_Data_Channel : Channel with Readable, Writable;
       Heartbeat_Data_Channel : Channel with Readable, Writable;
-      with function Decrypt (Server_Key_Update_Message : GreenTLS_Key_Update_Message; Server_Sequence_Number : GreenTLS_Sequence_Number; Encrypted_Record : Payload) return TLS_Record_TLS_Inner_Plaintext;
-      with function Encrypt (Client_Key_Update_Message : GreenTLS_Key_Update_Message; Client_Sequence_Number : GreenTLS_Sequence_Number; Fragment : Payload) return GreenTLS_Content;
+      with function Decrypt (Server_Key_Update_Message : GreenTLS::Key_Update_Message; Server_Sequence_Number : GreenTLS::Sequence_Number; Encrypted_Record : Payload) return TLS_Record::TLS_Inner_Plaintext;
+      with function Encrypt (Client_Key_Update_Message : GreenTLS::Key_Update_Message; Client_Sequence_Number : GreenTLS::Sequence_Number; Fragment : Payload) return GreenTLS::Content;
    session Client with
       Initial => IDLE,
       Final => TERMINATED
    is
-      GreenTLS_ALERT : Dummy;
-      GreenTLS_APPLICATION_ALERT : Dummy;
-      GreenTLS_APPLICATION_SHUTDOWN : Dummy;
-      GreenTLS_Heartbeat_Control_Message : Dummy;
-      GreenTLS_HEARTBEAT_ENABLED : Dummy;
-      GreenTLS_HEARTBEAT_MODE : Dummy;
-      GreenTLS_KEY_UPDATE_CLIENT : Dummy;
-      GreenTLS_Key_Update_Message : Dummy;
-      GreenTLS_KEY_UPDATE_SERVER : Dummy;
-      TLS_Alert_Alert : Dummy;
-      TLS_Alert_BAD_RECORD_MAC : Dummy;
-      TLS_Alert_CLOSE_NOTIFY : Dummy;
-      TLS_Alert_DECODE_ERROR : Dummy;
-      TLS_Alert_FATAL : Dummy;
-      TLS_Alert_INTERNAL_ERROR : Dummy;
-      TLS_Alert_UNEXPECTED_MESSAGE : Dummy;
-      TLS_Alert_WARNING : Dummy;
-      TLS_Record_ALERT : Dummy;
-      TLS_Record_APPLICATION_DATA : Dummy;
-      TLS_Record_APPLICATION : Dummy;
-      TLS_Record_CHANGE_CIPHER_SPEC : Dummy;
-      TLS_Record_HANDSHAKE : Dummy;
-      TLS_Record_HEARTBEAT : Dummy;
-      TLS_Record_TLS_1_2 : Dummy;
-      GreenTLS_Alert_Message : Dummy;
-
-      Alert_Message : TLS_Alert_Alert;
-      Application_Control_Message : GreenTLS_Application_Control_Message;
-      Ciphertext : GreenTLS_Content;
-      Client_Key_Update_Message : GreenTLS_Key_Update_Message;
-      Client_Sequence_Number : GreenTLS_Sequence_Number := 0;
+      Alert_Message : TLS_Alert::Alert;
+      Application_Control_Message : GreenTLS::Application_Control_Message;
+      Ciphertext : GreenTLS::Content;
+      Client_Key_Update_Message : GreenTLS::Key_Update_Message;
+      Client_Sequence_Number : Sequence_Number := 0;
       Client_Write_Key_Received : Boolean := False;
-      Error : TLS_Alert_Alert_Description;
+      Error : TLS_Alert::Alert_Description;
       Error_Sent : Boolean := False;
-      Handshake_Control_Message : GreenTLS_Control_Message;
-      Handshake_Message : GreenTLS_Content;
-      Heartbeat_Data_Message : GreenTLS_Content;
-      Heartbeat_Control_Message : GreenTLS_Heartbeat_Control_Message;
+      Handshake_Control_Message : GreenTLS::Control_Message;
+      Handshake_Message : GreenTLS::Content;
+      Heartbeat_Data_Message : GreenTLS::Content;
+      Heartbeat_Control_Message : GreenTLS::Heartbeat_Control_Message;
       Heartbeat_Receive_Enabled : Boolean := False;
       Heartbeat_Send_Enabled : Boolean := False;
       Network_Receive_Enabled : Boolean := True;
       Network_Send_Enabled : Boolean := True;
-      Plaintext : GreenTLS_Content;
+      Plaintext : GreenTLS::Content;
       Record_Protection : Boolean := False;
-      Server_Key_Update_Message : GreenTLS_Key_Update_Message;
-      Server_Sequence_Number : GreenTLS_Sequence_Number := 0;
+      Server_Key_Update_Message : GreenTLS::Key_Update_Message;
+      Server_Sequence_Number : Sequence_Number := 0;
       Server_Write_Key_Received : Boolean := False;
-      TLS_Inner_Plaintext : TLS_Record_TLS_Inner_Plaintext;
-      TLS_Record_Message : TLS_Record_TLS_Record;
+      TLS_Inner_Plaintext : TLS_Record::TLS_Inner_Plaintext;
+      TLS_Record_Message : TLS_Record::TLS_Record;
    begin
       state IDLE is
       begin
@@ -140,15 +120,15 @@ package TLS_Record_Session is
          then ERROR_INTERNAL_ERROR
             if Application_Control_Message'Valid = False
          then SHUTDOWN
-            if Application_Control_Message.Tag = GreenTLS_APPLICATION_SHUTDOWN
+            if Application_Control_Message.Tag = GreenTLS::APPLICATION_SHUTDOWN
          then ERROR_INTERNAL_ERROR
       end CONTROL;
 
       state SHUTDOWN is
          Success : Boolean;
       begin
-         Alert_Message := TLS_Alert_Alert'(Level => TLS_Alert_WARNING, Description => TLS_Alert_CLOSE_NOTIFY);
-         Success := Write (Network_Channel, TLS_Record_TLS_Record'(Tag => TLS_Record_ALERT, Legacy_Record_Version => TLS_Record_TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message));
+         Alert_Message := TLS_Alert::Alert'(Level => TLS_Alert::WARNING, Description => TLS_Alert::CLOSE_NOTIFY);
+         Success := Write (Network_Channel, TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message));
          Network_Send_Enabled := False;
       transition
          then ERROR_INTERNAL_ERROR
@@ -163,19 +143,19 @@ package TLS_Record_Session is
          then ERROR_INTERNAL_ERROR
             if Handshake_Control_Message'Valid = False
          then KEY_UPDATE_CLIENT
-            if Handshake_Control_Message.Tag = GreenTLS_KEY_UPDATE_CLIENT
+            if Handshake_Control_Message.Tag = GreenTLS::KEY_UPDATE_CLIENT
          then KEY_UPDATE_SERVER
-            if Handshake_Control_Message.Tag = GreenTLS_KEY_UPDATE_SERVER
+            if Handshake_Control_Message.Tag = GreenTLS::KEY_UPDATE_SERVER
          then HEARTBEAT_CONTROL
-            if Handshake_Control_Message.Tag = GreenTLS_HEARTBEAT_MODE
+            if Handshake_Control_Message.Tag = GreenTLS::HEARTBEAT_MODE
          then HANDSHAKE_ALERT
-            if Handshake_Control_Message.Tag = GreenTLS_ALERT
+            if Handshake_Control_Message.Tag = GreenTLS::ALERT
          then ERROR_INTERNAL_ERROR
       end HANDSHAKE_CONTROL;
 
       state KEY_UPDATE_CLIENT is
       begin
-         Client_Key_Update_Message := GreenTLS_Key_Update_Message (Handshake_Control_Message.Payload);
+         Client_Key_Update_Message := GreenTLS::Key_Update_Message (Handshake_Control_Message.Payload);
          Client_Write_Key_Received := True;
          Client_Sequence_Number := 0;
          Record_Protection := True;
@@ -187,7 +167,7 @@ package TLS_Record_Session is
 
       state KEY_UPDATE_SERVER is
       begin
-         Server_Key_Update_Message := GreenTLS_Key_Update_Message (Handshake_Control_Message.Payload);
+         Server_Key_Update_Message := GreenTLS::Key_Update_Message (Handshake_Control_Message.Payload);
          Server_Write_Key_Received := True;
          Server_Sequence_Number := 0;
       transition
@@ -198,8 +178,8 @@ package TLS_Record_Session is
 
       state HANDSHAKE_ALERT is
       begin
-         TLS_Record_Message := TLS_Record_TLS_Record'(Tag => TLS_Record_ALERT, Legacy_Record_Version => TLS_Record_TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message.Data)
-            where Alert_Message = TLS_Alert_TLS_Alert'(Level => TLS_Alert_FATAL, Description => GreenTLS_Alert_Message (Handshake_Control_Message.Data).Description);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message.Data)
+            where Alert_Message = TLS_Alert::TLS_Alert'(Level => TLS_Alert::FATAL, Description => GreenTLS::Alert_Message (Handshake_Control_Message.Data).Description);
       transition
          then NETWORK_OUT_SEND
       end HANDSHAKE_ALERT;
@@ -207,7 +187,7 @@ package TLS_Record_Session is
       state HANDSHAKE is
       begin
          Handshake_Message := Read (Handshake_Data_Channel);
-         TLS_Record_Message := TLS_Record_TLS_Record'(Tag => TLS_Record_HANDSHAKE, Legacy_Record_Version => TLS_Record_TLS_1_2, Length => Handshake_Message'Length, Fragment => Handshake_Message.Data);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HANDSHAKE, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Handshake_Message'Length, Fragment => Handshake_Message.Data);
       transition
          then ERROR_INTERNAL_ERROR
             if Handshake_Message'Valid = False
@@ -221,21 +201,21 @@ package TLS_Record_Session is
          then ERROR_DECODE_ERROR
             if TLS_Record_Message'Valid = False
          then ERROR_UNEXPECTED_MESSAGE
-            if TLS_Record_Message.Tag = TLS_Record_APPLICATION_DATA
+            if TLS_Record_Message.Tag = TLS_Record::APPLICATION_DATA
                and Server_Write_Key_Received = False
          then NETWORK_IN_DECRYPT
-            if TLS_Record_Message.Tag = TLS_Record_APPLICATION_DATA
+            if TLS_Record_Message.Tag = TLS_Record::APPLICATION_DATA
                and Server_Write_Key_Received = True
          then NETWORK_IN_CONTENT
-            if TLS_Record_Message.Tag = TLS_Record_HANDSHAKE
-               or TLS_Record_Message.Tag = TLS_Record_ALERT
+            if TLS_Record_Message.Tag = TLS_Record::HANDSHAKE
+               or TLS_Record_Message.Tag = TLS_Record::ALERT
          then NETWORK_IN_HANDSHAKE
-            if TLS_Record_Message.Tag = TLS_Record_CHANGE_CIPHER_SPEC
+            if TLS_Record_Message.Tag = TLS_Record::CHANGE_CIPHER_SPEC
          then NETWORK_IN_HEARTBEAT
-            if TLS_Record_Message.Tag = TLS_Record_HEARTBEAT
+            if TLS_Record_Message.Tag = TLS_Record::HEARTBEAT
                and Heartbeat_Receive_Enabled = True
          then ERROR_UNEXPECTED_MESSAGE
-            if TLS_Record_Message.Tag = TLS_Record_HEARTBEAT
+            if TLS_Record_Message.Tag = TLS_Record::HEARTBEAT
                and Heartbeat_Receive_Enabled = False
          then ERROR_INTERNAL_ERROR
       end NETWORK_IN;
@@ -244,31 +224,31 @@ package TLS_Record_Session is
       begin
          TLS_Inner_Plaintext := Decrypt (Server_Key_Update_Message, Server_Sequence_Number, TLS_Record_Message.Encrypted_Record);
          Server_Sequence_Number := Server_Sequence_Number + 1;
-         Plaintext := GreenTLS_Content'(Data => TLS_Inner_Plaintext.Content);
+         Plaintext := GreenTLS::Content'(Data => TLS_Inner_Plaintext.Content);
       transition
          then ERROR_BAD_RECORD_MAC
             if TLS_Inner_Plaintext'Valid = False
          then ERROR_INTERNAL_ERROR
             if Plaintext'Valid = False
          then NETWORK_IN_APPLICATION
-            if TLS_Inner_Plaintext.Tag = TLS_Record_APPLICATION_DATA
+            if TLS_Inner_Plaintext.Tag = TLS_Record::APPLICATION_DATA
          then NETWORK_IN_HANDSHAKE
-            if TLS_Inner_Plaintext.Tag = TLS_Record_HANDSHAKE
+            if TLS_Inner_Plaintext.Tag = TLS_Record::HANDSHAKE
          then NETWORK_IN_ALERT
-            if TLS_Inner_Plaintext.Tag = TLS_Record_ALERT
+            if TLS_Inner_Plaintext.Tag = TLS_Record::ALERT
          then ERROR_INTERNAL_ERROR
       end NETWORK_IN_DECRYPT;
 
       state NETWORK_IN_CONTENT is
       begin
-         Plaintext := GreenTLS_Content'(Data => TLS_Record_Message.Fragment);
+         Plaintext := GreenTLS::Content'(Data => TLS_Record_Message.Fragment);
       transition
          then ERROR_INTERNAL_ERROR
             if Plaintext'Valid = False
          then NETWORK_IN_HANDSHAKE
-            if TLS_Record_Message.Tag = TLS_Record_HANDSHAKE
+            if TLS_Record_Message.Tag = TLS_Record::HANDSHAKE
          then NETWORK_IN_ALERT
-            if TLS_Record_Message.Tag = TLS_Record_ALERT
+            if TLS_Record_Message.Tag = TLS_Record::ALERT
          then ERROR_INTERNAL_ERROR
       end NETWORK_IN_CONTENT;
 
@@ -304,12 +284,12 @@ package TLS_Record_Session is
 
       state NETWORK_IN_ALERT is
       begin
-         Alert_Message := TLS_Alert_Alert (Plaintext.Data);
+         Alert_Message := TLS_Alert::Alert (Plaintext.Data);
       transition
          then ERROR_DECODE_ERROR
             if Alert_Message'Valid = False
          then NETWORK_IN_ALERT_CLOSE
-            if Alert_Message.Description = TLS_Alert_CLOSE_NOTIFY
+            if Alert_Message.Description = TLS_Alert::CLOSE_NOTIFY
          then NETWORK_IN_ALERT_TERMINATE
       end NETWORK_IN_ALERT;
 
@@ -317,7 +297,7 @@ package TLS_Record_Session is
          Success : Boolean;
       begin
          Network_Receive_Enabled := False;
-         Success := Write (Application_Control_Channel, GreenTLS_Application_Control_Message'(Tag => GreenTLS_APPLICATION_ALERT, Length => Description'Length, Data => Description)
+         Success := Write (Application_Control_Channel, GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Description'Length, Data => Description)
             where Description = Alert_Message.Description);
       transition
          then ERROR_INTERNAL_ERROR
@@ -337,7 +317,7 @@ package TLS_Record_Session is
       state NETWORK_OUT_APPLICATION is
       begin
          Plaintext := Read (Data_Channel);
-         TLS_Record_Message := TLS_Record_TLS_Record'(Tag => TLS_Record_APPLICATION, Legacy_Record_Version => TLS_Record_TLS_1_2, Length => Plaintext.Data'Length, Fragment => Plaintext.Data);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::APPLICATION_DATA, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Plaintext.Data'Length, Fragment => Plaintext.Data);
       transition
          then NETWORK_OUT_SEND_ENCRYPTED
       end NETWORK_OUT_APPLICATION;
@@ -384,14 +364,14 @@ package TLS_Record_Session is
       state HEARTBEAT is
       begin
          Heartbeat_Data_Message := Read (Heartbeat_Data_Channel);
-         TLS_Record_Message := TLS_Record_TLS_Record'(Tag => TLS_Record_HEARTBEAT, Legacy_Record_Version => TLS_Record_TLS_1_2, Length => Heartbeat_Data_Message.Length, Fragment => Heartbeat_Data_Message.Data);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HEARTBEAT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Heartbeat_Data_Message.Length, Fragment => Heartbeat_Data_Message.Data);
       transition
          then NETWORK_OUT_SEND_ENCRYPTED
       end HEARTBEAT;
 
       state HEARTBEAT_CONTROL is
       begin
-         Heartbeat_Control_Message := GreenTLS_Heartbeat_Control_Message (Handshake_Control_Message.Payload);
+         Heartbeat_Control_Message := GreenTLS::Heartbeat_Control_Message (Handshake_Control_Message.Payload);
       transition
          then ERROR_INTERNAL_ERROR
             if Heartbeat_Control_Message'Valid = False
@@ -400,36 +380,36 @@ package TLS_Record_Session is
 
       state HEARTBEAT_CONTROL_CONFIGURE is
       begin
-         Heartbeat_Receive_Enabled := Heartbeat_Control_Message.Receive = GreenTLS_HEARTBEAT_ENABLED;
-         Heartbeat_Send_Enabled := Heartbeat_Control_Message.Send = GreenTLS_HEARTBEAT_ENABLED;
+         Heartbeat_Receive_Enabled := Heartbeat_Control_Message.Receive = GreenTLS::HEARTBEAT_ENABLED;
+         Heartbeat_Send_Enabled := Heartbeat_Control_Message.Send = GreenTLS::HEARTBEAT_ENABLED;
       transition
          then IDLE
       end HEARTBEAT_CONTROL_CONFIGURE;
 
       state ERROR_UNEXPECTED_MESSAGE is
       begin
-         Error := TLS_Alert_UNEXPECTED_MESSAGE;
+         Error := TLS_Alert::UNEXPECTED_MESSAGE;
       transition
          then ERROR_SEND_LOCAL
       end ERROR_UNEXPECTED_MESSAGE;
 
       state ERROR_BAD_RECORD_MAC is
       begin
-         Error := TLS_Alert_BAD_RECORD_MAC;
+         Error := TLS_Alert::BAD_RECORD_MAC;
       transition
          then ERROR_SEND_LOCAL
       end ERROR_BAD_RECORD_MAC;
 
       state ERROR_DECODE_ERROR is
       begin
-         Error := TLS_Alert_DECODE_ERROR;
+         Error := TLS_Alert::DECODE_ERROR;
       transition
          then ERROR_SEND_LOCAL
       end ERROR_DECODE_ERROR;
 
       state ERROR_INTERNAL_ERROR is
       begin
-         Error := TLS_Alert_INTERNAL_ERROR;
+         Error := TLS_Alert::INTERNAL_ERROR;
       transition
          then ERROR_SEND_LOCAL
       end ERROR_INTERNAL_ERROR;
@@ -437,8 +417,8 @@ package TLS_Record_Session is
       state ERROR_SEND_LOCAL is
          Success : Boolean;
       begin
-         Success := Write (Application_Control_Channel, GreenTLS_Application_Control_Message'(Tag => GreenTLS_APPLICATION_ALERT, Length => Data'Length, Data => Data)
-            where Data = GreenTLS_Alert_Message'(Description => Error));
+         Success := Write (Application_Control_Channel, GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Data'Length, Data => Data)
+            where Data = GreenTLS::Alert_Message'(Description => Error));
       transition
          then ERROR_SEND_REMOTE
             if Network_Send_Enabled = True
@@ -447,8 +427,8 @@ package TLS_Record_Session is
 
       state ERROR_SEND_REMOTE is
       begin
-         Alert_Message := TLS_Alert_TLS_Alert'(Level => TLS_Alert_FATAL, Description => Error);
-         TLS_Record_Message := TLS_Record_TLS_Record'(Tag => TLS_Record_ALERT, Legacy_Record_Version => TLS_Record_TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message);
+         Alert_Message := TLS_Alert::TLS_Alert'(Level => TLS_Alert::FATAL, Description => Error);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message);
          Error_Sent := True;
       transition
          then NETWORK_OUT_SEND_UNENCRYPTED

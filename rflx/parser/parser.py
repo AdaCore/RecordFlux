@@ -234,6 +234,7 @@ class Parser:
                 s.states,
                 s.declarations,
                 s.parameters,
+                list(self.__types.values()),
                 s.location,
             )
 

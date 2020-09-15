@@ -1,0 +1,19 @@
+project Test is
+
+   for Languages use ("RecordFlux");
+
+   package Compiler is
+      for Driver ("RecordFlux") use "";
+   end Compiler;
+
+   package Naming is
+      for Spec_Suffix ("RecordFlux") use ".rflx";
+   end Naming;
+
+   package RecordFlux is
+      for Output_Dir use "generated";
+   end RecordFlux;
+
+   for Source_Dirs use (".");
+
+end Test;

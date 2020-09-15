@@ -5,7 +5,7 @@ import rflx.expression as expr
 import rflx.statement as stmt
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
-from rflx.model import Session, State, Transition
+from rflx.model import BOOLEAN, Session, State, Transition
 from tests.utils import assert_equal, multilinestr
 
 
@@ -13,7 +13,7 @@ def test_str() -> None:
     assert_equal(
         str(
             Session(
-                "Session",
+                "P::S",
                 "A",
                 "B",
                 [
@@ -36,6 +36,7 @@ def test_str() -> None:
                     decl.PrivateDeclaration("T"),
                     decl.SubprogramDeclaration("F", [], "T"),
                 ],
+                [BOOLEAN],
             )
         ),
         multilinestr(
@@ -43,7 +44,7 @@ def test_str() -> None:
                   X : Channel with Readable, Writable;
                   type T is private;
                   with function F return T;
-               session Session with
+               session S with
                   Initial => A,
                   Final => B
                is
@@ -60,9 +61,25 @@ def test_str() -> None:
                   end A;
 
                   state B is null state;
-               end Session"""
+               end S"""
         ),
     )
+
+
+def test_invalid_name() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match='^model: error: invalid session name "P::S::X"',
+    ):
+        Session(
+            identifier="P::S::X",
+            initial=ID("START"),
+            final=ID("END"),
+            states=[],
+            declarations=[],
+            parameters=[],
+            types=[],
+        )
 
 
 def test_empty_states() -> None:
@@ -71,17 +88,19 @@ def test_empty_states() -> None:
         match=(
             "^"
             "model: error: empty states\n"
-            'model: error: initial state "START" does not exist in "session"\n'
-            'model: error: final state "END" does not exist in "session"'
+            'model: error: initial state "START" does not exist in "P::S"\n'
+            'model: error: final state "END" does not exist in "P::S"'
             "$"
         ),
     ):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("END"),
             states=[],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
@@ -90,13 +109,13 @@ def test_invalid_initial() -> None:
         RecordFluxError,
         match=(
             "^"
-            'model: error: initial state "NONEXISTENT" does not exist in "session"\n'
+            'model: error: initial state "NONEXISTENT" does not exist in "P::S"\n'
             "model: error: unreachable states START"
             "$"
         ),
     ):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("NONEXISTENT"),
             final=ID("END"),
             states=[
@@ -104,6 +123,8 @@ def test_invalid_initial() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
@@ -112,13 +133,13 @@ def test_invalid_final() -> None:
         RecordFluxError,
         match=(
             "^"
-            'model: error: final state "NONEXISTENT" does not exist in "session"\n'
+            'model: error: final state "NONEXISTENT" does not exist in "P::S"\n'
             "model: error: detached states END"
             "$"
         ),
     ):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("NONEXISTENT"),
             states=[
@@ -126,6 +147,8 @@ def test_invalid_final() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
@@ -133,10 +156,10 @@ def test_invalid_target_state() -> None:
     with pytest.raises(
         RecordFluxError,
         match='^model: error: transition from state "START" to non-existent'
-        ' state "NONEXISTENT" in "session"$',
+        ' state "NONEXISTENT" in "P::S"$',
     ):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -150,13 +173,15 @@ def test_invalid_target_state() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
 def test_duplicate_state() -> None:
     with pytest.raises(RecordFluxError, match="^model: error: duplicate states: START$"):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -165,6 +190,8 @@ def test_duplicate_state() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
@@ -173,7 +200,7 @@ def test_multiple_duplicate_states() -> None:
         RecordFluxError, match=("^model: error: duplicate states: BAR, FOO, START$")
     ):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -186,13 +213,15 @@ def test_multiple_duplicate_states() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
 def test_unreachable_state() -> None:
     with pytest.raises(RecordFluxError, match="^model: error: unreachable states UNREACHABLE$"):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -204,6 +233,8 @@ def test_unreachable_state() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
@@ -212,7 +243,7 @@ def test_multiple_unreachable_states() -> None:
         RecordFluxError, match="^model: error: unreachable states UNREACHABLE1, UNREACHABLE2$"
     ):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -228,13 +259,15 @@ def test_multiple_unreachable_states() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
 def test_detached_state() -> None:
     with pytest.raises(RecordFluxError, match="^model: error: detached states DETACHED$"):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -246,6 +279,8 @@ def test_detached_state() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )
 
 
@@ -254,7 +289,7 @@ def test_multiple_detached_states() -> None:
         RecordFluxError, match="^model: error: detached states DETACHED1, DETACHED2$"
     ):
         Session(
-            identifier="session",
+            identifier="P::S",
             initial=ID("START"),
             final=ID("END"),
             states=[
@@ -271,4 +306,6 @@ def test_multiple_detached_states() -> None:
                 State(name=ID("END")),
             ],
             declarations=[],
+            parameters=[],
+            types=[],
         )

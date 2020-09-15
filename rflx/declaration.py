@@ -1,12 +1,10 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Mapping, Sequence
+from typing import Sequence
 
 from rflx.common import Base
 from rflx.error import Location
+from rflx.expression import Expr, Variable
 from rflx.identifier import ID, StrID
-
-if TYPE_CHECKING:
-    from rflx.expression import Expr
 
 
 class Declaration(Base):
@@ -27,7 +25,7 @@ class Declaration(Base):
         return self.__refcount > 0
 
     @abstractmethod
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    def variables(self) -> Sequence[Variable]:
         raise NotImplementedError
 
 
@@ -35,29 +33,34 @@ class VariableDeclaration(Declaration):
     def __init__(
         self,
         identifier: StrID,
-        type_name: StrID = None,
-        expression: "Expr" = None,
+        type_name: StrID,
+        expression: Expr = None,
         location: Location = None,
     ):
         super().__init__(identifier, location)
-        self.__type_name = ID(type_name) if type_name else None
+        self.__type_name = ID(type_name)
         self.__expression = expression
 
     def __str__(self) -> str:
         expression = f" := {self.__expression}" if self.__expression else ""
         return f"{self.identifier} : {self.__type_name}{expression}"
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
+    @property
+    def type_name(self) -> ID:
+        return self.__type_name
+
+    def variables(self) -> Sequence[Variable]:
         if self.__expression:
-            self.__expression.validate(declarations)
+            return self.__expression.variables()
+        return []
 
 
 class PrivateDeclaration(Declaration):
     def __str__(self) -> str:
         return f"type {self.identifier} is private"
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
+    def variables(self) -> Sequence[Variable]:
+        return []
 
 
 class Argument(Base):
@@ -68,9 +71,6 @@ class Argument(Base):
 
     def __str__(self) -> str:
         return f"{self.__name} : {self.__type_name}"
-
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
 
 
 class SubprogramDeclaration(Declaration):
@@ -89,9 +89,8 @@ class SubprogramDeclaration(Declaration):
         arguments = (" (" + "; ".join(map(str, self.__arguments)) + ")") if self.__arguments else ""
         return f"with function {self.identifier}{arguments} return {self.__return_type}"
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        for a in self.__arguments:
-            a.validate(declarations)
+    def variables(self) -> Sequence[Variable]:
+        return []
 
 
 class RenamingDeclaration(Declaration):
@@ -105,8 +104,8 @@ class RenamingDeclaration(Declaration):
     def __str__(self) -> str:
         return f"{self.identifier} : {self.__type_name} renames {self.__expression}"
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        self.__expression.validate(declarations)
+    def variables(self) -> Sequence[Variable]:
+        return self.__expression.variables()
 
 
 class ChannelDeclaration(Declaration):
@@ -139,5 +138,5 @@ class ChannelDeclaration(Declaration):
     def writable(self) -> bool:
         return self.__writable
 
-    def validate(self, declarations: Mapping[ID, "Declaration"]) -> None:
-        pass
+    def variables(self) -> Sequence[Variable]:
+        return []

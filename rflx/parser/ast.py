@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Mapping, Optional, Sequence
+from typing import List, Mapping, Sequence
 
 import rflx.declaration as decl
 from rflx.common import Base, flat_name
@@ -55,8 +55,8 @@ class SessionSpec:
     final: ID
     states: Sequence[State]
     declarations: Sequence[decl.Declaration]
-    parameters: Optional[Sequence[decl.Declaration]] = None
-    location: Optional[Location] = None
+    parameters: Sequence[decl.Declaration]
+    location: Location
 
 
 class PackageSpec(SyntaxTree):
