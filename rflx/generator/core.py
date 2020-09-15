@@ -11,6 +11,7 @@ import rflx.expression as expr
 from rflx import __version__
 from rflx.ada import (
     FALSE,
+    ID,
     TRUE,
     AccessParameter,
     Add,
@@ -102,7 +103,6 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.common import file_name, flat_name
-from rflx.identifier import ID
 from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
@@ -152,10 +152,10 @@ class Generator:
                 continue
 
             if t.package not in self.units:
-                self.__create_unit(t.package, [], terminating=False)
+                self.__create_unit(ID(t.package), [], terminating=False)
 
             if isinstance(t, (Scalar, Composite)):
-                self.__create_type(t, t.package)
+                self.__create_type(t, ID(t.package))
 
             elif isinstance(t, Message):
                 # ISSUE: Componolit/RecordFlux#276
@@ -280,7 +280,7 @@ class Generator:
 
         context.append(WithClause(self.prefix * const.GENERIC_TYPES_PACKAGE))
 
-        unit_name = generic_name(message.identifier)
+        unit_name = generic_name(ID(message.identifier))
         parameters: List[FormalDeclaration] = [
             FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE),
         ]
@@ -293,8 +293,8 @@ class Generator:
             if isinstance(field_type, Scalar) and field_type.package != message.package:
                 context.extend(
                     [
-                        WithClause(self.prefix * field_type.package),
-                        UsePackageClause(self.prefix * field_type.package),
+                        WithClause(self.prefix * ID(field_type.package)),
+                        UsePackageClause(self.prefix * ID(field_type.package)),
                     ]
                 )
 
@@ -1007,9 +1007,11 @@ class Generator:
             contiguous_first = expr.Add(
                 expr.Selected(
                     expr.Indexed(
-                        expr.Variable("Ctx.Cursors"),
+                        expr.Variable(expr.ID("Ctx") * "Cursors"),
                         expr.Selected(
-                            expr.Indexed(expr.Variable("Ctx.Cursors"), expr.Variable("Fld")),
+                            expr.Indexed(
+                                expr.Variable(expr.ID("Ctx") * "Cursors"), expr.Variable("Fld")
+                            ),
                             "Predecessor",
                         ),
                     ),
@@ -1122,7 +1124,9 @@ class Generator:
             )
             if field not in (INITIAL, FINAL) and isinstance(message.types[field], Scalar):
                 c = c.substituted(
-                    lambda x: expr.Call(const.TYPES_U64, [expr.Variable(f"Val.{field.name}_Value")])
+                    lambda x: expr.Call(
+                        const.TYPES_U64, [expr.Variable(expr.ID("Val") * f"{field.name}_Value")]
+                    )
                     if x == expr.Variable(field.name)
                     else x
                 )
@@ -1504,7 +1508,7 @@ class Generator:
                                                 else "Valid",
                                                 [
                                                     expr.Indexed(
-                                                        expr.Variable("Ctx.Cursors"),
+                                                        expr.Variable(expr.ID("Ctx") * "Cursors"),
                                                         expr.Variable(p.affixed_name),
                                                     )
                                                 ],
@@ -1514,7 +1518,7 @@ class Generator:
                                             expr.Equal(
                                                 expr.Selected(
                                                     expr.Indexed(
-                                                        expr.Variable("Ctx.Cursors"),
+                                                        expr.Variable(expr.ID("Ctx") * "Cursors"),
                                                         expr.Variable("Fld"),
                                                     ),
                                                     "Predecessor",
@@ -1566,7 +1570,7 @@ class Generator:
                                         "Structural_Valid",
                                         [
                                             expr.Indexed(
-                                                expr.Variable("Ctx.Cursors"),
+                                                expr.Variable(expr.ID("Ctx") * "Cursors"),
                                                 expr.Variable(
                                                     l.source.affixed_name, immutable=True
                                                 ),
@@ -2231,9 +2235,9 @@ class Generator:
 
     def __create_message_unit(self, message: Message) -> None:
         if isinstance(message, DerivedMessage):
-            name = generic_name(self.prefix * message.base.identifier)
+            name = generic_name(self.prefix * ID(message.base.identifier))
         else:
-            name = generic_name(self.prefix * message.identifier)
+            name = generic_name(self.prefix * ID(message.identifier))
 
         context: List[ContextItem] = [
             Pragma("SPARK_Mode"),
@@ -2242,14 +2246,14 @@ class Generator:
         ]
 
         arrays = [
-            self.prefix * t.identifier for t in message.types.values() if isinstance(t, Array)
+            self.prefix * ID(t.identifier) for t in message.types.values() if isinstance(t, Array)
         ]
         context.extend(WithClause(array) for array in arrays)
         instantiation = GenericPackageInstantiation(
-            self.prefix * message.identifier, name, [self.prefix * const.TYPES_PACKAGE] + arrays
+            self.prefix * ID(message.identifier), name, [self.prefix * const.TYPES_PACKAGE] + arrays
         )
 
-        self.__create_instantiation_unit(message.identifier, context, instantiation)
+        self.__create_instantiation_unit(ID(message.identifier), context, instantiation)
 
     def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
         unit_name = generic_name(refinement.package * const.REFINEMENT_PACKAGE)
@@ -2282,15 +2286,15 @@ class Generator:
 
             unit.declaration_context.extend(
                 [
-                    WithClause(self.prefix * pdu_package),
-                    UsePackageClause(self.prefix * pdu_package),
+                    WithClause(self.prefix * ID(pdu_package)),
+                    UsePackageClause(self.prefix * ID(pdu_package)),
                 ]
             )
 
         generic_pdu_name = self.prefix * (
-            generic_name(refinement.pdu.base.identifier)
+            generic_name(ID(refinement.pdu.base.identifier))
             if isinstance(refinement.pdu, DerivedMessage)
-            else generic_name(refinement.pdu.identifier)
+            else generic_name(ID(refinement.pdu.identifier))
         )
 
         unit.declaration_context.append(WithClause(generic_pdu_name))
@@ -2301,9 +2305,9 @@ class Generator:
         )
 
         generic_sdu_name = self.prefix * (
-            generic_name(refinement.sdu.base.identifier)
+            generic_name(ID(refinement.sdu.base.identifier))
             if isinstance(refinement.sdu, DerivedMessage)
-            else generic_name(refinement.sdu.identifier)
+            else generic_name(ID(refinement.sdu.identifier))
         )
 
         if not null_sdu:
@@ -2327,7 +2331,7 @@ class Generator:
     def __create_refinement_unit(self, refinement: Refinement) -> None:
         unit_name = refinement.package * const.REFINEMENT_PACKAGE
         generic_unit_name = generic_name(
-            self.prefix * refinement.package * const.REFINEMENT_PACKAGE
+            self.prefix * ID(refinement.package) * const.REFINEMENT_PACKAGE
         )
 
         if unit_name in self.units:
@@ -2347,13 +2351,13 @@ class Generator:
 
         assert isinstance(unit, InstantiationUnit), "unexpected unit type"
 
-        pdu_name = self.prefix * refinement.pdu.identifier
+        pdu_name = self.prefix * ID(refinement.pdu.identifier)
 
         if pdu_name not in unit.declaration.associations:
             unit.context.append(WithClause(pdu_name))
             unit.declaration.associations.append(pdu_name)
 
-        sdu_name = self.prefix * refinement.sdu.identifier
+        sdu_name = self.prefix * ID(refinement.sdu.identifier)
 
         if not null_sdu and sdu_name not in unit.declaration.associations:
             unit.context.append(WithClause(sdu_name))
@@ -2383,6 +2387,8 @@ class Generator:
 
     def __create_array_unit(self, array_type: Array, package_name: ID) -> None:
         element_type = array_type.element_type
+        element_type_identifier = ID(element_type.identifier)
+        element_type_package = ID(element_type.package.name)
 
         array_context: List[ContextItem] = []
         array_package: GenericPackageInstantiation
@@ -2390,28 +2396,28 @@ class Generator:
             array_context = [
                 Pragma("SPARK_Mode"),
                 WithClause(self.prefix * const.MESSAGE_SEQUENCE_PACKAGE),
-                WithClause(self.prefix * element_type.identifier),
+                WithClause(self.prefix * element_type_identifier),
                 WithClause(self.prefix * const.TYPES_PACKAGE),
             ]
             array_package = GenericPackageInstantiation(
-                self.prefix * array_type.identifier,
+                self.prefix * ID(array_type.identifier),
                 self.prefix * const.MESSAGE_SEQUENCE_PACKAGE,
                 [
                     self.prefix * const.TYPES_PACKAGE,
-                    self.prefix * element_type.identifier * "Context",
-                    self.prefix * element_type.identifier * "Initialize",
-                    self.prefix * element_type.identifier * "Take_Buffer",
-                    self.prefix * element_type.identifier * "Has_Buffer",
-                    self.prefix * element_type.identifier * "Message_Last",
-                    self.prefix * element_type.identifier * "Initialized",
-                    self.prefix * element_type.identifier * "Structural_Valid_Message",
+                    self.prefix * element_type_identifier * "Context",
+                    self.prefix * element_type_identifier * "Initialize",
+                    self.prefix * element_type_identifier * "Take_Buffer",
+                    self.prefix * element_type_identifier * "Has_Buffer",
+                    self.prefix * element_type_identifier * "Message_Last",
+                    self.prefix * element_type_identifier * "Initialized",
+                    self.prefix * element_type_identifier * "Structural_Valid_Message",
                 ],
             )
         elif isinstance(element_type, Scalar):
             array_context = [
                 Pragma("SPARK_Mode"),
                 WithClause(self.prefix * const.SCALAR_SEQUENCE_PACKAGE),
-                WithClause(self.prefix * element_type.package.name),
+                WithClause(self.prefix * element_type_package),
                 WithClause(self.prefix * const.TYPES_PACKAGE),
             ]
             array_package = GenericPackageInstantiation(
@@ -2419,17 +2425,17 @@ class Generator:
                 self.prefix * const.SCALAR_SEQUENCE_PACKAGE,
                 [
                     self.prefix * const.TYPES_PACKAGE,
-                    self.prefix * element_type.identifier,
+                    self.prefix * element_type_identifier,
                     self.prefix
-                    * element_type.package.name
+                    * element_type_package
                     * (
                         common.base_type_name(element_type)
                         if not isinstance(element_type, ModularInteger)
                         else element_type.name
                     ),
-                    self.prefix * element_type.package.name * "Valid",
-                    self.prefix * element_type.package.name * "To_Actual",
-                    self.prefix * element_type.package.name * "To_Base",
+                    self.prefix * element_type_package * "Valid",
+                    self.prefix * element_type_package * "To_Actual",
+                    self.prefix * element_type_package * "To_Base",
                 ],
             )
         else:
@@ -2522,23 +2528,23 @@ class Generator:
                             ["Enum"],
                             self.prefix
                             * (
-                                common.full_enum_name(enum)
+                                ID(common.full_enum_name(enum))
                                 if enum.always_valid
-                                else enum.identifier
+                                else ID(enum.identifier)
                             ),
                         )
                     ],
                 ),
                 Case(
                     Variable("Enum"),
-                    [(Variable(key), value.ada_expr()) for key, value in enum.literals.items()],
+                    [(Variable(ID(key)), value.ada_expr()) for key, value in enum.literals.items()],
                 ),
             )
         )
 
         conversion_function = FunctionSpecification(
             "To_Actual",
-            self.prefix * enum.identifier,
+            self.prefix * ID(enum.identifier),
             [Parameter(["Val"], self.prefix * common.full_base_type_name(enum))],
         )
         precondition = Precondition(Call("Valid", [Variable("Val")]))
@@ -2549,7 +2555,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Actual",
-                        self.prefix * enum.identifier,
+                        self.prefix * ID(enum.identifier),
                         [Parameter(["Enum"], common.enum_name(enum))],
                     ),
                     Aggregate(TRUE, Variable("Enum")),
@@ -2557,7 +2563,7 @@ class Generator:
             )
 
             conversion_cases.extend(
-                (value.ada_expr(), Aggregate(Variable("True"), Variable(key)))
+                (value.ada_expr(), Aggregate(Variable("True"), Variable(ID(key))))
                 for key, value in enum.literals.items()
             )
             conversion_cases.append(
@@ -2575,7 +2581,7 @@ class Generator:
                     FunctionSpecification(
                         "To_Base",
                         self.prefix * common.full_base_type_name(enum),
-                        [Parameter(["Val"], self.prefix * enum.identifier)],
+                        [Parameter(["Val"], self.prefix * ID(enum.identifier))],
                     ),
                     If(
                         [(Variable("Val.Known"), Call("To_Base", [Variable("Val.Enum")]))],
@@ -2586,7 +2592,7 @@ class Generator:
 
         else:
             conversion_cases.extend(
-                (value.ada_expr(), Variable(key)) for key, value in enum.literals.items()
+                (value.ada_expr(), Variable(ID(key))) for key, value in enum.literals.items()
             )
             if incomplete:
                 conversion_cases.append(
@@ -2609,23 +2615,23 @@ class Generator:
     def __create_contains_function(
         refinement: Refinement, condition_fields: Mapping[Field, Type], null_sdu: bool
     ) -> SubprogramUnitPart:
-        pdu_name = flat_name(refinement.pdu.full_name)
+        pdu_name = expr.ID(flat_name(refinement.pdu.full_name))
         condition = refinement.condition
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
                 condition = expr.AndThen(
                     expr.Selected(
-                        expr.Call(f"{pdu_name}.Get_{f.name}", [expr.Variable("Ctx")]), "Known"
+                        expr.Call(pdu_name * f"Get_{f.name}", [expr.Variable("Ctx")]), "Known"
                     ),
                     condition,
                 )
         condition = condition.substituted(
             mapping={
                 expr.Variable(f.name): expr.Selected(
-                    expr.Call(f"{pdu_name}.Get_{f.name}", [expr.Variable("Ctx")]), "Enum"
+                    expr.Call(pdu_name * f"Get_{f.name}", [expr.Variable("Ctx")]), "Enum"
                 )
                 if isinstance(t, Enumeration) and t.always_valid
-                else expr.Call(f"{pdu_name}.Get_{f.name}", [expr.Variable("Ctx")])
+                else expr.Call(pdu_name * f"Get_{f.name}", [expr.Variable("Ctx")])
                 for f, t in condition_fields.items()
             }
         ).simplified()
@@ -2633,7 +2639,7 @@ class Generator:
         specification = FunctionSpecification(
             contains_function_name(refinement),
             "Boolean",
-            [Parameter(["Ctx"], f"{pdu_name}.Context")],
+            [Parameter(["Ctx"], ID(pdu_name) * "Context")],
         )
 
         return SubprogramUnitPart(
@@ -2849,7 +2855,7 @@ class Generator:
         if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
             base_name = self.prefix * common.full_base_type_name(scalar_type)
 
-        type_name = self.prefix * scalar_type.identifier
+        type_name = self.prefix * ID(scalar_type.identifier)
 
         return [
             Pragma("Warnings", [Variable("Off"), String("precondition is * false")]),
@@ -2869,7 +2875,7 @@ class Generator:
                 FunctionSpecification(
                     "To_Base",
                     self.prefix * common.full_base_type_name(integer),
-                    [Parameter(["Val"], self.prefix * integer.identifier)],
+                    [Parameter(["Val"], self.prefix * ID(integer.identifier))],
                 ),
                 Call(self.prefix * common.full_base_type_name(integer), [Variable("Val")])
                 if isinstance(integer, RangeInteger)
@@ -2878,10 +2884,10 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
-                    self.prefix * integer.identifier,
+                    self.prefix * ID(integer.identifier),
                     [Parameter(["Val"], self.prefix * common.full_base_type_name(integer))],
                 ),
-                Call(self.prefix * integer.identifier, [Variable("Val")])
+                Call(self.prefix * ID(integer.identifier), [Variable("Val")])
                 if isinstance(integer, RangeInteger)
                 else Variable("Val"),
                 [Precondition(Call("Valid", [Variable("Val")]))],
@@ -2931,7 +2937,7 @@ def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
     types.append(
         EnumerationType(
             common.enum_name(enum) if enum.always_valid else enum.name,
-            {k: Number(v.value) for k, v in enum.literals.items()},
+            {ID(k): Number(v.value) for k, v in enum.literals.items()},
             enum.size_expr.ada_expr(),
         )
     )
@@ -2996,28 +3002,26 @@ def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
 def refinement_conditions(
     refinement: Refinement, pdu_context: str, condition_fields: Mapping[Field, Type], null_sdu: bool
 ) -> Sequence[expr.Expr]:
-    pdu_name = flat_name(refinement.pdu.full_name)
+    pdu_name = expr.ID(flat_name(refinement.pdu.full_name))
 
-    conditions: List[expr.Expr] = [
-        expr.Call(f"{pdu_name}.Has_Buffer", [expr.Variable(pdu_context)])
-    ]
+    conditions: List[expr.Expr] = [expr.Call(pdu_name * "Has_Buffer", [expr.Variable(pdu_context)])]
 
     if null_sdu:
         conditions.extend(
             [
                 expr.Call(
-                    f"{pdu_name}.Structural_Valid",
+                    pdu_name * "Structural_Valid",
                     [
                         expr.Variable(pdu_context),
-                        expr.Variable(f"{pdu_name}.{refinement.field.affixed_name}"),
+                        expr.Variable(pdu_name * refinement.field.affixed_name),
                     ],
                 ),
                 expr.Not(
                     expr.Call(
-                        f"{pdu_name}.Present",
+                        pdu_name * "Present",
                         [
                             expr.Variable(pdu_context),
-                            expr.Variable(f"{pdu_name}.{refinement.field.affixed_name}"),
+                            expr.Variable(pdu_name * refinement.field.affixed_name),
                         ],
                     )
                 ),
@@ -3026,10 +3030,10 @@ def refinement_conditions(
     else:
         conditions.append(
             expr.Call(
-                f"{pdu_name}.Present",
+                pdu_name * "Present",
                 [
                     expr.Variable(pdu_context),
-                    expr.Variable(f"{pdu_name}.{refinement.field.affixed_name}"),
+                    expr.Variable(pdu_name * refinement.field.affixed_name),
                 ],
             )
         )
@@ -3037,8 +3041,8 @@ def refinement_conditions(
     conditions.extend(
         [
             expr.Call(
-                f"{pdu_name}.Valid",
-                [expr.Variable(pdu_context), expr.Variable(f"{pdu_name}.{f.affixed_name}")],
+                pdu_name * "Valid",
+                [expr.Variable(pdu_context), expr.Variable(pdu_name * f.affixed_name)],
             )
             for f in condition_fields
         ]

@@ -2,6 +2,34 @@ import rflx.ada as ada
 from tests.utils import assert_equal, multilinestr
 
 
+def test_id_str() -> None:
+    assert str(ada.ID("A.B.C")) == "A.B.C"
+
+
+def test_id_add() -> None:
+    assert ada.ID("A") + ada.ID("B.C") == ada.ID("AB.C")
+    assert ada.ID("B.C") + ada.ID("D") == ada.ID("B.CD")
+
+
+def test_id_add_str() -> None:
+    assert "A" + ada.ID("B.C") == ada.ID("AB.C")
+    assert ada.ID("B.C") + "D" == ada.ID("B.CD")
+    assert ada.ID("B.C") + "" == ada.ID("B.C")
+    assert "" + ada.ID("B.C") == ada.ID("B.C")
+
+
+def test_id_mul_id() -> None:
+    assert ada.ID("A") * ada.ID("B.C") == ada.ID("A.B.C")
+    assert ada.ID("B.C") * ada.ID("D") == ada.ID("B.C.D")
+
+
+def test_id_mul_str() -> None:
+    assert "A" * ada.ID("B.C") == ada.ID("A.B.C")
+    assert ada.ID("B.C") * "D" == ada.ID("B.C.D")
+    assert "" * ada.ID("B.C") == ada.ID("B.C")
+    assert ada.ID("B.C") * "" == ada.ID("B.C")
+
+
 def test_bool_expr_str() -> None:
     assert_equal(
         str(

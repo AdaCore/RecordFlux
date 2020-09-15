@@ -1,3 +1,4 @@
+import re
 from abc import ABC
 from typing import Iterable, Iterator, Sequence, Set, TypeVar
 
@@ -44,11 +45,11 @@ def indent_next(string: str, indentation: int) -> str:
 
 
 def flat_name(full_name: str) -> str:
-    return full_name.replace(".", "_")
+    return re.sub(r"(?:\.|::)", "_", full_name)
 
 
 def file_name(identifier: str) -> str:
-    return identifier.lower().replace(".", "-")
+    return re.sub(r"(?:\.|::)", "-", identifier.lower())
 
 
 T = TypeVar("T")  # pylint: disable=invalid-name

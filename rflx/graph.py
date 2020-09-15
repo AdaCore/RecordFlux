@@ -51,7 +51,7 @@ class Graph:
     def __graph_with_defaults(cls, name: str) -> Dot:
         """Return default pydot graph."""
 
-        result = Dot(graph_name=name)
+        result = Dot(graph_name=f'"{name}"')
         result.set_graph_defaults(
             splines="true", ranksep="0.1 equally", pad="0.1", truecolor="true", bgcolor="#00000000"
         )

@@ -11,101 +11,196 @@ package TLS_Handshake_Session is
 
       type Hash_Context is private;
 
-      with function Calculate_Binders (PSKs : GreenTLS.PSKs; Transcript_Hash : GreenTLS.Content) return TLS_Handshake.PSK_Binder_Entries;
-      with function Calculate_Binders_Length (PSKs : GreenTLS.PSKs) return Types.Bit_Length;
-      with function Calculate_ECDHE_Key (Client_Share : TLS_Handshake.Key_Share_Entry; Server_Share : TLS_Handshake.Key_Share_Entry) return GreenTLS.Content;
-      with function Create_Client_Hello_Extensions (Configuration : GreenTLS.Configuration) return FIXME;
-      with function Derive_Secret (Secret : GreenTLS.Content; Label : String; Transcript_Hash : GreenTLS.Content) return GreenTLS.Content;
+      with function Calculate_Binders (PSKs : GreenTLS_PSKs; Transcript_Hash : GreenTLS_Content) return TLS_Handshake_PSK_Binder_Entries;
+      with function Calculate_Binders_Length (PSKs : GreenTLS_PSKs) return Types_Bit_Length;
+      with function Calculate_ECDHE_Key (Client_Share : TLS_Handshake_Key_Share_Entry; Server_Share : TLS_Handshake_Key_Share_Entry) return GreenTLS_Content;
+      with function Create_Client_Hello_Extensions (Configuration : GreenTLS_Configuration) return FIXME;
+      with function Derive_Secret (Secret : GreenTLS_Content; Label : String; Transcript_Hash : GreenTLS_Content) return GreenTLS_Content;
       with function Empty_Hash return Hash_Context;
-      with function Get_Hash (Context : Hash_Context) return GreenTLS.Content;
-      with function Get_Hash_Length (Cipher_Suite : TLS_Handshake.Cipher_Suite) return GreenTLS.KM_Length;
-      with function Get_Zero_Content (Length : GreenTLS.KM_Length) return GreenTLS.Content;
-      with function HKDF_Expand_Label (Secret : GreenTLS.Content; Label : String; Context : GreenTLS.Content; Length : GreenTLS.KM_Length) return GreenTLS.Content;
-      with function HKDF_Extract (Salt : GreenTLS.Content; IKM : GreenTLS.Content) return GreenTLS.Content;
-      with function HMAC (Cipher_Suite : TLS_Handshake.Cipher_Suite; Key : GreenTLS.Content; Hash : GreenTLS.Content) return GreenTLS.Content;
-      with function Select_Supported_Groups (Server_Preferred_Groups : TLS_Handshake.Named_Groups; Supported_Groups : TLS_Handshake.Named_Groups) return TLS_Handshake.Named_Groups;
-      with function Truncate_Client_Hello (Client_Hello : TLS_Handshake.Handshake) return GreenTLS.Content;
+      with function Get_Hash (Context : Hash_Context) return GreenTLS_Content;
+      with function Get_Hash_Length (Cipher_Suite : TLS_Handshake_Cipher_Suite) return GreenTLS_KM_Length;
+      with function Get_Zero_Content (Length : GreenTLS_KM_Length) return GreenTLS_Content;
+      with function HKDF_Expand_Label (Secret : GreenTLS_Content; Label : String; Context : GreenTLS_Content; Length : GreenTLS_KM_Length) return GreenTLS_Content;
+      with function HKDF_Extract (Salt : GreenTLS_Content; IKM : GreenTLS_Content) return GreenTLS_Content;
+      with function HMAC (Cipher_Suite : TLS_Handshake_Cipher_Suite; Key : GreenTLS_Content; Hash : GreenTLS_Content) return GreenTLS_Content;
+      with function Select_Supported_Groups (Server_Preferred_Groups : TLS_Handshake_Named_Groups; Supported_Groups : TLS_Handshake_Named_Groups) return TLS_Handshake_Named_Groups;
+      with function Truncate_Client_Hello (Client_Hello : TLS_Handshake_Handshake) return GreenTLS_Content;
       with function Update_Hash (Context : Hash_Context; Data : Payload) return Hash_Context;
-      with function Validate_Certificate_Verify_Signature (Certificate_Message : TLS_Handshake.Certificate; Certificate_Verify_Message : TLS_Handshake.Certificate_Verify; Transcript_Hash : GreenTLS.Content) return GreenTLS.Signature_Validation_Result;
-      with function Validate_Server_Certificate (Certificate_Message : TLS_Handshake.Certificate; Configuration : GreenTLS.Configuration; Connection : GreenTLS.Connection) return GreenTLS.Certificate_Validation_Result;
+      with function Validate_Certificate_Verify_Signature (Certificate_Message : TLS_Handshake_Certificate; Certificate_Verify_Message : TLS_Handshake_Certificate_Verify; Transcript_Hash : GreenTLS_Content) return GreenTLS_Signature_Validation_Result;
+      with function Validate_Server_Certificate (Certificate_Message : TLS_Handshake_Certificate; Configuration : GreenTLS_Configuration; Connection : GreenTLS_Connection) return GreenTLS_Certificate_Validation_Result;
    session Client with
       Initial => START,
       Final => TERMINATED
    is
+      FIXME_NULL : Dummy;
+      FIXME : Dummy;
+      GreenTLS_APPLICATION_ALERT : Dummy;
+      GreenTLS_APPLICATION_NO_EARLY_DATA : Dummy;
+      GreenTLS_APPLICATION_PROTOCOL : Dummy;
+      GreenTLS_BAD_CERTIFICATE : Dummy;
+      GreenTLS_CERTIFICATE_EXPIRED : Dummy;
+      GreenTLS_CERTIFICATE_REVOKED : Dummy;
+      GreenTLS_CERTIFICATE_UNKNOWN : Dummy;
+      GreenTLS_DECRYPT_ERROR : Dummy;
+      GreenTLS_HEARTBEAT_MODE : Dummy;
+      GreenTLS_ILLEGAL_PARAMETER : Dummy;
+      GreenTLS_KEYSTORE_REQUEST : Dummy;
+      GreenTLS_KEYSTORE_REQUEST_PSK : Dummy;
+      GreenTLS_KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS : Dummy;
+      GreenTLS_KEY_UPDATE_CLIENT : Dummy;
+      GreenTLS_KEY_UPDATE_SERVER : Dummy;
+      GreenTLS_RNG_REQUEST : Dummy;
+      GreenTLS_RNG_RESPONSE : Dummy;
+      GreenTLS_TLS_1_2 : Dummy;
+      GreenTLS_UNSUPPORTED_CERTIFICATE : Dummy;
+      GreenTLS_VALID_CERTIFICATE : Dummy;
+      GreenTLS_VALID_SIGNATURE : Dummy;
+      TLS_Alert_ALERT : Dummy;
+      TLS_Alert_BAD_CERTIFICATE : Dummy;
+      TLS_Alert_CERTIFICATE_EXPIRED : Dummy;
+      TLS_Alert_CERTIFICATE_REVOKED : Dummy;
+      TLS_Alert_CERTIFICATE_UNKNOWN : Dummy;
+      TLS_Alert_DECODE_ERROR : Dummy;
+      TLS_Alert_DECRYPT_ERROR : Dummy;
+      TLS_Alert_ILLEGAL_PARAMETER : Dummy;
+      TLS_Alert_INTERNAL_ERROR : Dummy;
+      TLS_Alert_MISSING_EXTENSION : Dummy;
+      TLS_Alert_PROTOCOL_VERSION : Dummy;
+      TLS_Alert_UNEXPECTED_MESSAGE : Dummy;
+      TLS_Alert_UNSUPPORTED_CERTIFICATE : Dummy;
+      TLS_Handshake_EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION : Dummy;
+      TLS_Handshake_EXTENSION_CERTIFICATE_AUTHORITIES : Dummy;
+      TLS_Handshake_EXTENSION_COOKIE : Dummy;
+      TLS_Handshake_EXTENSION_EARLY_DATA : Dummy;
+      TLS_Handshake_EXTENSION_HEARTBEAT : Dummy;
+      TLS_Handshake_EXTENSION_KEY_SHARE : Dummy;
+      TLS_Handshake_EXTENSION_MAX_FRAGMENT_LENGTH : Dummy;
+      TLS_Handshake_EXTENSION_OID_FILTERS : Dummy;
+      TLS_Handshake_EXTENSION_POST_HANDSHAKE_AUTH : Dummy;
+      TLS_Handshake_EXTENSION_PRE_SHARED_KEY : Dummy;
+      TLS_Handshake_EXTENSION_PSK_KEY_EXCHANGE_MODES : Dummy;
+      TLS_Handshake_EXTENSION_SERVER_NAME : Dummy;
+      TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS_CERT : Dummy;
+      TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS : Dummy;
+      TLS_Handshake_EXTENSION_SUPPORTED_GROUPS : Dummy;
+      TLS_Handshake_EXTENSION_SUPPORTED_VERSIONS : Dummy;
+      TLS_Handshake_HANDSHAKE_CERTIFICATE : Dummy;
+      TLS_Handshake_HANDSHAKE_CERTIFICATE_REQUEST : Dummy;
+      TLS_Handshake_HANDSHAKE_CERTIFICATE_VERIFY : Dummy;
+      TLS_Handshake_HANDSHAKE_CLIENT_HELLO : Dummy;
+      TLS_Handshake_HANDSHAKE_ENCRYPTED_EXTENSIONS : Dummy;
+      TLS_Handshake_HANDSHAKE_END_OF_EARLY_DATA : Dummy;
+      TLS_Handshake_HANDSHAKE_FINISHED : Dummy;
+      TLS_Handshake_HANDSHAKE_KEY_UPDATE : Dummy;
+      TLS_Handshake_HANDSHAKE_MESSAGE_HASH : Dummy;
+      TLS_Handshake_HANDSHAKE_NEW_SESSION_TICKET : Dummy;
+      TLS_Handshake_HANDSHAKE_SERVER_HELLO : Dummy;
+      TLS_Handshake_PSK_DHE_KE : Dummy;
+      TLS_Handshake_PSK_KE : Dummy;
+      TLS_Handshake_TLS_1_3 : Dummy;
+      TLS_Handshake_UPDATE_REQUESTED : Dummy;
+      GreenTLS_Certificate : Dummy;
+      GreenTLS_KEYSTORE_REQUEST_CERTIFICATES : Dummy;
+      GreenTLS_KEYSTORE_REQUEST_NEW_SESSION_TICKET : Dummy;
+      GreenTLS_KEYSTORE_REQUEST_PSK_IDENTITIES : Dummy;
+      GreenTLS_KEYSTORE_REQUEST_PSKS : Dummy;
+      GreenTLS_KEYSTORE_REQUEST_SIGNATURE : Dummy;
+      GreenTLS_KEYSTORE_RESPONSE : Dummy;
+      GreenTLS_PSK : Dummy;
+      GreenTLS_PSK_Message : Dummy;
+      GreenTLS_TLS_1_3 : Dummy;
+      TLS_Handshake_Certificate_Authorities : Dummy;
+      TLS_Handshake_Certificate_Verify : Dummy;
+      TLS_Handshake_Client_Hello : Dummy;
+      TLS_Handshake_EXTENSION_PADDING : Dummy;
+      TLS_Handshake_Heartbeat : Dummy;
+      TLS_Handshake_Key_Share_CH : Dummy;
+      TLS_Handshake_Key_Share_Entry : Dummy;
+      TLS_Handshake_Key_Share_HRR : Dummy;
+      TLS_Handshake_Key_Share_SH : Dummy;
+      TLS_Handshake_Max_Fragment_Length : Dummy;
+      TLS_Handshake_OID_Filters : Dummy;
+      TLS_Handshake_Pre_Shared_Key_CH : Dummy;
+      TLS_Handshake_Pre_Shared_Key_SH : Dummy;
+      TLS_Handshake_Protocol_Name_List : Dummy;
+      TLS_Handshake_Signature_Algorithms_Cert : Dummy;
+      TLS_Handshake_Signature_Algorithms : Dummy;
+      TLS_Handshake_Supported_Groups : Dummy;
+      TLS_Handshake_TLS_1_2 : Dummy;
+      TLS_Handshake_UPDATE_NOT_REQUESTED : Dummy;
+      TLS_Handshake_EXTENSION_SIGNED_CERTIFICATE_TIMESTAMP : Dummy;
+      TLS_Handshake_Supported_Versions : Dummy;
+      TLS_Handshake_EXTENSION_STATUS_REQUEST : Dummy;
+
       Application_Layer_Protocol_Negotiation_Received : Boolean := False;
-      Binders : TLS_Handshake.PSK_Binder_Entries;
-      Binders_Length : TLS_Handshake.Binders_Length;
-      CCR_Handshake_Message : TLS_Handshake.Handshake;
+      Binders : TLS_Handshake_PSK_Binder_Entries;
+      Binders_Length : TLS_Handshake_Binders_Length;
+      CCR_Handshake_Message : TLS_Handshake_Handshake;
       CH_Cookie_Prepared : Boolean := False;
       CH_Key_Share_Prepared : Boolean := False;
       CH_PSK_Prepared : Boolean := False;
-      Certificate_Authorities : TLS_Handshake.Certificate_Authorities;
+      Certificate_Authorities : TLS_Handshake_Certificate_Authorities;
       Certificate_Authorities_Received : Boolean := False;
-      Certificate_Request : TLS_Handshake.Certificate_Request;
+      Certificate_Request : TLS_Handshake_Certificate_Request;
       Certificate_Request_Received : Boolean := False;
-      Certificate_Verify_Handshake_Message : TLS_Handshake.Handshake;
-      Client_Application_Traffic_Secret : GreenTLS.Content;
-      Client_Handshake_Traffic_Secret : GreenTLS.Content;
+      Certificate_Verify_Handshake_Message : TLS_Handshake_Handshake;
+      Client_Application_Traffic_Secret : GreenTLS_Content;
+      Client_Handshake_Traffic_Secret : GreenTLS_Content;
       Client_Hello_1_Hash : Hash_Context;
-      Client_Hello_Handshake_Message : TLS_Handshake.Handshake;
-      Client_Shares : TLS_Handshake.Key_Share_Entries;
-      Configuration : GreenTLS.Configuration;
-      Connection : GreenTLS.Connection;
+      Client_Hello_Handshake_Message : TLS_Handshake_Handshake;
+      Client_Shares : TLS_Handshake_Key_Share_Entries;
+      Configuration : GreenTLS_Configuration;
+      Connection : GreenTLS_Connection;
       DHE_Accepted : Boolean := False;
-      Derived_Handshake_Secret : GreenTLS.Content;
+      Derived_Handshake_Secret : GreenTLS_Content;
       Early_Data_Received : Boolean := False;
-      Early_Secret : GreenTLS.Content;
-      Encrypted_Extensions_Handshake_Message : TLS_Handshake.Handshake;
-      Error : TLS_Alert.Alert_Description;
-      Extensions_List : TLS_Handshake.Extensions;
-      Finished_Key : GreenTLS.Content;
-      Finished_Handshake_Message : TLS_Handshake.Handshake;
-      Hash_Length : GreenTLS.KM_Length;
+      Early_Secret : GreenTLS_Content;
+      Encrypted_Extensions_Handshake_Message : TLS_Handshake_Handshake;
+      Error : TLS_Alert_Alert_Description;
+      Extensions_List : TLS_Handshake_Extensions;
+      Finished_Key : GreenTLS_Content;
+      Finished_Handshake_Message : TLS_Handshake_Handshake;
+      Hash_Length : GreenTLS_KM_Length;
       Heartbeat_Received : Boolean := False;
-      Identity_Index : TLS_Handshake.Identity_Index;
-      Keystore_Message : GreenTLS.Keystore_Message;
-      Max_Fragment_Length : TLS_Handshake.Max_Fragment_Length_Value;
+      Identity_Index : TLS_Handshake_Identity_Index;
+      Keystore_Message : GreenTLS_Keystore_Message;
+      Max_Fragment_Length : TLS_Handshake_Max_Fragment_Length_Value;
       Max_Fragment_Length_Received : Boolean := False;
-      OID_Filters : TLS_Handshake.OID_Filters;
+      OID_Filters : TLS_Handshake_OID_Filters;
       OID_Filters_Received : Boolean := False;
-      PSK_Identities : TLS_Handshake.PSK_Identities;
-      PSKs : GreenTLS.PSKs;
-      Post_Handshake_Handshake_Message : TLS_Handshake.Handshake;
-      Random_Message : GreenTLS.RNG_Message;
-      Pre_Shared_Key_CH : TLS_Handshake.Pre_Shared_Key_CH;
-      Resumption_Master_Secret : GreenTLS.Content;
+      PSK_Identities : TLS_Handshake_PSK_Identities;
+      PSKs : GreenTLS_PSKs;
+      Post_Handshake_Handshake_Message : TLS_Handshake_Handshake;
+      Random_Message : GreenTLS_RNG_Message;
+      Pre_Shared_Key_CH : TLS_Handshake_Pre_Shared_Key_CH;
+      Resumption_Master_Secret : GreenTLS_Content;
       Retry_Request_Received : Boolean := False;
-      Selected_Group : TLS_Handshake.Named_Group;
-      Server_Application_Traffic_Secret : GreenTLS.Content;
-      Server_Handshake_Traffic_Secret : GreenTLS.Content;
-      Server_Hello_Handshake_Message : TLS_Handshake.Handshake;
-      Server_Name_Extension : TLS_Handshake.Extension;
+      Selected_Group : TLS_Handshake_Named_Group;
+      Server_Application_Traffic_Secret : GreenTLS_Content;
+      Server_Handshake_Traffic_Secret : GreenTLS_Content;
+      Server_Hello_Handshake_Message : TLS_Handshake_Handshake;
+      Server_Name_Extension : TLS_Handshake_Extension;
       Server_Name_Received : Boolean := False;
-      Server_Preferred_Groups : TLS_Handshake.Supported_Groups;
-      Signature_Algorithms : TLS_Handshake.Signature_Algorithms;
-      Signature_Algorithms_Cert : TLS_Handshake.Signature_Algorithms;
+      Server_Preferred_Groups : TLS_Handshake_Supported_Groups;
+      Signature_Algorithms : TLS_Handshake_Signature_Algorithms;
+      Signature_Algorithms_Cert : TLS_Handshake_Signature_Algorithms;
       Signature_Algorithms_Cert_Received : Boolean := False;
       Signature_Algorithms_Received : Boolean := False;
       Success : Boolean;
-      Supported_Groups : TLS_Handshake.Named_Groups;
+      Supported_Groups : TLS_Handshake_Named_Groups;
       Supported_Groups_Received : Boolean := False;
       Transcript_Hash : Hash_Context;
-      GreenTLS : Dummy;
-      TLS_Handshake : Dummy;
-      TLS_Alert : Dummy;
-      FIXME_NULL : Dummy;
-      FIXME : Dummy;
 
-      Certificate_Message : TLS_Handshake.Certificate renames CCR_Handshake_Message.Payload;
-      Certificate_Request_Message : TLS_Handshake.Certificate_Request renames CCR_Handshake_Message.Payload;
-      Certificate_Verify_Message : TLS_Handshake.Certificate_Verify renames Certificate_Verify_Handshake_Message.Payload;
-      Client_Hello_Message : TLS_Handshake.Client_Hello renames Client_Hello_Handshake_Message.Payload;
-      Encrypted_Extensions_Message : TLS_Handshake.Encrypted_Extensions renames Encrypted_Extensions_Handshake_Message.Payload;
-      Finished_Message : TLS_Handshake.Finished renames Finished_Handshake_Message.Payload;
-      Key_Update_Message : TLS_Handshake.Key_Update renames Post_Handshake_Handshake_Message.Payload;
-      New_Session_Ticket_Message : TLS_Handshake.New_Session_Ticket renames Post_Handshake_Handshake_Message.Payload;
-      PHA_Certificate_Request_Message : TLS_Handshake.Certificate_Request renames Post_Handshake_Handshake_Message.Payload;
-      Server_Hello_Message : TLS_Handshake.Server_Hello renames Server_Hello_Handshake_Message.Payload;
+      Certificate_Message : TLS_Handshake_Certificate renames CCR_Handshake_Message.Payload;
+      Certificate_Request_Message : TLS_Handshake_Certificate_Request renames CCR_Handshake_Message.Payload;
+      Certificate_Verify_Message : TLS_Handshake_Certificate_Verify renames Certificate_Verify_Handshake_Message.Payload;
+      Client_Hello_Message : TLS_Handshake_Client_Hello renames Client_Hello_Handshake_Message.Payload;
+      Encrypted_Extensions_Message : TLS_Handshake_Encrypted_Extensions renames Encrypted_Extensions_Handshake_Message.Payload;
+      Finished_Message : TLS_Handshake_Finished renames Finished_Handshake_Message.Payload;
+      Key_Update_Message : TLS_Handshake_Key_Update renames Post_Handshake_Handshake_Message.Payload;
+      New_Session_Ticket_Message : TLS_Handshake_New_Session_Ticket renames Post_Handshake_Handshake_Message.Payload;
+      PHA_Certificate_Request_Message : TLS_Handshake_Certificate_Request renames Post_Handshake_Handshake_Message.Payload;
+      Server_Hello_Message : TLS_Handshake_Server_Hello renames Server_Hello_Handshake_Message.Payload;
    begin
       state START is
       begin
@@ -121,18 +216,18 @@ package TLS_Handshake_Session is
 
       state SERVER_PREFERRED_GROUPS is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS));
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS));
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
-               or Keystore_Message.Tag /= GreenTLS.KEYSTORE_RESPONSE
-               or Keystore_Message.Request /= GreenTLS.KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS
+               or Keystore_Message.Tag /= GreenTLS_KEYSTORE_RESPONSE
+               or Keystore_Message.Request /= GreenTLS_KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS
          then SERVER_PREFERRED_GROUPS_CONFIGURE
       end SERVER_PREFERRED_GROUPS;
 
       state SERVER_PREFERRED_GROUPS_CONFIGURE is
       begin
-         Server_Preferred_Groups := TLS_Handshake.Supported_Groups (Keystore_Message.Payload);
+         Server_Preferred_Groups := TLS_Handshake_Supported_Groups (Keystore_Message.Payload);
       transition
          then ERROR_INTERNAL_ERROR
             if Server_Preferred_Groups'Valid = False
@@ -147,11 +242,11 @@ package TLS_Handshake_Session is
       end SERVER_PREFERRED_GROUPS_SELECT;
 
       state CREATE_CLIENT_HELLO_EXTENSIONS is
-         Supported_Version : TLS_Handshake.Supported_Version;
-         Supported_Versions_Extension : TLS_Handshake.CH_Extension;
+         Supported_Version : TLS_Handshake_Supported_Version;
+         Supported_Versions_Extension : TLS_Handshake_CH_Extension;
       begin
-         Supported_Version := TLS_Handshake.Supported_Version'(Version => TLS_Handshake.TLS_1_3);
-         Supported_Versions_Extension := TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS, Data_Length => Supported_Version'Length, Data => Supported_Version);
+         Supported_Version := TLS_Handshake_Supported_Version'(Version => TLS_Handshake_TLS_1_3);
+         Supported_Versions_Extension := TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_SUPPORTED_VERSIONS, Data_Length => Supported_Version'Length, Data => Supported_Version);
          Extensions_List := Append (Extensions_List, Supported_Versions_Extension);
          Extensions_List := Extend (Extensions_List, Create_Client_Hello_Extensions (Configuration));
       transition
@@ -160,40 +255,40 @@ package TLS_Handshake_Session is
          then START_POST_HANDSHAKE_AUTH_EXTENSION
             if Configuration.Post_Handshake_Auth_Enabled = True
          then START_DHE
-            if TLS_Handshake.PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes
+            if TLS_Handshake_PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes
          then START_PSK
-            if TLS_Handshake.PSK_KE in Configuration.PSK_Key_Exchange_Modes
+            if TLS_Handshake_PSK_KE in Configuration.PSK_Key_Exchange_Modes
          then ERROR_INTERNAL_ERROR
       end CREATE_CLIENT_HELLO_EXTENSIONS;
 
       state START_POST_HANDSHAKE_AUTH_EXTENSION is
-         Post_Handshake_Auth_Extension : TLS_Handshake.CH_Extension;
+         Post_Handshake_Auth_Extension : TLS_Handshake_CH_Extension;
       begin
-         Post_Handshake_Auth_Extension := TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_POST_HANDSHAKE_AUTH, Data_Length => 0);
+         Post_Handshake_Auth_Extension := TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_POST_HANDSHAKE_AUTH, Data_Length => 0);
          Extensions_List := Append (Extensions_List, Post_Handshake_Auth_Extension);
       transition
          then ERROR_INTERNAL_ERROR
             if Extensions_List'Valid = False
          then START_DHE
-            if TLS_Handshake.PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes
+            if TLS_Handshake_PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes
          then START_PSK
-            if TLS_Handshake.PSK_KE in Configuration.PSK_Key_Exchange_Modes
+            if TLS_Handshake_PSK_KE in Configuration.PSK_Key_Exchange_Modes
          then ERROR_INTERNAL_ERROR
       end START_POST_HANDSHAKE_AUTH_EXTENSION;
 
       state START_DHE is
-         Supported_Groups_Extension : TLS_Handshake.CH_Extension;
-         Key_Share_Extension : TLS_Handshake.CH_Extension;
-         Signature_Algorithms_Extension : TLS_Handshake.CH_Extension;
+         Supported_Groups_Extension : TLS_Handshake_CH_Extension;
+         Key_Share_Extension : TLS_Handshake_CH_Extension;
+         Signature_Algorithms_Extension : TLS_Handshake_CH_Extension;
       begin
-         Supported_Groups_Extension := TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_SUPPORTED_GROUPS, Data_Length => Modes'Length, Data => Modes)
-            where Modes = TLS_Handshake.Supported_Groups'(Length => Configuration.Supported_Groups_Length, Groups => Configuration.Supported_Groups);
+         Supported_Groups_Extension := TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_SUPPORTED_GROUPS, Data_Length => Modes'Length, Data => Modes)
+            where Modes = TLS_Handshake_Supported_Groups'(Length => Configuration.Supported_Groups_Length, Groups => Configuration.Supported_Groups);
          Extensions_List := Append (Extensions_List, Supported_Groups_Extension);
-         Key_Share_Extension := TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_KEY_SHARE, Data_Length => Modes'Length, Data => Modes)
-            where Modes = TLS_Handshake.Key_Share'(Length => Configuration.Key_Shares_Length, Shares => Configuration.Key_Shares);
+         Key_Share_Extension := TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_KEY_SHARE, Data_Length => Modes'Length, Data => Modes)
+            where Modes = TLS_Handshake_Key_Share'(Length => Configuration.Key_Shares_Length, Shares => Configuration.Key_Shares);
          Extensions_List := Append (Extensions_List, Key_Share_Extension);
-         Signature_Algorithms_Extension := TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS, Data_Length => Modes'Length, Data => Modes)
-            where Modes = TLS_Handshake.Signature_Algorithms'(Length => Configuration.Signature_Algorithms_Length, Algorithms => Configuration.Signature_Algorithms);
+         Signature_Algorithms_Extension := TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS, Data_Length => Modes'Length, Data => Modes)
+            where Modes = TLS_Handshake_Signature_Algorithms'(Length => Configuration.Signature_Algorithms_Length, Algorithms => Configuration.Signature_Algorithms);
          Extensions_List := Append (Extensions_List, Signature_Algorithms_Extension);
       transition
          then ERROR_INTERNAL_ERROR
@@ -201,34 +296,34 @@ package TLS_Handshake_Session is
          then START_DHE_SIGNATURE_ALGORITHMS
             if Configuration.Server_Authentication_Enabled = True
          then START_PSK
-            if TLS_Handshake.PSK_KE in Configuration.PSK_Key_Exchange_Modes
+            if TLS_Handshake_PSK_KE in Configuration.PSK_Key_Exchange_Modes
          then START_SEND
       end START_DHE;
 
       state START_DHE_SIGNATURE_ALGORITHMS is
-         Signature_Algorithms_Cert_Extension : TLS_Handshake.CH_Extension;
+         Signature_Algorithms_Cert_Extension : TLS_Handshake_CH_Extension;
       begin
-         Signature_Algorithms_Cert_Extension := TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS_CERT, Data_Length => Modes'Length, Data => Modes)
-            where Modes = TLS_Handshake.Signature_Algorithms_Cert'(Length => Configuration.Signature_Algorithms_Cert_Length, Algorithms => Configuration.Signature_Algorithms_Cert);
+         Signature_Algorithms_Cert_Extension := TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS_CERT, Data_Length => Modes'Length, Data => Modes)
+            where Modes = TLS_Handshake_Signature_Algorithms_Cert'(Length => Configuration.Signature_Algorithms_Cert_Length, Algorithms => Configuration.Signature_Algorithms_Cert);
          Extensions_List := Append (Extensions_List, Signature_Algorithms_Cert_Extension);
       transition
          then ERROR_INTERNAL_ERROR
             if Extensions_List'Valid = False
          then START_PSK
-            if TLS_Handshake.PSK_KE in Configuration.PSK_Key_Exchange_Modes
+            if TLS_Handshake_PSK_KE in Configuration.PSK_Key_Exchange_Modes
          then START_SEND
       end START_DHE_SIGNATURE_ALGORITHMS;
 
       state START_PSK is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
-               or Keystore_Message.Tag /= GreenTLS.KEYSTORE_RESPONSE
-               or Keystore_Message.Request /= GreenTLS.KEYSTORE_REQUEST_PSK_IDENTITIES
+               or Keystore_Message.Tag /= GreenTLS_KEYSTORE_RESPONSE
+               or Keystore_Message.Request /= GreenTLS_KEYSTORE_REQUEST_PSK_IDENTITIES
                or (Keystore_Message.Length = 0
-                   and TLS_Handshake.PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes)
+                   and TLS_Handshake_PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes)
          then START_SEND
             if Keystore_Message.Length = 0
          then START_PSK_EXTENSION_CHECK
@@ -236,10 +331,10 @@ package TLS_Handshake_Session is
 
       state START_PSK_EXTENSION_CHECK is
       begin
-         PSKs := GreenTLS.PSK_Message (Keystore_Message.Payload).PSKs;
+         PSKs := GreenTLS_PSK_Message (Keystore_Message.Payload).PSKs;
          Binders_Length := Calculate_Binders_Length (PSKs);
          PSK_Identities := [for K in PSKs => K.Identity when True];
-         Pre_Shared_Key_CH := TLS_Handshake.Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => FIXME_NULL);
+         Pre_Shared_Key_CH := TLS_Handshake_Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => FIXME_NULL);
       transition
          then ERROR_INTERNAL_ERROR
             if Pre_Shared_Key_CH'Valid = False
@@ -248,31 +343,31 @@ package TLS_Handshake_Session is
 
       state START_GET_RANDOM is
       begin
-         Random_Message := Call (RNG_Channel, GreenTLS.RNG_Message'(Tag => GreenTLS.RNG_REQUEST, Length => 32));
+         Random_Message := Call (RNG_Channel, GreenTLS_RNG_Message'(Tag => GreenTLS_RNG_REQUEST, Length => 32));
       transition
          then ERROR_INTERNAL_ERROR
             if Random_Message'Valid = False
-               or Random_Message.Tag /= GreenTLS.RNG_RESPONSE
+               or Random_Message.Tag /= GreenTLS_RNG_RESPONSE
                or Random_Message.Length /= 32
          then START_PSK_EXTENSIONS
       end START_GET_RANDOM;
 
       state START_PSK_EXTENSIONS is
-         PSK_Key_Exchange_Modes_Extension : TLS_Handshake.CH_Extension;
+         PSK_Key_Exchange_Modes_Extension : TLS_Handshake_CH_Extension;
          Client_Hello_Hash : Hash_Context;
       begin
-         PSK_Key_Exchange_Modes_Extension := TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_PSK_KEY_EXCHANGE_MODES, Data_Length => Modes'Length, Data => Modes)
-            where Modes = TLS_Handshake.PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes);
+         PSK_Key_Exchange_Modes_Extension := TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_PSK_KEY_EXCHANGE_MODES, Data_Length => Modes'Length, Data => Modes)
+            where Modes = TLS_Handshake_PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes);
          Extensions_List := Append (Extensions_List, PSK_Key_Exchange_Modes_Extension);
-         Extensions_List := Append (Extensions_List, TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_PRE_SHARED_KEY, Length => Pre_Shared_Key_CH'Length, Data => Pre_Shared_Key_CH));
-         Client_Hello_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
-            where CH = TLS_Handshake.Client_Hello'(Legacy_Version => TLS_Handshake.TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
+         Extensions_List := Append (Extensions_List, TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_PRE_SHARED_KEY, Length => Pre_Shared_Key_CH'Length, Data => Pre_Shared_Key_CH));
+         Client_Hello_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
+            where CH = TLS_Handshake_Client_Hello'(Legacy_Version => TLS_Handshake_TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
          Client_Hello_Hash := Empty_Hash;
          Client_Hello_Hash := Update_Hash (Client_Hello_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
          Binders := Calculate_Binders (PSKs, Get_Hash (Client_Hello_Hash));
-         Extensions_List := [for E in Extensions_List => E when E.Tag /= TLS_Handshake.EXTENSION_PRE_SHARED_KEY];
-         Extensions_List := Append (Extensions_List, TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_PRE_SHARED_KEY, Length => PSK_CH'Length, Data => PSK_CH)
-            where PSK_CH = TLS_Handshake.Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => Binders));
+         Extensions_List := [for E in Extensions_List => E when E.Tag /= TLS_Handshake_EXTENSION_PRE_SHARED_KEY];
+         Extensions_List := Append (Extensions_List, TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_PRE_SHARED_KEY, Length => PSK_CH'Length, Data => PSK_CH)
+            where PSK_CH = TLS_Handshake_Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => Binders));
       transition
          then ERROR_INTERNAL_ERROR
             if Extensions_List'Valid = False
@@ -286,7 +381,7 @@ package TLS_Handshake_Session is
          Client_Hello_1_Hash := Update_Hash (Client_Hello_1_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
          Transcript_Hash := Empty_Hash;
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Hello_Handshake_Message'Opaque);
-         Client_Hello_Message := Handshake.Client_Hello (Client_Hello_Handshake_Message.Payload);
+         Client_Hello_Message := TLS_Handshake_Client_Hello (Client_Hello_Handshake_Message.Payload);
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -296,17 +391,17 @@ package TLS_Handshake_Session is
       end START_SEND;
 
       state START_SEND_CLIENT_EARLY_TRAFFIC_SECRET is
-         Client_Early_Traffic_Secret : GreenTLS.Content;
-         Client_Key : GreenTLS.Content;
-         Client_IV : GreenTLS.Content;
+         Client_Early_Traffic_Secret : GreenTLS_Content;
+         Client_Key : GreenTLS_Content;
+         Client_IV : GreenTLS_Content;
       begin
-         Early_Secret := HKDF_Extract (Get_Zero_Content (Get_Hash_Length (PSKs'Head.Cipher_Suite)), GreenTLS.Content'(Data => PSKs'Head.Key));
+         Early_Secret := HKDF_Extract (Get_Zero_Content (Get_Hash_Length (PSKs'Head.Cipher_Suite)), GreenTLS_Content'(Data => PSKs'Head.Key));
          Client_Early_Traffic_Secret := Derive_Secret (Early_Secret.Data, "c e traffic", Get_Hash (Transcript_Hash));
-         Client_Key := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Early_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
-         Client_IV := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Early_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
+         Client_Key := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Early_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
+         Client_IV := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Early_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
          Keystore_Message := null;
-         Success := Write (Record_Data_Channel, GreenTLS.Control_Message'(Tag => GreenTLS.KEY_UPDATE_CLIENT, Length => KU'Length, Payload => KU)
-            where KU = GreenTLS.Key_Update_Message'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
+         Success := Write (Record_Data_Channel, GreenTLS_Control_Message'(Tag => GreenTLS_KEY_UPDATE_CLIENT, Length => KU'Length, Payload => KU)
+            where KU = GreenTLS_Key_Update_Message'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
          Client_Early_Traffic_Secret := null;
          Client_Key := null;
          Client_IV := null;
@@ -324,11 +419,11 @@ package TLS_Handshake_Session is
          then ERROR_DECODE_ERROR
             if Server_Hello_Handshake_Message'Valid = False
          then ERROR_UNEXPECTED_MESSAGE
-            if Server_Hello_Handshake_Message.Tag /= TLS_Handshake.HANDSHAKE_SERVER_HELLO
+            if Server_Hello_Handshake_Message.Tag /= TLS_Handshake_HANDSHAKE_SERVER_HELLO
          then ERROR_DECODE_ERROR
             if Server_Hello_Message'Valid = False
          then ERROR_PROTOCOL_VERSION
-            if Server_Hello_Message.Legacy_Version /= GreenTLS.TLS_1_2
+            if Server_Hello_Message.Legacy_Version /= GreenTLS_TLS_1_2
          then ERROR_ILLEGAL_PARAMETER
             if Server_Hello_Message.Legacy_Session_Id_Echo /= 0
                or Server_Hello_Message.Legacy_Compression_Method /= 0
@@ -336,18 +431,18 @@ package TLS_Handshake_Session is
             if Server_Hello_Message.Cipher_Suite not in Client_Hello_Message.Cipher_Suites
          then ERROR_MISSING_EXTENSION
             if (for all E in Server_Hello_Message.Extensions =>
-                   E.Tag /= TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS)
+                   E.Tag /= TLS_Handshake_EXTENSION_SUPPORTED_VERSIONS)
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Server_Hello_Message.Extensions =>
-                   E.Tag = TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS
-                   and GreenTLS.TLS_1_3 not in TLS_Handshake.Supported_Versions (E.Data).Versions)
+                   E.Tag = TLS_Handshake_EXTENSION_SUPPORTED_VERSIONS
+                   and GreenTLS_TLS_1_3 not in TLS_Handshake_Supported_Versions (E.Data).Versions)
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Server_Hello_Message.Extensions =>
                    E not in Client_Hello_Message.Extensions)
          then ERROR_ILLEGAL_PARAMETER
-            if TLS_Handshake.PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes
+            if TLS_Handshake_PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes
                and (for some E in Server_Hello_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE)
+                       E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE)
          then WAIT_SH_PARSE_HRR
             if Server_Hello_Message.HRR_Extensions'Present
                and Retry_Request_Received = False
@@ -356,94 +451,94 @@ package TLS_Handshake_Session is
                and Retry_Request_Received = True
          then WAIT_SH_EXTENSIONS_PSK
             if (for some E in Server_Hello_Message.Extensions =>
-                   E.Tag = TLS_Handshake.EXTENSION_PRE_SHARED_KEY)
+                   E.Tag = TLS_Handshake_EXTENSION_PRE_SHARED_KEY)
          then WAIT_SH_EXTENSIONS_DHE
             if (for some E in Server_Hello_Message.Extensions =>
-                   E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE)
+                   E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE)
          then ERROR_INVALID_CONFIGURATION
       end WAIT_SH;
 
       state WAIT_SH_EXTENSIONS_PSK is
       begin
-         Identity_Index := TLS_Handshake.Pre_Shared_Key_SH ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_PRE_SHARED_KEY]'Head.Data).Selected_Identity;
+         Identity_Index := TLS_Handshake_Pre_Shared_Key_SH ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_PRE_SHARED_KEY]'Head.Data).Selected_Identity;
       transition
          then ERROR_ILLEGAL_PARAMETER
             if Identity_Index /= 0
                and (for some E in Server_Hello_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_EARLY_DATA)
+                       E.Tag = TLS_Handshake_EXTENSION_EARLY_DATA)
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Client_Hello_Message.Extensions =>
-                   E.Tag = TLS_Handshake.EXTENSION_PRE_SHARED_KEY
-                   and TLS_Handshake.Pre_Shared_Key_CH (E.Data).Identities'Length < Identity_Index)
+                   E.Tag = TLS_Handshake_EXTENSION_PRE_SHARED_KEY
+                   and TLS_Handshake_Pre_Shared_Key_CH (E.Data).Identities'Length < Identity_Index)
          then WAIT_SH_EXTENSIONS_PSK_REQUEST
       end WAIT_SH_EXTENSIONS_PSK;
 
       state WAIT_SH_EXTENSIONS_PSK_REQUEST is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_PSKS, Length => Selected_Identity'Length, Payload => Selected_Identity)
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_PSKS, Length => Selected_Identity'Length, Payload => Selected_Identity)
             where Selected_Identity = FIXME);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
-               or Keystore_Message.Tag /= GreenTLS.KEYSTORE_RESPONSE
-               or Keystore_Message.Request /= GreenTLS.KEYSTORE_REQUEST_PSK
-               or GreenTLS.PSK (Keystore_Message.Payload)'Valid = False
+               or Keystore_Message.Tag /= GreenTLS_KEYSTORE_RESPONSE
+               or Keystore_Message.Request /= GreenTLS_KEYSTORE_REQUEST_PSK
+               or GreenTLS_PSK (Keystore_Message.Payload)'Valid = False
          then WAIT_SH_EXTENSIONS_PSK_VALIDATION
       end WAIT_SH_EXTENSIONS_PSK_REQUEST;
 
       state WAIT_SH_EXTENSIONS_PSK_VALIDATION is
-         Identity_Cipher_Suite : TLS_Handshake.Cipher_Suite;
+         Identity_Cipher_Suite : TLS_Handshake_Cipher_Suite;
       begin
-         Identity_Cipher_Suite := GreenTLS.PSK (Keystore_Message.Payload).Cipher_Suite;
+         Identity_Cipher_Suite := GreenTLS_PSK (Keystore_Message.Payload).Cipher_Suite;
       transition
          then ERROR_ILLEGAL_PARAMETER
             if Identity_Cipher_Suite /= Server_Hello_Message.Cipher_Suite
          then WAIT_SH_EXTENSIONS_DHE
             if (for some E in Server_Hello_Message.Extensions =>
-                   E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE)
+                   E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE)
          then SET_RECORD_KEYS
       end WAIT_SH_EXTENSIONS_PSK_VALIDATION;
 
       state WAIT_SH_EXTENSIONS_DHE is
       begin
-         Selected_Group := TLS_Handshake.Key_Share_SH ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE]'Head.Data).Group;
+         Selected_Group := TLS_Handshake_Key_Share_SH ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE]'Head.Data).Group;
          DHE_Accepted := True;
       transition
          then ERROR_ILLEGAL_PARAMETER
-            if (for some S in TLS_Handshake.Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE]'Head.Data).Shares =>
+            if (for some S in TLS_Handshake_Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE]'Head.Data).Shares =>
                    S.Group = Selected_Group) = False
          then SET_RECORD_KEYS
       end WAIT_SH_EXTENSIONS_DHE;
 
       state WAIT_SH_PARSE_HRR is
-         Client_Supported_Groups : TLS_Handshake.Named_Groups;
+         Client_Supported_Groups : TLS_Handshake_Named_Groups;
       begin
          Retry_Request_Received := True;
-         Client_Supported_Groups := TLS_Handshake.Supported_Groups ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_SUPPORTED_GROUPS]'Head.Data).Groups;
-         Client_Shares := TLS_Handshake.Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE]'Head.Data).Shares;
+         Client_Supported_Groups := TLS_Handshake_Supported_Groups ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_SUPPORTED_GROUPS]'Head.Data).Groups;
+         Client_Shares := TLS_Handshake_Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE]'Head.Data).Shares;
       transition
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Server_Hello_Message.Extensions =>
                    E not in Client_Hello_Message.Extensions
-                   and E.Tag /= TLS_Handshake.EXTENSION_COOKIE)
+                   and E.Tag /= TLS_Handshake_EXTENSION_COOKIE)
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Server_Hello_Message.Extensions =>
-                   E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE
-                   and TLS_Handshake.Key_Share_HRR (E.Data).Selected_Group not in Client_Supported_Groups)
+                   E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE
+                   and TLS_Handshake_Key_Share_HRR (E.Data).Selected_Group not in Client_Supported_Groups)
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Server_Hello_Message.Extensions =>
-                   E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE
+                   E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE
                    and (for some S in Client_Shares =>
-                           S.Group = TLS_Handshake.Key_Share_HRR (E.Data).Selected_Group))
+                           S.Group = TLS_Handshake_Key_Share_HRR (E.Data).Selected_Group))
          then WAIT_SH_PREPARE_CH
       end WAIT_SH_PARSE_HRR;
 
       state WAIT_SH_PREPARE_CH is
       begin
          Extensions_List'Reset;
-         Extensions_List := Extend (Extensions_List, [for E in Client_Hello_Message.Extensions => E when E.Tag /= TLS_Handshake.EXTENSION_KEY_SHARE
-         and E.Tag /= TLS_Handshake.EXTENSION_EARLY_DATA
-         and E.Tag /= TLS_Handshake.EXTENSION_PRE_SHARED_KEY]);
+         Extensions_List := Extend (Extensions_List, [for E in Client_Hello_Message.Extensions => E when E.Tag /= TLS_Handshake_EXTENSION_KEY_SHARE
+         and E.Tag /= TLS_Handshake_EXTENSION_EARLY_DATA
+         and E.Tag /= TLS_Handshake_EXTENSION_PRE_SHARED_KEY]);
       transition
          then WAIT_SH_PREPARE_CH_DISPATCH
       end WAIT_SH_PREPARE_CH;
@@ -454,22 +549,22 @@ package TLS_Handshake_Session is
          then WAIT_SH_PREPARE_CH_KEY_SHARE
             if CH_Key_Share_Prepared = False
                and (for some E in Server_Hello_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE)
+                       E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE)
          then WAIT_SH_PREPARE_CH_COOKIE
             if CH_Cookie_Prepared = False
                and (for some E in Server_Hello_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_COOKIE)
+                       E.Tag = TLS_Handshake_EXTENSION_COOKIE)
          then WAIT_SH_PREPARE_CH_PSK
             if CH_PSK_Prepared = False
                and (for some E in Server_Hello_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_PRE_SHARED_KEY)
+                       E.Tag = TLS_Handshake_EXTENSION_PRE_SHARED_KEY)
          then WAIT_SH_SEND_CH
       end WAIT_SH_PREPARE_CH_DISPATCH;
 
       state WAIT_SH_PREPARE_CH_KEY_SHARE is
       begin
-         Extensions_List := Append (Extensions_List, TLS_Handshake.Extension'(Tag => TLS_Handshake.EXTENSION_KEY_SHARE, Data_Length => Key_Share'Length, Data => Key_Share)
-            where Key_Share = TLS_Handshake.Key_Share_CH'(Length => Entries'Length, Shares => Entries)
+         Extensions_List := Append (Extensions_List, TLS_Handshake_Extension'(Tag => TLS_Handshake_EXTENSION_KEY_SHARE, Data_Length => Key_Share'Length, Data => Key_Share)
+            where Key_Share = TLS_Handshake_Key_Share_CH'(Length => Entries'Length, Shares => Entries)
                      where Entries = [for E in Client_Shares => E when E.Group = Selected_Group]);
          CH_Key_Share_Prepared := True;
       transition
@@ -478,7 +573,7 @@ package TLS_Handshake_Session is
 
       state WAIT_SH_PREPARE_CH_COOKIE is
       begin
-         Extensions_List := Append (Extensions_List, [for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_COOKIE]'Head);
+         Extensions_List := Append (Extensions_List, [for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_COOKIE]'Head);
          CH_Cookie_Prepared := True;
       transition
          then WAIT_SH_PREPARE_CH_DISPATCH
@@ -486,15 +581,15 @@ package TLS_Handshake_Session is
 
       state WAIT_SH_PREPARE_CH_PSK is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
-               or Keystore_Message.Tag /= GreenTLS.KEYSTORE_RESPONSE
-               or Keystore_Message.Request /= GreenTLS.KEYSTORE_REQUEST_PSKS
+               or Keystore_Message.Tag /= GreenTLS_KEYSTORE_RESPONSE
+               or Keystore_Message.Request /= GreenTLS_KEYSTORE_REQUEST_PSKS
                or (Keystore_Message.Length = 0
-                   and TLS_Handshake.PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes)
-               or GreenTLS.PSK_Message (Keystore_Message.Payload)'Valid = False
+                   and TLS_Handshake_PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes)
+               or GreenTLS_PSK_Message (Keystore_Message.Payload)'Valid = False
          then WAIT_SH_NO_PSK_EXTENSION
             if Keystore_Message.Length = 0
          then WAIT_SH_PSK_EXTENSION_CHECK
@@ -502,10 +597,10 @@ package TLS_Handshake_Session is
 
       state WAIT_SH_PSK_EXTENSION_CHECK is
       begin
-         PSKs := [for K in GreenTLS.PSK_Message (Keystore_Message.Payload).PSKs => K when K.Cipher_Suite = Server_Hello_Message.Cipher_Suite];
+         PSKs := [for K in GreenTLS_PSK_Message (Keystore_Message.Payload).PSKs => K when K.Cipher_Suite = Server_Hello_Message.Cipher_Suite];
          Binders_Length := Calculate_Binders_Length (PSKs);
          PSK_Identities := [for K in PSKs => K.Identity when True];
-         Pre_Shared_Key_CH := TLS_Handshake.Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => FIXME_NULL);
+         Pre_Shared_Key_CH := TLS_Handshake_Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => FIXME_NULL);
       transition
          then ERROR_INTERNAL_ERROR
             if Pre_Shared_Key_CH'Valid = False
@@ -513,21 +608,21 @@ package TLS_Handshake_Session is
       end WAIT_SH_PSK_EXTENSION_CHECK;
 
       state WAIT_SH_PSK_EXTENSIONS is
-         PSK_Key_Exchange_Modes_Extension : TLS_Handshake.CH_Extension;
+         PSK_Key_Exchange_Modes_Extension : TLS_Handshake_CH_Extension;
          Client_Hello_Hash : Hash_Context;
       begin
-         PSK_Key_Exchange_Modes_Extension := TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_PSK_KEY_EXCHANGE_MODES, Data_Length => Modes'Length, Data => Modes)
-            where Modes = TLS_Handshake.PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes);
+         PSK_Key_Exchange_Modes_Extension := TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_PSK_KEY_EXCHANGE_MODES, Data_Length => Modes'Length, Data => Modes)
+            where Modes = TLS_Handshake_PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes);
          Extensions_List := Append (Extensions_List, PSK_Key_Exchange_Modes_Extension);
-         Extensions_List := Append (Extensions_List, TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_PRE_SHARED_KEY, Length => Pre_Shared_Key_CH'Length, Data => Pre_Shared_Key_CH));
-         Client_Hello_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
-            where CH = TLS_Handshake.Client_Hello'(Legacy_Version => TLS_Handshake.TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
+         Extensions_List := Append (Extensions_List, TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_PRE_SHARED_KEY, Length => Pre_Shared_Key_CH'Length, Data => Pre_Shared_Key_CH));
+         Client_Hello_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
+            where CH = TLS_Handshake_Client_Hello'(Legacy_Version => TLS_Handshake_TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
          Client_Hello_Hash := Empty_Hash;
          Client_Hello_Hash := Update_Hash (Client_Hello_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
          Binders := Calculate_Binders (PSKs, Get_Hash (Client_Hello_Hash));
-         Extensions_List := [for E in Extensions_List => E when E.Tag /= TLS_Handshake.EXTENSION_PRE_SHARED_KEY];
-         Extensions_List := Append (Extensions_List, TLS_Handshake.CH_Extension'(Tag => TLS_Handshake.EXTENSION_PRE_SHARED_KEY, Length => PSK_CH'Length, Data => PSK_CH)
-            where PSK_CH = TLS_Handshake.Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => Binders));
+         Extensions_List := [for E in Extensions_List => E when E.Tag /= TLS_Handshake_EXTENSION_PRE_SHARED_KEY];
+         Extensions_List := Append (Extensions_List, TLS_Handshake_CH_Extension'(Tag => TLS_Handshake_EXTENSION_PRE_SHARED_KEY, Length => PSK_CH'Length, Data => PSK_CH)
+            where PSK_CH = TLS_Handshake_Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => Binders));
          CH_PSK_Prepared := True;
       transition
          then ERROR_INTERNAL_ERROR
@@ -543,18 +638,18 @@ package TLS_Handshake_Session is
       end WAIT_SH_NO_PSK_EXTENSION;
 
       state WAIT_SH_SEND_CH is
-         Random : GreenTLS.Content;
-         Transcript_Hash_2 : GreenTLS.Content;
+         Random : GreenTLS_Content;
+         Transcript_Hash_2 : GreenTLS_Content;
       begin
          Transcript_Hash_2 := Empty_Hash;
-         Transcript_Hash_2 := Update_Hash (Transcript_Hash_2, TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_MESSAGE_HASH, Length => CH1_Hash'Length, Payload => CH1_Hash.Data)'Opaque)
+         Transcript_Hash_2 := Update_Hash (Transcript_Hash_2, TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_MESSAGE_HASH, Length => CH1_Hash'Length, Payload => CH1_Hash.Data)'Opaque)
             where CH1_Hash = Get_Hash (Client_Hello_1_Hash);
          Transcript_Hash_2 := Update_Hash (Transcript_Hash_2, Server_Hello_Handshake_Message'Opaque);
          Transcript_Hash_2 := Update_Hash (Transcript_Hash_2, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
          Random := Client_Hello_Message.Random;
          Client_Hello_Handshake_Message'Reset;
-         Client_Hello_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
-            where CH = TLS_Handshake.Client_Hello'(Legacy_Version => TLS_Handshake.TLS_1_2, Random => Random.Data, Legacy_Session_ID_Length => 0, Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
+         Client_Hello_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
+            where CH = TLS_Handshake_Client_Hello'(Legacy_Version => TLS_Handshake_TLS_1_2, Random => Random.Data, Legacy_Session_ID_Length => 0, Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
          Success := Write (Record_Data_Channel, Client_Hello_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Hello_Handshake_Message'Opaque);
       transition
@@ -564,31 +659,31 @@ package TLS_Handshake_Session is
       end WAIT_SH_SEND_CH;
 
       state SET_RECORD_KEYS is
-         Derived_Early_Secret : GreenTLS.Content;
-         Handshake_Secret : GreenTLS.Content;
-         Server_Key : GreenTLS.Content;
-         Server_IV : GreenTLS.Content;
-         Client_Key : GreenTLS.Content;
-         Client_IV : GreenTLS.Content;
+         Derived_Early_Secret : GreenTLS_Content;
+         Handshake_Secret : GreenTLS_Content;
+         Server_Key : GreenTLS_Content;
+         Server_IV : GreenTLS_Content;
+         Client_Key : GreenTLS_Content;
+         Client_IV : GreenTLS_Content;
          Success_Client : Boolean;
          Success_Server : Boolean;
       begin
          Derived_Early_Secret := Derive_Secret (Early_Secret, "derived", Get_Hash (Empty_Hash));
          Early_Secret := null;
          Handshake_Secret := HKDF_Extract (Derived_Early_Secret, Key)
-            where Key = Calculate_ECDHE_Key (Client_Share, TLS_Handshake.Key_Share_Entry ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE]'Head).Data)
-                     where Client_Share = [for S in TLS_Handshake.Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE]'Head.Data).Shares => S when S.Group = Selected_Group]'Head;
+            where Key = Calculate_ECDHE_Key (Client_Share, TLS_Handshake_Key_Share_Entry ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE]'Head).Data)
+                     where Client_Share = [for S in TLS_Handshake_Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE]'Head.Data).Shares => S when S.Group = Selected_Group]'Head;
          Derived_Early_Secret := null;
          Client_Handshake_Traffic_Secret := Derive_Secret (Handshake_Secret, "c hs traffic", Get_Hash (Transcript_Hash));
          Server_Handshake_Traffic_Secret := Derive_Secret (Handshake_Secret, "s hs traffic", Get_Hash (Transcript_Hash));
-         Server_Key := HKDF_Expand_Label (GreenTLS.Content'(Data => Server_Handshake_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
-         Server_IV := HKDF_Expand_Label (GreenTLS.Content'(Data => Server_Handshake_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
-         Client_Key := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Handshake_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
-         Client_IV := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Handshake_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
-         Success_Client := Write (Record_Control_Channel, GreenTLS.Control_Message'(Tag => GreenTLS.KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Record_Keys'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
-         Success_Server := Write (Record_Control_Channel, GreenTLS.Control_Message'(Tag => GreenTLS.KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Record_Keys'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
+         Server_Key := HKDF_Expand_Label (GreenTLS_Content'(Data => Server_Handshake_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
+         Server_IV := HKDF_Expand_Label (GreenTLS_Content'(Data => Server_Handshake_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
+         Client_Key := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Handshake_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
+         Client_IV := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Handshake_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
+         Success_Client := Write (Record_Control_Channel, GreenTLS_Control_Message'(Tag => GreenTLS_KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Record_Keys'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
+         Success_Server := Write (Record_Control_Channel, GreenTLS_Control_Message'(Tag => GreenTLS_KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Record_Keys'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
          Server_Handshake_Traffic_Secret := null;
          Server_Key := null;
          Server_IV := null;
@@ -610,7 +705,7 @@ package TLS_Handshake_Session is
          then ERROR_DECODE_ERROR
             if Encrypted_Extensions_Handshake_Message'Valid = False
          then ERROR_UNEXPECTED_MESSAGE
-            if Encrypted_Extensions_Handshake_Message.Tag /= TLS_Handshake.HANDSHAKE_ENCRYPTED_EXTENSIONS
+            if Encrypted_Extensions_Handshake_Message.Tag /= TLS_Handshake_HANDSHAKE_ENCRYPTED_EXTENSIONS
          then WAIT_EE_PARSE_EXTENSIONS
       end WAIT_EE;
 
@@ -619,54 +714,54 @@ package TLS_Handshake_Session is
       transition
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Encrypted_Extensions_Message.Extensions =>
-                   E.Tag = TLS_Handshake.EXTENSION_STATUS_REQUEST
-                   or E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS
-                   or E.Tag = TLS_Handshake.EXTENSION_SIGNED_CERTIFICATE_TIMESTAMP
-                   or E.Tag = TLS_Handshake.EXTENSION_PADDING
-                   or E.Tag = TLS_Handshake.EXTENSION_KEY_SHARE
-                   or E.Tag = TLS_Handshake.EXTENSION_PRE_SHARED_KEY
-                   or E.Tag = TLS_Handshake.EXTENSION_PSK_KEY_EXCHANGE_MODES
-                   or E.Tag = TLS_Handshake.EXTENSION_COOKIE
-                   or E.Tag = TLS_Handshake.EXTENSION_SUPPORTED_VERSIONS
-                   or E.Tag = TLS_Handshake.EXTENSION_CERTIFICATE_AUTHORITIES
-                   or E.Tag = TLS_Handshake.EXTENSION_OID_FILTERS
-                   or E.Tag = TLS_Handshake.EXTENSION_POST_HANDSHAKE_AUTH
-                   or E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS_CERT)
+                   E.Tag = TLS_Handshake_EXTENSION_STATUS_REQUEST
+                   or E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS
+                   or E.Tag = TLS_Handshake_EXTENSION_SIGNED_CERTIFICATE_TIMESTAMP
+                   or E.Tag = TLS_Handshake_EXTENSION_PADDING
+                   or E.Tag = TLS_Handshake_EXTENSION_KEY_SHARE
+                   or E.Tag = TLS_Handshake_EXTENSION_PRE_SHARED_KEY
+                   or E.Tag = TLS_Handshake_EXTENSION_PSK_KEY_EXCHANGE_MODES
+                   or E.Tag = TLS_Handshake_EXTENSION_COOKIE
+                   or E.Tag = TLS_Handshake_EXTENSION_SUPPORTED_VERSIONS
+                   or E.Tag = TLS_Handshake_EXTENSION_CERTIFICATE_AUTHORITIES
+                   or E.Tag = TLS_Handshake_EXTENSION_OID_FILTERS
+                   or E.Tag = TLS_Handshake_EXTENSION_POST_HANDSHAKE_AUTH
+                   or E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS_CERT)
          then ERROR_ILLEGAL_PARAMETER
             if Server_Name_Received = False
                and (for some E in Encrypted_Extensions_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_SERVER_NAME)
+                       E.Tag = TLS_Handshake_EXTENSION_SERVER_NAME)
                and Configuration.Server_Name_Enabled = False
          then WAIT_EE_PROCESS_SERVER_NAME
             if Server_Name_Received = False
                and (for some E in Encrypted_Extensions_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_SERVER_NAME)
+                       E.Tag = TLS_Handshake_EXTENSION_SERVER_NAME)
          then WAIT_EE_PROCESS_MAX_FRAGMENT_LENGTH
             if Max_Fragment_Length_Received = False
                and (for some E in Encrypted_Extensions_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_MAX_FRAGMENT_LENGTH)
+                       E.Tag = TLS_Handshake_EXTENSION_MAX_FRAGMENT_LENGTH)
          then WAIT_EE_PROCESS_SUPPORTED_GROUPS
             if Supported_Groups_Received = False
                and (for some E in Encrypted_Extensions_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_SUPPORTED_GROUPS)
+                       E.Tag = TLS_Handshake_EXTENSION_SUPPORTED_GROUPS)
          then WAIT_EE_PROCESS_HEARTBEAT
             if Heartbeat_Received = False
                and (for some E in Encrypted_Extensions_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_HEARTBEAT)
+                       E.Tag = TLS_Handshake_EXTENSION_HEARTBEAT)
          then WAIT_EE_PROCESS_APPLICATION_LAYER_PROTOCOL_NEGOTIATION
             if Application_Layer_Protocol_Negotiation_Received = False
                and (for some E in Encrypted_Extensions_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION)
+                       E.Tag = TLS_Handshake_EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION)
          then WAIT_EE_PROCESS_EARLY_DATA
             if Early_Data_Received = False
                and (for some E in Encrypted_Extensions_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_EARLY_DATA)
+                       E.Tag = TLS_Handshake_EXTENSION_EARLY_DATA)
          then WAIT_EE_CHECK_EXTENSIONS
       end WAIT_EE_PARSE_EXTENSIONS;
 
       state WAIT_EE_PROCESS_SERVER_NAME is
       begin
-         Server_Name_Extension := [for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_SERVER_NAME]'Head;
+         Server_Name_Extension := [for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_SERVER_NAME]'Head;
          Server_Name_Received := True;
       transition
          then ERROR_ILLEGAL_PARAMETER
@@ -676,7 +771,7 @@ package TLS_Handshake_Session is
 
       state WAIT_EE_PROCESS_MAX_FRAGMENT_LENGTH is
       begin
-         Max_Fragment_Length := TLS_Handshake.Max_Fragment_Length ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_MAX_FRAGMENT_LENGTH]'Head.Data).Max_Fragment_Length;
+         Max_Fragment_Length := TLS_Handshake_Max_Fragment_Length ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_MAX_FRAGMENT_LENGTH]'Head.Data).Max_Fragment_Length;
          Max_Fragment_Length_Received := True;
       transition
          then ERROR_ILLEGAL_PARAMETER
@@ -686,18 +781,18 @@ package TLS_Handshake_Session is
 
       state WAIT_EE_PROCESS_SUPPORTED_GROUPS is
       begin
-         Server_Preferred_Groups := TLS_Handshake.Supported_Groups ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_SUPPORTED_GROUPS]'Head.Data).Groups;
+         Server_Preferred_Groups := TLS_Handshake_Supported_Groups ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_SUPPORTED_GROUPS]'Head.Data).Groups;
          Supported_Groups_Received := True;
       transition
          then WAIT_EE_PARSE_EXTENSIONS
       end WAIT_EE_PROCESS_SUPPORTED_GROUPS;
 
       state WAIT_EE_PROCESS_HEARTBEAT is
-         Server_Heartbeat_Mode : TLS_Handshake.Heartbeat_Mode;
+         Server_Heartbeat_Mode : TLS_Handshake_Heartbeat_Mode;
       begin
-         Server_Heartbeat_Mode := TLS_Handshake.Heartbeat ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_HEARTBEAT]'Head.Data).Mode;
-         Success := Write (Record_Control_Channel, GreenTLS.Control_Message'(Tag => GreenTLS.HEARTBEAT_MODE, Length => Data'Length, Payload => Data)
-            where Data = GreenTLS.Heartbeat_Control_Message'(Local => Configuration.Heartbeat_Mode, Remote => Server_Heartbeat_Mode));
+         Server_Heartbeat_Mode := TLS_Handshake_Heartbeat ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_HEARTBEAT]'Head.Data).Mode;
+         Success := Write (Record_Control_Channel, GreenTLS_Control_Message'(Tag => GreenTLS_HEARTBEAT_MODE, Length => Data'Length, Payload => Data)
+            where Data = GreenTLS_Heartbeat_Control_Message'(Local => Configuration.Heartbeat_Mode, Remote => Server_Heartbeat_Mode));
          Heartbeat_Received := True;
       transition
          then ERROR_INTERNAL_ERROR
@@ -706,11 +801,11 @@ package TLS_Handshake_Session is
       end WAIT_EE_PROCESS_HEARTBEAT;
 
       state WAIT_EE_PROCESS_APPLICATION_LAYER_PROTOCOL_NEGOTIATION is
-         Protocols : TLS_Handshake.Protocol_Names;
+         Protocols : TLS_Handshake_Protocol_Names;
       begin
-         Protocols := TLS_Handshake.Protocol_Name_List ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION]'Head.Data).Protocol_Name_List;
-         Success := Write (Application_Control_Channel, GreenTLS.Application_Control_Message'(Tag => GreenTLS.APPLICATION_PROTOCOL, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Application_Protocol_Message'(Protocol => Protocols'Head));
+         Protocols := TLS_Handshake_Protocol_Name_List ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION]'Head.Data).Protocol_Name_List;
+         Success := Write (Application_Control_Channel, GreenTLS_Application_Control_Message'(Tag => GreenTLS_APPLICATION_PROTOCOL, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Application_Protocol_Message'(Protocol => Protocols'Head));
          Application_Layer_Protocol_Negotiation_Received := True;
       transition
          then ERROR_INTERNAL_ERROR
@@ -748,8 +843,8 @@ package TLS_Handshake_Session is
 
       state WAIT_EE_NO_EARLY_DATA is
       begin
-         Success := Write (Application_Control_Channel, GreenTLS.Application_Control_Message'(Tag => GreenTLS.APPLICATION_NO_EARLY_DATA, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Application_No_Early_Data_Message'(null message));
+         Success := Write (Application_Control_Channel, GreenTLS_Application_Control_Message'(Tag => GreenTLS_APPLICATION_NO_EARLY_DATA, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Application_No_Early_Data_Message'(null message));
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -767,16 +862,16 @@ package TLS_Handshake_Session is
       state WAIT_CERT_CR is
       begin
          CCR_Handshake_Message := Read (Record_Data_Channel);
-         Certificate_Authorities := TLS_Handshake.Certificate_Authorities'(Length => 0);
-         OID_Filters := TLS_Handshake.OID_Filters'(Length => 0);
-         Signature_Algorithms := TLS_Handshake.Signature_Algorithms'(Length => 0);
-         Signature_Algorithms_Cert := TLS_Handshake.Signature_Algorithms_Cert'(Length => 0);
+         Certificate_Authorities := TLS_Handshake_Certificate_Authorities'(Length => 0);
+         OID_Filters := TLS_Handshake_OID_Filters'(Length => 0);
+         Signature_Algorithms := TLS_Handshake_Signature_Algorithms'(Length => 0);
+         Signature_Algorithms_Cert := TLS_Handshake_Signature_Algorithms_Cert'(Length => 0);
       transition
          then ERROR_DECODE_ERROR
             if CCR_Handshake_Message'Valid = False
          then ERROR_UNEXPECTED_MESSAGE
-            if CCR_Handshake_Message.Tag /= TLS_Handshake.HANDSHAKE_CERTIFICATE
-               and CCR_Handshake_Message.Tag /= TLS_Handshake.HANDSHAKE_CERTIFICATE_REQUEST
+            if CCR_Handshake_Message.Tag /= TLS_Handshake_HANDSHAKE_CERTIFICATE
+               and CCR_Handshake_Message.Tag /= TLS_Handshake_HANDSHAKE_CERTIFICATE_REQUEST
          then PARSE_CERT
             if Certificate_Message'Valid = True
          then PARSE_CR
@@ -786,7 +881,7 @@ package TLS_Handshake_Session is
 
       state PARSE_CR is
       begin
-         Certificate_Request := TLS_Handshake.Certificate_Request'(Certificate_Request_Context_Length => Certificate_Request_Message.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request_Message.Certificate_Request_Context, Extensions_Length => Certificate_Request_Message.Extensions_Length, Extensions => Certificate_Request_Message.Extensions);
+         Certificate_Request := TLS_Handshake_Certificate_Request'(Certificate_Request_Context_Length => Certificate_Request_Message.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request_Message.Certificate_Request_Context, Extensions_Length => Certificate_Request_Message.Extensions_Length, Extensions => Certificate_Request_Message.Extensions);
       transition
          then PARSE_CR_EXTENSIONS
       end PARSE_CR;
@@ -798,26 +893,26 @@ package TLS_Handshake_Session is
          then PARSE_CR_PARSE_CERTIFICATE_AUTHORITIES
             if Certificate_Authorities_Received = False
                and (for some E in Certificate_Request_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_CERTIFICATE_AUTHORITIES)
+                       E.Tag = TLS_Handshake_EXTENSION_CERTIFICATE_AUTHORITIES)
          then PARSE_CR_PARSE_OID_FILTERS
             if OID_Filters_Received = False
                and (for some E in Certificate_Request_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_OID_FILTERS)
+                       E.Tag = TLS_Handshake_EXTENSION_OID_FILTERS)
          then PARSE_CR_PARSE_SIGNATURE_ALGORITHMS
             if Signature_Algorithms_Received = False
                and (for some E in Certificate_Request_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS)
+                       E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS)
          then PARSE_CR_PARSE_SIGNATURE_ALGORITHMS_CERT
             if Signature_Algorithms_Cert_Received = False
                and (for some E in Certificate_Request_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS_CERT)
+                       E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS_CERT)
          then PARSE_CR_CHECK_EXTENSIONS
       end PARSE_CR_EXTENSIONS;
 
       state PARSE_CR_PARSE_CERTIFICATE_AUTHORITIES is
       begin
          Certificate_Authorities_Received := True;
-         Certificate_Authorities := TLS_Handshake.Certificate_Authorities ([for E in Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_CERTIFICATE_AUTHORITIES]'Head.Data);
+         Certificate_Authorities := TLS_Handshake_Certificate_Authorities ([for E in Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_CERTIFICATE_AUTHORITIES]'Head.Data);
       transition
          then PARSE_CR_EXTENSIONS
       end PARSE_CR_PARSE_CERTIFICATE_AUTHORITIES;
@@ -825,7 +920,7 @@ package TLS_Handshake_Session is
       state PARSE_CR_PARSE_OID_FILTERS is
       begin
          OID_Filters_Received := True;
-         OID_Filters := TLS_Handshake.OID_Filters ([for E in Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_OID_FILTERS]'Head.Data);
+         OID_Filters := TLS_Handshake_OID_Filters ([for E in Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_OID_FILTERS]'Head.Data);
       transition
          then PARSE_CR_EXTENSIONS
       end PARSE_CR_PARSE_OID_FILTERS;
@@ -833,7 +928,7 @@ package TLS_Handshake_Session is
       state PARSE_CR_PARSE_SIGNATURE_ALGORITHMS is
       begin
          Signature_Algorithms_Received := True;
-         Signature_Algorithms := TLS_Handshake.Signature_Algorithms ([for E in Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS]'Head.Data);
+         Signature_Algorithms := TLS_Handshake_Signature_Algorithms ([for E in Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS]'Head.Data);
       transition
          then ERROR_ILLEGAL_PARAMETER
             if (for all A in Configuration.Signature_Algorithms =>
@@ -844,7 +939,7 @@ package TLS_Handshake_Session is
       state PARSE_CR_PARSE_SIGNATURE_ALGORITHMS_CERT is
       begin
          Signature_Algorithms_Cert_Received := True;
-         Signature_Algorithms_Cert := TLS_Handshake.Signature_Algorithms_Cert ([for E in Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS_CERT]'Head.Data);
+         Signature_Algorithms_Cert := TLS_Handshake_Signature_Algorithms_Cert ([for E in Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS_CERT]'Head.Data);
       transition
          then ERROR_ILLEGAL_PARAMETER
             if (for all A in Configuration.Signature_Algorithms_Cert =>
@@ -869,7 +964,7 @@ package TLS_Handshake_Session is
             if CCR_Handshake_Message'Valid = False
                or Certificate_Message'Valid = False
          then ERROR_UNEXPECTED_MESSAGE
-            if CCR_Handshake_Message.Tag /= TLS_Handshake.HANDSHAKE_CERTIFICATE
+            if CCR_Handshake_Message.Tag /= TLS_Handshake_HANDSHAKE_CERTIFICATE
          then ERROR_ILLEGAL_PARAMETER
             if Certificate_Message.Certificate_Request_Context_Length /= 0
          then ERROR_ILLEGAL_PARAMETER
@@ -878,23 +973,23 @@ package TLS_Handshake_Session is
       end WAIT_CERT;
 
       state PARSE_CERT is
-         Validation_Result : GreenTLS.Certificate_Validation_Result;
+         Validation_Result : GreenTLS_Certificate_Validation_Result;
       begin
          Transcript_Hash := Update_Hash (Transcript_Hash, CCR_Handshake_Message'Opaque);
          Validation_Result := Validate_Server_Certificate (Certificate_Message, Configuration, Connection);
       transition
          then WAIT_CV
-            if Validation_Result = GreenTLS.VALID_CERTIFICATE
+            if Validation_Result = GreenTLS_VALID_CERTIFICATE
          then ERROR_BAD_CERTIFICATE
-            if Validation_Result = GreenTLS.BAD_CERTIFICATE
+            if Validation_Result = GreenTLS_BAD_CERTIFICATE
          then ERROR_UNSUPPORTED_CERTIFICATE
-            if Validation_Result = GreenTLS.UNSUPPORTED_CERTIFICATE
+            if Validation_Result = GreenTLS_UNSUPPORTED_CERTIFICATE
          then ERROR_CERTIFICATE_REVOKED
-            if Validation_Result = GreenTLS.CERTIFICATE_REVOKED
+            if Validation_Result = GreenTLS_CERTIFICATE_REVOKED
          then ERROR_CERTIFICATE_EXPIRED
-            if Validation_Result = GreenTLS.CERTIFICATE_EXPIRED
+            if Validation_Result = GreenTLS_CERTIFICATE_EXPIRED
          then ERROR_CERTIFICATE_UNKNOWN
-            if Validation_Result = GreenTLS.CERTIFICATE_UNKNOWN
+            if Validation_Result = GreenTLS_CERTIFICATE_UNKNOWN
          then ERROR_INTERNAL_ERROR
       end PARSE_CERT;
 
@@ -912,26 +1007,26 @@ package TLS_Handshake_Session is
       end WAIT_CV;
 
       state WAIT_CV_VALIDATE is
-         Validation_Result : GreenTLS.Signature_Validation_Result;
+         Validation_Result : GreenTLS_Signature_Validation_Result;
       begin
          Validation_Result := Validate_Certificate_Verify_Signature (Certificate_Message, Certificate_Verify_Message, Get_Hash (Transcript_Hash));
       transition
          then ERROR_ILLEGAL_PARAMETER
-            if Validation_Result = GreenTLS.ILLEGAL_PARAMETER
+            if Validation_Result = GreenTLS_ILLEGAL_PARAMETER
          then ERROR_DECRYPT_ERROR
-            if Validation_Result = GreenTLS.DECRYPT_ERROR
+            if Validation_Result = GreenTLS_DECRYPT_ERROR
          then WAIT_FINISHED
-            if Validation_Result = GreenTLS.VALID_SIGNATURE
+            if Validation_Result = GreenTLS_VALID_SIGNATURE
          then ERROR_INTERNAL_ERROR
       end WAIT_CV_VALIDATE;
 
       state WAIT_FINISHED is
-         Verify_Data : GreenTLS.Content;
-         Master_Secret : GreenTLS.Content;
+         Verify_Data : GreenTLS_Content;
+         Master_Secret : GreenTLS_Content;
       begin
          Hash_Length := Get_Hash_Length (Server_Hello_Message.Cipher_Suite);
          Finished_Handshake_Message := Read (Record_Data_Channel);
-         Finished_Key := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Handshake_Traffic_Secret), "finished", Get_Hash (Empty_Hash), Hash_Length);
+         Finished_Key := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Handshake_Traffic_Secret), "finished", Get_Hash (Empty_Hash), Hash_Length);
          Client_Handshake_Traffic_Secret := null;
          Verify_Data := HMAC (Server_Hello_Message.Cipher_Suite, Finished_Key, Get_Hash (Transcript_Hash));
          Transcript_Hash := Update_Hash (Transcript_Hash, Finished_Handshake_Message'Opaque);
@@ -953,7 +1048,7 @@ package TLS_Handshake_Session is
 
       state SEND_END_OF_EARLY_DATA is
       begin
-         Success := Write (Record_Data_Channel, TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_END_OF_EARLY_DATA, Length => 0));
+         Success := Write (Record_Data_Channel, TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_END_OF_EARLY_DATA, Length => 0));
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -970,23 +1065,23 @@ package TLS_Handshake_Session is
 
       state QUERY_CERTIFICATES is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_CERTIFICATES, Length => Query'Length, Payload => Query)
-            where Query = GreenTLS.Certificate_Query'(Certificate_Authorities => Certificate_Authorities, OID_Filters => OID_Filters, Signature_Algorithms => Signature_Algorithms, Signature_Algorithms_Cert => Signature_Algorithms_Cert));
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_CERTIFICATES, Length => Query'Length, Payload => Query)
+            where Query = GreenTLS_Certificate_Query'(Certificate_Authorities => Certificate_Authorities, OID_Filters => OID_Filters, Signature_Algorithms => Signature_Algorithms, Signature_Algorithms_Cert => Signature_Algorithms_Cert));
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
-               or GreenTLS.Certificate (Keystore_Message.Payload)'Valid = False
+               or GreenTLS_Certificate (Keystore_Message.Payload)'Valid = False
          then SEND_CERTIFICATE
-            if GreenTLS.Certificate (Keystore_Message.Payload).Length > 0
+            if GreenTLS_Certificate (Keystore_Message.Payload).Length > 0
          then SEND_EMPTY_CERTIFICATE
       end QUERY_CERTIFICATES;
 
       state SEND_CERTIFICATE is
-         Client_Certificate_Handshake_Message : TLS_Handshake.Handshake;
+         Client_Certificate_Handshake_Message : TLS_Handshake_Handshake;
       begin
-         Client_Certificate_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
-            where Certificate = TLS_Handshake.Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => C.Length, Certificate_List => C.Certificate_List)
-                     where C = GreenTLS.Certificate (Keystore_Message.Payload);
+         Client_Certificate_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
+            where Certificate = TLS_Handshake_Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => C.Length, Certificate_List => C.Certificate_List)
+                     where C = GreenTLS_Certificate (Keystore_Message.Payload);
          Success := Write (Record_Data_Channel, Client_Certificate_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
       transition
@@ -996,10 +1091,10 @@ package TLS_Handshake_Session is
       end SEND_CERTIFICATE;
 
       state SEND_EMPTY_CERTIFICATE is
-         Client_Certificate_Handshake_Message : TLS_Handshake.Handshake;
+         Client_Certificate_Handshake_Message : TLS_Handshake_Handshake;
       begin
-         Client_Certificate_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
-            where Certificate = TLS_Handshake.Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => 0);
+         Client_Certificate_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
+            where Certificate = TLS_Handshake_Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => 0);
          Success := Write (Record_Data_Channel, Client_Certificate_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
       transition
@@ -1010,21 +1105,21 @@ package TLS_Handshake_Session is
 
       state QUERY_SIGNATURE is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_SIGNATURE, Length => Query'Length, Payload => Query)
-            where Query = GreenTLS.Signature_Query'(ID => GreenTLS.Certificate (Keystore_Message.Payload).ID, Length => Hash'Length, Data => Hash)
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_SIGNATURE, Length => Query'Length, Payload => Query)
+            where Query = GreenTLS_Signature_Query'(ID => GreenTLS_Certificate (Keystore_Message.Payload).ID, Length => Hash'Length, Data => Hash)
                      where Hash = Get_Hash (Transcript_Hash).Data);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
-               or TLS_Handshake.Certificate_Verify (Keystore_Message.Payload)'Valid = False
+               or TLS_Handshake_Certificate_Verify (Keystore_Message.Payload)'Valid = False
          then SEND_CERTIFICATE_VERIFY
       end QUERY_SIGNATURE;
 
       state SEND_CERTIFICATE_VERIFY is
-         Client_Certificate_Verify_Handshake_Message : TLS_Handshake.Handshake;
+         Client_Certificate_Verify_Handshake_Message : TLS_Handshake_Handshake;
       begin
-         Client_Certificate_Verify_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CERTIFICATE_VERIFY, Length => Certificate_Verify'Length, Payload => Certificate_Verify)
-            where Certificate_Verify = TLS_Handshake.Certificate_Verify (Keystore_Message.Payload);
+         Client_Certificate_Verify_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CERTIFICATE_VERIFY, Length => Certificate_Verify'Length, Payload => Certificate_Verify)
+            where Certificate_Verify = TLS_Handshake_Certificate_Verify (Keystore_Message.Payload);
          Success := Write (Record_Data_Channel, Client_Certificate_Verify_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Verify_Handshake_Message'Opaque);
       transition
@@ -1034,12 +1129,12 @@ package TLS_Handshake_Session is
       end SEND_CERTIFICATE_VERIFY;
 
       state SEND_FINISHED is
-         Verify_Data : GreenTLS.Content;
+         Verify_Data : GreenTLS_Content;
       begin
          Verify_Data := HMAC (Server_Hello_Message.Cipher_Suite, Finished_Key, Get_Hash (Transcript_Hash));
          Finished_Key := null;
-         Finished_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_FINISHED, Length => Finished'Length, Payload => Finished)
-            where Finished = TLS_Handshake.Finished'(Verify_Data => Verify_Data);
+         Finished_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_FINISHED, Length => Finished'Length, Payload => Finished)
+            where Finished = TLS_Handshake_Finished'(Verify_Data => Verify_Data);
          Success := Write (Record_Data_Channel, Finished_Handshake_Message);
       transition
          then ERROR_INTERNAL_ERROR
@@ -1048,21 +1143,21 @@ package TLS_Handshake_Session is
       end SEND_FINISHED;
 
       state SEND_APPLICATION_RECORD_KEYS is
-         Server_Key : GreenTLS.Content;
-         Server_IV : GreenTLS.Content;
-         Client_Key : GreenTLS.Content;
-         Client_IV : GreenTLS.Content;
+         Server_Key : GreenTLS_Content;
+         Server_IV : GreenTLS_Content;
+         Client_Key : GreenTLS_Content;
+         Client_IV : GreenTLS_Content;
          Success_Client : Boolean;
          Success_Server : Boolean;
       begin
-         Server_Key := HKDF_Expand_Label (GreenTLS.Content'(Data => Server_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
-         Server_IV := HKDF_Expand_Label (GreenTLS.Content'(Data => Server_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
-         Client_Key := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
-         Client_IV := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
-         Success_Client := Write (Record_Control_Channel, GreenTLS.Control_Message'(Tag => GreenTLS.KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Record_Keys'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
-         Success_Server := Write (Record_Control_Channel, GreenTLS.Control_Message'(Tag => GreenTLS.KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Record_Keys'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
+         Server_Key := HKDF_Expand_Label (GreenTLS_Content'(Data => Server_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
+         Server_IV := HKDF_Expand_Label (GreenTLS_Content'(Data => Server_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
+         Client_Key := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
+         Client_IV := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
+         Success_Client := Write (Record_Control_Channel, GreenTLS_Control_Message'(Tag => GreenTLS_KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Record_Keys'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
+         Success_Server := Write (Record_Control_Channel, GreenTLS_Control_Message'(Tag => GreenTLS_KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Record_Keys'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
          Server_Application_Traffic_Secret := null;
       transition
          then ERROR_INTERNAL_ERROR
@@ -1077,32 +1172,32 @@ package TLS_Handshake_Session is
       transition
          then ERROR_DECODE_ERROR
             if Post_Handshake_Handshake_Message'Valid = False
-               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake.HANDSHAKE_NEW_SESSION_TICKET
+               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake_HANDSHAKE_NEW_SESSION_TICKET
                    and New_Session_Ticket_Message'Valid = False)
-               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake.HANDSHAKE_CERTIFICATE_REQUEST
+               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake_HANDSHAKE_CERTIFICATE_REQUEST
                    and PHA_Certificate_Request_Message'Valid = False)
-               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake.HANDSHAKE_KEY_UPDATE
+               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake_HANDSHAKE_KEY_UPDATE
                    and Key_Update_Message'Valid = False)
          then CONNECTED_NEW_SESSION_TICKET
-            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake.HANDSHAKE_NEW_SESSION_TICKET
+            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake_HANDSHAKE_NEW_SESSION_TICKET
                and New_Session_Ticket_Message'Valid = True
          then CONNECTED_POST_HANDSHAKE_AUTH
-            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake.HANDSHAKE_CERTIFICATE_REQUEST
+            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake_HANDSHAKE_CERTIFICATE_REQUEST
                and Configuration.Post_Handshake_Auth_Enabled = True
          then ERROR_UNEXPECTED_MESSAGE
-            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake.HANDSHAKE_CERTIFICATE_REQUEST
+            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake_HANDSHAKE_CERTIFICATE_REQUEST
                and Configuration.Post_Handshake_Auth_Enabled = False
          then CONNECTED_KEY_UPDATE
-            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake.HANDSHAKE_KEY_UPDATE
+            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake_HANDSHAKE_KEY_UPDATE
          then ERROR_UNEXPECTED_MESSAGE
       end CONNECTED;
 
       state CONNECTED_NEW_SESSION_TICKET is
-         PSK : GreenTLS.Content;
+         PSK : GreenTLS_Content;
       begin
-         PSK := HKDF_Expand_Label (GreenTLS.Content'(Data => Resumption_Master_Secret.Data), "resumption", GreenTLS.Content'(Data => New_Session_Ticket_Message.Ticket_Nonce), Hash_Length);
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_NEW_SESSION_TICKET, Length => NST'Length, Payload => NST)
-            where NST = GreenTLS.New_Session_Ticket'(Connection => Connection, Session => New_Session_Ticket_Message, PSK_Length => PSK'Length, PSK => PSK));
+         PSK := HKDF_Expand_Label (GreenTLS_Content'(Data => Resumption_Master_Secret.Data), "resumption", GreenTLS_Content'(Data => New_Session_Ticket_Message.Ticket_Nonce), Hash_Length);
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_NEW_SESSION_TICKET, Length => NST'Length, Payload => NST)
+            where NST = GreenTLS_New_Session_Ticket'(Connection => Connection, Session => New_Session_Ticket_Message, PSK_Length => PSK'Length, PSK => PSK));
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -1121,7 +1216,7 @@ package TLS_Handshake_Session is
 
       state CONNECTED_PHA_PARSE_CR is
       begin
-         Certificate_Request := TLS_Handshake.Certificate_Request'(Certificate_Request_Context_Length => PHA_Certificate_Request_Message.Certificate_Request_Context_Length, Certificate_Request_Context => PHA_Certificate_Request_Message.Certificate_Request_Context, Extensions_Length => PHA_Certificate_Request_Message.Extensions_Length, Extensions => PHA_Certificate_Request_Message.Extensions);
+         Certificate_Request := TLS_Handshake_Certificate_Request'(Certificate_Request_Context_Length => PHA_Certificate_Request_Message.Certificate_Request_Context_Length, Certificate_Request_Context => PHA_Certificate_Request_Message.Certificate_Request_Context, Extensions_Length => PHA_Certificate_Request_Message.Extensions_Length, Extensions => PHA_Certificate_Request_Message.Extensions);
       transition
          then CONNECTED_PHA_PARSE_CR_EXTENSIONS
       end CONNECTED_PHA_PARSE_CR;
@@ -1132,26 +1227,26 @@ package TLS_Handshake_Session is
          then CONNECTED_PHA_PARSE_CR_PARSE_CERTIFICATE_AUTHORITIES
             if Certificate_Authorities_Received = False
                and (for some E in PHA_Certificate_Request_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_CERTIFICATE_AUTHORITIES)
+                       E.Tag = TLS_Handshake_EXTENSION_CERTIFICATE_AUTHORITIES)
          then CONNECTED_PHA_PARSE_CR_PARSE_OID_FILTERS
             if OID_Filters_Received = False
                and (for some E in PHA_Certificate_Request_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_OID_FILTERS)
+                       E.Tag = TLS_Handshake_EXTENSION_OID_FILTERS)
          then CONNECTED_PHA_PARSE_CR_PARSE_SIGNATURE_ALGORITHMS
             if Signature_Algorithms_Received = False
                and (for some E in PHA_Certificate_Request_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS)
+                       E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS)
          then CONNECTED_PHA_PARSE_CR_PARSE_SIGNATURE_ALGORITHMS_CERT
             if Signature_Algorithms_Cert_Received = False
                and (for some E in PHA_Certificate_Request_Message.Extensions =>
-                       E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS_CERT)
+                       E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS_CERT)
          then CONNECTED_PHA_PARSE_CR_CHECK_EXTENSIONS
       end CONNECTED_PHA_PARSE_CR_EXTENSIONS;
 
       state CONNECTED_PHA_PARSE_CR_PARSE_CERTIFICATE_AUTHORITIES is
       begin
          Certificate_Authorities_Received := True;
-         Certificate_Authorities := TLS_Handshake.Certificate_Authorities ([for E in PHA_Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_CERTIFICATE_AUTHORITIES]'Head.Data);
+         Certificate_Authorities := TLS_Handshake_Certificate_Authorities ([for E in PHA_Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_CERTIFICATE_AUTHORITIES]'Head.Data);
       transition
          then CONNECTED_PHA_PARSE_CR_EXTENSIONS
       end CONNECTED_PHA_PARSE_CR_PARSE_CERTIFICATE_AUTHORITIES;
@@ -1159,7 +1254,7 @@ package TLS_Handshake_Session is
       state CONNECTED_PHA_PARSE_CR_PARSE_OID_FILTERS is
       begin
          OID_Filters_Received := True;
-         OID_Filters := TLS_Handshake.OID_Filters ([for E in PHA_Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_OID_FILTERS]'Head.Data);
+         OID_Filters := TLS_Handshake_OID_Filters ([for E in PHA_Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_OID_FILTERS]'Head.Data);
       transition
          then CONNECTED_PHA_PARSE_CR_EXTENSIONS
       end CONNECTED_PHA_PARSE_CR_PARSE_OID_FILTERS;
@@ -1167,7 +1262,7 @@ package TLS_Handshake_Session is
       state CONNECTED_PHA_PARSE_CR_PARSE_SIGNATURE_ALGORITHMS is
       begin
          Signature_Algorithms_Received := True;
-         Signature_Algorithms := TLS_Handshake.Signature_Algorithms ([for E in PHA_Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS]'Head.Data);
+         Signature_Algorithms := TLS_Handshake_Signature_Algorithms ([for E in PHA_Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS]'Head.Data);
       transition
          then ERROR_ILLEGAL_PARAMETER
             if (for all A in Configuration.Signature_Algorithms =>
@@ -1178,7 +1273,7 @@ package TLS_Handshake_Session is
       state CONNECTED_PHA_PARSE_CR_PARSE_SIGNATURE_ALGORITHMS_CERT is
       begin
          Signature_Algorithms_Cert_Received := True;
-         Signature_Algorithms_Cert := TLS_Handshake.Signature_Algorithms_Cert ([for E in PHA_Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake.EXTENSION_SIGNATURE_ALGORITHMS_CERT]'Head.Data);
+         Signature_Algorithms_Cert := TLS_Handshake_Signature_Algorithms_Cert ([for E in PHA_Certificate_Request_Message.Extensions => E when E.Tag = TLS_Handshake_EXTENSION_SIGNATURE_ALGORITHMS_CERT]'Head.Data);
       transition
          then ERROR_ILLEGAL_PARAMETER
             if (for all A in Configuration.Signature_Algorithms_Cert =>
@@ -1197,23 +1292,23 @@ package TLS_Handshake_Session is
 
       state CONNECTED_PHA_QUERY_CERTIFICATES is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_CERTIFICATES, Length => Query'Length, Payload => Query)
-            where Query = GreenTLS.Certificate_Query'(Certificate_Authorities => Certificate_Authorities, OID_Filters => OID_Filters, Signature_Algorithms => Signature_Algorithms, Signature_Algorithms_Cert => Signature_Algorithms_Cert));
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_CERTIFICATES, Length => Query'Length, Payload => Query)
+            where Query = GreenTLS_Certificate_Query'(Certificate_Authorities => Certificate_Authorities, OID_Filters => OID_Filters, Signature_Algorithms => Signature_Algorithms, Signature_Algorithms_Cert => Signature_Algorithms_Cert));
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
-               or GreenTLS.Certificate (Keystore_Message.Payload)'Valid = False
+               or GreenTLS_Certificate (Keystore_Message.Payload)'Valid = False
          then CONNECTED_PHA_SEND_CERTIFICATE
-            if GreenTLS.Certificate (Keystore_Message.Payload).Length > 0
+            if GreenTLS_Certificate (Keystore_Message.Payload).Length > 0
          then CONNECTED_PHA_SEND_EMPTY_CERTIFICATE
       end CONNECTED_PHA_QUERY_CERTIFICATES;
 
       state CONNECTED_PHA_SEND_CERTIFICATE is
-         Client_Certificate_Handshake_Message : TLS_Handshake.Handshake;
+         Client_Certificate_Handshake_Message : TLS_Handshake_Handshake;
       begin
-         Client_Certificate_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
-            where Certificate = TLS_Handshake.Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => C.Length, Certificate_List => C.Certificate_List)
-                     where C = GreenTLS.Certificate (Keystore_Message.Payload);
+         Client_Certificate_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
+            where Certificate = TLS_Handshake_Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => C.Length, Certificate_List => C.Certificate_List)
+                     where C = GreenTLS_Certificate (Keystore_Message.Payload);
          Success := Write (Record_Data_Channel, Client_Certificate_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
       transition
@@ -1223,10 +1318,10 @@ package TLS_Handshake_Session is
       end CONNECTED_PHA_SEND_CERTIFICATE;
 
       state CONNECTED_PHA_SEND_EMPTY_CERTIFICATE is
-         Client_Certificate_Handshake_Message : TLS_Handshake.Handshake;
+         Client_Certificate_Handshake_Message : TLS_Handshake_Handshake;
       begin
-         Client_Certificate_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
-            where Certificate = TLS_Handshake.Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => 0);
+         Client_Certificate_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
+            where Certificate = TLS_Handshake_Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => 0);
          Success := Write (Record_Data_Channel, Client_Certificate_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
       transition
@@ -1237,21 +1332,21 @@ package TLS_Handshake_Session is
 
       state CONNECTED_PHA_QUERY_SIGNATURE is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS.Keystore_Message'(Tag => GreenTLS.KEYSTORE_REQUEST, Request => GreenTLS.KEYSTORE_REQUEST_SIGNATURE, Length => Query'Length, Payload => Query)
-            where Query = GreenTLS.Signature_Query'(ID => GreenTLS.Certificate (Keystore_Message.Payload).ID, Length => Hash'Length, Data => Hash)
+         Keystore_Message := Call (Keystore_Channel, GreenTLS_Keystore_Message'(Tag => GreenTLS_KEYSTORE_REQUEST, Request => GreenTLS_KEYSTORE_REQUEST_SIGNATURE, Length => Query'Length, Payload => Query)
+            where Query = GreenTLS_Signature_Query'(ID => GreenTLS_Certificate (Keystore_Message.Payload).ID, Length => Hash'Length, Data => Hash)
                      where Hash = Get_Hash (Transcript_Hash).Data);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
-               or TLS_Handshake.Certificate_Verify (Keystore_Message.Payload)'Valid = False
+               or TLS_Handshake_Certificate_Verify (Keystore_Message.Payload)'Valid = False
          then CONNECTED_PHA_SEND_CERTIFICATE_VERIFY
       end CONNECTED_PHA_QUERY_SIGNATURE;
 
       state CONNECTED_PHA_SEND_CERTIFICATE_VERIFY is
-         Client_Certificate_Verify_Handshake_Message : TLS_Handshake.Handshake;
+         Client_Certificate_Verify_Handshake_Message : TLS_Handshake_Handshake;
       begin
-         Client_Certificate_Verify_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_CERTIFICATE_VERIFY, Length => Certificate_Verify'Length, Payload => Certificate_Verify)
-            where Certificate_Verify = TLS_Handshake.Certificate_Verify (Keystore_Message.Payload);
+         Client_Certificate_Verify_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_CERTIFICATE_VERIFY, Length => Certificate_Verify'Length, Payload => Certificate_Verify)
+            where Certificate_Verify = TLS_Handshake_Certificate_Verify (Keystore_Message.Payload);
          Success := Write (Record_Data_Channel, Client_Certificate_Verify_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Verify_Handshake_Message'Opaque);
       transition
@@ -1261,12 +1356,12 @@ package TLS_Handshake_Session is
       end CONNECTED_PHA_SEND_CERTIFICATE_VERIFY;
 
       state CONNECTED_PHA_SEND_FINISHED is
-         Verify_Data : GreenTLS.Content;
+         Verify_Data : GreenTLS_Content;
       begin
          Verify_Data := HMAC (Server_Hello_Message.Cipher_Suite, Finished_Key, Get_Hash (Transcript_Hash));
          Finished_Key := null;
-         Finished_Handshake_Message := TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_FINISHED, Length => Finished'Length, Payload => Finished)
-            where Finished = TLS_Handshake.Finished'(Verify_Data => Verify_Data);
+         Finished_Handshake_Message := TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_FINISHED, Length => Finished'Length, Payload => Finished)
+            where Finished = TLS_Handshake_Finished'(Verify_Data => Verify_Data);
          Success := Write (Record_Data_Channel, Finished_Handshake_Message);
       transition
          then ERROR_INTERNAL_ERROR
@@ -1275,35 +1370,35 @@ package TLS_Handshake_Session is
       end CONNECTED_PHA_SEND_FINISHED;
 
       state CONNECTED_KEY_UPDATE is
-         Server_Key : GreenTLS.Content;
-         Server_IV : GreenTLS.Content;
+         Server_Key : GreenTLS_Content;
+         Server_IV : GreenTLS_Content;
          Success_Server : Boolean;
       begin
-         Server_Application_Traffic_Secret := HKDF_Expand_Label (GreenTLS.Content'(Data => Server_Application_Traffic_Secret.Data), "traffic upd", Get_Hash (Empty_Hash), Hash_Length);
-         Server_Key := HKDF_Expand_Label (GreenTLS.Content'(Data => Server_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
-         Server_IV := HKDF_Expand_Label (GreenTLS.Content'(Data => Server_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
-         Success_Server := Write (Record_Control_Channel, GreenTLS.Control_Message'(Tag => GreenTLS.KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Record_Keys'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
+         Server_Application_Traffic_Secret := HKDF_Expand_Label (GreenTLS_Content'(Data => Server_Application_Traffic_Secret.Data), "traffic upd", Get_Hash (Empty_Hash), Hash_Length);
+         Server_Key := HKDF_Expand_Label (GreenTLS_Content'(Data => Server_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
+         Server_IV := HKDF_Expand_Label (GreenTLS_Content'(Data => Server_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
+         Success_Server := Write (Record_Control_Channel, GreenTLS_Control_Message'(Tag => GreenTLS_KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Record_Keys'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
       transition
          then ERROR_INTERNAL_ERROR
             if Success_Server = False
          then CONNECTED_SEND_KEY_UPDATE
-            if Key_Update_Message.Request_Update = TLS_Handshake.UPDATE_REQUESTED
+            if Key_Update_Message.Request_Update = TLS_Handshake_UPDATE_REQUESTED
          then CONNECTED
       end CONNECTED_KEY_UPDATE;
 
       state CONNECTED_SEND_KEY_UPDATE is
-         Client_Key : GreenTLS.Content;
-         Client_IV : GreenTLS.Content;
+         Client_Key : GreenTLS_Content;
+         Client_IV : GreenTLS_Content;
          Success_Client : Boolean;
       begin
-         Success := Write (Record_Data_Channel, TLS_Handshake.Handshake'(Tag => TLS_Handshake.HANDSHAKE_KEY_UPDATE, Length => KU'Length, Payload => KU)
-            where KU = TLS_Handshake.Key_Update'(Request_Update => TLS_Handshake.UPDATE_NOT_REQUESTED));
-         Client_Application_Traffic_Secret := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Application_Traffic_Secret), "traffic upd", Get_Hash (Empty_Hash), Hash_Length);
-         Client_Key := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
-         Client_IV := HKDF_Expand_Label (GreenTLS.Content'(Data => Client_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
-         Success_Client := Write (Record_Control_Channel, GreenTLS.Control_Message'(Tag => GreenTLS.KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Record_Keys'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
+         Success := Write (Record_Data_Channel, TLS_Handshake_Handshake'(Tag => TLS_Handshake_HANDSHAKE_KEY_UPDATE, Length => KU'Length, Payload => KU)
+            where KU = TLS_Handshake_Key_Update'(Request_Update => TLS_Handshake_UPDATE_NOT_REQUESTED));
+         Client_Application_Traffic_Secret := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Application_Traffic_Secret), "traffic upd", Get_Hash (Empty_Hash), Hash_Length);
+         Client_Key := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), Keystore_Message.Key_Length);
+         Client_IV := HKDF_Expand_Label (GreenTLS_Content'(Data => Client_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), Keystore_Message.IV_Length);
+         Success_Client := Write (Record_Control_Channel, GreenTLS_Control_Message'(Tag => GreenTLS_KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Record_Keys'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -1313,107 +1408,107 @@ package TLS_Handshake_Session is
 
       state ERROR_INVALID_CONFIGURATION is
       begin
-         Error := TLS_Alert.ILLEGAL_PARAMETER;
+         Error := TLS_Alert_ILLEGAL_PARAMETER;
       transition
          then ERROR_SEND_LOCAL
       end ERROR_INVALID_CONFIGURATION;
 
       state ERROR_UNEXPECTED_MESSAGE is
       begin
-         Error := TLS_Alert.UNEXPECTED_MESSAGE;
+         Error := TLS_Alert_UNEXPECTED_MESSAGE;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_UNEXPECTED_MESSAGE;
 
       state ERROR_BAD_CERTIFICATE is
       begin
-         Error := TLS_Alert.BAD_CERTIFICATE;
+         Error := TLS_Alert_BAD_CERTIFICATE;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_BAD_CERTIFICATE;
 
       state ERROR_UNSUPPORTED_CERTIFICATE is
       begin
-         Error := TLS_Alert.UNSUPPORTED_CERTIFICATE;
+         Error := TLS_Alert_UNSUPPORTED_CERTIFICATE;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_UNSUPPORTED_CERTIFICATE;
 
       state ERROR_CERTIFICATE_REVOKED is
       begin
-         Error := TLS_Alert.CERTIFICATE_REVOKED;
+         Error := TLS_Alert_CERTIFICATE_REVOKED;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_CERTIFICATE_REVOKED;
 
       state ERROR_CERTIFICATE_EXPIRED is
       begin
-         Error := TLS_Alert.CERTIFICATE_EXPIRED;
+         Error := TLS_Alert_CERTIFICATE_EXPIRED;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_CERTIFICATE_EXPIRED;
 
       state ERROR_CERTIFICATE_UNKNOWN is
       begin
-         Error := TLS_Alert.CERTIFICATE_UNKNOWN;
+         Error := TLS_Alert_CERTIFICATE_UNKNOWN;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_CERTIFICATE_UNKNOWN;
 
       state ERROR_ILLEGAL_PARAMETER is
       begin
-         Error := TLS_Alert.ILLEGAL_PARAMETER;
+         Error := TLS_Alert_ILLEGAL_PARAMETER;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_ILLEGAL_PARAMETER;
 
       state ERROR_DECODE_ERROR is
       begin
-         Error := TLS_Alert.DECODE_ERROR;
+         Error := TLS_Alert_DECODE_ERROR;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_DECODE_ERROR;
 
       state ERROR_DECRYPT_ERROR is
       begin
-         Error := TLS_Alert.DECRYPT_ERROR;
+         Error := TLS_Alert_DECRYPT_ERROR;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_DECRYPT_ERROR;
 
       state ERROR_PROTOCOL_VERSION is
       begin
-         Error := TLS_Alert.PROTOCOL_VERSION;
+         Error := TLS_Alert_PROTOCOL_VERSION;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_PROTOCOL_VERSION;
 
       state ERROR_INTERNAL_ERROR is
       begin
-         Error := TLS_Alert.INTERNAL_ERROR;
+         Error := TLS_Alert_INTERNAL_ERROR;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_INTERNAL_ERROR;
 
       state ERROR_MISSING_EXTENSION is
       begin
-         Error := TLS_Alert.MISSING_EXTENSION;
+         Error := TLS_Alert_MISSING_EXTENSION;
       transition
          then ERROR_SEND_REMOTE
       end ERROR_MISSING_EXTENSION;
 
       state ERROR_SEND_REMOTE is
       begin
-         Success := Write (Record_Control_Channel, GreenTLS.Control_Message'(Tag => TLS_Alert.ALERT, Length => Alert_Message'Length, Data => Alert_Message)
-            where Alert_Message = GreenTLS.Alert_Message'(Description => Error));
+         Success := Write (Record_Control_Channel, GreenTLS_Control_Message'(Tag => TLS_Alert_ALERT, Length => Alert_Message'Length, Data => Alert_Message)
+            where Alert_Message = GreenTLS_Alert_Message'(Description => Error));
       transition
          then ERROR_SEND_LOCAL
       end ERROR_SEND_REMOTE;
 
       state ERROR_SEND_LOCAL is
       begin
-         Success := Write (Application_Control_Channel, GreenTLS.Application_Control_Message'(Tag => GreenTLS.APPLICATION_ALERT, Length => Data'Length, Data => Data)
-            where Data = GreenTLS.Alert_Message'(Description => Error));
+         Success := Write (Application_Control_Channel, GreenTLS_Application_Control_Message'(Tag => GreenTLS_APPLICATION_ALERT, Length => Data'Length, Data => Data)
+            where Data = GreenTLS_Alert_Message'(Description => Error));
       transition
          then TERMINATED
       end ERROR_SEND_LOCAL;

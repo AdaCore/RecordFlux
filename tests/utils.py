@@ -24,7 +24,7 @@ def assert_message_model_error(
     location: Location = None,
 ) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        Message("P.M", structure, types, aspects=aspects, location=location)
+        Message("P::M", structure, types, aspects=aspects, location=location)
 
 
 def assert_type_model_error(instance: Type, regex: str) -> None:

@@ -4,8 +4,8 @@ from typing import Callable, Tuple
 import pytest
 
 import rflx.expression as expr
+from rflx.ada import ID
 from rflx.generator import Generator, common, const
-from rflx.identifier import ID
 from rflx.model import BUILTIN_TYPES, Model, Type
 from tests.models import (
     ARRAYS_MODEL,
@@ -91,7 +91,7 @@ def test_unexpected_type() -> None:
         pass
 
     with pytest.raises(AssertionError, match='unexpected type "TestType"'):
-        Generator().generate(Model([TestType("P.T")]))
+        Generator().generate(Model([TestType("P::T")]))
 
 
 def test_null_spec() -> None:
@@ -191,8 +191,8 @@ def test_substitution_relation_aggregate(
             expr.Variable("Ctx"),
             expr.Variable("F_Value"),
             expr.Aggregate(
-                expr.Val(expr.Variable("Types.Byte"), expr.Number(1)),
-                expr.Val(expr.Variable("Types.Byte"), expr.Number(2)),
+                expr.Val(expr.Variable(expr.ID("Types") * "Byte"), expr.Number(1)),
+                expr.Val(expr.Variable(expr.ID("Types") * "Byte"), expr.Number(2)),
             ),
         ],
     )
@@ -235,7 +235,7 @@ def test_substitution_relation_scalar(
 def test_prefixed_type_name() -> None:
     assert common.prefixed_type_name(ID("Modular"), "P") == ID("P.Modular")
     for t in BUILTIN_TYPES:
-        assert common.prefixed_type_name(t, "P") == t
+        assert common.prefixed_type_name(ID(t), "P") == t
 
 
 def test_base_type_name() -> None:

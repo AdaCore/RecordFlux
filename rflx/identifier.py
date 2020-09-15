@@ -1,27 +1,29 @@
 from typing import Optional, Sequence, Union
 
-from rflx.contract import invariant
+# from rflx.contract import invariant
 from rflx.error import Location
 
 
-@invariant(lambda self: all(" " not in part for part in self.parts), "no whitespace in identifier")
-@invariant(lambda self: "" not in self.parts, "no empty part in identifier")
 class ID:
     def __init__(
         self, identifier: Union[str, Sequence[str], "ID"], location: Location = None
     ) -> None:
-        self.parts: Sequence[str]
+        self._parts: Sequence[str]
         self.location = location
 
         if isinstance(identifier, str):
-            self.parts = identifier.split(".")
+            self._parts = identifier.split(self._separator)
         elif isinstance(identifier, list):
-            self.parts = identifier
+            self._parts = identifier
         elif isinstance(identifier, ID):
-            self.parts = list(identifier.parts)
+            self._parts = list(identifier.parts)
             self.location = location or identifier.location
         else:
             assert False, f'unexpected identifier type "{type(identifier).__name__}"'
+
+        assert "" not in self._parts, "empty part in identifier"
+        for c in [" ", ".", ":"]:
+            assert all(c not in part for part in self._parts), f'"{c}" in identifier parts'
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -40,30 +42,30 @@ class ID:
         return f'ID("{self}")'
 
     def __str__(self) -> str:
-        return ".".join(self.parts)
+        return self._separator.join(self.parts)
 
     def __add__(self, other: object) -> "ID":
         if isinstance(other, (str, ID)):
-            return ID(f"{self}{other}", self.__location(other))
+            return self.__class__(f"{self}{other}", self.__location(other))
         return NotImplemented
 
     def __radd__(self, other: object) -> "ID":
         if isinstance(other, (str, ID)):
-            return ID(f"{other}{self}", self.__location(other))
+            return self.__class__(f"{other}{self}", self.__location(other))
         return NotImplemented
 
     def __mul__(self, other: object) -> "ID":
         if isinstance(other, (str, ID)):
             if str(other) == "":
-                return ID(self, self.__location(other))
-            return ID(f"{self}.{other}", self.__location(other))
+                return self.__class__(self, self.__location(other))
+            return self.__class__(f"{self}{self._separator}{other}", self.__location(other))
         return NotImplemented
 
     def __rmul__(self, other: object) -> "ID":
         if isinstance(other, (str, ID)):
             if str(other) == "":
-                return ID(self, self.__location(other))
-            return ID(f"{other}.{self}", self.__location(other))
+                return self.__class__(self, self.__location(other))
+            return self.__class__(f"{other}{self._separator}{self}", self.__location(other))
         return NotImplemented
 
     def __location(self, other: object) -> Optional[Location]:
@@ -74,7 +76,12 @@ class ID:
                 return None
             if self.location is None:
                 return other.location
+            return self.location
         raise NotImplementedError
+
+    @property
+    def parts(self) -> Sequence[str]:
+        return self._parts
 
     @property
     def name(self) -> "ID":
@@ -83,6 +90,10 @@ class ID:
     @property
     def parent(self) -> "ID":
         return ID(self.parts[:-1])
+
+    @property
+    def _separator(self) -> str:
+        return "::"
 
 
 StrID = Union[str, ID]

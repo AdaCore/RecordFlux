@@ -3,6 +3,7 @@ from typing import List, Mapping, Sequence, Tuple
 import rflx.expression as expr
 from rflx.ada import (
     FALSE,
+    ID,
     TRUE,
     Add,
     And,
@@ -43,7 +44,6 @@ from rflx.ada import (
     Variable,
 )
 from rflx.common import unique
-from rflx.identifier import ID
 from rflx.model import BUILTINS_PACKAGE, FINAL, INITIAL, Composite, Field, Message, Scalar, Type
 
 from . import common, const
@@ -633,7 +633,7 @@ class ParserGenerator:
             if field_type.package == BUILTINS_PACKAGE:
                 type_name = ID(field_type.name)
             else:
-                type_name = self.prefix * field_type.identifier
+                type_name = self.prefix * ID(field_type.identifier)
 
             return FunctionSpecification(
                 f"Get_{field.name}", type_name, [Parameter(["Ctx"], "Context")]

@@ -7,9 +7,38 @@ from enum import Enum
 from sys import intern
 from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
+import rflx.identifier
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
-from rflx.identifier import ID, StrID
+
+
+class ID(rflx.identifier.ID):
+    @property
+    def _separator(self) -> str:
+        return "."
+
+    def __add__(self, other: object) -> "ID":
+        result = super().__add__(other)
+        assert isinstance(result, ID)
+        return result
+
+    def __radd__(self, other: object) -> "ID":
+        result = super().__radd__(other)
+        assert isinstance(result, ID)
+        return result
+
+    def __mul__(self, other: object) -> "ID":
+        result = super().__mul__(other)
+        assert isinstance(result, ID)
+        return result
+
+    def __rmul__(self, other: object) -> "ID":
+        result = super().__rmul__(other)
+        assert isinstance(result, ID)
+        return result
+
+
+StrID = Union[str, ID]
 
 
 class Precedence(Enum):

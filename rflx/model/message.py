@@ -269,12 +269,12 @@ class AbstractMessage(mty.Type):
             return expression.substituted(
                 mapping={
                     **{
-                        v: v.__class__(f"{prefix}{v.name}")
+                        v: v.__class__(ID(prefix) + v.name)
                         for v in expression.variables()
                         if v.identifier in fields
                     },
                     **{
-                        v: v.__class__(f"{self.package}.{v.name}")
+                        v: v.__class__(self.package * v.name)
                         for v in expression.variables()
                         if v.identifier in literals
                         and v.identifier not in mty.BUILTIN_LITERALS

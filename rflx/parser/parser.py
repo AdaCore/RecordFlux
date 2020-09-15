@@ -157,7 +157,7 @@ class Parser:
 
     def __evaluate_types(self, spec: Specification, error: RecordFluxError) -> None:
         for t in spec.package.types:
-            t.identifier = ID(f"{spec.package.identifier}.{t.name}", t.identifier.location)
+            t.identifier = ID(spec.package.identifier, t.identifier.location) * t.name
 
             if t.identifier in self.__types:
                 error.append(
@@ -203,9 +203,7 @@ class Parser:
 
     def __evaluate_sessions(self, spec: Specification, error: RecordFluxError) -> None:
         for s in spec.package.sessions:
-            s.identifier = ID(
-                f"{spec.package.identifier}.{s.identifier.name}", s.identifier.location
-            )
+            s.identifier = ID(spec.package.identifier, s.identifier.location) * s.identifier.name
 
             if s.identifier in self.__types or s.identifier in self.__sessions:
                 error.append(

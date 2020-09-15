@@ -110,7 +110,7 @@ class RefinementSpec(Type):
         self.sdu = ID(sdu)
         self.condition = condition
         super().__init__(
-            f"__PACKAGE__.__REFINEMENT__{flat_name(str(self.sdu))}"
+            ID("__PACKAGE__") * f"__REFINEMENT__{flat_name(str(self.sdu))}"
             f"__{flat_name(str(self.pdu))}__{field}__",
             location,
         )
