@@ -1939,14 +1939,6 @@ def test_tls() -> None:
     p.create_model()
 
 
-def test_tls_sessions() -> None:
-    p = Parser()
-    for f in ["tls_handshake_session.rflx", "tls_record_session.rflx"]:
-        p.parse(Path(f"{TESTDIR}/{f}"))
-    model = p.create_model()
-    assert len(model.sessions) == 2
-
-
 def test_message_with_two_length_fields() -> None:
     p = Parser()
     p.parse_string(

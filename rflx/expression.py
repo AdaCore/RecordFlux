@@ -12,8 +12,7 @@ import rflx.ada as ada
 import rflx.typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
-from rflx.declaration import ChannelDeclaration, Declaration, VariableDeclaration
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
 
@@ -168,10 +167,6 @@ class Expr(DBC, Base):
     def check(self, facts: Optional[Sequence["Expr"]] = None) -> Proof:
         return Proof(self, facts)
 
-    @abstractmethod
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        raise NotImplementedError
-
 
 class BooleanLiteral(Expr):
     _str: str
@@ -190,9 +185,6 @@ class BooleanLiteral(Expr):
 
     def simplified(self) -> Expr:
         return self
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        pass
 
 
 class BooleanTrue(BooleanLiteral):
@@ -279,9 +271,6 @@ class Not(Expr):
         assert isinstance(z3expr, z3.BoolRef)
         return z3.Not(z3expr)
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.expr.validate(declarations)
-
 
 class BinExpr(Expr):
     def __init__(
@@ -337,10 +326,6 @@ class BinExpr(Expr):
 
     def simplified(self) -> Expr:
         return self.__class__(self.left.simplified(), self.right.simplified())
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.left.validate(declarations)
-        self.right.validate(declarations)
 
     @property
     @abstractmethod
@@ -460,10 +445,6 @@ class AssExpr(Expr):
         if len(terms) == 1:
             return terms[0]
         return self.__class__(*terms, location=self.location)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        for term in self.terms:
-            term.validate(declarations)
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -717,9 +698,6 @@ class Number(Expr):
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        pass
 
 
 class MathAssExpr(AssExpr):
@@ -1014,16 +992,6 @@ class Variable(Name):
     def variables(self) -> List["Variable"]:
         return [self]
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        builtin_types = map(ID, ["Boolean", "True", "False"])
-        if self.identifier in builtin_types:
-            return
-        if self.identifier not in declarations:
-            fail(
-                f'undeclared variable "{self.name}"', Subsystem.MODEL, Severity.ERROR, self.location
-            )
-        declarations[self.identifier].reference()
-
     def ada_expr(self) -> ada.Expr:
         return ada.Variable(ada.ID(self.identifier), self.negative)
 
@@ -1085,9 +1053,6 @@ class Attribute(Name):
         if self.negative:
             return -z3.Int(name)
         return z3.Int(name)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.prefix.validate(declarations)
 
 
 class Size(Attribute):
@@ -1199,9 +1164,6 @@ class Indexed(Name):
     def representation(self) -> str:
         return f"{self.prefix} (" + ", ".join(map(str, self.elements)) + ")"
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        raise NotImplementedError
-
     def ada_expr(self) -> ada.Expr:
         return ada.Indexed(
             self.prefix.ada_expr(), *[e.ada_expr() for e in self.elements], negative=self.negative
@@ -1253,9 +1215,6 @@ class Selected(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.prefix.validate(declarations)
-
 
 class Call(Name):
     def __init__(
@@ -1289,85 +1248,8 @@ class Call(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def __validate_channel(
-        self, declarations: Mapping[ID, Declaration], error: RecordFluxError
-    ) -> None:
-        if len(self.args) < 1:
-            fail(
-                f'no channel argument in call to "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-        channel_id = self.args[0]
-        if not isinstance(channel_id, Variable):
-            fail(
-                f'invalid channel ID type in call to "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-        assert isinstance(channel_id, Variable)
-        if channel_id.identifier not in declarations:
-            fail(
-                f'undeclared channel "{channel_id}" in call to "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-
-        assert isinstance(channel_id, Variable)
-        channel = declarations[channel_id.identifier]
-        if not isinstance(channel, ChannelDeclaration):
-            fail(
-                f'invalid channel type in call to "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-
-        assert isinstance(channel, ChannelDeclaration)
-        channel.reference()
-        if self.name in map(ID, ["Write", "Call"]) and not channel.writable:
-            error.append(
-                f'channel "{channel_id}" not writable in call to "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-        if self.name in map(ID, ["Call", "Read", "Data_Available"]) and not channel.readable:
-            error.append(
-                f'channel "{channel_id}" not readable in call to "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-        for a in self.args[1:]:
-            a.validate(declarations)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        error = RecordFluxError()
-        if self.name in map(ID, ["Read", "Write", "Call", "Data_Available"]):
-            self.__validate_channel(declarations, error)
-        else:
-            if self.name not in map(ID, ["Append", "Extend"]):
-                if self.name not in declarations:
-                    fail(
-                        f'undeclared subprogram "{self.name}" called',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    )
-                declarations[self.name].reference()
-            for a in self.args:
-                try:
-                    a.validate(declarations)
-                except RecordFluxError as e:
-                    error.extend(e)
-        error.propagate()
-
     def variables(self) -> List["Variable"]:
-        result = []
+        result = [Variable(self.name, location=self.location)]
         for t in self.args:
             result.extend(t.variables())
         return result
@@ -1401,9 +1283,6 @@ class UndefinedExpr(Name):
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError
 
 
@@ -1451,9 +1330,6 @@ class Aggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        raise NotImplementedError
-
 
 class String(Aggregate):
     def __init__(self, data: str, location: Location = None) -> None:
@@ -1485,9 +1361,6 @@ class String(Aggregate):
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        pass
 
 
 class Relation(BinExpr):
@@ -1786,13 +1659,6 @@ class QuantifiedExpression(Expr):
             self.parameter_name, self.iterable.simplified(), self.predicate.simplified()
         )
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        quantifier: Mapping[ID, Declaration] = {
-            self.parameter_name: VariableDeclaration(self.parameter_name)
-        }
-        self.iterable.validate({**declarations, **quantifier})
-        self.predicate.validate({**declarations, **quantifier})
-
 
 class ForAllOf(QuantifiedExpression):
     def __neg__(self) -> Expr:
@@ -1873,9 +1739,6 @@ class ValueRange(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        raise NotImplementedError
-
 
 class Conversion(Expr):
     def __init__(
@@ -1918,9 +1781,6 @@ class Conversion(Expr):
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         raise NotImplementedError
 
     def variables(self) -> List["Variable"]:
@@ -1988,15 +1848,6 @@ class Comprehension(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        decls: Mapping[ID, Declaration] = {
-            **declarations,
-            self.iterator: VariableDeclaration(self.iterator),
-        }
-        self.array.validate(decls)
-        self.selector.validate(decls)
-        self.condition.validate(decls)
-
     def variables(self) -> List["Variable"]:
         return [
             v
@@ -2056,10 +1907,6 @@ class MessageAggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        for k in self.data:
-            self.data[k].validate(declarations)
-
     def variables(self) -> List["Variable"]:
         result = []
         for v in self.data.values():
@@ -2108,9 +1955,6 @@ class Binding(Expr):
 
     def variables(self) -> List["Variable"]:
         return self.simplified().variables()
-
-    def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.simplified().validate(declarations)
 
 
 def substitution(

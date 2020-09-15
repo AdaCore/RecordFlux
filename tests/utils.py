@@ -5,11 +5,12 @@ from typing import Any, Mapping, Sequence
 
 import pytest
 
+from rflx import declaration as decl
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
 from rflx.generator import Generator
 from rflx.identifier import ID
-from rflx.model import Field, Link, Message, Model, Type
+from rflx.model import Field, Link, Message, Model, Session, State, Type
 
 
 def assert_equal(left: Any, right: Any) -> None:
@@ -25,6 +26,27 @@ def assert_message_model_error(
 ) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         Message("P::M", structure, types, aspects=aspects, location=location)
+
+
+def assert_session_model_error(
+    states: Sequence[State],
+    declarations: Sequence[decl.Declaration],
+    parameters: Sequence[decl.Declaration],
+    types: Sequence[Type],
+    regex: str,
+    location: Location = None,
+) -> None:
+    with pytest.raises(RecordFluxError, match=regex):
+        Session(
+            "P::S",
+            ID("Start"),
+            ID("End"),
+            states,
+            declarations,
+            parameters,
+            types,
+            location=location,
+        )
 
 
 def assert_type_model_error(instance: Type, regex: str) -> None:

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from pathlib import Path
-from typing import List, Sequence, Tuple
+from typing import Iterable, List, Mapping, Sequence, Tuple
 
 import rflx.typing_ as rty
 from rflx import expression as expr
@@ -557,3 +557,17 @@ def qualified_type_name(name: ID, package: ID) -> ID:
         return package * name
 
     return name
+
+
+def qualified_literals(types: Iterable[Type], package: ID) -> Mapping[ID, Enumeration]:
+    literals = {}
+
+    for t in types:
+        if isinstance(t, Enumeration):
+            for l in t.literals:
+                if t.package == const.BUILTINS_PACKAGE or t.package == package:
+                    literals[l] = t
+                if t.package != const.BUILTINS_PACKAGE:
+                    literals[t.package * l] = t
+
+    return literals
