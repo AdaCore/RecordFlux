@@ -1,6 +1,5 @@
 from typing import Optional, Sequence, Union
 
-# from rflx.contract import invariant
 from rflx.error import Location
 
 
@@ -21,6 +20,7 @@ class ID:
         else:
             assert False, f'unexpected identifier type "{type(identifier).__name__}"'
 
+        assert self._parts, "empty identifier"
         assert "" not in self._parts, "empty part in identifier"
         for c in [" ", ".", ":"]:
             assert all(c not in part for part in self._parts), f'"{c}" in identifier parts'
@@ -85,11 +85,11 @@ class ID:
 
     @property
     def name(self) -> "ID":
-        return ID(self.parts[-1])
+        return self.__class__(self._parts[-1])
 
     @property
     def parent(self) -> "ID":
-        return ID(self.parts[:-1])
+        return self.__class__(self._parts[:-1])
 
     @property
     def _separator(self) -> str:
