@@ -37,9 +37,9 @@ def assert_graph(graph: Graph, expected: str) -> None:
 
 
 def test_graph_object() -> None:
-    f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
+    f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
     m = Message(
-        "P.M",
+        "P::M",
         structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
         types={Field("X"): f_type},
     )
@@ -63,9 +63,9 @@ def test_graph_object() -> None:
 
 
 def test_empty_message_graph() -> None:
-    m = Message("P.M", [], {})
+    m = Message("P::M", [], {})
     expected = """
-        digraph "P.M" {
+        digraph "P::M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
@@ -84,14 +84,14 @@ def test_empty_message_graph() -> None:
 
 
 def test_dot_graph() -> None:
-    f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
+    f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
     m = Message(
-        "P.M",
+        "P::M",
         structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
         types={Field("X"): f_type},
     )
     expected = """
-        digraph "P.M" {
+        digraph "P::M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
@@ -115,9 +115,9 @@ def test_dot_graph() -> None:
 
 
 def test_dot_graph_with_condition() -> None:
-    f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
+    f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
     m = Message(
-        "P.M",
+        "P::M",
         structure=[
             Link(INITIAL, Field("X")),
             Link(Field("X"), FINAL, Greater(Variable("X"), Number(100))),
@@ -125,7 +125,7 @@ def test_dot_graph_with_condition() -> None:
         types={Field("X"): f_type},
     )
     expected = """
-        digraph "P.M" {
+        digraph "P::M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true, truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
@@ -148,9 +148,9 @@ def test_dot_graph_with_condition() -> None:
 
 
 def test_dot_graph_with_double_edge() -> None:
-    f_type = ModularInteger("P.T", Pow(Number(2), Number(32)))
+    f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
     m = Message(
-        "P.M",
+        "P::M",
         structure=[
             Link(INITIAL, Field("X")),
             Link(Field("X"), FINAL, Greater(Variable("X"), Number(100))),
@@ -159,7 +159,7 @@ def test_dot_graph_with_double_edge() -> None:
         types={Field("X"): f_type},
     )
     expected = """
-        digraph "P.M" {
+        digraph "P::M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
@@ -210,7 +210,7 @@ def test_session_graph() -> None:
         declarations=[VariableDeclaration("Global", "Some_Type")],
     )
     expected = """
-        digraph Session {
+        digraph "Session" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];

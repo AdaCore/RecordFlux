@@ -1650,16 +1650,16 @@ def test_binding_simplified_list_comprehension() -> None:
         Comprehension(
             "E",
             Variable("List"),
-            Variable("E.Bar"),
-            Equal(Variable("E.Tag"), Variable("Foo")),
+            Selected(Variable("E"), "Bar"),
+            Equal(Selected(Variable("E"), "Tag"), Variable("Foo")),
         ),
         {"List": Variable("Foo")},
     )
     expected = Comprehension(
         "E",
         Variable("Foo"),
-        Variable("E.Bar"),
-        Equal(Variable("E.Tag"), Variable("Foo")),
+        Selected(Variable("E"), "Bar"),
+        Equal(Selected(Variable("E"), "Tag"), Variable("Foo")),
     )
     result = binding.simplified()
     assert result == expected

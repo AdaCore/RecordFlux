@@ -2,6 +2,7 @@ from typing import Mapping, Sequence
 
 import rflx.expression as expr
 from rflx.ada import (
+    ID,
     TRUE,
     Add,
     Aggregate,
@@ -51,7 +52,6 @@ from rflx.ada import (
     Variable,
 )
 from rflx.common import unique
-from rflx.identifier import ID
 from rflx.model import BUILTINS_PACKAGE, FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
 from . import common, const
@@ -245,7 +245,7 @@ class GeneratorGenerator:
                     common.full_enum_name(field_type), self.prefix
                 )
             else:
-                type_name = common.prefixed_type_name(field_type.identifier, self.prefix)
+                type_name = common.prefixed_type_name(ID(field_type.identifier), self.prefix)
 
             return ProcedureSpecification(
                 f"Set_{field.name}",

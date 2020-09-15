@@ -153,11 +153,11 @@ def test_grammar_unqualified_identifier(string: str, expected: ID) -> None:
         ("X2", ID("X2")),
         ("X_Y", ID("X_Y")),
         ("X_Y_3", ID("X_Y_3")),
-        ("X.Y", ID("X.Y")),
-        ("X2.Y2", ID("X2.Y2")),
-        ("X_Y.Z", ID("X_Y.Z")),
-        ("X_Y_3.Z_4", ID("X_Y_3.Z_4")),
-        ("X.Y.Z", ID("X.Y.Z")),
+        ("X::Y", ID("X::Y")),
+        ("X2::Y2", ID("X2::Y2")),
+        ("X_Y::Z", ID("X_Y::Z")),
+        ("X_Y_3::Z_4", ID("X_Y_3::Z_4")),
+        ("X::Y::Z", ID("X::Y::Z")),
     ],
 )
 def test_grammar_qualified_identifier(string: str, expected: ID) -> None:
@@ -186,7 +186,7 @@ def test_grammar_expression_numeric_literal(string: str, expected: Expr) -> None
 
 
 @pytest.mark.parametrize(
-    "string,expected", [("X", expr.Variable("X")), ("X.Y", expr.Selected(expr.Variable("X"), "Y"))]
+    "string,expected", [("X", expr.Variable("X")), ("X::Y", expr.Variable("X::Y"))]
 )
 def test_grammar_variable(string: str, expected: decl.Declaration) -> None:
     actual = grammar.variable().parseString(string, parseAll=True)[0]
@@ -388,7 +388,7 @@ def test_grammar_boolean_expression_error(string: str, error: Expr) -> None:
             'X (A, "S", 42)',
             expr.Call("X", [expr.Variable("A"), expr.String("S"), expr.Number(42)]),
         ),
-        ("X.Y (A)", expr.Conversion("X.Y", expr.Variable("A"))),
+        ("X::Y (A)", expr.Conversion("X::Y", expr.Variable("A"))),
         ("X'(Y => Z)", expr.MessageAggregate("X", {ID("Y"): expr.Variable("Z")})),
         (
             "X'(Y => Z, A => B)",
@@ -408,6 +408,7 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
     "string,expected",
     [
         ("X'Valid = True", expr.Equal(expr.Valid(expr.Variable("X")), expr.Variable("True"))),
+        ("X::Y /= Z", expr.NotEqual(expr.Variable("X::Y"), expr.Variable("Z"))),
         ("X.Y /= Z", expr.NotEqual(expr.Selected(expr.Variable("X"), "Y"), expr.Variable("Z"))),
         (
             "X = Y and Y /= Z",
@@ -450,7 +451,7 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
             ),
         ),
         (
-            "for some A in X.B => (A.T = P.E and (G.E not in P.S (A.D).V))",
+            "for some A in X.B => (A.T = P.E and (G::E not in P::S (A.D).V))",
             expr.ForSomeIn(
                 "A",
                 expr.Selected(expr.Variable("X"), "B"),
@@ -460,23 +461,23 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
                         expr.Selected(expr.Variable("P"), "E"),
                     ),
                     expr.NotIn(
-                        expr.Variable("G.E"),
+                        expr.Variable("G::E"),
                         expr.Selected(
-                            expr.Conversion("P.S", expr.Selected(expr.Variable("A"), "D")),
+                            expr.Conversion("P::S", expr.Selected(expr.Variable("A"), "D")),
                             "V",
                         ),
                     ),
                 ),
             ),
         ),
-        ("X.Y (Z) = 42", expr.Equal(expr.Conversion("X.Y", expr.Variable("Z")), expr.Number(42))),
+        ("X::Y (Z) = 42", expr.Equal(expr.Conversion("X::Y", expr.Variable("Z")), expr.Number(42))),
         ("X (Y).Z", expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z")),
         ("X (Y).Z'Length", Length(expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z"))),
         (
-            "G.E not in P.S (E.D).V",
+            "G::E not in P::S (E.D).V",
             expr.NotIn(
-                expr.Variable("G.E"),
-                expr.Selected(expr.Conversion("P.S", expr.Selected(expr.Variable("E"), "D")), "V"),
+                expr.Variable("G::E"),
+                expr.Selected(expr.Conversion("P::S", expr.Selected(expr.Variable("E"), "D")), "V"),
             ),
         ),
         (
@@ -506,13 +507,13 @@ def test_grammar_expression_base(string: str, expected: Expr) -> None:
             ),
         ),
         (
-            "(for some S in P.X ([for E in C.A => E when E.T = P.L]'Head.D).H => S.G = G) = False",
+            "(for some S in P::X ([for E in C.A => E when E.T = P.L]'Head.D).H => S.G = G) = False",
             expr.Equal(
                 expr.ForSomeIn(
                     "S",
                     expr.Selected(
                         expr.Conversion(
-                            "P.X",
+                            "P::X",
                             expr.Selected(
                                 expr.Head(
                                     expr.Comprehension(
@@ -634,7 +635,6 @@ def test_grammar_variable_declaration(string: str, expected: decl.Declaration) -
 @pytest.mark.parametrize(
     "string,expected",
     [
-        ("A : B renames C", decl.RenamingDeclaration("A", "B", expr.Variable("C"))),
         (
             "A : B renames C.D",
             decl.RenamingDeclaration("A", "B", expr.Selected(expr.Variable("C"), "D")),
@@ -1071,9 +1071,9 @@ def test_context_dependency_cycle() -> None:
 def test_duplicate_type() -> None:
     assert_error_files(
         [f"{TESTDIR}/duplicate_type.rflx"],
-        f'{TESTDIR}/duplicate_type.rflx:3:4: parser: error: duplicate type "Duplicate_Type.T"\n'
+        f'{TESTDIR}/duplicate_type.rflx:3:4: parser: error: duplicate type "Duplicate_Type::T"\n'
         f"{TESTDIR}/duplicate_type.rflx:2:4: parser: info:"
-        f' previous occurrence of "Duplicate_Type.T"',
+        f' previous occurrence of "Duplicate_Type::T"',
     )
 
 
@@ -1087,7 +1087,7 @@ def test_message_undefined_type() -> None:
                   end message;
             end Test;
         """,
-        r'^<stdin>:5:22: model: error: missing type for field "Foo" in "Test.PDU"$',
+        r'^<stdin>:5:22: model: error: missing type for field "Foo" in "Test::PDU"$',
     )
 
 
@@ -1200,7 +1200,7 @@ def test_array_undefined_type() -> None:
                type T is array of Foo;
             end Test;
         """,
-        r'^<stdin>:3:35: parser: error: undefined element type "Test.Foo"$',
+        r'^<stdin>:3:35: parser: error: undefined element type "Test::Foo"$',
     )
 
 
@@ -1219,7 +1219,7 @@ def test_duplicate_message() -> None:
                   end message;
             end Test;
         """,
-        r'parser: error: duplicate type "Test.PDU"',
+        r'parser: error: duplicate type "Test::PDU"',
     )
 
 
@@ -1234,11 +1234,11 @@ def test_duplicate_refinement() -> None:
                            with Length => 8;
                      Foo : Opaque;
                   end message;
-               for Test.PDU use (Foo => Test.PDU);
+               for Test::PDU use (Foo => Test::PDU);
                for PDU use (Foo => PDU);
             end Test;
         """,
-        r'^<stdin>:11:16: parser: error: duplicate refinement with "Test.PDU"\n'
+        r'^<stdin>:11:16: parser: error: duplicate refinement with "Test::PDU"\n'
         r"<stdin>:10:16: parser: info: previous occurrence",
     )
 
@@ -1250,7 +1250,7 @@ def test_refinement_undefined_message() -> None:
                for PDU use (Foo => Bar);
             end Test;
         """,
-        r'^<stdin>:3:16: parser: error: undefined type "Test.PDU" in refinement$',
+        r'^<stdin>:3:16: parser: error: undefined type "Test::PDU" in refinement$',
     )
 
 
@@ -1266,7 +1266,7 @@ def test_refinement_undefined_sdu() -> None:
                for PDU use (Foo => Bar);
             end Test;
         """,
-        r'^<stdin>:8:36: parser: error: undefined type "Test.Bar" in refinement of "Test.PDU"$',
+        r'^<stdin>:8:36: parser: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
     )
 
 
@@ -1303,9 +1303,9 @@ def test_refinement_invalid_condition() -> None:
         """,
         r"^"
         r'<stdin>:11:22: parser: error: unknown field or literal "X"'
-        r' in refinement condition of "Test.PDU"\n'
+        r' in refinement condition of "Test::PDU"\n'
         r'<stdin>:11:26: parser: error: unknown field or literal "Y"'
-        r' in refinement condition of "Test.PDU"'
+        r' in refinement condition of "Test::PDU"'
         r"$",
     )
 
@@ -1319,12 +1319,12 @@ def test_derivation_duplicate_type() -> None:
                   message
                      Foo : T;
                   end message;
-               type Bar is new Test.Foo;
+               type Bar is new Test::Foo;
                type Bar is new Foo;
             end Test;
         """,
-        r'^<stdin>:9:16: parser: error: duplicate type "Test.Bar"\n'
-        r'<stdin>:8:16: parser: info: previous occurrence of "Test.Bar"',
+        r'^<stdin>:9:16: parser: error: duplicate type "Test::Bar"\n'
+        r'<stdin>:8:16: parser: info: previous occurrence of "Test::Bar"',
     )
 
 
@@ -1335,7 +1335,7 @@ def test_derivation_undefined_type() -> None:
                type Bar is new Foo;
             end Test;
         """,
-        r'^<stdin>:3:16: parser: error: undefined base message "Test.Foo" in derived message$',
+        r'^<stdin>:3:16: parser: error: undefined base message "Test::Foo" in derived message$',
     )
 
 
@@ -1347,8 +1347,8 @@ def test_derivation_unsupported_type() -> None:
                type Bar is new Foo;
             end Test;
         """,
-        r'^<stdin>:4:16: parser: error: illegal derivation "Test.Bar"\n'
-        r'<stdin>:3:16: parser: info: invalid base message type "Test.Foo"',
+        r'^<stdin>:4:16: parser: error: illegal derivation "Test::Bar"\n'
+        r'<stdin>:3:16: parser: info: invalid base message type "Test::Foo"',
     )
 
 
@@ -1361,8 +1361,8 @@ def test_derivation_of_derived_type() -> None:
                type Baz is new Bar;
             end Test;
         """,
-        r'^<stdin>:5:16: parser: error: illegal derivation "Test.Baz"\n'
-        r'<stdin>:4:16: parser: info: invalid base message "Test.Bar"$',
+        r'^<stdin>:5:16: parser: error: illegal derivation "Test::Baz"\n'
+        r'<stdin>:4:16: parser: info: invalid base message "Test::Bar"$',
     )
 
 
@@ -1465,8 +1465,8 @@ def test_session_name_conflict() -> None:
                end X;
             end Test;
         """,
-        r'^<stdin>:5:16: parser: error: name conflict for session "Test.X"\n'
-        r'<stdin>:3:16: parser: info: previous occurrence of "Test.X"$',
+        r'^<stdin>:5:16: parser: error: name conflict for session "Test::X"\n'
+        r'<stdin>:3:16: parser: info: previous occurrence of "Test::X"$',
     )
 
 
@@ -1477,10 +1477,10 @@ def test_integer_type_spec() -> None:
             PackageSpec(
                 "Integer_Type",
                 [
-                    RangeInteger("__PACKAGE__.Page_Num", Number(1), Number(2000), Number(16)),
-                    RangeInteger("__PACKAGE__.Line_Size", Number(0), Number(255), Number(8)),
-                    ModularInteger("__PACKAGE__.Byte", Number(256)),
-                    ModularInteger("__PACKAGE__.Hash_Index", Number(64)),
+                    RangeInteger("__PACKAGE__::Page_Num", Number(1), Number(2000), Number(16)),
+                    RangeInteger("__PACKAGE__::Line_Size", Number(0), Number(255), Number(8)),
+                    ModularInteger("__PACKAGE__::Byte", Number(256)),
+                    ModularInteger("__PACKAGE__::Hash_Index", Number(64)),
                 ],
                 [],
             ),
@@ -1497,7 +1497,7 @@ def test_enumeration_type_spec() -> None:
                 "Enumeration_Type",
                 [
                     Enumeration(
-                        "__PACKAGE__.Day",
+                        "__PACKAGE__::Day",
                         [
                             ("Mon", Number(1)),
                             ("Tue", Number(2)),
@@ -1511,13 +1511,13 @@ def test_enumeration_type_spec() -> None:
                         False,
                     ),
                     Enumeration(
-                        "__PACKAGE__.Gender",
+                        "__PACKAGE__::Gender",
                         [("M", Number(0)), ("F", Number(1))],
                         Number(1),
                         False,
                     ),
                     Enumeration(
-                        "__PACKAGE__.Priority",
+                        "__PACKAGE__::Priority",
                         [("LOW", Number(1)), ("MEDIUM", Number(4)), ("HIGH", Number(7))],
                         Number(8),
                         True,
@@ -1537,10 +1537,10 @@ def test_array_type_spec() -> None:
             PackageSpec(
                 "Array_Type",
                 [
-                    ModularInteger("__PACKAGE__.Byte", Number(256)),
-                    ArraySpec("__PACKAGE__.Bytes", ReferenceSpec("__PACKAGE__.Byte")),
+                    ModularInteger("__PACKAGE__::Byte", Number(256)),
+                    ArraySpec("__PACKAGE__::Bytes", ReferenceSpec("__PACKAGE__::Byte")),
                     MessageSpec(
-                        "__PACKAGE__.Foo",
+                        "__PACKAGE__::Foo",
                         [
                             Component(
                                 "Length",
@@ -1550,7 +1550,7 @@ def test_array_type_spec() -> None:
                             Component("Bytes", "Bytes"),
                         ],
                     ),
-                    ArraySpec("__PACKAGE__.Bar", ReferenceSpec("__PACKAGE__.Foo")),
+                    ArraySpec("__PACKAGE__::Bar", ReferenceSpec("__PACKAGE__::Foo")),
                 ],
                 [],
             ),
@@ -1566,9 +1566,9 @@ def test_message_type_spec() -> None:
             PackageSpec(
                 "Message_Type",
                 [
-                    ModularInteger("__PACKAGE__.T", Number(256)),
+                    ModularInteger("__PACKAGE__::T", Number(256)),
                     MessageSpec(
-                        "__PACKAGE__.PDU",
+                        "__PACKAGE__::PDU",
                         [
                             Component(
                                 "Foo",
@@ -1593,10 +1593,10 @@ def test_message_type_spec() -> None:
                         ],
                     ),
                     MessageSpec(
-                        "__PACKAGE__.Simple_PDU",
+                        "__PACKAGE__::Simple_PDU",
                         [Component("Bar", "T"), Component("Baz", "T")],
                     ),
-                    MessageSpec("__PACKAGE__.Empty_PDU", []),
+                    MessageSpec("__PACKAGE__::Empty_PDU", []),
                 ],
                 [],
             ),
@@ -1613,11 +1613,11 @@ def test_message_type_message() -> None:
     ]
 
     simple_types = {
-        Field("Bar"): ModularInteger("Message_Type.T", Number(256)),
-        Field("Baz"): ModularInteger("Message_Type.T", Number(256)),
+        Field("Bar"): ModularInteger("Message_Type::T", Number(256)),
+        Field("Baz"): ModularInteger("Message_Type::T", Number(256)),
     }
 
-    simple_message = Message("Message_Type.Simple_PDU", simple_structure, simple_types)
+    simple_message = Message("Message_Type::Simple_PDU", simple_structure, simple_types)
 
     structure = [
         Link(INITIAL, Field("Foo")),
@@ -1629,12 +1629,12 @@ def test_message_type_message() -> None:
 
     types = {
         **simple_types,
-        **{Field("Foo"): ModularInteger("Message_Type.T", Number(256))},
+        **{Field("Foo"): ModularInteger("Message_Type::T", Number(256))},
     }
 
-    message = Message("Message_Type.PDU", structure, types)
+    message = Message("Message_Type::PDU", structure, types)
 
-    empty_message = Message("Message_Type.Empty_PDU", [], {})
+    empty_message = Message("Message_Type::Empty_PDU", [], {})
 
     assert_messages_files(
         [f"{TESTDIR}/message_type.rflx"], [message, simple_message, empty_message]
@@ -1642,10 +1642,10 @@ def test_message_type_message() -> None:
 
 
 def test_message_in_message() -> None:
-    length = ModularInteger("Message_In_Message.Length", Pow(Number(2), Number(16)))
+    length = ModularInteger("Message_In_Message::Length", Pow(Number(2), Number(16)))
 
     length_value = Message(
-        "Message_In_Message.Length_Value",
+        "Message_In_Message::Length_Value",
         [
             Link(INITIAL, Field("Length")),
             Link(Field("Length"), Field("Value"), length=Mul(Number(8), Variable("Length"))),
@@ -1654,10 +1654,10 @@ def test_message_in_message() -> None:
         {Field("Length"): length, Field("Value"): Opaque()},
     )
 
-    derived_length_value = DerivedMessage("Message_In_Message.Derived_Length_Value", length_value)
+    derived_length_value = DerivedMessage("Message_In_Message::Derived_Length_Value", length_value)
 
     message = Message(
-        "Message_In_Message.Message",
+        "Message_In_Message::Message",
         [
             Link(INITIAL, Field("Foo_Length")),
             Link(Field("Foo_Value"), Field("Bar_Length")),
@@ -1681,7 +1681,7 @@ def test_message_in_message() -> None:
         },
     )
 
-    derived_message = DerivedMessage("Message_In_Message.Derived_Message", message)
+    derived_message = DerivedMessage("Message_In_Message::Derived_Message", message)
 
     assert_messages_files(
         [f"{TESTDIR}/message_in_message.rflx"],
@@ -1696,9 +1696,9 @@ def test_type_refinement_spec() -> None:
             PackageSpec(
                 "Message_Type",
                 [
-                    ModularInteger("__PACKAGE__.T", Number(256)),
+                    ModularInteger("__PACKAGE__::T", Number(256)),
                     MessageSpec(
-                        "__PACKAGE__.PDU",
+                        "__PACKAGE__::PDU",
                         [
                             Component(
                                 "Foo",
@@ -1723,10 +1723,10 @@ def test_type_refinement_spec() -> None:
                         ],
                     ),
                     MessageSpec(
-                        "__PACKAGE__.Simple_PDU",
+                        "__PACKAGE__::Simple_PDU",
                         [Component("Bar", "T"), Component("Baz", "T")],
                     ),
-                    MessageSpec("__PACKAGE__.Empty_PDU", []),
+                    MessageSpec("__PACKAGE__::Empty_PDU", []),
                 ],
                 [],
             ),
@@ -1737,12 +1737,12 @@ def test_type_refinement_spec() -> None:
                 "Type_Refinement",
                 [
                     RefinementSpec(
-                        "Message_Type.Simple_PDU",
+                        "Message_Type::Simple_PDU",
                         "Bar",
-                        "Message_Type.PDU",
+                        "Message_Type::PDU",
                         Equal(Variable("Baz"), Number(42)),
                     ),
-                    RefinementSpec("Message_Type.PDU", "Bar", "Message_Type.Simple_PDU"),
+                    RefinementSpec("Message_Type::PDU", "Bar", "Message_Type::Simple_PDU"),
                 ],
                 [],
             ),
@@ -1771,9 +1771,9 @@ def test_type_derivation_spec() -> None:
                 PackageSpec(
                     "Test",
                     [
-                        ModularInteger("__PACKAGE__.T", Number(256)),
-                        MessageSpec("__PACKAGE__.Foo", [Component("N", "T")]),
-                        DerivationSpec("__PACKAGE__.Bar", "Foo"),
+                        ModularInteger("__PACKAGE__::T", Number(256)),
+                        MessageSpec("__PACKAGE__::Foo", [Component("N", "T")]),
+                        DerivationSpec("__PACKAGE__::Bar", "Foo"),
                     ],
                     [],
                 ),
@@ -1783,14 +1783,14 @@ def test_type_derivation_spec() -> None:
 
 
 def test_type_derivation_message() -> None:
-    t = ModularInteger("Test.T", Number(256))
+    t = ModularInteger("Test::T", Number(256))
 
     structure = [Link(INITIAL, Field("Baz")), Link(Field("Baz"), FINAL)]
 
     types = {Field("Baz"): t}
 
-    message_foo = Message("Test.Foo", structure, types)
-    message_bar = DerivedMessage("Test.Bar", message_foo)
+    message_foo = Message("Test::Foo", structure, types)
+    message_bar = DerivedMessage("Test::Bar", message_foo)
 
     assert_messages_string(
         """
@@ -1809,11 +1809,11 @@ def test_type_derivation_message() -> None:
 
 def test_type_derivation_refinements() -> None:
     message_foo = Message(
-        "Test.Foo",
+        "Test::Foo",
         [Link(INITIAL, Field("Baz"), length=Number(48)), Link(Field("Baz"), FINAL)],
         {Field("Baz"): Opaque()},
     )
-    message_bar = DerivedMessage("Test.Bar", message_foo)
+    message_bar = DerivedMessage("Test::Bar", message_foo)
 
     assert_refinements_string(
         """
@@ -1844,19 +1844,19 @@ def test_ethernet_spec() -> None:
             PackageSpec(
                 "Ethernet",
                 [
-                    ModularInteger("__PACKAGE__.Address", Pow(Number(2), Number(48))),
+                    ModularInteger("__PACKAGE__::Address", Pow(Number(2), Number(48))),
                     RangeInteger(
-                        "__PACKAGE__.Type_Length",
+                        "__PACKAGE__::Type_Length",
                         Number(46),
                         Sub(Pow(Number(2), Number(16)), Number(1)),
                         Number(16),
                     ),
                     RangeInteger(
-                        "__PACKAGE__.TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16)
+                        "__PACKAGE__::TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16)
                     ),
-                    ModularInteger("__PACKAGE__.TCI", Pow(Number(2), Number(16))),
+                    ModularInteger("__PACKAGE__::TCI", Pow(Number(2), Number(16))),
                     MessageSpec(
-                        "__PACKAGE__.Frame",
+                        "__PACKAGE__::Frame",
                         [
                             Component("Destination", "Address"),
                             Component("Source", "Address"),
@@ -1999,7 +1999,7 @@ def test_array_with_imported_element_type() -> None:
         """
            with Test;
            package Array_Test is
-              type T is array of Test.T;
+              type T is array of Test::T;
            end Array_Test;
         """
     )
@@ -2013,8 +2013,8 @@ def test_array_with_imported_element_type() -> None:
     m = p.create_model()
     arrays = [t for t in m.types if isinstance(t, Array)]
     assert len(arrays) == 1
-    assert arrays[0].identifier == ID("Array_Test.T")
-    assert arrays[0].element_type == ModularInteger("Test.T", Number(256))
+    assert arrays[0].identifier == ID("Array_Test::T")
+    assert arrays[0].element_type == ModularInteger("Test::T", Number(256))
 
 
 def test_parse_checksum() -> None:

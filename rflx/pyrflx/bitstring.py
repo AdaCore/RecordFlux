@@ -19,6 +19,9 @@ class Bitstring:
             raise IndexError
         return Bitstring(self._bits[key])
 
+    def __repr__(self) -> str:
+        return f'Bitstring("{self._bits}")'
+
     def __str__(self) -> str:
         return self._bits
 

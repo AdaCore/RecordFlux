@@ -2,7 +2,6 @@ from typing import Callable, Mapping, Sequence
 
 import rflx.ada as ada
 import rflx.expression as expr
-from rflx.identifier import ID
 from rflx.model import (
     BUILTINS_PACKAGE,
     FINAL,
@@ -25,7 +24,7 @@ def substitution(
     message: Message,
     embedded: bool = False,
     public: bool = False,
-    target_type: ID = const.TYPES_U64,
+    target_type: ada.ID = const.TYPES_U64,
 ) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, embedded, public, target_type)
 
@@ -54,7 +53,7 @@ def substitution(
                 if embedded:
                     return expr.Equal(
                         expr.Indexed(
-                            expr.Variable("Buffer.all"),
+                            expr.Variable(expr.ID("Buffer") * "all"),
                             expr.ValueRange(
                                 expr.Call(
                                     const.TYPES_BYTE_INDEX,
@@ -95,10 +94,10 @@ def substitution(
                 return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
             return expr.Selected(
                 expr.Indexed(
-                    expr.Variable("Ctx.Cursors" if not embedded else "Cursors"),
+                    expr.Variable(expr.ID("Ctx") * "Cursors" if not embedded else "Cursors"),
                     expr.Variable(field.affixed_name),
                 ),
-                f"Value.{field.name}_Value",
+                expr.ID("Value") * f"{field.name}_Value",
             )
 
         if isinstance(expression, expr.Relation):
@@ -128,10 +127,10 @@ def substitution_facts(
     message: Message,
     embedded: bool = False,
     public: bool = False,
-    target_type: ID = const.TYPES_U64,
+    target_type: ada.ID = const.TYPES_U64,
 ) -> Mapping[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
-        return expr.Variable(f"Ctx.{name}") if not embedded else expr.Variable(name)
+        return expr.Variable(expr.ID("Ctx") * name) if not embedded else expr.Variable(name)
 
     first = prefixed("First")
     last = prefixed("Last")
@@ -180,7 +179,7 @@ def substitution_facts(
                 [
                     expr.Selected(
                         expr.Indexed(cursors, expr.Variable(field.affixed_name)),
-                        f"Value.{field.name}_Value",
+                        expr.ID("Value") * f"{field.name}_Value",
                     )
                 ],
             )
@@ -194,7 +193,7 @@ def substitution_facts(
                 [
                     expr.Selected(
                         expr.Indexed(cursors, expr.Variable(field.affixed_name)),
-                        f"Value.{field.name}_Value",
+                        expr.ID("Value") * f"{field.name}_Value",
                     )
                 ],
             )
@@ -662,40 +661,40 @@ def field_byte_location_declarations() -> Sequence[ada.Declaration]:
     ]
 
 
-def prefixed_type_name(type_name: ID, prefix: str) -> ID:
+def prefixed_type_name(type_name: ada.ID, prefix: str) -> ada.ID:
     if is_builtin_type(type_name):
         return type_name
 
     return prefix * type_name
 
 
-def base_type_name(scalar_type: Scalar) -> ID:
+def base_type_name(scalar_type: Scalar) -> ada.ID:
     if isinstance(scalar_type, ModularInteger):
-        return ID(scalar_type.name)
+        return ada.ID(scalar_type.name)
 
-    return ID(f"{scalar_type.name}_Base")
+    return ada.ID(scalar_type.name + "_Base")
 
 
-def full_base_type_name(scalar_type: Scalar) -> ID:
+def full_base_type_name(scalar_type: Scalar) -> ada.ID:
     if scalar_type.package == BUILTINS_PACKAGE:
         return const.BUILTIN_TYPES_PACKAGE * scalar_type.name + "_Base"
 
     if isinstance(scalar_type, ModularInteger):
-        return scalar_type.identifier
+        return ada.ID(scalar_type.identifier)
 
-    return ID(f"{scalar_type.full_name}_Base")
-
-
-def enum_name(enum_type: Enumeration) -> ID:
-    return ID(f"{enum_type.name}_Enum")
+    return ada.ID(scalar_type.identifier + "_Base")
 
 
-def full_enum_name(enum_type: Enumeration) -> ID:
-    return ID(f"{enum_type.full_name}_Enum")
+def enum_name(enum_type: Enumeration) -> ada.ID:
+    return ada.ID(enum_type.name + "_Enum")
 
 
-def sequence_name(message: Message, field: Field) -> ID:
-    return ID(f"{message.types[field].name}_Sequence")
+def full_enum_name(enum_type: Enumeration) -> ada.ID:
+    return ada.ID(enum_type.identifier + "_Enum")
+
+
+def sequence_name(message: Message, field: Field) -> ada.ID:
+    return ada.ID(message.types[field].name + "_Sequence")
 
 
 def length_dependent_condition(message: Message) -> bool:

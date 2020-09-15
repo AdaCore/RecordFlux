@@ -1013,7 +1013,7 @@ class Variable(Name):
         declarations[self.identifier].reference()
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Variable(self.identifier, self.negative)
+        return ada.Variable(ada.ID(self.identifier), self.negative)
 
     def z3expr(self) -> z3.ArithRef:
         if self.negative:
@@ -1064,7 +1064,7 @@ class Attribute(Name):
         return self.prefix.variables()
 
     def ada_expr(self) -> ada.Expr:
-        return getattr(ada, self.__class__.__name__)(self.prefix, self.negative)
+        return getattr(ada, self.__class__.__name__)(self.prefix.ada_expr(), self.negative)
 
     def z3expr(self) -> z3.ExprRef:
         if not isinstance(self.prefix, Variable):
@@ -1233,7 +1233,7 @@ class Selected(Name):
         )
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Selected(self.prefix.ada_expr(), self.selector_name, self.negative)
+        return ada.Selected(self.prefix.ada_expr(), ada.ID(self.selector_name), self.negative)
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1268,7 +1268,7 @@ class Call(Name):
         return call
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Call(self.name, [a.ada_expr() for a in self.args], self.negative)
+        return ada.Call(ada.ID(self.name), [a.ada_expr() for a in self.args], self.negative)
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1885,13 +1885,13 @@ class Conversion(Expr):
         return Conversion(self.name, self.argument.simplified(), self.type_, self.location)
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Conversion(self.name, self.argument.ada_expr())
+        return ada.Conversion(ada.ID(self.name), self.argument.ada_expr())
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
-        self.argument.validate(declarations)
+        raise NotImplementedError
 
     def variables(self) -> List["Variable"]:
         return self.argument.variables()

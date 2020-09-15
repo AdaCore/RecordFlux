@@ -65,7 +65,7 @@ from tests.utils import (
 )
 
 M_NO_REF = UnprovenMessage(
-    "P.No_Ref",
+    "P::No_Ref",
     [
         Link(INITIAL, Field("F1"), length=Number(16)),
         Link(Field("F1"), Field("F2")),
@@ -88,14 +88,14 @@ M_NO_REF = UnprovenMessage(
 )
 
 M_SMPL_REF = UnprovenMessage(
-    "P.Smpl_Ref",
+    "P::Smpl_Ref",
     [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
     {Field("NR"): deepcopy(M_NO_REF)},
 )
 
 
 M_CMPLX_REF = UnprovenMessage(
-    "P.Cmplx_Ref",
+    "P::Cmplx_Ref",
     [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
@@ -119,14 +119,14 @@ M_CMPLX_REF = UnprovenMessage(
 
 
 M_DBL_REF = UnprovenMessage(
-    "P.Dbl_Ref",
+    "P::Dbl_Ref",
     [Link(INITIAL, Field("SR")), Link(Field("SR"), Field("NR")), Link(Field("NR"), FINAL)],
     {Field("SR"): deepcopy(M_SMPL_REF), Field("NR"): deepcopy(M_NO_REF)},
 )
 
 
 M_NO_REF_DERI = UnprovenDerivedMessage(
-    "P.No_Ref_Deri",
+    "P::No_Ref_Deri",
     M_NO_REF,
     [
         Link(INITIAL, Field("F1"), length=Number(16)),
@@ -151,7 +151,7 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
 
 
 M_SMPL_REF_DERI = UnprovenDerivedMessage(
-    "P.Smpl_Ref_Deri",
+    "P::Smpl_Ref_Deri",
     M_SMPL_REF,
     [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
     {Field("NR"): deepcopy(M_NO_REF_DERI)},
@@ -180,12 +180,12 @@ def test_missing_type() -> None:
     assert_message_model_error(
         structure,
         {},
-        '^<stdin>:5:6: model: error: missing type for field "X" in "P.M"$',
+        '^<stdin>:5:6: model: error: missing type for field "X" in "P::M"$',
     )
 
 
 def test_unused_type() -> None:
-    t = ModularInteger("P.T", Number(2))
+    t = ModularInteger("P::T", Number(2))
 
     structure = [
         Link(INITIAL, Field("X")),
@@ -195,12 +195,12 @@ def test_unused_type() -> None:
     types = {Field("X"): t, Field(ID("Y", Location((5, 6)))): t}
 
     assert_message_model_error(
-        structure, types, '^<stdin>:5:6: model: error: unused field "Y" in "P.M"$'
+        structure, types, '^<stdin>:5:6: model: error: unused field "Y" in "P::M"$'
     )
 
 
 def test_ambiguous_first_field() -> None:
-    t = ModularInteger("P.T", Number(2))
+    t = ModularInteger("P::T", Number(2))
 
     structure = [
         Link(INITIAL, Field(ID("X", Location((2, 6))))),
@@ -215,7 +215,7 @@ def test_ambiguous_first_field() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:8: model: error: ambiguous first field in "P.M"\n'
+        '^<stdin>:10:8: model: error: ambiguous first field in "P::M"\n'
         "<stdin>:2:6: model: info: duplicate\n"
         "<stdin>:3:6: model: info: duplicate",
         location=Location((10, 8)),
@@ -224,7 +224,7 @@ def test_ambiguous_first_field() -> None:
 
 def test_name_conflict_field_enum() -> None:
     t = Enumeration(
-        "P.T",
+        "P::T",
         [(ID("X", Location((3, 27))), Number(1)), (ID("Y", Location((3, 32))), Number(2))],
         Number(8),
         False,
@@ -240,13 +240,13 @@ def test_name_conflict_field_enum() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:5:6: model: error: name conflict for field "X" in "P.M"\n'
+        '^<stdin>:5:6: model: error: name conflict for field "X" in "P::M"\n'
         "<stdin>:3:27: model: info: conflicting enumeration literal",
     )
 
 
 def test_duplicate_link() -> None:
-    t = ModularInteger("P.T", Number(2))
+    t = ModularInteger("P::T", Number(2))
     x = Field(ID("X", location=Location((1, 5))))
 
     structure = [
@@ -267,7 +267,7 @@ def test_duplicate_link() -> None:
 
 
 def test_multiple_duplicate_links() -> None:
-    t = ModularInteger("P.T", Number(2))
+    t = ModularInteger("P::T", Number(2))
     x = Field(ID("X", location=Location((1, 5))))
     y = Field(ID("Y", location=Location((2, 5))))
 
@@ -318,7 +318,7 @@ def test_unsupported_expression() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:19: model: error: unsupported expression in "P.M"\n'
+        '^<stdin>:10:19: model: error: unsupported expression in "P::M"\n'
         '<stdin>:10:23: model: info: variable "X" in exponent',
     )
 
@@ -336,12 +336,12 @@ def test_unreachable_field() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:20:3: model: error: unreachable field "Y" in "P.M"$',
+        '^<stdin>:20:3: model: error: unreachable field "Y" in "P::M"$',
     )
 
 
 def test_cycle() -> None:
-    t = ModularInteger("P.T", Number(2))
+    t = ModularInteger("P::T", Number(2))
 
     structure = [
         Link(INITIAL, Field("X")),
@@ -356,7 +356,7 @@ def test_cycle() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:8: model: error: structure of "P.M" contains cycle',
+        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle',
         # ISSUE: Componolit/RecordFlux#256
         # '\n'
         # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
@@ -568,7 +568,7 @@ def test_field_locations() -> None:
     f3 = Field(ID("F3", Location((3, 2))))
 
     message = UnprovenMessage(
-        "P.M",
+        "P::M",
         [Link(INITIAL, f2), Link(f2, f3), Link(f3, FINAL)],
         {Field("F2"): MODULAR_INTEGER, Field("F3"): MODULAR_INTEGER},
         location=Location((17, 9)),
@@ -584,7 +584,7 @@ class NewType(Type):
 def test_invalid_message_field_type() -> None:
     with pytest.raises(AssertionError, match=r"rflx/model/message.py"):
         Message(
-            "P.M",
+            "P::M",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
             {Field("F"): NewType("T")},
         )
@@ -607,8 +607,8 @@ def test_invalid_message_field_type() -> None:
 def test_undefined_variable(
     operation: Callable[[Expr, Expr], Expr], condition: Tuple[Expr, Expr]
 ) -> None:
-    mod_type = ModularInteger("P.MT", Pow(Number(2), Number(32)))
-    enum_type = Enumeration("P.ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), True)
+    mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
+    enum_type = Enumeration("P::ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), True)
 
     structure = [
         Link(INITIAL, Field("F1")),
@@ -657,7 +657,7 @@ def test_undefined_variables() -> None:
 def test_subsequent_variable() -> None:
     f1 = Field("F1")
     f2 = Field("F2")
-    t = ModularInteger("P.T", Pow(Number(2), Number(32)))
+    t = ModularInteger("P::T", Pow(Number(2), Number(32)))
     structure = [
         Link(INITIAL, f1),
         Link(f1, f2, Equal(Variable("F2", location=Location((1024, 57))), Number(42))),
@@ -748,7 +748,7 @@ def test_invalid_element_in_relation_to_aggregate() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected integer type "P.Modular" \(0 .. 255\)\n'
+        r'^<stdin>:10:20: model: error: expected integer type "P::Modular" \(0 .. 255\)\n'
         r"<stdin>:10:20: model: info: found aggregate with element type universal integer"
         r" \(1 .. 2\)\n"
         r"model: info: on path F1 -> Final$",
@@ -798,13 +798,13 @@ def test_array_aggregate_out_of_range() -> None:
         ),
     ]
 
-    types = {Field("F"): Array("P.Array", ModularInteger("P.Element", Number(64)))}
+    types = {Field("F"): Array("P::Array", ModularInteger("P::Element", Number(64)))}
 
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected composite type "P.Array"'
-        r' with element integer type "P.Element" \(0 .. 63\)\n'
+        r'^<stdin>:10:20: model: error: expected composite type "P::Array"'
+        r' with element integer type "P::Element" \(0 .. 63\)\n'
         r"<stdin>:10:20: model: info: found aggregate"
         r" with element type universal integer \(1 .. 64\)\n"
         r"model: info: on path F -> Final$",
@@ -813,11 +813,11 @@ def test_array_aggregate_out_of_range() -> None:
 
 def test_array_aggregate_invalid_element_type() -> None:
     inner = Message(
-        "P.I",
+        "P::I",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
         {Field("F"): MODULAR_INTEGER},
     )
-    array_type = Array("P.Array", inner)
+    array_type = Array("P::Array", inner)
     f = Field("F")
 
     structure = [
@@ -837,8 +837,8 @@ def test_array_aggregate_invalid_element_type() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected composite type "P.Array"'
-        r' with element message type "P.I"\n'
+        r'^<stdin>:10:20: model: error: expected composite type "P::Array"'
+        r' with element message type "P::I"\n'
         r"<stdin>:10:20: model: info: found aggregate with element type universal integer"
         r" \(1 .. 64\)\n"
         r"model: info: on path F -> Final$",
@@ -853,9 +853,9 @@ def test_opaque_not_byte_aligned() -> None:
     ):
         o = Field(ID("O", location=Location((44, 3))))
         Message(
-            "P.M",
+            "P::M",
             [Link(INITIAL, Field("P")), Link(Field("P"), o, length=Number(128)), Link(o, FINAL)],
-            {Field("P"): ModularInteger("P.T", Number(4)), o: Opaque()},
+            {Field("P"): ModularInteger("P::T", Number(4)), o: Opaque()},
         )
 
 
@@ -867,7 +867,7 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
     ):
         o2 = Field(ID("O2", location=Location((44, 3))))
         Message(
-            "P.M",
+            "P::M",
             [
                 Link(INITIAL, Field("L1")),
                 Link(
@@ -882,7 +882,7 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
             ],
             {
                 Field("L1"): MODULAR_INTEGER,
-                Field("L2"): ModularInteger("P.T", Number(4)),
+                Field("L2"): ModularInteger("P::T", Number(4)),
                 Field("O1"): Opaque(),
                 o2: Opaque(),
             },
@@ -891,7 +891,7 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
 
 def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
     Message(
-        "P.M",
+        "P::M",
         [
             Link(INITIAL, Field("L")),
             Link(Field("L"), Field("O1"), length=Mul(Number(8), Variable("L"))),
@@ -903,7 +903,7 @@ def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
 
 def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
     Message(
-        "P.M",
+        "P::M",
         [
             Link(INITIAL, Field("L")),
             Link(
@@ -927,7 +927,7 @@ def test_opaque_length_not_multiple_of_8() -> None:
     ):
         o = Field(ID("O", location=Location((44, 3))))
         Message(
-            "P.M",
+            "P::M",
             [Link(INITIAL, o, length=Number(68)), Link(o, FINAL)],
             {o: Opaque()},
         )
@@ -941,7 +941,7 @@ def test_opaque_length_not_multiple_of_8_dynamic() -> None:
     ):
         o = Field(ID("O", location=Location((44, 3))))
         Message(
-            "P.M",
+            "P::M",
             [Link(INITIAL, Field("L")), Link(Field("L"), o, length=Variable("L")), Link(o, FINAL)],
             {Field("L"): MODULAR_INTEGER, o: Opaque()},
         )
@@ -949,7 +949,7 @@ def test_opaque_length_not_multiple_of_8_dynamic() -> None:
 
 def test_opaque_length_valid_multiple_of_8_dynamic_cond() -> None:
     Message(
-        "P.M",
+        "P::M",
         [
             Link(INITIAL, Field("L")),
             Link(
@@ -966,7 +966,7 @@ def test_opaque_length_valid_multiple_of_8_dynamic_cond() -> None:
 
 def test_prefixed_message_attribute() -> None:
     result = Message(
-        "P.M",
+        "P::M",
         [
             Link(INITIAL, Field("F1")),
             Link(
@@ -994,7 +994,7 @@ def test_prefixed_message_attribute() -> None:
     ).prefixed("X_")
 
     expected = Message(
-        "P.M",
+        "P::M",
         [
             Link(INITIAL, Field("X_F1")),
             Link(
@@ -1035,7 +1035,7 @@ def test_exclusive_valid() -> None:
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): MODULAR_INTEGER,
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_exclusive_enum_valid() -> None:
@@ -1049,26 +1049,26 @@ def test_exclusive_enum_valid() -> None:
         Field("F1"): ENUMERATION,
         Field("F2"): MODULAR_INTEGER,
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_exclusive_prefixed_enum_valid() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), FINAL, condition=Equal(Variable("F1"), Variable("ONE"))),
-        Link(Field("F1"), Field("F2"), condition=Equal(Variable("F1"), Variable("P.TWO"))),
+        Link(Field("F1"), Field("F2"), condition=Equal(Variable("F1"), Variable("P::TWO"))),
         Link(Field("F2"), FINAL),
     ]
     types = {
         Field("F1"): ENUMERATION,
         Field("F2"): Enumeration(
-            "P2.Enumeration",
+            "P2::Enumeration",
             [("ONE", Number(2)), ("TWO", Number(1))],
             Number(8),
             False,
         ),
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_exclusive_conflict() -> None:
@@ -1113,7 +1113,7 @@ def test_exclusive_with_length_valid() -> None:
         Field("F1"): Opaque(),
         Field("F2"): MODULAR_INTEGER,
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_exclusive_with_length_invalid() -> None:
@@ -1159,18 +1159,18 @@ def test_no_valid_path() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:11:6: model: error: unreachable field "F2" in "P.M"\n'
+        r'<stdin>:11:6: model: error: unreachable field "F2" in "P::M"\n'
         r"<stdin>:11:6: model: info: path 0 [(]F1 -> F2[)]:\n"
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:11:6: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:12:7: model: error: unreachable field "F3" in "P.M"\n'
+        r'<stdin>:12:7: model: error: unreachable field "F3" in "P::M"\n'
         r"<stdin>:12:7: model: info: path 0 [(]F1 -> F2 -> F3[)]:\n"
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
         r"<stdin>:12:7: model: info: path 1 [(]F1 -> F3[)]:\n"
         r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
         r'<stdin>:12:7: model: info: unsatisfied "F1 <= 80"\n'
-        r'model: error: unreachable field "Final" in "P.M"\n'
+        r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> F3 -> Final[)]:\n"
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
@@ -1194,7 +1194,7 @@ def test_invalid_path_1(monkeypatch: Any) -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:5:10: model: error: contradicting condition in "P.M"\n'
+        r'<stdin>:5:10: model: error: contradicting condition in "P::M"\n'
         r'<stdin>:20:10: model: info: on path: "F1"\n'
         r'<stdin>:5:10: model: info: unsatisfied "1 = 2"',
     )
@@ -1215,7 +1215,7 @@ def test_invalid_path_2(monkeypatch: Any) -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "1 = 2"',
     )
@@ -1235,7 +1235,7 @@ def test_contradiction() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
         r'model: info: unsatisfied "F1 > 1000"',
@@ -1256,7 +1256,7 @@ def test_invalid_type_condition_range_low() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 >= 1"\n'
         r'model: info: unsatisfied "F1 < 1"',
@@ -1277,7 +1277,7 @@ def test_invalid_type_condition_range_high() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
         r'model: info: unsatisfied "F1 > 200"',
@@ -1298,7 +1298,7 @@ def test_invalid_type_condition_modular_upper() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 < 256"\n'
         r'model: info: unsatisfied "F1 > 65537"',
@@ -1319,7 +1319,7 @@ def test_invalid_type_condition_modular_lower() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 >= 0"\n'
         r'model: info: unsatisfied "F1 < 0"',
@@ -1341,14 +1341,14 @@ def test_invalid_type_condition_enum() -> None:
         Link(Field("F2"), FINAL),
     ]
     e1 = Enumeration(
-        "P.E1",
+        "P::E1",
         [("E1", Number(1)), ("E2", Number(2)), ("E3", Number(3))],
         Number(8),
         False,
         Location((10, 4)),
     )
     e2 = Enumeration(
-        "P.E2",
+        "P::E2",
         [("E4", Number(1)), ("E5", Number(2)), ("E6", Number(3))],
         Number(8),
         False,
@@ -1361,8 +1361,8 @@ def test_invalid_type_condition_enum() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected enumeration type "P.E1"\n'
-        r'<stdin>:10:20: model: info: found enumeration type "P.E2"\n'
+        r'^<stdin>:10:20: model: error: expected enumeration type "P::E1"\n'
+        r'<stdin>:10:20: model: info: found enumeration type "P::E2"\n'
         r"<stdin>:10:10: model: info: on path F1 -> F2$",
     )
 
@@ -1386,7 +1386,7 @@ def test_tlv_valid_enum() -> None:
         Field("T"): ENUMERATION,
         Field("V"): Opaque(),
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_invalid_fixed_size_field_with_length() -> None:
@@ -1416,7 +1416,7 @@ def test_valid_first() -> None:
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): MODULAR_INTEGER,
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_invalid_first() -> None:
@@ -1485,7 +1485,7 @@ def test_valid_length_reference() -> None:
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): Opaque(),
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_invalid_length_forward_reference() -> None:
@@ -1580,8 +1580,8 @@ def test_incongruent_overlay() -> None:
         Link(Field("F3"), Field("F4")),
         Link(Field("F4"), FINAL),
     ]
-    u8 = ModularInteger("P.U8", Number(256))
-    u16 = ModularInteger("P.U16", Number(65536))
+    u8 = ModularInteger("P::U8", Number(256))
+    u16 = ModularInteger("P::U16", Number(65536))
     types = {
         Field("F1"): u8,
         Field("F2"): u8,
@@ -1680,7 +1680,7 @@ def test_valid_use_message_length() -> None:
         Link(Field("Verify_Data"), FINAL),
     ]
     types = {Field("Verify_Data"): Opaque()}
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_valid_use_message_first_last() -> None:
@@ -1693,7 +1693,7 @@ def test_valid_use_message_first_last() -> None:
         Link(Field("Verify_Data"), FINAL),
     ]
     types = {Field("Verify_Data"): Opaque()}
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_no_path_to_final() -> None:
@@ -1712,7 +1712,7 @@ def test_no_path_to_final() -> None:
         Field("F4"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure, types, '^model: error: no path to FINAL for field "F4" in "P.M"$'
+        structure, types, '^model: error: no path to FINAL for field "F4" in "P::M"$'
     )
 
 
@@ -1739,9 +1739,9 @@ def test_no_path_to_final_transitive() -> None:
         structure,
         types,
         r"^"
-        r'model: error: no path to FINAL for field "F4" in "P.M"\n'
-        r'model: error: no path to FINAL for field "F5" in "P.M"\n'
-        r'model: error: no path to FINAL for field "F6" in "P.M"'
+        r'model: error: no path to FINAL for field "F4" in "P::M"\n'
+        r'model: error: no path to FINAL for field "F5" in "P::M"\n'
+        r'model: error: no path to FINAL for field "F6" in "P::M"'
         r"$",
     )
 
@@ -1760,15 +1760,15 @@ def test_conditionally_unreachable_field_mod_first() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F1" in "P.M"\n'
+        r'model: error: unreachable field "F1" in "P::M"\n'
         r"model: info: path 0 [(]F1[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "F2" in "P.M"\n'
+        r'model: error: unreachable field "F2" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "Final" in "P.M"\n'
+        r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"',
@@ -1789,12 +1789,12 @@ def test_conditionally_unreachable_field_mod_last() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F2" in "P.M"\n'
+        r'model: error: unreachable field "F2" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: unreachable field "Final" in "P.M"\n'
+        r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
@@ -1816,15 +1816,15 @@ def test_conditionally_unreachable_field_range_first() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F1" in "P.M"\n'
+        r'model: error: unreachable field "F1" in "P::M"\n'
         r"model: info: path 0 [(]F1[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "F2" in "P.M"\n'
+        r'model: error: unreachable field "F2" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "Final" in "P.M"\n'
+        r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"',
@@ -1845,12 +1845,12 @@ def test_conditionally_unreachable_field_range_last() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F2" in "P.M"\n'
+        r'model: error: unreachable field "F2" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: unreachable field "Final" in "P.M"\n'
+        r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
@@ -1872,15 +1872,15 @@ def test_conditionally_unreachable_field_enum_first() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F1" in "P.M"\n'
+        r'model: error: unreachable field "F1" in "P::M"\n'
         r"model: info: path 0 [(]F1[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "F2" in "P.M"\n'
+        r'model: error: unreachable field "F2" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "Final" in "P.M"\n'
+        r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"',
@@ -1901,12 +1901,12 @@ def test_conditionally_unreachable_field_enum_last() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F2" in "P.M"\n'
+        r'model: error: unreachable field "F2" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
         r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: unreachable field "Final" in "P.M"\n'
+        r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
@@ -1929,7 +1929,7 @@ def test_conditionally_unreachable_field_outgoing() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F2" in "P.M"\n'
+        r'model: error: unreachable field "F2" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F1 <= 32"\n'
         r'model: info: unsatisfied "F1 > 32"',
@@ -1963,7 +1963,7 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:90:12: model: error: unreachable field "F2" in "P.M"\n'
+        r'<stdin>:90:12: model: error: unreachable field "F2" in "P::M"\n'
         r"<stdin>:90:12: model: info: path 0 [(]F1 -> F2[)]:\n"
         r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
         r'<stdin>:90:12: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"',
@@ -1981,7 +1981,7 @@ def test_length_attribute_final() -> None:
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure, types, '^<stdin>:4:12: model: error: length attribute for final field in "P.M"$'
+        structure, types, '^<stdin>:4:12: model: error: length attribute for final field in "P::M"$'
     )
 
 
@@ -2000,7 +2000,7 @@ def test_aggregate_equal_valid_length() -> None:
     types = {
         Field("Magic"): Opaque(),
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_aggregate_equal_invalid_length1() -> None:
@@ -2019,7 +2019,7 @@ def test_aggregate_equal_invalid_length1() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'model: info: unsatisfied "Magic\'Length = 40"',
@@ -2042,7 +2042,7 @@ def test_aggregate_equal_invalid_length2() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'model: info: unsatisfied "Magic\'Length = 40"',
@@ -2064,7 +2064,7 @@ def test_aggregate_inequal_valid_length() -> None:
     types = {
         Field("Magic"): Opaque(),
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_aggregate_inequal_invalid_length() -> None:
@@ -2083,7 +2083,7 @@ def test_aggregate_inequal_invalid_length() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P.M"\n'
+        r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
         r'model: info: unsatisfied "Magic\'Length = 40"',
@@ -2100,9 +2100,9 @@ def test_aggregate_equal_array_valid_length() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Array("P.Arr", ModularInteger("P.Modular", Number(128))),
+        Field("Magic"): Array("P::Arr", ModularInteger("P::Modular", Number(128))),
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 def test_aggregate_equal_array_invalid_length() -> None:
@@ -2119,14 +2119,14 @@ def test_aggregate_equal_array_invalid_length() -> None:
     ]
     types = {
         Field("Magic"): Array(
-            "P.Arr", ModularInteger("P.Modular", Number(128), location=Location((66, 3)))
+            "P::Arr", ModularInteger("P::Modular", Number(128), location=Location((66, 3)))
         ),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'<stdin>:17:3: model: error: contradicting condition in "P.M"\n'
+        r'<stdin>:17:3: model: error: contradicting condition in "P::M"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
         r'<stdin>:17:3: model: info: unsatisfied "2 [*] Modular\'Length = Magic\'Length"\n'
         r'<stdin>:66:3: model: info: unsatisfied "Modular\'Length = 7"\n'
@@ -2152,7 +2152,7 @@ def test_aggregate_equal_invalid_length_field() -> None:
     ]
     types = {
         Field("Length"): RangeInteger(
-            "P.Length_Type", Number(10), Number(100), Number(8), Location((5, 10))
+            "P::Length_Type", Number(10), Number(100), Number(8), Location((5, 10))
         ),
         Field(ID("Magic", Location((17, 3)))): Opaque(),
     }
@@ -2160,7 +2160,7 @@ def test_aggregate_equal_invalid_length_field() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:10:5: model: error: contradicting condition in "P.M"\n'
+        r'<stdin>:10:5: model: error: contradicting condition in "P::M"\n'
         r'<stdin>:2:5: model: info: on path: "Length"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
         r'<stdin>:6:5: model: info: unsatisfied "Magic\'Length = 8 [*] Length"\n'
@@ -2190,7 +2190,7 @@ def test_no_contradiction_multi() -> None:
         Field("F4"): RANGE_INTEGER,
         Field("F5"): RANGE_INTEGER,
     }
-    Message("P.M", structure, types)
+    Message("P::M", structure, types)
 
 
 @pytest.mark.parametrize(
@@ -2236,7 +2236,7 @@ def test_checksum(checksums: Mapping[ID, Sequence[Expr]], condition: Expr) -> No
     aspects = {
         ID("Checksum"): checksums,
     }
-    message = Message("P.M", structure, types, aspects=aspects)
+    message = Message("P::M", structure, types, aspects=aspects)
     assert message.checksums == checksums
 
 
@@ -2300,7 +2300,7 @@ def test_checksum_error(
 
 def test_field_size() -> None:
     message = Message(
-        "P.M",
+        "P::M",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
         {Field("F"): MODULAR_INTEGER},
         location=Location((30, 10)),
@@ -2316,14 +2316,14 @@ def test_field_size() -> None:
 
 def test_copy() -> None:
     message = Message(
-        "P.M",
+        "P::M",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
         {Field("F"): MODULAR_INTEGER},
     )
     assert_equal(
-        message.copy(identifier="A.B"),
+        message.copy(identifier="A::B"),
         Message(
-            "A.B",
+            "A::B",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
             {Field("F"): MODULAR_INTEGER},
         ),
@@ -2334,7 +2334,7 @@ def test_copy() -> None:
             types={Field("C"): RANGE_INTEGER},
         ),
         Message(
-            "P.M",
+            "P::M",
             [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
             {Field("C"): RANGE_INTEGER},
         ),
@@ -2343,7 +2343,7 @@ def test_copy() -> None:
 
 def test_proven() -> None:
     message = Message(
-        "P.M",
+        "P::M",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
         {Field("F"): MODULAR_INTEGER},
     )
@@ -2355,10 +2355,10 @@ def test_is_possibly_empty() -> None:
     b = Field("B")
     c = Field("C")
 
-    array = Array("P.Array", MODULAR_INTEGER)
+    array = Array("P::Array", MODULAR_INTEGER)
 
     message = Message(
-        "P.M",
+        "P::M",
         [
             Link(INITIAL, a),
             Link(a, c, condition=Less(Variable("A"), Number(10)), length=Variable("A")),
@@ -2378,14 +2378,14 @@ def test_derived_message_incorrect_base_name() -> None:
     with pytest.raises(
         RecordFluxError, match='^<stdin>:40:8: model: error: unexpected format of type name "M"$'
     ):
-        DerivedMessage("P.M", Message("M", [], {}, location=Location((40, 8))))
+        DerivedMessage("P::M", Message("M", [], {}, location=Location((40, 8))))
 
 
 def test_derived_message_proven() -> None:
     message = DerivedMessage(
-        "P.M",
+        "P::M",
         Message(
-            "X.M",
+            "X::M",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
             {Field("F"): MODULAR_INTEGER},
         ),
@@ -2396,7 +2396,7 @@ def test_derived_message_proven() -> None:
 def test_prefixed_message() -> None:
     assert_equal(
         UnprovenMessage(
-            "P.M",
+            "P::M",
             [
                 Link(INITIAL, Field("F1")),
                 Link(
@@ -2423,7 +2423,7 @@ def test_prefixed_message() -> None:
             },
         ).prefixed("X_"),
         UnprovenMessage(
-            "P.M",
+            "P::M",
             [
                 Link(INITIAL, Field("X_F1")),
                 Link(
@@ -2456,10 +2456,10 @@ def test_merge_message_simple() -> None:
     assert_equal(
         deepcopy(M_SMPL_REF).merged(),
         UnprovenMessage(
-            "P.Smpl_Ref",
+            "P::Smpl_Ref",
             [
                 Link(INITIAL, Field("NR_F1"), length=Number(16)),
-                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P.ONE"))),
+                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("NR_F1"), Field("NR_F2")),
                 Link(
@@ -2489,7 +2489,7 @@ def test_merge_message_complex() -> None:
     assert_equal(
         deepcopy(M_CMPLX_REF).merged(),
         UnprovenMessage(
-            "P.Cmplx_Ref",
+            "P::Cmplx_Ref",
             [
                 Link(INITIAL, Field("F1")),
                 Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
@@ -2511,7 +2511,7 @@ def test_merge_message_complex() -> None:
                     Field("F5"),
                     And(
                         LessEqual(Variable("F1"), Number(100)),
-                        Equal(Variable("NR_F3"), Variable("P.ONE")),
+                        Equal(Variable("NR_F3"), Variable("P::ONE")),
                     ),
                 ),
                 Link(Field("NR_F4"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
@@ -2520,7 +2520,7 @@ def test_merge_message_complex() -> None:
                     Field("F6"),
                     And(
                         GreaterEqual(Variable("F1"), Number(200)),
-                        Equal(Variable("NR_F3"), Variable("P.ONE")),
+                        Equal(Variable("NR_F3"), Variable("P::ONE")),
                     ),
                 ),
                 Link(Field("NR_F4"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
@@ -2559,17 +2559,17 @@ def test_merge_message_recursive() -> None:
     assert_equal(
         deepcopy(M_DBL_REF).merged(),
         UnprovenMessage(
-            "P.Dbl_Ref",
+            "P::Dbl_Ref",
             [
                 Link(INITIAL, Field("SR_NR_F1"), length=Number(16)),
                 Link(
                     Field("SR_NR_F3"),
                     Field("NR_F1"),
-                    Equal(Variable("SR_NR_F3"), Variable("P.ONE")),
+                    Equal(Variable("SR_NR_F3"), Variable("P::ONE")),
                     length=Number(16),
                 ),
                 Link(Field("SR_NR_F4"), Field("NR_F1"), length=Number(16)),
-                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P.ONE"))),
+                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("SR_NR_F1"), Field("SR_NR_F2")),
                 Link(
@@ -2616,11 +2616,11 @@ def test_merge_message_simple_derived() -> None:
     assert_equal(
         deepcopy(M_SMPL_REF_DERI).merged(),
         UnprovenDerivedMessage(
-            "P.Smpl_Ref_Deri",
+            "P::Smpl_Ref_Deri",
             M_SMPL_REF,
             [
                 Link(INITIAL, Field("NR_F1"), length=Number(16)),
-                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P.ONE"))),
+                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("NR_F1"), Field("NR_F2")),
                 Link(
@@ -2648,7 +2648,7 @@ def test_merge_message_simple_derived() -> None:
 
 def test_merge_message_constrained() -> None:
     m1 = UnprovenMessage(
-        "P.M1",
+        "P::M1",
         [
             Link(INITIAL, Field("F1")),
             Link(Field("F1"), Field("F3"), Equal(Variable("F1"), Variable("True"))),
@@ -2659,7 +2659,7 @@ def test_merge_message_constrained() -> None:
         {Field("F1"): BOOLEAN, Field("F2"): BOOLEAN, Field("F3"): BOOLEAN},
     )
     m2 = UnprovenMessage(
-        "P.M2",
+        "P::M2",
         [
             Link(INITIAL, Field("F4")),
             Link(
@@ -2674,7 +2674,7 @@ def test_merge_message_constrained() -> None:
         {Field("F4"): m1},
     )
     expected = UnprovenMessage(
-        "P.M2",
+        "P::M2",
         [
             Link(
                 INITIAL,
@@ -2698,7 +2698,7 @@ def test_merge_message_constrained() -> None:
 
 def test_merge_message_constrained_empty() -> None:
     m1 = UnprovenMessage(
-        "P.M1",
+        "P::M1",
         [
             Link(INITIAL, Field("F1")),
             Link(Field("F1"), Field("F2"), Equal(Variable("F1"), Variable("True"))),
@@ -2708,7 +2708,7 @@ def test_merge_message_constrained_empty() -> None:
         {Field("F1"): BOOLEAN, Field("F2"): BOOLEAN},
     )
     m2 = UnprovenMessage(
-        "P.M2",
+        "P::M2",
         [
             Link(INITIAL, Field("F3")),
             Link(
@@ -2733,7 +2733,7 @@ def test_merge_message_error_name_conflict() -> None:
     m2_f2 = Field(ID("F2", Location((10, 5))))
 
     m2 = UnprovenMessage(
-        "P.M2",
+        "P::M2",
         [Link(INITIAL, m2_f2), Link(m2_f2, FINAL)],
         {Field("F2"): MODULAR_INTEGER},
         location=Location((15, 3)),
@@ -2743,7 +2743,7 @@ def test_merge_message_error_name_conflict() -> None:
     m1_f1_f2 = Field(ID("F1_F2", Location((30, 5))))
 
     m1 = UnprovenMessage(
-        "P.M1",
+        "P::M1",
         [Link(INITIAL, m1_f1), Link(m1_f1, m1_f1_f2), Link(m1_f1_f2, FINAL)],
         {Field("F1"): m2, Field("F1_F2"): MODULAR_INTEGER},
         location=Location((2, 9)),
@@ -2752,43 +2752,45 @@ def test_merge_message_error_name_conflict() -> None:
     assert_type_model_error(
         m1.merged(),
         r"^"
-        r'<stdin>:30:5: model: error: name conflict for "F1_F2" in "P.M1"\n'
-        r'<stdin>:15:3: model: info: when merging message "P.M2"\n'
+        r'<stdin>:30:5: model: error: name conflict for "F1_F2" in "P::M1"\n'
+        r'<stdin>:15:3: model: info: when merging message "P::M2"\n'
         r'<stdin>:20:8: model: info: into field "F1"$',
     )
 
 
 def test_refinement_invalid_package() -> None:
     assert_type_model_error(
-        Refinement(ID("A.B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME),
-        r'^<stdin>:22:10: model: error: unexpected format of package name "A.B"$',
+        Refinement(
+            ID("A::B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME
+        ),
+        r'^<stdin>:22:10: model: error: unexpected format of package name "A::B"$',
     )
 
 
 def test_refinement_invalid_field_type() -> None:
     x = Field(ID("X", Location((20, 10))))
 
-    message = Message("P.M", [Link(INITIAL, x), Link(x, FINAL)], {x: MODULAR_INTEGER})
+    message = Message("P::M", [Link(INITIAL, x), Link(x, FINAL)], {x: MODULAR_INTEGER})
 
     assert_type_model_error(
         Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
-        r'^<stdin>:33:22: model: error: invalid type of field "X" in refinement of "P.M"\n'
+        r'^<stdin>:33:22: model: error: invalid type of field "X" in refinement of "P::M"\n'
         r"<stdin>:20:10: model: info: expected field of type Opaque",
     )
 
 
 def test_refinement_invalid_field() -> None:
-    message = Message("P.M", [], {})
+    message = Message("P::M", [], {})
 
     assert_type_model_error(
         Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
-        r'^<stdin>:33:22: model: error: invalid field "X" in refinement of "P.M"$',
+        r'^<stdin>:33:22: model: error: invalid field "X" in refinement of "P::M"$',
     )
 
 
 def test_paths() -> None:
     message = Message(
-        "P.M",
+        "P::M",
         [
             Link(INITIAL, Field("L")),
             Link(Field("L"), Field("O"), condition=Greater(Variable("L"), Number(100))),
@@ -2811,7 +2813,7 @@ def test_paths() -> None:
 
 def test_message_str() -> None:
     message = Message(
-        "P.M",
+        "P::M",
         [
             Link(INITIAL, Field("L")),
             Link(Field("L"), Field("O"), condition=Greater(Variable("L"), Number(100))),

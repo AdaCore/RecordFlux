@@ -31,15 +31,15 @@ from rflx.model import (
     Refinement,
 )
 
-NULL_MESSAGE = Message("Null.Message", [], {})
+NULL_MESSAGE = Message("Null::Message", [], {})
 NULL_MODEL = Model([NULL_MESSAGE])
 
 TLV_TAG = Enumeration(
-    "TLV.Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(2), False
+    "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(2), False
 )
-TLV_LENGTH = ModularInteger("TLV.Length", Pow(Number(2), Number(14)))
+TLV_LENGTH = ModularInteger("TLV::Length", Pow(Number(2), Number(14)))
 TLV_MESSAGE = Message(
-    "TLV.Message",
+    "TLV::Message",
     [
         Link(INITIAL, Field("Tag")),
         Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("Msg_Data"))),
@@ -56,14 +56,14 @@ NULL_MESSAGE_IN_TLV_MESSAGE_MODEL = Model(
     [TLV_TAG, TLV_LENGTH, TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE]
 )
 
-ETHERNET_ADDRESS = ModularInteger("Ethernet.Address", Pow(Number(2), Number(48)))
+ETHERNET_ADDRESS = ModularInteger("Ethernet::Address", Pow(Number(2), Number(48)))
 ETHERNET_TYPE_LENGTH = RangeInteger(
-    "Ethernet.Type_Length", Number(46), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+    "Ethernet::Type_Length", Number(46), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
 )
-ETHERNET_TPID = RangeInteger("Ethernet.TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16))
-ETHERNET_TCI = ModularInteger("Ethernet.TCI", Pow(Number(2), Number(16)))
+ETHERNET_TPID = RangeInteger("Ethernet::TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16))
+ETHERNET_TCI = ModularInteger("Ethernet::TCI", Pow(Number(2), Number(16)))
 ETHERNET_FRAME = Message(
-    "Ethernet.Frame",
+    "Ethernet::Frame",
     [
         Link(INITIAL, Field("Destination")),
         Link(Field("Destination"), Field("Source")),
@@ -118,39 +118,39 @@ ETHERNET_MODEL = Model(
 )
 
 ENUMERATION_PRIORITY = Enumeration(
-    "Enumeration.Priority",
+    "Enumeration::Priority",
     [("LOW", Number(1)), ("MEDIUM", Number(4)), ("HIGH", Number(7))],
     Number(3),
     True,
 )
 ENUMERATION_MESSAGE = Message(
-    "Enumeration.Message",
+    "Enumeration::Message",
     [Link(INITIAL, Field("Priority")), Link(Field("Priority"), FINAL)],
     {Field("Priority"): ENUMERATION_PRIORITY},
 )
 ENUMERATION_MODEL = Model([ENUMERATION_PRIORITY, ENUMERATION_MESSAGE])
 
-ARRAYS_LENGTH = ModularInteger("Arrays.Length", Pow(Number(2), Number(8)))
-ARRAYS_MODULAR_INTEGER = ModularInteger("Arrays.Modular_Integer", Pow(Number(2), Number(16)))
-ARRAYS_MODULAR_VECTOR = Array("Arrays.Modular_Vector", ARRAYS_MODULAR_INTEGER)
-ARRAYS_RANGE_INTEGER = RangeInteger("Arrays.Range_Integer", Number(1), Number(100), Number(8))
-ARRAYS_RANGE_VECTOR = Array("Arrays.Range_Vector", ARRAYS_RANGE_INTEGER)
+ARRAYS_LENGTH = ModularInteger("Arrays::Length", Pow(Number(2), Number(8)))
+ARRAYS_MODULAR_INTEGER = ModularInteger("Arrays::Modular_Integer", Pow(Number(2), Number(16)))
+ARRAYS_MODULAR_VECTOR = Array("Arrays::Modular_Vector", ARRAYS_MODULAR_INTEGER)
+ARRAYS_RANGE_INTEGER = RangeInteger("Arrays::Range_Integer", Number(1), Number(100), Number(8))
+ARRAYS_RANGE_VECTOR = Array("Arrays::Range_Vector", ARRAYS_RANGE_INTEGER)
 ARRAYS_ENUMERATION = Enumeration(
-    "Arrays.Enumeration",
+    "Arrays::Enumeration",
     [("ZERO", Number(0)), ("ONE", Number(1)), ("TWO", Number(2))],
     Number(8),
     False,
 )
-ARRAYS_ENUMERATION_VECTOR = Array("Arrays.Enumeration_Vector", ARRAYS_ENUMERATION)
+ARRAYS_ENUMERATION_VECTOR = Array("Arrays::Enumeration_Vector", ARRAYS_ENUMERATION)
 ARRAYS_AV_ENUMERATION = Enumeration(
-    "Arrays.AV_Enumeration",
+    "Arrays::AV_Enumeration",
     [("AV_ZERO", Number(0)), ("AV_ONE", Number(1)), ("AV_TWO", Number(2))],
     Number(8),
     True,
 )
-ARRAYS_AV_ENUMERATION_VECTOR = Array("Arrays.AV_Enumeration_Vector", ARRAYS_AV_ENUMERATION)
+ARRAYS_AV_ENUMERATION_VECTOR = Array("Arrays::AV_Enumeration_Vector", ARRAYS_AV_ENUMERATION)
 ARRAYS_MESSAGE = Message(
-    "Arrays.Message",
+    "Arrays::Message",
     [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Modular_Vector"), length=Mul(Variable("Length"), Number(8))),
@@ -168,7 +168,7 @@ ARRAYS_MESSAGE = Message(
     },
 )
 ARRAYS_INNER_MESSAGE = Message(
-    "Arrays.Inner_Message",
+    "Arrays::Inner_Message",
     [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Payload"), length=Mul(Variable("Length"), Number(8))),
@@ -176,9 +176,9 @@ ARRAYS_INNER_MESSAGE = Message(
     ],
     {Field("Length"): ARRAYS_LENGTH, Field("Payload"): Opaque()},
 )
-ARRAYS_INNER_MESSAGES = Array("Arrays.Inner_Messages", ARRAYS_INNER_MESSAGE)
+ARRAYS_INNER_MESSAGES = Array("Arrays::Inner_Messages", ARRAYS_INNER_MESSAGE)
 ARRAYS_MESSAGES_MESSAGE = Message(
-    "Arrays.Messages_Message",
+    "Arrays::Messages_Message",
     [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Messages"), length=Mul(Variable("Length"), Number(8))),
@@ -205,7 +205,7 @@ ARRAYS_MODEL = Model(
 )
 
 EXPRESSION_MESSAGE = Message(
-    "Expression.Message",
+    "Expression::Message",
     [
         Link(INITIAL, Field("Payload"), length=Number(16)),
         Link(Field("Payload"), FINAL, Equal(Variable("Payload"), Aggregate(Number(1), Number(2)))),
@@ -214,13 +214,13 @@ EXPRESSION_MESSAGE = Message(
 )
 EXPRESSION_MODEL = Model([EXPRESSION_MESSAGE])
 
-DERIVATION_MESSAGE = DerivedMessage("Derivation.Message", ARRAYS_MESSAGE)
+DERIVATION_MESSAGE = DerivedMessage("Derivation::Message", ARRAYS_MESSAGE)
 DERIVATION_MODEL = Model([*ARRAYS_MODEL.types, DERIVATION_MESSAGE])
 
-MODULAR_INTEGER = ModularInteger("P.Modular", Number(256))
-RANGE_INTEGER = RangeInteger("P.Range", Number(1), Number(100), Number(8))
+MODULAR_INTEGER = ModularInteger("P::Modular", Number(256))
+RANGE_INTEGER = RangeInteger("P::Range", Number(1), Number(100), Number(8))
 ENUMERATION = Enumeration(
-    "P.Enumeration",
+    "P::Enumeration",
     [("ZERO", Number(0)), ("ONE", Number(1)), ("TWO", Number(2))],
     Number(8),
     False,

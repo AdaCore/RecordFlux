@@ -208,7 +208,7 @@ def test_array_with_imported_element_type_scalar(tmp_path: Path) -> None:
         """
            with Test;
            package Array_Test is
-              type T is array of Test.T;
+              type T is array of Test::T;
            end Array_Test;
         """
     )
@@ -228,7 +228,7 @@ def test_array_with_imported_element_type_message(tmp_path: Path) -> None:
         """
            with Test;
            package Array_Test is
-              type T is array of Test.M;
+              type T is array of Test::M;
            end Array_Test;
         """
     )

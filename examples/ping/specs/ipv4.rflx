@@ -14,7 +14,7 @@ package IPv4 is
    type Protocol is (PROTOCOL_ICMP => 1, PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
    type Header_Checksum is mod 2**16;
    type Address is mod 2**32;
-   type Options is array of IPv4_Option.Option;
+   type Options is array of IPv4_Option::Option;
 
    type Packet is
       message
@@ -45,7 +45,7 @@ package IPv4 is
          Payload : Opaque;
       end message;
 
-   for Packet use (Payload => ICMP.Message)
+   for Packet use (Payload => ICMP::Message)
       if Protocol = PROTOCOL_ICMP;
 
 end IPv4;

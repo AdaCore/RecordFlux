@@ -1,15 +1,15 @@
+import rflx.ada as ada
 from rflx.common import file_name
-from rflx.identifier import ID
 
-REFINEMENT_PACKAGE = ID("Contains")
+REFINEMENT_PACKAGE = ada.ID("Contains")
 
-ARITHMETIC_PACKAGE = ID("RFLX_Arithmetic")
-BUILTIN_TYPES_CONVERSIONS_PACKAGE = ID("RFLX_Builtin_Types.Conversions")
-BUILTIN_TYPES_PACKAGE = ID("RFLX_Builtin_Types")
-GENERIC_TYPES_PACKAGE = ID("RFLX_Generic_Types")
-MESSAGE_SEQUENCE_PACKAGE = ID("RFLX_Message_Sequence")
-SCALAR_SEQUENCE_PACKAGE = ID("RFLX_Scalar_Sequence")
-TYPES_PACKAGE = ID("RFLX_Types")
+ARITHMETIC_PACKAGE = ada.ID("RFLX_Arithmetic")
+BUILTIN_TYPES_CONVERSIONS_PACKAGE = ada.ID("RFLX_Builtin_Types.Conversions")
+BUILTIN_TYPES_PACKAGE = ada.ID("RFLX_Builtin_Types")
+GENERIC_TYPES_PACKAGE = ada.ID("RFLX_Generic_Types")
+MESSAGE_SEQUENCE_PACKAGE = ada.ID("RFLX_Message_Sequence")
+SCALAR_SEQUENCE_PACKAGE = ada.ID("RFLX_Scalar_Sequence")
+TYPES_PACKAGE = ada.ID("RFLX_Types")
 
 LIBRARY_FILES = [
     file_name(str(p)) + ".ads"
@@ -34,7 +34,7 @@ LIBRARY_FILES = [
 
 TEMPLATE_DIR = ("rflx", "templates/")
 
-TYPES = ID("Types")
+TYPES = ada.ID("Types")
 TYPES_BYTE = TYPES * "Byte"
 TYPES_BYTES = TYPES * "Bytes"
 TYPES_BYTES_PTR = TYPES * "Bytes_Ptr"

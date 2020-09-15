@@ -127,7 +127,7 @@ def unqualified_identifier() -> Token:
 
 def qualified_identifier() -> Token:
     return (
-        locatedExpr(Regex(r"[a-zA-Z]\w*(\.[a-zA-Z]\w*)*"))
+        locatedExpr(Regex(r"[a-zA-Z]\w*(::[a-zA-Z]\w*)*"))
         .setParseAction(parse_identifier)
         .setName("QualifiedIdentifier")
     )
@@ -552,7 +552,11 @@ def variable_declaration() -> Token:
 
 def renaming_declaration() -> Token:
     return locatedExpr(
-        variable_base_declaration() + Keyword("renames").suppress() + variable()
+        variable_base_declaration()
+        + Keyword("renames").suppress()
+        + unqualified_identifier()
+        + Literal(".").suppress()
+        + unqualified_identifier()
     ).setParseAction(parse_renaming_declaration)
 
 
@@ -862,18 +866,11 @@ def parse_identifier(string: str, location: int, tokens: ParseResults) -> ID:
 
 
 @fatalexceptions
-def parse_variable(string: str, location: int, tokens: ParseResults) -> Union[Variable, Selected]:
+def parse_variable(string: str, location: int, tokens: ParseResults) -> Variable:
     identifier = tokens[0][0]
 
     assert 1 <= len(identifier.parts) <= 2
     assert identifier.location
-
-    if len(identifier.parts) == 2:
-        return Selected(
-            Variable(identifier.parent, location=identifier.location),
-            identifier.name,
-            location=identifier.location,
-        )
 
     return Variable(identifier, location=identifier.location)
 
@@ -1010,7 +1007,9 @@ def parse_renaming_declaration(
     string: str, location: int, tokens: ParseResults
 ) -> decl.RenamingDeclaration:
     tokens, locn = evaluate_located_expression(string, tokens)
-    return decl.RenamingDeclaration(tokens[0], tokens[1], tokens[2], location=locn)
+    return decl.RenamingDeclaration(
+        tokens[0], tokens[1], Selected(Variable(tokens[2]), tokens[3]), location=locn
+    )
 
 
 @fatalexceptions

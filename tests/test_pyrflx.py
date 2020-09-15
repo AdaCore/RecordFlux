@@ -250,7 +250,7 @@ def test_pyrflx_iterator(pyrflx: PyRFLX) -> None:
 
 
 def test_message_identifier(frame: MessageValue) -> None:
-    assert frame.identifier == ID("Ethernet.Frame")
+    assert frame.identifier == ID("Ethernet") * "Frame"
     assert frame.package == ID("Ethernet")
     assert frame.name == "Frame"
 
@@ -262,6 +262,16 @@ def test_message_eq(tlv_package: Package) -> None:
     assert tlv_package["Message"] == tlv_package["Message"]
     assert tlv_package["Message"] is not tlv_package["Message"]
     assert m1 is not None
+
+
+def test_message_bitstring(tlv: MessageValue) -> None:
+    assert tlv.bitstring == Bitstring("")
+    tlv.set("Tag", "Msg_Data")
+    assert tlv.bitstring == Bitstring("01")
+    tlv.set("Length", 1)
+    assert tlv.bitstring == Bitstring("0100000000000001")
+    tlv.set("Value", b"\x01")
+    assert tlv.bitstring == Bitstring("010000000000000100000001")
 
 
 def test_attributes(pyrflx: PyRFLX) -> None:
@@ -625,7 +635,7 @@ def test_icmp_echo_request(icmp: MessageValue) -> None:
 
 def test_value_mod() -> None:
     # pylint: disable=pointless-statement
-    modtype = ModularInteger("Test.Int", Number(2 ** 16))
+    modtype = ModularInteger("Test::Int", Number(2 ** 16))
     modvalue = IntegerValue(modtype)
     assert not modvalue.initialized
     with pytest.raises(NotInitializedError, match="value not initialized"):
@@ -644,7 +654,7 @@ def test_value_mod() -> None:
 
 def test_value_range() -> None:
     # pylint: disable=pointless-statement
-    rangetype = RangeInteger("Test.Int", Number(8), Number(16), Number(8))
+    rangetype = RangeInteger("Test::Int", Number(8), Number(16), Number(8))
     rangevalue = IntegerValue(rangetype)
     assert not rangevalue.initialized
     with pytest.raises(NotInitializedError, match="value not initialized"):
@@ -664,16 +674,16 @@ def test_value_range() -> None:
 @pytest.fixture(name="enum_value")
 def fixture_enum_value() -> EnumValue:
     return EnumValue(
-        Enumeration("Test.Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False)
+        Enumeration("Test::Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False)
     )
 
 
 def test_value_enum(enum_value: EnumValue) -> None:
     assert enum_value.literals == {
         Variable("One"): Number(1),
-        Variable("Test.One"): Number(1),
+        Variable("Test::One"): Number(1),
         Variable("Two"): Number(2),
-        Variable("Test.Two"): Number(2),
+        Variable("Test::Two"): Number(2),
     }
     assert not enum_value.initialized
 
@@ -704,29 +714,29 @@ def test_value_enum_parse(enum_value: EnumValue) -> None:
 @pytest.fixture(name="enum_value_imported")
 def fixture_enum_value_imported() -> EnumValue:
     return EnumValue(
-        Enumeration("Test.Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False),
+        Enumeration("Test::Enum", [("One", Number(1)), ("Two", Number(2))], Number(8), False),
         imported=True,
     )
 
 
 def test_value_enum_imported(enum_value_imported: EnumValue) -> None:
     assert enum_value_imported.literals == {
-        Variable("Test.One"): Number(1),
-        Variable("Test.Two"): Number(2),
+        Variable("Test::One"): Number(1),
+        Variable("Test::Two"): Number(2),
     }
     assert not enum_value_imported.initialized
 
 
 def test_value_enum_imported_assign(enum_value_imported: EnumValue) -> None:
     enum_value_imported.assign("One")
-    assert enum_value_imported.value == "Test.One"
-    enum_value_imported.assign("Test.Two")
-    assert enum_value_imported.value == "Test.Two"
+    assert enum_value_imported.value == "Test::One"
+    enum_value_imported.assign("Test::Two")
+    assert enum_value_imported.value == "Test::Two"
 
 
 def test_value_enum_imported_parse(enum_value_imported: EnumValue) -> None:
     enum_value_imported.parse(b"\x01")
-    assert enum_value_imported.value == "Test.One"
+    assert enum_value_imported.value == "Test::One"
 
 
 @pytest.fixture(name="enum_value_builtin")
@@ -778,9 +788,9 @@ def test_value_equal(enum_value: EnumValue) -> None:
     # pylint: disable=comparison-with-itself
     ov = OpaqueValue(Opaque())
     ev = enum_value
-    rangetype = RangeInteger("Test.Int", Number(8), Number(16), Number(8))
+    rangetype = RangeInteger("Test::Int", Number(8), Number(16), Number(8))
     rv = IntegerValue(rangetype)
-    modtype = ModularInteger("Test.Int", Number(2 ** 16))
+    modtype = ModularInteger("Test::Int", Number(2 ** 16))
     mv = IntegerValue(modtype)
     mv2 = IntegerValue(modtype)
     assert ov == ov
@@ -812,7 +822,7 @@ def test_value_invalid() -> None:
     class TestType(Type):
         pass
 
-    t = TestType("Test.Type")
+    t = TestType("Test::Type")
     with pytest.raises(ValueError, match="cannot construct unknown type: TestType"):
         TypeValue.construct(t)
 
@@ -879,12 +889,12 @@ def test_ethernet_parse_binary(frame: MessageValue) -> None:
 
 def test_value_parse_from_bitstring(tlv: MessageValue, enum_value: EnumValue) -> None:
     # pylint: disable=protected-access
-    intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
+    intval = IntegerValue(ModularInteger("Test::Int", Number(256)))
     intval.parse(b"\x02")
     assert intval.value == 2
     enum_value.parse(b"\x01")
     assert enum_value.value == "One"
-    msg_array = ArrayValue(Array("Test.MsgArray", tlv._type))
+    msg_array = ArrayValue(Array("Test::MsgArray", tlv._type))
     tlv.set("Tag", "Msg_Data")
     tlv.set("Length", 4)
     tlv.set("Value", b"\x00\x00\x00\x00")
@@ -927,9 +937,9 @@ def test_array_nested_messages(array_message_package: Package, array_message: Me
 
 
 def test_array_nested_values(array_type_foo: MessageValue) -> None:
-    a = IntegerValue(ModularInteger("Array_Type.Byte_One", Number(256)))
-    b = IntegerValue(ModularInteger("Array_Type.Byte_Two", Number(256)))
-    c = IntegerValue(ModularInteger("Array_Type.Byte_Three", Number(256)))
+    a = IntegerValue(ModularInteger("Array_Type::Byte_One", Number(256)))
+    b = IntegerValue(ModularInteger("Array_Type::Byte_Two", Number(256)))
+    c = IntegerValue(ModularInteger("Array_Type::Byte_Three", Number(256)))
     a.assign(5)
     b.assign(6)
     c.assign(7)
@@ -941,10 +951,10 @@ def test_array_nested_values(array_type_foo: MessageValue) -> None:
 
 
 def test_array_preserve_value(enum_value: EnumValue) -> None:
-    intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
+    intval = IntegerValue(ModularInteger("Test::Int", Number(256)))
     intval.assign(1)
     enum_value.assign("One")
-    type_array = ArrayValue(Array("Test.Array", ModularInteger("Test.Mod_Int", Number(256))))
+    type_array = ArrayValue(Array("Test::Array", ModularInteger("Test::Mod_Int", Number(256))))
     type_array.assign([intval])
     assert type_array.value == [intval]
     with pytest.raises(ValueError, match="cannot assign EnumValue to an array of ModularInteger"):
@@ -966,10 +976,10 @@ def test_array_assign_incorrect_values(
     tlv: MessageValue, frame: MessageValue, array_type_foo: MessageValue, enum_value: EnumValue
 ) -> None:
     # pylint: disable=protected-access
-    type_array = ArrayValue(Array("Test.Array", ModularInteger("Test.Mod_Int", Number(256))))
-    msg_array = ArrayValue(Array("Test.MsgArray", tlv._type))
+    type_array = ArrayValue(Array("Test::Array", ModularInteger("Test::Mod_Int", Number(256))))
+    msg_array = ArrayValue(Array("Test::MsgArray", tlv._type))
 
-    intval = IntegerValue(ModularInteger("Test.Int", Number(256)))
+    intval = IntegerValue(ModularInteger("Test::Int", Number(256)))
     enum_value.assign("One")
     with pytest.raises(ValueError, match="cannot assign EnumValue to an array of ModularInteger"):
         type_array.assign([enum_value])
@@ -999,7 +1009,7 @@ def test_array_assign_incorrect_values(
 
     with pytest.raises(
         ValueError,
-        match="cannot parse nested messages in array of type TLV.Message: Error while setting "
+        match="cannot parse nested messages in array of type TLV::Message: Error while setting "
         "value for field Tag: 'Number 0 is not a valid enum value'",
     ):
         msg_array.parse(Bitstring("0001111"))
@@ -1034,7 +1044,7 @@ def test_incorrect_nested_message(frame: MessageValue) -> None:
     with pytest.raises(
         ValueError,
         match="Error while setting value for field Payload: "
-        "Error while parsing nested message IPv4.Packet: "
+        "Error while parsing nested message IPv4::Packet: "
         "Bitstring representing the message is too short - "
         "stopped while parsing field: Payload",
     ):
@@ -1053,9 +1063,9 @@ def test_imported_literals(tmp_path: Path) -> None:
 
                type Message is
                   message
-                     A : Foo.T
+                     A : Foo::T
                         then null
-                           if A = Foo.E1;
+                           if A = Foo::E1;
                   end message;
 
             end Test;
@@ -1079,16 +1089,16 @@ def test_imported_literals(tmp_path: Path) -> None:
     m.set("A", "E1")
     assert m.valid_message
 
-    m.set("A", "Foo.E1")
+    m.set("A", "Foo::E1")
     assert m.valid_message
 
     m.parse(b"\x0B")
     assert m.valid_message
-    assert m.get("A") == "Foo.E1"
+    assert m.get("A") == "Foo::E1"
 
     with pytest.raises(
         ValueError,
-        match=r"^none of the field conditions \['A = Foo.E1'\] for field A have been met"
+        match=r"^none of the field conditions \['A = Foo::E1'\] for field A have been met"
         " by the assigned value: 00001100$",
     ):
         m.parse(b"\x0C")
@@ -1096,7 +1106,7 @@ def test_imported_literals(tmp_path: Path) -> None:
 
     with pytest.raises(
         ValueError,
-        match=r"^none of the field conditions \['A = Foo.E1'\] for field A have been met"
+        match=r"^none of the field conditions \['A = Foo::E1'\] for field A have been met"
         " by the assigned value: E2$",
     ):
         m.set("A", "E2")
@@ -1104,10 +1114,10 @@ def test_imported_literals(tmp_path: Path) -> None:
 
     with pytest.raises(
         ValueError,
-        match=r"^none of the field conditions \['A = Foo.E1'\] for field A have been met"
-        " by the assigned value: Foo.E2$",
+        match=r"^none of the field conditions \['A = Foo::E1'\] for field A have been met"
+        " by the assigned value: Foo::E2$",
     ):
-        m.set("A", "Foo.E2")
+        m.set("A", "Foo::E2")
         assert not m.valid_message
 
 
@@ -1296,11 +1306,11 @@ def test_ipv4_parsing_udp_in_ipv4_in_ethernet(frame: MessageValue) -> None:
     nested_ipv4 = frame.get("Payload")
     assert isinstance(nested_ipv4, MessageValue)
     assert nested_ipv4.valid_message
-    assert nested_ipv4.identifier == ID("IPv4.Packet")
+    assert nested_ipv4.identifier == ID("IPv4") * "Packet"
     nested_udp = nested_ipv4.get("Payload")
     assert isinstance(nested_udp, MessageValue)
     assert nested_udp.valid_message
-    assert nested_udp.identifier == ID("UDP.Datagram")
+    assert nested_udp.identifier == ID("UDP") * "Datagram"
 
 
 def test_ethernet_generating_udp_in_ipv4_in_ethernet(
