@@ -20,6 +20,12 @@ def test_id_invalid_type() -> None:
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_empty() -> None:
+    with pytest.raises(AssertionError, match=r"^empty identifier$"):
+        ID([])
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_id_invalid_empty_string() -> None:
     with pytest.raises(AssertionError, match=r"^empty part in identifier$"):
         ID("")
 
@@ -88,6 +94,12 @@ def test_id_name() -> None:
 
 def test_id_parent() -> None:
     assert ID("A::B::C").parent == ID("A::B")
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_id_parent_error() -> None:
+    with pytest.raises(AssertionError, match=r"^empty identifier$"):
+        ID("A").parent  # pylint: disable=expression-not-assigned
 
 
 def test_id_sorted() -> None:
