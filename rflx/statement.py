@@ -51,7 +51,7 @@ class AttributeStatement(Statement):
         return f"{self.name}'{self.attribute}" + (f" ({parameters})" if parameters else "")
 
     def variables(self) -> Sequence[Variable]:
-        return [e for p in self.parameters for e in p.variables()]
+        return [Variable(self.name), *[e for p in self.parameters for e in p.variables()]]
 
 
 class ListAttributeStatement(AttributeStatement):
