@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from rflx.common import Base
+from rflx.const import BUILTINS_PACKAGE
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -25,7 +26,6 @@ from rflx.expression import (
 )
 from rflx.identifier import ID
 from rflx.model import (
-    BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
     Array,

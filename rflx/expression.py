@@ -1,10 +1,12 @@
 # pylint: disable=too-many-lines,too-many-ancestors,too-many-arguments
+import difflib
+import itertools
 import operator
 from abc import abstractmethod
 from enum import Enum
 from functools import lru_cache
 from sys import intern
-from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
 
 import z3
 
@@ -76,11 +78,9 @@ class Expr(DBC, Base):
         self,
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
-        error: RecordFluxError = None,
     ):
         self.type_ = type_
         self.location = location
-        self.error = error or RecordFluxError()
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -127,6 +127,25 @@ class Expr(DBC, Base):
     @abstractmethod
     def _update_str(self) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    def _check_type_subexpr(self) -> RecordFluxError:
+        """Initialize and check the types of sub-expressions."""
+        raise NotImplementedError
+
+    def check_type(self, expected: rty.Type) -> RecordFluxError:
+        """Initialize and check the types of the expression and all sub-expressions."""
+        return self._check_type_subexpr() + rty.check_type(
+            self.type_, expected, self.location, _entity_name(self)
+        )
+
+    def check_type_instance(
+        self, expected: Union[Type[rty.Type], Tuple[Type[rty.Type], ...]]
+    ) -> RecordFluxError:
+        """Initialize and check the types of the expression and all sub-expressions."""
+        return self._check_type_subexpr() + rty.check_type_instance(
+            self.type_, expected, self.location, _entity_name(self)
+        )
 
     @property
     @abstractmethod
@@ -178,6 +197,9 @@ class BooleanLiteral(Expr):
     @abstractmethod
     def __neg__(self) -> "Expr":
         raise NotImplementedError
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return RecordFluxError()
 
     @property
     def precedence(self) -> Precedence:
@@ -234,10 +256,11 @@ class Not(Expr):
         super().__init__(rty.BOOLEAN)
         self.expr = expr
 
-        check_type(self.error, expr, rty.BOOLEAN)
-
     def _update_str(self) -> None:
         self._str = intern(f"not {self.parenthesized(self.expr)}")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return self.expr.check_type(rty.BOOLEAN)
 
     def __neg__(self) -> Expr:
         return self.expr
@@ -320,7 +343,9 @@ class BinExpr(Expr):
         expr = func(self)
         if isinstance(expr, BinExpr):
             return expr.__class__(
-                expr.left.substituted(func), expr.right.substituted(func), location=expr.location
+                expr.left.substituted(func),
+                expr.right.substituted(func),
+                location=expr.location,
             )
         return expr
 
@@ -465,9 +490,6 @@ class BoolAssExpr(AssExpr):
         super().__init__(*terms, location=location)
         self.type_ = rty.BOOLEAN
 
-        for t in terms:
-            check_type(self.error, t, rty.BOOLEAN)
-
     def _update_str(self) -> None:
         if not self.terms:
             self._str = str(TRUE)
@@ -484,6 +506,12 @@ class BoolAssExpr(AssExpr):
                     + self._str
                 )
         self._str = intern(self._str)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for t in self.terms:
+            error += t.check_type(rty.BOOLEAN)
+        return error
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
@@ -609,6 +637,9 @@ class Number(Expr):
             raise NotImplementedError(f"unsupported base {self.base}")
         self._str = intern(f"(-{self._str})" if self.value < 0 else self._str)
 
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return RecordFluxError()
+
     def __hash__(self) -> int:
         return hash(self.value)
 
@@ -706,8 +737,11 @@ class MathAssExpr(AssExpr):
         common_type = rty.common_type([t.type_ for t in terms])
         self.type_ = common_type if common_type != rty.Undefined() else rty.UndefinedInteger()
 
-        for t in terms:
-            check_type(self.error, t, rty.AnyInteger())
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for t in self.terms:
+            error += t.check_type_instance(rty.AnyInteger)
+        return error
 
 
 class Add(MathAssExpr):
@@ -800,8 +834,14 @@ class MathBinExpr(BinExpr):
     def __init__(self, left: Expr, right: Expr, location: Location = None) -> None:
         super().__init__(left, right, rty.common_type([left.type_, right.type_]), location)
 
-        for e in [left, right]:
-            check_type(self.error, e, rty.AnyInteger())
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for e in [self.left, self.right]:
+            error += e.check_type_instance(rty.AnyInteger)
+
+        self.type_ = rty.common_type([self.left.type_, self.right.type_])
+
+        return error
 
 
 class Sub(MathBinExpr):
@@ -976,14 +1016,17 @@ class Variable(Name):
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    @property
-    def name(self) -> str:
-        return str(self.identifier)
-
     def __neg__(self) -> "Variable":
         return self.__class__(
             self.identifier, not self.negative, self.immutable, self.type_, self.location
         )
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return RecordFluxError()
+
+    @property
+    def name(self) -> str:
+        return str(self.identifier)
 
     @property
     def representation(self) -> str:
@@ -1011,12 +1054,6 @@ class Attribute(Name):
 
         self.prefix: Expr = prefix
         super().__init__(negative, location=prefix.location)
-        self._init_type()
-        check_type(self.error, self.prefix, rty.Any())
-
-    @abstractmethod
-    def _init_type(self) -> None:
-        raise NotImplementedError
 
     @property
     def representation(self) -> str:
@@ -1056,28 +1093,33 @@ class Attribute(Name):
 
 
 class Size(Attribute):
-    def _init_type(self) -> None:
+    def _check_type_subexpr(self) -> RecordFluxError:
         self.type_ = rty.UniversalInteger()
+        return self.prefix.check_type_instance(rty.Any)
 
 
 class Length(Attribute):
-    def _init_type(self) -> None:
+    def _check_type_subexpr(self) -> RecordFluxError:
         self.type_ = rty.UniversalInteger()
+        return self.prefix.check_type_instance(rty.Any)
 
 
 class First(Attribute):
-    def _init_type(self) -> None:
+    def _check_type_subexpr(self) -> RecordFluxError:
         self.type_ = rty.UniversalInteger()
+        return self.prefix.check_type_instance(rty.Any)
 
 
 class Last(Attribute):
-    def _init_type(self) -> None:
+    def _check_type_subexpr(self) -> RecordFluxError:
         self.type_ = rty.UniversalInteger()
+        return self.prefix.check_type_instance(rty.Any)
 
 
 class ValidChecksum(Attribute):
-    def _init_type(self) -> None:
+    def _check_type_subexpr(self) -> RecordFluxError:
         self.type_ = rty.BOOLEAN
+        return self.prefix.check_type_instance(rty.Any)
 
     def z3expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
@@ -1088,23 +1130,42 @@ class ValidChecksum(Attribute):
 
 
 class Valid(Attribute):
-    def _init_type(self) -> None:
+    def _check_type_subexpr(self) -> RecordFluxError:
         self.type_ = rty.BOOLEAN
+        return self.prefix.check_type_instance((rty.Array, rty.Message))
 
 
 class Present(Attribute):
-    def _init_type(self) -> None:
+    def _check_type_subexpr(self) -> RecordFluxError:
         self.type_ = rty.BOOLEAN
+        if isinstance(self.prefix, Selected):
+            error = self.prefix.prefix.check_type_instance(rty.Message)
+        else:
+            error = RecordFluxError()
+            error.append(
+                "invalid prefix for attribute Present",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+        return error
 
 
 class Head(Attribute):
-    def _init_type(self) -> None:
-        self.type_ = rty.Undefined()
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = self.prefix.check_type_instance(rty.Composite)
+        self.type_ = (
+            self.prefix.type_.element
+            if isinstance(self.prefix.type_, (rty.Aggregate, rty.Array))
+            else rty.Any()
+        )
+        return error
 
 
 class Opaque(Attribute):
-    def _init_type(self) -> None:
-        self.type_ = rty.Aggregate(rty.UniversalInteger(rty.Bounds(0, 255)))
+    def _check_type_subexpr(self) -> RecordFluxError:
+        self.type_ = rty.OPAQUE
+        return self.prefix.check_type_instance(rty.Message)
 
 
 class Val(Attribute):
@@ -1119,8 +1180,8 @@ class Val(Attribute):
     def __neg__(self) -> "Val":
         return self.__class__(self.prefix, self.expression, not self.negative)
 
-    def _init_type(self) -> None:
-        self.type_ = rty.Any()
+    def _check_type_subexpr(self) -> RecordFluxError:
+        raise NotImplementedError
 
     def variables(self) -> List[Variable]:
         raise NotImplementedError
@@ -1152,6 +1213,8 @@ class Val(Attribute):
 
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
+    """Only used by code generator and therefore provides minimum functionality"""
+
     def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
         self.prefix = prefix
         self.elements = list(elements)
@@ -1159,6 +1222,9 @@ class Indexed(Name):
 
     def __neg__(self) -> "Indexed":
         return self.__class__(self.prefix, *self.elements, negative=not self.negative)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        raise NotImplementedError
 
     @property
     def representation(self) -> str:
@@ -1178,22 +1244,43 @@ class Selected(Name):
     def __init__(
         self,
         prefix: Expr,
-        selector_name: StrID,
+        selector: StrID,
         negative: bool = False,
         immutable: bool = False,
-        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
         self.prefix = prefix
-        self.selector_name = ID(selector_name)
-        super().__init__(negative, immutable, type_, location)
+        self.selector = ID(selector)
+        super().__init__(negative, immutable, rty.Undefined(), location)
 
     def __neg__(self) -> "Selected":
-        return self.__class__(self.prefix, self.selector_name, not self.negative)
+        return self.__class__(self.prefix, self.selector, not self.negative)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        if isinstance(self.prefix.type_, rty.Message):
+            if str(self.selector) in self.prefix.type_.fields:
+                self.type_ = self.prefix.type_.field_types[str(self.selector)]
+            else:
+                error.append(
+                    f'invalid field "{self.selector}" for {self.prefix.type_}',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
+                )
+                error.extend(
+                    _similar_field_names(
+                        str(self.selector), self.prefix.type_.fields, self.location
+                    )
+                )
+                self.type_ = rty.Any()
+        else:
+            self.type_ = rty.Any()
+        return error + self.prefix.check_type_instance(rty.Message)
 
     @property
     def representation(self) -> str:
-        return f"{self.prefix}.{self.selector_name}"
+        return f"{self.prefix}.{self.selector}"
 
     def variables(self) -> List["Variable"]:
         return self.prefix.variables()
@@ -1203,13 +1290,16 @@ class Selected(Name):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        assert isinstance(expr, Selected)
-        return expr.__class__(
-            expr.prefix.substituted(func), expr.selector_name, location=expr.location
-        )
+        if isinstance(expr, self.__class__):
+            return expr.__class__(
+                expr.prefix.substituted(func),
+                expr.selector,
+                location=expr.location,
+            )
+        return expr
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Selected(self.prefix.ada_expr(), ada.ID(self.selector_name), self.negative)
+        return ada.Selected(self.prefix.ada_expr(), ada.ID(self.selector), self.negative)
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -1224,14 +1314,22 @@ class Call(Name):
         negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.Undefined(),
+        argument_types: Sequence[rty.Type] = None,
         location: Location = None,
     ) -> None:
         self.name = ID(name)
         self.args = args or []
+        self.argument_types = argument_types or []
         super().__init__(negative, immutable, type_, location)
 
     def __neg__(self) -> "Call":
         return self.__class__(self.name, self.args, not self.negative)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for a, t in itertools.zip_longest(self.args, self.argument_types):
+            error += a.check_type(t if t else rty.Any())
+        return error
 
     @property
     def representation(self) -> str:
@@ -1266,6 +1364,7 @@ class Call(Name):
             expr.negative,
             expr.immutable,
             expr.type_,
+            expr.argument_types,
             expr.location,
         )
 
@@ -1276,6 +1375,9 @@ class UndefinedExpr(Name):
         return "__UNDEFINED__"
 
     def __neg__(self) -> "UndefinedExpr":
+        raise NotImplementedError
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         raise NotImplementedError
 
     def ada_expr(self) -> ada.Expr:
@@ -1289,7 +1391,6 @@ class UndefinedExpr(Name):
 UNDEFINED = UndefinedExpr()
 
 
-@invariant(lambda self: len(self.elements) > 0)
 class Aggregate(Expr):
     def __init__(self, *elements: Expr, location: Location = None) -> None:
         super().__init__(rty.Aggregate(rty.common_type([e.type_ for e in elements])), location)
@@ -1297,6 +1398,12 @@ class Aggregate(Expr):
 
     def _update_str(self) -> None:
         self._str = intern("[" + ", ".join(map(str, self.elements)) + "]")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for e in self.elements:
+            error += e.check_type_instance(rty.Any)
+        return error
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1366,11 +1473,6 @@ class String(Aggregate):
 class Relation(BinExpr):
     def __init__(self, left: Expr, right: Expr, location: Location = None) -> None:
         super().__init__(left, right, rty.BOOLEAN, location)
-        self._check_type()
-
-    @abstractmethod
-    def _check_type(self) -> None:
-        raise NotImplementedError
 
     @abstractmethod
     def __neg__(self) -> Expr:
@@ -1391,12 +1493,14 @@ class Relation(BinExpr):
 
 
 class Less(Relation):
-    def _check_type(self) -> None:
-        for e in [self.left, self.right]:
-            check_type(self.error, e, rty.AnyInteger())
-
     def __neg__(self) -> Expr:
         return GreaterEqual(self.left, self.right)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for e in [self.left, self.right]:
+            error += e.check_type_instance(rty.AnyInteger)
+        return error
 
     @property
     def symbol(self) -> str:
@@ -1417,12 +1521,14 @@ class Less(Relation):
 
 
 class LessEqual(Relation):
-    def _check_type(self) -> None:
-        for e in [self.left, self.right]:
-            check_type(self.error, e, rty.AnyInteger())
-
     def __neg__(self) -> Expr:
         return Greater(self.left, self.right)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for e in [self.left, self.right]:
+            error += e.check_type_instance(rty.AnyInteger)
+        return error
 
     @property
     def symbol(self) -> str:
@@ -1443,12 +1549,11 @@ class LessEqual(Relation):
 
 
 class Equal(Relation):
-    def _check_type(self) -> None:
-        check_type(self.error, self.left, rty.Any())
-        check_type(self.error, self.right, self.left.type_)
-
     def __neg__(self) -> Expr:
         return NotEqual(self.left, self.right)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return self.left.check_type_instance(rty.Any) + self.right.check_type(self.left.type_)
 
     @property
     def symbol(self) -> str:
@@ -1470,12 +1575,14 @@ class Equal(Relation):
 
 
 class GreaterEqual(Relation):
-    def _check_type(self) -> None:
-        for e in [self.left, self.right]:
-            check_type(self.error, e, rty.AnyInteger())
-
     def __neg__(self) -> Expr:
         return Less(self.left, self.right)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for e in [self.left, self.right]:
+            error += e.check_type_instance(rty.AnyInteger)
+        return error
 
     @property
     def symbol(self) -> str:
@@ -1496,12 +1603,14 @@ class GreaterEqual(Relation):
 
 
 class Greater(Relation):
-    def _check_type(self) -> None:
-        for e in [self.left, self.right]:
-            check_type(self.error, e, rty.AnyInteger())
-
     def __neg__(self) -> Expr:
         return LessEqual(self.left, self.right)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for e in [self.left, self.right]:
+            error += e.check_type_instance(rty.AnyInteger)
+        return error
 
     @property
     def symbol(self) -> str:
@@ -1522,12 +1631,11 @@ class Greater(Relation):
 
 
 class NotEqual(Relation):
-    def _check_type(self) -> None:
-        check_type(self.error, self.left, rty.Any())
-        check_type(self.error, self.right, self.left.type_)
-
     def __neg__(self) -> Expr:
         return Equal(self.left, self.right)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return self.left.check_type_instance(rty.Any) + self.right.check_type(self.left.type_)
 
     @property
     def symbol(self) -> str:
@@ -1549,11 +1657,13 @@ class NotEqual(Relation):
 
 
 class In(Relation):
-    def _check_type(self) -> None:
-        check_type(self.error, self.right, rty.Aggregate(self.left.type_))
-
     def __neg__(self) -> Expr:
         return NotIn(self.left, self.right)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return self.left.check_type_instance(rty.Any) + self.right.check_type(
+            rty.Aggregate(self.left.type_)
+        )
 
     @property
     def symbol(self) -> str:
@@ -1568,11 +1678,13 @@ class In(Relation):
 
 
 class NotIn(Relation):
-    def _check_type(self) -> None:
-        check_type(self.error, self.right, rty.Aggregate(self.left.type_))
-
     def __neg__(self) -> Expr:
         return In(self.left, self.right)
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return self.left.check_type_instance(rty.Any) + self.right.check_type(
+            rty.Aggregate(self.left.type_)
+        )
 
     @property
     def symbol(self) -> str:
@@ -1599,15 +1711,27 @@ class QuantifiedExpression(Expr):
         self.iterable = iterable
         self.predicate = predicate
 
-        check_type(self.error, iterable, rty.Aggregate(rty.Any()))
-        check_type(self.error, predicate, rty.BOOLEAN)
-
     def _update_str(self) -> None:
         self._str = intern(
             f"(for {self.quantifier} {self.parameter_name} {self.keyword} {self.iterable} =>\n"
             + indent(str(self.predicate), 4)
             + ")"
         )
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        def typify_variable(expr: Expr) -> Expr:
+            if isinstance(expr, Variable) and expr.identifier == self.parameter_name:
+                if isinstance(self.iterable.type_, (rty.Aggregate, rty.Array)):
+                    expr.type_ = self.iterable.type_.element
+                else:
+                    expr.type_ = rty.Any()
+            return expr
+
+        error = self.iterable.check_type_instance(rty.Composite)
+
+        self.predicate = self.predicate.substituted(typify_variable)
+
+        return error + self.predicate.check_type(rty.BOOLEAN)
 
     @property
     def precedence(self) -> Precedence:
@@ -1700,15 +1824,19 @@ class ForSomeIn(QuantifiedExpression):
 
 
 class ValueRange(Expr):
-    def __init__(
-        self, lower: Expr, upper: Expr, type_: rty.Type = rty.Undefined(), location: Location = None
-    ):
-        super().__init__(type_, location)
+    def __init__(self, lower: Expr, upper: Expr, location: Location = None):
+        super().__init__(rty.Any(), location)
         self.lower = lower
         self.upper = upper
 
     def _update_str(self) -> None:
         self._str = intern(f"{self.lower} .. {self.upper}")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for e in [self.lower, self.upper]:
+            error += e.check_type_instance(rty.AnyInteger)
+        return error
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1755,6 +1883,9 @@ class Conversion(Expr):
     def _update_str(self) -> None:
         self._str = intern(f"{self.name} ({self.argument})")
 
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return self.argument.check_type(rty.OPAQUE)
+
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
@@ -1769,7 +1900,7 @@ class Conversion(Expr):
         expr = func(self)
         if isinstance(expr, Conversion):
             return expr.__class__(
-                self.name, self.argument.substituted(func), location=expr.location
+                self.name, self.argument.substituted(func), type_=expr.type_, location=expr.location
             )
         return expr
 
@@ -1794,10 +1925,9 @@ class Comprehension(Expr):
         array: Expr,
         selector: Expr,
         condition: Expr,
-        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
-        super().__init__(type_, location)
+        super().__init__(rty.Aggregate(selector.type_), location)
         self.iterator = ID(iterator)
         self.array = array
         self.selector = selector
@@ -1808,6 +1938,27 @@ class Comprehension(Expr):
             f"[for {self.iterator} in {self.array} => {self.selector} when {self.condition}]"
         )
 
+    def _check_type_subexpr(self) -> RecordFluxError:
+        def typify_variable(expr: Expr) -> Expr:
+            if isinstance(expr, Variable) and expr.identifier == self.iterator:
+                if isinstance(self.array.type_, (rty.Aggregate, rty.Array)):
+                    expr.type_ = self.array.type_.element
+                else:
+                    expr.type_ = rty.Any()
+            return expr
+
+        error = self.array.check_type_instance(rty.Composite)
+
+        self.selector = self.selector.substituted(typify_variable)
+        self.condition = self.condition.substituted(typify_variable)
+
+        error += self.selector.check_type_instance(rty.Any)
+        error += self.condition.check_type(rty.BOOLEAN)
+
+        self.type_ = rty.Aggregate(self.selector.type_)
+
+        return error
+
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
@@ -1817,7 +1968,6 @@ class Comprehension(Expr):
             self.array.simplified(),
             self.selector.simplified(),
             self.condition.simplified(),
-            self.type_,
             self.location,
         )
 
@@ -1832,14 +1982,13 @@ class Comprehension(Expr):
                 expr.array.substituted(func),
                 expr.selector.substituted(func),
                 expr.condition.substituted(func),
-                expr.type_,
                 expr.location,
             )
         return expr
 
     @property
     def precedence(self) -> Precedence:
-        raise NotImplementedError
+        return Precedence.literal
 
     def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
@@ -1860,26 +2009,89 @@ class MessageAggregate(Expr):
     def __init__(
         self,
         name: StrID,
-        data: Mapping[StrID, Expr],
+        field_values: Mapping[StrID, Expr],
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
         super().__init__(type_, location)
         self.name = ID(name)
-        self.data = {ID(k): v for k, v in data.items()}
+        self.field_values = {ID(k): v for k, v in field_values.items()}
 
     def _update_str(self) -> None:
-        data = (
-            ", ".join(f"{k} => {self.data[k]}" for k in self.data) if self.data else "null message"
+        field_values = (
+            ", ".join(f"{k} => {self.field_values[k]}" for k in self.field_values)
+            if self.field_values
+            else "null message"
         )
-        self._str = intern(f"{self.name}'({data})")
+        self._str = intern(f"{self.name}'({field_values})")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        if isinstance(self.type_, rty.Message):
+            field_combinations = set(self.type_.field_combinations)
+
+            for i, (field, expr) in enumerate(self.field_values.items()):
+                if str(field) not in self.type_.fields:
+                    error.append(
+                        f'invalid field "{field}" for {self.type_}',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        field.location,
+                    )
+                    error.extend(
+                        _similar_field_names(str(field), self.type_.fields, field.location)
+                    )
+                    continue
+
+                field_type = self.type_.field_types[str(field)]
+
+                error += expr.check_type(field_type)
+
+                field_combinations = {
+                    c for c in field_combinations if len(c) > i and c[i] == str(field)
+                }
+
+                if not field_combinations:
+                    error.append(
+                        f'invalid position for field "{field}" of {self.type_}',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        field.location,
+                    )
+                    break
+
+            if field_combinations and all(
+                len(c) > len(self.field_values) for c in field_combinations
+            ):
+                error.append(
+                    f"missing fields for {self.type_}",
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
+                )
+                error.append(
+                    "possible next fields: "
+                    + ", ".join(
+                        unique(c[len(self.field_values)] for c in sorted(field_combinations))
+                    ),
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    self.location,
+                )
+        else:
+            for d in self.field_values.values():
+                error += d.check_type_instance(rty.Any)
+        return error
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
     def simplified(self) -> Expr:
         return MessageAggregate(
-            self.name, {k: self.data[k].simplified() for k in self.data}, self.type_, self.location
+            self.name,
+            {k: self.field_values[k].simplified() for k in self.field_values},
+            self.type_,
+            self.location,
         )
 
     def substituted(
@@ -1890,8 +2102,8 @@ class MessageAggregate(Expr):
         if isinstance(expr, MessageAggregate):
             return expr.__class__(
                 expr.name,
-                {k: expr.data[k].substituted(func) for k in expr.data},
-                expr.type_,
+                {k: expr.field_values[k].substituted(func) for k in expr.field_values},
+                type_=expr.type_,
                 location=expr.location,
             )
         return expr
@@ -1909,7 +2121,7 @@ class MessageAggregate(Expr):
 
     def variables(self) -> List["Variable"]:
         result = []
-        for v in self.data.values():
+        for v in self.field_values.values():
             result.extend(v.variables())
         return result
 
@@ -1919,16 +2131,36 @@ class Binding(Expr):
         self,
         expr: Expr,
         data: Mapping[StrID, Expr],
-        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
-        super().__init__(type_, location)
+        super().__init__(expr.type_, location)
         self.expr = expr
         self.data = {ID(k): v for k, v in data.items()}
 
     def _update_str(self) -> None:
         data = ",\n".join("{k} = {v}".format(k=k, v=self.data[k]) for k in self.data)
         self._str = intern(f"{self.expr}\n   where {indent_next(data, 9)}")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        for d in self.data.values():
+            error += d.check_type_instance(rty.Any)
+
+        def typify_variable(expr: Expr) -> Expr:
+            if isinstance(expr, Variable) and expr.identifier in self.data:
+                if isinstance(self.data[expr.identifier].type_, rty.Undefined):
+                    expr.type_ = rty.Any()
+                else:
+                    expr.type_ = self.data[expr.identifier].type_
+            return expr
+
+        self.expr = self.expr.substituted(typify_variable)
+
+        error += self.expr.check_type_instance(rty.Any)
+
+        self.type_ = self.expr.type_
+
+        return error
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1940,7 +2172,15 @@ class Binding(Expr):
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
-        raise NotImplementedError
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Binding):
+            return expr.__class__(
+                expr.expr.substituted(func),
+                {k: v.substituted(func) for k, v in expr.data.items()},
+                location=expr.location,
+            )
+        return expr
 
     @property
     def precedence(self) -> Precedence:
@@ -1969,27 +2209,42 @@ def substitution(
     )
 
 
-def check_type(error: RecordFluxError, expression: Expr, expected: rty.Type) -> None:
-    if expression.type_ == rty.Undefined():
-        details = f' variable "{expression.name}"' if isinstance(expression, Variable) else ""
-        error.append(
-            f"undefined{details}",
-            Subsystem.MODEL,
-            Severity.ERROR,
-            expression.location,
-        )
-        return
+def _entity_name(expr: Expr) -> str:
+    expr_type = (
+        "variable"
+        if isinstance(expr, Variable)
+        else "function"
+        if isinstance(expr, Call)
+        else "type"
+        if isinstance(expr, Conversion)
+        else "message"
+        if isinstance(expr, MessageAggregate)
+        else "expression"
+    )
+    expr_name = (
+        str(expr.name)
+        if isinstance(expr, (Variable, Call, Conversion, MessageAggregate))
+        else str(expr)
+    )
+    return f'{expr_type} "{expr_name}"'
 
-    if expected != rty.Undefined() and not expression.type_.is_compatible(expected):
+
+def _similar_field_names(
+    field: str, fields: Iterable[str], location: Optional[Location]
+) -> RecordFluxError:
+    field_similarity = sorted(
+        ((f, difflib.SequenceMatcher(None, f, field).ratio()) for f in sorted(fields)),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    similar_fields = [f for f, s in field_similarity if s >= 0.5]
+
+    error = RecordFluxError()
+    if similar_fields:
         error.append(
-            f"expected {expected}",
-            Subsystem.MODEL,
-            Severity.ERROR,
-            expression.location,
-        )
-        error.append(
-            f"found {expression.type_}",
+            "similar field names: " + ", ".join(similar_fields),
             Subsystem.MODEL,
             Severity.INFO,
-            expression.location,
+            location,
         )
+    return error

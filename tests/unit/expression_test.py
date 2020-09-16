@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 
-from typing import Callable
+from typing import Callable, Mapping
 
 import pytest
 import z3
@@ -61,24 +61,27 @@ from rflx.expression import (
     ValueRange,
     Variable,
 )
-from rflx.identifier import ID
+from rflx.identifier import ID, StrID
 from tests.utils import assert_equal, multilinestr
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
 
 
 def assert_type(expr: Expr, type_: rty.Type) -> None:
+    expr.check_type(type_).propagate()
     assert expr.type_ == type_
-    assert not expr.error.check()
 
 
 def assert_type_error(expr: Expr, regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        expr.error.propagate()
+        expr.check_type(rty.Any()).propagate()
 
 
 def test_true_type() -> None:
-    assert TRUE.type_ == rty.BOOLEAN
+    assert_type(
+        TRUE,
+        rty.BOOLEAN,
+    )
 
 
 def test_true_neg() -> None:
@@ -98,7 +101,10 @@ def test_true_z3expr() -> None:
 
 
 def test_false_type() -> None:
-    assert FALSE.type_ == rty.BOOLEAN
+    assert_type(
+        FALSE,
+        rty.BOOLEAN,
+    )
 
 
 def test_false_neg() -> None:
@@ -118,7 +124,18 @@ def test_false_z3expr() -> None:
 
 
 def test_not_type() -> None:
-    assert Not(Variable("X")).type_ == rty.BOOLEAN
+    assert_type(
+        Not(Variable("X", type_=rty.BOOLEAN)),
+        rty.BOOLEAN,
+    )
+
+
+def test_not_type_error() -> None:
+    assert_type_error(
+        Not(Variable("X", type_=rty.AnyInteger(), location=Location((10, 20)))),
+        r'^<stdin>:10:20: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+        r"<stdin>:10:20: model: info: found integer type$",
+    )
 
 
 def test_not_neg() -> None:
@@ -271,9 +288,9 @@ def test_bool_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
             Variable("X", type_=rty.Integer("A", rty.Bounds(0, 100)), location=Location((10, 20))),
             Number(1, location=Location((10, 30))),
         ),
-        r'^<stdin>:10:20: model: error: expected enumeration type "Boolean"\n'
+        r'^<stdin>:10:20: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
         r'<stdin>:10:20: model: info: found integer type "A" \(0 .. 100\)\n'
-        r'<stdin>:10:30: model: error: expected enumeration type "Boolean"\n'
+        r'<stdin>:10:30: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
         r"<stdin>:10:30: model: info: found type universal integer \(1\)$",
     )
 
@@ -483,9 +500,9 @@ def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
             BooleanTrue(location=Location((10, 30))),
         ),
         r"^<stdin>:10:20: model: error: expected integer type\n"
-        r'<stdin>:10:20: model: info: found enumeration type "Boolean"\n'
+        r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
         r"<stdin>:10:30: model: error: expected integer type\n"
-        r'<stdin>:10:30: model: info: found enumeration type "Boolean"$',
+        r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -683,16 +700,19 @@ def test_variable_invalid_name() -> None:
 
 def test_variable_type() -> None:
     assert_type(
-        Variable("X"),
-        rty.Undefined(),
-    )
-    assert_type(
         Variable("X", type_=rty.BOOLEAN),
         rty.BOOLEAN,
     )
     assert_type(
         Variable("X", type_=rty.Integer("A")),
         rty.Integer("A"),
+    )
+
+
+def test_variable_type_error() -> None:
+    assert_type_error(
+        Variable("X", location=Location((10, 20))),
+        r'^<stdin>:10:20: model: error: undefined variable "X"$',
     )
 
 
@@ -742,23 +762,52 @@ def test_attribute() -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute,type_",
+    "attribute,expr,expected",
     [
-        (Size, rty.UniversalInteger()),
-        (Length, rty.UniversalInteger()),
-        (First, rty.UniversalInteger()),
-        (Last, rty.UniversalInteger()),
-        (ValidChecksum, rty.BOOLEAN),
-        (Valid, rty.BOOLEAN),
-        (Present, rty.BOOLEAN),
-        (Head, rty.Undefined()),
-        (Opaque, rty.Aggregate(rty.UniversalInteger(rty.Bounds(0, 255)))),
+        (Size, Variable("X", type_=rty.AnyInteger()), rty.UniversalInteger()),
+        (Length, Variable("X", type_=rty.AnyInteger()), rty.UniversalInteger()),
+        (First, Variable("X", type_=rty.AnyInteger()), rty.UniversalInteger()),
+        (Last, Variable("X", type_=rty.AnyInteger()), rty.UniversalInteger()),
+        (ValidChecksum, Variable("X", type_=rty.AnyInteger()), rty.BOOLEAN),
+        (Valid, Variable("X", type_=rty.Message("A")), rty.BOOLEAN),
+        (
+            Present,
+            Selected(Variable("X", type_=rty.Message("M", {("F",)}, {"F": rty.Integer("A")})), "F"),
+            rty.BOOLEAN,
+        ),
+        (Head, Variable("X", type_=rty.Array("A", rty.Integer("B"))), rty.Integer("B")),
+        (Opaque, Variable("X", type_=rty.Message("A")), rty.OPAQUE),
     ],
 )
-def test_attribute_type(attribute: Callable[[Expr], Expr], type_: rty.Type) -> None:
+def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected: rty.Type) -> None:
     assert_type(
-        attribute(Variable("X", type_=rty.AnyInteger())),
-        type_,
+        attribute(expr),
+        expected,
+    )
+
+
+@pytest.mark.parametrize(
+    "expr,match",
+    [
+        (
+            Present(Variable("X", location=Location((10, 30)))),
+            r"^<stdin>:10:30: model: error: invalid prefix for attribute Present$",
+        ),
+        (
+            Opaque(
+                Call(
+                    "X", [Variable("Y", location=Location((10, 30)))], location=Location((10, 20))
+                ),
+            ),
+            r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
+            r'<stdin>:10:20: model: error: undefined function "X"$',
+        ),
+    ],
+)
+def test_attribute_type_error(expr: Expr, match: str) -> None:
+    assert_type_error(
+        expr,
+        match,
     )
 
 
@@ -910,8 +959,9 @@ def test_relation_integer_type(relation: Callable[[Expr, Expr], Expr]) -> None:
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
 def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type_error(
-        relation(Variable("X", type_=rty.AnyInteger()), TRUE),
-        r'^model: error: expected integer type\nmodel: info: found enumeration type "Boolean"$',
+        relation(Variable("X", type_=rty.AnyInteger()), BooleanTrue(location=Location((10, 30)))),
+        r"^<stdin>:10:30: model: error: expected integer type\n"
+        r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -920,7 +970,7 @@ def test_relation_composite_type(relation: Callable[[Expr, Expr], Expr]) -> None
     assert_type(
         relation(
             Variable("X", type_=rty.AnyInteger()),
-            Variable("Y", type_=rty.Composite("A", rty.AnyInteger())),
+            Variable("Y", type_=rty.Array("A", rty.AnyInteger())),
         ),
         rty.BOOLEAN,
     )
@@ -935,17 +985,17 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
         ),
         r"^<stdin>:10:30: model: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: model: info: found enumeration type "Boolean"$',
+        r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
     assert_type_error(
         relation(
             Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
-            Variable("Y", type_=rty.Composite("A", rty.BOOLEAN), location=Location((10, 30))),
+            Variable("Y", type_=rty.Array("A", rty.BOOLEAN), location=Location((10, 30))),
         ),
         r"^<stdin>:10:30: model: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: model: info: found composite type "A"'
-        r' with element enumeration type "Boolean"$',
+        r'<stdin>:10:30: model: info: found array type "A"'
+        r' with element enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -1126,6 +1176,27 @@ def test_not_in_str() -> None:
     assert str(NotIn(Variable("X"), Variable("Y"))) == "X not in Y"
 
 
+def test_value_range_type() -> None:
+    assert_type(
+        ValueRange(Number(1), Number(42)),
+        rty.Any(),
+    )
+
+
+def test_value_range_type_error() -> None:
+    assert_type_error(
+        ValueRange(
+            Variable("X", type_=rty.BOOLEAN, location=Location((10, 30))),
+            Variable("Y", type_=rty.Array("A", rty.AnyInteger()), location=Location((10, 40))),
+            location=Location((10, 20)),
+        ),
+        r"^<stdin>:10:30: model: error: expected integer type\n"
+        r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
+        r"<stdin>:10:40: model: error: expected integer type\n"
+        r'<stdin>:10:40: model: info: found array type "A" with element integer type$',
+    )
+
+
 def test_value_range_simplified() -> None:
     assert_equal(
         ValueRange(Number(1), Add(Number(21), Number(21))).simplified(),
@@ -1150,6 +1221,58 @@ def test_value_range_substituted() -> None:
             lambda x: Variable("Z") if isinstance(x, ValueRange) else x
         ),
         Variable("Z"),
+    )
+
+
+@pytest.mark.parametrize("expr", [ForAllIn, ForSomeIn])
+def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> None:
+    assert_type(
+        expr(
+            "X",
+            Variable("Y", type_=rty.Array("A", rty.Integer("B"))),
+            Variable("Z", type_=rty.BOOLEAN),
+        ),
+        rty.BOOLEAN,
+    )
+
+
+@pytest.mark.parametrize("expr", [ForAllIn, ForSomeIn])
+@pytest.mark.parametrize(
+    "iterable,predicate,match",
+    [
+        (
+            Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
+            Variable("Z", type_=rty.Array("A", rty.AnyInteger()), location=Location((10, 40))),
+            r"^<stdin>:10:30: model: error: expected composite type\n"
+            r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
+            r'<stdin>:10:40: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r'<stdin>:10:40: model: info: found array type "A" with element integer type$',
+        ),
+        (
+            Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
+            Equal(Variable("X"), Number(1)),
+            r"^<stdin>:10:30: model: error: expected composite type\n"
+            r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+        ),
+        (
+            Variable("Y", type_=rty.Array("A", rty.BOOLEAN)),
+            Equal(Variable("X"), Number(1, location=Location((10, 30)))),
+            r'^<stdin>:10:30: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r"<stdin>:10:30: model: info: found type universal integer \(1\)$",
+        ),
+    ],
+)
+def test_quantified_expression_type_error(
+    expr: Callable[[str, Expr, Expr, Location], Expr], iterable: Expr, predicate: Expr, match: str
+) -> None:
+    assert_type_error(
+        expr(
+            "X",
+            iterable,
+            predicate,
+            Location((10, 20)),
+        ),
+        match,
     )
 
 
@@ -1404,6 +1527,75 @@ def test_string_ada_expr() -> None:
     assert String("X Y").ada_expr() == ada.String("X Y")
 
 
+def test_selected_type() -> None:
+    assert_type(
+        Selected(Variable("X", type_=rty.Message("M", {("F",)}, {"F": rty.Integer("A")})), "F"),
+        rty.Integer("A"),
+    )
+
+
+@pytest.mark.parametrize(
+    "expr,match",
+    [
+        (
+            Selected(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20))), "Y"),
+            r"^<stdin>:10:20: model: error: expected message type\n"
+            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+        ),
+        (
+            Selected(
+                Variable(
+                    "X",
+                    type_=rty.Message("M", {("F",)}, {"F": rty.Integer("A")}),
+                ),
+                "Y",
+                location=Location((10, 20)),
+            ),
+            r'^<stdin>:10:20: model: error: invalid field "Y" for message type "M"$',
+        ),
+        (
+            Selected(
+                Variable(
+                    "X",
+                    type_=rty.Message(
+                        "M", {("F1",), ("F2",)}, {"F1": rty.Integer("A"), "F2": rty.Integer("A")}
+                    ),
+                ),
+                "F",
+                location=Location((10, 20)),
+            ),
+            r'^<stdin>:10:20: model: error: invalid field "F" for message type "M"\n'
+            r"<stdin>:10:20: model: info: similar field names: F1, F2$",
+        ),
+    ],
+)
+def test_selected_type_error(expr: Expr, match: str) -> None:
+    assert_type_error(
+        expr,
+        match,
+    )
+
+
+def test_selected_substituted() -> None:
+    assert_equal(
+        Selected(Variable("X"), "Y").substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        ),
+        Selected(Variable("P_X"), "Y"),
+    )
+    assert_equal(
+        Selected(Variable("X"), "Y").substituted(
+            lambda x: Variable("Z") if isinstance(x, Selected) else x
+        ),
+        Variable("Z"),
+    )
+
+
+def test_selected_substituted_location() -> None:
+    expr = Selected(Variable("X"), "Y", location=Location((1, 2))).substituted(lambda x: x)
+    assert expr.location
+
+
 def test_selected_variables() -> None:
     result = Selected(Variable("X"), "Y").variables()
     expected = [Variable("X")]
@@ -1416,10 +1608,68 @@ def test_in_variables() -> None:
     assert result == expected
 
 
+def test_call_type() -> None:
+    assert_type(
+        Call(
+            "X",
+            [Variable("Y", type_=rty.Integer("A"))],
+            type_=rty.BOOLEAN,
+            argument_types=[rty.Integer("A")],
+        ),
+        rty.BOOLEAN,
+    )
+
+
+def test_call_type_error() -> None:
+    assert_type_error(
+        Call("X", [Variable("Y", location=Location((10, 30)))], location=Location((10, 20))),
+        r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
+        r'<stdin>:10:20: model: error: undefined function "X"$',
+    )
+    assert_type_error(
+        Call(
+            "X",
+            [
+                Variable("Y", type_=rty.AnyInteger(), location=Location((10, 30))),
+                Variable("Z", type_=rty.BOOLEAN, location=Location((10, 40))),
+            ],
+            type_=rty.BOOLEAN,
+            argument_types=[
+                rty.BOOLEAN,
+                rty.AnyInteger(),
+            ],
+        ),
+        r'^<stdin>:10:30: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+        r"<stdin>:10:30: model: info: found integer type\n"
+        r"<stdin>:10:40: model: error: expected integer type\n"
+        r'<stdin>:10:40: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+    )
+
+
 def test_call_variables() -> None:
     result = Call("Sub", [Variable("A"), Variable("B")]).variables()
     expected = [Variable("Sub"), Variable("A"), Variable("B")]
     assert result == expected
+
+
+def test_call_str() -> None:
+    assert str(Call("Test", [])) == "Test"
+    assert str(-Call("Test", [])) == "(-Test)"
+
+
+def test_conversion_type() -> None:
+    assert_type(
+        Conversion("X", Variable("Y", type_=rty.OPAQUE), type_=rty.Message("X")),
+        rty.Message("X"),
+    )
+
+
+def test_conversion_type_error() -> None:
+    assert_type_error(
+        Conversion("X", Variable("Y", location=Location((10, 30))), location=Location((10, 20))),
+        r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
+        r'<stdin>:10:20: model: error: undefined type "X"$',
+    )
 
 
 def test_conversion_substituted() -> None:
@@ -1450,6 +1700,45 @@ def test_conversion_variables() -> None:
 
 def test_conversion_ada_expr() -> None:
     assert Conversion("X", Variable("Y")).ada_expr() == ada.Conversion("X", ada.Variable("Y"))
+
+
+def test_comprehension_type() -> None:
+    assert_type(
+        Comprehension(
+            "X",
+            Variable("Y", type_=rty.Array("A", rty.Integer("B"))),
+            Add(Variable("X"), Variable("Z", type_=rty.Integer("B"))),
+            TRUE,
+        ),
+        rty.Aggregate(rty.Integer("B")),
+    )
+    assert_type(
+        Comprehension(
+            "X",
+            Selected(
+                Variable(
+                    "Y",
+                    type_=rty.Message("M", {("F",)}, {"F": rty.Array("A", rty.Integer("B"))}),
+                ),
+                "F",
+            ),
+            Variable("X"),
+            Equal(Variable("X"), Number(1)),
+        ),
+        rty.Aggregate(rty.Integer("B")),
+    )
+
+
+def test_comprehension_type_error() -> None:
+    assert_type_error(
+        Comprehension(
+            "X",
+            Variable("Y", location=Location((10, 20))),
+            Variable("X", location=Location((10, 30))),
+            TRUE,
+        ),
+        r'^<stdin>:10:20: model: error: undefined variable "Y"$',
+    )
 
 
 def test_comprehension_substituted() -> None:
@@ -1485,6 +1774,164 @@ def test_comprehension_variables() -> None:
     assert result == expected
 
 
+def test_comprehension_str() -> None:
+    assert (
+        str(Comprehension("X", Variable("Y"), Variable("Z"), TRUE)) == "[for X in Y => Z when True]"
+    )
+    assert (
+        str(In(Variable("A"), Comprehension("X", Variable("Y"), Variable("Z"), TRUE)))
+        == "A in [for X in Y => Z when True]"
+    )
+
+
+@pytest.mark.parametrize(
+    "field_values,type_",
+    [
+        (
+            {"X": Variable("A", type_=rty.Integer("A")), "Y": Variable("B", type_=rty.BOOLEAN)},
+            rty.Message(
+                "M",
+                {
+                    ("X",),
+                    ("X", "Y"),
+                    ("X", "Y", "Z"),
+                },
+                {
+                    "X": rty.Integer("A"),
+                    "Y": rty.BOOLEAN,
+                },
+            ),
+        ),
+    ],
+)
+def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.Type) -> None:
+    assert_type(
+        MessageAggregate(
+            "M",
+            field_values,
+            type_=type_,
+        ),
+        type_,
+    )
+
+
+@pytest.mark.parametrize(
+    "field_values,type_,match",
+    [
+        (
+            {
+                "X": Variable("A", location=Location((10, 30))),
+                "Y": Variable("B", location=Location((10, 40))),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {
+                    "X": rty.Integer("A"),
+                    "Y": rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:30: model: error: undefined variable "A"\n'
+            r'<stdin>:10:40: model: error: undefined variable "B"$',
+        ),
+        (
+            {
+                "X": Variable("A", type_=rty.Integer("A")),
+                "Y": Variable("B", type_=rty.BOOLEAN),
+                ID("Z", location=Location((10, 50))): Variable("Z", type_=rty.Integer("A")),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {
+                    "X": rty.Integer("A"),
+                    "Y": rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:50: model: error: invalid field "Z" for message type "M"$',
+        ),
+        (
+            {
+                ID("Y", location=Location((10, 30))): Variable("B", type_=rty.BOOLEAN),
+                "X": Variable("A", type_=rty.Integer("A")),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {
+                    "X": rty.Integer("A"),
+                    "Y": rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:30: model: error: invalid position for field "Y" of message type "M"$',
+        ),
+        (
+            {
+                "X": Variable("A", type_=rty.Integer("A")),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                    ("X", "Y", "Z"),
+                },
+                {
+                    "X": rty.Integer("A"),
+                    "Y": rty.BOOLEAN,
+                    "Z": rty.Integer("A"),
+                },
+            ),
+            r'^<stdin>:10:20: model: error: missing fields for message type "M"\n'
+            r"<stdin>:10:20: model: info: possible next fields: Y$",
+        ),
+        (
+            {
+                "X": Variable("A", location=Location((10, 40))),
+                "Y": Variable("B", location=Location((10, 30))),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y", "Z"),
+                },
+                {
+                    "X": rty.Integer("A"),
+                    "Y": rty.BOOLEAN,
+                    "Z": rty.Integer("A"),
+                },
+            ),
+            r'^<stdin>:10:40: model: error: undefined variable "A"\n'
+            r'<stdin>:10:30: model: error: undefined variable "B"\n'
+            r'<stdin>:10:20: model: error: missing fields for message type "M"\n'
+            r"<stdin>:10:20: model: info: possible next fields: Z$",
+        ),
+        (
+            {
+                "X": Variable("A", location=Location((10, 40))),
+                "Y": Variable("B", location=Location((10, 30))),
+            },
+            rty.Undefined(),
+            r'^<stdin>:10:40: model: error: undefined variable "A"\n'
+            r'<stdin>:10:30: model: error: undefined variable "B"\n'
+            r'<stdin>:10:20: model: error: undefined message "X"$',
+        ),
+    ],
+)
+def test_message_aggregate_type_error(
+    field_values: Mapping[StrID, Expr], type_: rty.Type, match: str
+) -> None:
+    assert_type_error(
+        MessageAggregate("X", field_values, type_=type_, location=Location((10, 20))),
+        match,
+    )
+
+
 def test_message_aggregate_substituted() -> None:
     assert_equal(
         MessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
@@ -1513,6 +1960,61 @@ def test_message_aggregate_variables() -> None:
     ).variables()
     expected = [Variable("A"), Variable("B"), Variable("C")]
     assert result == expected
+
+
+def test_binding_type() -> None:
+    assert_type(
+        Binding(
+            And(Variable("A", type_=rty.BOOLEAN), Variable("Bound")),
+            {
+                "Bound": Less(
+                    Variable("B", type_=rty.Integer("A")), Variable("C", type_=rty.Integer("A"))
+                )
+            },
+        ),
+        rty.BOOLEAN,
+    )
+
+
+def test_binding_type_error() -> None:
+    assert_type_error(
+        Binding(
+            And(
+                Variable("A", location=Location((10, 20))),
+                Variable("Bound", location=Location((10, 30))),
+            ),
+            {"Bound": Variable("B", location=Location((10, 40)))},
+        ),
+        r'^<stdin>:10:40: model: error: undefined variable "B"\n'
+        r'<stdin>:10:20: model: error: undefined variable "A"$',
+    )
+
+
+def test_binding_substituted() -> None:
+    assert_equal(
+        Binding(
+            And(Variable("A"), Variable("Bound")), {"Bound": Less(Variable("B"), Variable("C"))}
+        ).substituted(lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x),
+        Binding(
+            And(Variable("P_A"), Variable("P_Bound")),
+            {"Bound": Less(Variable("P_B"), Variable("P_C"))},
+        ),
+    )
+    assert_equal(
+        Binding(
+            And(Variable("A"), Variable("Bound")), {"Bound": Less(Variable("B"), Variable("C"))}
+        ).substituted(lambda x: Variable("Z") if isinstance(x, Binding) else x),
+        Variable("Z"),
+    )
+
+
+def test_binding_substituted_location() -> None:
+    expr = Binding(
+        And(Variable("A"), Variable("Bound")),
+        {"Bound": Less(Variable("B"), Variable("C"))},
+        location=Location((1, 2)),
+    ).substituted(lambda x: x)
+    assert expr.location
 
 
 def test_binding_variables() -> None:
@@ -1692,11 +2194,6 @@ def test_binding_simplified_multiple_variables() -> None:
     expected = Call("Sub", [Variable("Baz"), Variable("Baz")])
     result = binding.simplified()
     assert result == expected
-
-
-def test_call_str() -> None:
-    assert str(Call("Test", [])) == "Test"
-    assert str(-Call("Test", [])) == "(-Test)"
 
 
 def test_indexed_neg() -> None:

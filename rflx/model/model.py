@@ -1,9 +1,10 @@
 from typing import Sequence
 
+from rflx import const
 from rflx.common import Base, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
 
-from . import const, message, session, type_
+from . import message, session, type_
 
 
 class Model(Base):

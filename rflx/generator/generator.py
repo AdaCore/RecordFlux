@@ -52,7 +52,8 @@ from rflx.ada import (
     Variable,
 )
 from rflx.common import unique
-from rflx.model import BUILTINS_PACKAGE, FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
+from rflx.const import BUILTINS_PACKAGE
+from rflx.model import FINAL, Enumeration, Field, Message, Opaque, Scalar, Type
 
 from . import common, const
 

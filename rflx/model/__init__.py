@@ -1,4 +1,3 @@
-from .const import BUILTINS_PACKAGE, INTERNAL_PACKAGE  # noqa: F401
 from .message import (  # noqa: F401
     FINAL,
     INITIAL,

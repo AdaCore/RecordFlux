@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Iterable, List, Mapping, Sequence, Tuple
 
 import rflx.typing_ as rty
-from rflx import expression as expr
+from rflx import const, expression as expr
 from rflx.common import Base, verbose_repr
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
-from . import const, message
+from . import message
 
 
 class Type(Base):
@@ -486,7 +486,7 @@ class Array(Composite):
 
     @property
     def type_(self) -> rty.Type:
-        return rty.Composite(self.full_name, self.element_type.type_)
+        return rty.Array(self.full_name, self.element_type.type_)
 
     @property
     def element_size(self) -> expr.Expr:
@@ -505,7 +505,7 @@ class Opaque(Composite):
 
     @property
     def type_(self) -> rty.Type:
-        return rty.Composite("Bytes", rty.Integer("Byte", rty.Bounds(0, 255)))
+        return rty.Array("Bytes", rty.Integer("Byte", rty.Bounds(0, 255)))
 
     @property
     def element_size(self) -> expr.Expr:

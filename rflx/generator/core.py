@@ -103,11 +103,10 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.common import file_name, flat_name
+from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.model import (
-    BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
-    INTERNAL_PACKAGE,
     Array,
     Composite,
     DerivedMessage,
