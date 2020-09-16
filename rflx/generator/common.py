@@ -2,8 +2,8 @@ from typing import Callable, Mapping, Sequence
 
 import rflx.ada as ada
 import rflx.expression as expr
+from rflx.const import BUILTINS_PACKAGE
 from rflx.model import (
-    BUILTINS_PACKAGE,
     FINAL,
     INITIAL,
     Composite,

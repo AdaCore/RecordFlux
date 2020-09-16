@@ -1,6 +1,9 @@
 import typing as ty
 from abc import abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
+
+from rflx import const
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 
 
 @dataclass(frozen=True)
@@ -46,6 +49,11 @@ class Bounds:
 
 
 class Type:
+    descriptive_name: ty.ClassVar[str]
+
+    def __str__(self) -> str:
+        return self.descriptive_name
+
     @abstractmethod
     def is_compatible(self, other: "Type") -> bool:
         raise NotImplementedError
@@ -60,8 +68,7 @@ class Type:
 
 @dataclass(frozen=True)
 class Undefined(Type):
-    def __str__(self) -> str:
-        return "undefined"
+    descriptive_name: ty.ClassVar[str] = "undefined"
 
     def is_compatible(self, other: Type) -> bool:
         return False
@@ -72,8 +79,7 @@ class Undefined(Type):
 
 @dataclass(frozen=True)
 class Any(Type):
-    def __str__(self) -> str:
-        return "any type"
+    descriptive_name: ty.ClassVar[str] = "any type"
 
     def is_compatible(self, other: Type) -> bool:
         return not isinstance(other, Undefined)
@@ -83,14 +89,11 @@ class Any(Type):
 
 
 @dataclass(frozen=True)
-class Enumeration(Any):
+class IndependentType(Any):
     name: str
 
-    def __str__(self) -> str:
-        return f'enumeration type "{self.name}"'
-
     def is_compatible(self, other: Type) -> bool:
-        return other == Any() or (isinstance(other, Enumeration) and self.name == other.name)
+        return other == Any() or (isinstance(other, self.__class__) and self.name == other.name)
 
     def common_type(self, other: Type) -> Type:
         if other == Any() or self == other:
@@ -98,13 +101,20 @@ class Enumeration(Any):
         return Undefined()
 
 
-BOOLEAN = Enumeration("Boolean")
+@dataclass(frozen=True)
+class Enumeration(IndependentType):
+    descriptive_name: ty.ClassVar[str] = "enumeration type"
+
+    def __str__(self) -> str:
+        return f'{self.descriptive_name} "{self.name}"'
+
+
+BOOLEAN = Enumeration(str(const.BUILTINS_PACKAGE * "Boolean"))
 
 
 @dataclass(frozen=True)
 class AnyInteger(Any):
-    def __str__(self) -> str:
-        return "integer type"
+    descriptive_name: ty.ClassVar[str] = "integer type"
 
     def is_compatible(self, other: Type) -> bool:
         return other == Any() or isinstance(other, AnyInteger)
@@ -127,10 +137,11 @@ class UndefinedInteger(AnyInteger):
 
 @dataclass(frozen=True)
 class UniversalInteger(AnyInteger):
+    descriptive_name: ty.ClassVar[str] = "type universal integer"
     bounds: Bounds = Bounds(None, None)
 
     def __str__(self) -> str:
-        return f"type universal integer ({self.bounds})"
+        return f"{self.descriptive_name} ({self.bounds})"
 
     def is_compatible_strong(self, other: Type) -> bool:
         return isinstance(other, UniversalInteger) or (
@@ -153,11 +164,12 @@ class UniversalInteger(AnyInteger):
 
 @dataclass(frozen=True)
 class Integer(AnyInteger):
+    descriptive_name: ty.ClassVar[str] = "integer type"
     name: str
     bounds: Bounds = Bounds(None, None)
 
     def __str__(self) -> str:
-        return f'integer type "{self.name}" ({self.bounds})'
+        return f'{self.descriptive_name} "{self.name}" ({self.bounds})'
 
     def is_compatible_strong(self, other: Type) -> bool:
         return self == other or (
@@ -178,22 +190,27 @@ class Integer(AnyInteger):
         return Undefined()
 
 
+class Composite(Any):
+    descriptive_name: ty.ClassVar[str] = "composite type"
+
+
 @dataclass(frozen=True)
-class Aggregate(Any):
+class Aggregate(Composite):
+    descriptive_name: ty.ClassVar[str] = "aggregate"
     element: Type
 
     def __str__(self) -> str:
-        return f"aggregate with element {self.element}"
+        return f"{self.descriptive_name} with element {self.element}"
 
     def is_compatible(self, other: Type) -> bool:
         return (
             other == Any()
             or isinstance(other, Aggregate)
-            or (isinstance(other, Composite) and self.element.is_compatible_strong(other.element))
+            or (isinstance(other, Array) and self.element.is_compatible_strong(other.element))
         )
 
     def common_type(self, other: Type) -> Type:
-        if isinstance(other, Composite) and self.element.is_compatible_strong(other.element):
+        if isinstance(other, Array) and self.element.is_compatible_strong(other.element):
             return other
         if isinstance(other, Aggregate) and self.element != other.element:
             return Aggregate(self.element.common_type(other.element))
@@ -203,19 +220,20 @@ class Aggregate(Any):
 
 
 @dataclass(frozen=True)
-class Composite(Any):
+class Array(Composite):
+    descriptive_name: ty.ClassVar[str] = "array type"
     name: str
     element: Type
 
     def __str__(self) -> str:
-        return f'composite type "{self.name}" with element {self.element}'
+        return f'{self.descriptive_name} "{self.name}" with element {self.element}'
 
     def is_compatible(self, other: Type) -> bool:
         return (
             other == Any()
             or (isinstance(other, Aggregate) and other.element.is_compatible_strong(self.element))
             or (
-                isinstance(other, Composite)
+                isinstance(other, Array)
                 and self.name == other.name
                 and self.element == other.element
             )
@@ -229,20 +247,38 @@ class Composite(Any):
         return Undefined()
 
 
+OPAQUE = Array("Opaque", Integer("Byte", Bounds(0, 255)))
+
+
 @dataclass(frozen=True)
-class Message(Any):
+class Message(IndependentType):
+    descriptive_name: ty.ClassVar[str] = "message type"
     name: str
+    field_combinations: ty.Set[ty.Tuple[str, ...]] = dataclass_field(default_factory=set)
+    field_types: ty.Mapping[str, Type] = dataclass_field(default_factory=dict)
 
     def __str__(self) -> str:
-        return f'message type "{self.name}"'
+        return f'{self.descriptive_name} "{self.name}"'
 
-    def is_compatible(self, other: Type) -> bool:
-        return other == Any() or (isinstance(other, Message) and self.name == other.name)
+    @property
+    def fields(self) -> ty.Set[str]:
+        return set(self.field_types.keys())
 
-    def common_type(self, other: Type) -> Type:
-        if other == Any() or self == other:
-            return self
-        return Undefined()
+
+@dataclass(frozen=True)
+class Private(IndependentType):
+    descriptive_name: ty.ClassVar[str] = "private type"
+
+    def __str__(self) -> str:
+        return f'{self.descriptive_name} "{self.name}"'
+
+
+@dataclass(frozen=True)
+class Channel(IndependentType):
+    descriptive_name: ty.ClassVar[str] = "channel"
+
+    def __str__(self) -> str:
+        return f'{self.descriptive_name} "{self.name}"'
 
 
 def common_type(types: ty.Sequence[Type]) -> Type:
@@ -252,3 +288,72 @@ def common_type(types: ty.Sequence[Type]) -> Type:
         result = result.common_type(t)
 
     return result
+
+
+def check_type(
+    actual: Type, expected: Type, location: ty.Optional[Location], description: str
+) -> RecordFluxError:
+    if actual == Undefined():
+        return _undefined_type(location, description)
+
+    error = RecordFluxError()
+
+    if Undefined() not in [actual, expected] and not actual.is_compatible(expected):
+        error.append(
+            f"expected {expected}",
+            Subsystem.MODEL,
+            Severity.ERROR,
+            location,
+        )
+        error.append(
+            f"found {actual}",
+            Subsystem.MODEL,
+            Severity.INFO,
+            location,
+        )
+
+    return error
+
+
+def check_type_instance(
+    actual: Type,
+    expected: ty.Union[ty.Type[Type], ty.Tuple[ty.Type[Type], ...]],
+    location: ty.Optional[Location],
+    description: str = "",
+) -> RecordFluxError:
+    if actual == Undefined():
+        return _undefined_type(location, description)
+
+    error = RecordFluxError()
+
+    if not isinstance(actual, expected) and actual != Any():
+        desc = (
+            " or ".join(e.descriptive_name for e in expected)
+            if isinstance(expected, tuple)
+            else expected.descriptive_name
+        )
+        error.append(
+            f"expected {desc}",
+            Subsystem.MODEL,
+            Severity.ERROR,
+            location,
+        )
+        error.append(
+            f"found {actual}",
+            Subsystem.MODEL,
+            Severity.INFO,
+            location,
+        )
+
+    return error
+
+
+def _undefined_type(location: ty.Optional[Location], description: str = "") -> RecordFluxError:
+    error = RecordFluxError()
+    error.append(
+        "undefined" + (f" {description}" if description else ""),
+        Subsystem.MODEL,
+        Severity.ERROR,
+        location,
+    )
+    return error

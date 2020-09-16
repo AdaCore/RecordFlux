@@ -123,6 +123,20 @@ class RecordFluxError(Exception, Base):
             f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self.__errors
         )
 
+    def __add__(self, other: object) -> "RecordFluxError":
+        if isinstance(other, RecordFluxError):
+            error = RecordFluxError()
+            error.extend(self)
+            error.extend(other)
+            return error
+        return NotImplemented
+
+    def __iadd__(self, other: object) -> "RecordFluxError":
+        if isinstance(other, RecordFluxError):
+            self.extend(other)
+            return self
+        return NotImplemented
+
     @property
     def errors(self) -> List["RecordFluxError.Entry"]:
         return self.__errors

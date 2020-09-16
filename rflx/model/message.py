@@ -169,7 +169,11 @@ class AbstractMessage(mty.Type):
 
     @property
     def type_(self) -> rty.Type:
-        return rty.Message(self.full_name)
+        return rty.Message(
+            self.full_name,
+            {tuple(l.target.name for l in p if l.target != FINAL) for p in self.paths(FINAL)},
+            {f.name: t.type_ for f, t in self.types.items()},
+        )
 
     @abstractmethod
     def copy(
@@ -465,7 +469,7 @@ class AbstractMessage(mty.Type):
         def typed_variable(expression: expr.Expr) -> expr.Expr:
             if isinstance(expression, expr.Variable):
                 if expression.name.lower() == "message":
-                    expression.type_ = rty.UniversalInteger()
+                    expression.type_ = rty.OPAQUE
                 if ID(expression.name) in types:
                     expression.type_ = types[ID(expression.name)].type_
                 if ID(expression.name) in literals:
@@ -486,12 +490,14 @@ class AbstractMessage(mty.Type):
                 l.first = l.first.substituted(typed_variable)
 
                 for t in [l.condition, l.length, l.first]:
-                    if t != expr.UNDEFINED and not t.error.check():
-                        expr.check_type(t.error, t, rty.Any())
+                    if t == expr.UNDEFINED:
+                        continue
 
-                    self.error.extend(t.error)
+                    error = t.check_type(rty.Any())
 
-                    if t.error.check():
+                    self.error.extend(error)
+
+                    if error.check():
                         self.error.append(
                             "on path " + " -> ".join(f.name for f in path),
                             Subsystem.MODEL,

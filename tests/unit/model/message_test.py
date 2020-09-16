@@ -687,7 +687,7 @@ def test_invalid_relation_to_opaque() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected composite type "Bytes"'
+        r'^<stdin>:10:20: model: error: expected array type "Bytes"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:20: model: info: found type universal integer \(42\)\n"
         r"model: info: on path Length -> Data -> Final$",
@@ -711,7 +711,7 @@ def test_invalid_relation_to_aggregate() -> None:
         structure,
         types,
         r"^<stdin>:10:20: model: error: expected integer type\n"
-        r'<stdin>:10:20: model: info: found composite type "Bytes"'
+        r'<stdin>:10:20: model: info: found array type "Bytes"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:30: model: error: expected integer type\n"
         r"<stdin>:10:30: model: info: found aggregate"
@@ -762,7 +762,7 @@ def test_opaque_aggregate_out_of_range() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected composite type "Bytes"'
+        r'^<stdin>:10:20: model: error: expected array type "Bytes"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:20: model: info: found aggregate"
         r" with element type universal integer \(1 .. 256\)\n"
@@ -790,7 +790,7 @@ def test_array_aggregate_out_of_range() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected composite type "P::Array"'
+        r'^<stdin>:10:20: model: error: expected array type "P::Array"'
         r' with element integer type "P::Element" \(0 .. 63\)\n'
         r"<stdin>:10:20: model: info: found aggregate"
         r" with element type universal integer \(1 .. 64\)\n"
@@ -824,7 +824,7 @@ def test_array_aggregate_invalid_element_type() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected composite type "P::Array"'
+        r'^<stdin>:10:20: model: error: expected array type "P::Array"'
         r' with element message type "P::I"\n'
         r"<stdin>:10:20: model: info: found aggregate with element type universal integer"
         r" \(1 .. 64\)\n"
@@ -1083,22 +1083,24 @@ def test_exclusive_conflict() -> None:
 
 def test_exclusive_with_length_valid() -> None:
     structure = [
-        Link(INITIAL, Field("F1"), length=Number(32)),
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), length=Number(32)),
         Link(
-            Field("F1"),
-            FINAL,
-            condition=And(Equal(Length("F1"), Number(32)), Less(Variable("F1"), Number(50))),
-        ),
-        Link(
-            Field("F1"),
             Field("F2"),
-            condition=And(Equal(Length("F1"), Number(32)), Greater(Variable("F1"), Number(80))),
+            FINAL,
+            condition=And(Equal(Length("F2"), Number(32)), Less(Variable("F1"), Number(50))),
         ),
-        Link(Field("F2"), FINAL),
+        Link(
+            Field("F2"),
+            Field("F3"),
+            condition=And(Equal(Length("F2"), Number(32)), Greater(Variable("F1"), Number(80))),
+        ),
+        Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): Opaque(),
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): MODULAR_INTEGER,
+        Field("F2"): Opaque(),
+        Field("F3"): MODULAR_INTEGER,
     }
     Message("P::M", structure, types)
 

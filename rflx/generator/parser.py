@@ -44,7 +44,8 @@ from rflx.ada import (
     Variable,
 )
 from rflx.common import unique
-from rflx.model import BUILTINS_PACKAGE, FINAL, INITIAL, Composite, Field, Message, Scalar, Type
+from rflx.const import BUILTINS_PACKAGE
+from rflx.model import FINAL, INITIAL, Composite, Field, Message, Scalar, Type
 
 from . import common, const
 
