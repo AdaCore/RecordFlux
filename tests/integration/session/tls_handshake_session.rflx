@@ -154,8 +154,8 @@ package TLS_Handshake_Session is
       begin
          Supported_Version := TLS_Handshake::Supported_Version'(Version => TLS_Handshake::TLS_1_3);
          Supported_Versions_Extension := TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_SUPPORTED_VERSIONS, Data_Length => Supported_Version'Length, Data => Supported_Version);
-         Extensions_List := Append (Extensions_List, Supported_Versions_Extension);
-         Extensions_List := Extend (Extensions_List, Create_Client_Hello_Extensions (Configuration));
+         Extensions_List'Append (Supported_Versions_Extension);
+         Extensions_List'Extend (Create_Client_Hello_Extensions (Configuration));
       transition
          then ERROR_INTERNAL_ERROR
             if Extensions_List'Valid = False
@@ -172,7 +172,7 @@ package TLS_Handshake_Session is
          Post_Handshake_Auth_Extension : TLS_Handshake::CH_Extension;
       begin
          Post_Handshake_Auth_Extension := TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_POST_HANDSHAKE_AUTH, Data_Length => 0);
-         Extensions_List := Append (Extensions_List, Post_Handshake_Auth_Extension);
+         Extensions_List'Append (Post_Handshake_Auth_Extension);
       transition
          then ERROR_INTERNAL_ERROR
             if Extensions_List'Valid = False
@@ -190,13 +190,13 @@ package TLS_Handshake_Session is
       begin
          Supported_Groups_Extension := TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_SUPPORTED_GROUPS, Data_Length => Modes'Length, Data => Modes)
             where Modes = TLS_Handshake::Supported_Groups'(Length => Configuration.Supported_Groups_Length, Groups => Configuration.Supported_Groups);
-         Extensions_List := Append (Extensions_List, Supported_Groups_Extension);
+         Extensions_List'Append (Supported_Groups_Extension);
          Key_Share_Extension := TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_KEY_SHARE, Data_Length => Modes'Length, Data => Modes)
             where Modes = TLS_Handshake::Key_Share'(Length => Configuration.Key_Shares_Length, Shares => Configuration.Key_Shares);
-         Extensions_List := Append (Extensions_List, Key_Share_Extension);
+         Extensions_List'Append (Key_Share_Extension);
          Signature_Algorithms_Extension := TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_SIGNATURE_ALGORITHMS, Data_Length => Modes'Length, Data => Modes)
             where Modes = TLS_Handshake::Signature_Algorithms'(Length => Configuration.Signature_Algorithms_Length, Algorithms => Configuration.Signature_Algorithms);
-         Extensions_List := Append (Extensions_List, Signature_Algorithms_Extension);
+         Extensions_List'Append (Signature_Algorithms_Extension);
       transition
          then ERROR_INTERNAL_ERROR
             if Extensions_List'Valid = False
@@ -212,7 +212,7 @@ package TLS_Handshake_Session is
       begin
          Signature_Algorithms_Cert_Extension := TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_SIGNATURE_ALGORITHMS_CERT, Data_Length => Modes'Length, Data => Modes)
             where Modes = TLS_Handshake::Signature_Algorithms_Cert'(Length => Configuration.Signature_Algorithms_Cert_Length, Algorithms => Configuration.Signature_Algorithms_Cert);
-         Extensions_List := Append (Extensions_List, Signature_Algorithms_Cert_Extension);
+         Extensions_List'Append (Signature_Algorithms_Cert_Extension);
       transition
          then ERROR_INTERNAL_ERROR
             if Extensions_List'Valid = False
@@ -265,15 +265,15 @@ package TLS_Handshake_Session is
       begin
          PSK_Key_Exchange_Modes_Extension := TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PSK_KEY_EXCHANGE_MODES, Data_Length => Modes'Length, Data => Modes)
             where Modes = TLS_Handshake::PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes);
-         Extensions_List := Append (Extensions_List, PSK_Key_Exchange_Modes_Extension);
-         Extensions_List := Append (Extensions_List, TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PRE_SHARED_KEY, Length => Pre_Shared_Key_CH'Length, Data => Pre_Shared_Key_CH));
+         Extensions_List'Append (PSK_Key_Exchange_Modes_Extension);
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PRE_SHARED_KEY, Length => Pre_Shared_Key_CH'Length, Data => Pre_Shared_Key_CH));
          Client_Hello_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
             where CH = TLS_Handshake::Client_Hello'(Legacy_Version => TLS_Handshake::TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
          Client_Hello_Hash := Empty_Hash;
          Client_Hello_Hash := Update_Hash (Client_Hello_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
          Binders := Calculate_Binders (PSKs, Get_Hash (Client_Hello_Hash));
          Extensions_List := [for E in Extensions_List => E when E.Tag /= TLS_Handshake::EXTENSION_PRE_SHARED_KEY];
-         Extensions_List := Append (Extensions_List, TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PRE_SHARED_KEY, Length => PSK_CH'Length, Data => PSK_CH)
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PRE_SHARED_KEY, Length => PSK_CH'Length, Data => PSK_CH)
             where PSK_CH = TLS_Handshake::Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => Binders));
       transition
          then ERROR_INTERNAL_ERROR
@@ -443,7 +443,7 @@ package TLS_Handshake_Session is
       state WAIT_SH_PREPARE_CH is
       begin
          Extensions_List'Reset;
-         Extensions_List := Extend (Extensions_List, [for E in Client_Hello_Message.Extensions => E when E.Tag /= TLS_Handshake::EXTENSION_KEY_SHARE
+         Extensions_List'Extend ([for E in Client_Hello_Message.Extensions => E when E.Tag /= TLS_Handshake::EXTENSION_KEY_SHARE
          and E.Tag /= TLS_Handshake::EXTENSION_EARLY_DATA
          and E.Tag /= TLS_Handshake::EXTENSION_PRE_SHARED_KEY]);
       transition
@@ -470,7 +470,7 @@ package TLS_Handshake_Session is
 
       state WAIT_SH_PREPARE_CH_KEY_SHARE is
       begin
-         Extensions_List := Append (Extensions_List, TLS_Handshake::Extension'(Tag => TLS_Handshake::EXTENSION_KEY_SHARE, Data_Length => Key_Share'Length, Data => Key_Share)
+         Extensions_List'Append (TLS_Handshake::Extension'(Tag => TLS_Handshake::EXTENSION_KEY_SHARE, Data_Length => Key_Share'Length, Data => Key_Share)
             where Key_Share = TLS_Handshake::Key_Share_CH'(Length => Entries'Length, Shares => Entries)
                      where Entries = [for E in Client_Shares => E when E.Group = Selected_Group]);
          CH_Key_Share_Prepared := True;
@@ -480,7 +480,7 @@ package TLS_Handshake_Session is
 
       state WAIT_SH_PREPARE_CH_COOKIE is
       begin
-         Extensions_List := Append (Extensions_List, [for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_COOKIE]'Head);
+         Extensions_List'Append ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_COOKIE]'Head);
          CH_Cookie_Prepared := True;
       transition
          then WAIT_SH_PREPARE_CH_DISPATCH
@@ -520,15 +520,15 @@ package TLS_Handshake_Session is
       begin
          PSK_Key_Exchange_Modes_Extension := TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PSK_KEY_EXCHANGE_MODES, Data_Length => Modes'Length, Data => Modes)
             where Modes = TLS_Handshake::PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes);
-         Extensions_List := Append (Extensions_List, PSK_Key_Exchange_Modes_Extension);
-         Extensions_List := Append (Extensions_List, TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PRE_SHARED_KEY, Length => Pre_Shared_Key_CH'Length, Data => Pre_Shared_Key_CH));
+         Extensions_List'Append (PSK_Key_Exchange_Modes_Extension);
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PRE_SHARED_KEY, Length => Pre_Shared_Key_CH'Length, Data => Pre_Shared_Key_CH));
          Client_Hello_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
             where CH = TLS_Handshake::Client_Hello'(Legacy_Version => TLS_Handshake::TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
          Client_Hello_Hash := Empty_Hash;
          Client_Hello_Hash := Update_Hash (Client_Hello_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
          Binders := Calculate_Binders (PSKs, Get_Hash (Client_Hello_Hash));
          Extensions_List := [for E in Extensions_List => E when E.Tag /= TLS_Handshake::EXTENSION_PRE_SHARED_KEY];
-         Extensions_List := Append (Extensions_List, TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PRE_SHARED_KEY, Length => PSK_CH'Length, Data => PSK_CH)
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_PRE_SHARED_KEY, Length => PSK_CH'Length, Data => PSK_CH)
             where PSK_CH = TLS_Handshake::Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Length, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => Binders));
          CH_PSK_Prepared := True;
       transition

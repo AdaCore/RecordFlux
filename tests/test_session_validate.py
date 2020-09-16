@@ -25,7 +25,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID
 from rflx.model import BOOLEAN, Session, State, Transition
-from rflx.statement import Assignment, Erase, Reset
+from rflx.statement import Append, Assignment, Erase, Extend, Reset
 from tests.utils import assert_session_model_error
 
 
@@ -851,12 +851,7 @@ def test_append_list_attribute() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[
-                    Assignment(
-                        "List",
-                        Call("Append", [Variable("List"), Variable("Element")]),
-                    )
-                ],
+                actions=[Append("List", Variable("Element"))],
             ),
             State(name=ID("End")),
         ],
@@ -879,12 +874,7 @@ def test_extend_list_attribute() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[
-                    Assignment(
-                        "List",
-                        Call("Extend", [Variable("List"), Variable("Element")]),
-                    )
-                ],
+                actions=[Extend("List", Variable("Element"))],
             ),
             State(name=ID("End")),
         ],
