@@ -88,9 +88,8 @@ def valid_message_field_types(message: "AbstractMessage") -> bool:
 
 class MessageState(Base):
     fields: Optional[Tuple[Field, ...]] = ()
-    paths: Mapping[Field, Set[Tuple[Link, ...]]] = {}
-    definite_predecessors: Mapping[Field, Tuple[Field, ...]] = {}
-    field_condition: Mapping[Field, expr.Expr] = {}
+    definite_predecessors: Optional[Mapping[Field, Tuple[Field, ...]]] = None
+    field_condition: Optional[Mapping[Field, expr.Expr]] = None
     checksums: Mapping[ID, Sequence[expr.Expr]] = {}
 
 
@@ -117,6 +116,7 @@ class AbstractMessage(mty.Type):
         self.__aspects = aspects or {}
         self.__has_unreachable = False
         self._state = state or MessageState()
+        self.__paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
 
         if not state and (structure or types):
             try:
@@ -124,7 +124,6 @@ class AbstractMessage(mty.Type):
                 self._state.fields = self.__compute_topological_sorting()
                 if self._state.fields:
                     self.__types = {f: self.__types[f] for f in self._state.fields}
-                    self._state.paths = {f: self.__compute_paths(f) for f in self.all_fields}
                     self._state.definite_predecessors = {
                         f: self.__compute_definite_predecessors(f) for f in self.all_fields
                     }
@@ -257,7 +256,21 @@ class AbstractMessage(mty.Type):
         raise NotImplementedError
 
     def paths(self, field: Field) -> Set[Tuple[Link, ...]]:
-        return self._state.paths[field]
+        if field == INITIAL:
+            return set()
+        if field in self.__paths_cache:
+            return self.__paths_cache[field]
+
+        result = set()
+        for l in self.incoming(field):
+            source = self.paths(l.source)
+            for s in source:
+                result.add(s + (l,))
+            if not source:
+                result.add((l,))
+
+        self.__paths_cache[field] = result
+        return result
 
     def prefixed(self, prefix: str) -> "AbstractMessage":
         fields = {f.identifier for f in self.fields}
@@ -301,7 +314,7 @@ class AbstractMessage(mty.Type):
         if isinstance(self.types[field], mty.Scalar):
             return False
 
-        for p in self._state.paths[FINAL]:
+        for p in self.paths(FINAL):
             if not any(l.target == field for l in p):
                 continue
             conditions = [l.condition for l in p if l.condition != expr.TRUE]
@@ -452,7 +465,7 @@ class AbstractMessage(mty.Type):
                     expression.type_ = literals[ID(expression.name)].type_
             return expression
 
-        for p in self._state.paths[FINAL]:
+        for p in self.paths(FINAL):
             types = {}
             path = []
             for l in p:
@@ -653,7 +666,7 @@ class AbstractMessage(mty.Type):
                         lower_field = (
                             Field(lower.name) if lower.name.lower() != "message" else INITIAL
                         )
-                        for p in self._state.paths[upper_field]:
+                        for p in self.paths(upper_field):
                             if not any(lower_field == l.source for l in p):
                                 self.error.append(
                                     f'invalid range "{e}" in definition of checksum "{name}"',
@@ -735,7 +748,7 @@ class AbstractMessage(mty.Type):
 
         for f in (*self.fields, FINAL):
             paths = []
-            for path in self._state.paths[f]:
+            for path in self.paths(f):
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 outgoing = self.outgoing(f)
                 if f != FINAL and outgoing:
@@ -772,7 +785,7 @@ class AbstractMessage(mty.Type):
         for f in (INITIAL, *self.fields):
             contradictions = []
             paths = 0
-            for path in self._state.paths[f]:
+            for path in self.paths(f):
                 facts = [fact for link in path for fact in self.__link_expression(link)]
                 for c in self.outgoing(f):
                     paths += 1
@@ -852,7 +865,7 @@ class AbstractMessage(mty.Type):
 
     def __prove_field_positions(self) -> None:
         for f in (*self.fields, FINAL):
-            for path in self._state.paths[f]:
+            for path in self.paths(f):
 
                 last = path[-1]
                 negative = expr.Less(
@@ -964,7 +977,7 @@ class AbstractMessage(mty.Type):
         effectively pruning the range that this field covers from the bit range of the message. For
         the overall expression, prove that it is false for all f, i.e. no bits are left.
         """
-        for path in [p[:-1] for p in self._state.paths[FINAL] if p]:
+        for path in [p[:-1] for p in self.paths(FINAL) if p]:
 
             facts: Sequence[expr.Expr]
 
@@ -1019,7 +1032,7 @@ class AbstractMessage(mty.Type):
 
     def __prove_overlays(self) -> None:
         for f in (INITIAL, *self.fields):
-            for p, l in [(p, p[-1]) for p in self._state.paths[f] if p]:
+            for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
                     facts = [f for l in p for f in self.__link_expression(l)]
                     overlaid = expr.Equal(
@@ -1072,20 +1085,11 @@ class AbstractMessage(mty.Type):
             return None
         return tuple(f for f in result if f not in [INITIAL, FINAL])
 
-    def __compute_paths(self, final: Field) -> Set[Tuple[Link, ...]]:
-        if final == INITIAL:
-            return {()}
-        return set(
-            itertools.chain.from_iterable(
-                ((p + (l,) for p in self.__compute_paths(l.source)) for l in self.incoming(final))
-            )
-        )
-
     def __compute_definite_predecessors(self, final: Field) -> Tuple[Field, ...]:
         return tuple(
             f
             for f in self.fields
-            if all(any(f == pf.source for pf in p) for p in self._state.paths[final])
+            if all(any(f == pf.source for pf in p) for p in self.paths(final))
         )
 
     def __compute_field_condition(self, final: Field) -> expr.Expr:
