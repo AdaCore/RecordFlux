@@ -381,19 +381,6 @@ def test_fields() -> None:
     )
 
 
-def test_definite_fields() -> None:
-    assert_equal(
-        ETHERNET_FRAME.definite_fields,
-        (
-            Field("Destination"),
-            Field("Source"),
-            Field("Type_Length_TPID"),
-            Field("Type_Length"),
-            Field("Payload"),
-        ),
-    )
-
-
 def test_field_condition() -> None:
     assert_equal(ETHERNET_FRAME.field_condition(INITIAL), TRUE)
     assert_equal(
