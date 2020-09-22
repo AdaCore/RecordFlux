@@ -124,12 +124,6 @@ class AbstractMessage(mty.Type):
                 self._state.fields = self.__compute_topological_sorting()
                 if self._state.fields:
                     self.__types = {f: self.__types[f] for f in self._state.fields}
-                    self._state.definite_predecessors = {
-                        f: self.__compute_definite_predecessors(f) for f in self.all_fields
-                    }
-                    self._state.field_condition = {
-                        f: self.__compute_field_condition(f).simplified() for f in self.all_fields
-                    }
                 if ID("Checksum") in self.__aspects:
                     self._state.checksums = self.__aspects[ID("Checksum")]
             except RecordFluxError:
@@ -193,11 +187,6 @@ class AbstractMessage(mty.Type):
         return (INITIAL, *self.fields, FINAL)
 
     @property
-    def definite_fields(self) -> Tuple[Field, ...]:
-        """Return all fields which are part of all possible paths."""
-        return self._state.definite_predecessors[FINAL]
-
-    @property
     def types(self) -> Mapping[Field, mty.Type]:
         """Return fields and corresponding types topologically sorted."""
         return self.__types
@@ -238,9 +227,17 @@ class AbstractMessage(mty.Type):
 
     def definite_predecessors(self, field: Field) -> Tuple[Field, ...]:
         """Return preceding fields which are part of all possible paths."""
+        if self._state.definite_predecessors is None:
+            self._state.definite_predecessors = {
+                f: self.__compute_definite_predecessors(f) for f in self.all_fields
+            }
         return self._state.definite_predecessors[field]
 
     def field_condition(self, field: Field) -> expr.Expr:
+        if self._state.field_condition is None:
+            self._state.field_condition = {
+                f: self.__compute_field_condition(f).simplified() for f in self.all_fields
+            }
         return self._state.field_condition[field]
 
     def field_size(self, field: Field) -> expr.Expr:
