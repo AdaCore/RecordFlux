@@ -276,9 +276,8 @@ class Not(Expr):
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         z3expr = self.expr.z3expr()
-        if isinstance(z3expr, z3.BoolRef):
-            return z3.Not(z3expr)
-        raise TypeError
+        assert isinstance(z3expr, z3.BoolRef)
+        return z3.Not(z3expr)
 
     def validate(self, declarations: Mapping[ID, Declaration]) -> None:
         self.expr.validate(declarations)
@@ -1081,8 +1080,7 @@ class Attribute(Name):
         return getattr(ada, self.__class__.__name__)(self.prefix.ada_expr(), self.negative)
 
     def z3expr(self) -> z3.ExprRef:
-        if not isinstance(self.prefix, Variable):
-            raise TypeError
+        assert isinstance(self.prefix, Variable)
         name = f"{self.prefix}'{self.__class__.__name__}"
         if self.negative:
             return -z3.Int(name)

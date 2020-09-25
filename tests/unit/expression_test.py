@@ -160,7 +160,7 @@ def test_not_simplified() -> None:
 def test_not_z3expr() -> None:
     assert Not(TRUE).z3expr() == z3.Not(z3.BoolVal(True))
     assert Not(FALSE).z3expr() == z3.Not(z3.BoolVal(False))
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         Not(Variable("X")).z3expr()
 
 
@@ -833,7 +833,7 @@ def test_attribute_z3expr(attribute: Expr, z3name: str) -> None:
 
 
 def test_attribute_z3expr_error() -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         First(Call("X")).z3expr()
 
 
