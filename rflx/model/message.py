@@ -129,6 +129,16 @@ class AbstractMessage(mty.Type):
             except RecordFluxError:
                 pass
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return (
+                self.identifier == other.identifier
+                and self.structure == other.structure
+                and self.types == other.types
+                and self.aspects == other.aspects
+            )
+        return NotImplemented
+
     def __repr__(self) -> str:
         return verbose_repr(self, ["identifier", "structure", "types"])
 
