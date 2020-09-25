@@ -2,6 +2,7 @@
 import operator
 from abc import abstractmethod
 from enum import Enum
+from functools import lru_cache
 from sys import intern
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
@@ -207,6 +208,7 @@ class BooleanTrue(BooleanLiteral):
     def ada_expr(self) -> ada.Expr:
         return ada.TRUE
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
 
@@ -227,6 +229,7 @@ class BooleanFalse(BooleanLiteral):
     def ada_expr(self) -> ada.Expr:
         return ada.FALSE
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         return z3.BoolVal(False)
 
@@ -270,6 +273,7 @@ class Not(Expr):
     def ada_expr(self) -> ada.Expr:
         return ada.Not(self.expr.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         z3expr = self.expr.z3expr()
         if isinstance(z3expr, z3.BoolRef):
@@ -542,6 +546,7 @@ class And(BoolAssExpr):
     def ada_expr(self) -> ada.Expr:
         return ada.And(*[t.ada_expr() for t in self.terms])
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
         boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
@@ -585,6 +590,7 @@ class Or(BoolAssExpr):
     def ada_expr(self) -> ada.Expr:
         return ada.Or(*[t.ada_expr() for t in self.terms])
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
         boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
@@ -709,6 +715,7 @@ class Number(Expr):
     def ada_expr(self) -> ada.Expr:
         return ada.Number(self.value, self.base)
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
 
@@ -777,6 +784,7 @@ class Add(MathAssExpr):
     def ada_expr(self) -> ada.Expr:
         return ada.Add(*[t.ada_expr() for t in self.terms])
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         terms = [t for t in map(lambda e: e.z3expr(), self.terms) if isinstance(t, z3.ArithRef)]
         assert len(terms) == len(self.terms), "Adding non-arithmetic terms"
@@ -804,6 +812,7 @@ class Mul(MathAssExpr):
     def ada_expr(self) -> ada.Expr:
         return ada.Mul(*[t.ada_expr() for t in self.terms])
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         terms = [t for t in map(lambda e: e.z3expr(), self.terms) if isinstance(t, z3.ArithRef)]
         assert len(terms) == len(self.terms), "Multiplying non-arithmetic terms"
@@ -837,6 +846,7 @@ class Sub(MathBinExpr):
     def ada_expr(self) -> ada.Expr:
         return ada.Sub(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -863,6 +873,7 @@ class Div(MathBinExpr):
     def ada_expr(self) -> ada.Expr:
         return ada.Div(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -889,6 +900,7 @@ class Pow(MathBinExpr):
     def ada_expr(self) -> ada.Expr:
         return ada.Pow(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -915,6 +927,7 @@ class Mod(MathBinExpr):
     def ada_expr(self) -> ada.Expr:
         return ada.Mod(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1015,6 +1028,7 @@ class Variable(Name):
     def ada_expr(self) -> ada.Expr:
         return ada.Variable(ada.ID(self.identifier), self.negative)
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         if self.negative:
             return -z3.Int(self.name)
@@ -1168,6 +1182,7 @@ class Val(Attribute):
             self.prefix.ada_expr(), self.expression.ada_expr(), self.negative
         )
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -1194,6 +1209,7 @@ class Indexed(Name):
             self.prefix.ada_expr(), *[e.ada_expr() for e in self.elements], negative=self.negative
         )
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -1235,6 +1251,7 @@ class Selected(Name):
     def ada_expr(self) -> ada.Expr:
         return ada.Selected(self.prefix.ada_expr(), ada.ID(self.selector_name), self.negative)
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -1270,6 +1287,7 @@ class Call(Name):
     def ada_expr(self) -> ada.Expr:
         return ada.Call(ada.ID(self.name), [a.ada_expr() for a in self.args], self.negative)
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -1383,6 +1401,7 @@ class UndefinedExpr(Name):
     def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -1430,6 +1449,7 @@ class Aggregate(Expr):
     def ada_expr(self) -> ada.Expr:
         return ada.Aggregate(*[e.ada_expr() for e in self.elements])
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
 
@@ -1464,6 +1484,7 @@ class String(Aggregate):
     def ada_expr(self) -> ada.Expr:
         return ada.String(self.data)
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
 
@@ -1516,6 +1537,7 @@ class Less(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.Less(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1541,6 +1563,7 @@ class LessEqual(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.LessEqual(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1566,6 +1589,7 @@ class Equal(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.Equal(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1592,6 +1616,7 @@ class GreaterEqual(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.GreaterEqual(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1617,6 +1642,7 @@ class Greater(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.Greater(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1642,6 +1668,7 @@ class NotEqual(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.NotEqual(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
@@ -1664,6 +1691,7 @@ class In(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.In(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
@@ -1682,6 +1710,7 @@ class NotIn(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.NotIn(self.left.ada_expr(), self.right.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
@@ -1737,6 +1766,7 @@ class QuantifiedExpression(Expr):
             self.parameter_name, self.iterable.ada_expr(), self.predicate.ada_expr()
         )
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -1841,6 +1871,7 @@ class ValueRange(Expr):
     def ada_expr(self) -> ada.Expr:
         return ada.ValueRange(self.lower.ada_expr(), self.upper.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -1887,6 +1918,7 @@ class Conversion(Expr):
     def ada_expr(self) -> ada.Expr:
         return ada.Conversion(ada.ID(self.name), self.argument.ada_expr())
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -1954,6 +1986,7 @@ class Comprehension(Expr):
     def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -2021,6 +2054,7 @@ class MessageAggregate(Expr):
     def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
@@ -2070,6 +2104,7 @@ class Binding(Expr):
     def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
+    @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
