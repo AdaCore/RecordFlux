@@ -29,6 +29,7 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
+    UnprovenMessage,
 )
 
 NULL_MESSAGE = Message("Null::Message", [], {})
@@ -216,6 +217,24 @@ EXPRESSION_MODEL = Model([EXPRESSION_MESSAGE])
 
 DERIVATION_MESSAGE = DerivedMessage("Derivation::Message", ARRAYS_MESSAGE)
 DERIVATION_MODEL = Model([*ARRAYS_MODEL.types, DERIVATION_MESSAGE])
+
+VALID_MESSAGE = UnprovenMessage(
+    "P::M",
+    [
+        Link(INITIAL, Field("F"), length=Number(16)),
+        Link(Field("F"), FINAL),
+    ],
+    {Field("F"): Opaque()},
+)
+
+INVALID_MESSAGE = UnprovenMessage(
+    "P::M",
+    [
+        Link(INITIAL, Field("F")),
+        Link(Field("F"), FINAL),
+    ],
+    {Field("F"): Opaque()},
+)
 
 MODULAR_INTEGER = ModularInteger("P::Modular", Number(256))
 RANGE_INTEGER = RangeInteger("P::Range", Number(1), Number(100), Number(8))

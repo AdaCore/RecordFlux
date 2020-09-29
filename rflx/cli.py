@@ -115,7 +115,7 @@ def generate(args: argparse.Namespace) -> None:
 
 
 def parse(files: List, skip_verification: bool = False) -> Model:
-    parser = Parser(skip_verification)
+    parser = Parser(skip_verification, cached=True)
 
     error = RecordFluxError()
     for f in files:
