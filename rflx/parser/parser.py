@@ -48,17 +48,19 @@ from .ast import (
     RefinementSpec,
     Specification,
 )
+from .cache import Cache
 
 log = logging.getLogger(__name__)
 
 
 class Parser:
-    def __init__(self, skip_verification: bool = False) -> None:
+    def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
         self.__specifications: Deque[Specification] = deque()
         self.__evaluated_specifications: Set[ID] = set()
         self.__types: Dict[ID, Type] = {**BUILTIN_TYPES, **INTERNAL_TYPES}
         self.__sessions: Dict[ID, Session] = {}
+        self.__cache = Cache(cached)
 
     def parse(self, specfile: Path) -> None:
         self.__parse(specfile)
@@ -140,6 +142,7 @@ class Parser:
             result = Model(list(self.__types.values()), list(self.__sessions.values()))
         except RecordFluxError as e:
             error.extend(e)
+
         error.propagate()
         return result
 
@@ -184,10 +187,12 @@ class Parser:
                     new_type = create_array(t, self.__types)
 
                 elif isinstance(t, MessageSpec):
-                    new_type = create_message(t, self.__types, self.skip_verification)
+                    new_type = create_message(t, self.__types, self.skip_verification, self.__cache)
 
                 elif isinstance(t, DerivationSpec):
-                    new_type = create_derived_message(t, self.__types)
+                    new_type = create_derived_message(
+                        t, self.__types, self.skip_verification, self.__cache
+                    )
 
                 elif isinstance(t, RefinementSpec):
                     new_type = create_refinement(t, self.__types)
@@ -248,7 +253,10 @@ def create_array(array: ArraySpec, types: Mapping[ID, Type]) -> Array:
 
 
 def create_message(
-    message: MessageSpec, types: Mapping[ID, Type], skip_verification: bool = False
+    message: MessageSpec,
+    types: Mapping[ID, Type],
+    skip_verification: bool,
+    cache: Cache,
 ) -> Message:
     components = list(message.components)
 
@@ -306,16 +314,21 @@ def create_message(
                 )
             )
 
-    return (
+    return create_proven_message(
         UnprovenMessage(
             message.identifier, structure, field_types, message.aspects, message.location, error
-        )
-        .merged()
-        .proven(skip_verification)
+        ).merged(),
+        skip_verification,
+        cache,
     )
 
 
-def create_derived_message(derivation: DerivationSpec, types: Mapping[ID, Type]) -> Message:
+def create_derived_message(
+    derivation: DerivationSpec,
+    types: Mapping[ID, Type],
+    skip_verification: bool,
+    cache: Cache,
+) -> Message:
     base_name = qualified_type_name(derivation.base, derivation.package)
     messages = message_types(types)
     error = RecordFluxError()
@@ -357,11 +370,23 @@ def create_derived_message(derivation: DerivationSpec, types: Mapping[ID, Type])
         )
         error.propagate()
 
-    return (
-        UnprovenDerivedMessage(derivation.identifier, base, location=derivation.location)
-        .merged()
-        .proven()
+    return create_proven_message(
+        UnprovenDerivedMessage(derivation.identifier, base, location=derivation.location).merged(),
+        skip_verification,
+        cache,
     )
+
+
+def create_proven_message(
+    unproven_message: UnprovenMessage, skip_verification: bool, cache: Cache
+) -> Message:
+    proven_message = unproven_message.proven(
+        skip_verification or cache.is_verified(unproven_message)
+    )
+
+    cache.add_verified(unproven_message)
+
+    return proven_message
 
 
 def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> Refinement:
