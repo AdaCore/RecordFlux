@@ -45,7 +45,7 @@ class Cache:
     @staticmethod
     def _initialize_cache() -> None:
         if not CACHE_DIR.exists():
-            CACHE_DIR.mkdir()
+            CACHE_DIR.mkdir(parents=True)
         if not (CACHE_DIR / VERIFICATION_FILE).exists():
             with open(CACHE_DIR / VERIFICATION_FILE, "w") as f:
                 json.dump({}, f)
