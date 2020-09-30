@@ -209,10 +209,10 @@ class AbstractMessage(mty.Type):
     def checksums(self) -> Mapping[ID, Sequence[expr.Expr]]:
         return self._state.checksums or {}
 
-    def incoming(self, field: Field) -> Sequence[Link]:
+    def incoming(self, field: Field) -> List[Link]:
         return [l for l in self.structure if l.target == field]
 
-    def outgoing(self, field: Field) -> Sequence[Link]:
+    def outgoing(self, field: Field) -> List[Link]:
         return [l for l in self.structure if l.source == field]
 
     def predecessors(self, field: Field) -> Tuple[Field, ...]:
@@ -229,10 +229,10 @@ class AbstractMessage(mty.Type):
             return ()
         return self.fields[self.fields.index(field) + 1 :]
 
-    def direct_predecessors(self, field: Field) -> Sequence[Field]:
+    def direct_predecessors(self, field: Field) -> List[Field]:
         return list(dict.fromkeys([l.source for l in self.incoming(field)]))
 
-    def direct_successors(self, field: Field) -> Sequence[Field]:
+    def direct_successors(self, field: Field) -> List[Field]:
         return list(dict.fromkeys([l.target for l in self.outgoing(field)]))
 
     def definite_predecessors(self, field: Field) -> Tuple[Field, ...]:
@@ -560,7 +560,7 @@ class AbstractMessage(mty.Type):
                     link.target.identifier.location,
                 )
 
-    def type_constraints(self, expression: expr.Expr) -> Sequence[expr.Expr]:
+    def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
             comp = self.types[Field(field.name)]
             assert isinstance(comp, mty.Composite)
@@ -850,7 +850,7 @@ class AbstractMessage(mty.Type):
             link.target.identifier.location,
         )
 
-    def __link_expression(self, link: Link) -> Sequence[expr.Expr]:
+    def __link_expression(self, link: Link) -> List[expr.Expr]:
         name = link.target.name
         target_first = self.__target_first(link)
         target_length = self.__target_length(link)
