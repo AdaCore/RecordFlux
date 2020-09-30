@@ -7,10 +7,12 @@ class Base(ABC):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             for k in other.__dict__:
-                if k != "location" and k not in self.__dict__:
+                if k not in ["location", "error"] and k not in self.__dict__:
                     return False
             for k, v in self.__dict__.items():
-                if k != "location" and (k not in other.__dict__ or v != other.__dict__[k]):
+                if k not in ["location", "error"] and (
+                    k not in other.__dict__ or v != other.__dict__[k]
+                ):
                     return False
             return True
         return NotImplemented
