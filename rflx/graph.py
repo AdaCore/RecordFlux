@@ -118,8 +118,8 @@ class Graph:
             )
 
         for index, a in enumerate(state.actions):
-            if a.name not in state.declarations:
-                variables_write.update([a.name])
+            if a.identifier not in state.declarations:
+                variables_write.update([a.identifier])
             if isinstance(a, Assignment):
                 variables_read.update(
                     [

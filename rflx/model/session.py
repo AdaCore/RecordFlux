@@ -1,16 +1,18 @@
 import itertools
-from typing import Dict, Iterable, List, Mapping, Sequence
+from collections import defaultdict
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence
 
-from rflx import declaration as decl, expression as expr, statement as stmt
+from rflx import declaration as decl, expression as expr, statement as stmt, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID
+from rflx.model import Message, Refinement
 
 from . import type_ as mty
 
-BUILTIN_CHANNEL_FUNCTIONS = list(map(ID, ["Read", "Write", "Call", "Data_Available"]))
-BUILTIN_LIST_FUNCTIONS = list(map(ID, ["Append", "Extend"]))
-BUILTIN_FUNCTIONS = [*BUILTIN_CHANNEL_FUNCTIONS, *BUILTIN_LIST_FUNCTIONS]
+READABLE_CHANNEL_FUNCTIONS = list(map(ID, ["Call", "Read", "Data_Available"]))
+WRITABLE_CHANNEL_FUNCTIONS = list(map(ID, ["Call", "Write"]))
+CHANNEL_FUNCTIONS = [*READABLE_CHANNEL_FUNCTIONS, *WRITABLE_CHANNEL_FUNCTIONS]
 
 
 class Transition(Base):
@@ -102,31 +104,22 @@ class Session(Base):
         self.location = location
         self.error = RecordFluxError()
 
+        assert all(not isinstance(d, decl.FormalDeclaration) for d in self.declarations.values())
+        assert all(isinstance(p, decl.FormalDeclaration) for p in self.parameters.values())
+
+        self.__global_declarations = {**self.parameters, **self.declarations}
+
         if len(self.identifier.parts) != 2:
             self.error.append(
                 f'invalid session name "{self.identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                location,
-            )
-
-        if not states:
-            self.error.append(
-                "empty states",
-                Subsystem.MODEL,
-                Severity.ERROR,
-                location,
+                self.identifier.location,
             )
 
         self.__literals = mty.qualified_literals(self.types.values(), self.identifier.parent)
 
-        self.__validate_state_existence()
-        self.__validate_duplicate_states()
-        self.__validate_state_reachability()
-        self.__validate_declarations()
-        self.__validate_conditions()
-        self.__validate_actions()
-        self.__validate_variable_usage()
+        self.__validate()
         self.error.propagate()
 
     def __repr__(self) -> str:
@@ -142,31 +135,33 @@ class Session(Base):
             f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.identifier.name}"
         )
 
-    def __validate_conditions(self) -> None:
-        for s in self.states:
-            declarations = {
-                **self.parameters,
-                **self.declarations,
-                **s.declarations,
-            }
-            for t in s.transitions:
-                self.__validate_variable_declaration(t.condition.variables(), declarations)
+    def __validate(self) -> None:
+        self.__validate_states()
 
-    def __validate_actions(self) -> None:
+        self.__validate_declarations(self.__global_declarations, {})
+
         for s in self.states:
-            declarations = {
-                **self.parameters,
-                **self.declarations,
-                **s.declarations,
-            }
-            for a in s.actions:
-                if isinstance(a, stmt.Assignment):
-                    for c in a.expression.findall(
-                        lambda x: isinstance(x, expr.Call) and x.name in BUILTIN_CHANNEL_FUNCTIONS
-                    ):
-                        assert isinstance(c, expr.Call)
-                        self.__validate_channel(c, declarations)
-                self.__validate_variable_declaration(a.variables(), declarations)
+            self.__validate_declarations(s.declarations, self.__global_declarations)
+
+            declarations = {**self.__global_declarations, **s.declarations}
+
+            self.__validate_actions(s.actions, declarations)
+            self.__validate_transitions(s.transitions, declarations)
+
+        self.__validate_usage()
+
+    def __validate_states(self) -> None:
+        if not self.states:
+            self.error.append(
+                "empty states",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+
+        self.__validate_state_existence()
+        self.__validate_duplicate_states()
+        self.__validate_state_reachability()
 
     def __validate_state_existence(self) -> None:
         state_names = [s.name for s in self.states]
@@ -196,23 +191,25 @@ class Session(Base):
                     )
 
     def __validate_duplicate_states(self) -> None:
-        state_names = [s.name for s in self.states]
-        seen: Dict[ID, int] = {}
-        duplicates: List[ID] = []
-        for n in state_names:
-            if n not in seen:
-                seen[n] = 1
-            else:
-                duplicates.append(n.name)
-                seen[n] += 1
+        name_states = defaultdict(list)
+        for s in self.states:
+            name_states[s.name].append(s)
 
-        if duplicates:
-            self.error.append(
-                f'duplicate states: {", ".join(map(str, sorted(duplicates)))}',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
+        for name, states in name_states.items():
+            if len(states) >= 2:
+                for s in states[1:]:
+                    self.error.append(
+                        f'duplicate state "{name}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        s.location,
+                    )
+                    self.error.append(
+                        f'previous definition of state "{name}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        states[0].location,
+                    )
 
     def __validate_state_reachability(self) -> None:
         inputs: Dict[ID, List[ID]] = {}
@@ -222,121 +219,148 @@ class Session(Base):
                     inputs[t.target].append(s.name)
                 else:
                     inputs[t.target] = [s.name]
-        unreachable = [
-            str(s.name) for s in self.states if s.name != self.initial and s.name not in inputs
-        ]
-        if unreachable:
+
+        for s in [s for s in self.states if s.name != self.initial and s.name not in inputs]:
             self.error.append(
-                f'unreachable states {", ".join(unreachable)}',
+                f'unreachable state "{s.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                self.location,
+                s.location,
             )
 
-        detached = [str(s.name) for s in self.states if s.name != self.final and not s.transitions]
-        if detached:
+        for s in [s for s in self.states if s.name != self.final and not s.transitions]:
             self.error.append(
-                f'detached states {", ".join(detached)}',
+                f'detached state "{s.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                self.location,
+                s.location,
             )
 
-    @staticmethod
-    def __entity_name(declaration: decl.Declaration) -> str:
-        if isinstance(declaration, decl.SubprogramDeclaration):
-            return "subprogram"
-        if isinstance(declaration, decl.VariableDeclaration):
-            return "variable"
-        if isinstance(declaration, decl.RenamingDeclaration):
-            return "renames"
-        if isinstance(declaration, decl.ChannelDeclaration):
-            return "channel"
-        if isinstance(declaration, decl.PrivateDeclaration):
-            return "private"
-        assert False, f"unsupported entity {type(decl).__name__}"
+    def __validate_declarations(
+        self,
+        declarations: Mapping[ID, decl.Declaration],
+        visible_declarations: Mapping[ID, decl.Declaration],
+    ) -> None:
+        visible_declarations = dict(visible_declarations)
 
-    def __validate_declarations(self) -> None:
-        for s in self.states:
-            for k, d in s.declarations.items():
-                if k in self.declarations:
-                    self.error.append(
-                        f'local variable "{k}" shadows global declaration'
-                        f" in state {s.name.name}",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    )
+        def undefined_type(type_name: StrID, location: Optional[Location]) -> None:
+            self.error.append(
+                f'undefined type "{type_name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                location,
+            )
 
-        for k, d in self.declarations.items():
-            if any(str(k).upper() == str(f).upper() for f in BUILTIN_FUNCTIONS):
+        for k, d in declarations.items():
+            if any(str(d.identifier).upper() == str(f).upper() for f in CHANNEL_FUNCTIONS):
                 self.error.append(
-                    f'{self.__entity_name(d)} declaration shadows builtin subprogram "{k}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
-                )
-
-        for k, d in self.declarations.items():
-            if isinstance(d, decl.VariableDeclaration):
-                try:
-                    if d.type_name in (
-                        d.identifier
-                        for d in self.parameters.values()
-                        if isinstance(d, decl.PrivateDeclaration)
-                    ):
-                        continue
-                    type_name = mty.qualified_type_name(d.type_name, self.identifier.parent)
-                    self.types[type_name]  # pylint: disable=pointless-statement
-                except KeyError:
-                    self.error.append(
-                        f'undefined type "{d.type_name}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        d.location,
-                    )
-
-        declarations: Dict[ID, decl.Declaration] = {}
-        for k, d in self.declarations.items():
-            self.__validate_variable_declaration(d.variables(), declarations)
-            declarations[k] = d
-
-        for s in self.states:
-            declarations = {**self.declarations}
-            for k, d in s.declarations.items():
-                self.__validate_variable_declaration(d.variables(), declarations)
-                declarations[k] = d
-
-    def __validate_variable_usage(self) -> None:
-        global_declarations = ((k, d, None) for k, d in self.declarations.items())
-        local_declarations = ((k, d, s) for s in self.states for k, d in s.declarations.items())
-        for k, d, s in itertools.chain(global_declarations, local_declarations):
-            if not d.is_referenced:
-                state = f" in state {s.name}" if s else ""
-                self.error.append(
-                    f'unused {self.__entity_name(d)} "{k}"{state}',
+                    f'{self.__entity_name(d)} declaration shadows built-in function "{k}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     d.location,
                 )
 
-    def __validate_variable_declaration(
-        self, variables: Iterable[expr.Variable], declarations: Mapping[ID, decl.Declaration]
-    ) -> None:
-        for v in variables:
-            if v.identifier in self.__literals:
-                continue
-            if v.identifier in BUILTIN_FUNCTIONS:
-                continue
-            if v.identifier not in declarations:
+            if k in visible_declarations:
                 self.error.append(
-                    f'undeclared variable "{v.identifier}"',
+                    f'local variable "{k}" shadows previous declaration',
                     Subsystem.MODEL,
                     Severity.ERROR,
-                    self.location,
+                    d.location,
                 )
-                continue
-            declarations[v.identifier].reference()
+                self.error.append(
+                    f'previous declaration of variable "{k}"',
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    visible_declarations[k].location,
+                )
+
+            self.__reference_variable_declaration(d.variables(), visible_declarations)
+
+            if isinstance(d, decl.TypeDeclaration):
+                type_name = mty.qualified_type_name(k, self.identifier.parent)
+                if type_name in self.types:
+                    self.error.append(
+                        f'type "{k}" shadows type',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        d.location,
+                    )
+                self.types[type_name] = d.type_definition
+
+            elif isinstance(d, decl.TypedDeclaration):
+                type_name = mty.qualified_type_name(d.type_name, self.identifier.parent)
+                if type_name not in self.types:
+                    undefined_type(d.type_name, d.location)
+                    d.type_ = rty.Any()
+                    return
+                self.error.extend(
+                    d.check_type(
+                        self.types[type_name].type_,
+                        lambda x: self.__typify_variable(x, visible_declarations),
+                    )
+                )
+
+                if isinstance(d, decl.FunctionDeclaration):
+                    argument_types = []
+                    for a in d.arguments:
+                        type_name = mty.qualified_type_name(a.type_name, self.identifier.parent)
+                        if type_name in self.types:
+                            argument_types.append(self.types[type_name].type_)
+                        else:
+                            argument_types.append(rty.Any())
+                            undefined_type(a.type_name, d.location)
+                            continue
+                    d.argument_types = argument_types
+
+                if d.type_name in self.__global_declarations:
+                    self.__global_declarations[d.type_name].reference()
+
+            visible_declarations[k] = d
+
+    def __validate_actions(
+        self, actions: Sequence[stmt.Statement], declarations: Mapping[ID, decl.Declaration]
+    ) -> None:
+        for a in actions:
+            type_ = (
+                declarations[a.identifier].type_
+                if a.identifier in declarations
+                else rty.Undefined()
+            )
+            self.error.extend(
+                a.check_type(
+                    type_,
+                    lambda x: self.__typify_variable(x, declarations),
+                )
+            )
+
+            if isinstance(a, stmt.Assignment):
+                for c in a.expression.findall(
+                    lambda x: isinstance(x, expr.Call) and x.name in CHANNEL_FUNCTIONS
+                ):
+                    assert isinstance(c, expr.Call)
+                    self.__validate_channel(c, declarations)
+
+            self.__reference_variable_declaration(a.variables(), declarations)
+
+    def __validate_transitions(
+        self, transitions: Sequence[Transition], declarations: Mapping[ID, decl.Declaration]
+    ) -> None:
+        for t in transitions:
+            t.condition = t.condition.substituted(lambda x: self.__typify_variable(x, declarations))
+            self.error.extend(t.condition.check_type(rty.BOOLEAN))
+            self.__reference_variable_declaration(t.condition.variables(), declarations)
+
+    def __validate_usage(self) -> None:
+        global_declarations = self.__global_declarations.items()
+        local_declarations = ((k, d) for s in self.states for k, d in s.declarations.items())
+        for k, d in itertools.chain(global_declarations, local_declarations):
+            if not d.is_referenced:
+                self.error.append(
+                    f'unused {self.__entity_name(d)} "{k}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    d.location,
+                )
 
     def __validate_channel(
         self, call: expr.Call, declarations: Mapping[ID, decl.Declaration]
@@ -364,7 +388,7 @@ class Session(Base):
                 f'undeclared channel "{channel_id}" in call to "{call.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                call.location,
+                channel_id.location,
             )
             return
 
@@ -381,17 +405,75 @@ class Session(Base):
 
         assert isinstance(channel, decl.ChannelDeclaration)
         channel.reference()
-        if call.name in map(ID, ["Write", "Call"]) and not channel.writable:
+        if call.name in WRITABLE_CHANNEL_FUNCTIONS and not channel.writable:
             self.error.append(
                 f'channel "{channel_id}" not writable in call to "{call.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 call.location,
             )
-        if call.name in map(ID, ["Call", "Read", "Data_Available"]) and not channel.readable:
+        if call.name in READABLE_CHANNEL_FUNCTIONS and not channel.readable:
             self.error.append(
                 f'channel "{channel_id}" not readable in call to "{call.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 call.location,
             )
+
+    def __typify_variable(
+        self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
+    ) -> expr.Expr:
+        if isinstance(
+            expression, (expr.Variable, expr.Call, expr.Conversion, expr.MessageAggregate)
+        ):
+            identifier = ID(expression.name)
+
+            if isinstance(expression, expr.Variable):
+                if identifier in declarations:
+                    expression.type_ = declarations[identifier].type_
+                if identifier in self.__literals:
+                    expression.type_ = self.__literals[identifier].type_
+            if isinstance(expression, expr.Call):
+                if identifier in declarations:
+                    expression.type_ = declarations[identifier].type_
+                if identifier in CHANNEL_FUNCTIONS:
+                    expression.type_ = rty.Any()
+            if isinstance(expression, expr.Conversion):
+                if identifier in self.types:
+                    type_ = self.types[identifier].type_
+                    expression.type_ = type_
+            if isinstance(expression, expr.MessageAggregate):
+                if identifier in self.types:
+                    message = self.types[identifier]
+                    assert isinstance(message, Message)
+                    expression.type_ = message.refined_type(
+                        [
+                            t
+                            for t in self.types.values()
+                            if isinstance(t, Refinement) and t.pdu.identifier == identifier
+                        ]
+                    )
+
+        return expression
+
+    @staticmethod
+    def __reference_variable_declaration(
+        variables: Iterable[expr.Variable], declarations: Mapping[ID, decl.Declaration]
+    ) -> None:
+        for v in variables:
+            if v.identifier in declarations:
+                declarations[v.identifier].reference()
+
+    @staticmethod
+    def __entity_name(declaration: decl.Declaration) -> str:
+        if isinstance(declaration, decl.FunctionDeclaration):
+            return "function"
+        if isinstance(declaration, decl.VariableDeclaration):
+            return "variable"
+        if isinstance(declaration, decl.RenamingDeclaration):
+            return "renaming"
+        if isinstance(declaration, decl.ChannelDeclaration):
+            return "channel"
+        if isinstance(declaration, decl.TypeDeclaration):
+            return "type"
+        assert False, f"unsupported entity {type(decl).__name__}"

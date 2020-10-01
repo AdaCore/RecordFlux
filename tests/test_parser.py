@@ -43,6 +43,7 @@ from rflx.model import (
     Message,
     ModularInteger,
     Opaque,
+    Private,
     RangeInteger,
     Refinement,
     State,
@@ -577,7 +578,7 @@ def test_grammar_expression_complex(string: str, expected: Expr) -> None:
 
 def test_grammar_private_type_declaration() -> None:
     string = "type X is private"
-    expected = decl.PrivateDeclaration("X")
+    expected = decl.TypeDeclaration(Private("X", location=Location((1, 1), None, (1, 17))))
     actual = grammar.private_type_declaration().parseString(string, parseAll=True)[0]
     assert actual == expected
     assert actual.location
@@ -603,12 +604,10 @@ def test_grammar_channel_declaration(string: str, expected: decl.Declaration) ->
 @pytest.mark.parametrize(
     "string,expected",
     [
-        ("with function X return Y", decl.SubprogramDeclaration("X", [], "Y")),
+        ("with function X return Y", decl.FunctionDeclaration("X", [], "Y")),
         (
             "with function X (A : B; C : D) return Y",
-            decl.SubprogramDeclaration(
-                "X", [decl.Argument("A", "B"), decl.Argument("C", "D")], "Y"
-            ),
+            decl.FunctionDeclaration("X", [decl.Argument("A", "B"), decl.Argument("C", "D")], "Y"),
         ),
     ],
 )
@@ -814,8 +813,8 @@ def test_grammar_state_error(string: str, error: str) -> None:
                 [decl.VariableDeclaration("Y", "Boolean", Number(0))],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.PrivateDeclaration("T"),
-                    decl.SubprogramDeclaration("F", [], "T"),
+                    decl.TypeDeclaration(Private("T")),
+                    decl.FunctionDeclaration("F", [], "T"),
                 ],
                 Location((2, 16), None, (23, 27)),
             ),

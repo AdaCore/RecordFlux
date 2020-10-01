@@ -276,8 +276,12 @@ package GreenTLS is
          Length : KM_Length
             then Data
                with Length => Length * 8
-               if Tag = RNG_RESPONSE;
+               if Tag = RNG_RESPONSE
+            then null
+               if Tag = RNG_REQUEST;
          Data : Opaque;
       end message;
+
+   type Sequence_Number is mod 2**16;
 
 end GreenTLS;

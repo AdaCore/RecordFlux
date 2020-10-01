@@ -1,3 +1,6 @@
+with TLS_Alert;
+with TLS_Handshake;
+
 package TLS_Record is
 
    type Content_Type is (INVALID => 0, CHANGE_CIPHER_SPEC => 20, ALERT => 21, HANDSHAKE => 22, APPLICATION_DATA => 23, HEARTBEAT => 24) with Size => 8;
@@ -19,6 +22,12 @@ package TLS_Record is
             then null;
          Encrypted_Record : Opaque;
       end message;
+
+   for TLS_Record use (Fragment => TLS_Alert::Alert)
+       if Tag = ALERT;
+
+   for TLS_Record use (Fragment => TLS_Handshake::Handshake)
+       if Tag = HANDSHAKE;
 
    type TLS_Inner_Plaintext is
       message

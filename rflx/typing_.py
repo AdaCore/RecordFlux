@@ -256,6 +256,7 @@ class Message(IndependentType):
     name: str
     field_combinations: ty.Set[ty.Tuple[str, ...]] = dataclass_field(default_factory=set)
     field_types: ty.Mapping[str, Type] = dataclass_field(default_factory=dict)
+    refinements: ty.Sequence[ty.Tuple[str, "Message"]] = dataclass_field(default_factory=list)
 
     def __str__(self) -> str:
         return f'{self.descriptive_name} "{self.name}"'

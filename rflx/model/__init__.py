@@ -24,6 +24,7 @@ from .type_ import (  # noqa: F401
     Integer,
     ModularInteger,
     Opaque,
+    Private,
     RangeInteger,
     Scalar,
     Type,
