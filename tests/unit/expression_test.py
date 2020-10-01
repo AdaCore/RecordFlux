@@ -1802,6 +1802,19 @@ def test_comprehension_str() -> None:
                 },
             ),
         ),
+        (
+            {"X": Variable("A", type_=rty.Message("I"))},
+            rty.Message(
+                "M",
+                {
+                    ("X",),
+                },
+                {
+                    "X": rty.OPAQUE,
+                },
+                [("X", rty.Message("I"))],
+            ),
+        ),
     ],
 )
 def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.Type) -> None:

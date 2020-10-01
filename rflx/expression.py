@@ -2045,7 +2045,16 @@ class MessageAggregate(Expr):
 
                 field_type = self.type_.field_types[str(field)]
 
-                error += expr.check_type(field_type)
+                if field_type == rty.OPAQUE:
+                    for refinement_field, refinement_type in self.type_.refinements:
+                        if refinement_field == str(field) and expr.type_.is_compatible(
+                            refinement_type
+                        ):
+                            break
+                    else:
+                        error += expr.check_type(field_type)
+                else:
+                    error += expr.check_type(field_type)
 
                 field_combinations = {
                     c for c in field_combinations if len(c) > i and c[i] == str(field)

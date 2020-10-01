@@ -34,13 +34,13 @@ def assert_session_model_error(
     parameters: Sequence[decl.Declaration],
     types: Sequence[Type],
     regex: str,
-    location: Location = None,
+    location: Location = Location((1, 1)),
 ) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         Session(
             "P::S",
-            ID("Start"),
-            ID("End"),
+            ID("Start", location=Location((1, 2))),
+            ID("End", location=Location((1, 3))),
             states,
             declarations,
             parameters,

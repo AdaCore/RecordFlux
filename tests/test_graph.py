@@ -9,6 +9,7 @@ from rflx.model import (
     BOOLEAN,
     FINAL,
     INITIAL,
+    OPAQUE,
     Field,
     Link,
     Message,
@@ -17,7 +18,7 @@ from rflx.model import (
     State,
     Transition,
 )
-from rflx.statement import Assignment, Erase
+from rflx.statement import Assignment, Reset
 
 
 def assert_graph(graph: Graph, expected: str) -> None:
@@ -194,14 +195,14 @@ def test_session_graph() -> None:
             State(
                 name=ID("STATE"),
                 transitions=[Transition(target=ID("END"))],
-                actions=[Assignment("Global", FALSE), Erase("Local")],
-                declarations=[VariableDeclaration("Local", "Boolean")],
+                actions=[Assignment("Global", FALSE), Reset("Local")],
+                declarations=[VariableDeclaration("Local", "Opaque")],
             ),
             State(name=ID("END")),
         ],
         declarations=[VariableDeclaration("Global", "Boolean")],
         parameters=[],
-        types=[BOOLEAN],
+        types=[BOOLEAN, OPAQUE],
     )
     expected = """
         digraph "Session" {

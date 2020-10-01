@@ -1,24 +1,33 @@
 from abc import abstractmethod
-from typing import Sequence
+from typing import TYPE_CHECKING, Callable, Sequence
 
+import rflx.typing_ as rty
 from rflx.common import Base
-from rflx.error import Location
-from rflx.expression import Expr, Variable
+from rflx.error import Location, RecordFluxError
+from rflx.expression import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
+
+if TYPE_CHECKING:
+    import rflx.model.type_ as mty
 
 
 class Declaration(Base):
     def __init__(self, identifier: StrID, location: Location = None):
-        self.__identifier = ID(identifier)
+        self.identifier = ID(identifier)
         self.location = location
         self.__refcount = 0
+
+    @abstractmethod
+    def __str__(self) -> str:
+        raise NotImplementedError
 
     def reference(self) -> None:
         self.__refcount += 1
 
     @property
-    def identifier(self) -> ID:
-        return self.__identifier
+    @abstractmethod
+    def type_(self) -> rty.Type:
+        raise NotImplementedError
 
     @property
     def is_referenced(self) -> bool:
@@ -29,7 +38,38 @@ class Declaration(Base):
         raise NotImplementedError
 
 
-class VariableDeclaration(Declaration):
+class TypedDeclaration(Declaration):
+    def __init__(
+        self,
+        identifier: StrID,
+        type_name: StrID,
+        location: Location = None,
+    ):
+        super().__init__(identifier, location)
+        self.__type_name = ID(type_name)
+        self.__type: rty.Type = rty.Undefined()
+
+    @property
+    def type_name(self) -> ID:
+        return self.__type_name
+
+    @property
+    def type_(self) -> rty.Type:
+        return self.__type
+
+    @type_.setter
+    def type_(self, value: rty.Type) -> None:
+        self.__type = value
+
+    @abstractmethod
+    def check_type(
+        self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+    ) -> RecordFluxError:
+        """Set the types of the declaration and variables, and check the types of expressions."""
+        raise NotImplementedError
+
+
+class VariableDeclaration(TypedDeclaration):
     def __init__(
         self,
         identifier: StrID,
@@ -37,28 +77,54 @@ class VariableDeclaration(Declaration):
         expression: Expr = None,
         location: Location = None,
     ):
-        super().__init__(identifier, location)
-        self.__type_name = ID(type_name)
-        self.__expression = expression
+        super().__init__(identifier, type_name, location)
+        self.expression = expression
 
     def __str__(self) -> str:
-        expression = f" := {self.__expression}" if self.__expression else ""
-        return f"{self.identifier} : {self.__type_name}{expression}"
+        expression = f" := {self.expression}" if self.expression else ""
+        return f"{self.identifier} : {self.type_name}{expression}"
 
-    @property
-    def type_name(self) -> ID:
-        return self.__type_name
+    def check_type(
+        self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+    ) -> RecordFluxError:
+        self.type_ = declaration_type
+
+        if self.expression is not None:
+            self.expression = self.expression.substituted(typify_variable)
+            return self.expression.check_type(self.type_)
+
+        return RecordFluxError()
 
     def variables(self) -> Sequence[Variable]:
-        if self.__expression:
-            return self.__expression.variables()
+        if self.expression:
+            return self.expression.variables()
         return []
 
 
-class PrivateDeclaration(Declaration):
-    def __str__(self) -> str:
-        return f"type {self.identifier} is private"
+class RenamingDeclaration(TypedDeclaration):
+    def __init__(
+        self, identifier: StrID, type_name: StrID, expression: Selected, location: Location = None
+    ):
+        super().__init__(identifier, type_name, location)
+        self.expression = expression
 
+    def __str__(self) -> str:
+        return f"{self.identifier} : {self.type_name} renames {self.expression}"
+
+    def check_type(
+        self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+    ) -> RecordFluxError:
+        self.type_ = declaration_type
+        expression = self.expression.substituted(typify_variable)
+        assert isinstance(expression, Selected)
+        self.expression = expression
+        return self.expression.check_type(rty.Any())
+
+    def variables(self) -> Sequence[Variable]:
+        return self.expression.variables()
+
+
+class FormalDeclaration(Declaration):
     def variables(self) -> Sequence[Variable]:
         return []
 
@@ -72,8 +138,12 @@ class Argument(Base):
     def __str__(self) -> str:
         return f"{self.__name} : {self.__type_name}"
 
+    @property
+    def type_name(self) -> ID:
+        return self.__type_name
 
-class SubprogramDeclaration(Declaration):
+
+class FunctionDeclaration(TypedDeclaration, FormalDeclaration):
     def __init__(
         self,
         identifier: StrID,
@@ -81,34 +151,27 @@ class SubprogramDeclaration(Declaration):
         return_type: StrID,
         location: Location = None,
     ):
-        super().__init__(identifier, location)
+        super().__init__(identifier, return_type, location)
         self.__arguments = arguments
         self.__return_type = ID(return_type)
+        self.argument_types: Sequence[rty.Type] = []
 
     def __str__(self) -> str:
         arguments = (" (" + "; ".join(map(str, self.__arguments)) + ")") if self.__arguments else ""
         return f"with function {self.identifier}{arguments} return {self.__return_type}"
 
-    def variables(self) -> Sequence[Variable]:
-        return []
+    def check_type(
+        self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+    ) -> RecordFluxError:
+        self.type_ = declaration_type
+        return RecordFluxError()
+
+    @property
+    def arguments(self) -> Sequence[Argument]:
+        return self.__arguments
 
 
-class RenamingDeclaration(Declaration):
-    def __init__(
-        self, identifier: StrID, type_name: StrID, expression: "Expr", location: Location = None
-    ):
-        super().__init__(identifier, location)
-        self.__type_name = ID(type_name)
-        self.__expression = expression
-
-    def __str__(self) -> str:
-        return f"{self.identifier} : {self.__type_name} renames {self.__expression}"
-
-    def variables(self) -> Sequence[Variable]:
-        return self.__expression.variables()
-
-
-class ChannelDeclaration(Declaration):
+class ChannelDeclaration(FormalDeclaration):
     def __init__(
         self,
         identifier: StrID,
@@ -131,6 +194,10 @@ class ChannelDeclaration(Declaration):
         return f"{self.identifier} : Channel{with_aspects}"
 
     @property
+    def type_(self) -> rty.Type:
+        return rty.Channel(str(self.identifier))
+
+    @property
     def readable(self) -> bool:
         return self.__readable
 
@@ -138,5 +205,15 @@ class ChannelDeclaration(Declaration):
     def writable(self) -> bool:
         return self.__writable
 
-    def variables(self) -> Sequence[Variable]:
-        return []
+
+class TypeDeclaration(FormalDeclaration):
+    def __init__(self, type_: "mty.Type"):
+        super().__init__(type_.identifier, type_.location)
+        self.type_definition = type_
+
+    def __str__(self) -> str:
+        return str(self.type_definition)
+
+    @property
+    def type_(self) -> rty.Type:
+        raise NotImplementedError

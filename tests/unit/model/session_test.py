@@ -1,13 +1,19 @@
 # pylint: disable=too-many-lines
+from typing import Sequence
+
 import pytest
 
 import rflx.declaration as decl
 import rflx.expression as expr
 import rflx.statement as stmt
-from rflx.error import RecordFluxError
+from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.model import BOOLEAN, Session, State, Transition
+from rflx.model import BOOLEAN, OPAQUE, Array, Private, Session, State, Transition
+from tests.models import TLV_MESSAGE, TLV_TAG
 from tests.utils import assert_equal, assert_session_model_error, multilinestr
+
+TLV_MESSAGES = Array("TLV::Messages", TLV_MESSAGE)
+TLV_TAGS = Array("TLV::Tags", TLV_TAG)
 
 
 def test_str() -> None:
@@ -21,21 +27,26 @@ def test_str() -> None:
                     State(
                         "A",
                         declarations=[decl.VariableDeclaration("Z", "Boolean", expr.Variable("Y"))],
-                        actions=[stmt.Assignment("Z", expr.Number(1))],
+                        actions=[stmt.Assignment("Z", expr.Call("Read", [expr.Variable("X")]))],
                         transitions=[
                             Transition(
-                                "B", condition=expr.Equal(expr.Variable("Z"), expr.Number(1))
+                                "B",
+                                condition=expr.And(
+                                    expr.Equal(expr.Variable("Z"), expr.TRUE),
+                                    expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                                ),
                             ),
                             Transition("A"),
                         ],
                     ),
                     State("B"),
                 ],
-                [decl.VariableDeclaration("Y", "Boolean", expr.Number(0))],
+                [decl.VariableDeclaration("Y", "Boolean", expr.FALSE)],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.PrivateDeclaration("T"),
-                    decl.SubprogramDeclaration("F", [], "T"),
+                    decl.TypeDeclaration(Private("T")),
+                    decl.FunctionDeclaration("F", [], "T"),
+                    decl.FunctionDeclaration("G", [decl.Argument("P", "T")], "Boolean"),
                 ],
                 [BOOLEAN],
             )
@@ -45,19 +56,21 @@ def test_str() -> None:
                   X : Channel with Readable, Writable;
                   type T is private;
                   with function F return T;
+                  with function G (P : T) return Boolean;
                session S with
                   Initial => A,
                   Final => B
                is
-                  Y : Boolean := 0;
+                  Y : Boolean := False;
                begin
                   state A is
                      Z : Boolean := Y;
                   begin
-                     Z := 1;
+                     Z := Read (X);
                   transition
                      then B
-                        if Z = 1
+                        if Z = True
+                           and G (F) = True
                      then A
                   end A;
 
@@ -70,13 +83,16 @@ def test_str() -> None:
 def test_invalid_name() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^model: error: invalid session name "P::S::X"',
+        match=r'^<stdin>:10:20: model: error: invalid session name "P::S::X"$',
     ):
         Session(
-            identifier="P::S::X",
+            identifier=ID("P::S::X", location=Location((10, 20))),
             initial=ID("Start"),
             final=ID("End"),
-            states=[],
+            states=[
+                State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
+                State(name=ID("End")),
+            ],
             declarations=[],
             parameters=[],
             types=[],
@@ -89,11 +105,12 @@ def test_empty_states() -> None:
         declarations=[],
         parameters=[],
         types=[],
+        location=Location((1, 1)),
         regex=(
             r"^"
-            r"model: error: empty states\n"
-            r'model: error: initial state "Start" does not exist in "P::S"\n'
-            r'model: error: final state "End" does not exist in "P::S"'
+            r"<stdin>:1:1: model: error: empty states\n"
+            r'<stdin>:1:2: model: error: initial state "Start" does not exist in "P::S"\n'
+            r'<stdin>:1:3: model: error: final state "End" does not exist in "P::S"'
             r"$"
         ),
     )
@@ -104,22 +121,27 @@ def test_invalid_initial() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'model: error: initial state "NonExistent" does not exist in "P::S"\n'
-            r"model: error: unreachable states Start"
+            r'<stdin>:1:2: model: error: initial state "NonExistent" does not exist in "P::S"\n'
+            r'<stdin>:10:20: model: error: unreachable state "Start"'
             r"$"
         ),
     ):
         Session(
             identifier="P::S",
-            initial=ID("NonExistent"),
+            initial=ID("NonExistent", location=Location((1, 2))),
             final=ID("End"),
             states=[
-                State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
+                State(
+                    name=ID("Start"),
+                    transitions=[Transition(target=ID("End"))],
+                    location=Location((10, 20)),
+                ),
                 State(name=ID("End")),
             ],
             declarations=[],
             parameters=[],
             types=[],
+            location=Location((1, 1)),
         )
 
 
@@ -128,18 +150,18 @@ def test_invalid_final() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'model: error: final state "NonExistent" does not exist in "P::S"\n'
-            r"model: error: detached states End"
+            r'<stdin>:1:3: model: error: final state "NonExistent" does not exist in "P::S"\n'
+            r'<stdin>:10:20: model: error: detached state "End"'
             r"$"
         ),
     ):
         Session(
             identifier="P::S",
             initial=ID("Start"),
-            final=ID("NonExistent"),
+            final=ID("NonExistent", location=Location((1, 3))),
             states=[
                 State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
-                State(name=ID("End")),
+                State(name=ID("End"), location=Location((10, 20))),
             ],
             declarations=[],
             parameters=[],
@@ -153,7 +175,7 @@ def test_invalid_target_state() -> None:
             State(
                 name=ID("Start"),
                 transitions=[
-                    Transition(target=ID("NonExistent")),
+                    Transition(target=ID("NonExistent", location=Location((10, 20)))),
                     Transition(target=ID("End")),
                 ],
             ),
@@ -164,8 +186,8 @@ def test_invalid_target_state() -> None:
         types=[],
         regex=(
             r"^"
-            r'model: error: transition from state "Start" to non-existent'
-            ' state "NonExistent" in "P::S"'
+            r'<stdin>:10:20: model: error: transition from state "Start" to non-existent'
+            r' state "NonExistent" in "P::S"'
             r"$"
         ),
     )
@@ -174,32 +196,85 @@ def test_invalid_target_state() -> None:
 def test_duplicate_state() -> None:
     assert_session_model_error(
         states=[
-            State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
-            State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                location=Location((10, 20)),
+            ),
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                location=Location((10, 30)),
+            ),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex=r"^model: error: duplicate states: Start$",
+        regex=(
+            r"^"
+            r'<stdin>:10:30: model: error: duplicate state "Start"\n'
+            r'<stdin>:10:20: model: info: previous definition of state "Start"'
+            r"$"
+        ),
     )
 
 
 def test_multiple_duplicate_states() -> None:
     assert_session_model_error(
         states=[
-            State(name=ID("Start"), transitions=[Transition(target=ID("Foo"))]),
-            State(name=ID("Start"), transitions=[Transition(target=ID("Foo"))]),
-            State(name=ID("Foo"), transitions=[Transition(target=ID("Bar"))]),
-            State(name=ID("Bar"), transitions=[Transition(target=ID("End"))]),
-            State(name=ID("Foo"), transitions=[Transition(target=ID("Bar"))]),
-            State(name=ID("Bar"), transitions=[Transition(target=ID("End"))]),
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("Foo"))],
+                location=Location((10, 20)),
+            ),
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("Foo"))],
+                location=Location((10, 30)),
+            ),
+            State(
+                name=ID("Foo"),
+                transitions=[Transition(target=ID("Bar"))],
+                location=Location((10, 40)),
+            ),
+            State(
+                name=ID("Bar"),
+                transitions=[Transition(target=ID("End"))],
+                location=Location((10, 50)),
+            ),
+            State(
+                name=ID("Foo"),
+                transitions=[Transition(target=ID("Bar"))],
+                location=Location((10, 60)),
+            ),
+            State(
+                name=ID("Bar"),
+                transitions=[Transition(target=ID("End"))],
+                location=Location((10, 70)),
+            ),
+            State(
+                name=ID("Foo"),
+                transitions=[Transition(target=ID("Bar"))],
+                location=Location((10, 80)),
+            ),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex="^model: error: duplicate states: Bar, Foo, Start$",
+        regex=(
+            r"^"
+            r'<stdin>:10:30: model: error: duplicate state "Start"\n'
+            r'<stdin>:10:20: model: info: previous definition of state "Start"\n'
+            r'<stdin>:10:60: model: error: duplicate state "Foo"\n'
+            r'<stdin>:10:40: model: info: previous definition of state "Foo"\n'
+            r'<stdin>:10:80: model: error: duplicate state "Foo"\n'
+            r'<stdin>:10:40: model: info: previous definition of state "Foo"\n'
+            r'<stdin>:10:70: model: error: duplicate state "Bar"\n'
+            r'<stdin>:10:50: model: info: previous definition of state "Bar"'
+            r"$"
+        ),
     )
 
 
@@ -210,13 +285,14 @@ def test_unreachable_state() -> None:
             State(
                 name=ID("Unreachable"),
                 transitions=[Transition(target=ID("End"))],
+                location=Location((10, 20)),
             ),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex=r"^model: error: unreachable states Unreachable$",
+        regex=r'^<stdin>:10:20: model: error: unreachable state "Unreachable"$',
     )
 
 
@@ -227,17 +303,24 @@ def test_multiple_unreachable_states() -> None:
             State(
                 name=ID("Unreachable1"),
                 transitions=[Transition(target=ID("End"))],
+                location=Location((10, 20)),
             ),
             State(
                 name=ID("Unreachable2"),
                 transitions=[Transition(target=ID("End"))],
+                location=Location((10, 30)),
             ),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex=r"^model: error: unreachable states Unreachable1, Unreachable2$",
+        regex=(
+            r"^"
+            r'<stdin>:10:20: model: error: unreachable state "Unreachable1"\n'
+            r'<stdin>:10:30: model: error: unreachable state "Unreachable2"'
+            r"$"
+        ),
     )
 
 
@@ -248,13 +331,13 @@ def test_detached_state() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End")), Transition(target=ID("Detached"))],
             ),
-            State(name=ID("Detached")),
+            State(name=ID("Detached"), location=Location((10, 20))),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex=r"^model: error: detached states Detached$",
+        regex=r'^<stdin>:10:20: model: error: detached state "Detached"$',
     )
 
 
@@ -269,14 +352,19 @@ def test_multiple_detached_states() -> None:
                     Transition(target=ID("Detached2")),
                 ],
             ),
-            State(name=ID("Detached1")),
-            State(name=ID("Detached2")),
+            State(name=ID("Detached1"), location=Location((10, 20))),
+            State(name=ID("Detached2"), location=Location((10, 30))),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex=r"^model: error: detached states Detached1, Detached2$",
+        regex=(
+            r"^"
+            r'<stdin>:10:20: model: error: detached state "Detached1"\n'
+            r'<stdin>:10:30: model: error: detached state "Detached2"'
+            r"$"
+        ),
     )
 
 
@@ -288,7 +376,9 @@ def test_undeclared_variable() -> None:
                 transitions=[
                     Transition(
                         target=ID("End"),
-                        condition=expr.Equal(expr.Variable("Undefined"), expr.TRUE),
+                        condition=expr.Equal(
+                            expr.Variable("Undefined", location=Location((10, 20))), expr.TRUE
+                        ),
                     )
                 ],
             ),
@@ -297,7 +387,7 @@ def test_undeclared_variable() -> None:
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^model: error: undeclared variable "Undefined"$',
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
     )
 
 
@@ -315,10 +405,12 @@ def test_undefinded_type() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Defined", "Undefined_Type")],
+        declarations=[
+            decl.VariableDeclaration("Defined", "Undefined_Type", location=Location((10, 20)))
+        ],
         parameters=[],
         types=[],
-        regex=r'^model: error: undefined type "Undefined_Type"$',
+        regex=r'^<stdin>:10:20: model: error: undefined type "Undefined_Type"$',
     )
 
 
@@ -332,15 +424,18 @@ def test_declared_variable() -> None:
                 name=ID("Start"),
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("Defined"), expr.TRUE)
+                        target=ID("End"),
+                        condition=expr.Equal(
+                            expr.Variable("Defined"), expr.Variable("TLV::Msg_Data")
+                        ),
                     )
                 ],
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Defined", "Boolean")],
+        declarations=[decl.VariableDeclaration("Defined", "TLV::Tag")],
         parameters=[],
-        types=[BOOLEAN],
+        types=[TLV_TAG],
     )
 
 
@@ -381,7 +476,10 @@ def test_undeclared_local_variable() -> None:
                 transitions=[
                     Transition(
                         target=ID("End"),
-                        condition=expr.Equal(expr.Variable("Local"), expr.Variable("Global")),
+                        condition=expr.Equal(
+                            expr.Variable("Local", location=Location((10, 20))),
+                            expr.Variable("Global"),
+                        ),
                     )
                 ],
                 declarations=[],
@@ -391,7 +489,7 @@ def test_undeclared_local_variable() -> None:
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: undeclared variable "Local"$',
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Local"$',
     )
 
 
@@ -413,13 +511,13 @@ def test_declared_local_variable_valid() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
-        types=[BOOLEAN],
+        types=[TLV_MESSAGE],
     )
 
 
-def test_declared_local_variable_field() -> None:
+def test_declared_local_variable_message_field() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -431,7 +529,7 @@ def test_declared_local_variable_field() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(
-                            expr.Selected(expr.Variable("Global"), "Field"), expr.TRUE
+                            expr.Selected(expr.Variable("Global"), "Length"), expr.Number(1)
                         ),
                     )
                 ],
@@ -439,9 +537,9 @@ def test_declared_local_variable_field() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
-        types=[BOOLEAN],
+        types=[TLV_MESSAGE],
     )
 
 
@@ -452,14 +550,14 @@ def test_assignment_to_undeclared_variable() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Undefined", expr.FALSE)],
+                actions=[stmt.Assignment("Undefined", expr.FALSE, location=Location((10, 20)))],
             ),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^model: error: undeclared variable "Undefined"$',
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
     )
 
 
@@ -470,14 +568,18 @@ def test_assignment_from_undeclared_variable() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Global", expr.Variable("Undefined"))],
+                actions=[
+                    stmt.Assignment(
+                        "Global", expr.Variable("Undefined", location=Location((10, 20)))
+                    )
+                ],
             ),
             State(name=ID("End")),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: undeclared variable "Undefined"$',
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
     )
 
 
@@ -488,14 +590,35 @@ def test_erasure_of_undeclared_variable() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Erase("Undefined")],
+                actions=[stmt.Erase("Undefined", location=Location((10, 20)))],
             ),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^model: error: undeclared variable "Undefined"$',
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+    )
+
+
+def test_erasure_incompatible() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[stmt.Erase("Global", location=Location((10, 20)))],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        parameters=[],
+        types=[BOOLEAN],
+        regex=(
+            r"^<stdin>:10:20: model: error: expected array type\n"
+            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
+        ),
     )
 
 
@@ -506,14 +629,35 @@ def test_reset_of_undeclared_list() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Reset("Undefined")],
+                actions=[stmt.Reset("Undefined", location=Location((10, 20)))],
             ),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^model: error: undeclared variable "Undefined"$',
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+    )
+
+
+def test_reset_incompatible() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[stmt.Reset("Global", location=Location((10, 20)))],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        parameters=[],
+        types=[BOOLEAN],
+        regex=(
+            r"^<stdin>:10:20: model: error: expected array type or message type\n"
+            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
+        ),
     )
 
 
@@ -525,7 +669,12 @@ def test_call_to_undeclared_function() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment("Global", expr.Call("UndefSub", [expr.Variable("Global")]))
+                    stmt.Assignment(
+                        "Global",
+                        expr.Call(
+                            "UndefSub", [expr.Variable("Global")], location=Location((10, 20))
+                        ),
+                    )
                 ],
             ),
             State(name=ID("End")),
@@ -533,7 +682,7 @@ def test_call_to_undeclared_function() -> None:
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: undeclared variable "UndefSub"$',
+        regex=r'^<stdin>:10:20: model: error: undefined function "UndefSub"$',
     )
 
 
@@ -555,9 +704,10 @@ def test_call_to_builtin_read() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Global", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Some_Channel", readable=True, writable=False),
         ],
-        parameters=[],
         types=[BOOLEAN],
     )
 
@@ -583,9 +733,10 @@ def test_call_to_builtin_write() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Success", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Some_Channel", readable=False, writable=True),
         ],
-        parameters=[],
         types=[BOOLEAN],
     )
 
@@ -610,9 +761,10 @@ def test_call_to_builtin_call() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Some_Channel", readable=True, writable=True),
         ],
-        parameters=[],
         types=[BOOLEAN],
     )
 
@@ -638,9 +790,10 @@ def test_call_to_builtin_data_available() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Some_Channel", readable=True, writable=True),
         ],
-        parameters=[],
         types=[BOOLEAN],
     )
 
@@ -652,14 +805,16 @@ def test_call_to_builtin_read_without_arguments() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Result", expr.Call("Read", []))],
+                actions=[
+                    stmt.Assignment("Result", expr.Call("Read", [], location=Location((10, 20))))
+                ],
             ),
             State(name=ID("End")),
         ],
         declarations=[decl.VariableDeclaration("Result", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: no channel argument in call to "Read"$',
+        regex=r'^<stdin>:10:20: model: error: no channel argument in call to "Read"$',
     )
 
 
@@ -675,7 +830,12 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
                 ],
                 declarations=[],
                 actions=[
-                    stmt.Assignment("Result", expr.Call("Read", [expr.Variable("Undeclared")]))
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call(
+                            "Read", [expr.Variable("Undeclared", location=Location((10, 20)))]
+                        ),
+                    )
                 ],
             ),
             State(name=ID("End")),
@@ -685,8 +845,8 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
         types=[BOOLEAN],
         regex=(
             r"^"
-            r'model: error: undeclared channel "Undeclared" in call to "Read"\n'
-            r'model: error: undeclared variable "Undeclared"'
+            r'<stdin>:10:20: model: error: undefined variable "Undeclared"\n'
+            r'<stdin>:10:20: model: error: undeclared channel "Undeclared" in call to "Read"'
             r"$"
         ),
     )
@@ -699,14 +859,18 @@ def test_call_to_builtin_read_invalid_channel_type() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Result", expr.Call("Read", [expr.Number(0)]))],
+                actions=[
+                    stmt.Assignment(
+                        "Result", expr.Call("Read", [expr.Number(0)], location=Location((10, 20)))
+                    )
+                ],
             ),
             State(name=ID("End")),
         ],
         declarations=[decl.VariableDeclaration("Result", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: invalid channel ID type in call to "Read"$',
+        regex=r'^<stdin>:10:20: model: error: invalid channel ID type in call to "Read"$',
     )
 
 
@@ -717,14 +881,19 @@ def test_call_to_builtin_read_invalid_channel_id_type() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Result", expr.Call("Read", [expr.Variable("Result")]))],
+                actions=[
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call("Read", [expr.Variable("Result")], location=Location((10, 20))),
+                    )
+                ],
             ),
             State(name=ID("End")),
         ],
         declarations=[decl.VariableDeclaration("Result", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: invalid channel type in call to "Read"$',
+        regex=r'^<stdin>:10:20: model: error: invalid channel type in call to "Read"$',
     )
 
 
@@ -740,18 +909,26 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
                 ],
                 declarations=[],
                 actions=[
-                    stmt.Assignment("Result", expr.Call("Write", [expr.Variable("Out_Channel")]))
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call(
+                            "Write", [expr.Variable("Out_Channel")], location=Location((10, 20))
+                        ),
+                    )
                 ],
             ),
             State(name=ID("End")),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Out_Channel", readable=True, writable=False),
         ],
-        parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: channel "Out_Channel" not writable in call to "Write"$',
+        regex=(
+            r'^<stdin>:10:20: model: error: channel "Out_Channel" not writable in call to "Write"$'
+        ),
     )
 
 
@@ -765,7 +942,11 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
                 actions=[
                     stmt.Assignment(
                         "Result",
-                        expr.Call("Data_Available", [expr.Variable("Out_Channel")]),
+                        expr.Call(
+                            "Data_Available",
+                            [expr.Variable("Out_Channel")],
+                            location=Location((10, 20)),
+                        ),
                     )
                 ],
             ),
@@ -773,11 +954,15 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Out_Channel", readable=False, writable=True),
         ],
-        parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: channel "Out_Channel" not readable in call to "Data_Available"$',
+        regex=(
+            r'^<stdin>:10:20: model: error: channel "Out_Channel" not readable in call to'
+            r' "Data_Available"$'
+        ),
     )
 
 
@@ -788,17 +973,23 @@ def test_call_to_builtin_read_invalid_channel_mode() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Result", expr.Call("Read", [expr.Variable("Channel")]))],
+                actions=[
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call("Read", [expr.Variable("Channel")], location=Location((10, 20))),
+                    )
+                ],
             ),
             State(name=ID("End")),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Channel", readable=False, writable=True),
         ],
-        parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: channel "Channel" not readable in call to "Read"$',
+        regex=r'^<stdin>:10:20: model: error: channel "Channel" not readable in call to "Read"$',
     )
 
 
@@ -809,17 +1000,23 @@ def test_call_to_builtin_call_channel_not_readable() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Result", expr.Call("Call", [expr.Variable("Channel")]))],
+                actions=[
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call("Call", [expr.Variable("Channel")], location=Location((10, 20))),
+                    )
+                ],
             ),
             State(name=ID("End")),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Channel", readable=False, writable=True),
         ],
-        parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: channel "Channel" not readable in call to "Call"$',
+        regex=r'^<stdin>:10:20: model: error: channel "Channel" not readable in call to "Call"$',
     )
 
 
@@ -830,21 +1027,27 @@ def test_call_to_builtin_call_channel_not_writable() -> None:
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Result", expr.Call("Call", [expr.Variable("Channel")]))],
+                actions=[
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call("Call", [expr.Variable("Channel")], location=Location((10, 20))),
+                    )
+                ],
             ),
             State(name=ID("End")),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Channel", readable=True, writable=False),
         ],
-        parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: channel "Channel" not writable in call to "Call"$',
+        regex=r'^<stdin>:10:20: model: error: channel "Channel" not writable in call to "Call"$',
     )
 
 
-def test_subprogram_call() -> None:
+def test_function_call() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -860,14 +1063,15 @@ def test_subprogram_call() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
             decl.ChannelDeclaration("Channel", readable=True, writable=True),
         ],
-        parameters=[],
         types=[BOOLEAN],
     )
 
 
-def test_undeclared_variable_in_subprogram_call() -> None:
+def test_undeclared_variable_in_function_call() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -881,7 +1085,9 @@ def test_undeclared_variable_in_subprogram_call() -> None:
                 actions=[
                     stmt.Assignment(
                         "Result",
-                        expr.Call("SubProg", [expr.Variable("Undefined")]),
+                        expr.Call(
+                            "SubProg", [expr.Variable("Undefined", location=Location((10, 20)))]
+                        ),
                     )
                 ],
             ),
@@ -889,11 +1095,12 @@ def test_undeclared_variable_in_subprogram_call() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
-            decl.SubprogramDeclaration("SubProg", [], "Boolean"),
         ],
-        parameters=[],
+        parameters=[
+            decl.FunctionDeclaration("SubProg", [], "Boolean"),
+        ],
         types=[BOOLEAN],
-        regex=r'^model: error: undeclared variable "Undefined"$',
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
     )
 
 
@@ -907,13 +1114,14 @@ def test_function_declaration_is_no_builtin_read() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.SubprogramDeclaration("Read", [], "Boolean")],
-        parameters=[],
+        declarations=[],
+        parameters=[decl.FunctionDeclaration("Read", [], "Boolean", location=Location((10, 20)))],
         types=[BOOLEAN],
         regex=(
             r"^"
-            r'model: error: subprogram declaration shadows builtin subprogram "Read"\n'
-            r'model: error: unused subprogram "Read"'
+            r"<stdin>:10:20: model: error: function declaration shadows built-in function"
+            r' "Read"\n'
+            r'<stdin>:10:20: model: error: unused function "Read"'
             r"$"
         ),
     )
@@ -929,13 +1137,18 @@ def test_function_declaration_is_no_builtin_write() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.ChannelDeclaration("Write", readable=True, writable=False)],
-        parameters=[],
+        declarations=[],
+        parameters=[
+            decl.ChannelDeclaration(
+                "Write", readable=True, writable=False, location=Location((10, 20))
+            )
+        ],
         types=[],
         regex=(
             r"^"
-            r'model: error: channel declaration shadows builtin subprogram "Write"\n'
-            r'model: error: unused channel "Write"'
+            r"<stdin>:10:20: model: error: channel declaration shadows built-in function"
+            r' "Write"\n'
+            r'<stdin>:10:20: model: error: unused channel "Write"'
             r"$"
         ),
     )
@@ -951,13 +1164,14 @@ def test_function_declaration_is_no_builtin_call() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Call", "Boolean")],
+        declarations=[decl.VariableDeclaration("Call", "Boolean", location=Location((10, 20)))],
         parameters=[],
         types=[BOOLEAN],
         regex=(
             r"^"
-            r'model: error: variable declaration shadows builtin subprogram "Call"\n'
-            r'model: error: unused variable "Call"'
+            r"<stdin>:10:20: model: error: variable declaration shadows built-in function"
+            r' "Call"\n'
+            r'<stdin>:10:20: model: error: unused variable "Call"'
             r"$"
         ),
     )
@@ -974,15 +1188,21 @@ def test_function_declaration_is_no_builtin_data_available() -> None:
             State(name=ID("End")),
         ],
         declarations=[
-            decl.VariableDeclaration("Foo", "Boolean"),
-            decl.RenamingDeclaration("Data_Available", "Boolean", expr.Variable("Foo")),
+            decl.VariableDeclaration("Message", "TLV::Message"),
+            decl.RenamingDeclaration(
+                "Data_Available",
+                "Boolean",
+                expr.Selected(expr.Variable("Message"), "Tag"),
+                location=Location((10, 20)),
+            ),
         ],
         parameters=[],
-        types=[BOOLEAN],
+        types=[BOOLEAN, TLV_MESSAGE],
         regex=(
             r"^"
-            r'model: error: renames declaration shadows builtin subprogram "Data_Available"\n'
-            r'model: error: unused renames "Data_Available"'
+            r"<stdin>:10:20: model: error: renaming declaration shadows built-in function "
+            r'"Data_Available"\n'
+            r'<stdin>:10:20: model: error: unused renaming "Data_Available"'
             r"$"
         ),
     )
@@ -998,17 +1218,20 @@ def test_local_variable_shadows_global() -> None:
                         target=ID("End"), condition=expr.Equal(expr.Variable("Global"), expr.TRUE)
                     )
                 ],
-                declarations=[decl.VariableDeclaration("Global", "Boolean")],
+                declarations=[
+                    decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))
+                ],
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        declarations=[decl.VariableDeclaration("Global", "Boolean", location=Location((10, 30)))],
         parameters=[],
         types=[BOOLEAN],
         regex=(
             r"^"
-            r'model: error: local variable "Global" shadows global declaration in state Start\n'
-            r'model: error: unused variable "Global"'
+            r'<stdin>:10:20: model: error: local variable "Global" shadows previous declaration\n'
+            r'<stdin>:10:30: model: info: previous declaration of variable "Global"\n'
+            r'<stdin>:10:30: model: error: unused variable "Global"'
             r"$"
         ),
     )
@@ -1024,10 +1247,10 @@ def test_unused_global_variable() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        declarations=[decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: unused variable "Global"$',
+        regex=r'^<stdin>:10:20: model: error: unused variable "Global"$',
     )
 
 
@@ -1037,18 +1260,65 @@ def test_unused_local_variable() -> None:
             State(
                 name=ID("Start"),
                 transitions=[Transition(target=ID("End"))],
-                declarations=[decl.VariableDeclaration("Data", "Boolean")],
+                declarations=[
+                    decl.VariableDeclaration("Data", "Boolean", location=Location((10, 20)))
+                ],
             ),
             State(name=ID("End")),
         ],
         declarations=[],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: unused variable "Data" in state Start$',
+        regex=r'^<stdin>:10:20: model: error: unused variable "Data"$',
     )
 
 
-def test_renames_references_undefined_variable() -> None:
+def test_unused_channel() -> None:
+    assert_session_model_error(
+        states=[
+            State(name=ID("Start"), transitions=[Transition(target=ID("End"))], declarations=[]),
+            State(name=ID("End")),
+        ],
+        declarations=[],
+        parameters=[
+            decl.ChannelDeclaration("X", readable=True, writable=True, location=Location((10, 20))),
+        ],
+        types=[],
+        regex=r'^<stdin>:10:20: model: error: unused channel "X"$',
+    )
+
+
+def test_unused_private_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(name=ID("Start"), transitions=[Transition(target=ID("End"))], declarations=[]),
+            State(name=ID("End")),
+        ],
+        declarations=[],
+        parameters=[
+            decl.TypeDeclaration(Private("X", location=Location((10, 20)))),
+        ],
+        types=[],
+        regex=r'^<stdin>:10:20: model: error: unused type "X"$',
+    )
+
+
+def test_unused_function() -> None:
+    assert_session_model_error(
+        states=[
+            State(name=ID("Start"), transitions=[Transition(target=ID("End"))], declarations=[]),
+            State(name=ID("End")),
+        ],
+        declarations=[],
+        parameters=[
+            decl.FunctionDeclaration("X", [], "Boolean", location=Location((10, 20))),
+        ],
+        types=[BOOLEAN],
+        regex=r'^<stdin>:10:20: model: error: unused function "X"$',
+    )
+
+
+def test_renaming_references_undefined_variable() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1062,14 +1332,20 @@ def test_renames_references_undefined_variable() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.RenamingDeclaration("Ren", "Boolean", expr.Variable("Foo"))],
+        declarations=[
+            decl.RenamingDeclaration(
+                "Ren",
+                "Boolean",
+                expr.Selected(expr.Variable("Message", location=Location((10, 20))), "Field"),
+            ),
+        ],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: undeclared variable "Foo"$',
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Message"$',
     )
 
 
-def test_binding_as_subprogram_parameter() -> None:
+def test_binding_as_function_parameter() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -1094,9 +1370,10 @@ def test_binding_as_subprogram_parameter() -> None:
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
             decl.VariableDeclaration("Variable", "Boolean"),
-            decl.SubprogramDeclaration("SubProg", [], "Boolean"),
         ],
-        parameters=[],
+        parameters=[
+            decl.FunctionDeclaration("SubProg", [], "Boolean"),
+        ],
         types=[BOOLEAN],
     )
 
@@ -1115,20 +1392,22 @@ def test_for_all() -> None:
                         condition=expr.ForAllIn(
                             "E",
                             expr.Variable("List"),
-                            expr.Equal(expr.Selected(expr.Variable("E"), "Tag"), expr.Number(42)),
+                            expr.Greater(
+                                expr.Selected(expr.Variable("E"), "Length"), expr.Number(0)
+                            ),
                         ),
                     )
                 ],
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("List", "Boolean")],
+        declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
-        types=[BOOLEAN],
+        types=[BOOLEAN, TLV_MESSAGES],
     )
 
 
-def test_append_list_attribute() -> None:
+def test_append() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -1143,15 +1422,38 @@ def test_append_list_attribute() -> None:
             State(name=ID("End")),
         ],
         declarations=[
-            decl.VariableDeclaration("List", "Boolean"),
-            decl.VariableDeclaration("Element", "Boolean"),
+            decl.VariableDeclaration("List", "TLV::Messages"),
+            decl.VariableDeclaration("Element", "TLV::Message"),
         ],
         parameters=[],
-        types=[BOOLEAN],
+        types=[BOOLEAN, TLV_MESSAGE, TLV_MESSAGES],
     )
 
 
-def test_extend_list_attribute() -> None:
+def test_append_incompatible() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Append("Global", expr.Variable("Global"), location=Location((10, 20)))
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        parameters=[],
+        types=[BOOLEAN],
+        regex=(
+            r"^<stdin>:10:20: model: error: expected array type\n"
+            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
+        ),
+    )
+
+
+def test_extend() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -1166,15 +1468,38 @@ def test_extend_list_attribute() -> None:
             State(name=ID("End")),
         ],
         declarations=[
-            decl.VariableDeclaration("List", "Boolean"),
-            decl.VariableDeclaration("Element", "Boolean"),
+            decl.VariableDeclaration("List", "TLV::Messages"),
+            decl.VariableDeclaration("Element", "TLV::Messages"),
         ],
         parameters=[],
-        types=[BOOLEAN],
+        types=[BOOLEAN, TLV_MESSAGES],
     )
 
 
-def test_aggregate_with_undefined_parameter() -> None:
+def test_extend_incompatible() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Extend("Global", expr.Variable("Global"), location=Location((10, 20)))
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        parameters=[],
+        types=[BOOLEAN],
+        regex=(
+            r"^<stdin>:10:20: model: error: expected array type\n"
+            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
+        ),
+    )
+
+
+def test_message_aggregate_with_undefined_parameter() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1185,18 +1510,50 @@ def test_aggregate_with_undefined_parameter() -> None:
                     stmt.Assignment(
                         "Data",
                         expr.MessageAggregate(
-                            "Boolean",
-                            {"Foo": expr.Variable("Data"), "Bar": expr.Variable("Undef")},
+                            "TLV::Message",
+                            {"Tag": expr.Variable("Undef", location=Location((10, 20)))},
                         ),
                     )
                 ],
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Data", "Boolean")],
+        declarations=[decl.VariableDeclaration("Data", "TLV::Message")],
+        parameters=[],
+        types=[BOOLEAN, TLV_MESSAGE],
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Undef"$',
+    )
+
+
+def test_message_aggregate_with_undefined_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Assignment(
+                        "Data",
+                        expr.MessageAggregate(
+                            "P::Undefined",
+                            {"Flag": expr.TRUE},
+                            location=Location((10, 30)),
+                        ),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Data", "P::Undefined", location=Location((10, 20)))
+        ],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^model: error: undeclared variable "Undef"$',
+        regex=(
+            r'^<stdin>:10:20: model: error: undefined type "P::Undefined"\n'
+            r'<stdin>:10:30: model: error: undefined message "P::Undefined"$'
+        ),
     )
 
 
@@ -1211,25 +1568,30 @@ def test_comprehension() -> None:
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
-                        "Input",
+                        "Result",
                         expr.Comprehension(
-                            "K",
-                            expr.Variable("Input"),
-                            expr.Selected(expr.Variable("K"), "Data"),
-                            expr.Equal(expr.Selected(expr.Variable("K"), "Valid"), expr.TRUE),
+                            "E",
+                            expr.Variable("List"),
+                            expr.Selected(expr.Variable("E"), "Tag"),
+                            expr.Greater(
+                                expr.Selected(expr.Variable("E"), "Length"), expr.Number(0)
+                            ),
                         ),
                     )
                 ],
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Input", "Boolean")],
+        declarations=[
+            decl.VariableDeclaration("List", "TLV::Messages"),
+            decl.VariableDeclaration("Result", "TLV::Tags"),
+        ],
         parameters=[],
-        types=[BOOLEAN],
+        types=[BOOLEAN, TLV_MESSAGES, TLV_TAGS],
     )
 
 
-def test_assignment_opaque_subprogram_undef_parameter() -> None:
+def test_assignment_opaque_function_undef_parameter() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1239,7 +1601,9 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
                     stmt.Assignment(
                         "Data",
                         expr.Opaque(
-                            expr.Call("Sub", [expr.Variable("UndefData")]),
+                            expr.Call(
+                                "Sub", [expr.Variable("UndefData", location=Location((10, 20)))]
+                            ),
                         ),
                     )
                 ],
@@ -1247,18 +1611,17 @@ def test_assignment_opaque_subprogram_undef_parameter() -> None:
             State(name=ID("End")),
         ],
         declarations=[
-            decl.VariableDeclaration("Data", "Boolean"),
-            decl.SubprogramDeclaration(
-                "Sub", [decl.Argument("Param", "Param_Type")], "Result_Type"
-            ),
+            decl.VariableDeclaration("Data", "Opaque"),
         ],
-        parameters=[],
-        types=[BOOLEAN],
-        regex=r'^model: error: undeclared variable "UndefData"$',
+        parameters=[
+            decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
+        ],
+        types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
+        regex=r'^<stdin>:10:20: model: error: undefined variable "UndefData"$',
     )
 
 
-def test_assignment_opaque_subprogram_result() -> None:
+def test_assignment_opaque_function_result() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -1279,17 +1642,16 @@ def test_assignment_opaque_subprogram_result() -> None:
             State(name=ID("End")),
         ],
         declarations=[
-            decl.VariableDeclaration("Data", "Boolean"),
-            decl.SubprogramDeclaration(
-                "Sub", [decl.Argument("Param", "Param_Type")], "Result_Type"
-            ),
+            decl.VariableDeclaration("Data", "Opaque"),
         ],
-        parameters=[],
-        types=[BOOLEAN],
+        parameters=[
+            decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
+        ],
+        types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
     )
 
 
-def test_assignment_opaque_subprogram_binding() -> None:
+def test_assignment_opaque_function_binding() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -1311,17 +1673,104 @@ def test_assignment_opaque_subprogram_binding() -> None:
             State(name=ID("End")),
         ],
         declarations=[
-            decl.VariableDeclaration("Data", "Boolean"),
-            decl.SubprogramDeclaration(
-                "Sub", [decl.Argument("Param", "Param_Type")], "Result_Type"
-            ),
+            decl.VariableDeclaration("Data", "Opaque"),
         ],
-        parameters=[],
-        types=[BOOLEAN],
+        parameters=[
+            decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
+        ],
+        types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
     )
 
 
-def test_private_declaration_is_no_builtin_write() -> None:
+def test_assignment_conversion() -> None:
+    Session(
+        identifier="P::S",
+        initial=ID("Start"),
+        final=ID("End"),
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                actions=[
+                    stmt.Assignment(
+                        "Converted",
+                        expr.Conversion(
+                            "TLV::Message",
+                            expr.Selected(expr.Variable("Message"), "Value"),
+                        ),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+            decl.VariableDeclaration("Converted", "TLV::Message"),
+        ],
+        parameters=[],
+        types=[TLV_MESSAGE],
+    )
+
+
+def test_assignment_conversion_undefined() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                actions=[
+                    stmt.Assignment(
+                        "Converted",
+                        expr.Conversion(
+                            "P::Undef",
+                            expr.Selected(expr.Variable("Message"), "Value"),
+                            location=Location((10, 30)),
+                        ),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+            decl.VariableDeclaration("Converted", "P::Undef", location=Location((10, 20))),
+        ],
+        parameters=[],
+        types=[TLV_MESSAGE],
+        regex=(
+            r'^<stdin>:10:20: model: error: undefined type "P::Undef"\n'
+            r'<stdin>:10:30: model: error: undefined type "P::Undef"$'
+        ),
+    )
+
+
+def test_private_type() -> None:
+    Session(
+        identifier=ID("P::S"),
+        initial=ID("Start"),
+        final=ID("End"),
+        states=[
+            State(
+                name=ID("Start"),
+                declarations=[
+                    decl.VariableDeclaration("X", "P::T"),
+                ],
+                transitions=[
+                    Transition(
+                        target=ID("End"),
+                        condition=expr.Equal(expr.Variable("X"), expr.Variable("X")),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[],
+        parameters=[decl.TypeDeclaration(Private("P::T"))],
+        types=[],
+    )
+
+
+def test_private_type_is_no_builtin_write() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1331,11 +1780,198 @@ def test_private_declaration_is_no_builtin_write() -> None:
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.PrivateDeclaration("Write")],
-        parameters=[],
+        declarations=[],
+        parameters=[decl.TypeDeclaration(Private("Write", location=Location((10, 20))))],
         types=[],
         regex=(
-            r'^model: error: private declaration shadows builtin subprogram "Write"\n'
-            r'model: error: unused private "Write"$'
+            r"^<stdin>:10:20: model: error: type declaration shadows built-in function"
+            r' "Write"\n'
+            r'<stdin>:10:20: model: error: unused type "Write"$'
+        ),
+    )
+
+
+def test_private_type_shadows_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[
+                    Transition(
+                        target=ID("End"),
+                        condition=expr.Equal(expr.Variable("X"), expr.Variable("Y")),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("X", "Boolean"),
+            decl.VariableDeclaration("Y", "Boolean"),
+        ],
+        parameters=[
+            decl.TypeDeclaration(Private("Boolean", location=Location((10, 20)))),
+        ],
+        types=[BOOLEAN],
+        regex=r'^<stdin>:10:20: model: error: type "Boolean" shadows type$',
+    )
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        [decl.FunctionDeclaration("X", [], "Undefined", location=Location((10, 20)))],
+        [
+            decl.FunctionDeclaration(
+                "X", [decl.Argument("Y", "Undefined")], "Boolean", location=Location((10, 20))
+            )
+        ],
+    ],
+)
+def test_undefined_type_in_parameters(parameters: Sequence[decl.Declaration]) -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[
+                    Transition(target=ID("End"), condition=expr.Equal(expr.Call("X"), expr.TRUE))
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[],
+        parameters=parameters,
+        types=[BOOLEAN],
+        regex=r'^<stdin>:10:20: model: error: undefined type "Undefined"$',
+    )
+
+
+@pytest.mark.parametrize(
+    "declarations",
+    [
+        [decl.VariableDeclaration("X", "Undefined", location=Location((10, 20)))],
+        [
+            decl.VariableDeclaration("Message", "TLV::Message"),
+            decl.RenamingDeclaration(
+                "X",
+                "Undefined",
+                expr.Selected(expr.Variable("Message"), "Tag"),
+                location=Location((10, 20)),
+            ),
+        ],
+    ],
+)
+def test_undefined_type_in_declarations(declarations: Sequence[decl.Declaration]) -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[
+                    Transition(
+                        target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=declarations,
+        parameters=[],
+        types=[TLV_MESSAGE],
+        regex=r'^<stdin>:10:20: model: error: undefined type "Undefined"$',
+    )
+
+
+@pytest.mark.parametrize(
+    "declarations",
+    [
+        [decl.VariableDeclaration("X", "Undefined", location=Location((10, 20)))],
+        [
+            decl.VariableDeclaration("Message", "TLV::Message"),
+            decl.RenamingDeclaration(
+                "X",
+                "Undefined",
+                expr.Selected(expr.Variable("Message"), "Tag"),
+                location=Location((10, 20)),
+            ),
+        ],
+    ],
+)
+def test_undefined_type_in_local_declarations(declarations: Sequence[decl.Declaration]) -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[
+                    Transition(
+                        target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                    )
+                ],
+                declarations=declarations,
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[],
+        parameters=[],
+        types=[TLV_MESSAGE],
+        regex=r'^<stdin>:10:20: model: error: undefined type "Undefined"$',
+    )
+
+
+def test_type_error_in_variable_declaration() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[
+                    Transition(
+                        target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                    )
+                ],
+                declarations=[],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("X", "Boolean", expr.Number(1, location=Location((10, 20))))
+        ],
+        parameters=[],
+        types=[BOOLEAN],
+        regex=(
+            r"^"
+            r'<stdin>:10:20: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r"<stdin>:10:20: model: info: found type universal integer \(1\)"
+            r"$"
+        ),
+    )
+
+
+def test_type_error_in_renaming_declaration() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[
+                    Transition(
+                        target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                    )
+                ],
+                declarations=[],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.RenamingDeclaration(
+                "X",
+                "Boolean",
+                expr.Selected(expr.Number(1, location=Location((10, 20))), "Field"),
+            ),
+        ],
+        parameters=[],
+        types=[BOOLEAN],
+        regex=(
+            r"^"
+            r"<stdin>:10:20: model: error: expected message type\n"
+            r"<stdin>:10:20: model: info: found type universal integer \(1\)"
+            r"$"
         ),
     )

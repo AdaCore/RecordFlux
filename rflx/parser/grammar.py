@@ -80,6 +80,7 @@ from rflx.identifier import ID
 from rflx.model import (
     Enumeration,
     ModularInteger,
+    Private,
     RangeInteger,
     State,
     Transition,
@@ -212,7 +213,7 @@ def expression(restricted: bool = False) -> Token:
 
     array_aggregate = (
         Literal("[").setParseAction(lambda s, l, t: l)
-        + numeric_literal()
+        + Optional(numeric_literal())
         + (comma() - numeric_literal()) * (0,)
         + Literal("]").setParseAction(lambda s, l, t: l)
     )
@@ -508,7 +509,7 @@ def private_type_declaration() -> Token:
         + unqualified_identifier()
         + Keyword("is").suppress()
         + Keyword("private").suppress()
-    ).setParseAction(parse_private_declaration)
+    ).setParseAction(parse_private_type_declaration)
 
 
 def channel_declaration() -> Token:
@@ -967,11 +968,11 @@ def parse_refinement(string: str, location: int, tokens: ParseResults) -> Refine
 
 
 @fatalexceptions
-def parse_private_declaration(
+def parse_private_type_declaration(
     string: str, location: int, tokens: ParseResults
-) -> decl.PrivateDeclaration:
+) -> decl.TypeDeclaration:
     tokens, locn = evaluate_located_expression(string, tokens)
-    return decl.PrivateDeclaration(tokens[0], location=locn)
+    return decl.TypeDeclaration(Private(tokens[0], location=locn))
 
 
 @fatalexceptions
@@ -987,9 +988,9 @@ def parse_channel_declaration(
 @fatalexceptions
 def parse_formal_function_declaration(
     string: str, location: int, tokens: ParseResults
-) -> decl.SubprogramDeclaration:
+) -> decl.FunctionDeclaration:
     tokens, locn = evaluate_located_expression(string, tokens)
-    return decl.SubprogramDeclaration(tokens[0], tokens[1:-1], tokens[-1], location=locn)
+    return decl.FunctionDeclaration(tokens[0], tokens[1:-1], tokens[-1], location=locn)
 
 
 @fatalexceptions
