@@ -562,13 +562,9 @@ def renaming_declaration() -> Token:
 
 
 def assignment_statement() -> Token:
-    erase = locatedExpr(unqualified_identifier() + Keyword(":=").suppress() + Keyword("null"))
-    erase.setParseAction(parse_erase)
-
-    assignment = locatedExpr(unqualified_identifier() + Keyword(":=").suppress() + expression())
-    assignment.setParseAction(parse_assignment)
-
-    return erase | assignment
+    return locatedExpr(
+        unqualified_identifier() + Keyword(":=").suppress() + expression()
+    ).setParseAction(parse_assignment)
 
 
 def attribute_statement() -> Token:
@@ -1011,12 +1007,6 @@ def parse_renaming_declaration(
     return decl.RenamingDeclaration(
         tokens[0], tokens[1], Selected(Variable(tokens[2]), tokens[3]), location=locn
     )
-
-
-@fatalexceptions
-def parse_erase(string: str, location: int, tokens: ParseResults) -> stmt.Erase:
-    tokens, locn = evaluate_located_expression(string, tokens)
-    return stmt.Erase(tokens[0], location=locn)
 
 
 @fatalexceptions

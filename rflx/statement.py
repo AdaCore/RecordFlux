@@ -45,21 +45,6 @@ class Assignment(Statement):
         return [Variable(self.identifier), *self.expression.variables()]
 
 
-class Erase(Statement):
-    def __str__(self) -> str:
-        return f"{self.identifier} := null"
-
-    def check_type(
-        self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
-    ) -> RecordFluxError:
-        return rty.check_type_instance(
-            statement_type, rty.Array, self.location, f'variable "{self.identifier}"'
-        )
-
-    def variables(self) -> Sequence[Variable]:
-        return [Variable(self.identifier)]
-
-
 class AttributeStatement(Statement):
     def __init__(
         self,
