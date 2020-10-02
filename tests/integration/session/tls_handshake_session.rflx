@@ -108,8 +108,8 @@ package TLS_Handshake_Session is
    begin
       state START is
       begin
-         Connection := Read (Connection_Channel);
-         Configuration := Read (Configuration_Channel);
+         Connection_Channel'Read (Connection);
+         Configuration_Channel'Read (Configuration);
       transition
          then ERROR_INTERNAL_ERROR
             if Connection'Valid = False
@@ -120,7 +120,8 @@ package TLS_Handshake_Session is
 
       state SERVER_PREFERRED_GROUPS is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS, Length => 0, Payload => []));
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS, Length => 0, Payload => []));
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -220,7 +221,8 @@ package TLS_Handshake_Session is
 
       state START_PSK is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -247,7 +249,8 @@ package TLS_Handshake_Session is
 
       state START_GET_RANDOM is
       begin
-         Random_Message := Call (RNG_Channel, GreenTLS::RNG_Message'(Tag => GreenTLS::RNG_REQUEST, Length => 32));
+         RNG_Channel'Write (GreenTLS::RNG_Message'(Tag => GreenTLS::RNG_REQUEST, Length => 32));
+         RNG_Channel'Read (Random_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Random_Message'Valid = False
@@ -280,7 +283,7 @@ package TLS_Handshake_Session is
 
       state START_SEND is
       begin
-         Success := Write (Record_Data_Channel, Client_Hello_Handshake_Message);
+         Record_Data_Channel'Write (Client_Hello_Handshake_Message);
          Client_Hello_1_Hash := Empty_Hash;
          Client_Hello_1_Hash := Update_Hash (Client_Hello_1_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
          Transcript_Hash := Empty_Hash;
@@ -305,7 +308,7 @@ package TLS_Handshake_Session is
          Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Early_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
          Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Early_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
          Keystore_Message'Reset;
-         Success := Write (Record_Data_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_CLIENT, Length => KU'Length, Data => KU)
+         Record_Data_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_CLIENT, Length => KU'Length, Data => KU)
             where KU = GreenTLS::Key_Update_Message'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
          Client_Early_Traffic_Secret'Reset;
          Client_Key'Reset;
@@ -318,7 +321,7 @@ package TLS_Handshake_Session is
 
       state WAIT_SH is
       begin
-         Server_Hello_Handshake_Message := Read (Record_Data_Channel);
+         Record_Data_Channel'Read (Server_Hello_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Server_Hello_Handshake_Message'Opaque);
       transition
          then ERROR_DECODE_ERROR
@@ -381,8 +384,9 @@ package TLS_Handshake_Session is
       state WAIT_SH_EXTENSIONS_PSK_REQUEST is
       begin
          --  FIXME: use Identity_Index to determine Selected_Identity
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_PSKS, Length => Selected_Identity'Length, Payload => Selected_Identity)
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_PSKS, Length => Selected_Identity'Length, Payload => Selected_Identity)
             where Selected_Identity = []);
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -487,7 +491,8 @@ package TLS_Handshake_Session is
 
       state WAIT_SH_PREPARE_CH_PSK is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -556,7 +561,7 @@ package TLS_Handshake_Session is
          Client_Hello_Handshake_Message'Reset;
          Client_Hello_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CLIENT_HELLO, Length => CH'Length, Payload => CH)
             where CH = TLS_Handshake::Client_Hello'(Legacy_Version => TLS_Handshake::TLS_1_2, Random => Random.Data, Legacy_Session_ID_Length => 0, Legacy_Session_ID => [], Cipher_Suites_Length => Configuration.Cipher_Suites'Length, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Legacy_Compression_Methods => [], Extensions_Length => Extensions_List'Length, Extensions => Extensions_List);
-         Success := Write (Record_Data_Channel, Client_Hello_Handshake_Message);
+         Record_Data_Channel'Write (Client_Hello_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Hello_Handshake_Message'Opaque);
       transition
          then ERROR_INTERNAL_ERROR
@@ -587,9 +592,9 @@ package TLS_Handshake_Session is
          Server_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Handshake_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
          Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Handshake_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
          Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Handshake_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
-         Success_Client := Write (Record_Control_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Key_Update_Message'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
-         Success_Server := Write (Record_Control_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Key_Update_Message'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
          Server_Handshake_Traffic_Secret'Reset;
          Server_Key'Reset;
@@ -607,7 +612,7 @@ package TLS_Handshake_Session is
 
       state WAIT_EE is
       begin
-         Encrypted_Extensions_Handshake_Message := Read (Record_Data_Channel);
+         Record_Data_Channel'Read (Encrypted_Extensions_Handshake_Message);
       transition
          then ERROR_DECODE_ERROR
             if Encrypted_Extensions_Handshake_Message'Valid = False
@@ -698,7 +703,7 @@ package TLS_Handshake_Session is
          Server_Heartbeat_Mode : TLS_Handshake::Heartbeat_Mode;
       begin
          Server_Heartbeat_Mode := TLS_Handshake::Heartbeat ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_HEARTBEAT]'Head.Data).Mode;
-         Success := Write (Record_Control_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::HEARTBEAT_MODE, Length => Data'Length, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::HEARTBEAT_MODE, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Heartbeat_Control_Message'(Local => Configuration.Heartbeat_Mode, Remote => Server_Heartbeat_Mode));
          Heartbeat_Received := True;
       transition
@@ -713,7 +718,7 @@ package TLS_Handshake_Session is
       begin
          Protocols := TLS_Handshake::Protocol_Name_List ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION]'Head.Data).Protocol_Name_List;
          Protocol := Protocols'Head;
-         Success := Write (Application_Control_Channel, GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_PROTOCOL, Length => Data'Length, Data => Data)
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_PROTOCOL, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Application_Protocol_Message'(Protocol_Length => Protocol.Length, Protocol_Name => Protocol.Name));
          Application_Layer_Protocol_Negotiation_Received := True;
       transition
@@ -752,7 +757,7 @@ package TLS_Handshake_Session is
 
       state WAIT_EE_NO_EARLY_DATA is
       begin
-         Success := Write (Application_Control_Channel, GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_NO_EARLY_DATA, Length => Data'Length, Data => Data)
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_NO_EARLY_DATA, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Application_No_Early_Data_Message'(null message));
       transition
          then ERROR_INTERNAL_ERROR
@@ -770,7 +775,7 @@ package TLS_Handshake_Session is
 
       state WAIT_CERT_CR is
       begin
-         CCR_Handshake_Message := Read (Record_Data_Channel);
+         Record_Data_Channel'Read (CCR_Handshake_Message);
          Certificate_Authorities := TLS_Handshake::Certificate_Authorities'(Length => 0, Authorities => []);
          OID_Filters := TLS_Handshake::OID_Filters'(Length => 0, Filters => []);
          Signature_Algorithms := TLS_Handshake::Signature_Algorithms'(Length => 0, Algorithms => []);
@@ -867,7 +872,7 @@ package TLS_Handshake_Session is
 
       state WAIT_CERT is
       begin
-         CCR_Handshake_Message := Read (Record_Data_Channel);
+         Record_Data_Channel'Read (CCR_Handshake_Message);
       transition
          then ERROR_DECODE_ERROR
             if CCR_Handshake_Message'Valid = False
@@ -904,7 +909,7 @@ package TLS_Handshake_Session is
 
       state WAIT_CV is
       begin
-         Certificate_Verify_Handshake_Message := Read (Record_Data_Channel);
+         Record_Data_Channel'Read (Certificate_Verify_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Certificate_Verify_Handshake_Message'Opaque);
       transition
          then ERROR_DECODE_ERROR
@@ -934,7 +939,7 @@ package TLS_Handshake_Session is
          Master_Secret : GreenTLS::Content;
       begin
          Hash_Length := Get_Hash_Length (Server_Hello_Message.Cipher_Suite);
-         Finished_Handshake_Message := Read (Record_Data_Channel);
+         Record_Data_Channel'Read (Finished_Handshake_Message);
          Finished_Key := HKDF_Expand_Label (Client_Handshake_Traffic_Secret, "finished", Get_Hash (Empty_Hash), Hash_Length);
          Client_Handshake_Traffic_Secret'Reset;
          Verify_Data := HMAC (Server_Hello_Message.Cipher_Suite, Finished_Key, Get_Hash (Transcript_Hash));
@@ -957,7 +962,7 @@ package TLS_Handshake_Session is
 
       state SEND_END_OF_EARLY_DATA is
       begin
-         Success := Write (Record_Data_Channel, TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_END_OF_EARLY_DATA, Length => 0, Payload => []));
+         Record_Data_Channel'Write (TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_END_OF_EARLY_DATA, Length => 0, Payload => []));
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -974,8 +979,9 @@ package TLS_Handshake_Session is
 
       state QUERY_CERTIFICATES is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_CERTIFICATES, Length => Query'Length, Payload => Query)
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_CERTIFICATES, Length => Query'Length, Payload => Query)
             where Query = GreenTLS::Certificate_Query'(Certificate_Authorities_Length => Certificate_Authorities.Length, Certificate_Authorities_Authorities => Certificate_Authorities.Authorities, OID_Filters_Length => OID_Filters.Length, OID_Filters_Filters => OID_Filters.Filters, Signature_Algorithms_Length => Signature_Algorithms.Length, Signature_Algorithms_Algorithms => Signature_Algorithms.Algorithms, Signature_Algorithms_Cert_Length => Signature_Algorithms_Cert.Length, Signature_Algorithms_Cert_Algorithms => Signature_Algorithms_Cert.Algorithms));
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -990,8 +996,8 @@ package TLS_Handshake_Session is
       begin
          Client_Certificate_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
             where Certificate = TLS_Handshake::Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => C.Length, Certificate_List => C.Certificate_List)
-                     where C = GreenTLS::Certificate (Keystore_Message.Payload);
-         Success := Write (Record_Data_Channel, Client_Certificate_Handshake_Message);
+               where C = GreenTLS::Certificate (Keystore_Message.Payload);
+         Record_Data_Channel'Write (Client_Certificate_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
       transition
          then ERROR_INTERNAL_ERROR
@@ -1004,7 +1010,7 @@ package TLS_Handshake_Session is
       begin
          Client_Certificate_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
             where Certificate = TLS_Handshake::Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => 0, Certificate_List => []);
-         Success := Write (Record_Data_Channel, Client_Certificate_Handshake_Message);
+         Record_Data_Channel'Write (Client_Certificate_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
       transition
          then ERROR_INTERNAL_ERROR
@@ -1014,9 +1020,10 @@ package TLS_Handshake_Session is
 
       state QUERY_SIGNATURE is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_SIGNATURE, Length => Query'Length, Payload => Query)
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_SIGNATURE, Length => Query'Length, Payload => Query)
             where Query = GreenTLS::Signature_Query'(ID => GreenTLS::Certificate (Keystore_Message.Payload).ID, Length => Hash'Length, Data => Hash)
-                     where Hash = Get_Hash (Transcript_Hash).Data);
+               where Hash = Get_Hash (Transcript_Hash).Data);
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -1029,7 +1036,7 @@ package TLS_Handshake_Session is
       begin
          Client_Certificate_Verify_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CERTIFICATE_VERIFY, Length => Certificate_Verify'Length, Payload => Certificate_Verify)
             where Certificate_Verify = TLS_Handshake::Certificate_Verify (Keystore_Message.Payload);
-         Success := Write (Record_Data_Channel, Client_Certificate_Verify_Handshake_Message);
+         Record_Data_Channel'Write (Client_Certificate_Verify_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Verify_Handshake_Message'Opaque);
       transition
          then ERROR_INTERNAL_ERROR
@@ -1044,7 +1051,7 @@ package TLS_Handshake_Session is
          Finished_Key'Reset;
          Finished_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_FINISHED, Length => Finished'Length, Payload => Finished)
             where Finished = TLS_Handshake::Finished'(Verify_Data => Verify_Data.Data);
-         Success := Write (Record_Data_Channel, Finished_Handshake_Message);
+         Record_Data_Channel'Write (Finished_Handshake_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -1064,9 +1071,9 @@ package TLS_Handshake_Session is
          Server_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
          Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
          Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
-         Success_Client := Write (Record_Control_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Key_Update_Message'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
-         Success_Server := Write (Record_Control_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Key_Update_Message'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
          Server_Application_Traffic_Secret'Reset;
       transition
@@ -1078,7 +1085,7 @@ package TLS_Handshake_Session is
 
       state CONNECTED is
       begin
-         Post_Handshake_Handshake_Message := Read (Record_Data_Channel);
+         Record_Data_Channel'Read (Post_Handshake_Handshake_Message);
       transition
          then ERROR_DECODE_ERROR
             if Post_Handshake_Handshake_Message'Valid = False
@@ -1106,8 +1113,9 @@ package TLS_Handshake_Session is
          PSK : GreenTLS::Content;
       begin
          PSK := HKDF_Expand_Label (GreenTLS::Content'(Data => Resumption_Master_Secret.Data), "resumption", GreenTLS::Content'(Data => New_Session_Ticket_Message.Ticket_Nonce), Hash_Length);
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_NEW_SESSION_TICKET, Length => NST'Length, Payload => NST)
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_NEW_SESSION_TICKET, Length => NST'Length, Payload => NST)
             where NST = GreenTLS::New_Session_Ticket'(Connection_Name_Length => Connection.Name_Length, Connection_Name => Connection.Name, Connection_Port => Connection.Port, Session_Ticket_Lifetime => New_Session_Ticket_Message.Ticket_Lifetime, Session_Ticket_Age_Add => New_Session_Ticket_Message.Ticket_Age_Add, Session_Ticket_Nonce_Length => New_Session_Ticket_Message.Ticket_Nonce_Length, Session_Ticket_Nonce => New_Session_Ticket_Message.Ticket_Nonce, Session_Ticket_Length => New_Session_Ticket_Message.Ticket_Length, Session_Ticket => New_Session_Ticket_Message.Ticket, Session_Extensions_Length => New_Session_Ticket_Message.Extensions_Length, Session_Extensions => New_Session_Ticket_Message.Extensions, PSK_Length => PSK'Length, PSK => PSK.Data));
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -1202,8 +1210,9 @@ package TLS_Handshake_Session is
 
       state CONNECTED_PHA_QUERY_CERTIFICATES is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_CERTIFICATES, Length => Query'Length, Payload => Query)
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_CERTIFICATES, Length => Query'Length, Payload => Query)
             where Query = GreenTLS::Certificate_Query'(Certificate_Authorities_Length => Certificate_Authorities.Length, Certificate_Authorities_Authorities => Certificate_Authorities.Authorities, OID_Filters_Length => OID_Filters.Length, OID_Filters_Filters => OID_Filters.Filters, Signature_Algorithms_Length => Signature_Algorithms.Length, Signature_Algorithms_Algorithms => Signature_Algorithms.Algorithms, Signature_Algorithms_Cert_Length => Signature_Algorithms_Cert.Length, Signature_Algorithms_Cert_Algorithms => Signature_Algorithms_Cert.Algorithms));
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -1219,7 +1228,7 @@ package TLS_Handshake_Session is
          Client_Certificate_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
             where Certificate = TLS_Handshake::Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => C.Length, Certificate_List => C.Certificate_List)
                      where C = GreenTLS::Certificate (Keystore_Message.Payload);
-         Success := Write (Record_Data_Channel, Client_Certificate_Handshake_Message);
+         Record_Data_Channel'Write (Client_Certificate_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
       transition
          then ERROR_INTERNAL_ERROR
@@ -1232,7 +1241,7 @@ package TLS_Handshake_Session is
       begin
          Client_Certificate_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CERTIFICATE, Length => Certificate'Length, Payload => Certificate)
             where Certificate = TLS_Handshake::Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => 0, Certificate_List => []);
-         Success := Write (Record_Data_Channel, Client_Certificate_Handshake_Message);
+         Record_Data_Channel'Write (Client_Certificate_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
       transition
          then ERROR_INTERNAL_ERROR
@@ -1242,9 +1251,10 @@ package TLS_Handshake_Session is
 
       state CONNECTED_PHA_QUERY_SIGNATURE is
       begin
-         Keystore_Message := Call (Keystore_Channel, GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_SIGNATURE, Length => Query'Length, Payload => Query)
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_SIGNATURE, Length => Query'Length, Payload => Query)
             where Query = GreenTLS::Signature_Query'(ID => GreenTLS::Certificate (Keystore_Message.Payload).ID, Length => Hash'Length, Data => Hash)
                      where Hash = Get_Hash (Transcript_Hash).Data);
+         Keystore_Channel'Read (Keystore_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Keystore_Message'Valid = False
@@ -1257,7 +1267,7 @@ package TLS_Handshake_Session is
       begin
          Client_Certificate_Verify_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_CERTIFICATE_VERIFY, Length => Certificate_Verify'Length, Payload => Certificate_Verify)
             where Certificate_Verify = TLS_Handshake::Certificate_Verify (Keystore_Message.Payload);
-         Success := Write (Record_Data_Channel, Client_Certificate_Verify_Handshake_Message);
+         Record_Data_Channel'Write (Client_Certificate_Verify_Handshake_Message);
          Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Verify_Handshake_Message'Opaque);
       transition
          then ERROR_INTERNAL_ERROR
@@ -1272,7 +1282,7 @@ package TLS_Handshake_Session is
          Finished_Key'Reset;
          Finished_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_FINISHED, Length => Finished'Length, Payload => Finished)
             where Finished = TLS_Handshake::Finished'(Verify_Data => Verify_Data.Data);
-         Success := Write (Record_Data_Channel, Finished_Handshake_Message);
+         Record_Data_Channel'Write (Finished_Handshake_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -1288,7 +1298,7 @@ package TLS_Handshake_Session is
          -- FIXME: Replace 256 by key length and IV length determined by keystore
          Server_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
          Server_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
-         Success_Server := Write (Record_Control_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_SERVER, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Key_Update_Message'(Key_Length => Server_Key'Length, Key => Server_Key.Data, IV_Length => Server_IV'Length, IV => Server_IV.Data));
       transition
          then ERROR_INTERNAL_ERROR
@@ -1303,13 +1313,13 @@ package TLS_Handshake_Session is
          Client_IV : GreenTLS::Content;
          Success_Client : Boolean;
       begin
-         Success := Write (Record_Data_Channel, TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_KEY_UPDATE, Length => KU'Length, Payload => KU)
+         Record_Data_Channel'Write (TLS_Handshake::Handshake'(Tag => TLS_Handshake::HANDSHAKE_KEY_UPDATE, Length => KU'Length, Payload => KU)
             where KU = TLS_Handshake::Key_Update'(Request_Update => TLS_Handshake::UPDATE_NOT_REQUESTED));
          Client_Application_Traffic_Secret := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "traffic upd", Get_Hash (Empty_Hash), Hash_Length);
          -- FIXME: Replace 256 by key length and IV length determined by keystore
          Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
          Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
-         Success_Client := Write (Record_Control_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::KEY_UPDATE_CLIENT, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Key_Update_Message'(Key_Length => Client_Key'Length, Key => Client_Key.Data, IV_Length => Client_IV'Length, IV => Client_IV.Data));
       transition
          then ERROR_INTERNAL_ERROR
@@ -1411,7 +1421,7 @@ package TLS_Handshake_Session is
 
       state ERROR_SEND_REMOTE is
       begin
-         Success := Write (Record_Control_Channel, GreenTLS::Control_Message'(Tag => GreenTLS::ALERT, Length => Alert_Message'Length, Data => Alert_Message)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::ALERT, Length => Alert_Message'Length, Data => Alert_Message)
             where Alert_Message = GreenTLS::Alert_Message'(Description => Error));
       transition
          then ERROR_SEND_LOCAL
@@ -1419,7 +1429,7 @@ package TLS_Handshake_Session is
 
       state ERROR_SEND_LOCAL is
       begin
-         Success := Write (Application_Control_Channel, GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Data'Length, Data => Data)
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Alert_Message'(Description => Error));
       transition
          then TERMINATED

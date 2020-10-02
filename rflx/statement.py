@@ -61,6 +61,11 @@ class AttributeStatement(Statement):
         parameters = ", ".join(str(p) for p in self.parameters)
         return f"{self.identifier}'{self.attribute}" + (f" ({parameters})" if parameters else "")
 
+    def check_type(
+        self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+    ) -> RecordFluxError:
+        raise NotImplementedError
+
     def variables(self) -> Sequence[Variable]:
         return [Variable(self.identifier), *[e for p in self.parameters for e in p.variables()]]
 
@@ -111,3 +116,36 @@ class Reset(AttributeStatement):
 
     def variables(self) -> Sequence[Variable]:
         return [Variable(self.identifier)]
+
+
+class ChannelAttributeStatement(AttributeStatement):
+    def __init__(self, identifier: StrID, parameter: Expr, location: Location = None) -> None:
+        super().__init__(identifier, self.__class__.__name__, [parameter], location)
+
+    def check_type(
+        self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+    ) -> RecordFluxError:
+        self.parameters = [self.parameters[0].substituted(typify_variable)]
+        return (
+            rty.check_type(
+                statement_type,
+                self._expected_channel_type(),
+                self.location,
+                f'channel "{self.identifier}"',
+            )
+            + self.parameters[0].check_type_instance(rty.Message)
+        )
+
+    @abstractmethod
+    def _expected_channel_type(self) -> rty.Channel:
+        raise NotImplementedError
+
+
+class Read(ChannelAttributeStatement):
+    def _expected_channel_type(self) -> rty.Channel:
+        return rty.Channel(readable=True, writable=False)
+
+
+class Write(ChannelAttributeStatement):
+    def _expected_channel_type(self) -> rty.Channel:
+        return rty.Channel(readable=False, writable=True)

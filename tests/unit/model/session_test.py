@@ -26,8 +26,11 @@ def test_str() -> None:
                 [
                     State(
                         "A",
-                        declarations=[decl.VariableDeclaration("Z", "Boolean", expr.Variable("Y"))],
-                        actions=[stmt.Assignment("Z", expr.Call("Read", [expr.Variable("X")]))],
+                        declarations=[
+                            decl.VariableDeclaration("Z", "Boolean", expr.Variable("Y")),
+                            decl.VariableDeclaration("M", "TLV::Message"),
+                        ],
+                        actions=[stmt.Read("X", expr.Variable("M"))],
                         transitions=[
                             Transition(
                                 "B",
@@ -48,7 +51,7 @@ def test_str() -> None:
                     decl.FunctionDeclaration("F", [], "T"),
                     decl.FunctionDeclaration("G", [decl.Argument("P", "T")], "Boolean"),
                 ],
-                [BOOLEAN],
+                [BOOLEAN, TLV_MESSAGE],
             )
         ),
         multilinestr(
@@ -65,8 +68,9 @@ def test_str() -> None:
                begin
                   state A is
                      Z : Boolean := Y;
+                     M : TLV::Message;
                   begin
-                     Z := Read (X);
+                     X'Read (M);
                   transition
                      then B
                         if Z = True
@@ -647,139 +651,7 @@ def test_call_to_undeclared_function() -> None:
     )
 
 
-def test_call_to_builtin_read() -> None:
-    Session(
-        identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment("Global", expr.Call("Read", [expr.Variable("Some_Channel")]))
-                ],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Global", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Some_Channel", readable=True, writable=False),
-        ],
-        types=[BOOLEAN],
-    )
-
-
-def test_call_to_builtin_write() -> None:
-    Session(
-        identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment(
-                        "Success",
-                        expr.Call("Write", [expr.Variable("Some_Channel"), expr.TRUE]),
-                    )
-                ],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Success", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Some_Channel", readable=False, writable=True),
-        ],
-        types=[BOOLEAN],
-    )
-
-
-def test_call_to_builtin_call() -> None:
-    Session(
-        identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment(
-                        "Result", expr.Call("Call", [expr.Variable("Some_Channel"), expr.TRUE])
-                    )
-                ],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Result", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Some_Channel", readable=True, writable=True),
-        ],
-        types=[BOOLEAN],
-    )
-
-
-def test_call_to_builtin_data_available() -> None:
-    Session(
-        identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment(
-                        "Result",
-                        expr.Call("Data_Available", [expr.Variable("Some_Channel")]),
-                    )
-                ],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Result", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Some_Channel", readable=True, writable=True),
-        ],
-        types=[BOOLEAN],
-    )
-
-
-def test_call_to_builtin_read_without_arguments() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment("Result", expr.Call("Read", [], location=Location((10, 20))))
-                ],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[decl.VariableDeclaration("Result", "Boolean")],
-        parameters=[],
-        types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: no channel argument in call to "Read"$',
-    )
-
-
-def test_call_to_builtin_read_undeclared_channel() -> None:
+def test_call_undeclared_variable() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -794,26 +666,124 @@ def test_call_to_builtin_read_undeclared_channel() -> None:
                     stmt.Assignment(
                         "Result",
                         expr.Call(
-                            "Read", [expr.Variable("Undeclared", location=Location((10, 20)))]
+                            "SubProg", [expr.Variable("Undefined", location=Location((10, 20)))]
                         ),
                     )
                 ],
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Result", "Boolean")],
-        parameters=[],
+        declarations=[
+            decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
+            decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
+        ],
         types=[BOOLEAN],
+        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+    )
+
+
+def test_channel_read() -> None:
+    Session(
+        identifier="P::S",
+        initial=ID("Start"),
+        final=ID("End"),
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[stmt.Read("Some_Channel", expr.Variable("Global"))],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Global", "TLV::Message"),
+        ],
+        parameters=[
+            decl.ChannelDeclaration("Some_Channel", readable=True, writable=False),
+        ],
+        types=[TLV_MESSAGE],
+    )
+
+
+def test_channel_write() -> None:
+    Session(
+        identifier="P::S",
+        initial=ID("Start"),
+        final=ID("End"),
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[stmt.Write("Some_Channel", expr.Variable("M"))],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("M", "TLV::Message"),
+        ],
+        parameters=[
+            decl.ChannelDeclaration("Some_Channel", readable=False, writable=True),
+        ],
+        types=[TLV_MESSAGE],
+    )
+
+
+def test_channel_read_undeclared() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Read("Undeclared", expr.Variable("Result"), location=Location((10, 20)))
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
+        parameters=[],
+        types=[TLV_MESSAGE],
+        regex=r'^<stdin>:10:20: model: error: undefined channel "Undeclared"$',
+    )
+
+
+def test_channel_read_invalid_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Read(
+                        "Result",
+                        expr.Number(0, location=Location((10, 30))),
+                        location=Location((10, 20)),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
+        parameters=[],
+        types=[TLV_MESSAGE],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: undefined variable "Undeclared"\n'
-            r'<stdin>:10:20: model: error: undeclared channel "Undeclared" in call to "Read"'
+            r"<stdin>:10:20: model: error: expected readable channel\n"
+            r'<stdin>:10:20: model: info: found message type "TLV::Message"\n'
+            r"<stdin>:10:30: model: error: expected message type\n"
+            r"<stdin>:10:30: model: info: found type universal integer \(0\)"
             r"$"
         ),
     )
 
 
-def test_call_to_builtin_read_invalid_channel_type() -> None:
+def test_channel_read_invalid_mode() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -821,21 +791,28 @@ def test_call_to_builtin_read_invalid_channel_type() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
-                        "Result", expr.Call("Read", [expr.Number(0)], location=Location((10, 20)))
-                    )
+                    stmt.Read("Channel", expr.Variable("Result"), location=Location((10, 20)))
                 ],
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Result", "Boolean")],
-        parameters=[],
-        types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: invalid channel ID type in call to "Read"$',
+        declarations=[
+            decl.VariableDeclaration("Result", "TLV::Message"),
+        ],
+        parameters=[
+            decl.ChannelDeclaration("Channel", readable=False, writable=True),
+        ],
+        types=[TLV_MESSAGE],
+        regex=(
+            r"^"
+            r"<stdin>:10:20: model: error: expected readable channel\n"
+            r"<stdin>:10:20: model: info: found writable channel"
+            r"$"
+        ),
     )
 
 
-def test_call_to_builtin_read_invalid_channel_id_type() -> None:
+def test_channel_write_invalid_mode() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -843,38 +820,40 @@ def test_call_to_builtin_read_invalid_channel_id_type() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
-                        "Result",
-                        expr.Call("Read", [expr.Variable("Result")], location=Location((10, 20))),
-                    )
+                    stmt.Write("Out_Channel", expr.Variable("Result"), location=Location((10, 20)))
                 ],
             ),
             State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Result", "Boolean")],
-        parameters=[],
-        types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: invalid channel type in call to "Read"$',
+        declarations=[
+            decl.VariableDeclaration("Result", "TLV::Message"),
+        ],
+        parameters=[
+            decl.ChannelDeclaration("Out_Channel", readable=True, writable=False),
+        ],
+        types=[TLV_MESSAGE],
+        regex=(
+            r"^"
+            r"<stdin>:10:20: model: error: expected writable channel\n"
+            r"<stdin>:10:20: model: info: found readable channel"
+            r"$"
+        ),
     )
 
 
-def test_call_to_builtin_write_invalid_channel_mode() -> None:
-    assert_session_model_error(
+def test_channel_function_data_available() -> None:
+    Session(
+        identifier="P::S",
+        initial=ID("Start"),
+        final=ID("End"),
         states=[
             State(
                 name=ID("Start"),
-                transitions=[
-                    Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
-                    )
-                ],
+                transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
                     stmt.Assignment(
-                        "Result",
-                        expr.Call(
-                            "Write", [expr.Variable("Out_Channel")], location=Location((10, 20))
-                        ),
+                        "Result", expr.Call("Data_Available", [expr.Variable("Channel")])
                     )
                 ],
             ),
@@ -884,16 +863,13 @@ def test_call_to_builtin_write_invalid_channel_mode() -> None:
             decl.VariableDeclaration("Result", "Boolean"),
         ],
         parameters=[
-            decl.ChannelDeclaration("Out_Channel", readable=True, writable=False),
+            decl.ChannelDeclaration("Channel", readable=True, writable=True),
         ],
         types=[BOOLEAN],
-        regex=(
-            r'^<stdin>:10:20: model: error: channel "Out_Channel" not writable in call to "Write"$'
-        ),
     )
 
 
-def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
+def test_channel_function_data_available_invalid_mode() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -905,8 +881,7 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
                         "Result",
                         expr.Call(
                             "Data_Available",
-                            [expr.Variable("Out_Channel")],
-                            location=Location((10, 20)),
+                            [expr.Variable("Out_Channel", location=Location((10, 20)))],
                         ),
                     )
                 ],
@@ -921,114 +896,11 @@ def test_call_to_builtin_data_available_invalid_channel_mode() -> None:
         ],
         types=[BOOLEAN],
         regex=(
-            r'^<stdin>:10:20: model: error: channel "Out_Channel" not readable in call to'
-            r' "Data_Available"$'
+            r"^"
+            r"<stdin>:10:20: model: error: expected readable channel\n"
+            r"<stdin>:10:20: model: info: found writable channel"
+            r"$"
         ),
-    )
-
-
-def test_call_to_builtin_read_invalid_channel_mode() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment(
-                        "Result",
-                        expr.Call("Read", [expr.Variable("Channel")], location=Location((10, 20))),
-                    )
-                ],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Result", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Channel", readable=False, writable=True),
-        ],
-        types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: channel "Channel" not readable in call to "Read"$',
-    )
-
-
-def test_call_to_builtin_call_channel_not_readable() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment(
-                        "Result",
-                        expr.Call("Call", [expr.Variable("Channel")], location=Location((10, 20))),
-                    )
-                ],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Result", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Channel", readable=False, writable=True),
-        ],
-        types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: channel "Channel" not readable in call to "Call"$',
-    )
-
-
-def test_call_to_builtin_call_channel_not_writable() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment(
-                        "Result",
-                        expr.Call("Call", [expr.Variable("Channel")], location=Location((10, 20))),
-                    )
-                ],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Result", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Channel", readable=True, writable=False),
-        ],
-        types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: channel "Channel" not writable in call to "Call"$',
-    )
-
-
-def test_function_call() -> None:
-    Session(
-        identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[stmt.Assignment("Result", expr.Call("Call", [expr.Variable("Channel")]))],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Result", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Channel", readable=True, writable=True),
-        ],
-        types=[BOOLEAN],
     )
 
 
@@ -1065,30 +937,7 @@ def test_undeclared_variable_in_function_call() -> None:
     )
 
 
-def test_function_declaration_is_no_builtin_read() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[],
-        parameters=[decl.FunctionDeclaration("Read", [], "Boolean", location=Location((10, 20)))],
-        types=[BOOLEAN],
-        regex=(
-            r"^"
-            r"<stdin>:10:20: model: error: function declaration shadows built-in function"
-            r' "Read"\n'
-            r'<stdin>:10:20: model: error: unused function "Read"'
-            r"$"
-        ),
-    )
-
-
-def test_function_declaration_is_no_builtin_write() -> None:
+def test_function_shadows_builtin_data_available() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1100,45 +949,25 @@ def test_function_declaration_is_no_builtin_write() -> None:
         ],
         declarations=[],
         parameters=[
-            decl.ChannelDeclaration(
-                "Write", readable=True, writable=False, location=Location((10, 20))
-            )
-        ],
-        types=[],
-        regex=(
-            r"^"
-            r"<stdin>:10:20: model: error: channel declaration shadows built-in function"
-            r' "Write"\n'
-            r'<stdin>:10:20: model: error: unused channel "Write"'
-            r"$"
-        ),
-    )
-
-
-def test_function_declaration_is_no_builtin_call() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
+            decl.FunctionDeclaration(
+                "Data_Available",
+                [],
+                "Boolean",
+                location=Location((10, 20)),
             ),
-            State(name=ID("End")),
         ],
-        declarations=[decl.VariableDeclaration("Call", "Boolean", location=Location((10, 20)))],
-        parameters=[],
         types=[BOOLEAN],
         regex=(
             r"^"
-            r"<stdin>:10:20: model: error: variable declaration shadows built-in function"
-            r' "Call"\n'
-            r'<stdin>:10:20: model: error: unused variable "Call"'
+            r"<stdin>:10:20: model: error: function declaration shadows built-in function "
+            r'"Data_Available"\n'
+            r'<stdin>:10:20: model: error: unused function "Data_Available"'
             r"$"
         ),
     )
 
 
-def test_function_declaration_is_no_builtin_data_available() -> None:
+def test_renaming_shadows_builtin_data_available() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1731,7 +1560,7 @@ def test_private_type() -> None:
     )
 
 
-def test_private_type_is_no_builtin_write() -> None:
+def test_private_type_shadows_builtin_data_available() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1742,12 +1571,12 @@ def test_private_type_is_no_builtin_write() -> None:
             State(name=ID("End")),
         ],
         declarations=[],
-        parameters=[decl.TypeDeclaration(Private("Write", location=Location((10, 20))))],
+        parameters=[decl.TypeDeclaration(Private("Data_Available", location=Location((10, 20))))],
         types=[],
         regex=(
             r"^<stdin>:10:20: model: error: type declaration shadows built-in function"
-            r' "Write"\n'
-            r'<stdin>:10:20: model: error: unused type "Write"$'
+            r' "Data_Available"\n'
+            r'<stdin>:10:20: model: error: unused type "Data_Available"$'
         ),
     )
 

@@ -559,6 +559,53 @@ def test_message_is_compatible(message: Type, other: Type, expected: bool) -> No
 
 
 @pytest.mark.parametrize(
+    "channel,other,expected",
+    [
+        (Channel(readable=True, writable=False), Any(), Channel(readable=True, writable=False)),
+        (
+            Channel(readable=True, writable=False),
+            Channel(readable=True, writable=False),
+            Channel(readable=True, writable=False),
+        ),
+        (
+            Channel(readable=True, writable=False),
+            Channel(readable=False, writable=True),
+            Undefined(),
+        ),
+        (Channel(readable=True, writable=False), Undefined(), Undefined()),
+        (
+            Channel(readable=True, writable=False),
+            Enumeration("A"),
+            Undefined(),
+        ),
+    ],
+)
+def test_channel_common_type(channel: Type, other: Type, expected: Type) -> None:
+    assert channel.common_type(other) == expected
+    assert other.common_type(channel) == expected
+
+
+@pytest.mark.parametrize(
+    "channel,other,expected",
+    [
+        (Channel(readable=True, writable=False), Any(), True),
+        (Any(), Channel(readable=True, writable=False), True),
+        (Channel(readable=True, writable=False), Channel(readable=True, writable=False), True),
+        (Channel(readable=True, writable=False), Channel(readable=False, writable=True), False),
+        (Channel(readable=False, writable=True), Channel(readable=True, writable=False), False),
+        (Channel(readable=True, writable=True), Channel(readable=False, writable=True), True),
+        (Channel(readable=True, writable=True), Channel(readable=True, writable=False), True),
+        (Channel(readable=False, writable=True), Channel(readable=True, writable=True), False),
+        (Channel(readable=True, writable=False), Channel(readable=True, writable=True), False),
+        (Channel(readable=True, writable=False), Undefined(), False),
+        (Channel(readable=True, writable=False), Enumeration("A"), False),
+    ],
+)
+def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> None:
+    assert channel.is_compatible(other) == expected
+
+
+@pytest.mark.parametrize(
     "types,expected",
     [
         (
@@ -630,8 +677,8 @@ def test_check_type(actual: Type, expected: Type) -> None:
     [
         (
             Private("A"),
-            Channel("B"),
-            r'^<stdin>:10:20: model: error: expected channel "B"\n'
+            Channel(readable=False, writable=True),
+            r"^<stdin>:10:20: model: error: expected writable channel\n"
             r'<stdin>:10:20: model: info: found private type "A"$',
         ),
         (

@@ -661,6 +661,8 @@ def test_grammar_assignment_statement(string: str, expected: stmt.Statement) -> 
     [
         ("A'Append (B)", stmt.Append("A", expr.Variable("B"))),
         ("A'Extend (B)", stmt.Extend("A", expr.Variable("B"))),
+        ("A'Read (B)", stmt.Read("A", expr.Variable("B"))),
+        ("A'Write (B)", stmt.Write("A", expr.Variable("B"))),
         ("C'Reset", stmt.Reset("C")),
     ],
 )
@@ -950,6 +952,12 @@ def test_grammar_unexpected_quantified_expression(monkeypatch: Any) -> None:
 def test_grammar_unexpected_type() -> None:
     with pytest.raises(ParseFatalException, match=r"^unexpected type"):
         grammar.parse_type("type T is X;", 0, [0, "type", "T", "is", "X", 8])
+
+
+def test_grammar_unexpected_attribute(monkeypatch: Any) -> None:
+    monkeypatch.setattr(grammar, "evaluate_located_expression", lambda s, t: (t, Location((1, 1))))
+    with pytest.raises(ParseFatalException, match=r"^unexpected attribute"):
+        grammar.parse_attribute("", 0, ["A", "Invalid", Variable("B")])
 
 
 def test_illegal_package_identifiers() -> None:

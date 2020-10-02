@@ -113,7 +113,7 @@ package TLS_Record_Session is
 
       state CONTROL is
       begin
-         Application_Control_Message := Read (Application_Control_Channel);
+         Application_Control_Channel'Read (Application_Control_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Application_Control_Message'Valid = False
@@ -126,7 +126,7 @@ package TLS_Record_Session is
          Success : Boolean;
       begin
          Alert_Message := TLS_Alert::Alert'(Level => TLS_Alert::WARNING, Description => TLS_Alert::CLOSE_NOTIFY);
-         Success := Write (Network_Channel, TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message));
+         Network_Channel'Write (TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message));
          Network_Send_Enabled := False;
       transition
          then ERROR_INTERNAL_ERROR
@@ -136,7 +136,7 @@ package TLS_Record_Session is
 
       state HANDSHAKE_CONTROL is
       begin
-         Handshake_Control_Message := Read (Handshake_Control_Channel);
+         Handshake_Control_Channel'Read (Handshake_Control_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Handshake_Control_Message'Valid = False
@@ -184,7 +184,7 @@ package TLS_Record_Session is
 
       state HANDSHAKE is
       begin
-         Handshake_Message := Read (Handshake_Data_Channel);
+         Handshake_Data_Channel'Read (Handshake_Message);
          TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HANDSHAKE, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Handshake_Message'Length, Fragment => Handshake_Message.Data);
       transition
          then ERROR_INTERNAL_ERROR
@@ -194,7 +194,7 @@ package TLS_Record_Session is
 
       state NETWORK_IN is
       begin
-         TLS_Record_Message := Read (Network_Channel);
+         Network_Channel'Read (TLS_Record_Message);
       transition
          then ERROR_DECODE_ERROR
             if TLS_Record_Message'Valid = False
@@ -253,7 +253,7 @@ package TLS_Record_Session is
       state NETWORK_IN_APPLICATION is
          Success : Boolean;
       begin
-         Success := Write (Data_Channel, Plaintext.Data);
+         Data_Channel'Write (Plaintext);
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -263,7 +263,7 @@ package TLS_Record_Session is
       state NETWORK_IN_HANDSHAKE is
          Success : Boolean;
       begin
-         Success := Write (Handshake_Data_Channel, Plaintext.Data);
+         Handshake_Data_Channel'Write (Plaintext);
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -273,7 +273,7 @@ package TLS_Record_Session is
       state NETWORK_IN_HEARTBEAT is
          Success : Boolean;
       begin
-         Success := Write (Heartbeat_Data_Channel, Plaintext.Data);
+         Heartbeat_Data_Channel'Write (Plaintext);
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -295,7 +295,7 @@ package TLS_Record_Session is
          Success : Boolean;
       begin
          Network_Receive_Enabled := False;
-         Success := Write (Application_Control_Channel, GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => M'Length, Data => M)
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => M'Length, Data => M)
             where M = GreenTLS::Alert_Message'(Description => Alert_Message.Description));
       transition
          then ERROR_INTERNAL_ERROR
@@ -314,7 +314,7 @@ package TLS_Record_Session is
 
       state NETWORK_OUT_APPLICATION is
       begin
-         Plaintext := Read (Data_Channel);
+         Data_Channel'Read (Plaintext);
          TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::APPLICATION_DATA, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Plaintext.Data'Length, Fragment => Plaintext.Data);
       transition
          then NETWORK_OUT_SEND_ENCRYPTED
@@ -340,7 +340,7 @@ package TLS_Record_Session is
       state NETWORK_OUT_SEND_UNENCRYPTED is
          Success : Boolean;
       begin
-         Success := Write (Network_Channel, TLS_Record_Message);
+         Network_Channel'Write (TLS_Record_Message);
       transition
          then ERROR_INTERNAL_ERROR
             if Success = False
@@ -351,7 +351,7 @@ package TLS_Record_Session is
          Success : Boolean;
       begin
          Ciphertext := Encrypt (Client_Key_Update_Message, Client_Sequence_Number, TLS_Record_Message.Fragment);
-         Success := Write (Network_Channel, Ciphertext.Data);
+         Network_Channel'Write (Ciphertext);
          Client_Sequence_Number := Client_Sequence_Number + 1;
       transition
          then ERROR_INTERNAL_ERROR
@@ -361,7 +361,7 @@ package TLS_Record_Session is
 
       state HEARTBEAT is
       begin
-         Heartbeat_Data_Message := Read (Heartbeat_Data_Channel);
+         Heartbeat_Data_Channel'Read (Heartbeat_Data_Message);
          TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HEARTBEAT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Heartbeat_Data_Message'Length, Fragment => Heartbeat_Data_Message.Data);
       transition
          then NETWORK_OUT_SEND_ENCRYPTED
@@ -413,9 +413,8 @@ package TLS_Record_Session is
       end ERROR_INTERNAL_ERROR;
 
       state ERROR_SEND_LOCAL is
-         Success : Boolean;
       begin
-         Success := Write (Application_Control_Channel, GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Data'Length, Data => Data)
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Data'Length, Data => Data)
             where Data = GreenTLS::Alert_Message'(Description => Error));
       transition
          then ERROR_SEND_REMOTE
