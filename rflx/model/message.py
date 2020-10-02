@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
 import rflx.typing_ as rty
 from rflx import expression as expr
@@ -28,6 +28,9 @@ class Field(Base):
 
     def __lt__(self, other: "Field") -> int:
         return self.identifier < other.identifier
+
+    def __str__(self) -> str:
+        return str(self.identifier)
 
     @property
     def name(self) -> str:
@@ -1128,6 +1131,17 @@ class AbstractMessage(mty.Type):
             location=final.identifier.location,
         )
 
+    @property
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "kind": "Message",
+            "data": {
+                "identifier": self.identifier.serialize,
+                "structure": [l.serialize for l in self.structure],
+                "types": {f.name: t.identifier.serialize for f, t in self.types.items()},
+            },
+        }
+
 
 class Message(AbstractMessage):
     # pylint: disable=too-many-arguments
@@ -1499,6 +1513,20 @@ class Refinement(mty.Type):
                 and self.sdu == other.sdu
             )
         return NotImplemented
+
+    @property
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "kind": "Refinement",
+            "data": {
+                "identifier": self.identifier.serialize,
+                "package": self.package.serialize,
+                "pdu": self.pdu.identifier.serialize,
+                "field": self.field.serialize,
+                "sdu": self.sdu.identifier.serialize,
+                "condition": self.condition.serialize,
+            },
+        }
 
 
 def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:
