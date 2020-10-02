@@ -648,7 +648,7 @@ def test_grammar_renaming_declaration(string: str, expected: decl.Declaration) -
 
 @pytest.mark.parametrize(
     "string,expected",
-    [("A := B", stmt.Assignment("A", expr.Variable("B"))), ("C := null", stmt.Erase("C"))],
+    [("A := B", stmt.Assignment("A", expr.Variable("B")))],
 )
 def test_grammar_assignment_statement(string: str, expected: stmt.Statement) -> None:
     actual = grammar.assignment_statement().parseString(string, parseAll=True)[0]

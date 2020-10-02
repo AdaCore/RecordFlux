@@ -583,45 +583,6 @@ def test_assignment_from_undeclared_variable() -> None:
     )
 
 
-def test_erasure_of_undeclared_variable() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[stmt.Erase("Undefined", location=Location((10, 20)))],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[],
-        parameters=[],
-        types=[],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
-    )
-
-
-def test_erasure_incompatible() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                name=ID("Start"),
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[stmt.Erase("Global", location=Location((10, 20)))],
-            ),
-            State(name=ID("End")),
-        ],
-        declarations=[decl.VariableDeclaration("Global", "Boolean")],
-        parameters=[],
-        types=[BOOLEAN],
-        regex=(
-            r"^<stdin>:10:20: model: error: expected array type\n"
-            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
-        ),
-    )
-
-
 def test_reset_of_undeclared_list() -> None:
     assert_session_model_error(
         states=[
