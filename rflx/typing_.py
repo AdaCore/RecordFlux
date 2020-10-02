@@ -275,11 +275,30 @@ class Private(IndependentType):
 
 
 @dataclass(frozen=True)
-class Channel(IndependentType):
+class Channel(Any):
     descriptive_name: ty.ClassVar[str] = "channel"
+    readable: bool
+    writable: bool
 
     def __str__(self) -> str:
-        return f'{self.descriptive_name} "{self.name}"'
+        mode = {
+            (True, False): "readable ",
+            (False, True): "writable ",
+            (True, True): "readable and writable ",
+        }
+        return f"{mode[(self.readable, self.writable)]}{self.descriptive_name}"
+
+    def is_compatible(self, other: Type) -> bool:
+        return other == Any() or (
+            isinstance(other, self.__class__)
+            and (self.readable or not other.readable)
+            and (self.writable or not other.writable)
+        )
+
+    def common_type(self, other: Type) -> Type:
+        if other == Any() or self == other:
+            return self
+        return Undefined()
 
 
 def common_type(types: ty.Sequence[Type]) -> Type:

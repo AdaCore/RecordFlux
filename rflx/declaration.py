@@ -195,7 +195,7 @@ class ChannelDeclaration(FormalDeclaration):
 
     @property
     def type_(self) -> rty.Type:
-        return rty.Channel(str(self.identifier))
+        return rty.Channel(self.readable, self.writable)
 
     @property
     def readable(self) -> bool:

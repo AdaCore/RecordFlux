@@ -568,14 +568,14 @@ def assignment_statement() -> Token:
 
 
 def attribute_statement() -> Token:
-    designator = Keyword("Append") | Keyword("Extend")
+    designator = Keyword("Append") | Keyword("Extend") | Keyword("Read") | Keyword("Write")
 
     parameter = left_parenthesis() + expression() + right_parenthesis()
 
     list_attribute = locatedExpr(
         unqualified_identifier() + Literal("'").suppress() + designator + parameter
     )
-    list_attribute.setParseAction(parse_list_attribute)
+    list_attribute.setParseAction(parse_attribute)
 
     reset = locatedExpr(unqualified_identifier() + Literal("'").suppress() + Keyword("Reset"))
     reset.setParseAction(parse_reset)
@@ -1016,13 +1016,18 @@ def parse_assignment(string: str, location: int, tokens: ParseResults) -> stmt.A
 
 
 @fatalexceptions
-def parse_list_attribute(
-    string: str, location: int, tokens: ParseResults
-) -> Union[stmt.Append, stmt.Extend]:
+def parse_attribute(string: str, location: int, tokens: ParseResults) -> stmt.AttributeStatement:
     tokens, locn = evaluate_located_expression(string, tokens)
-    if tokens[1] == "Append":
-        return stmt.Append(tokens[0], tokens[2], location=locn)
-    return stmt.Extend(tokens[0], tokens[2], location=locn)
+    attributes = {
+        "Append": stmt.Append,
+        "Extend": stmt.Extend,
+        "Read": stmt.Read,
+        "Write": stmt.Write,
+    }
+    try:
+        return attributes[tokens[1]](tokens[0], tokens[2], location=locn)
+    except KeyError:
+        raise ParseFatalException(string, location, "unexpected attribute") from None
 
 
 @fatalexceptions

@@ -10,9 +10,9 @@ from rflx.model import Message, Refinement
 
 from . import type_ as mty
 
-READABLE_CHANNEL_FUNCTIONS = list(map(ID, ["Call", "Read", "Data_Available"]))
-WRITABLE_CHANNEL_FUNCTIONS = list(map(ID, ["Call", "Write"]))
-CHANNEL_FUNCTIONS = [*READABLE_CHANNEL_FUNCTIONS, *WRITABLE_CHANNEL_FUNCTIONS]
+CHANNEL_FUNCTIONS = {
+    ID("Data_Available"): rty.Channel(readable=True, writable=False),
+}
 
 
 class Transition(Base):
@@ -333,13 +333,6 @@ class Session(Base):
                 )
             )
 
-            if isinstance(a, stmt.Assignment):
-                for c in a.expression.findall(
-                    lambda x: isinstance(x, expr.Call) and x.name in CHANNEL_FUNCTIONS
-                ):
-                    assert isinstance(c, expr.Call)
-                    self.__validate_channel(c, declarations)
-
             self.__reference_variable_declaration(a.variables(), declarations)
 
     def __validate_transitions(
@@ -362,64 +355,6 @@ class Session(Base):
                     d.location,
                 )
 
-    def __validate_channel(
-        self, call: expr.Call, declarations: Mapping[ID, decl.Declaration]
-    ) -> None:
-        if len(call.args) < 1:
-            self.error.append(
-                f'no channel argument in call to "{call.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                call.location,
-            )
-            return
-        channel_id = call.args[0]
-        if not isinstance(channel_id, expr.Variable):
-            self.error.append(
-                f'invalid channel ID type in call to "{call.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                call.location,
-            )
-            return
-        assert isinstance(channel_id, expr.Variable)
-        if channel_id.identifier not in declarations:
-            self.error.append(
-                f'undeclared channel "{channel_id}" in call to "{call.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                channel_id.location,
-            )
-            return
-
-        assert isinstance(channel_id, expr.Variable)
-        channel = declarations[channel_id.identifier]
-        if not isinstance(channel, decl.ChannelDeclaration):
-            self.error.append(
-                f'invalid channel type in call to "{call.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                call.location,
-            )
-            return
-
-        assert isinstance(channel, decl.ChannelDeclaration)
-        channel.reference()
-        if call.name in WRITABLE_CHANNEL_FUNCTIONS and not channel.writable:
-            self.error.append(
-                f'channel "{channel_id}" not writable in call to "{call.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                call.location,
-            )
-        if call.name in READABLE_CHANNEL_FUNCTIONS and not channel.readable:
-            self.error.append(
-                f'channel "{channel_id}" not readable in call to "{call.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                call.location,
-            )
-
     def __typify_variable(
         self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
     ) -> expr.Expr:
@@ -437,7 +372,8 @@ class Session(Base):
                 if identifier in declarations:
                     expression.type_ = declarations[identifier].type_
                 if identifier in CHANNEL_FUNCTIONS:
-                    expression.type_ = rty.Any()
+                    expression.type_ = rty.BOOLEAN
+                    expression.argument_types = [CHANNEL_FUNCTIONS[identifier]]
             if isinstance(expression, expr.Conversion):
                 if identifier in self.types:
                     type_ = self.types[identifier].type_
