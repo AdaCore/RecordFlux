@@ -1,6 +1,6 @@
 import re
 from abc import ABC
-from typing import Iterable, Iterator, Sequence, Set, TypeVar
+from typing import Any, Dict, Iterable, Iterator, Sequence, Set, TypeVar
 
 
 class Base(ABC):
@@ -20,6 +20,26 @@ class Base(ABC):
     def __repr__(self) -> str:
         args = "\n" + ",\n".join(f"{k}={v!r}" for k, v in self.__dict__.items() if k != "location")
         return indent_next(f"\n{self.__class__.__name__}({indent(args, 4)})", 4)
+
+    @property
+    def serialize(self) -> Dict[str, Any]:
+        def value(data: Any) -> Any:
+            if isinstance(data, (list, tuple)):
+                return [e.serialize for e in data]
+            if isinstance(data, dict):
+                return {str(k): v.serialize for k, v in data.items()}
+            if isinstance(data, (int, str)):
+                return data
+            return data.serialize
+
+        return {
+            "kind": self.__class__.__name__,
+            "data": {
+                k: value(v)
+                for k, v in self.__dict__.items()
+                if k not in ("location", "error", "type_", "_str")
+            },
+        }
 
 
 def verbose_repr(obj: object, attributes: Sequence[str]) -> str:
