@@ -241,6 +241,8 @@ class Session(Base):
         declarations: Mapping[ID, decl.Declaration],
         visible_declarations: Mapping[ID, decl.Declaration],
     ) -> None:
+        # pylint: disable=too-many-branches
+
         visible_declarations = dict(visible_declarations)
 
         def undefined_type(type_name: StrID, location: Optional[Location]) -> None:
@@ -289,16 +291,16 @@ class Session(Base):
 
             elif isinstance(d, decl.TypedDeclaration):
                 type_name = mty.qualified_type_name(d.type_name, self.identifier.parent)
-                if type_name not in self.types:
+                if type_name in self.types:
+                    self.error.extend(
+                        d.check_type(
+                            self.types[type_name].type_,
+                            lambda x: self.__typify_variable(x, visible_declarations),
+                        )
+                    )
+                else:
                     undefined_type(d.type_name, d.location)
                     d.type_ = rty.Any()
-                    return
-                self.error.extend(
-                    d.check_type(
-                        self.types[type_name].type_,
-                        lambda x: self.__typify_variable(x, visible_declarations),
-                    )
-                )
 
                 if isinstance(d, decl.FunctionDeclaration):
                     argument_types = []
@@ -371,6 +373,9 @@ class Session(Base):
             if isinstance(expression, expr.Call):
                 if identifier in declarations:
                     expression.type_ = declarations[identifier].type_
+                    declaration = declarations[identifier]
+                    assert isinstance(declaration, decl.FunctionDeclaration)
+                    expression.argument_types = declaration.argument_types
                 if identifier in CHANNEL_FUNCTIONS:
                     expression.type_ = rty.BOOLEAN
                     expression.argument_types = [CHANNEL_FUNCTIONS[identifier]]

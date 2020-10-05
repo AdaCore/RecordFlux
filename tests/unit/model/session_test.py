@@ -684,6 +684,103 @@ def test_call_undeclared_variable() -> None:
     )
 
 
+def test_call_invalid_argument_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call(
+                            "Function",
+                            [expr.Variable("Channel", location=Location((10, 20)))],
+                        ),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
+            decl.FunctionDeclaration("Function", [decl.Argument("P", "Boolean")], "Boolean"),
+            decl.ChannelDeclaration("Channel", readable=True, writable=False),
+        ],
+        types=[BOOLEAN],
+        regex=(
+            r"^"
+            r'<stdin>:10:20: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r"<stdin>:10:20: model: info: found readable channel"
+            "$"
+        ),
+    )
+
+
+def test_call_missing_arguments() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call(
+                            "Function",
+                            location=Location((10, 20)),
+                        ),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
+            decl.FunctionDeclaration("Function", [decl.Argument("P", "Boolean")], "Boolean"),
+        ],
+        types=[BOOLEAN],
+        regex=r"^<stdin>:10:20: model: error: missing function arguments$",
+    )
+
+
+def test_call_too_many_arguments() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Assignment(
+                        "Result",
+                        expr.Call(
+                            "Function",
+                            [expr.TRUE, expr.Number(1)],
+                            location=Location((10, 20)),
+                        ),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
+            decl.FunctionDeclaration("Function", [decl.Argument("P", "Boolean")], "Boolean"),
+        ],
+        types=[BOOLEAN],
+        regex=r"^<stdin>:10:20: model: error: too many function arguments$",
+    )
+
+
 def test_channel_read() -> None:
     Session(
         identifier="P::S",
@@ -930,7 +1027,7 @@ def test_undeclared_variable_in_function_call() -> None:
             decl.VariableDeclaration("Result", "Boolean"),
         ],
         parameters=[
-            decl.FunctionDeclaration("SubProg", [], "Boolean"),
+            decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
         regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
@@ -1149,7 +1246,7 @@ def test_binding_as_function_parameter() -> None:
                     stmt.Assignment(
                         "Result",
                         expr.Binding(
-                            expr.Call("SubProg", [expr.Length(expr.Variable("Bound"))]),
+                            expr.Call("SubProg", [expr.Variable("Bound")]),
                             {"Bound": expr.Variable("Variable")},
                         ),
                     )
@@ -1162,7 +1259,7 @@ def test_binding_as_function_parameter() -> None:
             decl.VariableDeclaration("Variable", "Boolean"),
         ],
         parameters=[
-            decl.FunctionDeclaration("SubProg", [], "Boolean"),
+            decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
     )
@@ -1610,7 +1707,11 @@ def test_private_type_shadows_type() -> None:
 @pytest.mark.parametrize(
     "parameters",
     [
-        [decl.FunctionDeclaration("X", [], "Undefined", location=Location((10, 20)))],
+        [
+            decl.FunctionDeclaration(
+                "X", [decl.Argument("Y", "Boolean")], "Undefined", location=Location((10, 20))
+            )
+        ],
         [
             decl.FunctionDeclaration(
                 "X", [decl.Argument("Y", "Undefined")], "Boolean", location=Location((10, 20))
@@ -1624,7 +1725,10 @@ def test_undefined_type_in_parameters(parameters: Sequence[decl.Declaration]) ->
             State(
                 name=ID("Start"),
                 transitions=[
-                    Transition(target=ID("End"), condition=expr.Equal(expr.Call("X"), expr.TRUE))
+                    Transition(
+                        target=ID("End"),
+                        condition=expr.Equal(expr.Call("X", [expr.TRUE]), expr.TRUE),
+                    )
                 ],
             ),
             State(name=ID("End")),
