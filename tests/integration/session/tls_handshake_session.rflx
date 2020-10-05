@@ -303,7 +303,7 @@ package TLS_Handshake_Session is
          Client_IV : GreenTLS::Content;
       begin
          Early_Secret := HKDF_Extract (Get_Zero_Content (Get_Hash_Length (PSKs'Head.Cipher_Suite)), GreenTLS::Content'(Data => PSKs'Head.Key));
-         Client_Early_Traffic_Secret := Derive_Secret (Early_Secret.Data, "c e traffic", Get_Hash (Transcript_Hash));
+         Client_Early_Traffic_Secret := Derive_Secret (Early_Secret, "c e traffic", Get_Hash (Transcript_Hash));
          -- FIXME: Replace 256 by key length and IV length determined by keystore
          Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Early_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
          Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Early_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
@@ -582,7 +582,7 @@ package TLS_Handshake_Session is
          Derived_Early_Secret := Derive_Secret (Early_Secret, "derived", Get_Hash (Empty_Hash));
          Early_Secret'Reset;
          Handshake_Secret := HKDF_Extract (Derived_Early_Secret, Key)
-            where Key = Calculate_ECDHE_Key (Client_Share, TLS_Handshake::Key_Share_SH ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE]'Head.Data))
+            where Key = Calculate_ECDHE_Key (Client_Share, TLS_Handshake::Key_Share_Entry ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE]'Head.Data))
                      where Client_Share = [for S in TLS_Handshake::Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE]'Head.Data).Shares => S when S.Group = Selected_Group]'Head;
          Derived_Early_Secret'Reset;
          Client_Handshake_Traffic_Secret := Derive_Secret (Handshake_Secret, "c hs traffic", Get_Hash (Transcript_Hash));
