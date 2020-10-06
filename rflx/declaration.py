@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Callable, ClassVar, Sequence
 
 import rflx.typing_ as rty
 from rflx.common import Base
-from rflx.error import Location, RecordFluxError
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
 
@@ -124,7 +124,32 @@ class RenamingDeclaration(TypedDeclaration):
         expression = self.expression.substituted(typify_variable)
         assert isinstance(expression, Selected)
         self.expression = expression
-        return self.expression.check_type(rty.Any())
+
+        error = self.expression.prefix.check_type_instance(rty.Message)
+        if error.errors:
+            return error
+
+        assert isinstance(self.expression.prefix.type_, rty.Message)
+
+        error = RecordFluxError()
+        for f, t in self.expression.prefix.type_.refinements:
+            if ID(f) == self.expression.selector and t.is_compatible(declaration_type):
+                break
+        else:
+            error.append(
+                f'invalid renaming to "{self.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+            error.append(
+                f'refinement for message "{self.expression.prefix.type_.name}"'
+                " would make operation legal",
+                Subsystem.MODEL,
+                Severity.INFO,
+                self.location,
+            )
+        return error + self.expression.check_type(rty.OPAQUE)
 
     def variables(self) -> Sequence[Variable]:
         return self.expression.variables()

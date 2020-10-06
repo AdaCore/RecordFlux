@@ -1078,13 +1078,13 @@ def test_renaming_shadows_builtin_data_available() -> None:
             decl.VariableDeclaration("Message", "TLV::Message"),
             decl.RenamingDeclaration(
                 "Data_Available",
-                "Boolean",
-                expr.Selected(expr.Variable("Message"), "Tag"),
+                "Null::Message",
+                expr.Selected(expr.Variable("Message"), "Value"),
                 location=Location((10, 20)),
             ),
         ],
         parameters=[],
-        types=[BOOLEAN, TLV_MESSAGE],
+        types=[BOOLEAN, TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
         regex=(
             r"^"
             r"<stdin>:10:20: model: error: renaming declaration shadows built-in function "
@@ -1205,14 +1205,86 @@ def test_unused_function() -> None:
     )
 
 
-def test_renaming_references_undefined_variable() -> None:
+def test_renaming() -> None:
+    Session(
+        identifier="P::S",
+        initial=ID("Start"),
+        final=ID("End"),
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[
+                    Transition(
+                        target=ID("End"),
+                        condition=expr.Equal(
+                            expr.Length(expr.Variable("Null_Message")), expr.Number(0)
+                        ),
+                    )
+                ],
+                declarations=[],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+            decl.RenamingDeclaration(
+                "Null_Message",
+                "Null::Message",
+                expr.Selected(expr.Variable("Message"), "Value"),
+            ),
+        ],
+        parameters=[],
+        types=[NULL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
+    )
+
+
+def test_renaming_invalid() -> None:
     assert_session_model_error(
         states=[
             State(
                 name=ID("Start"),
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("Ren"), expr.TRUE)
+                        target=ID("End"),
+                        condition=expr.Equal(
+                            expr.Length(expr.Variable("Null_Message")), expr.Number(0)
+                        ),
+                    )
+                ],
+                declarations=[],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+            decl.RenamingDeclaration(
+                "Null_Message",
+                "Null::Message",
+                expr.Selected(expr.Variable("Message"), "Value"),
+                location=Location((10, 20)),
+            ),
+        ],
+        parameters=[],
+        types=[NULL_MESSAGE, TLV_MESSAGE],
+        regex=(
+            r"^"
+            r'<stdin>:10:20: model: error: invalid renaming to "Null_Message"\n'
+            r'<stdin>:10:20: model: info: refinement for message "TLV::Message"'
+            r" would make operation legal"
+            r"$"
+        ),
+    )
+
+
+def test_renaming_undefined() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[
+                    Transition(
+                        target=ID("End"),
+                        condition=expr.Equal(expr.Length(expr.Variable("M")), expr.Number(0)),
                     )
                 ],
                 declarations=[],
@@ -1221,7 +1293,7 @@ def test_renaming_references_undefined_variable() -> None:
         ],
         declarations=[
             decl.RenamingDeclaration(
-                "Ren",
+                "M",
                 "Boolean",
                 expr.Selected(expr.Variable("Message", location=Location((10, 20))), "Field"),
             ),
