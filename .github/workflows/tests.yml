@@ -21,7 +21,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
       run:
-        python -c "import platform; print('::set-env name=PYTHON_VERSION::' + platform.python_version())"
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
       uses: actions/cache@v2
       with:
@@ -37,9 +37,9 @@ jobs:
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
-        echo "::add-path::$HOME/.local/bin"
-        echo "::add-path::$HOME/bin"
-        echo "::set-env name=PYTHONPATH::$PWD"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "$HOME/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -88,7 +88,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
       run:
-        python -c "import platform; print('::set-env name=PYTHON_VERSION::' + platform.python_version())"
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
       uses: actions/cache@v2
       with:
@@ -105,11 +105,11 @@ jobs:
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
-        echo "::add-path::$HOME/.local/bin"
-        echo "::add-path::$HOME/bin"
-        echo "::set-env name=PYTHONPATH::$PWD"
-        echo "::set-env name=HYPOTHESIS_PROFILE::ci"
-        echo "::set-env name=PYTEST_ADDOPTS::--basetemp=build"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "$HOME/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
+        echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
     - name: Configure kernel parameters
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
@@ -134,7 +134,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
       run:
-        python -c "import platform; print('::set-env name=PYTHON_VERSION::' + platform.python_version())"
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
       uses: actions/cache@v2
       with:
@@ -153,11 +153,11 @@ jobs:
         chmod +x $HOME/bin/gprbuild
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
         chmod +x $HOME/bin/gnatprove
-        echo "::add-path::$HOME/.local/bin"
-        echo "::add-path::$HOME/bin"
-        echo "::set-env name=PYTHONPATH::$PWD"
-        echo "::set-env name=HYPOTHESIS_PROFILE::ci"
-        echo "::set-env name=PYTEST_ADDOPTS::--basetemp=build"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "$HOME/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
+        echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -179,7 +179,7 @@ jobs:
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
-        echo "::add-path::$HOME/bin"
+        echo "$HOME/bin" >> $GITHUB_PATH
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -194,7 +194,7 @@ jobs:
         mkdir $HOME/bin
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
-        echo "::add-path::$HOME/bin"
+        echo "$HOME/bin" >> $GITHUB_PATH
     - name: Build runtime
       run: |
         git clone https://github.com/Componolit/ada-runtime
@@ -226,7 +226,7 @@ jobs:
         chmod +x $HOME/bin/gnatprove
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 run_spat $@' > $HOME/bin/run_spat
         chmod +x $HOME/bin/run_spat
-        echo "::add-path::$HOME/bin"
+        echo "$HOME/bin" >> $GITHUB_PATH
     - name: Verify
       run: |
         make prove_${{ matrix.target }}
@@ -255,7 +255,7 @@ jobs:
         chmod +x $HOME/bin/gnatprove
         echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 run_spat $@' > $HOME/bin/run_spat
         chmod +x $HOME/bin/run_spat
-        echo "::add-path::$HOME/bin"
+        echo "$HOME/bin" >> $GITHUB_PATH
     - name: Cache GNATprove results
       uses: Componolit/github-action-cache@master  # ISSUE: actions/cache#342
       with:
