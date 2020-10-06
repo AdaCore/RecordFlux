@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines,too-many-ancestors,too-many-arguments
 import difflib
+import itertools
 import operator
 from abc import abstractmethod
 from enum import Enum
@@ -1327,8 +1328,9 @@ class Call(Name):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
 
-        for a, t in zip(self.args, self.argument_types):
-            error += a.check_type(t if t else rty.Any())
+        for a, t in itertools.zip_longest(self.args, self.argument_types):
+            if a:
+                error += a.check_type(t if t else rty.Any())
 
         if self.type_ != rty.Undefined():
             if len(self.args) < len(self.argument_types):

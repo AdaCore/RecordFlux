@@ -256,7 +256,7 @@ class Session(Base):
         for k, d in declarations.items():
             if any(str(d.identifier).upper() == str(f).upper() for f in CHANNEL_FUNCTIONS):
                 self.error.append(
-                    f'{self.__entity_name(d)} declaration shadows built-in function "{k}"',
+                    f'{d.descriptive_name} declaration shadows built-in function "{k}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     d.location,
@@ -351,7 +351,7 @@ class Session(Base):
         for k, d in itertools.chain(global_declarations, local_declarations):
             if not d.is_referenced:
                 self.error.append(
-                    f'unused {self.__entity_name(d)} "{k}"',
+                    f'unused {d.descriptive_name} "{k}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     d.location,
@@ -404,17 +404,3 @@ class Session(Base):
         for v in variables:
             if v.identifier in declarations:
                 declarations[v.identifier].reference()
-
-    @staticmethod
-    def __entity_name(declaration: decl.Declaration) -> str:
-        if isinstance(declaration, decl.FunctionDeclaration):
-            return "function"
-        if isinstance(declaration, decl.VariableDeclaration):
-            return "variable"
-        if isinstance(declaration, decl.RenamingDeclaration):
-            return "renaming"
-        if isinstance(declaration, decl.ChannelDeclaration):
-            return "channel"
-        if isinstance(declaration, decl.TypeDeclaration):
-            return "type"
-        assert False, f"unsupported entity {type(decl).__name__}"

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Callable, Sequence
+from typing import TYPE_CHECKING, Callable, ClassVar, Sequence
 
 import rflx.typing_ as rty
 from rflx.common import Base
@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 
 class Declaration(Base):
+    descriptive_name: ClassVar[str]
+
     def __init__(self, identifier: StrID, location: Location = None):
         self.identifier = ID(identifier)
         self.location = location
@@ -70,6 +72,8 @@ class TypedDeclaration(Declaration):
 
 
 class VariableDeclaration(TypedDeclaration):
+    descriptive_name: ClassVar[str] = "variable"
+
     def __init__(
         self,
         identifier: StrID,
@@ -102,6 +106,8 @@ class VariableDeclaration(TypedDeclaration):
 
 
 class RenamingDeclaration(TypedDeclaration):
+    descriptive_name: ClassVar[str] = "renaming"
+
     def __init__(
         self, identifier: StrID, type_name: StrID, expression: Selected, location: Location = None
     ):
@@ -144,6 +150,8 @@ class Argument(Base):
 
 
 class FunctionDeclaration(TypedDeclaration, FormalDeclaration):
+    descriptive_name: ClassVar[str] = "function"
+
     def __init__(
         self,
         identifier: StrID,
@@ -172,6 +180,8 @@ class FunctionDeclaration(TypedDeclaration, FormalDeclaration):
 
 
 class ChannelDeclaration(FormalDeclaration):
+    descriptive_name: ClassVar[str] = "channel"
+
     def __init__(
         self,
         identifier: StrID,
@@ -207,6 +217,8 @@ class ChannelDeclaration(FormalDeclaration):
 
 
 class TypeDeclaration(FormalDeclaration):
+    descriptive_name: ClassVar[str] = "type"
+
     def __init__(self, type_: "mty.Type"):
         super().__init__(type_.identifier, type_.location)
         self.type_definition = type_
