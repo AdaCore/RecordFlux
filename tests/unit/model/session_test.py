@@ -38,9 +38,11 @@ def test_str() -> None:
                                     expr.Equal(expr.Variable("Z"), expr.TRUE),
                                     expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
                                 ),
+                                description="rfc1149.txt+45:4-47:8",
                             ),
                             Transition("A"),
                         ],
+                        description="rfc1149.txt+51:4-52:9",
                     ),
                     State("B"),
                 ],
@@ -66,13 +68,16 @@ def test_str() -> None:
                is
                   Y : Boolean := False;
                begin
-                  state A is
+                  state A
+                     with Desc => "rfc1149.txt+51:4-52:9"
+                  is
                      Z : Boolean := Y;
                      M : TLV::Message;
                   begin
                      X'Read (M);
                   transition
                      then B
+                        with Desc => "rfc1149.txt+45:4-47:8"
                         if Z = True
                            and G (F) = True
                      then A
