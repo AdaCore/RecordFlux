@@ -1659,15 +1659,25 @@ def test_call_str() -> None:
 
 def test_conversion_type() -> None:
     assert_type(
-        Conversion("X", Variable("Y", type_=rty.OPAQUE), type_=rty.Message("X")),
+        Conversion(
+            "X",
+            Selected(Variable("Y", type_=rty.Message("Y", {("Z",)}, {"Z": rty.OPAQUE})), "Z"),
+            type_=rty.Message("X"),
+            argument_types=[rty.Message("Y")],
+        ),
         rty.Message("X"),
     )
 
 
 def test_conversion_type_error() -> None:
     assert_type_error(
-        Conversion("X", Variable("Y", location=Location((10, 30))), location=Location((10, 20))),
+        Conversion(
+            "X",
+            Selected(Variable("Y", location=Location((10, 30))), "Z"),
+            location=Location((10, 20)),
+        ),
         r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
+        r'<stdin>:10:20: model: error: invalid conversion to "X"\n'
         r'<stdin>:10:20: model: error: undefined type "X"$',
     )
 

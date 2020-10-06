@@ -9,7 +9,7 @@ import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model import BOOLEAN, OPAQUE, Array, Private, Session, State, Transition
-from tests.models import TLV_MESSAGE, TLV_TAG
+from tests.models import NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE, TLV_MESSAGE, TLV_TAG
 from tests.utils import assert_equal, assert_session_model_error, multilinestr
 
 TLV_MESSAGES = Array("TLV::Messages", TLV_MESSAGE)
@@ -1569,7 +1569,7 @@ def test_assignment_opaque_function_binding() -> None:
     )
 
 
-def test_assignment_conversion() -> None:
+def test_conversion() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -1582,7 +1582,7 @@ def test_assignment_conversion() -> None:
                     stmt.Assignment(
                         "Converted",
                         expr.Conversion(
-                            "TLV::Message",
+                            "Null::Message",
                             expr.Selected(expr.Variable("Message"), "Value"),
                         ),
                     )
@@ -1592,14 +1592,14 @@ def test_assignment_conversion() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
-            decl.VariableDeclaration("Converted", "TLV::Message"),
+            decl.VariableDeclaration("Converted", "Null::Message"),
         ],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[NULL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
     )
 
 
-def test_assignment_conversion_undefined() -> None:
+def test_conversion_undefined() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1626,7 +1626,76 @@ def test_assignment_conversion_undefined() -> None:
         types=[TLV_MESSAGE],
         regex=(
             r'^<stdin>:10:20: model: error: undefined type "P::Undef"\n'
+            r'<stdin>:10:30: model: error: invalid conversion to "P::Undef"\n'
+            r'<stdin>:10:30: model: info: refinement for message "TLV::Message"'
+            r" would make operation legal\n"
             r'<stdin>:10:30: model: error: undefined type "P::Undef"$'
+        ),
+    )
+
+
+def test_conversion_invalid_argument() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                actions=[
+                    stmt.Assignment(
+                        "Converted",
+                        expr.Conversion(
+                            "TLV::Message",
+                            expr.Variable("Message", location=Location((10, 20))),
+                        ),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "Opaque"),
+            decl.VariableDeclaration("Converted", "TLV::Message"),
+        ],
+        parameters=[],
+        types=[OPAQUE, TLV_MESSAGE],
+        regex=(
+            r"^<stdin>:10:20: model: error: invalid argument for conversion,"
+            r" expected message field$"
+        ),
+    )
+
+
+def test_conversion_invalid() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                name=ID("Start"),
+                transitions=[Transition(target=ID("End"))],
+                actions=[
+                    stmt.Assignment(
+                        "Converted",
+                        expr.Conversion(
+                            "Null::Message",
+                            expr.Selected(expr.Variable("Message"), "Value"),
+                            location=Location((10, 20)),
+                        ),
+                    )
+                ],
+            ),
+            State(name=ID("End")),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+            decl.VariableDeclaration("Converted", "Null::Message"),
+        ],
+        parameters=[],
+        types=[NULL_MESSAGE, TLV_MESSAGE],
+        regex=(
+            r"^"
+            r'<stdin>:10:20: model: error: invalid conversion to "Null::Message"\n'
+            r'<stdin>:10:20: model: info: refinement for message "TLV::Message"'
+            r" would make operation legal"
+            r"$"
         ),
     )
 

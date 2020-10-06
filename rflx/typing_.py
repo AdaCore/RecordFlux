@@ -311,16 +311,28 @@ def common_type(types: ty.Sequence[Type]) -> Type:
 
 
 def check_type(
-    actual: Type, expected: Type, location: ty.Optional[Location], description: str
+    actual: Type,
+    expected: ty.Union[Type, ty.Tuple[Type, ...]],
+    location: ty.Optional[Location],
+    description: str,
 ) -> RecordFluxError:
+    assert expected, "empty expected types"
+
     if actual == Undefined():
         return _undefined_type(location, description)
 
     error = RecordFluxError()
 
-    if Undefined() not in [actual, expected] and not actual.is_compatible(expected):
+    expected_types = [expected] if isinstance(expected, Type) else list(expected)
+
+    if Undefined() not in [actual, expected] and all(
+        not actual.is_compatible(t) for t in expected_types
+    ):
+        desc = (
+            " or ".join(map(str, expected_types)) if isinstance(expected, tuple) else str(expected)
+        )
         error.append(
-            f"expected {expected}",
+            f"expected {desc}",
             Subsystem.MODEL,
             Severity.ERROR,
             location,
@@ -341,6 +353,8 @@ def check_type_instance(
     location: ty.Optional[Location],
     description: str = "",
 ) -> RecordFluxError:
+    assert expected, "empty expected types"
+
     if actual == Undefined():
         return _undefined_type(location, description)
 

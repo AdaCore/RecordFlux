@@ -475,6 +475,9 @@ package TLS_Handshake is
          Mode : Heartbeat_Mode;
       end message;
 
+   for EE_Extension use (Data => Heartbeat)
+      if Tag = EXTENSION_HEARTBEAT;
+
    -- Certificate Authorities Extension
 
    type Certificate_Authorities_Length is range 3 .. 2**16 - 1 with Size => 16;

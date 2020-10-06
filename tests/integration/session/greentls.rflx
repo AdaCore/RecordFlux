@@ -13,6 +13,8 @@ package GreenTLS is
          Data : Opaque;
       end message;
 
+   for Content use (Data => TLS_Alert::Alert);
+
    type Control_Message_Type is (KEY_UPDATE_CLIENT, KEY_UPDATE_SERVER, HEARTBEAT_MODE, ALERT) with Size => 8;
    type Control_Message_Length is range 0 .. 2**16 - 1 with Size => 16;
 
