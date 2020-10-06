@@ -133,7 +133,7 @@ class Expr(DBC, Base):
         """Initialize and check the types of sub-expressions."""
         raise NotImplementedError
 
-    def check_type(self, expected: rty.Type) -> RecordFluxError:
+    def check_type(self, expected: Union[rty.Type, Tuple[rty.Type, ...]]) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         return self._check_type_subexpr() + rty.check_type(
             self.type_, expected, self.location, _entity_name(self)
@@ -1894,17 +1894,47 @@ class Conversion(Expr):
         name: StrID,
         argument: Expr,
         type_: rty.Type = rty.Undefined(),
+        argument_types: Sequence[rty.Type] = None,
         location: Location = None,
     ) -> None:
         super().__init__(type_, location)
         self.name = ID(name)
         self.argument = argument
+        self.argument_types = argument_types or []
 
     def _update_str(self) -> None:
         self._str = intern(f"{self.name} ({self.argument})")
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.argument.check_type(rty.OPAQUE)
+        error = self.argument.check_type(rty.OPAQUE)
+
+        if isinstance(self.argument, Selected):
+            if self.argument_types:
+                error += self.argument.prefix.check_type(tuple(self.argument_types))
+            else:
+                error.append(
+                    f'invalid conversion to "{self.name}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
+                )
+                if isinstance(self.argument.prefix.type_, rty.Message):
+                    error.append(
+                        f'refinement for message "{self.argument.prefix.type_.name}"'
+                        " would make operation legal",
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        self.location,
+                    )
+        else:
+            error.append(
+                "invalid argument for conversion, expected message field",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.argument.location,
+            )
+
+        return error
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
@@ -1920,12 +1950,22 @@ class Conversion(Expr):
         expr = func(self)
         if isinstance(expr, Conversion):
             return expr.__class__(
-                self.name, self.argument.substituted(func), type_=expr.type_, location=expr.location
+                expr.name,
+                expr.argument.substituted(func),
+                expr.type_,
+                expr.argument_types,
+                expr.location,
             )
         return expr
 
     def simplified(self) -> Expr:
-        return Conversion(self.name, self.argument.simplified(), self.type_, self.location)
+        return Conversion(
+            self.name,
+            self.argument.simplified(),
+            self.type_,
+            self.argument_types,
+            self.location,
+        )
 
     def ada_expr(self) -> ada.Expr:
         return ada.Conversion(ada.ID(self.name), self.argument.ada_expr())

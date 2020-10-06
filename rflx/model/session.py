@@ -383,6 +383,11 @@ class Session(Base):
                 if identifier in self.types:
                     type_ = self.types[identifier].type_
                     expression.type_ = type_
+                    expression.argument_types = [
+                        t.pdu.type_
+                        for t in self.types.values()
+                        if isinstance(t, Refinement) and t.sdu.identifier == identifier
+                    ]
             if isinstance(expression, expr.MessageAggregate):
                 if identifier in self.types:
                     message = self.types[identifier]

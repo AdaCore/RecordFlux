@@ -17,7 +17,7 @@ package TLS_Handshake_Session is
 
       with function Calculate_Binders (PSKs : GreenTLS::PSKs; Transcript_Hash : GreenTLS::Content) return TLS_Handshake::PSK_Binder_Entries;
       with function Calculate_Binders_Length (PSKs : GreenTLS::PSKs) return TLS_Handshake::Binders_Length;
-      with function Calculate_ECDHE_Key (Client_Share : TLS_Handshake::Key_Share_Entry; Server_Share : TLS_Handshake::Key_Share_Entry) return GreenTLS::Content;
+      with function Calculate_ECDHE_Key (Client_Share : TLS_Handshake::Key_Share_Entry; Server_Share : TLS_Handshake::Key_Share_SH) return GreenTLS::Content;
       with function Create_Client_Hello_Extensions (Configuration : GreenTLS::Configuration) return TLS_Handshake::CH_Extensions;
       with function Derive_Secret (Secret : GreenTLS::Content; Label : Opaque; Transcript_Hash : GreenTLS::Content) return GreenTLS::Content;
       with function Empty_Hash return Hash_Context;
@@ -343,7 +343,7 @@ package TLS_Handshake_Session is
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Server_Hello_Message.Extensions =>
                    E.Tag = TLS_Handshake::EXTENSION_SUPPORTED_VERSIONS
-                   and TLS_Handshake::TLS_1_3 not in TLS_Handshake::Supported_Versions (E.Data).Versions)
+                   and TLS_Handshake::TLS_1_3 /= TLS_Handshake::Supported_Version (E.Data).Version)
          then ERROR_ILLEGAL_PARAMETER
             if (for some E in Server_Hello_Message.Extensions =>
                    E.Tag not in [for E in Client_Hello_Message.Extensions => E.Tag])
@@ -392,14 +392,14 @@ package TLS_Handshake_Session is
             if Keystore_Message'Valid = False
                or Keystore_Message.Tag /= GreenTLS::KEYSTORE_RESPONSE
                or Keystore_Message.Request /= GreenTLS::KEYSTORE_REQUEST_PSKS
-               or GreenTLS::PSK (Keystore_Message.Payload)'Valid = False
+               or GreenTLS::PSK_Message (Keystore_Message.Payload)'Valid = False
          then WAIT_SH_EXTENSIONS_PSK_VALIDATION
       end WAIT_SH_EXTENSIONS_PSK_REQUEST;
 
       state WAIT_SH_EXTENSIONS_PSK_VALIDATION is
          Identity_Cipher_Suite : TLS_Handshake::Cipher_Suite;
       begin
-         Identity_Cipher_Suite := GreenTLS::PSK (Keystore_Message.Payload).Cipher_Suite;
+         Identity_Cipher_Suite := GreenTLS::PSK_Message (Keystore_Message.Payload).PSKs'Head.Cipher_Suite;
       transition
          then ERROR_ILLEGAL_PARAMETER
             if Identity_Cipher_Suite /= Server_Hello_Message.Cipher_Suite
@@ -432,11 +432,11 @@ package TLS_Handshake_Session is
                    E.Tag not in [for E in Client_Hello_Message.Extensions => E.Tag]
                    and E.Tag /= TLS_Handshake::EXTENSION_COOKIE)
          then ERROR_ILLEGAL_PARAMETER
-            if (for some E in Server_Hello_Message.Extensions =>
+            if (for some E in Server_Hello_Message.HRR_Extensions =>
                    E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE
                    and TLS_Handshake::Key_Share_HRR (E.Data).Selected_Group not in Client_Supported_Groups)
          then ERROR_ILLEGAL_PARAMETER
-            if (for some E in Server_Hello_Message.Extensions =>
+            if (for some E in Server_Hello_Message.HRR_Extensions =>
                    E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE
                    and (for some S in Client_Shares =>
                            S.Group = TLS_Handshake::Key_Share_HRR (E.Data).Selected_Group))
@@ -582,7 +582,7 @@ package TLS_Handshake_Session is
          Derived_Early_Secret := Derive_Secret (Early_Secret, "derived", Get_Hash (Empty_Hash));
          Early_Secret'Reset;
          Handshake_Secret := HKDF_Extract (Derived_Early_Secret, Key)
-            where Key = Calculate_ECDHE_Key (Client_Share, TLS_Handshake::Key_Share_Entry ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE]'Head.Data))
+            where Key = Calculate_ECDHE_Key (Client_Share, TLS_Handshake::Key_Share_SH ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE]'Head.Data))
                      where Client_Share = [for S in TLS_Handshake::Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE]'Head.Data).Shares => S when S.Group = Selected_Group]'Head;
          Derived_Early_Secret'Reset;
          Client_Handshake_Traffic_Secret := Derive_Secret (Handshake_Secret, "c hs traffic", Get_Hash (Transcript_Hash));
