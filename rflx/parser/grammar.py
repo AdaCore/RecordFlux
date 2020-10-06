@@ -612,6 +612,7 @@ def state() -> Token:
         locatedExpr(
             Suppress(Keyword("state"))
             - unqualified_identifier()("identifier")
+            + Optional(with_aspects(description_aspect), {})("aspects")
             + Suppress(Keyword("is"))
             + (
                 Keyword("null state")
@@ -1067,6 +1068,7 @@ def parse_state(string: str, location: int, tokens: ParseResults) -> State:
         declarations=tokens["declarations"],
         actions=tokens["actions"],
         transitions=tokens["transitions"],
+        description=tokens["aspects"]["desc"] if "desc" in tokens["aspects"] else None,
         location=locn,
     )
 

@@ -25,8 +25,8 @@ class Transition(Base):
     ):
         self.target = ID(target)
         self.condition = condition
-        self.location = location
         self.description = description
+        self.location = location
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["target", "condition", "description"])
@@ -46,25 +46,30 @@ class State(Base):
         transitions: Sequence[Transition] = None,
         actions: Sequence[stmt.Statement] = None,
         declarations: Sequence[decl.Declaration] = None,
+        description: str = None,
         location: Location = None,
     ):
+        # pylint: disable=too-many-arguments
         self.__name = ID(name)
         self.__transitions = transitions or []
         self.__actions = actions or []
         self.declarations = {d.identifier: d for d in declarations} if declarations else {}
+        self.description = description
         self.location = location
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["name", "transitions", "actions", "declarations"])
 
     def __str__(self) -> str:
+        with_aspects = f'\n   with Desc => "{self.description}"\n' if self.description else " "
         if not self.declarations and not self.actions and not self.transitions:
-            return f"state {self.name} is null state"
+            return f"state {self.name}{with_aspects}is null state"
         declarations = "".join([f"{d};\n" for d in self.declarations.values()])
         actions = "".join([f"{a};\n" for a in self.actions])
         transitions = "\n".join([f"{p}" for p in self.transitions])
         return (
-            f"state {self.name} is\n{indent(declarations, 3)}begin\n{indent(actions, 3)}"
+            f"state {self.name}{with_aspects}is\n{indent(declarations, 3)}begin\n"
+            f"{indent(actions, 3)}"
             f"transition\n{indent(transitions, 3)}\nend {self.name}"
         )
 

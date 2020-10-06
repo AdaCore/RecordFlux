@@ -116,13 +116,17 @@ package TLS_Record_Session is
          Application_Control_Channel'Read (Application_Control_Message);
       transition
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Application_Control_Message'Valid = False
          then SHUTDOWN
             if Application_Control_Message.Tag = GreenTLS::APPLICATION_SHUTDOWN
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
       end CONTROL;
 
-      state SHUTDOWN is
+      state SHUTDOWN
+         with Desc => "rfc8446.txt+4828:4-4829:52"
+      is
          Success : Boolean;
       begin
          Alert_Message := TLS_Alert::Alert'(Level => TLS_Alert::WARNING, Description => TLS_Alert::CLOSE_NOTIFY);
@@ -139,6 +143,7 @@ package TLS_Record_Session is
          Handshake_Control_Channel'Read (Handshake_Control_Message);
       transition
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Handshake_Control_Message'Valid = False
          then KEY_UPDATE_CLIENT
             if Handshake_Control_Message.Tag = GreenTLS::KEY_UPDATE_CLIENT
@@ -159,6 +164,7 @@ package TLS_Record_Session is
          Record_Protection := True;
       transition
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Client_Key_Update_Message'Valid = False
          then IDLE
       end KEY_UPDATE_CLIENT;
@@ -170,6 +176,7 @@ package TLS_Record_Session is
          Server_Sequence_Number := 0;
       transition
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Server_Key_Update_Message'Valid = False
          then IDLE
       end KEY_UPDATE_SERVER;
@@ -188,6 +195,7 @@ package TLS_Record_Session is
          TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HANDSHAKE, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Handshake_Message'Length, Fragment => Handshake_Message.Data);
       transition
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Handshake_Message'Valid = False
          then NETWORK_OUT_SEND
       end HANDSHAKE;
@@ -197,8 +205,10 @@ package TLS_Record_Session is
          Network_Channel'Read (TLS_Record_Message);
       transition
          then ERROR_DECODE_ERROR
+            with Desc => "rfc8446.txt+4959:4-4964:57"
             if TLS_Record_Message'Valid = False
          then ERROR_UNEXPECTED_MESSAGE
+            with Desc => "rfc8446.txt+4902:4-4905:29"
             if TLS_Record_Message.Tag = TLS_Record::APPLICATION_DATA
                and Server_Write_Key_Received = False
          then NETWORK_IN_DECRYPT
@@ -213,20 +223,26 @@ package TLS_Record_Session is
             if TLS_Record_Message.Tag = TLS_Record::HEARTBEAT
                and Heartbeat_Receive_Enabled = True
          then ERROR_UNEXPECTED_MESSAGE
+            with Desc => "rfc6520.txt+146:69-149:61"
             if TLS_Record_Message.Tag = TLS_Record::HEARTBEAT
                and Heartbeat_Receive_Enabled = False
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
       end NETWORK_IN;
 
-      state NETWORK_IN_DECRYPT is
+      state NETWORK_IN_DECRYPT
+         with Desc => "rfc8446.txt+4631:4-4669:49"
+      is
       begin
          TLS_Inner_Plaintext := Decrypt (Server_Key_Update_Message, Server_Sequence_Number, TLS_Record_Message.Encrypted_Record);
          Server_Sequence_Number := Server_Sequence_Number + 1;
          Plaintext := GreenTLS::Content'(Data => TLS_Inner_Plaintext.Content);
       transition
          then ERROR_BAD_RECORD_MAC
+            with Desc => "rfc8446.txt+4907:4-4912:57"
             if TLS_Inner_Plaintext'Valid = False
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Plaintext'Valid = False
          then NETWORK_IN_APPLICATION
             if TLS_Inner_Plaintext.Tag = TLS_Record::APPLICATION_DATA
@@ -235,6 +251,7 @@ package TLS_Record_Session is
          then NETWORK_IN_ALERT
             if TLS_Inner_Plaintext.Tag = TLS_Record::ALERT
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
       end NETWORK_IN_DECRYPT;
 
       state NETWORK_IN_CONTENT is
@@ -242,12 +259,14 @@ package TLS_Record_Session is
          Plaintext := GreenTLS::Content'(Data => TLS_Record_Message.Fragment);
       transition
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Plaintext'Valid = False
          then NETWORK_IN_HANDSHAKE
             if TLS_Record_Message.Tag = TLS_Record::HANDSHAKE
          then NETWORK_IN_ALERT
             if TLS_Record_Message.Tag = TLS_Record::ALERT
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
       end NETWORK_IN_CONTENT;
 
       state NETWORK_IN_APPLICATION is
@@ -285,10 +304,12 @@ package TLS_Record_Session is
          Alert_Message := TLS_Alert::Alert (Plaintext.Data);
       transition
          then ERROR_DECODE_ERROR
+            with Desc => "rfc8446.txt+4959:4-4964:57"
             if Alert_Message'Valid = False
          then NETWORK_IN_ALERT_CLOSE
             if Alert_Message.Description = TLS_Alert::CLOSE_NOTIFY
          then NETWORK_IN_ALERT_TERMINATE
+            with Desc => "rfc8446.txt+4726:4-4728:46"
       end NETWORK_IN_ALERT;
 
       state NETWORK_IN_ALERT_CLOSE is
@@ -303,7 +324,9 @@ package TLS_Record_Session is
          then IDLE
       end NETWORK_IN_ALERT_CLOSE;
 
-      state NETWORK_IN_ALERT_TERMINATE is
+      state NETWORK_IN_ALERT_TERMINATE
+         with Desc => "rfc8446.txt+4728:48-4729:57"
+      is
       begin
          Network_Send_Enabled := False;
          Network_Receive_Enabled := False;
@@ -326,6 +349,7 @@ package TLS_Record_Session is
          then IDLE
             if Network_Send_Enabled = False
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Record_Protection = True
                and Client_Write_Key_Received = False
          then NETWORK_OUT_SEND_UNENCRYPTED
@@ -335,6 +359,7 @@ package TLS_Record_Session is
             if Record_Protection = True
                and Client_Write_Key_Received = True
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
       end NETWORK_OUT_SEND;
 
       state NETWORK_OUT_SEND_UNENCRYPTED is
@@ -372,6 +397,7 @@ package TLS_Record_Session is
          Heartbeat_Control_Message := GreenTLS::Heartbeat_Control_Message (Handshake_Control_Message.Data);
       transition
          then ERROR_INTERNAL_ERROR
+            with Desc => "rfc8446.txt+4977:4-4979:38"
             if Heartbeat_Control_Message'Valid = False
          then HEARTBEAT_CONTROL_CONFIGURE
       end HEARTBEAT_CONTROL;
@@ -433,7 +459,9 @@ package TLS_Record_Session is
          then NETWORK_OUT_SEND_ENCRYPTED
       end ERROR_SEND_REMOTE;
 
-      state TERMINATING is
+      state TERMINATING
+         with Desc => "rfc8446.txt+4729:60-4731:14"
+      is
       begin
          Client_Key_Update_Message'Reset;
          Server_Key_Update_Message'Reset;

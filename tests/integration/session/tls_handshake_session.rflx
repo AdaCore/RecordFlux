@@ -199,6 +199,7 @@ package TLS_Handshake_Session is
          then ERROR_INTERNAL_ERROR
             if Extensions_List'Valid = False
          then START_DHE_SIGNATURE_ALGORITHMS
+            with Desc => "rfc8446.txt+2259:43-2261:36"
             if Configuration.Server_Authentication_Enabled = True
          then START_PSK
             if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
@@ -297,7 +298,9 @@ package TLS_Handshake_Session is
          then WAIT_SH
       end START_SEND;
 
-      state START_SEND_CLIENT_EARLY_TRAFFIC_SECRET is
+      state START_SEND_CLIENT_EARLY_TRAFFIC_SECRET
+         with Desc => "rfc8446.txt+2938:43-2940:30"
+      is
          Client_Early_Traffic_Secret : GreenTLS::Content;
          Client_Key : GreenTLS::Content;
          Client_IV : GreenTLS::Content;
@@ -348,6 +351,7 @@ package TLS_Handshake_Session is
             if (for some E in Server_Hello_Message.Extensions =>
                    E.Tag not in [for E in Client_Hello_Message.Extensions => E.Tag])
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+2770:46-2771:59"
             if TLS_Handshake::PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes_Modes
                and (for some E in Server_Hello_Message.Extensions =>
                        E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE)
@@ -358,9 +362,11 @@ package TLS_Handshake_Session is
             if Server_Hello_Message.HRR_Extensions'Present = False
                and Retry_Request_Received = True
          then WAIT_SH_EXTENSIONS_PSK
+            with Desc => "rfc8446.txt+643:57-646:21"
             if (for some E in Server_Hello_Message.Extensions =>
                    E.Tag = TLS_Handshake::EXTENSION_PRE_SHARED_KEY)
          then WAIT_SH_EXTENSIONS_DHE
+            with Desc => "rfc8446.txt+640:45-642:47"
             if (for some E in Server_Hello_Message.Extensions =>
                    E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE)
          then ERROR_INVALID_CONFIGURATION
@@ -371,6 +377,7 @@ package TLS_Handshake_Session is
          Identity_Index := TLS_Handshake::Pre_Shared_Key_SH ([for E in Server_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_PRE_SHARED_KEY]'Head.Data).Selected_Identity;
       transition
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+3199:4-3202:29"
             if Identity_Index /= 0
                and (for some E in Server_Hello_Message.Extensions =>
                        E.Tag = TLS_Handshake::EXTENSION_EARLY_DATA)
@@ -404,6 +411,7 @@ package TLS_Handshake_Session is
          then ERROR_ILLEGAL_PARAMETER
             if Identity_Cipher_Suite /= Server_Hello_Message.Cipher_Suite
          then WAIT_SH_EXTENSIONS_DHE
+            with Desc => "rfc8446.txt+2765:4-2766:36, rfc8446.txt+646:24-647:60"
             if (for some E in Server_Hello_Message.Extensions =>
                    E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE)
          then SET_RECORD_KEYS
@@ -415,6 +423,7 @@ package TLS_Handshake_Session is
          DHE_Accepted := True;
       transition
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+2766:39-2768:55"
             if (for some S in TLS_Handshake::Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE]'Head.Data).Shares =>
                    S.Group = Selected_Group) = False
          then SET_RECORD_KEYS
@@ -428,14 +437,17 @@ package TLS_Handshake_Session is
          Client_Shares := TLS_Handshake::Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE]'Head.Data).Shares;
       transition
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+1825:70-1829:28"
             if (for some E in Server_Hello_Message.Extensions =>
                    E.Tag not in [for E in Client_Hello_Message.Extensions => E.Tag]
                    and E.Tag /= TLS_Handshake::EXTENSION_COOKIE)
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+2736:21-2738:23"
             if (for some E in Server_Hello_Message.HRR_Extensions =>
                    E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE
                    and TLS_Handshake::Key_Share_HRR (E.Data).Selected_Group not in Client_Supported_Groups)
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+2738:29-2740:31"
             if (for some E in Server_Hello_Message.HRR_Extensions =>
                    E.Tag = TLS_Handshake::EXTENSION_KEY_SHARE
                    and (for some S in Client_Shares =>
@@ -443,7 +455,9 @@ package TLS_Handshake_Session is
          then WAIT_SH_PREPARE_CH
       end WAIT_SH_PARSE_HRR;
 
-      state WAIT_SH_PREPARE_CH is
+      state WAIT_SH_PREPARE_CH
+         with Desc => "rfc8446.txt+1497:7-1498:70"
+      is
       begin
          Extensions_List'Reset;
          Extensions_List'Extend ([for E in Client_Hello_Message.Extensions => E when E.Tag /= TLS_Handshake::EXTENSION_KEY_SHARE
@@ -471,7 +485,9 @@ package TLS_Handshake_Session is
          then WAIT_SH_SEND_CH
       end WAIT_SH_PREPARE_CH_DISPATCH;
 
-      state WAIT_SH_PREPARE_CH_KEY_SHARE is
+      state WAIT_SH_PREPARE_CH_KEY_SHARE
+         with Desc => "rfc8446.txt+2742:12-2753:39"
+      is
       begin
          Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::EXTENSION_KEY_SHARE, Data_Length => Key_Share'Length, Data => Key_Share)
             where Key_Share = TLS_Handshake::Key_Share_CH'(Length => Entries'Length, Shares => Entries)
@@ -481,7 +497,9 @@ package TLS_Handshake_Session is
          then WAIT_SH_PREPARE_CH_DISPATCH
       end WAIT_SH_PREPARE_CH_KEY_SHARE;
 
-      state WAIT_SH_PREPARE_CH_COOKIE is
+      state WAIT_SH_PREPARE_CH_COOKIE
+         with Desc => "rfc8446.txt+2223:19-2225:47"
+      is
       begin
          Extensions_List'Append ([for E in Server_Hello_Message.Extensions => TLS_Handshake::CH_Extension'(Tag => E.Tag, Data_Length => E.Data_Length, Data => E.Data) when E.Tag = TLS_Handshake::EXTENSION_COOKIE]'Head);
          CH_Cookie_Prepared := True;
@@ -489,7 +507,9 @@ package TLS_Handshake_Session is
          then WAIT_SH_PREPARE_CH_DISPATCH
       end WAIT_SH_PREPARE_CH_COOKIE;
 
-      state WAIT_SH_PREPARE_CH_PSK is
+      state WAIT_SH_PREPARE_CH_PSK
+         with Desc => "rfc8446.txt+1519:7-1520:51"
+      is
       begin
          Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::KEYSTORE_REQUEST, Request => GreenTLS::KEYSTORE_REQUEST_PSKS, Length => Connection'Length, Payload => Connection));
          Keystore_Channel'Read (Keystore_Message);
@@ -548,7 +568,9 @@ package TLS_Handshake_Session is
          then WAIT_SH_PREPARE_CH_DISPATCH
       end WAIT_SH_NO_PSK_EXTENSION;
 
-      state WAIT_SH_SEND_CH is
+      state WAIT_SH_SEND_CH
+         with Desc => "rfc8446.txt+3264:4-3275:42"
+      is
          Random : GreenTLS::Content;
          Transcript_Hash_2 : Hash_Context;
       begin
@@ -640,6 +662,7 @@ package TLS_Handshake_Session is
                    or E.Tag = TLS_Handshake::EXTENSION_POST_HANDSHAKE_AUTH
                    or E.Tag = TLS_Handshake::EXTENSION_SIGNATURE_ALGORITHMS_CERT)
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc6066.txt+376:46-378:16"
             if Server_Name_Received = False
                and (for some E in Encrypted_Extensions_Message.Extensions =>
                        E.Tag = TLS_Handshake::EXTENSION_SERVER_NAME)
@@ -677,6 +700,7 @@ package TLS_Handshake_Session is
          Server_Name_Received := True;
       transition
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc6066.txt+378:19-379:9"
             if Server_Name_Extension.Data_Length > 0
          then WAIT_EE_PARSE_EXTENSIONS
       end WAIT_EE_PROCESS_SERVER_NAME;
@@ -687,11 +711,14 @@ package TLS_Handshake_Session is
          Max_Fragment_Length_Received := True;
       transition
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc6066.txt+435:50-438:32"
             if Configuration.Max_Fragment_Length /= Max_Fragment_Length
          then WAIT_EE_PARSE_EXTENSIONS
       end WAIT_EE_PROCESS_MAX_FRAGMENT_LENGTH;
 
-      state WAIT_EE_PROCESS_SUPPORTED_GROUPS is
+      state WAIT_EE_PROCESS_SUPPORTED_GROUPS
+         with Desc => "rfc8446.txt+2651:4-2661:68"
+      is
       begin
          Server_Preferred_Groups := TLS_Handshake::Supported_Groups ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_SUPPORTED_GROUPS]'Head.Data);
          Supported_Groups_Received := True;
@@ -699,7 +726,9 @@ package TLS_Handshake_Session is
          then WAIT_EE_PARSE_EXTENSIONS
       end WAIT_EE_PROCESS_SUPPORTED_GROUPS;
 
-      state WAIT_EE_PROCESS_HEARTBEAT is
+      state WAIT_EE_PROCESS_HEARTBEAT
+         with Desc => "rfc6520.txt+138:4-149:61"
+      is
          Server_Heartbeat_Mode : TLS_Handshake::Heartbeat_Mode;
       begin
          Server_Heartbeat_Mode := TLS_Handshake::Heartbeat ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_HEARTBEAT]'Head.Data).Mode;
@@ -725,14 +754,18 @@ package TLS_Handshake_Session is
          then ERROR_INTERNAL_ERROR
             if Success = False
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc7301.txt+181:53-185:30"
             if Protocols'Length /= 1
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc7301.txt+175:4-177:54"
             if (for all P in Configuration.Protocols_Protocol_Name_List =>
                    P.Name /= Protocol.Name)
          then WAIT_EE_PARSE_EXTENSIONS
       end WAIT_EE_PROCESS_APPLICATION_LAYER_PROTOCOL_NEGOTIATION;
 
-      state WAIT_EE_PROCESS_EARLY_DATA is
+      state WAIT_EE_PROCESS_EARLY_DATA
+         with Desc => "rfc8446.txt+2993:7-2998:45"
+      is
       begin
          Early_Data_Received := True;
       transition
@@ -880,8 +913,10 @@ package TLS_Handshake_Session is
          then ERROR_UNEXPECTED_MESSAGE
             if CCR_Handshake_Message.Tag /= TLS_Handshake::HANDSHAKE_CERTIFICATE
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+3593:22-3594:38"
             if Certificate_Message.Certificate_Request_Context_Length /= 0
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+3649:4-3649:58"
             if Certificate_Message.Certificate_List_Length = 0
          then PARSE_CERT
       end WAIT_CERT;
@@ -916,6 +951,7 @@ package TLS_Handshake_Session is
             if Certificate_Verify_Handshake_Message'Valid = False
                or Certificate_Verify_Message'Valid = False
          then ERROR_ILLEGAL_PARAMETER
+            with Desc => "rfc8446.txt+3902:4-3904:12"
             if Certificate_Verify_Message.Algorithm not in Configuration.Signature_Algorithms_Algorithms
          then WAIT_CV_VALIDATE
       end WAIT_CV;
@@ -952,12 +988,15 @@ package TLS_Handshake_Session is
          Master_Secret'Reset;
       transition
          then ERROR_DECRYPT_ERROR
+            with Desc => "rfc8446.txt+3951:4-3953:25"
             if Finished_Handshake_Message'Valid = False
                or Finished_Message'Valid = False
                or Finished_Message.Verify_Data /= Verify_Data.Data
          then SEND_END_OF_EARLY_DATA
+            with Desc => "rfc8446.txt+4025:4-4027:19"
             if Early_Data_Received = True
          then CHECK_CERTIFICATE_REQUEST
+            with Desc => "rfc8446.txt+4027:22-4029:26"
       end WAIT_FINISHED;
 
       state SEND_END_OF_EARLY_DATA is
@@ -973,6 +1012,7 @@ package TLS_Handshake_Session is
       begin
       transition
          then SEND_FINISHED
+            with Desc => "rfc8446.txt+3544:4-3546:19"
             if Certificate_Request_Received = False
          then QUERY_CERTIFICATES
       end CHECK_CERTIFICATE_REQUEST;
@@ -989,6 +1029,7 @@ package TLS_Handshake_Session is
          then SEND_CERTIFICATE
             if GreenTLS::Certificate (Keystore_Message.Payload).Length > 0
          then SEND_EMPTY_CERTIFICATE
+            with Desc => "rfc8446.txt+3456:22-3549:26"
       end QUERY_CERTIFICATES;
 
       state SEND_CERTIFICATE is
@@ -1003,6 +1044,7 @@ package TLS_Handshake_Session is
          then ERROR_INTERNAL_ERROR
             if Success = False
          then QUERY_SIGNATURE
+            with Desc => "rfc8446.txt+3829:24-3833:11"
       end SEND_CERTIFICATE;
 
       state SEND_EMPTY_CERTIFICATE is
@@ -1083,7 +1125,9 @@ package TLS_Handshake_Session is
          then CONNECTED
       end SEND_APPLICATION_RECORD_KEYS;
 
-      state CONNECTED is
+      state CONNECTED
+         with Desc => "rfc8446.txt+4047:4-4049:43"
+      is
       begin
          Record_Data_Channel'Read (Post_Handshake_Handshake_Message);
       transition
@@ -1099,9 +1143,11 @@ package TLS_Handshake_Session is
             if Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HANDSHAKE_NEW_SESSION_TICKET
                and New_Session_Ticket_Message'Valid = True
          then CONNECTED_POST_HANDSHAKE_AUTH
+            with Desc => "rfc8446.txt+4193:4-4197:57"
             if Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HANDSHAKE_CERTIFICATE_REQUEST
                and Configuration.Post_Handshake_Auth_Enabled = True
          then ERROR_UNEXPECTED_MESSAGE
+            with Desc => "rfc8446.txt+4212:4-4214:36"
             if Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HANDSHAKE_CERTIFICATE_REQUEST
                and Configuration.Post_Handshake_Auth_Enabled = False
          then CONNECTED_KEY_UPDATE
@@ -1109,7 +1155,9 @@ package TLS_Handshake_Session is
          then ERROR_UNEXPECTED_MESSAGE
       end CONNECTED;
 
-      state CONNECTED_NEW_SESSION_TICKET is
+      state CONNECTED_NEW_SESSION_TICKET
+         with Desc => "rfc8446.txt+4053:4-4056:65"
+      is
          PSK : GreenTLS::Content;
       begin
          PSK := HKDF_Expand_Label (GreenTLS::Content'(Data => Resumption_Master_Secret.Data), "resumption", GreenTLS::Content'(Data => New_Session_Ticket_Message.Ticket_Nonce), Hash_Length);
@@ -1220,6 +1268,7 @@ package TLS_Handshake_Session is
          then CONNECTED_PHA_SEND_CERTIFICATE
             if GreenTLS::Certificate (Keystore_Message.Payload).Length > 0
          then CONNECTED_PHA_SEND_EMPTY_CERTIFICATE
+            with Desc => "rfc8446.txt+3456:22-3549:26"
       end CONNECTED_PHA_QUERY_CERTIFICATES;
 
       state CONNECTED_PHA_SEND_CERTIFICATE is
@@ -1234,6 +1283,7 @@ package TLS_Handshake_Session is
          then ERROR_INTERNAL_ERROR
             if Success = False
          then CONNECTED_PHA_QUERY_SIGNATURE
+            with Desc => "rfc8446.txt+3829:24-3833:11"
       end CONNECTED_PHA_SEND_CERTIFICATE;
 
       state CONNECTED_PHA_SEND_EMPTY_CERTIFICATE is
