@@ -292,9 +292,18 @@ class Session(Base):
             elif isinstance(d, decl.TypedDeclaration):
                 type_name = mty.qualified_type_name(d.type_name, self.identifier.parent)
                 if type_name in self.types:
+                    model_type = self.types[type_name]
                     self.error.extend(
                         d.check_type(
-                            self.types[type_name].type_,
+                            model_type.refined_type(
+                                [
+                                    t
+                                    for t in self.types.values()
+                                    if isinstance(t, Refinement) and t.pdu.identifier == d.type_name
+                                ]
+                            )
+                            if isinstance(model_type, Message)
+                            else model_type.type_,
                             lambda x: self.__typify_variable(x, visible_declarations),
                         )
                     )
