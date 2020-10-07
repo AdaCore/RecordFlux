@@ -672,14 +672,18 @@ def session_declaration() -> Token:
     )
 
 
-def package_declaration() -> Token:
+def basic_declarations() -> Token:
     basic_declaration = type_declaration() | type_refinement() | session_declaration()
 
+    return ZeroOrMore(basic_declaration)
+
+
+def package_declaration() -> Token:
     return (
         Keyword("package")
         - unqualified_identifier()
         - Keyword("is")
-        - Group(ZeroOrMore(basic_declaration))
+        - Group(basic_declarations())
         - Keyword("end")
         - unqualified_identifier()
         - semicolon()
