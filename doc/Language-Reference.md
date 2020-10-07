@@ -83,6 +83,7 @@ A message type is a collection components. Additional then clauses allow to defi
 *message_definition* ::= __message__ [ *null_component* ] *component* { *component* } __end message__ | __null message__
 
 *component* ::= *component_name* __:__ *component_type*
+                   [__if__ *condition*]
                    { *then_clause* } __;__
 
 *null_component* ::= __null__
@@ -108,7 +109,7 @@ A message type is a collection components. Additional then clauses allow to defi
 
 #### Static Semantics
 
-A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the length of the next field and the location of its first bit. The condition can refer to previous fields (including the component containing the then clause). If required, a null component can be used to specify the length of the first field in the message. An empty message can be represented by a null message.
+A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the length of the next field and the location of its first bit. The condition can refer to previous fields (including the component containing the then clause). A condition can also be added to a component. A component condition is equivalent to adding a condition to all incoming then clauses. If a component condition as well as a condition at an incoming then clause exists, both conditions are combined by a logical conjunction. If required, a null component can be used to specify the length of the first field in the message. An empty message can be represented by a null message.
 
 #### Example
 
