@@ -9,7 +9,7 @@ import pytest
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, Field, Link, Message, ModularInteger
+from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, ModularInteger
 from rflx.specification import ast, cache, parser
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 from tests.data import models
@@ -1184,6 +1184,156 @@ def test_message_field_condition(spec: str) -> None:
                     Link(Field("B"), FINAL),
                 ],
                 {Field("A"): T, Field("B"): T},
+            ),
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        """
+               type M is
+                  message
+                     A : T
+                        then B
+                           with First => A'First;
+                     B : T;
+                  end message;
+            """,
+        """
+               type M is
+                  message
+                     A : T;
+                     B : T
+                        with First => A'First;
+                  end message;
+            """,
+    ],
+)
+def test_message_field_first(spec: str) -> None:
+    assert_messages_string(
+        f"""
+            package Test is
+
+               type T is mod 256;
+
+               {spec}
+
+            end Test;
+        """,
+        [
+            Message(
+                "Test::M",
+                [
+                    Link(INITIAL, Field("A")),
+                    Link(Field("A"), Field("B"), first=expr.First("A")),
+                    Link(Field("B"), FINAL),
+                ],
+                {Field("A"): T, Field("B"): T},
+            ),
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        """
+               type M is
+                  message
+                     A : T
+                        then B
+                           with Length => 8;
+                     B : Opaque;
+                  end message;
+            """,
+        """
+               type M is
+                  message
+                     A : T;
+                     B : Opaque
+                        with Length => 8;
+                  end message;
+            """,
+    ],
+)
+def test_message_field_length(spec: str) -> None:
+    assert_messages_string(
+        f"""
+            package Test is
+
+               type T is mod 256;
+
+               {spec}
+
+            end Test;
+        """,
+        [
+            Message(
+                "Test::M",
+                [
+                    Link(INITIAL, Field("A")),
+                    Link(Field("A"), Field("B"), length=expr.Number(8)),
+                    Link(Field("B"), FINAL),
+                ],
+                {Field("A"): T, Field("B"): OPAQUE},
+            ),
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "link, field",
+    [
+        ("with First => A'First, Length => 8 if A > 10 and A < 100", ""),
+        ("with First => A'First, Length => 8 if A < 100", "if A > 10"),
+        ("with First => A'First, Length => 8", "if A > 10 and A < 100"),
+        ("with First => A'First if A > 10 and A < 100", "with Length => 8"),
+        ("with First => A'First if A < 100", "with Length => 8 if A > 10"),
+        ("with First => A'First", "with Length => 8 if A > 10 and A < 100"),
+        ("with Length => 8 if A > 10 and A < 100", "with First => A'First"),
+        ("with Length => 8 if A < 100", "with First => A'First if A > 10"),
+        ("with Length => 8", "with First => A'First if A > 10 and A < 100"),
+        ("if A > 10 and A < 100", "with First => A'First, Length => 8"),
+        ("if A < 100", "with First => A'First, Length => 8 if A > 10"),
+        ("", "with First => A'First, Length => 8 if A > 10 and A < 100"),
+    ],
+)
+def test_message_field_condition_and_aspects(link: str, field: str) -> None:
+    assert_messages_string(
+        f"""
+            package Test is
+
+               type T is mod 256;
+
+               type M is
+                  message
+                     A : T
+                        then B {link};
+                     B : Opaque {field};
+                  end message;
+
+            end Test;
+        """,
+        [
+            Message(
+                "Test::M",
+                [
+                    Link(INITIAL, Field("A")),
+                    Link(
+                        Field("A"),
+                        Field("B"),
+                        first=expr.First("A"),
+                        length=expr.Number(8),
+                        condition=expr.And(
+                            expr.Greater(expr.Variable("A"), expr.Number(10)),
+                            expr.Less(expr.Variable("A"), expr.Number(100)),
+                        ),
+                    ),
+                    Link(Field("B"), FINAL),
+                ],
+                {Field("A"): T, Field("B"): OPAQUE},
             ),
         ],
     )

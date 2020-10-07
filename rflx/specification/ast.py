@@ -45,11 +45,16 @@ class Component(SyntaxTree):
         name: StrID = None,
         type_name: StrID = None,
         thens: List[Then] = None,
+        first: Expr = UNDEFINED,
+        length: Expr = UNDEFINED,
         condition: Expr = TRUE,
     ) -> None:
+        # pylint: disable=too-many-arguments
         self.name = ID(name) if name else None
         self.type_name = ID(type_name) if type_name else None
         self.thens = thens or []
+        self.first = first
+        self.length = length
         self.condition = condition
 
 
