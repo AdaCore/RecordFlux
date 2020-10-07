@@ -9,9 +9,12 @@ import pytest
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
+from rflx.model import FINAL, INITIAL, Field, Link, Message, ModularInteger
 from rflx.specification import ast, cache, parser
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 from tests.data import models
+
+T = ModularInteger("Test::T", expr.Number(256))
 
 
 def assert_specifications_files(
@@ -1120,3 +1123,67 @@ def test_create_model_checksum() -> None:
             )
         ],
     }
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        """
+               type M is
+                  message
+                     A : T
+                        then B
+                           if A < 100;
+                     B : T
+                        if A > 10;
+                  end message;
+            """,
+        """
+               type M is
+                  message
+                     A : T;
+                     B : T
+                        if A > 10 and A < 100;
+                  end message;
+            """,
+        """
+               type M is
+                  message
+                     A : T
+                        then B
+                           if A > 10 and A < 100;
+                     B : T;
+                  end message;
+            """,
+    ],
+)
+def test_message_field_condition(spec: str) -> None:
+    assert_messages_string(
+        f"""
+            package Test is
+
+               type T is mod 256;
+
+               {spec}
+
+            end Test;
+        """,
+        [
+            Message(
+                "Test::M",
+                [
+                    Link(INITIAL, Field("A")),
+                    Link(
+                        Field("A"),
+                        Field("B"),
+                        condition=expr.And(
+                            expr.Greater(expr.Variable("A"), expr.Number(10)),
+                            expr.Less(expr.Variable("A"), expr.Number(100)),
+                        ),
+                    ),
+                    Link(Field("B"), FINAL),
+                ],
+                {Field("A"): T, Field("B"): T},
+            ),
+        ],
+    )

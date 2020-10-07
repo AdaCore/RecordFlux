@@ -5,6 +5,7 @@ from typing import Deque, Dict, List, Mapping, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
+import rflx.expression as expr
 from rflx.error import (
     RecordFluxError,
     Severity,
@@ -14,7 +15,6 @@ from rflx.error import (
     pop_source,
     push_source,
 )
-from rflx.expression import UNDEFINED
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
@@ -267,6 +267,8 @@ def create_message(
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
+    # pylint: disable=too-many-locals
+
     components = list(message.components)
 
     if components and components[0].name:
@@ -296,7 +298,7 @@ def create_message(
                         then.first.location,
                     )
                     for then in component.thens
-                    if then.first != UNDEFINED
+                    if then.first != expr.UNDEFINED
                 ]
             )
 
@@ -306,6 +308,15 @@ def create_message(
             name = components[i + 1].name if i + 1 < len(components) else None
             target_node = Field(name) if name else FINAL
             structure.append(Link(source_node, target_node))
+
+        if component.condition != expr.TRUE:
+            for l in structure:
+                if l.target.identifier == component.name:
+                    l.condition = (
+                        expr.And(component.condition, l.condition, location=l.condition.location)
+                        if l.condition != expr.TRUE
+                        else component.condition
+                    )
 
         for then in component.thens:
             target_node = Field(then.name) if then.name else FINAL

@@ -41,11 +41,16 @@ class Then(SyntaxTree):
 
 class Component(SyntaxTree):
     def __init__(
-        self, name: StrID = None, type_name: StrID = None, thens: List[Then] = None
+        self,
+        name: StrID = None,
+        type_name: StrID = None,
+        thens: List[Then] = None,
+        condition: Expr = TRUE,
     ) -> None:
         self.name = ID(name) if name else None
         self.type_name = ID(type_name) if type_name else None
         self.thens = thens or []
+        self.condition = condition
 
 
 @dataclass

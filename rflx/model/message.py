@@ -3,7 +3,7 @@ import itertools
 from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
 import rflx.typing_ as rty
@@ -52,7 +52,7 @@ class Link(Base):
     condition: expr.Expr = expr.TRUE
     length: expr.Expr = expr.UNDEFINED
     first: expr.Expr = expr.UNDEFINED
-    location: Optional[Location] = None
+    location: Optional[Location] = dataclass_field(default=None, repr=False)
 
     def __str__(self) -> str:
         condition = indent_next(

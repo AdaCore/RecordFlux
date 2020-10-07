@@ -442,11 +442,12 @@ def message_type_definition() -> Token:
         - unqualified_identifier()
         + Literal(":")
         - qualified_identifier()
+        - Optional(if_condition(restricted=True), TRUE)
         - then_list
         - semicolon()
     )
     component_item.setParseAction(
-        lambda t: Component(t[0], t[2], t[3]) if len(t) >= 4 else Component(t[0], t[2])
+        lambda t: Component(t[0], t[2], t[4], t[3]) if len(t) >= 5 else Component(t[0], t[2])
     )
     component_item.setName("Component")
     null_component_item = Keyword("null") - then - semicolon()
