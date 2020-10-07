@@ -1,7 +1,7 @@
 import logging
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, List, Mapping, Set, Tuple
+from typing import Deque, Dict, List, Mapping, Sequence, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
@@ -267,16 +267,33 @@ def create_message(
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
-    # pylint: disable=too-many-locals, too-many-branches
 
     components = list(message.components)
 
     if components and components[0].name:
         components.insert(0, Component())
 
-    field_types: Dict[Field, Type] = {}
-
     error = RecordFluxError()
+
+    field_types = create_message_types(message, types, components)
+    structure = create_message_structure(components, error)
+
+    return create_proven_message(
+        UnprovenMessage(
+            message.identifier, structure, field_types, message.aspects, message.location, error
+        ).merged(),
+        skip_verification,
+        cache,
+    )
+
+
+def create_message_types(
+    message: MessageSpec,
+    types: Mapping[ID, Type],
+    components: Sequence[Component],
+) -> Dict[Field, Type]:
+
+    field_types: Dict[Field, Type] = {}
 
     for component in components:
         if component.name and component.type_name:
@@ -284,6 +301,12 @@ def create_message(
             if type_name not in types:
                 continue
             field_types[Field(component.name)] = types[type_name]
+
+    return field_types
+
+
+def create_message_structure(components: Sequence[Component], error: RecordFluxError) -> List[Link]:
+    # pylint: disable=too-many-branches
 
     structure: List[Link] = []
 
@@ -359,8 +382,7 @@ def create_message(
                     )
 
         for then in component.thens:
-            target_node = Field(then.name) if then.name else FINAL
-            if then.name and target_node not in field_types.keys():
+            if then.name and not any(then.name == c.name for c in components):
                 error.append(
                     f'undefined field "{then.name}"',
                     Subsystem.PARSER,
@@ -368,19 +390,14 @@ def create_message(
                     then.name.location if then.name else None,
                 )
                 continue
+            target_node = Field(then.name) if then.name else FINAL
             structure.append(
                 Link(
                     source_node, target_node, then.condition, then.length, then.first, then.location
                 )
             )
 
-    return create_proven_message(
-        UnprovenMessage(
-            message.identifier, structure, field_types, message.aspects, message.location, error
-        ).merged(),
-        skip_verification,
-        cache,
-    )
+    return structure
 
 
 def create_derived_message(

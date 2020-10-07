@@ -108,7 +108,6 @@ def test_multiple_errors() -> None:
         r" \(1 .. 1000\)\n"
         rf"{path}:184:19: model: info: on path Length -> Data1 -> Data2 -> Final\n"
         rf'{path}:187:30: parser: error: undefined element type "RFLX_Invalid::M5"\n'
-        rf'{path}:191:18: parser: error: undefined field "Data"\n'
         rf'{path}:193:10: model: error: missing type for field "Data" in "RFLX_Invalid::M7"\n'
         rf'{path}:204:10: model: error: conflicting conditions for field "F1"\n'
         rf"{path}:208:19: model: info: condition 0 \(F1 -> F2\): F1 < 80\n"
