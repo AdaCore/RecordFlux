@@ -36,7 +36,7 @@ The set of values of a range type consists of all numbers from the lower bound t
 
 #### Example
 
-```Ada RFLX partial
+```Ada RFLX declaration
 type U16 is range 0 .. 2**16 - 1 with Size => 16;
 type U48 is mod 2**48;
 ```
@@ -67,7 +67,7 @@ The set of values of an enumeration type consists of the list of declared enumer
 
 #### Example
 
-```Ada RFLX partial
+```Ada RFLX declaration
 type Packet is (Msg_Error, Msg_Data) with Size => 1;
 type Day is (Mon => 1, Tue => 2, Wed => 3, Thu => 4, Fri => 5, Sat => 6, Sun => 7) with Size => 3;
 ```
@@ -113,7 +113,7 @@ A message type specifies the message format of a protocol. Each component corres
 
 #### Example
 
-```Ada RFLX partial
+```Ada RFLX declaration
 type Frame is
    message
       Destination : U48;
@@ -157,8 +157,8 @@ A type refinement describes under which condition a specific protocol message ca
 
 #### Example
 
-```Ada RFLX partial
-type IPv4_In_Ethernet is new Ethernet.Frame (Payload => IPv4.Packet)
+```Ada RFLX declaration
+for Ethernet::Frame use (Payload => IPv4::Packet)
    if EtherType = 16#0800#;
 ```
 
@@ -178,7 +178,7 @@ A derived message type derives its specification from a base type. Type refineme
 
 #### Example
 
-```Ada RFLX partial
+```Ada RFLX declaration
 type Specific_Extension is new Extension;
 ```
 
@@ -198,7 +198,7 @@ An array consists of a number of elements with similar type. Scalar types as wel
 
 #### Example
 
-```Ada RFLX partial
+```Ada RFLX declaration
 type Options is array of Option;
 ```
 
@@ -259,7 +259,7 @@ For each package referenced in a file, a corresponding with clause has to be add
 
 #### Example
 
-```Ada RFLX partial
+```Ada RFLX context
 with Ethernet;
 with IPv4;
 ```
@@ -282,7 +282,7 @@ with IPv4;
 
 package In_Ethernet is
 
-   type IPv4_In_Ethernet is new Ethernet.Frame (Payload => IPv4.Packet)
+   for Ethernet::Frame use (Payload => IPv4::Packet)
       if EtherType = 16#0800#;
 
 end In_Ethernet;
