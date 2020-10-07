@@ -58,7 +58,7 @@ class AttributeStatement(Statement):
         self.parameters = parameters
 
     def __str__(self) -> str:
-        parameters = ", ".join(str(p) for p in self.parameters)
+        parameters = ", ".join([str(p) for p in self.parameters])
         return f"{self.identifier}'{self.attribute}" + (f" ({parameters})" if parameters else "")
 
     def check_type(

@@ -54,8 +54,8 @@ class SessionSpec:
     initial: ID
     final: ID
     states: Sequence[State]
-    declarations: Sequence[decl.Declaration]
-    parameters: Sequence[decl.Declaration]
+    declarations: Sequence[decl.BasicDeclaration]
+    parameters: Sequence[decl.FormalDeclaration]
     location: Location
 
 

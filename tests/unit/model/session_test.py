@@ -1860,7 +1860,7 @@ def test_private_type_shadows_type() -> None:
         ],
     ],
 )
-def test_undefined_type_in_parameters(parameters: Sequence[decl.Declaration]) -> None:
+def test_undefined_type_in_parameters(parameters: Sequence[decl.FormalDeclaration]) -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1896,7 +1896,7 @@ def test_undefined_type_in_parameters(parameters: Sequence[decl.Declaration]) ->
         ],
     ],
 )
-def test_undefined_type_in_declarations(declarations: Sequence[decl.Declaration]) -> None:
+def test_undefined_type_in_declarations(declarations: Sequence[decl.BasicDeclaration]) -> None:
     assert_session_model_error(
         states=[
             State(
