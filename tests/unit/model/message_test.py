@@ -6,6 +6,7 @@ import pytest
 
 from rflx.error import Location, RecordFluxError
 from rflx.expression import (
+    FALSE,
     TRUE,
     Add,
     Aggregate,
@@ -657,6 +658,31 @@ def test_subsequent_variable() -> None:
         types,
         '^<stdin>:1024:57: model: error: undefined variable "F2"\n'
         r"model: info: on path F1 -> F2$",
+    )
+
+
+def test_reference_to_optional_field() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), Equal(Variable("F1"), TRUE)),
+        Link(Field("F1"), Field("F3"), Equal(Variable("F1"), FALSE)),
+        Link(Field("F2"), Field("F3")),
+        Link(
+            Field("F3"),
+            FINAL,
+            Equal(Variable("F2", location=Location((10, 30))), TRUE, location=Location((10, 20))),
+        ),
+    ]
+
+    types = {Field("F1"): BOOLEAN, Field("F2"): BOOLEAN, Field("F3"): BOOLEAN}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'<stdin>:10:30: model: error: undefined variable "F2"\n'
+        r"<stdin>:10:20: model: info: on path F1 -> F3 -> Final"
+        r"$",
     )
 
 
