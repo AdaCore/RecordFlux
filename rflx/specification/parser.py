@@ -267,7 +267,7 @@ def create_message(
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-branches
 
     components = list(message.components)
 
@@ -308,6 +308,46 @@ def create_message(
             name = components[i + 1].name if i + 1 < len(components) else None
             target_node = Field(name) if name else FINAL
             structure.append(Link(source_node, target_node))
+
+        if component.first != expr.UNDEFINED:
+            for l in structure:
+                if l.target.identifier == component.name:
+                    if l.first == expr.UNDEFINED:
+                        l.first = component.first
+                    else:
+                        error.append(
+                            f'first aspect of field "{component.name}" conflicts with previous'
+                            " specification",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            component.first.location,
+                        )
+                        error.append(
+                            "previous specification of first",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            l.first.location,
+                        )
+
+        if component.length != expr.UNDEFINED:
+            for l in structure:
+                if l.target.identifier == component.name:
+                    if l.length == expr.UNDEFINED:
+                        l.length = component.length
+                    else:
+                        error.append(
+                            f'length aspect of field "{component.name}" conflicts with previous'
+                            " specification",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            component.length.location,
+                        )
+                        error.append(
+                            "previous specification of length",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            l.length.location,
+                        )
 
         if component.condition != expr.TRUE:
             for l in structure:

@@ -39,6 +39,58 @@ def test_message_undefined_type() -> None:
     )
 
 
+def test_message_field_first_conflict() -> None:
+    assert_error_string(
+        """
+            package Test is
+
+               type T is mod 256;
+
+               type M is
+                  message
+                     A : T
+                        then B
+                           with First => A'First;
+                     B : T
+                        with First => A'First;
+                  end message;
+
+            end Test;
+        """,
+        r"^"
+        r'<stdin>:12:39: model: error: first aspect of field "B" conflicts with previous'
+        r" specification\n"
+        r"<stdin>:10:42: model: info: previous specification of first"
+        r"$",
+    )
+
+
+def test_message_field_length_conflict() -> None:
+    assert_error_string(
+        """
+            package Test is
+
+               type T is mod 256;
+
+               type M is
+                  message
+                     A : T
+                        then B
+                           with Length => 8;
+                     B : T
+                        with Length => 8;
+                  end message;
+
+            end Test;
+        """,
+        r"^"
+        r'<stdin>:12:40: model: error: length aspect of field "B" conflicts with previous'
+        r" specification\n"
+        r"<stdin>:10:43: model: info: previous specification of length"
+        r"$",
+    )
+
+
 def test_illegal_redefinition() -> None:
     assert_error_string(
         """

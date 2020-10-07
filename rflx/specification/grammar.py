@@ -433,22 +433,19 @@ def message_type_definition() -> Token:
         - Group(Optional(if_condition(restricted=True)))
     )
     then.setParseAction(parse_then)
-    then_list = ZeroOrMore(then)
-    then_list.setParseAction(lambda t: [t.asList()])
 
     component_item = (
         ~Keyword("end")
         + ~CaselessKeyword("Message")
-        - unqualified_identifier()
+        - unqualified_identifier()("identifier")
         + Literal(":")
-        - qualified_identifier()
-        - Optional(if_condition(restricted=True), TRUE)
-        - then_list
+        - qualified_identifier()("type")
+        - Optional(with_aspects(delimitedList(first_aspect | length_aspect))("aspects"))
+        - Optional(if_condition(restricted=True)("condition"))
+        - ZeroOrMore(then)("thens")
         - semicolon()
     )
-    component_item.setParseAction(
-        lambda t: Component(t[0], t[2], t[4], t[3]) if len(t) >= 5 else Component(t[0], t[2])
-    )
+    component_item.setParseAction(parse_component)
     component_item.setName("Component")
     null_component_item = Keyword("null") - then - semicolon()
     null_component_item.setParseAction(lambda t: Component(None, None, [t[1]]))
@@ -850,6 +847,22 @@ def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
         tokens[2][0]["length"] if tokens[2] and "length" in tokens[2][0] else UNDEFINED,
         tokens[3][0] if tokens[3] else BooleanTrue(location=locn),
         locn,
+    )
+
+
+@fatalexceptions
+def parse_component(string: str, location: int, tokens: ParseResults) -> Component:
+    return Component(
+        tokens["identifier"],
+        tokens["type"],
+        tokens["thens"].asList() if "thens" in tokens else [],
+        tokens["aspects"]["first"]
+        if "aspects" in tokens and "first" in tokens["aspects"]
+        else UNDEFINED,
+        tokens["aspects"]["length"]
+        if "aspects" in tokens and "length" in tokens["aspects"]
+        else UNDEFINED,
+        tokens["condition"] if "condition" in tokens else TRUE,
     )
 
 
