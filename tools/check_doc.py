@@ -13,13 +13,17 @@ from tests.const import GENERATED_DIR, SPEC_DIR
 
 
 class CodeBlockType(enum.Enum):
-    UNKNOWN = 0
-    RFLX = 1
-    ADA = 2
-    PYTHON = 3
+    UNKNOWN = enum.auto()
+    RFLX = enum.auto()
+    RFLX_PARTIAL = enum.auto()
+    RFLX_CONTEXT = enum.auto()
+    RFLX_DECLARATION = enum.auto()
+    ADA = enum.auto()
+    PYTHON = enum.auto()
 
 
 def check_code_blocks() -> bool:
+    # pylint: disable=too-many-branches
     valid = True
     code_blocks = []
     inside = False
@@ -32,6 +36,12 @@ def check_code_blocks() -> bool:
                     block = ""
                     if l.endswith("Ada RFLX\n"):
                         block_type = CodeBlockType.RFLX
+                    elif l.endswith("Ada RFLX partial\n"):
+                        block_type = CodeBlockType.RFLX_PARTIAL
+                    elif l.endswith("Ada RFLX context\n"):
+                        block_type = CodeBlockType.RFLX_CONTEXT
+                    elif l.endswith("Ada RFLX declaration\n"):
+                        block_type = CodeBlockType.RFLX_DECLARATION
                     elif l.endswith("Ada\n"):
                         block_type = CodeBlockType.ADA
                     elif l.endswith("Python\n"):
@@ -61,8 +71,13 @@ def check_code_blocks() -> bool:
 
 
 def check_code(block: str, block_type: CodeBlockType) -> bool:
-    if block_type is CodeBlockType.RFLX:
-        return check_rflx_code(block)
+    if block_type in [
+        CodeBlockType.RFLX,
+        CodeBlockType.RFLX_PARTIAL,
+        CodeBlockType.RFLX_CONTEXT,
+        CodeBlockType.RFLX_DECLARATION,
+    ]:
+        return check_rflx_code(block, block_type)
     if block_type is CodeBlockType.ADA:
         return check_ada_code(block)
     if block_type is CodeBlockType.PYTHON:
@@ -70,11 +85,18 @@ def check_code(block: str, block_type: CodeBlockType) -> bool:
     return True
 
 
-def check_rflx_code(block: str) -> bool:
+def check_rflx_code(block: str, block_type: CodeBlockType) -> bool:
     valid = True
 
     try:
-        rflx.specification.Parser().parse_string(block)
+        if block_type == CodeBlockType.RFLX:
+            rflx.specification.Parser().parse_string(block)
+        elif block_type == CodeBlockType.RFLX_PARTIAL:
+            rflx.specification.grammar.specification().parseString(block)
+        elif block_type == CodeBlockType.RFLX_CONTEXT:
+            rflx.specification.grammar.context_clause().parseString(block)
+        elif block_type == CodeBlockType.RFLX_DECLARATION:
+            rflx.specification.grammar.basic_declarations().parseString(block)
     except (pyparsing.ParseException, pyparsing.ParseFatalException) as e:
         valid = False
         print(pyparsing.ParseException.explain(e, 0))
