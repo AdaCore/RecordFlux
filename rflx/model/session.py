@@ -60,9 +60,9 @@ class State(Base):
     def __str__(self) -> str:
         if not self.declarations and not self.actions and not self.transitions:
             return f"state {self.name} is null state"
-        declarations = "".join(f"{d};\n" for d in self.declarations.values())
-        actions = "".join(f"{a};\n" for a in self.actions)
-        transitions = "\n".join(f"{p}" for p in self.transitions)
+        declarations = "".join([f"{d};\n" for d in self.declarations.values()])
+        actions = "".join([f"{a};\n" for a in self.actions])
+        transitions = "\n".join([f"{p}" for p in self.transitions])
         return (
             f"state {self.name} is\n{indent(declarations, 3)}begin\n{indent(actions, 3)}"
             f"transition\n{indent(transitions, 3)}\nend {self.name}"
@@ -89,8 +89,8 @@ class Session(Base):
         initial: StrID,
         final: StrID,
         states: Sequence[State],
-        declarations: Sequence[decl.Declaration],
-        parameters: Sequence[decl.Declaration],
+        declarations: Sequence[decl.BasicDeclaration],
+        parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[mty.Type],
         location: Location = None,
     ):
@@ -105,9 +105,11 @@ class Session(Base):
         self.error = RecordFluxError()
 
         assert all(not isinstance(d, decl.FormalDeclaration) for d in self.declarations.values())
-        assert all(isinstance(p, decl.FormalDeclaration) for p in self.parameters.values())
 
-        self.__global_declarations = {**self.parameters, **self.declarations}
+        self.__global_declarations: Mapping[ID, decl.Declaration] = {
+            **self.parameters,
+            **self.declarations,
+        }
 
         if len(self.identifier.parts) != 2:
             self.error.append(
@@ -126,9 +128,9 @@ class Session(Base):
         return verbose_repr(self, ["identifier", "initial", "states", "declarations", "parameters"])
 
     def __str__(self) -> str:
-        parameters = "".join(f"{p};\n" for p in self.parameters.values())
-        declarations = "".join(f"{d};\n" for d in self.declarations.values())
-        states = "\n\n".join(f"{s};" for s in self.states)
+        parameters = "".join([f"{p};\n" for p in self.parameters.values()])
+        declarations = "".join([f"{d};\n" for d in self.declarations.values()])
+        states = "\n\n".join([f"{s};" for s in self.states])
         return (
             f"generic\n{indent(parameters, 3)}session {self.identifier.name} with\n"
             f"   Initial => {self.initial},\n   Final => {self.final}\n"
@@ -220,21 +222,21 @@ class Session(Base):
                 else:
                     inputs[t.target] = [s.name]
 
-        for s in [s for s in self.states if s.name != self.initial and s.name not in inputs]:
-            self.error.append(
-                f'unreachable state "{s.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                s.location,
-            )
+            if s.name != self.initial and s.name not in inputs:
+                self.error.append(
+                    f'unreachable state "{s.name}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    s.location,
+                )
 
-        for s in [s for s in self.states if s.name != self.final and not s.transitions]:
-            self.error.append(
-                f'detached state "{s.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                s.location,
-            )
+            if s.name != self.final and not s.transitions:
+                self.error.append(
+                    f'detached state "{s.name}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    s.location,
+                )
 
     def __validate_declarations(
         self,
@@ -320,7 +322,6 @@ class Session(Base):
                         else:
                             argument_types.append(rty.Any())
                             undefined_type(a.type_name, d.location)
-                            continue
                     d.argument_types = argument_types
 
                 if d.type_name in self.__global_declarations:
@@ -332,11 +333,11 @@ class Session(Base):
         self, actions: Sequence[stmt.Statement], declarations: Mapping[ID, decl.Declaration]
     ) -> None:
         for a in actions:
-            type_ = (
-                declarations[a.identifier].type_
-                if a.identifier in declarations
-                else rty.Undefined()
-            )
+            try:
+                type_ = declarations[a.identifier].type_
+            except KeyError:
+                type_ = rty.Undefined()
+
             self.error.extend(
                 a.check_type(
                     type_,
@@ -390,8 +391,7 @@ class Session(Base):
                     expression.argument_types = [CHANNEL_FUNCTIONS[identifier]]
             if isinstance(expression, expr.Conversion):
                 if identifier in self.types:
-                    type_ = self.types[identifier].type_
-                    expression.type_ = type_
+                    expression.type_ = self.types[identifier].type_
                     expression.argument_types = [
                         t.pdu.type_
                         for t in self.types.values()
@@ -416,5 +416,7 @@ class Session(Base):
         variables: Iterable[expr.Variable], declarations: Mapping[ID, decl.Declaration]
     ) -> None:
         for v in variables:
-            if v.identifier in declarations:
+            try:
                 declarations[v.identifier].reference()
+            except KeyError:
+                pass

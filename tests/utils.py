@@ -30,8 +30,8 @@ def assert_message_model_error(
 
 def assert_session_model_error(
     states: Sequence[State],
-    declarations: Sequence[decl.Declaration],
-    parameters: Sequence[decl.Declaration],
+    declarations: Sequence[decl.BasicDeclaration],
+    parameters: Sequence[decl.FormalDeclaration],
     types: Sequence[Type],
     regex: str,
     location: Location = Location((1, 1)),

@@ -40,6 +40,10 @@ class Declaration(Base):
         raise NotImplementedError
 
 
+class BasicDeclaration(Declaration):
+    pass
+
+
 class TypedDeclaration(Declaration):
     def __init__(
         self,
@@ -71,7 +75,7 @@ class TypedDeclaration(Declaration):
         raise NotImplementedError
 
 
-class VariableDeclaration(TypedDeclaration):
+class VariableDeclaration(TypedDeclaration, BasicDeclaration):
     descriptive_name: ClassVar[str] = "variable"
 
     def __init__(
@@ -105,7 +109,7 @@ class VariableDeclaration(TypedDeclaration):
         return []
 
 
-class RenamingDeclaration(TypedDeclaration):
+class RenamingDeclaration(TypedDeclaration, BasicDeclaration):
     descriptive_name: ClassVar[str] = "renaming"
 
     def __init__(
