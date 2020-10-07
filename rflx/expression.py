@@ -2086,70 +2086,67 @@ class MessageAggregate(Expr):
         self._str = intern(f"{self.name}'({field_values})")
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        error = RecordFluxError()
-        if isinstance(self.type_, rty.Message):
-            field_combinations = set(self.type_.field_combinations)
+        if not isinstance(self.type_, rty.Message):
+            error = RecordFluxError()
 
-            for i, (field, expr) in enumerate(self.field_values.items()):
-                if str(field) not in self.type_.fields:
-                    error.append(
-                        f'invalid field "{field}" for {self.type_}',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        field.location,
-                    )
-                    error.extend(
-                        _similar_field_names(str(field), self.type_.fields, field.location)
-                    )
-                    continue
-
-                field_type = self.type_.field_types[str(field)]
-
-                if field_type == rty.OPAQUE:
-                    for refinement_field, refinement_type in self.type_.refinements:
-                        if refinement_field == str(field) and expr.type_.is_compatible(
-                            refinement_type
-                        ):
-                            break
-                    else:
-                        error += expr.check_type(field_type)
-                else:
-                    error += expr.check_type(field_type)
-
-                field_combinations = {
-                    c for c in field_combinations if len(c) > i and c[i] == str(field)
-                }
-
-                if not field_combinations:
-                    error.append(
-                        f'invalid position for field "{field}" of {self.type_}',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        field.location,
-                    )
-                    break
-
-            if field_combinations and all(
-                len(c) > len(self.field_values) for c in field_combinations
-            ):
-                error.append(
-                    f"missing fields for {self.type_}",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
-                )
-                error.append(
-                    "possible next fields: "
-                    + ", ".join(
-                        unique(c[len(self.field_values)] for c in sorted(field_combinations))
-                    ),
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    self.location,
-                )
-        else:
             for d in self.field_values.values():
                 error += d.check_type_instance(rty.Any)
+
+            return error
+
+        error = RecordFluxError()
+        field_combinations = set(self.type_.field_combinations)
+
+        for i, (field, expr) in enumerate(self.field_values.items()):
+            if str(field) not in self.type_.fields:
+                error.append(
+                    f'invalid field "{field}" for {self.type_}',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    field.location,
+                )
+                error.extend(_similar_field_names(str(field), self.type_.fields, field.location))
+                continue
+
+            field_type = self.type_.field_types[str(field)]
+
+            if field_type == rty.OPAQUE:
+                for refinement_field, refinement_type in self.type_.refinements:
+                    if refinement_field == str(field) and expr.type_.is_compatible(refinement_type):
+                        break
+                else:
+                    error += expr.check_type(field_type)
+            else:
+                error += expr.check_type(field_type)
+
+            field_combinations = {
+                c for c in field_combinations if len(c) > i and c[i] == str(field)
+            }
+
+            if not field_combinations:
+                error.append(
+                    f'invalid position for field "{field}" of {self.type_}',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    field.location,
+                )
+                break
+
+        if field_combinations and all(len(c) > len(self.field_values) for c in field_combinations):
+            error.append(
+                f"missing fields for {self.type_}",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+            error.append(
+                "possible next fields: "
+                + ", ".join(unique(c[len(self.field_values)] for c in sorted(field_combinations))),
+                Subsystem.MODEL,
+                Severity.INFO,
+                self.location,
+            )
+
         return error
 
     def __neg__(self) -> Expr:
