@@ -306,7 +306,7 @@ class BinExpr(Expr):
     def __repr__(self) -> str:
         return (
             f"\n{self.__class__.__name__}(\n"
-            + ",\n".join(indent(repr(t), 4) for t in [self.left, self.right])
+            + ",\n".join([indent(repr(t), 4) for t in [self.left, self.right]])
             + ")"
         )
 
@@ -366,7 +366,7 @@ class AssExpr(Expr):
     def __repr__(self) -> str:
         return (
             f"\n{self.__class__.__name__}(\n"
-            + ",\n".join(indent(repr(t), 4) for t in self.terms)
+            + ",\n".join([indent(repr(t), 4) for t in self.terms])
             + ")"
         )
 
@@ -1328,9 +1328,10 @@ class Call(Name):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
 
-        for a, t in itertools.zip_longest(self.args, self.argument_types):
-            if a:
-                error += a.check_type(t if t else rty.Any())
+        for a, t in itertools.zip_longest(
+            self.args, self.argument_types[: len(self.args)], fillvalue=rty.Any()
+        ):
+            error += a.check_type(t)
 
         if self.type_ != rty.Undefined():
             if len(self.args) < len(self.argument_types):
@@ -2079,7 +2080,7 @@ class MessageAggregate(Expr):
 
     def _update_str(self) -> None:
         field_values = (
-            ", ".join(f"{k} => {self.field_values[k]}" for k in self.field_values)
+            ", ".join([f"{k} => {self.field_values[k]}" for k in self.field_values])
             if self.field_values
             else "null message"
         )
@@ -2111,10 +2112,10 @@ class MessageAggregate(Expr):
             field_type = self.type_.field_types[str(field)]
 
             if field_type == rty.OPAQUE:
-                for refinement_field, refinement_type in self.type_.refinements:
-                    if refinement_field == str(field) and expr.type_.is_compatible(refinement_type):
-                        break
-                else:
+                if not any(
+                    f == str(field) and expr.type_.is_compatible(t)
+                    for f, t in self.type_.refinements
+                ):
                     error += expr.check_type(field_type)
             else:
                 error += expr.check_type(field_type)
@@ -2204,7 +2205,7 @@ class Binding(Expr):
         self.data = {ID(k): v for k, v in data.items()}
 
     def _update_str(self) -> None:
-        data = ",\n".join("{k} = {v}".format(k=k, v=self.data[k]) for k in self.data)
+        data = ",\n".join(["{k} = {v}".format(k=k, v=self.data[k]) for k in self.data])
         self._str = intern(f"{self.expr}\n   where {indent_next(data, 9)}")
 
     def _check_type_subexpr(self) -> RecordFluxError:
