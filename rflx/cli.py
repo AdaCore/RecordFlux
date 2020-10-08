@@ -4,7 +4,7 @@ import logging
 import os
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Sequence, Union
 
 from rflx import __version__
 from rflx.common import flat_name
@@ -31,7 +31,7 @@ def main(argv: List[str]) -> Union[int, str]:
 
     parser_check = subparsers.add_parser("check", help="check specification")
     parser_check.add_argument(
-        "files", metavar="FILE", type=str, nargs="+", help="specification file"
+        "files", metavar="FILE", type=Path, nargs="+", help="specification file"
     )
     parser_check.set_defaults(func=check)
 
@@ -57,7 +57,7 @@ def main(argv: List[str]) -> Union[int, str]:
         "-d", "--directory", help="output directory", default=".", type=str
     )
     parser_generate.add_argument(
-        "files", metavar="FILE", type=str, nargs="*", help="specification file"
+        "files", metavar="FILE", type=Path, nargs="*", help="specification file"
     )
     parser_generate.set_defaults(func=generate)
 
@@ -71,7 +71,7 @@ def main(argv: List[str]) -> Union[int, str]:
         help=("output format (default: svg)"),
     )
     parser_graph.add_argument(
-        "files", metavar="FILE", type=str, nargs="+", help="specification file"
+        "files", metavar="FILE", type=Path, nargs="+", help="specification file"
     )
     parser_graph.add_argument("-d", "--directory", help="output directory", default=".", type=str)
     parser_graph.add_argument(
@@ -121,18 +121,22 @@ def generate(args: argparse.Namespace) -> None:
         generator.write_top_level_package(directory)
 
 
-def parse(files: List, skip_verification: bool = False) -> Model:
+def parse(files: Sequence[Path], skip_verification: bool = False) -> Model:
     parser = Parser(skip_verification, cached=True)
-
     error = RecordFluxError()
+    present_files = []
+
     for f in files:
-        if not Path(f).is_file():
+        if not f.is_file():
             error.append(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR)
             continue
-        try:
-            parser.parse(Path(f))
-        except RecordFluxError as e:
-            error.extend(e)
+
+        present_files.append(Path(f))
+
+    try:
+        parser.parse(*present_files)
+    except RecordFluxError as e:
+        error.extend(e)
 
     try:
         model = parser.create_model()
