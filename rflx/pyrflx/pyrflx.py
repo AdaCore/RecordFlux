@@ -33,11 +33,12 @@ class PyRFLX:
         skip_model_verification: bool = False,
         skip_message_verification: bool = False,
     ) -> "PyRFLX":
+        paths = list(map(Path, files))
+        for p in paths:
+            if not p.is_file():
+                raise FileNotFoundError(f'file not found: "{p}"')
         parser = Parser(skip_model_verification)
-        for f in files:
-            if not Path(f).is_file():
-                raise FileNotFoundError(f'file not found: "{f}"')
-            parser.parse(Path(f))
+        parser.parse(*paths)
         model = parser.create_model()
         return cls(model, skip_message_verification)
 

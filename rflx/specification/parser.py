@@ -1,5 +1,6 @@
 import logging
 from collections import OrderedDict
+from multiprocessing import Pool
 from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
@@ -62,14 +63,21 @@ class Parser:
         self.__sessions: Dict[ID, Session] = {}
         self.__cache = Cache(cached)
 
-    def parse(self, specfile: Path) -> None:
+    def parse(self, *specfiles: Path) -> None:
         error = RecordFluxError()
 
-        error.extend(self.__determine_dependencies(specfile))
+        for f in specfiles:
+            error.extend(self.__determine_dependencies(f))
 
-        for f, s in self.__specifications.items():
-            if s is None:
-                error.extend(self.__parse(f))
+        with Pool() as p:
+            for f, s, e in p.map(
+                self._parse, [f for f, s in self.__specifications.items() if s is None]
+            ):
+                self.__specifications[f] = s
+                error.extend(e)
+
+            p.close()
+            p.join()
 
         error.propagate()
 
@@ -130,16 +138,21 @@ class Parser:
 
         return error
 
-    def __parse(self, specfile: Path) -> RecordFluxError:
+    @staticmethod
+    def _parse(specfile: Path) -> Tuple[Path, Optional[Specification], RecordFluxError]:
         error = RecordFluxError()
         log.info("Parsing %s", specfile)
+
+        specification = None
 
         with open(specfile, "r") as filehandle:
             push_source(specfile)
             try:
-                for specification in grammar.unit().parseFile(filehandle):
+                specifications = grammar.unit().parseFile(filehandle)
+                if specifications:
+                    assert len(specifications) == 1
+                    specification = specifications[0]
                     check_naming(error, specification.package, specfile.name)
-                    self.__specifications[specfile] = specification
             except (ParseException, ParseFatalException) as e:
                 error.append(
                     e.msg,
@@ -150,7 +163,7 @@ class Parser:
             finally:
                 pop_source()
 
-        return error
+        return (specfile, specification, error)
 
     def parse_string(self, string: str) -> None:
         error = RecordFluxError()
