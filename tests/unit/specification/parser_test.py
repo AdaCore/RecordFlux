@@ -875,6 +875,18 @@ def test_parse_error_session_name_conflict() -> None:
     )
 
 
+def test_parse_error_invalid_context_clause(tmp_path: Path) -> None:
+    test_file = tmp_path / "test.rflx"
+
+    with open(test_file, "x") as f:
+        f.write("with invalid")
+
+    p = parser.Parser()
+
+    with pytest.raises(RecordFluxError, match=rf'^{test_file}:1:13: parser: error: Expected ";"$'):
+        p.parse(test_file)
+
+
 @pytest.mark.parametrize("spec", ["empty_file", "comment_only", "empty_package", "context"])
 def test_create_model_no_messages(spec: str) -> None:
     assert_messages_files([f"{SPEC_DIR}/{spec}.rflx"], [])

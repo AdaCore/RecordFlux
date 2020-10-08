@@ -106,6 +106,10 @@ from .ast import (
 ParserElement.enablePackrat()
 
 
+def comment() -> Token:
+    return Regex(r"--.*")
+
+
 def comma() -> Token:
     return Suppress(Literal(",")).setName('","')
 
@@ -691,7 +695,9 @@ def context_clause() -> Token:
     context_item = Keyword("with") - unqualified_identifier() - semicolon()
     context_item.setParseAction(lambda t: t[1])
 
-    return ZeroOrMore(context_item).setParseAction(lambda t: ContextSpec(t.asList()))
+    return (
+        ZeroOrMore(context_item).setParseAction(lambda t: ContextSpec(t.asList())).ignore(comment())
+    )
 
 
 def specification() -> Token:
@@ -1130,4 +1136,4 @@ def evaluate_located_expression(string: str, tokens: ParseResults) -> Tuple[Pars
 
 
 def unit() -> Token:
-    return (specification() + StringEnd()).ignore(Regex(r"--.*"))
+    return (specification() + StringEnd()).ignore(comment())

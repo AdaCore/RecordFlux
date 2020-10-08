@@ -1,11 +1,11 @@
 import logging
-from collections import deque
+from collections import OrderedDict
 from pathlib import Path
-from typing import Deque, Dict, List, Mapping, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
-import rflx.expression as expr
+from rflx import common, expression as expr
 from rflx.error import (
     RecordFluxError,
     Severity,
@@ -56,30 +56,42 @@ log = logging.getLogger(__name__)
 class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
-        self.__specifications: Deque[Specification] = deque()
+        self.__specifications: OrderedDict[Path, Optional[Specification]] = OrderedDict()
         self.__evaluated_specifications: Set[ID] = set()
         self.__types: Dict[ID, Type] = {**BUILTIN_TYPES, **INTERNAL_TYPES}
         self.__sessions: Dict[ID, Session] = {}
         self.__cache = Cache(cached)
 
     def parse(self, specfile: Path) -> None:
-        self.__parse(specfile)
-
-    def __parse(self, specfile: Path, transitions: List[Tuple[ID, ID]] = None) -> None:
         error = RecordFluxError()
-        log.info("Parsing %s", specfile)
+
+        error.extend(self.__determine_dependencies(specfile))
+
+        for f, s in self.__specifications.items():
+            if s is None:
+                error.extend(self.__parse(f))
+
+        error.propagate()
+
+    def __determine_dependencies(
+        self, specfile: Path, transitions: List[Tuple[str, ID]] = None
+    ) -> RecordFluxError:
+        if specfile in self.__specifications:
+            self.__specifications.move_to_end(specfile)
+        else:
+            self.__specifications[specfile] = None
 
         if not transitions:
             transitions = []
 
+        error = RecordFluxError()
+
         with open(specfile, "r") as filehandle:
             push_source(specfile)
             try:
-                for specification in grammar.unit().parseFile(filehandle):
-                    check_naming(error, specification.package, specfile.name)
-                    self.__specifications.appendleft(specification)
-                    for item in specification.context.items:
-                        transition = (specification.package.identifier, item)
+                for context in grammar.context_clause().parseFile(filehandle):
+                    for item in context.items:
+                        transition = (specfile.name, item)
                         if transition in transitions:
                             error.append(
                                 f'dependency cycle when including "{transitions[0][1]}"',
@@ -100,7 +112,34 @@ class Parser:
                             )
                             continue
                         transitions.append(transition)
-                        self.__parse(specfile.parent / f"{str(item).lower()}.rflx", transitions)
+                        error.extend(
+                            self.__determine_dependencies(
+                                specfile.parent / f"{str(item).lower()}.rflx", transitions
+                            )
+                        )
+            except (ParseException, ParseFatalException) as e:
+                error.append(
+                    e.msg,
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    parser_location(e.loc, e.loc, e.pstr, specfile),
+                )
+                error.propagate()
+            finally:
+                pop_source()
+
+        return error
+
+    def __parse(self, specfile: Path) -> RecordFluxError:
+        error = RecordFluxError()
+        log.info("Parsing %s", specfile)
+
+        with open(specfile, "r") as filehandle:
+            push_source(specfile)
+            try:
+                for specification in grammar.unit().parseFile(filehandle):
+                    check_naming(error, specification.package, specfile.name)
+                    self.__specifications[specfile] = specification
             except (ParseException, ParseFatalException) as e:
                 error.append(
                     e.msg,
@@ -111,14 +150,16 @@ class Parser:
             finally:
                 pop_source()
 
-        error.propagate()
+        return error
 
     def parse_string(self, string: str) -> None:
         error = RecordFluxError()
         try:
             for specification in grammar.unit().parseString(string):
-                self.__specifications.appendleft(specification)
                 check_naming(error, specification.package)
+                self.__specifications[
+                    Path(common.file_name(str(specification.package.identifier)))
+                ] = specification
         except (ParseException, ParseFatalException) as e:
             error.append(
                 e.msg,
@@ -130,14 +171,16 @@ class Parser:
 
     def create_model(self) -> Model:
         error = RecordFluxError()
-        for specification in self.__specifications:
-            if specification.package.identifier in self.__evaluated_specifications:
-                continue
-            self.__evaluated_specifications.add(specification.package.identifier)
-            try:
-                self.__evaluate_specification(specification)
-            except RecordFluxError as e:
-                error.extend(e)
+        for specification in reversed(self.__specifications.values()):
+            if (
+                specification
+                and specification.package.identifier not in self.__evaluated_specifications
+            ):
+                self.__evaluated_specifications.add(specification.package.identifier)
+                try:
+                    self.__evaluate_specification(specification)
+                except RecordFluxError as e:
+                    error.extend(e)
         try:
             result = Model(list(self.__types.values()), list(self.__sessions.values()))
         except RecordFluxError as e:
@@ -148,7 +191,7 @@ class Parser:
 
     @property
     def specifications(self) -> Dict[str, Specification]:
-        return {str(s.package.identifier): s for s in self.__specifications}
+        return {str(s.package.identifier): s for s in self.__specifications.values() if s}
 
     def __evaluate_specification(self, specification: Specification) -> None:
         log.info("Processing %s", specification.package.identifier)
