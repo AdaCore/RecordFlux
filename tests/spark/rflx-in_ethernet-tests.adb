@@ -36,7 +36,8 @@ package body RFLX.In_Ethernet.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer                 : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
+         Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
       Ethernet_Frame_Context : Ethernet.Frame.Context;
       IPv4_Packet_Context    : IPv4.Packet.Context;
       Valid                  : Boolean;
@@ -74,7 +75,8 @@ package body RFLX.In_Ethernet.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new IPv4.Packet.Set_Payload (Write_Data, Valid_Data_Length);
-      Expected               : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ethernet_ipv4_udp.raw");
+      Expected               : RFLX_Builtin_Types.Bytes_Ptr :=
+         Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
                                       .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);

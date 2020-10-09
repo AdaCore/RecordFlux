@@ -55,7 +55,7 @@ package body RFLX.IPv4.Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer          : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
+      Buffer          : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ipv4_udp.raw");
       Context         : IPv4.Packet.Context;
       Valid           : Boolean;
       Version         : IPv4.Version;
@@ -253,7 +253,7 @@ package body RFLX.IPv4.Tests is
 --       SPARK_Mode, Pre => True
 --     is
 --        pragma Unreferenced (T);
---        Buffer           : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4-options_udp.raw");
+--        Buffer           : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ipv4-options_udp.raw");
 --        Context          : IPv4.Packet.Context;
 --        Valid            : Boolean;
 --        Sequence_Context : IPv4.Options.Context;
@@ -294,7 +294,7 @@ package body RFLX.IPv4.Tests is
    is
       pragma Unreferenced (T);
       procedure Set_Payload is new IPv4.Packet.Set_Payload (Write_Data, Valid_Data_Length);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/ipv4_udp.raw");
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ipv4_udp.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
                                       .. RFLX_Builtin_Types.Index'First + 2000 => 0);
