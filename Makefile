@@ -8,7 +8,7 @@ noprefix-dir := build/noprefix
 
 project := test
 test-bin := $(build-dir)/test
-test-files := $(wildcard generated/rflx-*.ad? tests/*.ad? tests/*.raw specs/*.rflx test.gpr)
+test-files := $(wildcard tests/spark/generated/rflx-*.ad? tests/spark/*.ad? tests/*.raw specs/*.rflx test.gpr)
 
 ifneq ($(NOPREFIX),)
 project := $(noprefix-dir)/test
@@ -94,10 +94,10 @@ remove-prefix = $(VERBOSE) \
 	sed 's/\(RFLX\.\|rflx-\)//g' $< > $@.tmp && \
 	mv $@.tmp $@
 
-$(noprefix-dir)/generated/%: generated/rflx-%
+$(noprefix-dir)/tests/spark/generated/%: tests/spark/generated/rflx-%
 	$(remove-prefix)
 
-$(noprefix-dir)/tests/%: tests/rflx-%
+$(noprefix-dir)/tests/spark/%: tests/spark/rflx-%
 	$(remove-prefix)
 
 $(noprefix-dir)/specs/%: specs/%

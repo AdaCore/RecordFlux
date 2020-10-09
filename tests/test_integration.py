@@ -6,8 +6,8 @@ import pytest
 from rflx.generator import Generator
 from rflx.parser import Parser
 from tests import utils
+from tests.const import GENERATED_DIR
 
-CODEDIR = "generated"
 SPECDIR = "specs"
 TESTDIR = "tests"
 
@@ -24,11 +24,11 @@ def assert_equal_code(spec_files: List[str]) -> None:
     generator.generate(model)
 
     for unit in generator.units.values():
-        filename = f"{CODEDIR}/{unit.name}.ads"
+        filename = f"{GENERATED_DIR}/{unit.name}.ads"
         with open(filename, "r") as f:
             assert unit.ads == f.read(), filename
         if unit.adb:
-            filename = f"{CODEDIR}/{unit.name}.adb"
+            filename = f"{GENERATED_DIR}/{unit.name}.adb"
             with open(filename, "r") as f:
                 assert unit.adb == f.read(), filename
 
