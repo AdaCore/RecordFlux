@@ -7,7 +7,7 @@ project Test is
    AUnit : Flag_Type := external ("aunit", "yes");
    Optimization : Flag_Type := external ("optimization", "no");
 
-   Spec_Dir := "specs";
+   Spec_Dir := "examples/specs";
    Test_Dir := "tests/spark";
    Generated_Dir := "tests/spark/generated";
 

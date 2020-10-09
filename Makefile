@@ -8,7 +8,7 @@ noprefix-dir := build/noprefix
 
 project := test
 test-bin := $(build-dir)/test
-test-files := $(wildcard tests/spark/generated/rflx-*.ad? tests/spark/*.ad? tests/*.raw specs/*.rflx test.gpr)
+test-files := $(wildcard tests/spark/generated/rflx-*.ad? tests/spark/*.ad? tests/*.raw examples/specs/*.rflx test.gpr)
 
 ifneq ($(NOPREFIX),)
 project := $(noprefix-dir)/test
@@ -100,7 +100,7 @@ $(noprefix-dir)/tests/spark/generated/%: tests/spark/generated/rflx-%
 $(noprefix-dir)/tests/spark/%: tests/spark/rflx-%
 	$(remove-prefix)
 
-$(noprefix-dir)/specs/%: specs/%
+$(noprefix-dir)/examples/specs/%: examples/specs/%
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)cp $< $@
 
