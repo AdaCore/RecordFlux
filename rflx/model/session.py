@@ -291,7 +291,7 @@ class Session(Base):
                     )
                 self.types[type_name] = d.type_definition
 
-            elif isinstance(d, decl.TypedDeclaration):
+            elif isinstance(d, decl.TypeCheckableDeclaration):
                 type_name = mty.qualified_type_name(d.type_name, self.identifier.parent)
                 if type_name in self.types:
                     model_type = self.types[type_name]

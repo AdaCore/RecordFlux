@@ -44,7 +44,7 @@ class BasicDeclaration(Declaration):
     pass
 
 
-class TypedDeclaration(Declaration):
+class TypeCheckableDeclaration(Declaration):
     def __init__(
         self,
         identifier: StrID,
@@ -75,7 +75,7 @@ class TypedDeclaration(Declaration):
         raise NotImplementedError
 
 
-class VariableDeclaration(TypedDeclaration, BasicDeclaration):
+class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     descriptive_name: ClassVar[str] = "variable"
 
     def __init__(
@@ -109,7 +109,7 @@ class VariableDeclaration(TypedDeclaration, BasicDeclaration):
         return []
 
 
-class RenamingDeclaration(TypedDeclaration, BasicDeclaration):
+class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     descriptive_name: ClassVar[str] = "renaming"
 
     def __init__(
@@ -178,7 +178,7 @@ class Argument(Base):
         return self.__type_name
 
 
-class FunctionDeclaration(TypedDeclaration, FormalDeclaration):
+class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
     descriptive_name: ClassVar[str] = "function"
 
     def __init__(
