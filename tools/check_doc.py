@@ -9,7 +9,7 @@ import sys
 import pyparsing
 
 import rflx.parser
-from tests.const import GENERATED_DIR
+from tests.const import GENERATED_DIR, SPEC_DIR
 
 
 class CodeBlockType(enum.Enum):
@@ -48,14 +48,14 @@ def check_code_blocks() -> bool:
                 if inside:
                     block += l
 
-    pathlib.Path("build").mkdir(exist_ok=True)
-    os.symlink("../specs", "build/specs")
+    pathlib.Path("build/tests").mkdir(parents=True, exist_ok=True)
+    os.symlink(f"../../{SPEC_DIR}", f"build/{SPEC_DIR}")
     os.chdir("build")
 
     for block_type, block in code_blocks:
         valid = check_code(block, block_type) and valid
 
-    os.unlink("specs")
+    os.unlink(SPEC_DIR)
 
     return valid
 

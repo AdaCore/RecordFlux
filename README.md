@@ -83,33 +83,34 @@ end TLV;
 With the sub-command `check` the correctness of the given specification file can be checked.
 
 ```Console
-$ rflx check specs/tlv.rflx
-Parsing specs/tlv.rflx
+$ rflx check tests/specs/tlv.rflx
+Parsing tests/specs/tlv.rflx
 Processing TLV
 ```
 
 The sub-command `generate` is used to generate the code based on the specification. The target directory and the specification files have to be given.
 
 ```Console
-$ rflx generate -d generated specs/tlv.rflx
-Parsing specs/tlv.rflx
+$ mkdir /tmp/generated
+$ rflx generate -d /tmp/generated tests/specs/tlv.rflx
+Parsing tests/specs/tlv.rflx
 Processing TLV
-Creating generated/rflx-tlv.ads
-Creating generated/rflx-tlv-generic_message.ads
-Creating generated/rflx-tlv-generic_message.adb
-Creating generated/rflx-tlv-message.ads
-Creating generated/rflx-rflx_arithmetic.ads
-Creating generated/rflx-rflx_builtin_types-conversions.ads
-Creating generated/rflx-rflx_builtin_types.ads
-Creating generated/rflx-rflx_generic_types.ads
-Creating generated/rflx-rflx_message_sequence.ads
-Creating generated/rflx-rflx_scalar_sequence.ads
-Creating generated/rflx-rflx_types.ads
-Creating generated/rflx-rflx_arithmetic.adb
-Creating generated/rflx-rflx_generic_types.adb
-Creating generated/rflx-rflx_message_sequence.adb
-Creating generated/rflx-rflx_scalar_sequence.adb
-Creating generated/rflx.ads
+Creating /tmp/generated/rflx-tlv.ads
+Creating /tmp/generated/rflx-tlv-generic_message.ads
+Creating /tmp/generated/rflx-tlv-generic_message.adb
+Creating /tmp/generated/rflx-tlv-message.ads
+Creating /tmp/generated/rflx-rflx_arithmetic.ads
+Creating /tmp/generated/rflx-rflx_builtin_types-conversions.ads
+Creating /tmp/generated/rflx-rflx_builtin_types.ads
+Creating /tmp/generated/rflx-rflx_generic_types.ads
+Creating /tmp/generated/rflx-rflx_message_sequence.ads
+Creating /tmp/generated/rflx-rflx_scalar_sequence.ads
+Creating /tmp/generated/rflx-rflx_types.ads
+Creating /tmp/generated/rflx-rflx_arithmetic.adb
+Creating /tmp/generated/rflx-rflx_generic_types.adb
+Creating /tmp/generated/rflx-rflx_message_sequence.adb
+Creating /tmp/generated/rflx-rflx_scalar_sequence.adb
+Creating /tmp/generated/rflx.ads
 ```
 
 ### Using the Generated Code
@@ -252,7 +253,7 @@ import sys
 
 from rflx.pyrflx import MessageValue, PyRFLX
 
-PYRFLX = PyRFLX(["specs/tlv.rflx"])
+PYRFLX = PyRFLX(["tests/specs/tlv.rflx"])
 TLV = PYRFLX["TLV"]
 
 
