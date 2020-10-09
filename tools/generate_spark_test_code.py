@@ -9,6 +9,7 @@ from typing import Sequence
 import tests.models
 from rflx.generator import Generator
 from rflx.parser import Parser
+from tests.const import EX_SPEC_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.disable(logging.NOTSET)
@@ -25,11 +26,11 @@ MODELS = [
 ]
 
 SPECIFICATION_FILES = [
-    "specs/ethernet.rflx",
-    "specs/in_ethernet.rflx",
-    "specs/in_ipv4.rflx",
-    "specs/ipv4.rflx",
-    "specs/udp.rflx",
+    EX_SPEC_DIR / "ethernet.rflx",
+    EX_SPEC_DIR / "in_ethernet.rflx",
+    EX_SPEC_DIR / "in_ipv4.rflx",
+    EX_SPEC_DIR / "ipv4.rflx",
+    EX_SPEC_DIR / "udp.rflx",
 ]
 
 
@@ -42,7 +43,7 @@ def main(argv: Sequence[str]) -> int:
 
     parser = Parser()
     for f in SPECIFICATION_FILES:
-        parser.parse(pathlib.Path(f))
+        parser.parse(f)
 
     generator = Generator("RFLX", reproducible=True)
     generator.generate(parser.create_model())
