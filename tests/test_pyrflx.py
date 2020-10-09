@@ -45,30 +45,28 @@ from rflx.pyrflx import (
     TypeValue,
     utils,
 )
-
-TESTDIR = "tests"
-SPECDIR = "specs"
+from tests.const import EX_SPEC_DIR, SPEC_DIR
 
 
 @pytest.fixture(name="pyrflx", scope="module")
 def fixture_pyrflx() -> PyRFLX:
     return PyRFLX(
         [
-            f"{SPECDIR}/ethernet.rflx",
-            f"{SPECDIR}/icmp.rflx",
-            f"{SPECDIR}/in_ethernet.rflx",
-            f"{SPECDIR}/in_ipv4.rflx",
-            f"{SPECDIR}/ipv4.rflx",
-            f"{SPECDIR}/tls_alert.rflx",
-            f"{SPECDIR}/tls_record.rflx",
-            f"{SPECDIR}/tlv.rflx",
-            f"{SPECDIR}/udp.rflx",
-            f"{TESTDIR}/array_message.rflx",
-            f"{TESTDIR}/array_type.rflx",
-            f"{TESTDIR}/message_odd_length.rflx",
-            f"{TESTDIR}/null_message.rflx",
-            f"{TESTDIR}/tlv_with_checksum.rflx",
-            f"{TESTDIR}/no_conditionals.rflx",
+            f"{EX_SPEC_DIR}/ethernet.rflx",
+            f"{EX_SPEC_DIR}/icmp.rflx",
+            f"{EX_SPEC_DIR}/in_ethernet.rflx",
+            f"{EX_SPEC_DIR}/in_ipv4.rflx",
+            f"{EX_SPEC_DIR}/ipv4.rflx",
+            f"{EX_SPEC_DIR}/tls_alert.rflx",
+            f"{EX_SPEC_DIR}/tls_record.rflx",
+            f"{EX_SPEC_DIR}/udp.rflx",
+            f"{SPEC_DIR}/array_message.rflx",
+            f"{SPEC_DIR}/array_type.rflx",
+            f"{SPEC_DIR}/message_odd_length.rflx",
+            f"{SPEC_DIR}/null_message.rflx",
+            f"{SPEC_DIR}/tlv.rflx",
+            f"{SPEC_DIR}/tlv_with_checksum.rflx",
+            f"{SPEC_DIR}/no_conditionals.rflx",
         ]
     )
 
@@ -275,7 +273,7 @@ def test_message_bitstring(tlv: MessageValue) -> None:
 
 
 def test_attributes(pyrflx: PyRFLX) -> None:
-    pyrflx = PyRFLX([f"{SPECDIR}/tlv.rflx"])
+    pyrflx = PyRFLX([f"{SPEC_DIR}/tlv.rflx"])
     assert isinstance(pyrflx["TLV"], Package)
     tlv_package = pyrflx["TLV"]
     assert isinstance(tlv_package["Message"], MessageValue)
@@ -549,7 +547,7 @@ def test_ethernet_802_3(frame: MessageValue) -> None:
         ),
     )
     assert frame.valid_message
-    with open(f"{TESTDIR}/ethernet_802.3.raw", "rb") as raw:
+    with open("tests/ethernet_802.3.raw", "rb") as raw:
         assert frame.bytestring == raw.read()
 
 
@@ -1688,7 +1686,7 @@ def test_checksum_value_range(no_conditionals_type: Message) -> None:
 
 
 def test_no_verification_icmp(icmp: MessageValue) -> None:
-    pyrflx = PyRFLX([f"{SPECDIR}/icmp.rflx"], True, True)
+    pyrflx = PyRFLX([f"{EX_SPEC_DIR}/icmp.rflx"], True, True)
     icmp_unv = pyrflx["ICMP"]["Message"]
     icmp.set("Tag", "Echo_Request")
     icmp.set("Code_Zero", 0)
@@ -1719,7 +1717,7 @@ def test_no_verification_ethernet(frame: MessageValue) -> None:
     frame.set("Type_Length", int("0800", 16))
     frame.set("Payload", payload)
     assert frame.valid_message
-    pyrflx = PyRFLX([f"{SPECDIR}/ethernet.rflx"], True, True)
+    pyrflx = PyRFLX([f"{EX_SPEC_DIR}/ethernet.rflx"], True, True)
     frame_unv = pyrflx["Ethernet"]["Frame"]
     frame_unv.set("Destination", int("FFFFFFFFFFFF", 16))
     frame_unv.set("Source", int("0", 16))
@@ -1742,7 +1740,7 @@ def test_no_verification_array_nested_messages(
     array_message.set("Bar", foos)
     assert array_message.valid_message
 
-    pyrflx = PyRFLX([f"{TESTDIR}/array_message.rflx"], True, True)
+    pyrflx = PyRFLX([f"{SPEC_DIR}/array_message.rflx"], True, True)
     array_message_package_unv = pyrflx["Array_Message"]
     array_message_unv = array_message_package_unv["Message"]
     array_message_one_unv = array_message_package_unv["Foo"]

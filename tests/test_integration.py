@@ -6,10 +6,7 @@ import pytest
 from rflx.generator import Generator
 from rflx.parser import Parser
 from tests import utils
-from tests.const import GENERATED_DIR
-
-SPECDIR = "specs"
-TESTDIR = "tests"
+from tests.const import EX_SPEC_DIR, GENERATED_DIR, SPEC_DIR
 
 
 def assert_equal_code(spec_files: List[str]) -> None:
@@ -50,52 +47,62 @@ def assert_compilable_code_string(specification: str, tmp_path: Path, prefix: st
 
 
 def test_ethernet() -> None:
-    assert_equal_code([f"{SPECDIR}/ethernet.rflx"])
+    assert_equal_code([f"{EX_SPEC_DIR}/ethernet.rflx"])
 
 
 def test_ipv4() -> None:
-    assert_equal_code([f"{SPECDIR}/ipv4.rflx"])
+    assert_equal_code([f"{EX_SPEC_DIR}/ipv4.rflx"])
 
 
 def test_in_ethernet() -> None:
     assert_equal_code(
-        [f"{SPECDIR}/ethernet.rflx", f"{SPECDIR}/ipv4.rflx", f"{SPECDIR}/in_ethernet.rflx"]
+        [
+            f"{EX_SPEC_DIR}/ethernet.rflx",
+            f"{EX_SPEC_DIR}/ipv4.rflx",
+            f"{EX_SPEC_DIR}/in_ethernet.rflx",
+        ]
     )
 
 
 def test_udp() -> None:
-    assert_equal_code([f"{SPECDIR}/udp.rflx"])
+    assert_equal_code([f"{EX_SPEC_DIR}/udp.rflx"])
 
 
 def test_in_ipv4() -> None:
-    assert_equal_code([f"{SPECDIR}/ipv4.rflx", f"{SPECDIR}/udp.rflx", f"{SPECDIR}/in_ipv4.rflx"])
+    assert_equal_code(
+        [
+            f"{EX_SPEC_DIR}/ipv4.rflx",
+            f"{EX_SPEC_DIR}/udp.rflx",
+            f"{EX_SPEC_DIR}/in_ipv4.rflx",
+        ]
+    )
 
 
 def test_tlv() -> None:
-    assert_equal_code([f"{SPECDIR}/tlv.rflx"])
+    assert_equal_code([f"{SPEC_DIR}/tlv.rflx"])
 
 
 def test_tls(tmp_path: Path) -> None:
     assert_compilable_code(
         [
-            f"{SPECDIR}/tls_alert.rflx",
-            f"{SPECDIR}/tls_handshake.rflx",
-            f"{SPECDIR}/tls_record.rflx",
+            f"{EX_SPEC_DIR}/tls_alert.rflx",
+            f"{EX_SPEC_DIR}/tls_handshake.rflx",
+            f"{EX_SPEC_DIR}/tls_record.rflx",
         ],
         tmp_path,
     )
 
 
 def test_icmp(tmp_path: Path) -> None:
-    assert_compilable_code([f"{SPECDIR}/icmp.rflx"], tmp_path)
+    assert_compilable_code([f"{EX_SPEC_DIR}/icmp.rflx"], tmp_path)
 
 
 def test_feature_integeration(tmp_path: Path) -> None:
-    assert_compilable_code([f"{TESTDIR}/feature_integration.rflx"], tmp_path)
+    assert_compilable_code([f"{SPEC_DIR}/feature_integration.rflx"], tmp_path)
 
 
 def test_no_prefix(tmp_path: Path) -> None:
-    assert_compilable_code([f"{SPECDIR}/tlv.rflx"], tmp_path, prefix="")
+    assert_compilable_code([f"{SPEC_DIR}/tlv.rflx"], tmp_path, prefix="")
 
 
 @pytest.mark.parametrize(

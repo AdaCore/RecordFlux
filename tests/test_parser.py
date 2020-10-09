@@ -63,11 +63,9 @@ from rflx.parser.ast import (
     Then,
 )
 from rflx.parser.parser import Component, ParseFatalException, Parser
+from tests.const import EX_SPEC_DIR, SPEC_DIR
 from tests.models import ETHERNET_FRAME
 from tests.utils import assert_equal
-
-TESTDIR = "tests"
-SPECDIR = "specs"
 
 
 def assert_specifications_files(
@@ -982,33 +980,33 @@ def test_inconsistent_package_identifiers() -> None:
 
 
 def test_empty_file_spec() -> None:
-    assert_specifications_files([f"{TESTDIR}/empty_file.rflx"], {})
+    assert_specifications_files([f"{SPEC_DIR}/empty_file.rflx"], {})
 
 
 def test_empty_file_message() -> None:
-    assert_messages_files([f"{TESTDIR}/empty_file.rflx"], [])
+    assert_messages_files([f"{SPEC_DIR}/empty_file.rflx"], [])
 
 
 def test_comment_only_spec() -> None:
-    assert_specifications_files([f"{TESTDIR}/comment_only.rflx"], {})
+    assert_specifications_files([f"{SPEC_DIR}/comment_only.rflx"], {})
 
 
 def test_comment_only_message() -> None:
-    assert_messages_files([f"{TESTDIR}/comment_only.rflx"], [])
+    assert_messages_files([f"{SPEC_DIR}/comment_only.rflx"], [])
 
 
 def test_incorrect_name() -> None:
     assert_error_files(
-        [f"{TESTDIR}/incorrect_name.rflx"],
-        f"^{TESTDIR}/incorrect_name.rflx:1:9: parser: error: file name does not match unit name"
+        [f"{SPEC_DIR}/incorrect_name.rflx"],
+        f"^{SPEC_DIR}/incorrect_name.rflx:1:9: parser: error: file name does not match unit name"
         r' "Test", should be "test.rflx"$',
     )
 
 
 def test_incorrect_specification() -> None:
     assert_error_files(
-        [f"{TESTDIR}/incorrect_specification.rflx"],
-        f'{TESTDIR}/incorrect_specification.rflx:3:10: parser: error: Expected "is"',
+        [f"{SPEC_DIR}/incorrect_specification.rflx"],
+        f'{SPEC_DIR}/incorrect_specification.rflx:3:10: parser: error: Expected "is"',
     )
 
 
@@ -1028,17 +1026,17 @@ def test_unexpected_exception_in_parser(monkeypatch: Any) -> None:
 
 def test_package_spec() -> None:
     assert_specifications_files(
-        [f"{TESTDIR}/empty_package.rflx"],
+        [f"{SPEC_DIR}/empty_package.rflx"],
         {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [], []))},
     )
 
 
 def test_package_message() -> None:
-    assert_messages_files([f"{TESTDIR}/empty_package.rflx"], [])
+    assert_messages_files([f"{SPEC_DIR}/empty_package.rflx"], [])
 
 
 def test_duplicate_specifications() -> None:
-    files = [f"{TESTDIR}/empty_package.rflx", f"{TESTDIR}/empty_package.rflx"]
+    files = [f"{SPEC_DIR}/empty_package.rflx", f"{SPEC_DIR}/empty_package.rflx"]
     assert_specifications_files(
         files,
         {"Empty_Package": Specification(ContextSpec([]), PackageSpec("Empty_Package", [], []))},
@@ -1048,7 +1046,7 @@ def test_duplicate_specifications() -> None:
 
 def test_context_spec() -> None:
     assert_specifications_files(
-        [f"{TESTDIR}/context.rflx"],
+        [f"{SPEC_DIR}/context.rflx"],
         {
             "Context": Specification(
                 ContextSpec(["Empty_File", "Empty_Package"]),
@@ -1060,27 +1058,27 @@ def test_context_spec() -> None:
 
 
 def test_context_message() -> None:
-    assert_messages_files([f"{TESTDIR}/context.rflx"], [])
+    assert_messages_files([f"{SPEC_DIR}/context.rflx"], [])
 
 
 def test_context_dependency_cycle() -> None:
     assert_error_files(
-        [f"{TESTDIR}/context_cycle.rflx"],
+        [f"{SPEC_DIR}/context_cycle.rflx"],
         f"^"
-        f"{TESTDIR}/context_cycle.rflx:1:6: parser: error: dependency cycle when "
+        f"{SPEC_DIR}/context_cycle.rflx:1:6: parser: error: dependency cycle when "
         f'including "Context_Cycle_1"\n'
-        f'{TESTDIR}/context_cycle_1.rflx:1:6: parser: info: when including "Context_Cycle_2"\n'
-        f'{TESTDIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
-        f'{TESTDIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
+        f'{SPEC_DIR}/context_cycle_1.rflx:1:6: parser: info: when including "Context_Cycle_2"\n'
+        f'{SPEC_DIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
+        f'{SPEC_DIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
         f"$",
     )
 
 
 def test_duplicate_type() -> None:
     assert_error_files(
-        [f"{TESTDIR}/duplicate_type.rflx"],
-        f'{TESTDIR}/duplicate_type.rflx:3:4: parser: error: duplicate type "Duplicate_Type::T"\n'
-        f"{TESTDIR}/duplicate_type.rflx:2:4: parser: info:"
+        [f"{SPEC_DIR}/duplicate_type.rflx"],
+        f'{SPEC_DIR}/duplicate_type.rflx:3:4: parser: error: duplicate type "Duplicate_Type::T"\n'
+        f"{SPEC_DIR}/duplicate_type.rflx:2:4: parser: info:"
         f' previous occurrence of "Duplicate_Type::T"',
     )
 
@@ -1195,9 +1193,9 @@ def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
 
 def test_invalid_enumeration_type_identical_literals_location() -> None:
     assert_error_files(
-        [f"{TESTDIR}/identical_literals.rflx"],
-        f"{TESTDIR}/identical_literals.rflx:3:4: model: error: conflicting literals: Bar\n"
-        f'{TESTDIR}/identical_literals.rflx:2:21: model: info: previous occurrence of "Bar"',
+        [f"{SPEC_DIR}/identical_literals.rflx"],
+        f"{SPEC_DIR}/identical_literals.rflx:3:4: model: error: conflicting literals: Bar\n"
+        f'{SPEC_DIR}/identical_literals.rflx:2:21: model: info: previous occurrence of "Bar"',
     )
 
 
@@ -1494,7 +1492,7 @@ def test_integer_type_spec() -> None:
             ),
         )
     }
-    assert_specifications_files([f"{TESTDIR}/integer_type.rflx"], spec)
+    assert_specifications_files([f"{SPEC_DIR}/integer_type.rflx"], spec)
 
 
 def test_enumeration_type_spec() -> None:
@@ -1535,7 +1533,7 @@ def test_enumeration_type_spec() -> None:
             ),
         )
     }
-    assert_specifications_files([f"{TESTDIR}/enumeration_type.rflx"], spec)
+    assert_specifications_files([f"{SPEC_DIR}/enumeration_type.rflx"], spec)
 
 
 def test_array_type_spec() -> None:
@@ -1564,7 +1562,7 @@ def test_array_type_spec() -> None:
             ),
         )
     }
-    assert_specifications_files([f"{TESTDIR}/array_type.rflx"], spec)
+    assert_specifications_files([f"{SPEC_DIR}/array_type.rflx"], spec)
 
 
 def test_message_type_spec() -> None:
@@ -1610,7 +1608,7 @@ def test_message_type_spec() -> None:
             ),
         )
     }
-    assert_specifications_files([f"{TESTDIR}/message_type.rflx"], spec)
+    assert_specifications_files([f"{SPEC_DIR}/message_type.rflx"], spec)
 
 
 def test_message_type_message() -> None:
@@ -1645,7 +1643,7 @@ def test_message_type_message() -> None:
     empty_message = Message("Message_Type::Empty_PDU", [], {})
 
     assert_messages_files(
-        [f"{TESTDIR}/message_type.rflx"], [message, simple_message, empty_message]
+        [f"{SPEC_DIR}/message_type.rflx"], [message, simple_message, empty_message]
     )
 
 
@@ -1692,7 +1690,7 @@ def test_message_in_message() -> None:
     derived_message = DerivedMessage("Message_In_Message::Derived_Message", message)
 
     assert_messages_files(
-        [f"{TESTDIR}/message_in_message.rflx"],
+        [f"{SPEC_DIR}/message_in_message.rflx"],
         [length_value, derived_length_value, message, derived_message],
     )
 
@@ -1757,7 +1755,7 @@ def test_type_refinement_spec() -> None:
         ),
     }
     assert_specifications_files(
-        [f"{TESTDIR}/message_type.rflx", f"{TESTDIR}/type_refinement.rflx"], spec
+        [f"{SPEC_DIR}/message_type.rflx", f"{SPEC_DIR}/type_refinement.rflx"], spec
     )
 
 
@@ -1932,17 +1930,17 @@ def test_ethernet_spec() -> None:
         )
     }
 
-    assert_specifications_files([f"{SPECDIR}/ethernet.rflx"], spec)
+    assert_specifications_files([f"{EX_SPEC_DIR}/ethernet.rflx"], spec)
 
 
 def test_ethernet_message() -> None:
-    assert_messages_files([f"{SPECDIR}/ethernet.rflx"], [ETHERNET_FRAME])
+    assert_messages_files([f"{EX_SPEC_DIR}/ethernet.rflx"], [ETHERNET_FRAME])
 
 
 def test_tls() -> None:
     p = Parser()
     for f in ["tls_alert.rflx", "tls_handshake.rflx", "tls_heartbeat.rflx", "tls_record.rflx"]:
-        p.parse(Path(f"{SPECDIR}/{f}"))
+        p.parse(Path(f"{EX_SPEC_DIR}/{f}"))
     p.create_model()
 
 
@@ -1968,7 +1966,7 @@ def test_message_with_two_length_fields() -> None:
 
 def test_feature_integration() -> None:
     p = Parser()
-    p.parse(Path(f"{TESTDIR}/feature_integration.rflx"))
+    p.parse(Path(f"{SPEC_DIR}/feature_integration.rflx"))
     p.create_model()
 
 

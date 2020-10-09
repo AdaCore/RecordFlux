@@ -4,10 +4,8 @@ import pytest
 
 from rflx.error import RecordFluxError
 from rflx.parser import cache, parser
+from tests.const import SPEC_DIR
 from tests.models import INVALID_MESSAGE, VALID_MESSAGE
-
-TEST_DIR = Path("specs")
-SPEC_DIR = Path("specs")
 
 
 def test_create_model() -> None:
