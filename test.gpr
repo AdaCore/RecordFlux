@@ -85,7 +85,7 @@ project Test is
       for Proof_Switches ("rflx-ipv4-option.ads") use ("--prover=CVC4,Z3", "--steps=2017");
       for Proof_Switches ("rflx-ipv4-options.ads") use ("--prover=Z3", "--steps=1");
       for Proof_Switches ("rflx-ipv4-packet.ads") use ("--prover=CVC4,Z3", "--steps=29780");
-      for Proof_Switches ("rflx-ipv4-tests.adb") use ("--prover=Z3", "--steps=91069");
+      for Proof_Switches ("rflx-ipv4-tests.adb") use ("--prover=Z3", "--steps=92233");
       for Proof_Switches ("rflx-ipv4.ads") use ("--prover=Z3", "--steps=1");
       for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--prover=CVC4,altergo", "--steps=70979");
       for Proof_Switches ("rflx-rflx_types.ads") use ("--prover=CVC4,altergo", "--steps=239854");
