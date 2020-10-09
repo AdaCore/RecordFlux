@@ -7,6 +7,7 @@ import rflx.expression as expr
 from rflx.ada import ID
 from rflx.generator import Generator, common, const
 from rflx.model import BUILTIN_TYPES, Model, Type
+from tests.const import GENERATED_DIR
 from tests.models import (
     ARRAYS_MODEL,
     DERIVATION_MODEL,
@@ -22,19 +23,17 @@ from tests.models import (
 )
 from tests.utils import assert_equal
 
-TESTDIR = Path("generated")
-
 
 def assert_specification(generator: Generator) -> None:
     for unit in generator.units.values():
-        with open(f"{TESTDIR}/{unit.name}.ads", "r") as f:
+        with open(f"{GENERATED_DIR}/{unit.name}.ads", "r") as f:
             assert unit.ads == f.read(), unit.name
 
 
 def assert_body(generator: Generator) -> None:
     for unit in generator.units.values():
         if unit.adb:
-            with open(f"{TESTDIR}/{unit.name}.adb", "r") as f:
+            with open(f"{GENERATED_DIR}/{unit.name}.adb", "r") as f:
                 assert unit.adb == f.read(), unit.name
 
 
@@ -49,7 +48,7 @@ def test_library_files(tmp_path: Path) -> None:
     generator.write_library_files(tmp_path)
     for filename in [f"rflx-{f}" for f in const.LIBRARY_FILES]:
         with open(tmp_path / filename) as library_file:
-            with open(TESTDIR / filename) as expected_file:
+            with open(GENERATED_DIR / filename) as expected_file:
                 assert library_file.read() == expected_file.read(), filename
 
 
@@ -69,7 +68,7 @@ def test_top_level_package(tmp_path: Path) -> None:
 
     for created_file in created_files:
         with open(created_file) as library_file:
-            with open(TESTDIR / created_file.name) as expected_file:
+            with open(GENERATED_DIR / created_file.name) as expected_file:
                 assert library_file.read() == expected_file.read(), created_file.name
 
 

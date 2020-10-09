@@ -9,6 +9,7 @@ import sys
 import pyparsing
 
 import rflx.parser
+from tests.const import GENERATED_DIR
 
 
 class CodeBlockType(enum.Enum):
@@ -90,7 +91,9 @@ def check_ada_code(block: str) -> bool:
         f.write(block)
 
     try:
-        subprocess.run(["gprbuild", "-q", "-u", unit, "--src-subdirs=../generated"], check=True)
+        subprocess.run(
+            ["gprbuild", "-q", "-u", unit, f"--src-subdirs=../{GENERATED_DIR}"], check=True
+        )
         os.unlink(f"{unit}.ali")
         os.unlink(f"{unit}.o")
     except subprocess.CalledProcessError:
