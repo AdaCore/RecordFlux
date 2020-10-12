@@ -1,3 +1,4 @@
+import glob
 import os
 import re
 from typing import Any, Sequence
@@ -5,7 +6,8 @@ from typing import Any, Sequence
 import hypothesis
 import pytest
 
-from rflx.expression import Expr
+from rflx import expression as expr
+from tests.const import FIXTURE_DIR
 
 hypothesis.settings.register_profile(
     "default", max_examples=100, verbosity=hypothesis.Verbosity.verbose
@@ -36,7 +38,7 @@ def pytest_collection_modifyitems(config: Any, items: list) -> None:
 
 
 def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[str]:
-    if isinstance(left, Expr) and isinstance(right, Expr) and op == "==":
+    if isinstance(left, expr.Expr) and isinstance(right, expr.Expr) and op == "==":
         return [
             "Expr instances",
             "repr:",
@@ -47,3 +49,9 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
             "    Expected: " + re.sub(r"\n +", " ", str(right)),
         ]
     return []
+
+
+pytest_plugins = [
+    re.sub(r"[/\\]", ".", fixture.replace(".py", ""))
+    for fixture in glob.glob(f"{FIXTURE_DIR}/*.py")
+]

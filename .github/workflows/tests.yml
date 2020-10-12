@@ -72,6 +72,8 @@ jobs:
         target: ["python"]
         python-version: [3.7, 3.8]
         include:
+          - target: "python_unit"
+            python-version: 3.7
           - target: "python_property"
             python-version: 3.7
           - target: "python_optimized"
