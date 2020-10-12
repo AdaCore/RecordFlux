@@ -1,108 +1,14 @@
 from pathlib import Path
-from typing import List
 
 import pytest
 
-from rflx.generator import Generator
 from rflx.parser import Parser
 from tests import utils
-from tests.const import EX_SPEC_DIR, GENERATED_DIR, SPEC_DIR
-
-
-def assert_equal_code(spec_files: List[str]) -> None:
-    parser = Parser()
-
-    for spec_file in spec_files:
-        parser.parse(Path(spec_file))
-
-    model = parser.create_model()
-
-    generator = Generator("RFLX", reproducible=True)
-    generator.generate(model)
-
-    for unit in generator.units.values():
-        filename = f"{GENERATED_DIR}/{unit.name}.ads"
-        with open(filename, "r") as f:
-            assert unit.ads == f.read(), filename
-        if unit.adb:
-            filename = f"{GENERATED_DIR}/{unit.name}.adb"
-            with open(filename, "r") as f:
-                assert unit.adb == f.read(), filename
-
-
-def assert_compilable_code(spec_files: List[str], tmp_path: Path, prefix: str = None) -> None:
-    parser = Parser()
-
-    for spec_file in spec_files:
-        parser.parse(Path(spec_file))
-
-    utils.assert_compilable_code(parser.create_model(), tmp_path, prefix)
-
-
-def assert_compilable_code_string(specification: str, tmp_path: Path, prefix: str = None) -> None:
-    parser = Parser()
-    parser.parse_string(specification)
-
-    utils.assert_compilable_code(parser.create_model(), tmp_path, prefix)
-
-
-def test_ethernet() -> None:
-    assert_equal_code([f"{EX_SPEC_DIR}/ethernet.rflx"])
-
-
-def test_ipv4() -> None:
-    assert_equal_code([f"{EX_SPEC_DIR}/ipv4.rflx"])
-
-
-def test_in_ethernet() -> None:
-    assert_equal_code(
-        [
-            f"{EX_SPEC_DIR}/ethernet.rflx",
-            f"{EX_SPEC_DIR}/ipv4.rflx",
-            f"{EX_SPEC_DIR}/in_ethernet.rflx",
-        ]
-    )
-
-
-def test_udp() -> None:
-    assert_equal_code([f"{EX_SPEC_DIR}/udp.rflx"])
-
-
-def test_in_ipv4() -> None:
-    assert_equal_code(
-        [
-            f"{EX_SPEC_DIR}/ipv4.rflx",
-            f"{EX_SPEC_DIR}/udp.rflx",
-            f"{EX_SPEC_DIR}/in_ipv4.rflx",
-        ]
-    )
-
-
-def test_tlv() -> None:
-    assert_equal_code([f"{SPEC_DIR}/tlv.rflx"])
-
-
-def test_tls(tmp_path: Path) -> None:
-    assert_compilable_code(
-        [
-            f"{EX_SPEC_DIR}/tls_alert.rflx",
-            f"{EX_SPEC_DIR}/tls_handshake.rflx",
-            f"{EX_SPEC_DIR}/tls_record.rflx",
-        ],
-        tmp_path,
-    )
-
-
-def test_icmp(tmp_path: Path) -> None:
-    assert_compilable_code([f"{EX_SPEC_DIR}/icmp.rflx"], tmp_path)
-
-
-def test_feature_integeration(tmp_path: Path) -> None:
-    assert_compilable_code([f"{SPEC_DIR}/feature_integration.rflx"], tmp_path)
+from tests.const import SPEC_DIR
 
 
 def test_no_prefix(tmp_path: Path) -> None:
-    assert_compilable_code([f"{SPEC_DIR}/tlv.rflx"], tmp_path, prefix="")
+    utils.assert_compilable_code_specs([f"{SPEC_DIR}/tlv.rflx"], tmp_path, prefix="")
 
 
 @pytest.mark.parametrize(
@@ -127,12 +33,12 @@ def test_type_name_equals_package_name(definition: str, tmp_path: Path) -> None:
 
            end Test;
         """
-    assert_compilable_code_string(spec.format(definition), tmp_path)
+    utils.assert_compilable_code_string(spec.format(definition), tmp_path)
 
 
 @pytest.mark.parametrize("condition", ["A + 1 = 17179869178", "A = B - 1"])
 def test_comparison_big_integers(condition: str, tmp_path: Path) -> None:
-    assert_compilable_code_string(
+    utils.assert_compilable_code_string(
         f"""
            package Test is
 
@@ -166,7 +72,7 @@ def test_comparison_big_integers(condition: str, tmp_path: Path) -> None:
     ],
 )
 def test_comparison_opaque(condition: str, tmp_path: Path) -> None:
-    assert_compilable_code_string(
+    utils.assert_compilable_code_string(
         f"""
            package Test is
 
@@ -187,7 +93,7 @@ def test_comparison_opaque(condition: str, tmp_path: Path) -> None:
 
 
 def test_potential_name_conflicts_fields_literals(tmp_path: Path) -> None:
-    assert_compilable_code_string(
+    utils.assert_compilable_code_string(
         """
            package Test is
 
@@ -256,7 +162,7 @@ def test_array_with_imported_element_type_message(tmp_path: Path) -> None:
 
 
 def test_unbounded_message(tmp_path: Path) -> None:
-    assert_compilable_code_string(
+    utils.assert_compilable_code_string(
         """
            package Test is
 

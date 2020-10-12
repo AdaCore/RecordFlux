@@ -54,6 +54,12 @@ test: check test_python_coverage test_python_property test_spark prove_spark
 test_python:
 	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis"
 
+test_python_unit:
+	python3 -m pytest -n$(shell nproc) -vv tests/unit
+
+test_python_integration:
+	python3 -m pytest -n$(shell nproc) -vv tests/integration
+
 test_python_property:
 	python3 -m pytest -vv tests/property
 

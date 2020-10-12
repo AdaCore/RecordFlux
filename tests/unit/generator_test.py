@@ -7,20 +7,8 @@ import rflx.expression as expr
 from rflx.ada import ID
 from rflx.generator import Generator, common, const
 from rflx.model import BUILTIN_TYPES, Model, Type
+from tests import models
 from tests.const import GENERATED_DIR
-from tests.models import (
-    ARRAYS_MODEL,
-    DERIVATION_MODEL,
-    ENUMERATION_MODEL,
-    ETHERNET_MODEL,
-    EXPRESSION_MODEL,
-    MODULAR_INTEGER,
-    NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
-    NULL_MODEL,
-    RANGE_INTEGER,
-    TLV_MESSAGE,
-    TLV_MODEL,
-)
 from tests.utils import assert_equal
 
 
@@ -41,6 +29,21 @@ def generate(model: Model) -> Generator:
     generator = Generator("RFLX", reproducible=True)
     generator.generate(model)
     return generator
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_invalid_prefix() -> None:
+    with pytest.raises(AssertionError, match=r"empty part in identifier"):
+        Generator("A..B")
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_unexpected_type() -> None:
+    class TestType(Type):
+        pass
+
+    with pytest.raises(AssertionError, match='unexpected type "TestType"'):
+        Generator().generate(Model([TestType("P::T")]))
 
 
 def test_library_files(tmp_path: Path) -> None:
@@ -78,101 +81,6 @@ def test_top_level_package_no_prefix(tmp_path: Path) -> None:
     assert list(tmp_path.glob("*")) == []
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_invalid_prefix() -> None:
-    with pytest.raises(AssertionError, match=r"empty part in identifier"):
-        Generator("A..B")
-
-
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_unexpected_type() -> None:
-    class TestType(Type):
-        pass
-
-    with pytest.raises(AssertionError, match='unexpected type "TestType"'):
-        Generator().generate(Model([TestType("P::T")]))
-
-
-def test_null_spec() -> None:
-    generator = generate(NULL_MODEL)
-    assert_specification(generator)
-
-
-def test_null_body() -> None:
-    generator = generate(NULL_MODEL)
-    assert_body(generator)
-
-
-def test_tlv_spec() -> None:
-    generator = generate(TLV_MODEL)
-    assert_specification(generator)
-
-
-def test_tlv_body() -> None:
-    generator = generate(TLV_MODEL)
-    assert_body(generator)
-
-
-def test_tlv_refinement_to_null_spec() -> None:
-    generator = generate(NULL_MESSAGE_IN_TLV_MESSAGE_MODEL)
-    assert_specification(generator)
-
-
-def test_tlv_refinement_to_null_body() -> None:
-    generator = generate(NULL_MESSAGE_IN_TLV_MESSAGE_MODEL)
-    assert_body(generator)
-
-
-def test_ethernet_spec() -> None:
-    generator = generate(ETHERNET_MODEL)
-    assert_specification(generator)
-
-
-def test_ethernet_body() -> None:
-    generator = generate(ETHERNET_MODEL)
-    assert_body(generator)
-
-
-def test_enumeration_spec() -> None:
-    generator = generate(ENUMERATION_MODEL)
-    assert_specification(generator)
-
-
-def test_enumeration_body() -> None:
-    generator = generate(ENUMERATION_MODEL)
-    assert_body(generator)
-
-
-def test_array_spec() -> None:
-    generator = generate(ARRAYS_MODEL)
-    assert_specification(generator)
-
-
-def test_array_body() -> None:
-    generator = generate(ARRAYS_MODEL)
-    assert_body(generator)
-
-
-def test_expression_spec() -> None:
-    generator = generate(EXPRESSION_MODEL)
-    assert_specification(generator)
-
-
-def test_expression_body() -> None:
-    generator = generate(EXPRESSION_MODEL)
-    assert_body(generator)
-
-
-def test_derivation_spec() -> None:
-    generator = generate(DERIVATION_MODEL)
-    assert_specification(generator)
-
-
-def test_derivation_body() -> None:
-    generator = generate(DERIVATION_MODEL)
-    assert_body(generator)
-
-
 @pytest.mark.parametrize(
     "left,right",
     [
@@ -197,7 +105,7 @@ def test_substitution_relation_aggregate(
     )
 
     assert_equal(
-        relation(left, right).substituted(common.substitution(TLV_MESSAGE)),
+        relation(left, right).substituted(common.substitution(models.TLV_MESSAGE)),
         equal_call if relation == expr.Equal else expr.Not(equal_call),
     )
 
@@ -226,7 +134,7 @@ def test_substitution_relation_scalar(
     expected: Tuple[expr.Expr, expr.Expr],
 ) -> None:
     assert_equal(
-        relation(*expressions).substituted(common.substitution(TLV_MESSAGE, public=True)),
+        relation(*expressions).substituted(common.substitution(models.TLV_MESSAGE, public=True)),
         relation(*expected),
     )
 
@@ -238,10 +146,46 @@ def test_prefixed_type_name() -> None:
 
 
 def test_base_type_name() -> None:
-    assert common.base_type_name(MODULAR_INTEGER) == ID("Modular")
-    assert common.base_type_name(RANGE_INTEGER) == ID("Range_Base")
+    assert common.base_type_name(models.MODULAR_INTEGER) == ID("Modular")
+    assert common.base_type_name(models.RANGE_INTEGER) == ID("Range_Base")
 
 
 def test_full_base_type_name() -> None:
-    assert common.full_base_type_name(MODULAR_INTEGER) == ID("P.Modular")
-    assert common.full_base_type_name(RANGE_INTEGER) == ID("P.Range_Base")
+    assert common.full_base_type_name(models.MODULAR_INTEGER) == ID("P.Modular")
+    assert common.full_base_type_name(models.RANGE_INTEGER) == ID("P.Range_Base")
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        models.NULL_MODEL,
+        models.TLV_MODEL,
+        models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
+        models.ETHERNET_MODEL,
+        models.ENUMERATION_MODEL,
+        models.ARRAYS_MODEL,
+        models.EXPRESSION_MODEL,
+        models.DERIVATION_MODEL,
+    ],
+)
+def test_specification(model: Model) -> None:
+    generator = generate(model)
+    assert_specification(generator)
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        models.NULL_MODEL,
+        models.TLV_MODEL,
+        models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
+        models.ETHERNET_MODEL,
+        models.ENUMERATION_MODEL,
+        models.ARRAYS_MODEL,
+        models.EXPRESSION_MODEL,
+        models.DERIVATION_MODEL,
+    ],
+)
+def test_body(model: Model) -> None:
+    generator = generate(model)
+    assert_body(generator)

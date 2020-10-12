@@ -55,19 +55,13 @@ from tests.models import (
     ARRAYS_MODULAR_VECTOR,
     ENUMERATION,
     ETHERNET_FRAME,
-    ETHERNET_TYPE_LENGTH,
     MODULAR_INTEGER,
     NULL_MESSAGE,
     NULL_MESSAGE_IN_TLV_MESSAGE,
     RANGE_INTEGER,
     TLV_MESSAGE,
 )
-from tests.utils import (
-    assert_equal,
-    assert_message_model_error,
-    assert_type_model_error,
-    multilinestr,
-)
+from tests.utils import assert_equal, assert_message_model_error, assert_type_error, multilinestr
 
 M_NO_REF = UnprovenMessage(
     "P::No_Ref",
@@ -2768,42 +2762,12 @@ def test_merge_message_error_name_conflict() -> None:
         location=Location((2, 9)),
     )
 
-    assert_type_model_error(
+    assert_type_error(
         m1.merged(),
         r"^"
         r'<stdin>:30:5: model: error: name conflict for "F1_F2" in "P::M1"\n'
         r'<stdin>:15:3: model: info: when merging message "P::M2"\n'
         r'<stdin>:20:8: model: info: into field "F1"$',
-    )
-
-
-def test_refinement_invalid_package() -> None:
-    assert_type_model_error(
-        Refinement(
-            ID("A::B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME
-        ),
-        r'^<stdin>:22:10: model: error: unexpected format of package name "A::B"$',
-    )
-
-
-def test_refinement_invalid_field_type() -> None:
-    x = Field(ID("X", Location((20, 10))))
-
-    message = Message("P::M", [Link(INITIAL, x), Link(x, FINAL)], {x: MODULAR_INTEGER})
-
-    assert_type_model_error(
-        Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
-        r'^<stdin>:33:22: model: error: invalid type of field "X" in refinement of "P::M"\n'
-        r"<stdin>:20:10: model: info: expected field of type Opaque",
-    )
-
-
-def test_refinement_invalid_field() -> None:
-    message = Message("P::M", [], {})
-
-    assert_type_model_error(
-        Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
-        r'^<stdin>:33:22: model: error: invalid field "X" in refinement of "P::M"$',
     )
 
 
@@ -2860,36 +2824,14 @@ def test_message_str() -> None:
     )
 
 
-def test_serialize_array() -> None:
-    assert ARRAYS_MODULAR_VECTOR.serialize == {
-        "kind": "Array",
-        "data": {
-            "identifier": ["Arrays", "Modular_Vector"],
-            "element_type": ["Arrays", "Modular_Integer"],
-        },
-    }
-
-
-def test_serialize_range_integer() -> None:
-    assert ETHERNET_TYPE_LENGTH.serialize == {
-        "data": {
-            "identifier": ["Ethernet", "Type_Length"],
-            "first": {"data": {"base": 0, "value": 46}, "kind": "Number"},
-            "last": {"data": {"base": 0, "value": 65535}, "kind": "Number"},
-            "size": {"data": {"base": 0, "value": 16}, "kind": "Number"},
-        },
-        "kind": "RangeInteger",
-    }
-
-
-def test_serialize_empty_message() -> None:
+def test_message_serialize_empty() -> None:
     assert NULL_MESSAGE.serialize == {
         "kind": "Message",
         "data": {"identifier": ["Null", "Message"], "structure": [], "types": {}},
     }
 
 
-def test_serialize_simple_message() -> None:
+def test_message_serialize() -> None:
     assert TLV_MESSAGE.serialize == {
         "kind": "Message",
         "data": {
@@ -3017,7 +2959,7 @@ def test_serialize_simple_message() -> None:
     }
 
 
-def test_serialize_refinement() -> None:
+def test_refinement_serialize() -> None:
     assert NULL_MESSAGE_IN_TLV_MESSAGE.serialize == {
         "kind": "Refinement",
         "data": {
@@ -3029,3 +2971,33 @@ def test_serialize_refinement() -> None:
             "condition": {"data": {}, "kind": "BooleanTrue"},
         },
     }
+
+
+def test_refinement_invalid_package() -> None:
+    assert_type_error(
+        Refinement(
+            ID("A::B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME
+        ),
+        r'^<stdin>:22:10: model: error: unexpected format of package name "A::B"$',
+    )
+
+
+def test_refinement_invalid_field_type() -> None:
+    x = Field(ID("X", Location((20, 10))))
+
+    message = Message("P::M", [Link(INITIAL, x), Link(x, FINAL)], {x: MODULAR_INTEGER})
+
+    assert_type_error(
+        Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
+        r'^<stdin>:33:22: model: error: invalid type of field "X" in refinement of "P::M"\n'
+        r"<stdin>:20:10: model: info: expected field of type Opaque",
+    )
+
+
+def test_refinement_invalid_field() -> None:
+    message = Message("P::M", [], {})
+
+    assert_type_error(
+        Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
+        r'^<stdin>:33:22: model: error: invalid field "X" in refinement of "P::M"$',
+    )

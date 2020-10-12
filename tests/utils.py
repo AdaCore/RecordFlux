@@ -11,6 +11,7 @@ from rflx.expression import Expr
 from rflx.generator import Generator
 from rflx.identifier import ID
 from rflx.model import Field, Link, Message, Model, Session, State, Type
+from rflx.parser import Parser
 
 
 def assert_equal(left: Any, right: Any) -> None:
@@ -49,9 +50,29 @@ def assert_session_model_error(
         )
 
 
-def assert_type_model_error(instance: Type, regex: str) -> None:
+def assert_type_error(instance: Type, regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         instance.error.propagate()
+
+
+def assert_compilable_code_specs(
+    spec_files: Sequence[str], tmp_path: pathlib.Path, prefix: str = None
+) -> None:
+    parser = Parser()
+
+    for spec_file in spec_files:
+        parser.parse(pathlib.Path(spec_file))
+
+    assert_compilable_code(parser.create_model(), tmp_path, prefix)
+
+
+def assert_compilable_code_string(
+    specification: str, tmp_path: pathlib.Path, prefix: str = None
+) -> None:
+    parser = Parser()
+    parser.parse_string(specification)
+
+    assert_compilable_code(parser.create_model(), tmp_path, prefix)
 
 
 def assert_compilable_code(model: Model, tmp_path: pathlib.Path, prefix: str = None) -> None:
