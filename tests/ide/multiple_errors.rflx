@@ -64,13 +64,13 @@ package RFLX_Invalid is
          X : Opaque
             then Y
                with Length => 5 * 8
-               if X = (1, 256, 20, 500);
+               if X = [1, 256, 20, 500];
          -- error: Aggregate element out of range (3 times)
          Y : R_Array
-            then null if Y = (1, 10, 20, 50, 60);
+            then null if Y = [1, 10, 20, 50, 60];
 
          -- error: duplicate link
-         Z : R then null, then null;
+         Z : R then null then null;
       end message;
 
    type M2 is
@@ -103,7 +103,7 @@ package RFLX_Invalid is
          Length : R then Data with Length => Length;
          Data : Opaque;
       end message;
-   for RFLX_Invalid.PDU1 use (Data => RFLX_Invalid.SDU2);
+   for RFLX_Invalid::PDU1 use (Data => RFLX_Invalid::SDU2);
 
    -- error: duplicate refinement
    for PDU1 use (Data => SDU2);
@@ -145,7 +145,7 @@ package RFLX_Invalid is
          Data  : Opaque
             then F1
                -- error: invalid relation to aggregate
-               if F1 <= (5, 20);
+               if F1 <= [5, 20];
          F1 : R
             then F2
                -- error: invalid use of length attribute
@@ -153,7 +153,7 @@ package RFLX_Invalid is
          F2 : R
             then null
                -- error: invalid relation between F2 and aggregate
-               if F1 = (1, 100);
+               if F1 = [1, 100];
       end message;
 
    type M4 is
@@ -177,11 +177,11 @@ package RFLX_Invalid is
             then Data2
                with Length => Length
                -- error: aggregate element out of range, 2 times
-               if Data1 = (1, 7, 1000);
+               if Data1 = [1, 7, 1000];
          Data2  : Opaque
             then null
                -- error: aggregate element out of range
-               if Data2 = (1, 1000);
+               if Data2 = [1, 1000];
       end message;
 
    type M5_Array is array of M5;
@@ -193,7 +193,7 @@ package RFLX_Invalid is
          Data : M5_Array
             then null
                -- error: invalid array element type
-               if Data = (1, 7, 1000);
+               if Data = [1, 7, 1000];
       end message;
 
    type Modular_32 is mod 2**32;
@@ -203,7 +203,7 @@ package RFLX_Invalid is
       message
          F1 : Modular_32
             then null
-               if F1 > 50,
+               if F1 > 50
             then F2
                if F1 < 80;
          F2 : Modular_32;
@@ -220,7 +220,7 @@ package RFLX_Invalid is
       message
          F1 : Modular_32
             -- error: contradicting condition
-            then null if 1 = 2,
+            then null if 1 = 2
             then null if F1 > 50;
       end message;
 
