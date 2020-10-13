@@ -1158,14 +1158,19 @@ class Message(AbstractMessage):
     ) -> None:
         super().__init__(identifier, structure, types, aspects, location, error, state)
 
-        if not self.error.check() and (structure or types) and not skip_proof:
+        if not self.error.check() and not skip_proof:
+            self.verify()
+
+        self.error.propagate()
+
+    def verify(self) -> None:
+        if self.structure or self.types:
             self._verify_expression_types()
             self._verify_expressions()
             self._verify_checksums()
             self.error.propagate()
             self._prove()
-
-        self.error.propagate()
+            self.error.propagate()
 
     def copy(
         self,
