@@ -26,8 +26,6 @@ class Base(ABC):
         def value(data: Any) -> Any:
             if isinstance(data, (list, tuple)):
                 return [e.serialize for e in data]
-            if isinstance(data, dict):
-                return {str(k): v.serialize for k, v in data.items()}
             if isinstance(data, (int, str)):
                 return data
             return data.serialize
@@ -37,7 +35,7 @@ class Base(ABC):
             "data": {
                 k: value(v)
                 for k, v in self.__dict__.items()
-                if k not in ("location", "error", "type_", "_str")
+                if k not in ("location", "error", "type_", "_str", "immutable")
             },
         }
 

@@ -141,3 +141,7 @@ def test_main_graph_non_existent_directory() -> None:
 
 def test_main_graph_no_output_files(tmp_path: Path) -> None:
     assert cli.main(["rflx", "graph", "-d", str(tmp_path), "tests/empty_package.rflx"]) == 0
+
+
+def test_main_export(tmp_path: Path) -> None:
+    assert cli.main(["rflx", "export", "-o", str(tmp_path) + "/model.json", "specs/tlv.rflx"]) == 0
