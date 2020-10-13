@@ -7,8 +7,8 @@ import rflx.expression as expr
 from rflx.ada import ID
 from rflx.generator import Generator, common, const
 from rflx.model import BUILTIN_TYPES, Model, Type
-from tests import models
 from tests.const import GENERATED_DIR
+from tests.data import models
 from tests.utils import assert_equal
 
 

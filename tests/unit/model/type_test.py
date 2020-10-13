@@ -14,7 +14,7 @@ from rflx.model import (
     RangeInteger,
     Type,
 )
-from tests import models
+from tests.data import models
 from tests.utils import assert_equal, assert_type_error
 
 

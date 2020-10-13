@@ -9,7 +9,7 @@ import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model import BOOLEAN, OPAQUE, Array, Private, Session, State, Transition
-from tests.models import NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE, TLV_MESSAGE, TLV_TAG
+from tests.data.models import NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE, TLV_MESSAGE, TLV_TAG
 from tests.utils import assert_equal, assert_session_model_error, multilinestr
 
 TLV_MESSAGES = Array("TLV::Messages", TLV_MESSAGE)
