@@ -12,7 +12,7 @@ from rflx.error import RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Message, Model, Session
-from rflx.parser import Parser
+from rflx.specification import Parser
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 

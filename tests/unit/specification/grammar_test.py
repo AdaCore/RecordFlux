@@ -5,8 +5,8 @@ import pytest
 from rflx import declaration as decl, expression as expr, model, statement as stmt
 from rflx.error import Location
 from rflx.identifier import ID
-from rflx.parser import ast, grammar, parser
-from rflx.parser.parser import ParseFatalException
+from rflx.specification import ast, grammar, parser
+from rflx.specification.parser import ParseFatalException
 
 
 @pytest.mark.parametrize(

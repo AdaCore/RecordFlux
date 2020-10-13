@@ -4,7 +4,7 @@ from typing import Any
 import pkg_resources
 import pytest
 
-import rflx.parser
+import rflx.specification
 from rflx import cli
 from rflx.error import Location, Severity, Subsystem, fail
 from tests.const import SPEC_DIR
@@ -50,7 +50,7 @@ def test_main_check_model_error_parse(monkeypatch: Any) -> None:
 
 
 def test_main_check_model_error_create_model(monkeypatch: Any) -> None:
-    monkeypatch.setattr(rflx.parser.Parser, "create_model", lambda x: raise_model_error())
+    monkeypatch.setattr(rflx.specification.Parser, "create_model", lambda x: raise_model_error())
     assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
 
 

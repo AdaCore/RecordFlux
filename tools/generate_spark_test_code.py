@@ -8,7 +8,7 @@ from typing import Sequence
 
 import tests.data.models
 from rflx.generator import Generator
-from rflx.parser import Parser
+from rflx.specification import Parser
 from tests.const import EX_SPEC_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")

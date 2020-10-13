@@ -8,7 +8,7 @@ import sys
 
 import pyparsing
 
-import rflx.parser
+import rflx.specification
 from tests.const import GENERATED_DIR, SPEC_DIR
 
 
@@ -74,7 +74,7 @@ def check_rflx_code(block: str) -> bool:
     valid = True
 
     try:
-        rflx.parser.Parser().parse_string(block)
+        rflx.specification.Parser().parse_string(block)
     except (pyparsing.ParseException, pyparsing.ParseFatalException) as e:
         valid = False
         print(pyparsing.ParseException.explain(e, 0))
