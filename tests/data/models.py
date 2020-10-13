@@ -32,7 +32,7 @@ from rflx.model import (
     UnprovenMessage,
 )
 
-NULL_MESSAGE = Message("Null::Message", [], {})
+NULL_MESSAGE = Message("Null::Message", [], {}, skip_proof=True)
 NULL_MODEL = Model([NULL_MESSAGE])
 
 TLV_TAG = Enumeration(
@@ -49,6 +49,7 @@ TLV_MESSAGE = Message(
         Link(Field("Value"), FINAL),
     ],
     {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): Opaque()},
+    skip_proof=True,
 )
 TLV_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE])
 
@@ -113,6 +114,7 @@ ETHERNET_FRAME = Message(
         Field("Type_Length"): ETHERNET_TYPE_LENGTH,
         Field("Payload"): Opaque(),
     },
+    skip_proof=True,
 )
 ETHERNET_MODEL = Model(
     [ETHERNET_ADDRESS, ETHERNET_TYPE_LENGTH, ETHERNET_TPID, ETHERNET_TCI, ETHERNET_FRAME]
@@ -128,6 +130,7 @@ ENUMERATION_MESSAGE = Message(
     "Enumeration::Message",
     [Link(INITIAL, Field("Priority")), Link(Field("Priority"), FINAL)],
     {Field("Priority"): ENUMERATION_PRIORITY},
+    skip_proof=True,
 )
 ENUMERATION_MODEL = Model([ENUMERATION_PRIORITY, ENUMERATION_MESSAGE])
 
@@ -167,6 +170,7 @@ ARRAYS_MESSAGE = Message(
         Field("Enumeration_Vector"): ARRAYS_ENUMERATION_VECTOR,
         Field("AV_Enumeration_Vector"): ARRAYS_AV_ENUMERATION_VECTOR,
     },
+    skip_proof=True,
 )
 ARRAYS_INNER_MESSAGE = Message(
     "Arrays::Inner_Message",
@@ -176,6 +180,7 @@ ARRAYS_INNER_MESSAGE = Message(
         Link(Field("Payload"), FINAL),
     ],
     {Field("Length"): ARRAYS_LENGTH, Field("Payload"): Opaque()},
+    skip_proof=True,
 )
 ARRAYS_INNER_MESSAGES = Array("Arrays::Inner_Messages", ARRAYS_INNER_MESSAGE)
 ARRAYS_MESSAGES_MESSAGE = Message(
@@ -186,6 +191,7 @@ ARRAYS_MESSAGES_MESSAGE = Message(
         Link(Field("Messages"), FINAL),
     ],
     {Field("Length"): ARRAYS_LENGTH, Field("Messages"): ARRAYS_INNER_MESSAGES},
+    skip_proof=True,
 )
 ARRAYS_MODEL = Model(
     [
@@ -212,6 +218,7 @@ EXPRESSION_MESSAGE = Message(
         Link(Field("Payload"), FINAL, Equal(Variable("Payload"), Aggregate(Number(1), Number(2)))),
     ],
     {Field("Payload"): Opaque()},
+    skip_proof=True,
 )
 EXPRESSION_MODEL = Model([EXPRESSION_MESSAGE])
 
