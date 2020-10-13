@@ -4,13 +4,13 @@ import pathlib
 
 import pytest
 
-from rflx import parser
+from rflx import specification
 from rflx.error import RecordFluxError
 from tests.const import IDE_DIR
 
 
 def assert_error(filename: pathlib.Path, regex: str) -> None:
-    p = parser.Parser()
+    p = specification.Parser()
     with pytest.raises(RecordFluxError, match=regex):
         error = RecordFluxError()
 

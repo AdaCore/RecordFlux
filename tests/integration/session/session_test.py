@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx.parser.parser import Parser
+from rflx.specification.parser import Parser
 
 TESTDIR = "tests/integration/session"
 

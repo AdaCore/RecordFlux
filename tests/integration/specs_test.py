@@ -7,7 +7,7 @@ import pytest
 from rflx import expression as expr, pyrflx
 from rflx.generator import Generator
 from rflx.identifier import ID
-from rflx.parser import Parser
+from rflx.specification import Parser
 from tests import utils
 from tests.const import CAPTURED_DIR, EX_SPEC_DIR, GENERATED_DIR, SPEC_DIR
 

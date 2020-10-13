@@ -9,7 +9,7 @@ import pytest
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
-from rflx.parser import ast, cache, parser
+from rflx.specification import ast, cache, parser
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 from tests.data import models
 

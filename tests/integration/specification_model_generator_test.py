@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx.parser import Parser
+from rflx.specification import Parser
 from tests import utils
 from tests.const import SPEC_DIR
 

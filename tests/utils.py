@@ -11,7 +11,7 @@ from rflx.expression import Expr
 from rflx.generator import Generator
 from rflx.identifier import ID
 from rflx.model import Field, Link, Message, Model, Session, State, Type
-from rflx.parser import Parser
+from rflx.specification import Parser
 
 
 def assert_equal(left: Any, right: Any) -> None:

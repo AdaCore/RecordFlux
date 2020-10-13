@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from rflx.parser import cache
+from rflx.specification import cache
 from tests.data.models import TLV_MESSAGE
 
 

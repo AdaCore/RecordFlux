@@ -28,7 +28,7 @@ from rflx.model import (
     Type,
     UnprovenMessage,
 )
-from rflx.parser import const
+from rflx.specification import const
 
 
 def unique_qualified_identifiers() -> Generator[ID, None, None]:

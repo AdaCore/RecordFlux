@@ -2,8 +2,8 @@ import logging
 from pathlib import Path
 from typing import Dict, Iterator, List
 
-from rflx.parser import Parser
 from rflx.pyrflx.typevalue import MessageValue
+from rflx.specification import Parser
 
 from .package import Package
 

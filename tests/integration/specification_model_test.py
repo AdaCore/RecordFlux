@@ -4,7 +4,7 @@ from typing import Sequence
 import pytest
 
 from rflx.error import RecordFluxError
-from rflx.parser import parser
+from rflx.specification import parser
 from tests.const import SPEC_DIR
 
 
