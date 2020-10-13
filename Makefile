@@ -1,7 +1,7 @@
 VERBOSE ?= @
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := bin examples rflx tests tools stubs setup.py
+python-packages := bin examples/apps rflx tests tools stubs setup.py
 
 build-dir := build
 noprefix-dir := build/noprefix
@@ -81,7 +81,7 @@ test_spark_optimized: $(test-files)
 	$(test-bin)
 
 test_examples:
-	python3 -m pytest -n$(shell nproc) -vv -m "root or not root" tests/test_examples.py
+	python3 -m pytest -n$(shell nproc) -vv -m "root or not root" tests/integration/example_apps_test.py
 
 prove_spark: $(test-files)
 	gnatprove -P$(project) $(GNATPROVE_ARGS)
