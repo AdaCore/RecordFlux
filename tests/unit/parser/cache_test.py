@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from rflx.parser import cache
-from tests.models import TLV_MESSAGE
+from tests.data.models import TLV_MESSAGE
 
 
 def test_init(tmp_path: Path) -> None:

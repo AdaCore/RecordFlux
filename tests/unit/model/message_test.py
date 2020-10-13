@@ -51,7 +51,7 @@ from rflx.model import (
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
-from tests.models import (
+from tests.data.models import (
     ARRAYS_MODULAR_VECTOR,
     ENUMERATION,
     ETHERNET_FRAME,

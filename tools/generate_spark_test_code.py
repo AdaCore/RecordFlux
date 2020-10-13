@@ -6,7 +6,7 @@ import pathlib
 import sys
 from typing import Sequence
 
-import tests.models
+import tests.data.models
 from rflx.generator import Generator
 from rflx.parser import Parser
 from tests.const import EX_SPEC_DIR
@@ -16,13 +16,13 @@ logging.disable(logging.NOTSET)
 
 
 MODELS = [
-    tests.models.EXPRESSION_MODEL,
-    tests.models.ENUMERATION_MODEL,
-    tests.models.ARRAYS_MODEL,
-    tests.models.DERIVATION_MODEL,
-    tests.models.NULL_MODEL,
-    tests.models.TLV_MODEL,
-    tests.models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
+    tests.data.models.EXPRESSION_MODEL,
+    tests.data.models.ENUMERATION_MODEL,
+    tests.data.models.ARRAYS_MODEL,
+    tests.data.models.DERIVATION_MODEL,
+    tests.data.models.NULL_MODEL,
+    tests.data.models.TLV_MODEL,
+    tests.data.models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
 ]
 
 SPECIFICATION_FILES = [
