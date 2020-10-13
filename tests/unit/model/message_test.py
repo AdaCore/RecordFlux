@@ -55,8 +55,12 @@ from tests.models import (
     ARRAYS_MODULAR_VECTOR,
     ENUMERATION,
     ETHERNET_FRAME,
+    ETHERNET_TYPE_LENGTH,
     MODULAR_INTEGER,
+    NULL_MESSAGE,
+    NULL_MESSAGE_IN_TLV_MESSAGE,
     RANGE_INTEGER,
+    TLV_MESSAGE,
 )
 from tests.utils import (
     assert_equal,
@@ -2854,3 +2858,174 @@ def test_message_str() -> None:
                   end message"""
         ),
     )
+
+
+def test_serialize_array() -> None:
+    assert ARRAYS_MODULAR_VECTOR.serialize == {
+        "kind": "Array",
+        "data": {
+            "identifier": ["Arrays", "Modular_Vector"],
+            "element_type": ["Arrays", "Modular_Integer"],
+        },
+    }
+
+
+def test_serialize_range_integer() -> None:
+    assert ETHERNET_TYPE_LENGTH.serialize == {
+        "data": {
+            "identifier": ["Ethernet", "Type_Length"],
+            "first": {"data": {"base": 0, "value": 46}, "kind": "Number"},
+            "last": {"data": {"base": 0, "value": 65535}, "kind": "Number"},
+            "size": {"data": {"base": 0, "value": 16}, "kind": "Number"},
+        },
+        "kind": "RangeInteger",
+    }
+
+
+def test_serialize_empty_message() -> None:
+    assert NULL_MESSAGE.serialize == {
+        "kind": "Message",
+        "data": {"identifier": ["Null", "Message"], "structure": [], "types": {}},
+    }
+
+
+def test_serialize_simple_message() -> None:
+    assert TLV_MESSAGE.serialize == {
+        "kind": "Message",
+        "data": {
+            "identifier": ["TLV", "Message"],
+            "structure": [
+                {
+                    "kind": "Link",
+                    "data": {
+                        "source": {"kind": "Field", "data": {"identifier": ["Initial"]}},
+                        "target": {"kind": "Field", "data": {"identifier": ["Tag"]}},
+                        "condition": {"kind": "BooleanTrue", "data": {}},
+                        "length": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                        "first": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                    },
+                },
+                {
+                    "kind": "Link",
+                    "data": {
+                        "source": {"kind": "Field", "data": {"identifier": ["Length"]}},
+                        "target": {"kind": "Field", "data": {"identifier": ["Value"]}},
+                        "condition": {"kind": "BooleanTrue", "data": {}},
+                        "length": {
+                            "kind": "Mul",
+                            "data": {
+                                "terms": [
+                                    {
+                                        "kind": "Variable",
+                                        "data": {"identifier": ["Length"], "negative": False},
+                                    },
+                                    {"kind": "Number", "data": {"value": 8, "base": 0}},
+                                ]
+                            },
+                        },
+                        "first": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                    },
+                },
+                {
+                    "kind": "Link",
+                    "data": {
+                        "source": {"kind": "Field", "data": {"identifier": ["Tag"]}},
+                        "target": {"kind": "Field", "data": {"identifier": ["Final"]}},
+                        "condition": {
+                            "kind": "Equal",
+                            "data": {
+                                "left": {
+                                    "kind": "Variable",
+                                    "data": {"identifier": ["Tag"], "negative": False},
+                                },
+                                "right": {
+                                    "kind": "Variable",
+                                    "data": {"identifier": ["Msg_Error"], "negative": False},
+                                },
+                            },
+                        },
+                        "length": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                        "first": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                    },
+                },
+                {
+                    "kind": "Link",
+                    "data": {
+                        "source": {"kind": "Field", "data": {"identifier": ["Tag"]}},
+                        "target": {"kind": "Field", "data": {"identifier": ["Length"]}},
+                        "condition": {
+                            "kind": "Equal",
+                            "data": {
+                                "left": {
+                                    "kind": "Variable",
+                                    "data": {"identifier": ["Tag"], "negative": False},
+                                },
+                                "right": {
+                                    "kind": "Variable",
+                                    "data": {"identifier": ["Msg_Data"], "negative": False},
+                                },
+                            },
+                        },
+                        "length": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                        "first": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                    },
+                },
+                {
+                    "kind": "Link",
+                    "data": {
+                        "source": {"kind": "Field", "data": {"identifier": ["Value"]}},
+                        "target": {"kind": "Field", "data": {"identifier": ["Final"]}},
+                        "condition": {"kind": "BooleanTrue", "data": {}},
+                        "length": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                        "first": {
+                            "kind": "UndefinedExpr",
+                            "data": {"negative": False},
+                        },
+                    },
+                },
+            ],
+            "types": {
+                "Tag": ["TLV", "Tag"],
+                "Length": ["TLV", "Length"],
+                "Value": ["__INTERNAL__", "Opaque"],
+            },
+        },
+    }
+
+
+def test_serialize_refinement() -> None:
+    assert NULL_MESSAGE_IN_TLV_MESSAGE.serialize == {
+        "kind": "Refinement",
+        "data": {
+            "package": ["In_TLV"],
+            "identifier": ["In_TLV", "__REFINEMENT__Null_Message__TLV_Message__Value__"],
+            "field": {"kind": "Field", "data": {"identifier": ["Value"]}},
+            "pdu": ["TLV", "Message"],
+            "sdu": ["Null", "Message"],
+            "condition": {"data": {}, "kind": "BooleanTrue"},
+        },
+    }

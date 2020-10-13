@@ -104,3 +104,8 @@ def test_id_parent_error() -> None:
 
 def test_id_sorted() -> None:
     assert sorted([ID("B"), ID("A")]) == [ID("A"), ID("B")]
+
+
+def test_serialize_id() -> None:
+    assert ID("A::B").serialize == ["A", "B"]
+    assert ID("A").serialize == ["A"]

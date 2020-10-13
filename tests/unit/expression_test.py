@@ -2226,3 +2226,14 @@ def test_indexed_neg() -> None:
     assert Indexed(Variable("X"), Variable("Y")) != Indexed(
         Variable("X"), Variable("Y"), negative=True
     )
+
+
+def test_serialize_variable() -> None:
+    assert Variable("X").serialize == {
+        "kind": "Variable",
+        "data": {"identifier": ["X"], "negative": False},
+    }
+    assert Variable("Y", negative=True).serialize == {
+        "kind": "Variable",
+        "data": {"identifier": ["Y"], "negative": True},
+    }
