@@ -48,8 +48,8 @@ def check_code_blocks() -> bool:
                 if inside:
                     block += l
 
-    pathlib.Path("build/tests").mkdir(parents=True, exist_ok=True)
-    os.symlink(f"../../{SPEC_DIR}", f"build/{SPEC_DIR}")
+    ("build" / SPEC_DIR.parent).mkdir(parents=True, exist_ok=True)
+    os.symlink(os.getcwd() / SPEC_DIR, "build" / SPEC_DIR)
     os.chdir("build")
 
     for block_type, block in code_blocks:

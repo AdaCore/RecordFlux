@@ -83,8 +83,8 @@ end TLV;
 With the sub-command `check` the correctness of the given specification file can be checked.
 
 ```Console
-$ rflx check tests/specs/tlv.rflx
-Parsing tests/specs/tlv.rflx
+$ rflx check tests/data/specs/tlv.rflx
+Parsing tests/data/specs/tlv.rflx
 Processing TLV
 ```
 
@@ -92,8 +92,8 @@ The sub-command `generate` is used to generate the code based on the specificati
 
 ```Console
 $ mkdir /tmp/generated
-$ rflx generate -d /tmp/generated tests/specs/tlv.rflx
-Parsing tests/specs/tlv.rflx
+$ rflx generate -d /tmp/generated tests/data/specs/tlv.rflx
+Parsing tests/data/specs/tlv.rflx
 Processing TLV
 Creating /tmp/generated/rflx-tlv.ads
 Creating /tmp/generated/rflx-tlv-generic_message.ads
@@ -253,7 +253,7 @@ import sys
 
 from rflx.pyrflx import MessageValue, PyRFLX
 
-PYRFLX = PyRFLX(["tests/specs/tlv.rflx"])
+PYRFLX = PyRFLX(["tests/data/specs/tlv.rflx"])
 TLV = PYRFLX["TLV"]
 
 
