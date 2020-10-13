@@ -177,4 +177,4 @@ def graph(args: argparse.Namespace) -> None:
 def export(args: argparse.Namespace) -> None:
     model = parse(args.files)
     with open(args.output, "w") as f:
-        print(json.dumps(model.serialize, indent=3), file=f)
+        json.dump(model.serialize, f, indent=3)
