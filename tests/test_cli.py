@@ -9,6 +9,10 @@ from rflx import cli
 from rflx.error import Location, Severity, Subsystem, fail
 
 
+def raise_parser_error() -> None:
+    fail("TEST", Subsystem.PARSER, Severity.ERROR, Location((8, 22)))
+
+
 def raise_model_error() -> None:
     fail("TEST", Subsystem.MODEL, Severity.ERROR, Location((8, 22)))
 
@@ -32,8 +36,9 @@ def test_main_check_quiet() -> None:
     assert cli.main(["rflx", "--quiet", "check", "specs/tlv.rflx"]) == 0
 
 
-def test_main_check_parser_error() -> None:
-    assert "README.md:1:1: parser: error: " in str(cli.main(["rflx", "check", "README.md"]))
+def test_main_check_parser_error(monkeypatch: Any) -> None:
+    monkeypatch.setattr(cli, "check", lambda x: raise_parser_error())
+    assert "<stdin>:8:22: parser: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
 
 
 def test_main_check_model_error_parse(monkeypatch: Any) -> None:
