@@ -106,6 +106,6 @@ def test_id_sorted() -> None:
     assert sorted([ID("B"), ID("A")]) == [ID("A"), ID("B")]
 
 
-def test_serialize_id() -> None:
+def test_serialize() -> None:
     assert ID("A::B").serialize == ["A", "B"]
     assert ID("A").serialize == ["A"]

@@ -6,19 +6,7 @@ from abc import abstractmethod
 from enum import Enum
 from functools import lru_cache
 from sys import intern
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
 
 import z3
 
@@ -1055,13 +1043,6 @@ class Variable(Name):
         if self.negative:
             return -z3.Int(self.name)
         return z3.Int(self.name)
-
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            "kind": "Variable",
-            "data": {"identifier": str(self.identifier.name), "negative": self.negative},
-        }
 
 
 class Attribute(Name):

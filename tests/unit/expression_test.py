@@ -2228,7 +2228,7 @@ def test_indexed_neg() -> None:
     )
 
 
-def test_serialize_variable() -> None:
+def test_variable_serialize() -> None:
     assert Variable("X").serialize == {
         "kind": "Variable",
         "data": {"identifier": ["X"], "negative": False},
