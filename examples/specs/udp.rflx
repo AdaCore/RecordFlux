@@ -9,10 +9,9 @@ package UDP is
          Source_Port : Port;
          Destination_Port : Port;
          Length : Length;
-         Checksum : Checksum
-            then Payload
-               with Length => (Length - 8) * 8;
-         Payload : Opaque;
+         Checksum : Checksum;
+         Payload : Opaque
+            with Length => (Length - 8) * 8;
       end message;
 
 end UDP;

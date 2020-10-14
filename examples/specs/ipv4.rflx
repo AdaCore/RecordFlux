@@ -25,14 +25,13 @@ package IPv4 is
                if Option_Class = Control and Option_Number = 1
             then Option_Length
                if Option_Number > 1;
-         Option_Length : Option_Length
-            then Option_Data
-               with Length => (Option_Length - 2) * 8
-               if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
-                  or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
-                  or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
-                  or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
-         Option_Data : Opaque;
+         Option_Length : Option_Length;
+         Option_Data : Opaque
+            with Length => (Option_Length - 2) * 8
+            if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
+               or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
+               or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
+               or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
       end message;
 
    type Options is array of Option;
@@ -43,14 +42,12 @@ package IPv4 is
          IHL : IHL;
          DSCP : DCSP;
          ECN : ECN;
-         Total_Length : Total_Length
-            then Identification
-               if Total_Length >= IHL * 4;
-         Identification : Identification;
-         Flag_R : Boolean
-            then Flag_DF
-               if Flag_R = False;
-         Flag_DF : Boolean;
+         Total_Length : Total_Length;
+         Identification : Identification
+            if Total_Length >= IHL * 4;
+         Flag_R : Boolean;
+         Flag_DF : Boolean
+            if Flag_R = False;
          Flag_MF : Boolean;
          Fragment_Offset : Fragment_Offset;
          TTL : TTL;
