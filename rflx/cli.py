@@ -37,7 +37,7 @@ def main(argv: List[str]) -> Union[int, str]:
 
     parser_export = subparsers.add_parser("export", help="export model as JSON")
     parser_export.add_argument(
-        "files", metavar="FILE", type=str, nargs="+", help="specification file"
+        "files", metavar="FILE", type=Path, nargs="+", help="specification file"
     )
     parser_export.add_argument("-o", "--output", help="output file", type=Path, required=True)
     parser_export.set_defaults(func=export)
@@ -54,7 +54,7 @@ def main(argv: List[str]) -> Union[int, str]:
         "-n", "--no-library", help="omit generating library files", action="store_true"
     )
     parser_generate.add_argument(
-        "-d", "--directory", help="output directory", default=".", type=str
+        "-d", "--directory", help="output directory", default=".", type=Path
     )
     parser_generate.add_argument(
         "files", metavar="FILE", type=Path, nargs="*", help="specification file"
@@ -73,7 +73,7 @@ def main(argv: List[str]) -> Union[int, str]:
     parser_graph.add_argument(
         "files", metavar="FILE", type=Path, nargs="+", help="specification file"
     )
-    parser_graph.add_argument("-d", "--directory", help="output directory", default=".", type=str)
+    parser_graph.add_argument("-d", "--directory", help="output directory", default=".", type=Path)
     parser_graph.add_argument(
         "--no-verification",
         action="store_true",
@@ -105,20 +105,19 @@ def generate(args: argparse.Namespace) -> None:
     if args.prefix and "" in args.prefix.split("."):
         fail(f'invalid prefix: "{args.prefix}"', Subsystem.CLI)
 
-    directory = Path(args.directory)
-    if not directory.is_dir():
-        fail(f'directory not found: "{directory}"', Subsystem.CLI)
+    if not args.directory.is_dir():
+        fail(f'directory not found: "{args.directory}"', Subsystem.CLI)
 
     generator = Generator(args.prefix, reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None)
 
     model = parse(args.files)
     generator.generate(model)
 
-    generator.write_units(directory)
+    generator.write_units(args.directory)
     if not args.no_library:
-        generator.write_library_files(directory)
+        generator.write_library_files(args.directory)
     if args.prefix == DEFAULT_PREFIX:
-        generator.write_top_level_package(directory)
+        generator.write_top_level_package(args.directory)
 
 
 def parse(files: Sequence[Path], skip_verification: bool = False) -> Model:
@@ -148,9 +147,8 @@ def parse(files: Sequence[Path], skip_verification: bool = False) -> Model:
 
 
 def graph(args: argparse.Namespace) -> None:
-    directory = Path(args.directory)
-    if not directory.is_dir():
-        fail(f'directory not found: "{directory}"', Subsystem.GRAPH)
+    if not args.directory.is_dir():
+        fail(f'directory not found: "{args.directory}"', Subsystem.GRAPH)
 
     model = parse(args.files, args.no_verification)
     locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = defaultdict(dict)
@@ -158,7 +156,7 @@ def graph(args: argparse.Namespace) -> None:
     for m in [*model.messages, *model.sessions]:
         assert isinstance(m, (Message, Session))
         name = flat_name(str(m.identifier))
-        filename = Path(directory).joinpath(name).with_suffix(f".{args.format}")
+        filename = args.directory.joinpath(name).with_suffix(f".{args.format}")
         Graph(m).write(filename, fmt=args.format)
 
         assert m.location
@@ -173,7 +171,7 @@ def graph(args: argparse.Namespace) -> None:
             "end": {"line": m.location.end[0], "column": m.location.end[1]},
         }
 
-    filename = Path(directory).joinpath("locations.json")
+    filename = args.directory.joinpath("locations.json")
     with open(filename, "w") as f:
         json.dump(locations, f)
 
