@@ -187,9 +187,11 @@ class Generator:
                     Path(directory) / Path(filename),
                     self.__license_header()
                     + "".join(
-                        l.format(prefix=prefix)
-                        for l in template_file
-                        if "  --  WORKAROUND" not in l
+                        [
+                            l.format(prefix=prefix)
+                            for l in template_file
+                            if "  --  WORKAROUND" not in l
+                        ]
                     ),
                 )
 
@@ -311,9 +313,17 @@ class Generator:
                     )
                 )
 
-        scalar_fields = {f: t for f, t in message.types.items() if isinstance(t, Scalar)}
-        composite_fields = [f for f, t in message.types.items() if isinstance(t, Composite)]
-        sequence_fields = {f: t for f, t in message.types.items() if isinstance(t, Array)}
+        scalar_fields = {}
+        composite_fields = []
+        sequence_fields = {}
+
+        for f, t in message.types.items():
+            if isinstance(t, Scalar):
+                scalar_fields[f] = t
+            if isinstance(t, Composite):
+                composite_fields.append(f)
+            if isinstance(t, Array):
+                sequence_fields[f] = t
 
         context_invariant = [
             Equal(e, Old(e))
