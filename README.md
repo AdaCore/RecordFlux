@@ -253,7 +253,7 @@ import sys
 
 from rflx.pyrflx import MessageValue, PyRFLX
 
-PYRFLX = PyRFLX(["tests/data/specs/tlv.rflx"])
+PYRFLX = PyRFLX.parse(["tests/data/specs/tlv.rflx"])
 TLV = PYRFLX["TLV"]
 
 
