@@ -332,9 +332,13 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
             target_node = Field(name) if name else FINAL
             structure.append(Link(source_node, target_node))
 
-        if component.first != expr.UNDEFINED:
-            for l in structure:
-                if l.target.identifier == component.name:
+        if (
+            component.first != expr.UNDEFINED
+            or component.length != expr.UNDEFINED
+            or component.condition != expr.TRUE
+        ):
+            for l in (l for l in structure if l.target.identifier == component.name):
+                if component.first != expr.UNDEFINED:
                     if l.first == expr.UNDEFINED:
                         l.first = component.first
                     else:
@@ -352,9 +356,7 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
                             l.first.location,
                         )
 
-        if component.length != expr.UNDEFINED:
-            for l in structure:
-                if l.target.identifier == component.name:
+                if component.length != expr.UNDEFINED:
                     if l.length == expr.UNDEFINED:
                         l.length = component.length
                     else:
@@ -372,9 +374,7 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
                             l.length.location,
                         )
 
-        if component.condition != expr.TRUE:
-            for l in structure:
-                if l.target.identifier == component.name:
+                if component.condition != expr.TRUE:
                     l.condition = (
                         expr.And(component.condition, l.condition, location=l.condition.location)
                         if l.condition != expr.TRUE
