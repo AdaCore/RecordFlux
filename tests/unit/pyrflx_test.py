@@ -41,7 +41,7 @@ def assert_bytestring_error(msg: MessageValue) -> None:
 
 def test_file_not_found(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
-        PyRFLX.parse([f"{tmp_path}/test.rflx"])
+        PyRFLX.from_specs([f"{tmp_path}/test.rflx"])
 
 
 def test_package_name() -> None:
@@ -72,14 +72,14 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
 
 
 def test_attributes(pyrflx_: PyRFLX) -> None:
-    pyrflx_ = PyRFLX.parse([f"{SPEC_DIR}/tlv.rflx"])
+    pyrflx_ = PyRFLX.from_specs([f"{SPEC_DIR}/tlv.rflx"])
     assert isinstance(pyrflx_["TLV"], Package)
     tlv_package = pyrflx_["TLV"]
     assert isinstance(tlv_package["Message"], MessageValue)
 
 
 def test_no_verification(icmp_message_value: MessageValue) -> None:
-    pyrflx_ = PyRFLX.parse(
+    pyrflx_ = PyRFLX.from_specs(
         [f"{EX_SPEC_DIR}/icmp.rflx"], skip_model_verification=True, skip_message_verification=True
     )
     icmp_message_value_unv = pyrflx_["ICMP"]["Message"]

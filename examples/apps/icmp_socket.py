@@ -6,7 +6,7 @@ from rflx.pyrflx import MessageValue, PyRFLX
 
 class ICMPSocket:
     def __init__(self) -> None:
-        pyrflx = PyRFLX.parse(["examples/specs/icmp.rflx"])
+        pyrflx = PyRFLX.from_specs(["examples/specs/icmp.rflx"])
         self.package_icmp = pyrflx["ICMP"]
         self.icmp_data = (
             b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"

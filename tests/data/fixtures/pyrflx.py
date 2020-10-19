@@ -7,7 +7,7 @@ from tests.const import EX_SPEC_DIR, SPEC_DIR
 
 @pytest.fixture(name="pyrflx_", scope="session")
 def fixture_pyrflx() -> pyrflx.PyRFLX:
-    return pyrflx.PyRFLX.parse(
+    return pyrflx.PyRFLX.from_specs(
         [
             f"{EX_SPEC_DIR}/ethernet.rflx",
             f"{EX_SPEC_DIR}/icmp.rflx",

@@ -7,7 +7,7 @@ import time
 
 from rflx.pyrflx import MessageValue, PyRFLX
 
-PYRFLX = PyRFLX.parse(["specs/ipv4.rflx"], True)
+PYRFLX = PyRFLX.from_specs(["specs/ipv4.rflx"], True)
 ICMP = PYRFLX["ICMP"]
 IP = PYRFLX["IPv4"]
 

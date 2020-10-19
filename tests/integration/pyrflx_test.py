@@ -195,7 +195,7 @@ def test_imported_literals(tmp_path: Path) -> None:
             """
         )
 
-    pyrflx_ = PyRFLX.parse([str(tmp_path / "test.rflx")])
+    pyrflx_ = PyRFLX.from_specs([str(tmp_path / "test.rflx")])
     m = pyrflx_["Test"]["Message"]
 
     m.set("A", "E1")
@@ -246,7 +246,7 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
     ethernet_frame_value.set("Type_Length", int("0800", 16))
     ethernet_frame_value.set("Payload", payload)
     assert ethernet_frame_value.valid_message
-    pyrflx_ = PyRFLX.parse(
+    pyrflx_ = PyRFLX.from_specs(
         [f"{EX_SPEC_DIR}/ethernet.rflx"],
         skip_model_verification=True,
         skip_message_verification=True,
@@ -273,7 +273,7 @@ def test_no_verification_array_nested_messages(
     array_message_value.set("Bar", foos)
     assert array_message_value.valid_message
 
-    pyrflx_ = PyRFLX.parse(
+    pyrflx_ = PyRFLX.from_specs(
         [f"{SPEC_DIR}/array_message.rflx"],
         skip_model_verification=True,
         skip_message_verification=True,
