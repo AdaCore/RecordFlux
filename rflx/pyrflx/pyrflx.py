@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, Sequence
 
 from rflx.model import Model
 from rflx.pyrflx.typevalue import MessageValue
@@ -27,9 +27,9 @@ class PyRFLX:
                 )
 
     @classmethod
-    def parse(
+    def from_specs(
         cls,
-        files: List[str],
+        files: Sequence[str],
         skip_model_verification: bool = False,
         skip_message_verification: bool = False,
     ) -> "PyRFLX":

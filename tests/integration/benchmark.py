@@ -16,7 +16,7 @@ class Benchmark:
     def __init__(self, specdir: Path) -> None:
         print("Loading...")
         start = perf_counter()
-        self.__pyrflx = PyRFLX.parse(
+        self.__pyrflx = PyRFLX.from_specs(
             [str(specdir / "ipv4.rflx"), str(specdir / "icmp.rflx")], True, True
         )
         self.__ipv4 = self.__pyrflx["IPv4"]
