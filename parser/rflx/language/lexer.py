@@ -1,11 +1,35 @@
-from langkit.lexer import Lexer, LexerToken, Literal, WithText  # type: ignore
+from langkit.lexer import (  # type: ignore
+    Ignore,
+    Lexer,
+    LexerToken,
+    Literal,
+    Pattern,
+    WithSymbol,
+    WithText,
+    WithTrivia,
+)
 
 
 class Token(LexerToken):
-    Example = WithText()
+    Package = WithText()
+    Is = WithText()
+    End = WithText()
+    Semicolon = WithText()
+
+    # Identifiers
+    UnqualifiedIdentifier = WithSymbol()
+
+    # Comment
+    Comment = WithTrivia()
 
 
 rflx_lexer = Lexer(Token)
 rflx_lexer.add_rules(
-    (Literal("example"), Token.Example),
+    (Pattern(r"[ \t\r\n]+"), Ignore()),
+    (Pattern(r"--.*"), Token.Comment),
+    (Literal("package"), Token.Package),
+    (Literal("is"), Token.Is),
+    (Literal("end"), Token.End),
+    (Literal(";"), Token.Semicolon),
+    (Pattern("[a-zA-Z]\w*"), Token.UnqualifiedIdentifier),
 )

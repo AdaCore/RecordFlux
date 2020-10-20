@@ -1,19 +1,30 @@
-from langkit.dsl import ASTNode, abstract  # type: ignore
-from langkit.parsers import Grammar  # type: ignore
+from langkit.dsl import ASTNode, Field, abstract  # type: ignore
+from langkit.parsers import Grammar, Opt, Pick  # type: ignore
+
+from rflx.language.lexer import rflx_lexer as lexer
 
 
 @abstract
 class RFLXNode(ASTNode):
-    """
-    Root node class for RecordFluxDSL AST nodes.
-    """
+    pass
 
 
-class ExampleNode(RFLXNode):
-    """
-    Example node.
-    """
+class ID(RFLXNode):
+    token_node = True
+
+
+class PackageDeclarationNode(RFLXNode):
+    name_start = Field()
+    name_end = Field()
 
 
 rflx_grammar = Grammar("main_rule")
-rflx_grammar.add_rules(main_rule=ExampleNode("example"))
+G = rflx_grammar
+
+rflx_grammar.add_rules(
+    main_rule=Opt(G.package_declaration),
+    unqualified_identifier=ID(lexer.UnqualifiedIdentifier),
+    package_declaration=PackageDeclarationNode(
+        "package", G.unqualified_identifier, "is", "end", G.unqualified_identifier, ";"
+    ),
+)
