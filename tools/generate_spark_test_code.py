@@ -42,16 +42,13 @@ def main(argv: Sequence[str]) -> int:
     args = arg_parser.parse_args(argv[1:])
 
     parser = Parser()
-    for f in SPECIFICATION_FILES:
-        parser.parse(f)
+    parser.parse(*SPECIFICATION_FILES)
 
-    generator = Generator("RFLX", reproducible=True)
-    generator.generate(parser.create_model())
-    for model in MODELS:
-        generator.generate(model)
-    generator.write_units(args.directory)
-    generator.write_library_files(args.directory)
-    generator.write_top_level_package(args.directory)
+    for model in [parser.create_model(), *MODELS]:
+        generator = Generator(model, "RFLX", reproducible=True)
+        generator.write_units(args.directory)
+        generator.write_library_files(args.directory)
+        generator.write_top_level_package(args.directory)
 
     return 0
 

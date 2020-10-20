@@ -108,11 +108,11 @@ def generate(args: argparse.Namespace) -> None:
     if not args.directory.is_dir():
         fail(f'directory not found: "{args.directory}"', Subsystem.CLI)
 
-    generator = Generator(args.prefix, reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None)
-
     model = parse(args.files)
-    generator.generate(model)
 
+    generator = Generator(
+        model, args.prefix, reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None
+    )
     generator.write_units(args.directory)
     if not args.no_library:
         generator.write_library_files(args.directory)

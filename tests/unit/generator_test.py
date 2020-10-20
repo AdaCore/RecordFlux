@@ -13,28 +13,27 @@ from tests.utils import assert_equal
 
 
 def assert_specification(generator: Generator) -> None:
-    for unit in generator.units.values():
+    for unit in generator._units.values():  # pylint: disable=protected-access
         with open(f"{GENERATED_DIR}/{unit.name}.ads", "r") as f:
             assert unit.ads == f.read(), unit.name
 
 
 def assert_body(generator: Generator) -> None:
-    for unit in generator.units.values():
+    for unit in generator._units.values():  # pylint: disable=protected-access
         if unit.adb:
             with open(f"{GENERATED_DIR}/{unit.name}.adb", "r") as f:
                 assert unit.adb == f.read(), unit.name
 
 
 def generate(model: Model) -> Generator:
-    generator = Generator("RFLX", reproducible=True)
-    generator.generate(model)
+    generator = Generator(model, "RFLX", reproducible=True)
     return generator
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_invalid_prefix() -> None:
     with pytest.raises(AssertionError, match=r"empty part in identifier"):
-        Generator("A..B")
+        Generator(Model(), "A..B")
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
@@ -43,11 +42,11 @@ def test_unexpected_type() -> None:
         pass
 
     with pytest.raises(AssertionError, match='unexpected type "TestType"'):
-        Generator().generate(Model([TestType("P::T")]))
+        Generator(Model([TestType("P::T")]))
 
 
 def test_library_files(tmp_path: Path) -> None:
-    generator = Generator("RFLX", reproducible=True)
+    generator = Generator(Model(), "RFLX", reproducible=True)
     generator.write_library_files(tmp_path)
     for filename in [f"rflx-{f}" for f in const.LIBRARY_FILES]:
         with open(tmp_path / filename) as library_file:
@@ -56,14 +55,14 @@ def test_library_files(tmp_path: Path) -> None:
 
 
 def test_library_files_no_prefix(tmp_path: Path) -> None:
-    generator = Generator("", reproducible=True)
+    generator = Generator(Model(), "", reproducible=True)
     generator.write_library_files(tmp_path)
     for filename in const.LIBRARY_FILES:
         assert (tmp_path / filename).exists()
 
 
 def test_top_level_package(tmp_path: Path) -> None:
-    generator = Generator("RFLX", reproducible=True)
+    generator = Generator(Model(), "RFLX", reproducible=True)
     generator.write_top_level_package(tmp_path)
 
     created_files = list(tmp_path.glob("*"))
@@ -76,7 +75,7 @@ def test_top_level_package(tmp_path: Path) -> None:
 
 
 def test_top_level_package_no_prefix(tmp_path: Path) -> None:
-    generator = Generator("", reproducible=True)
+    generator = Generator(Model(), "", reproducible=True)
     generator.write_top_level_package(tmp_path)
     assert list(tmp_path.glob("*")) == []
 

@@ -118,8 +118,7 @@ def _create_files(tmp_path: pathlib.Path, model: Model, prefix: str = None) -> N
             """
         )
 
-    generator = Generator(prefix if prefix else "RFLX")
-    generator.generate(model)
+    generator = Generator(model, prefix if prefix else "RFLX")
     generator.write_units(tmp_path)
     generator.write_library_files(tmp_path)
     generator.write_top_level_package(tmp_path)

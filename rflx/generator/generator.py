@@ -3,7 +3,7 @@ import itertools
 import logging
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Mapping, Sequence, Set, Tuple, cast
+from typing import Dict, List, Mapping, Sequence, Tuple, cast
 
 import pkg_resources
 
@@ -134,23 +134,61 @@ CONFIGURATION_PRAGMAS = [Pragma("Style_Checks", [String("N3aAbcdefhiIklnOprStux"
 
 
 class Generator:
-    def __init__(self, prefix: str = "", reproducible: bool = False) -> None:
-        self.prefix = str(ID(prefix)) if prefix else ""
-        self.reproducible = reproducible
-        self.units: Dict[ID, Unit] = {}
-        self.seen_types: Set[ID] = set()
-        self.parser = ParserGenerator(self.prefix)
-        self.serializer = SerializerGenerator(self.prefix)
+    def __init__(self, model: Model, prefix: str = "", reproducible: bool = False) -> None:
+        self.__prefix = str(ID(prefix)) if prefix else ""
+        self.__reproducible = reproducible
+        self.__parser = ParserGenerator(self.__prefix)
+        self.__serializer = SerializerGenerator(self.__prefix)
 
-        self.template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
-        assert self.template_dir.is_dir(), "template directory not found"
+        self._units: Dict[ID, Unit] = {}
 
-    def generate(self, model: Model) -> None:
+        self.__template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
+        assert self.__template_dir.is_dir(), "template directory not found"
+
+        self.__generate(model)
+
+    def write_library_files(self, directory: Path) -> None:
+        for template_filename in const.LIBRARY_FILES:
+            self.__check_template_file(template_filename)
+
+            prefix = f"{self.__prefix}." if self.__prefix else ""
+            filename = f"{file_name(prefix)}{template_filename}"
+
+            with open(self.__template_dir / Path(template_filename)) as template_file:
+                create_file(
+                    Path(directory) / Path(filename),
+                    self.__license_header()
+                    + "".join(
+                        [
+                            l.format(prefix=prefix)
+                            for l in template_file
+                            if "  --  WORKAROUND" not in l
+                        ]
+                    ),
+                )
+
+    def write_top_level_package(self, directory: Path) -> None:
+        if self.__prefix:
+            create_file(
+                Path(directory) / Path(file_name(self.__prefix) + ".ads"),
+                self.__license_header() + f"package {self.__prefix} is\n\nend {self.__prefix};",
+            )
+
+    def write_units(self, directory: Path) -> None:
+        for unit in self._units.values():
+            create_file(directory / Path(unit.name + ".ads"), self.__license_header() + unit.ads)
+
+            if unit.adb:
+                create_file(
+                    directory / Path(unit.name + ".adb"), self.__license_header() + unit.adb
+                )
+
+    def __generate(self, model: Model) -> None:
         for t in model.types:
             if t.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
                 continue
 
-            if t.package not in self.units:
+            if t.package not in self._units:
                 self.__create_unit(ID(t.package), [], terminating=False)
 
             if isinstance(t, (Scalar, Composite)):
@@ -174,42 +212,6 @@ class Generator:
 
             else:
                 assert False, f'unexpected type "{type(t).__name__}"'
-
-    def write_library_files(self, directory: Path) -> None:
-        for template_filename in const.LIBRARY_FILES:
-            self.__check_template_file(template_filename)
-
-            prefix = f"{self.prefix}." if self.prefix else ""
-            filename = f"{file_name(prefix)}{template_filename}"
-
-            with open(self.template_dir / Path(template_filename)) as template_file:
-                create_file(
-                    Path(directory) / Path(filename),
-                    self.__license_header()
-                    + "".join(
-                        [
-                            l.format(prefix=prefix)
-                            for l in template_file
-                            if "  --  WORKAROUND" not in l
-                        ]
-                    ),
-                )
-
-    def write_top_level_package(self, directory: Path) -> None:
-        if self.prefix:
-            create_file(
-                Path(directory) / Path(file_name(self.prefix) + ".ads"),
-                self.__license_header() + f"package {self.prefix} is\n\nend {self.prefix};",
-            )
-
-    def write_units(self, directory: Path) -> None:
-        for unit in self.units.values():
-            create_file(directory / Path(unit.name + ".ads"), self.__license_header() + unit.ads)
-
-            if unit.adb:
-                create_file(
-                    directory / Path(unit.name + ".adb"), self.__license_header() + unit.adb
-                )
 
     def __create_refinement(self, refinement: Refinement) -> None:
         self.__create_generic_refinement_unit(refinement)
@@ -238,7 +240,7 @@ class Generator:
         unit = PackageUnit(
             declaration_context,
             PackageDeclaration(
-                self.prefix * name,
+                self.__prefix * name,
                 formal_parameters=formal_parameters,
                 aspects=[
                     SparkMode(),
@@ -246,9 +248,9 @@ class Generator:
                 ],
             ),
             list(CONFIGURATION_PRAGMAS),
-            PackageBody(self.prefix * name, aspects=[SparkMode()]),
+            PackageBody(self.__prefix * name, aspects=[SparkMode()]),
         )
-        self.units[name] = unit
+        self._units[name] = unit
 
         return unit
 
@@ -262,7 +264,7 @@ class Generator:
             context.insert(0, p)
 
         unit = InstantiationUnit(context, instantiation)
-        self.units[name] = unit
+        self._units[name] = unit
 
         return unit
 
@@ -273,17 +275,17 @@ class Generator:
         if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
             context.extend(
                 [
-                    WithClause(self.prefix * const.BUILTIN_TYPES_PACKAGE),
-                    WithClause(self.prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
-                    UsePackageClause(self.prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    WithClause(self.__prefix * const.BUILTIN_TYPES_PACKAGE),
+                    WithClause(self.__prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    UsePackageClause(self.__prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                 ]
             )
 
-        context.append(WithClause(self.prefix * const.GENERIC_TYPES_PACKAGE))
+        context.append(WithClause(self.__prefix * const.GENERIC_TYPES_PACKAGE))
 
         unit_name = generic_name(ID(message.identifier))
         parameters: List[FormalDeclaration] = [
-            FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE),
+            FormalPackageDeclaration("Types", self.__prefix * const.GENERIC_TYPES_PACKAGE),
         ]
         unit = self.__create_unit(unit_name, context, parameters)
 
@@ -294,8 +296,8 @@ class Generator:
             if isinstance(field_type, Scalar) and field_type.package != message.package:
                 context.extend(
                     [
-                        WithClause(self.prefix * ID(field_type.package)),
-                        UsePackageClause(self.prefix * ID(field_type.package)),
+                        WithClause(self.__prefix * ID(field_type.package)),
+                        UsePackageClause(self.__prefix * ID(field_type.package)),
                     ]
                 )
 
@@ -304,11 +306,11 @@ class Generator:
                     name = const.MESSAGE_SEQUENCE_PACKAGE
                 else:
                     name = const.SCALAR_SEQUENCE_PACKAGE
-                context.append(WithClause(self.prefix * name))
+                context.append(WithClause(self.__prefix * name))
                 parameters.append(
                     FormalPackageDeclaration(
                         f"{field_type.name}_Sequence",
-                        self.prefix * name,
+                        self.__prefix * name,
                         ["Types", "others => <>"],
                     )
                 )
@@ -365,25 +367,25 @@ class Generator:
             unit += self.__create_equal_function(scalar_fields, composite_fields)
         unit += self.__create_reset_dependent_fields_procedure(message, context_invariant)
 
-        unit += self.parser.create_internal_functions(message, scalar_fields, composite_fields)
-        unit += self.parser.create_verify_procedure(message, context_invariant)
-        unit += self.parser.create_verify_message_procedure(message, context_invariant)
-        unit += self.parser.create_present_function()
-        unit += self.parser.create_structural_valid_function()
-        unit += self.parser.create_valid_function()
-        unit += self.parser.create_incomplete_function()
-        unit += self.parser.create_invalid_function()
-        unit += self.parser.create_structural_valid_message_function(message)
-        unit += self.parser.create_valid_message_function(message)
-        unit += self.parser.create_incomplete_message_function(message)
-        unit += self.parser.create_scalar_accessor_functions(scalar_fields)
-        unit += self.parser.create_composite_accessor_procedures(composite_fields)
+        unit += self.__parser.create_internal_functions(message, scalar_fields, composite_fields)
+        unit += self.__parser.create_verify_procedure(message, context_invariant)
+        unit += self.__parser.create_verify_message_procedure(message, context_invariant)
+        unit += self.__parser.create_present_function()
+        unit += self.__parser.create_structural_valid_function()
+        unit += self.__parser.create_valid_function()
+        unit += self.__parser.create_incomplete_function()
+        unit += self.__parser.create_invalid_function()
+        unit += self.__parser.create_structural_valid_message_function(message)
+        unit += self.__parser.create_valid_message_function(message)
+        unit += self.__parser.create_incomplete_message_function(message)
+        unit += self.__parser.create_scalar_accessor_functions(scalar_fields)
+        unit += self.__parser.create_composite_accessor_procedures(composite_fields)
 
-        unit += self.serializer.create_internal_functions(message, scalar_fields)
-        unit += self.serializer.create_scalar_setter_procedures(message, scalar_fields)
-        unit += self.serializer.create_composite_setter_empty_procedures(message)
-        unit += self.serializer.create_composite_setter_procedures(message)
-        unit += self.serializer.create_composite_initialize_procedures(message)
+        unit += self.__serializer.create_internal_functions(message, scalar_fields)
+        unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)
+        unit += self.__serializer.create_composite_setter_empty_procedures(message)
+        unit += self.__serializer.create_composite_setter_procedures(message)
+        unit += self.__serializer.create_composite_initialize_procedures(message)
 
         unit += self.__create_switch_procedures(message, sequence_fields)
         unit += self.__create_update_procedures(message, sequence_fields)
@@ -606,7 +608,7 @@ class Generator:
         ] + [
             Variant(
                 [Variable(f.affixed_name)],
-                [Component(f"{f.name}_Value", self.prefix * common.full_base_type_name(t))],
+                [Component(f"{f.name}_Value", self.__prefix * common.full_base_type_name(t))],
             )
             for f, t in scalar_fields.items()
         ]
@@ -948,7 +950,7 @@ class Generator:
                 field_type = message.types[target]
                 size: Expr
                 if isinstance(field_type, Scalar):
-                    size = Size(self.prefix * common.full_base_type_name(field_type))
+                    size = Size(self.__prefix * common.full_base_type_name(field_type))
                 else:
                     if len(links) == 1:
                         size = substituted(links[0].size)
@@ -1949,7 +1951,7 @@ class Generator:
                                         "Invalid",
                                         [Variable("Ctx"), Variable(f.affixed_name)],
                                     ),
-                                    common.initialize_field_statements(message, f, self.prefix),
+                                    common.initialize_field_statements(message, f, self.__prefix),
                                 )
                             ]
                         ),
@@ -2196,7 +2198,8 @@ class Generator:
             [],
             [
                 ExpressionFunctionDeclaration(
-                    specification, common.context_predicate(message, composite_fields, self.prefix)
+                    specification,
+                    common.context_predicate(message, composite_fields, self.__prefix),
                 ),
             ],
         )
@@ -2241,22 +2244,24 @@ class Generator:
 
     def __create_message_unit(self, message: Message) -> None:
         if isinstance(message, DerivedMessage):
-            name = generic_name(self.prefix * ID(message.base.identifier))
+            name = generic_name(self.__prefix * ID(message.base.identifier))
         else:
-            name = generic_name(self.prefix * ID(message.identifier))
+            name = generic_name(self.__prefix * ID(message.identifier))
 
         context: List[ContextItem] = [
             Pragma("SPARK_Mode"),
             WithClause(name),
-            WithClause(self.prefix * const.TYPES_PACKAGE),
+            WithClause(self.__prefix * const.TYPES_PACKAGE),
         ]
 
         arrays = [
-            self.prefix * ID(t.identifier) for t in message.types.values() if isinstance(t, Array)
+            self.__prefix * ID(t.identifier) for t in message.types.values() if isinstance(t, Array)
         ]
         context.extend(WithClause(array) for array in arrays)
         instantiation = GenericPackageInstantiation(
-            self.prefix * ID(message.identifier), name, [self.prefix * const.TYPES_PACKAGE] + arrays
+            self.__prefix * ID(message.identifier),
+            name,
+            [self.__prefix * const.TYPES_PACKAGE] + arrays,
         )
 
         self.__create_instantiation_unit(ID(message.identifier), context, instantiation)
@@ -2264,14 +2269,14 @@ class Generator:
     def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
         unit_name = generic_name(refinement.package * const.REFINEMENT_PACKAGE)
 
-        if unit_name in self.units:
-            unit = self.units[unit_name]
+        if unit_name in self._units:
+            unit = self._units[unit_name]
         else:
             unit = self.__create_unit(
                 unit_name,
-                [WithClause(self.prefix * const.GENERIC_TYPES_PACKAGE)],
+                [WithClause(self.__prefix * const.GENERIC_TYPES_PACKAGE)],
                 formal_parameters=[
-                    FormalPackageDeclaration("Types", self.prefix * const.GENERIC_TYPES_PACKAGE)
+                    FormalPackageDeclaration("Types", self.__prefix * const.GENERIC_TYPES_PACKAGE)
                 ],
             )
 
@@ -2292,12 +2297,12 @@ class Generator:
 
             unit.declaration_context.extend(
                 [
-                    WithClause(self.prefix * ID(pdu_package)),
-                    UsePackageClause(self.prefix * ID(pdu_package)),
+                    WithClause(self.__prefix * ID(pdu_package)),
+                    UsePackageClause(self.__prefix * ID(pdu_package)),
                 ]
             )
 
-        generic_pdu_name = self.prefix * (
+        generic_pdu_name = self.__prefix * (
             generic_name(ID(refinement.pdu.base.identifier))
             if isinstance(refinement.pdu, DerivedMessage)
             else generic_name(ID(refinement.pdu.identifier))
@@ -2310,7 +2315,7 @@ class Generator:
             )
         )
 
-        generic_sdu_name = self.prefix * (
+        generic_sdu_name = self.__prefix * (
             generic_name(ID(refinement.sdu.base.identifier))
             if isinstance(refinement.sdu, DerivedMessage)
             else generic_name(ID(refinement.sdu.identifier))
@@ -2337,19 +2342,19 @@ class Generator:
     def __create_refinement_unit(self, refinement: Refinement) -> None:
         unit_name = refinement.package * const.REFINEMENT_PACKAGE
         generic_unit_name = generic_name(
-            self.prefix * ID(refinement.package) * const.REFINEMENT_PACKAGE
+            self.__prefix * ID(refinement.package) * const.REFINEMENT_PACKAGE
         )
 
-        if unit_name in self.units:
-            unit = self.units[unit_name]
+        if unit_name in self._units:
+            unit = self._units[unit_name]
         else:
             context = [
                 Pragma("SPARK_Mode"),
-                WithClause(self.prefix * const.TYPES_PACKAGE),
+                WithClause(self.__prefix * const.TYPES_PACKAGE),
                 WithClause(generic_unit_name),
             ]
             instantiation = GenericPackageInstantiation(
-                self.prefix * unit_name, generic_unit_name, [self.prefix * const.TYPES_PACKAGE]
+                self.__prefix * unit_name, generic_unit_name, [self.__prefix * const.TYPES_PACKAGE]
             )
             unit = self.__create_instantiation_unit(unit_name, context, instantiation)
 
@@ -2357,20 +2362,20 @@ class Generator:
 
         assert isinstance(unit, InstantiationUnit), "unexpected unit type"
 
-        pdu_name = self.prefix * ID(refinement.pdu.identifier)
+        pdu_name = self.__prefix * ID(refinement.pdu.identifier)
 
         if pdu_name not in unit.declaration.associations:
             unit.context.append(WithClause(pdu_name))
             unit.declaration.associations.append(pdu_name)
 
-        sdu_name = self.prefix * ID(refinement.sdu.identifier)
+        sdu_name = self.__prefix * ID(refinement.sdu.identifier)
 
         if not null_sdu and sdu_name not in unit.declaration.associations:
             unit.context.append(WithClause(sdu_name))
             unit.declaration.associations.append(sdu_name)
 
     def __create_type(self, field_type: Type, message_package: ID) -> None:
-        unit = self.units[message_package]
+        unit = self._units[message_package]
 
         assert field_type.package != BUILTINS_PACKAGE
 
@@ -2401,47 +2406,47 @@ class Generator:
         if isinstance(element_type, Message):
             array_context = [
                 Pragma("SPARK_Mode"),
-                WithClause(self.prefix * const.MESSAGE_SEQUENCE_PACKAGE),
-                WithClause(self.prefix * element_type_identifier),
-                WithClause(self.prefix * const.TYPES_PACKAGE),
+                WithClause(self.__prefix * const.MESSAGE_SEQUENCE_PACKAGE),
+                WithClause(self.__prefix * element_type_identifier),
+                WithClause(self.__prefix * const.TYPES_PACKAGE),
             ]
             array_package = GenericPackageInstantiation(
-                self.prefix * ID(array_type.identifier),
-                self.prefix * const.MESSAGE_SEQUENCE_PACKAGE,
+                self.__prefix * ID(array_type.identifier),
+                self.__prefix * const.MESSAGE_SEQUENCE_PACKAGE,
                 [
-                    self.prefix * const.TYPES_PACKAGE,
-                    self.prefix * element_type_identifier * "Context",
-                    self.prefix * element_type_identifier * "Initialize",
-                    self.prefix * element_type_identifier * "Take_Buffer",
-                    self.prefix * element_type_identifier * "Has_Buffer",
-                    self.prefix * element_type_identifier * "Message_Last",
-                    self.prefix * element_type_identifier * "Initialized",
-                    self.prefix * element_type_identifier * "Structural_Valid_Message",
+                    self.__prefix * const.TYPES_PACKAGE,
+                    self.__prefix * element_type_identifier * "Context",
+                    self.__prefix * element_type_identifier * "Initialize",
+                    self.__prefix * element_type_identifier * "Take_Buffer",
+                    self.__prefix * element_type_identifier * "Has_Buffer",
+                    self.__prefix * element_type_identifier * "Message_Last",
+                    self.__prefix * element_type_identifier * "Initialized",
+                    self.__prefix * element_type_identifier * "Structural_Valid_Message",
                 ],
             )
         elif isinstance(element_type, Scalar):
             array_context = [
                 Pragma("SPARK_Mode"),
-                WithClause(self.prefix * const.SCALAR_SEQUENCE_PACKAGE),
-                WithClause(self.prefix * element_type_package),
-                WithClause(self.prefix * const.TYPES_PACKAGE),
+                WithClause(self.__prefix * const.SCALAR_SEQUENCE_PACKAGE),
+                WithClause(self.__prefix * element_type_package),
+                WithClause(self.__prefix * const.TYPES_PACKAGE),
             ]
             array_package = GenericPackageInstantiation(
-                self.prefix * package_name * array_type.name,
-                self.prefix * const.SCALAR_SEQUENCE_PACKAGE,
+                self.__prefix * package_name * array_type.name,
+                self.__prefix * const.SCALAR_SEQUENCE_PACKAGE,
                 [
-                    self.prefix * const.TYPES_PACKAGE,
-                    self.prefix * element_type_identifier,
-                    self.prefix
+                    self.__prefix * const.TYPES_PACKAGE,
+                    self.__prefix * element_type_identifier,
+                    self.__prefix
                     * element_type_package
                     * (
                         common.base_type_name(element_type)
                         if not isinstance(element_type, ModularInteger)
                         else element_type.name
                     ),
-                    self.prefix * element_type_package * "Valid",
-                    self.prefix * element_type_package * "To_Actual",
-                    self.prefix * element_type_package * "To_Base",
+                    self.__prefix * element_type_package * "Valid",
+                    self.__prefix * element_type_package * "To_Actual",
+                    self.__prefix * element_type_package * "To_Base",
                 ],
             )
         else:
@@ -2528,11 +2533,11 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base",
-                    self.prefix * common.full_base_type_name(enum),
+                    self.__prefix * common.full_base_type_name(enum),
                     [
                         Parameter(
                             ["Enum"],
-                            self.prefix
+                            self.__prefix
                             * (
                                 ID(common.full_enum_name(enum))
                                 if enum.always_valid
@@ -2550,8 +2555,8 @@ class Generator:
 
         conversion_function = FunctionSpecification(
             "To_Actual",
-            self.prefix * ID(enum.identifier),
-            [Parameter(["Val"], self.prefix * common.full_base_type_name(enum))],
+            self.__prefix * ID(enum.identifier),
+            [Parameter(["Val"], self.__prefix * common.full_base_type_name(enum))],
         )
         precondition = Precondition(Call("Valid", [Variable("Val")]))
         conversion_cases: List[Tuple[Expr, Expr]] = []
@@ -2561,7 +2566,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Actual",
-                        self.prefix * ID(enum.identifier),
+                        self.__prefix * ID(enum.identifier),
                         [Parameter(["Enum"], common.enum_name(enum))],
                     ),
                     Aggregate(TRUE, Variable("Enum")),
@@ -2586,8 +2591,8 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Base",
-                        self.prefix * common.full_base_type_name(enum),
-                        [Parameter(["Val"], self.prefix * ID(enum.identifier))],
+                        self.__prefix * common.full_base_type_name(enum),
+                        [Parameter(["Val"], self.__prefix * ID(enum.identifier))],
                     ),
                     If(
                         [(Variable("Val.Known"), Call("To_Base", [Variable("Val.Enum")]))],
@@ -2826,17 +2831,17 @@ class Generator:
         )
 
     def __check_template_file(self, filename: str) -> None:
-        assert self.template_dir.joinpath(
+        assert self.__template_dir.joinpath(
             filename
         ).is_file(), f'template file not found: "{filename}"'
 
     def __license_header(self) -> str:
-        if self.reproducible:
+        if self.__reproducible:
             return ""
 
         filename = "license_header"
         self.__check_template_file(filename)
-        with open(self.template_dir.joinpath(filename)) as license_file:
+        with open(self.__template_dir.joinpath(filename)) as license_file:
             today = date.today()
             return license_file.read().format(
                 version=__version__,
@@ -2851,7 +2856,7 @@ class Generator:
             FunctionSpecification(
                 "Valid",
                 "Boolean",
-                [Parameter(["Val"], self.prefix * common.full_base_type_name(scalar_type))],
+                [Parameter(["Val"], self.__prefix * common.full_base_type_name(scalar_type))],
             ),
             validation_expression,
         )
@@ -2859,9 +2864,9 @@ class Generator:
     def __type_dependent_unreachable_function(self, scalar_type: Scalar) -> List[Declaration]:
         base_name = None
         if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
-            base_name = self.prefix * common.full_base_type_name(scalar_type)
+            base_name = self.__prefix * common.full_base_type_name(scalar_type)
 
-        type_name = self.prefix * ID(scalar_type.identifier)
+        type_name = self.__prefix * ID(scalar_type.identifier)
 
         return [
             Pragma("Warnings", [Variable("Off"), String("precondition is * false")]),
@@ -2880,20 +2885,20 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base",
-                    self.prefix * common.full_base_type_name(integer),
-                    [Parameter(["Val"], self.prefix * ID(integer.identifier))],
+                    self.__prefix * common.full_base_type_name(integer),
+                    [Parameter(["Val"], self.__prefix * ID(integer.identifier))],
                 ),
-                Call(self.prefix * common.full_base_type_name(integer), [Variable("Val")])
+                Call(self.__prefix * common.full_base_type_name(integer), [Variable("Val")])
                 if isinstance(integer, RangeInteger)
                 else Variable("Val"),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
-                    self.prefix * ID(integer.identifier),
-                    [Parameter(["Val"], self.prefix * common.full_base_type_name(integer))],
+                    self.__prefix * ID(integer.identifier),
+                    [Parameter(["Val"], self.__prefix * common.full_base_type_name(integer))],
                 ),
-                Call(self.prefix * ID(integer.identifier), [Variable("Val")])
+                Call(self.__prefix * ID(integer.identifier), [Variable("Val")])
                 if isinstance(integer, RangeInteger)
                 else Variable("Val"),
                 [Precondition(Call("Valid", [Variable("Val")]))],
