@@ -485,11 +485,11 @@ def test_parse_ethernet_spec() -> None:
                                     ast.Then(
                                         condition=expr.And(
                                             expr.GreaterEqual(
-                                                expr.Div(expr.Length("Payload"), expr.Number(8)),
+                                                expr.Div(expr.Size("Payload"), expr.Number(8)),
                                                 expr.Number(46),
                                             ),
                                             expr.LessEqual(
-                                                expr.Div(expr.Length("Payload"), expr.Number(8)),
+                                                expr.Div(expr.Size("Payload"), expr.Number(8)),
                                                 expr.Number(1500),
                                             ),
                                         ),
@@ -609,7 +609,7 @@ def test_parse_error_invalid_location_expression() -> None:
             end Test;
         """,
         r'^<stdin>:8:38: parser: error: Expected {{"First" - "=>" - MathematicalExpression}'
-        r' | {"Length" - "=>" - MathematicalExpression}}$',
+        r' | {"Size" - "=>" - MathematicalExpression}}$',
     )
 
 
@@ -652,7 +652,7 @@ def test_parse_error_duplicate_refinement() -> None:
                   message
                      null
                         then Foo
-                           with Length => 8;
+                           with Size => 8;
                      Foo : Opaque;
                   end message;
                for Test::PDU use (Foo => Test::PDU);
@@ -699,7 +699,7 @@ def test_parse_error_refinement_invalid_condition() -> None:
                   message
                      null
                         then Foo
-                           with Length => 8;
+                           with Size => 8;
                      Foo : Opaque;
                   end message;
                for PDU use (Foo => PDU)
@@ -785,7 +785,7 @@ def test_parse_error_invalid_first_in_initial_node() -> None:
                   end message;
             end Test;
         """,
-        r"^<stdin>:8:42: parser: error: invalid first expression$",
+        r"^<stdin>:8:42: parser: error: invalid first aspect$",
     )
 
 
@@ -948,7 +948,7 @@ def test_create_model_message_in_message() -> None:
             model.Link(
                 model.Field("Length"),
                 model.Field("Value"),
-                length=expr.Mul(expr.Number(8), expr.Variable("Length")),
+                size=expr.Mul(expr.Number(8), expr.Variable("Length")),
             ),
             model.Link(model.Field("Value"), model.FINAL),
         ],
@@ -968,12 +968,12 @@ def test_create_model_message_in_message() -> None:
             model.Link(
                 model.Field("Foo_Length"),
                 model.Field("Foo_Value"),
-                length=expr.Mul(expr.Variable("Foo_Length"), expr.Number(8)),
+                size=expr.Mul(expr.Variable("Foo_Length"), expr.Number(8)),
             ),
             model.Link(
                 model.Field("Bar_Length"),
                 model.Field("Bar_Value"),
-                length=expr.Mul(expr.Variable("Bar_Length"), expr.Number(8)),
+                size=expr.Mul(expr.Variable("Bar_Length"), expr.Number(8)),
             ),
         ],
         {
@@ -1028,7 +1028,7 @@ def test_create_model_type_derivation_refinements() -> None:
     message_foo = model.Message(
         "Test::Foo",
         [
-            model.Link(model.INITIAL, model.Field("Baz"), length=expr.Number(48)),
+            model.Link(model.INITIAL, model.Field("Baz"), size=expr.Number(48)),
             model.Link(model.Field("Baz"), model.FINAL),
         ],
         {model.Field("Baz"): model.Opaque()},
@@ -1042,7 +1042,7 @@ def test_create_model_type_derivation_refinements() -> None:
                   message
                      null
                         then Baz
-                           with Length => 48;
+                           with Size => 48;
                      Baz : Opaque;
                   end message;
                for Foo use (Baz => Foo);
@@ -1256,7 +1256,7 @@ def test_message_field_first(spec: str) -> None:
                   message
                      A : T
                         then B
-                           with Length => 8;
+                           with Size => 8;
                      B : Opaque;
                   end message;
             """,
@@ -1265,12 +1265,12 @@ def test_message_field_first(spec: str) -> None:
                   message
                      A : T;
                      B : Opaque
-                        with Length => 8;
+                        with Size => 8;
                   end message;
             """,
     ],
 )
-def test_message_field_length(spec: str) -> None:
+def test_message_field_size(spec: str) -> None:
     assert_messages_string(
         f"""
             package Test is
@@ -1286,7 +1286,7 @@ def test_message_field_length(spec: str) -> None:
                 "Test::M",
                 [
                     Link(INITIAL, Field("A")),
-                    Link(Field("A"), Field("B"), length=expr.Number(8)),
+                    Link(Field("A"), Field("B"), size=expr.Number(8)),
                     Link(Field("B"), FINAL),
                 ],
                 {Field("A"): T, Field("B"): OPAQUE},
@@ -1298,18 +1298,18 @@ def test_message_field_length(spec: str) -> None:
 @pytest.mark.parametrize(
     "link, field",
     [
-        ("with First => A'First, Length => 8 if A > 10 and A < 100", ""),
-        ("with First => A'First, Length => 8 if A < 100", "if A > 10"),
-        ("with First => A'First, Length => 8", "if A > 10 and A < 100"),
-        ("with First => A'First if A > 10 and A < 100", "with Length => 8"),
-        ("with First => A'First if A < 100", "with Length => 8 if A > 10"),
-        ("with First => A'First", "with Length => 8 if A > 10 and A < 100"),
-        ("with Length => 8 if A > 10 and A < 100", "with First => A'First"),
-        ("with Length => 8 if A < 100", "with First => A'First if A > 10"),
-        ("with Length => 8", "with First => A'First if A > 10 and A < 100"),
-        ("if A > 10 and A < 100", "with First => A'First, Length => 8"),
-        ("if A < 100", "with First => A'First, Length => 8 if A > 10"),
-        ("", "with First => A'First, Length => 8 if A > 10 and A < 100"),
+        ("with First => A'First, Size => 8 if A > 10 and A < 100", ""),
+        ("with First => A'First, Size => 8 if A < 100", "if A > 10"),
+        ("with First => A'First, Size => 8", "if A > 10 and A < 100"),
+        ("with First => A'First if A > 10 and A < 100", "with Size => 8"),
+        ("with First => A'First if A < 100", "with Size => 8 if A > 10"),
+        ("with First => A'First", "with Size => 8 if A > 10 and A < 100"),
+        ("with Size => 8 if A > 10 and A < 100", "with First => A'First"),
+        ("with Size => 8 if A < 100", "with First => A'First if A > 10"),
+        ("with Size => 8", "with First => A'First if A > 10 and A < 100"),
+        ("if A > 10 and A < 100", "with First => A'First, Size => 8"),
+        ("if A < 100", "with First => A'First, Size => 8 if A > 10"),
+        ("", "with First => A'First, Size => 8 if A > 10 and A < 100"),
     ],
 )
 def test_message_field_condition_and_aspects(link: str, field: str) -> None:
@@ -1337,7 +1337,7 @@ def test_message_field_condition_and_aspects(link: str, field: str) -> None:
                         Field("A"),
                         Field("B"),
                         first=expr.First("A"),
-                        length=expr.Number(8),
+                        size=expr.Number(8),
                         condition=expr.And(
                             expr.Greater(expr.Variable("A"), expr.Number(10)),
                             expr.Less(expr.Variable("A"), expr.Number(100)),

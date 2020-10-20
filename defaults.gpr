@@ -4,7 +4,7 @@ abstract project Defaults is
    (
       "--prover=z3,cvc4,altergo",
       "--steps=1000",
-      "--timeout=60",
+      "--timeout=90",
       "--memlimit=1000",
       "--checks-as-errors",
       "--warnings=error",

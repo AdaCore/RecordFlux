@@ -70,7 +70,7 @@ project Test is
       for Proof_Switches ("rflx-enumeration-message.ads") use ("--prover=Z3", "--steps=359");
       for Proof_Switches ("rflx-enumeration-tests.adb") use ("--prover=Z3", "--steps=1");
       for Proof_Switches ("rflx-enumeration.ads") use ("--prover=Z3", "--steps=1");
-      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--prover=Z3", "--steps=14670");
+      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--prover=Z3,CVC4", "--steps=425584");
       for Proof_Switches ("rflx-ethernet-tests.adb") use ("--prover=Z3", "--steps=3359");
       for Proof_Switches ("rflx-ethernet.ads") use ("--prover=Z3", "--steps=1");
       for Proof_Switches ("rflx-expression-message.ads") use ("--prover=Z3", "--steps=1");

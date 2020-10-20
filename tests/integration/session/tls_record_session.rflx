@@ -130,7 +130,7 @@ package TLS_Record_Session is
          Success : Boolean;
       begin
          Alert_Message := TLS_Alert::Alert'(Level => TLS_Alert::WARNING, Description => TLS_Alert::CLOSE_NOTIFY);
-         Network_Channel'Write (TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message));
+         Network_Channel'Write (TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Size, Fragment => Alert_Message));
          Network_Send_Enabled := False;
       transition
          then ERROR_INTERNAL_ERROR
@@ -183,7 +183,7 @@ package TLS_Record_Session is
 
       state HANDSHAKE_ALERT is
       begin
-         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message)
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Size, Fragment => Alert_Message)
             where Alert_Message = TLS_Alert::Alert'(Level => TLS_Alert::FATAL, Description => GreenTLS::Alert_Message (Handshake_Control_Message.Data).Description);
       transition
          then NETWORK_OUT_SEND
@@ -192,7 +192,7 @@ package TLS_Record_Session is
       state HANDSHAKE is
       begin
          Handshake_Data_Channel'Read (Handshake_Message);
-         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HANDSHAKE, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Handshake_Message'Length, Fragment => Handshake_Message.Data);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HANDSHAKE, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Handshake_Message'Size, Fragment => Handshake_Message.Data);
       transition
          then ERROR_INTERNAL_ERROR
             with Desc => "rfc8446.txt+4977:4-4979:38"
@@ -316,7 +316,7 @@ package TLS_Record_Session is
          Success : Boolean;
       begin
          Network_Receive_Enabled := False;
-         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => M'Length, Data => M)
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => M'Size, Data => M)
             where M = GreenTLS::Alert_Message'(Description => Alert_Message.Description));
       transition
          then ERROR_INTERNAL_ERROR
@@ -338,7 +338,7 @@ package TLS_Record_Session is
       state NETWORK_OUT_APPLICATION is
       begin
          Data_Channel'Read (Plaintext);
-         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::APPLICATION_DATA, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Plaintext.Data'Length, Fragment => Plaintext.Data);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::APPLICATION_DATA, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Plaintext.Data'Size, Fragment => Plaintext.Data);
       transition
          then NETWORK_OUT_SEND_ENCRYPTED
       end NETWORK_OUT_APPLICATION;
@@ -387,7 +387,7 @@ package TLS_Record_Session is
       state HEARTBEAT is
       begin
          Heartbeat_Data_Channel'Read (Heartbeat_Data_Message);
-         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HEARTBEAT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Heartbeat_Data_Message'Length, Fragment => Heartbeat_Data_Message.Data);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::HEARTBEAT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Heartbeat_Data_Message'Size, Fragment => Heartbeat_Data_Message.Data);
       transition
          then NETWORK_OUT_SEND_ENCRYPTED
       end HEARTBEAT;
@@ -440,7 +440,7 @@ package TLS_Record_Session is
 
       state ERROR_SEND_LOCAL is
       begin
-         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Data'Length, Data => Data)
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Data'Size, Data => Data)
             where Data = GreenTLS::Alert_Message'(Description => Error));
       transition
          then ERROR_SEND_REMOTE
@@ -451,7 +451,7 @@ package TLS_Record_Session is
       state ERROR_SEND_REMOTE is
       begin
          Alert_Message := TLS_Alert::Alert'(Level => TLS_Alert::FATAL, Description => Error);
-         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Length, Fragment => Alert_Message);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::ALERT, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Size, Fragment => Alert_Message);
          Error_Sent := True;
       transition
          then NETWORK_OUT_SEND_UNENCRYPTED

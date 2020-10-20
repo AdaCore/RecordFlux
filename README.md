@@ -20,7 +20,7 @@ Message specifications are automatically verified using the [Z3 theorem prover](
 * Each field is reachable on at least one path from the initial node
 * Each field has at least one path to the final node
 * Message fields are always located after the first message bit
-* Field length is never negative
+* Field size is never negative
 * Message fields cover all bits of a message on all paths
 * Overlaid fields are congruent with exactly one other field
 
@@ -71,7 +71,7 @@ package TLV is
                if Tag = Msg_Error;
          Length : Length
             then Value
-               with Length => Length * 8;
+               with Size => Length * 8;
          Value  : Opaque;
        end message;
 
@@ -138,9 +138,9 @@ All types and subprograms related to `Message` can be found in the package `RFLX
 - `procedure Verify_Message (Ctx : in out Context)`
     - Verify all fields of message
 - `function Structural_Valid (Ctx : Context; Fld : Field) return Boolean`
-    - Check if composite field is structural valid (i.e. location and length of field is correct, but content is not necessarily valid)
+    - Check if composite field is structural valid (i.e. location and size of field is correct, but content is not necessarily valid)
 - `function Present (Ctx : Context; Fld : Field) return Boolean`
-    - Check if composite field is structural valid and has non-zero length
+    - Check if composite field is structural valid and has non-zero size
 - `function Valid (Ctx : Context; Fld : Field) return Boolean`
     - Check if field is valid (i.e. it has valid structure and valid content)
 - `function Incomplete (Ctx : Context; Fld : Field) return Boolean`

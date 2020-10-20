@@ -150,10 +150,10 @@ def substitution_facts(
             )
         return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last")
 
-    def field_length(field: Field) -> expr.Expr:
+    def field_size(field: Field) -> expr.Expr:
         if public:
             return expr.Call(
-                "Field_Length", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
+                "Field_Size", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
             )
         return expr.Add(
             expr.Sub(
@@ -205,10 +205,10 @@ def substitution_facts(
     return {
         **{expr.First("Message"): first},
         **{expr.Last("Message"): last},
-        **{expr.Length("Message"): expr.Add(last, -first, expr.Number(1))},
+        **{expr.Size("Message"): expr.Add(last, -first, expr.Number(1))},
         **{expr.First(f.name): field_first(f) for f in message.fields},
         **{expr.Last(f.name): field_last(f) for f in message.fields},
-        **{expr.Length(f.name): field_length(f) for f in message.fields},
+        **{expr.Size(f.name): field_size(f) for f in message.fields},
         **{expr.Variable(f.name): field_value(f, t) for f, t in message.types.items()},
         **{
             expr.Variable(l): expr.Call(target_type, [expr.Call("To_Base", [expr.Variable(l)])])
@@ -246,10 +246,10 @@ def message_structure_invariant(
 
     field_type = message.types[target]
     condition = link.condition.substituted(substitution(message, embedded)).simplified()
-    length = (
+    size = (
         expr.Size(prefix * full_base_type_name(field_type))
         if isinstance(field_type, Scalar)
-        else link.length.substituted(
+        else link.size.substituted(
             substitution(message, embedded, target_type=const.TYPES_BIT_LENGTH)
         ).simplified()
     )
@@ -309,7 +309,7 @@ def message_structure_invariant(
                             ),
                             ada.Number(1),
                         ),
-                        length.ada_expr(),
+                        size.ada_expr(),
                     ),
                     ada.Equal(
                         ada.Selected(
@@ -550,7 +550,7 @@ def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequen
 def sufficient_space_for_field_condition(field_name: ada.Name) -> ada.Expr:
     return ada.GreaterEqual(
         ada.Call("Available_Space", [ada.Variable("Ctx"), field_name]),
-        ada.Call("Field_Length", [ada.Variable("Ctx"), field_name]),
+        ada.Call("Field_Size", [ada.Variable("Ctx"), field_name]),
     )
 
 
@@ -697,13 +697,13 @@ def sequence_name(message: Message, field: Field) -> ada.ID:
     return ada.ID(message.types[field].name + "_Sequence")
 
 
-def length_dependent_condition(message: Message) -> bool:
+def size_dependent_condition(message: Message) -> bool:
     return (
         len(
             [
                 l
                 for link in message.structure
-                for l in link.condition.findall(lambda x: isinstance(x, expr.Length))
+                for l in link.condition.findall(lambda x: isinstance(x, expr.Size))
             ]
         )
         > 0

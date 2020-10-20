@@ -18,13 +18,13 @@ class Then(SyntaxTree):
         self,
         name: StrID = None,
         first: Expr = UNDEFINED,
-        length: Expr = UNDEFINED,
+        size: Expr = UNDEFINED,
         condition: Expr = TRUE,
         location: Location = None,
     ) -> None:
         self.name = ID(name) if name else None
         self.first = first
-        self.length = length
+        self.size = size
         self.condition = condition
         self.location = location
 
@@ -33,7 +33,7 @@ class Then(SyntaxTree):
             return (
                 self.name == other.name
                 and self.first == other.first
-                and self.length == other.length
+                and self.size == other.size
                 and self.condition == other.condition
             )
         return NotImplemented
@@ -46,7 +46,7 @@ class Component(SyntaxTree):
         type_name: StrID = None,
         thens: List[Then] = None,
         first: Expr = UNDEFINED,
-        length: Expr = UNDEFINED,
+        size: Expr = UNDEFINED,
         condition: Expr = TRUE,
     ) -> None:
         # pylint: disable=too-many-arguments
@@ -54,7 +54,7 @@ class Component(SyntaxTree):
         self.type_name = ID(type_name) if type_name else None
         self.thens = thens or []
         self.first = first
-        self.length = length
+        self.size = size
         self.condition = condition
 
 

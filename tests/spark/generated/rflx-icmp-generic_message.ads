@@ -144,7 +144,7 @@ is
        and Val.Fld in Field'Range
        and Valid_Predecessor (Ctx, Val.Fld);
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length with
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
        Valid_Next (Ctx, Fld);
 
@@ -288,7 +288,7 @@ is
        and then Field_Last (Ctx, F_Tag) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Tag, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Tag) >= Field_Length (Ctx, F_Tag),
+       and then Available_Space (Ctx, F_Tag) >= Field_Size (Ctx, F_Tag),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Tag)
@@ -349,7 +349,7 @@ is
        and then Field_Last (Ctx, F_Code_Destination_Unreachable) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Code_Destination_Unreachable, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Code_Destination_Unreachable) >= Field_Length (Ctx, F_Code_Destination_Unreachable),
+       and then Available_Space (Ctx, F_Code_Destination_Unreachable) >= Field_Size (Ctx, F_Code_Destination_Unreachable),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Destination_Unreachable)
@@ -386,7 +386,7 @@ is
        and then Field_Last (Ctx, F_Code_Redirect) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Code_Redirect, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Code_Redirect) >= Field_Length (Ctx, F_Code_Redirect),
+       and then Available_Space (Ctx, F_Code_Redirect) >= Field_Size (Ctx, F_Code_Redirect),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Redirect)
@@ -423,7 +423,7 @@ is
        and then Field_Last (Ctx, F_Code_Time_Exceeded) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Code_Time_Exceeded, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Code_Time_Exceeded) >= Field_Length (Ctx, F_Code_Time_Exceeded),
+       and then Available_Space (Ctx, F_Code_Time_Exceeded) >= Field_Size (Ctx, F_Code_Time_Exceeded),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Time_Exceeded)
@@ -460,7 +460,7 @@ is
        and then Field_Last (Ctx, F_Code_Zero) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Code_Zero, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Code_Zero) >= Field_Length (Ctx, F_Code_Zero),
+       and then Available_Space (Ctx, F_Code_Zero) >= Field_Size (Ctx, F_Code_Zero),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Zero)
@@ -497,7 +497,7 @@ is
        and then Field_Last (Ctx, F_Checksum) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Checksum, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Checksum) >= Field_Length (Ctx, F_Checksum),
+       and then Available_Space (Ctx, F_Checksum) >= Field_Size (Ctx, F_Checksum),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Checksum)
@@ -559,7 +559,7 @@ is
        and then Field_Last (Ctx, F_Gateway_Internet_Address) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Gateway_Internet_Address, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Gateway_Internet_Address) >= Field_Length (Ctx, F_Gateway_Internet_Address),
+       and then Available_Space (Ctx, F_Gateway_Internet_Address) >= Field_Size (Ctx, F_Gateway_Internet_Address),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Gateway_Internet_Address)
@@ -597,7 +597,7 @@ is
        and then Field_Last (Ctx, F_Identifier) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Identifier, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Identifier) >= Field_Length (Ctx, F_Identifier),
+       and then Available_Space (Ctx, F_Identifier) >= Field_Size (Ctx, F_Identifier),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Identifier)
@@ -635,7 +635,7 @@ is
        and then Field_Last (Ctx, F_Pointer) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Pointer, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Pointer) >= Field_Length (Ctx, F_Pointer),
+       and then Available_Space (Ctx, F_Pointer) >= Field_Size (Ctx, F_Pointer),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Pointer)
@@ -673,7 +673,7 @@ is
        and then Field_Last (Ctx, F_Unused_32) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Unused_32, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Unused_32) >= Field_Length (Ctx, F_Unused_32),
+       and then Available_Space (Ctx, F_Unused_32) >= Field_Size (Ctx, F_Unused_32),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Unused_32)
@@ -711,7 +711,7 @@ is
        and then Field_Last (Ctx, F_Sequence_Number) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Sequence_Number, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Sequence_Number) >= Field_Length (Ctx, F_Sequence_Number),
+       and then Available_Space (Ctx, F_Sequence_Number) >= Field_Size (Ctx, F_Sequence_Number),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Sequence_Number)
@@ -760,7 +760,7 @@ is
        and then Field_Last (Ctx, F_Unused_24) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Unused_24, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Unused_24) >= Field_Length (Ctx, F_Unused_24),
+       and then Available_Space (Ctx, F_Unused_24) >= Field_Size (Ctx, F_Unused_24),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Unused_24)
@@ -799,7 +799,7 @@ is
        and then Field_Last (Ctx, F_Originate_Timestamp) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Originate_Timestamp, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Originate_Timestamp) >= Field_Length (Ctx, F_Originate_Timestamp),
+       and then Available_Space (Ctx, F_Originate_Timestamp) >= Field_Size (Ctx, F_Originate_Timestamp),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Originate_Timestamp)
@@ -839,7 +839,7 @@ is
        and then Field_Last (Ctx, F_Receive_Timestamp) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Receive_Timestamp, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Receive_Timestamp) >= Field_Length (Ctx, F_Receive_Timestamp),
+       and then Available_Space (Ctx, F_Receive_Timestamp) >= Field_Size (Ctx, F_Receive_Timestamp),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Receive_Timestamp)
@@ -880,7 +880,7 @@ is
        and then Field_Last (Ctx, F_Transmit_Timestamp) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Transmit_Timestamp, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Transmit_Timestamp) >= Field_Length (Ctx, F_Transmit_Timestamp),
+       and then Available_Space (Ctx, F_Transmit_Timestamp) >= Field_Size (Ctx, F_Transmit_Timestamp),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Transmit_Timestamp)
@@ -919,10 +919,10 @@ is
        and then Valid_Next (Ctx, F_Data)
        and then Field_Last (Ctx, F_Data) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Data))
-       and then Available_Space (Ctx, F_Data) >= Field_Length (Ctx, F_Data)
+       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
        and then Field_First (Ctx, F_Data) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Data) mod Types.Byte'Size = 0
-       and then Field_Length (Ctx, F_Data) = 0,
+       and then Field_Size (Ctx, F_Data) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Data) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Invalid (Ctx, F_Receive_Timestamp)
@@ -946,10 +946,10 @@ is
        and then Valid_Next (Ctx, F_Data)
        and then Field_Last (Ctx, F_Data) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Data))
-       and then Available_Space (Ctx, F_Data) >= Field_Length (Ctx, F_Data)
+       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
        and then Field_First (Ctx, F_Data) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Data) mod Types.Byte'Size = 0
-       and then Valid_Length (Types.Length (Field_Length (Ctx, F_Data) / Types.Byte'Size)),
+       and then Field_Size (Ctx, F_Data) mod Types.Byte'Size = 0
+       and then Valid_Length (Types.Length (Field_Size (Ctx, F_Data) / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
        and Invalid (Ctx, F_Receive_Timestamp)
@@ -966,21 +966,21 @@ is
    generic
       with procedure Process_Data (Data : out Types.Bytes);
       with function Valid_Length (Length : Types.Length) return Boolean;
-   procedure Set_Bounded_Data (Ctx : in out Context; Length : Types.Bit_Length) with
+   procedure Set_Bounded_Data (Ctx : in out Context; Size : Types.Bit_Length) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
        and then Field_Last (Ctx, F_Data) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Data))
-       and then Available_Space (Ctx, F_Data) >= Length
-       and then Field_First (Ctx, F_Data) + Length <= Types.Bit_Index'Last / 2
+       and then Available_Space (Ctx, F_Data) >= Size
+       and then Field_First (Ctx, F_Data) + Size <= Types.Bit_Index'Last / 2
        and then ((Valid (Ctx, F_Tag)
                   and (Get_Tag (Ctx) = Echo_Reply
                        or Get_Tag (Ctx) = Echo_Request)))
        and then Field_First (Ctx, F_Data) mod Types.Byte'Size = 1
-       and then Length mod Types.Byte'Size = 0
-       and then Valid_Length (Types.Length (Length / Types.Byte'Size)),
+       and then Size mod Types.Byte'Size = 0
+       and then Valid_Length (Types.Length (Size / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
        and Invalid (Ctx, F_Receive_Timestamp)
@@ -1001,9 +1001,9 @@ is
        and then Valid_Next (Ctx, F_Data)
        and then Field_Last (Ctx, F_Data) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Data))
-       and then Available_Space (Ctx, F_Data) >= Field_Length (Ctx, F_Data)
+       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
        and then Field_First (Ctx, F_Data) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Data) mod Types.Byte'Size = 0,
+       and then Field_Size (Ctx, F_Data) mod Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Invalid (Ctx, F_Receive_Timestamp)
@@ -1017,20 +1017,20 @@ is
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Structural_Valid (Ctx, F_Data);
 
-   procedure Initialize_Bounded_Data (Ctx : in out Context; Length : Types.Bit_Length) with
+   procedure Initialize_Bounded_Data (Ctx : in out Context; Size : Types.Bit_Length) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
        and then Field_Last (Ctx, F_Data) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Data))
-       and then Available_Space (Ctx, F_Data) >= Length
-       and then Field_First (Ctx, F_Data) + Length <= Types.Bit_Index'Last / 2
+       and then Available_Space (Ctx, F_Data) >= Size
+       and then Field_First (Ctx, F_Data) + Size <= Types.Bit_Index'Last / 2
        and then ((Valid (Ctx, F_Tag)
                   and (Get_Tag (Ctx) = Echo_Reply
                        or Get_Tag (Ctx) = Echo_Request)))
        and then Field_First (Ctx, F_Data) mod Types.Byte'Size = 1
-       and then Length mod Types.Byte'Size = 0,
+       and then Size mod Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Invalid (Ctx, F_Receive_Timestamp)

@@ -116,7 +116,7 @@ is
        and Val.Fld in Field'Range
        and Valid_Predecessor (Ctx, Val.Fld);
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length with
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
        Valid_Next (Ctx, Fld);
 
@@ -192,7 +192,7 @@ is
        and then Field_Last (Ctx, F_Priority) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Priority, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Priority) >= Field_Length (Ctx, F_Priority),
+       and then Available_Space (Ctx, F_Priority) >= Field_Size (Ctx, F_Priority),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Priority)

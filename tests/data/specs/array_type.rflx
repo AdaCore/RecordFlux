@@ -6,7 +6,8 @@ package Array_Type is
    type Foo is
       message
          Length : Byte
-            then Bytes with Length => Length * 8;
+            then Bytes
+               with Size => Length * 8;
          Bytes : Bytes;
       end message;
 

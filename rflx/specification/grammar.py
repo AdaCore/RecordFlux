@@ -54,7 +54,6 @@ from rflx.expression import (
     Head,
     In,
     Last,
-    Length,
     Less,
     LessEqual,
     MessageAggregate,
@@ -69,6 +68,7 @@ from rflx.expression import (
     QuantifiedExpression,
     Relation,
     Selected,
+    Size,
     String,
     Sub,
     Valid,
@@ -211,7 +211,7 @@ def expression(restricted: bool = False) -> Token:
         relational_operator |= Keyword("in") | Keyword("not in")
     boolean_operator = Keyword("and") | Keyword("or")
 
-    designator = Keyword("First") | Keyword("Last") | Keyword("Length") | Keyword("Valid_Checksum")
+    designator = Keyword("First") | Keyword("Last") | Keyword("Size") | Keyword("Valid_Checksum")
     if not restricted:
         designator |= Keyword("Head") | Keyword("Opaque") | Keyword("Present") | Keyword("Valid")
 
@@ -427,13 +427,11 @@ def checksum_aspect() -> Token:
 def message_type_definition() -> Token:
     first_aspect = Keyword("First") - Keyword("=>") - mathematical_expression(restricted=True)
     first_aspect.setParseAction(parse_aspect)
-    length_aspect = Keyword("Length") - Keyword("=>") - mathematical_expression(restricted=True)
-    length_aspect.setParseAction(parse_aspect)
 
     then = locatedExpr(
         Keyword("then")
         - (Keyword("null") | unqualified_identifier())
-        - Group(Optional(with_aspects(delimitedList(first_aspect | length_aspect))))
+        - Group(Optional(with_aspects(delimitedList(first_aspect | size_aspect()))))
         - Group(Optional(if_condition(restricted=True)))
     )
     then.setParseAction(parse_then)
@@ -444,7 +442,7 @@ def message_type_definition() -> Token:
         - unqualified_identifier()("identifier")
         + Literal(":")
         - qualified_identifier()("type")
-        - Optional(with_aspects(delimitedList(first_aspect | length_aspect))("aspects"))
+        - Optional(with_aspects(delimitedList(first_aspect | size_aspect()))("aspects"))
         - Optional(if_condition(restricted=True)("condition"))
         - ZeroOrMore(then)("thens")
         - semicolon()
@@ -835,7 +833,7 @@ def parse_boolean_expression(string: str, location: int, tokens: ParseResults) -
 @fatalexceptions
 def parse_mathematical_expression(string: str, location: int, tokens: ParseResults) -> Expr:
     math_expr = tokens[0][0]
-    if isinstance(math_expr, (Number, Variable, Add, Sub, Mul, Div, Pow, First, Last, Length)):
+    if isinstance(math_expr, (Number, Variable, Add, Sub, Mul, Div, Pow, First, Last, Size)):
         return math_expr
     raise ParseFatalException(
         string, location, f'unexpected expression type "{type(math_expr).__name__}"'
@@ -850,7 +848,7 @@ def parse_then(string: str, location: int, tokens: ParseResults) -> Then:
     return Then(
         tokens[1] if tokens[1] != "null" else None,
         tokens[2][0]["first"] if tokens[2] and "first" in tokens[2][0] else UNDEFINED,
-        tokens[2][0]["length"] if tokens[2] and "length" in tokens[2][0] else UNDEFINED,
+        tokens[2][0]["size"] if tokens[2] and "size" in tokens[2][0] else UNDEFINED,
         tokens[3][0] if tokens[3] else BooleanTrue(location=locn),
         locn,
     )
@@ -865,8 +863,8 @@ def parse_component(string: str, location: int, tokens: ParseResults) -> Compone
         tokens["aspects"]["first"]
         if "aspects" in tokens and "first" in tokens["aspects"]
         else UNDEFINED,
-        tokens["aspects"]["length"]
-        if "aspects" in tokens and "length" in tokens["aspects"]
+        tokens["aspects"]["size"]
+        if "aspects" in tokens and "size" in tokens["aspects"]
         else UNDEFINED,
         tokens["condition"] if "condition" in tokens else TRUE,
     )
@@ -904,7 +902,7 @@ def parse_suffix(string: str, location: int, tokens: ParseResults) -> Attribute:
     suffixes = {
         "First": First,
         "Last": Last,
-        "Length": Length,
+        "Size": Size,
         "Head": Head,
         "Opaque": Opaque,
         "Present": Present,

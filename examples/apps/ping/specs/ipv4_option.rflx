@@ -15,7 +15,7 @@ package IPv4_Option is
                if Option_Number > 1;
          Option_Length : Option_Length
             then Option_Data
-               with Length => (Option_Length - 2) * 8
+               with Size => (Option_Length - 2) * 8
                if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
                   or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
                   or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))

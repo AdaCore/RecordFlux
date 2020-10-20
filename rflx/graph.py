@@ -31,10 +31,10 @@ class Graph:
         return str(self.__data.field_size(link.target))
 
     def __edge_label(self, link: Link) -> str:
-        return "({cond},{sep1}{length},{sep2}{first})".format(
+        return "({cond},{sep1}{size},{sep2}{first})".format(
             cond=str(link.condition) if link.condition != TRUE else "⊤",
-            sep1=" " if link.condition == TRUE or link.length == UNDEFINED else "\n",
-            length=str(link.length) if link.length != UNDEFINED else self.__target_size(link),
+            sep1=" " if link.condition == TRUE or link.size == UNDEFINED else "\n",
+            size=str(link.size) if link.size != UNDEFINED else self.__target_size(link),
             sep2=" " if link.first == UNDEFINED else "\n",
             first=str(link.first) if link.first != UNDEFINED else "⋆",
         )

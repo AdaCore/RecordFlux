@@ -100,17 +100,17 @@ A message type is a collection components. Additional then clauses allow to defi
 
 *aspects* ::= *aspect* { __,__ *aspect* }
 
-*aspect* ::= *first_aspect* | *length_aspect*
+*aspect* ::= *first_aspect* | *size_aspect*
 
 *first_aspect* ::= __First__ __=>__ *mathematical_expression*
 
-*length_aspect* ::= __Length__ __=>__ *mathematical_expression*
+*size_aspect* ::= __Size__ __=>__ *mathematical_expression*
 
 *condition* ::= *boolean_expression*
 
 #### Static Semantics
 
-A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the length of the next field and the location of its first bit. These aspects can also be specified in the component. Each aspect can be specified either in the component or in all incoming then clauses, but not in both. The condition can refer to previous fields (including the component containing the then clause). A condition can also be added to a component. A component condition is equivalent to adding a condition to all incoming then clauses. If a component condition as well as a condition at an incoming then clause exists, both conditions are combined by a logical conjunction. If required, a null component can be used to specify the length of the first field in the message. An empty message can be represented by a null message.
+A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the size of the next field and the location of its first bit. These aspects can also be specified in the component. Each aspect can be specified either in the component or in all incoming then clauses, but not in both. The condition can refer to previous fields (including the component containing the then clause). A condition can also be added to a component. A component condition is equivalent to adding a condition to all incoming then clauses. If a component condition as well as a condition at an incoming then clause exists, both conditions are combined by a logical conjunction. If required, a null component can be used to specify the size of the first field in the message. An empty message can be represented by a null message.
 
 #### Example
 
@@ -121,14 +121,14 @@ type Frame is
       Source : U48;
       EtherType : U16
          then Payload
-            with Length => EtherType * 8
+            with Size => EtherType * 8
             if EtherType <= 1500
          then Payload
-            with Length => Message'Last - EtherType'Last
+            with Size => Message'Last - EtherType'Last
             if EtherType >= 1536;
       Payload : Opaque
          then null
-            if Payload'Length / 8 >= 46 and Payload'Length / 8 <= 1500;
+            if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
    end message;
 
 type Empty_Message is null message;
@@ -195,7 +195,7 @@ An array type represents a list of similar elements.
 
 #### Static Semantics
 
-An array consists of a number of elements with similar type. Scalar types as well as message types can be used as element type. When an array is used in a message type, its bit length has to be specified by a length aspect.
+An array consists of a number of elements with similar type. Scalar types as well as message types can be used as element type. When an array is used in a message type, its bit length has to be specified by a size aspect.
 
 #### Example
 
@@ -231,14 +231,14 @@ package Ethernet is
          Source : U48;
          EtherType : U16
             then Payload
-               with Length => EtherType * 8
+               with Size => EtherType * 8
                if EtherType <= 1500
             then Payload
-               with Length => Message'Last - EtherType'Last
+               with Size => Message'Last - EtherType'Last
                if EtherType >= 1536;
          Payload : Opaque
             then null
-               if Payload'Length / 8 >= 46 and Payload'Length / 8 <= 1500;
+               if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
       end message;
 
 end Ethernet;

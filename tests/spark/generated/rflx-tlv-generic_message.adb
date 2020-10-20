@@ -81,7 +81,7 @@ is
           when F_Final =>
              False));
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length is
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
      ((case Ctx.Cursors (Fld).Predecessor is
           when F_Initial =>
              (case Fld is
@@ -125,7 +125,7 @@ is
                  Types.Unreachable_Bit_Length)));
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1);
+     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
      ((case Fld is
@@ -195,9 +195,9 @@ is
      (Ctx.Buffer /= null
       and Ctx.First <= Types.Bit_Index'Last / 2
       and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
-      and Field_Length (Ctx, Fld) >= 0
-      and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_Size (Ctx, Fld) >= 0
+      and Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
       and Ctx.First <= Field_First (Ctx, Fld)
       and Ctx.Last >= Field_Last (Ctx, Fld))
     with
@@ -227,7 +227,7 @@ is
        and Ctx.Cursors (Fld).Predecessor = Ctx.Cursors (Fld).Predecessor'Old
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
-       and Field_Length (Ctx, Fld) = Field_Length (Ctx, Fld)'Old
+       and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
        and (case Fld is
                when F_Tag =>
                   Invalid (Ctx, F_Tag)
@@ -244,27 +244,27 @@ is
    is
       First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
-      Length : constant Types.Bit_Length := Field_Length (Ctx, Fld) with
+      Size : constant Types.Bit_Length := Field_Size (Ctx, Fld) with
         Ghost;
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
-                     and Field_Length (Ctx, Fld) = Length);
+                     and Field_Size (Ctx, Fld) = Size);
       case Fld is
          when F_Tag =>
             Ctx.Cursors (F_Value) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Length) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Tag) := (S_Invalid, Ctx.Cursors (F_Tag).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Length =>
             Ctx.Cursors (F_Value) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Length) := (S_Invalid, Ctx.Cursors (F_Length).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Value =>
             Ctx.Cursors (F_Value) := (S_Invalid, Ctx.Cursors (F_Value).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
       end case;
    end Reset_Dependent_Fields;
 
@@ -422,7 +422,7 @@ is
        and then Has_Buffer (Ctx)
        and then Val.Fld in Field'Range
        and then Valid_Next (Ctx, Val.Fld)
-       and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
+       and then Available_Space (Ctx, Val.Fld) >= Field_Size (Ctx, Val.Fld)
        and then (for all F in Field'Range =>
                     (if
                         Structural_Valid (Ctx.Cursors (F))

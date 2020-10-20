@@ -50,7 +50,7 @@ class Link(Base):
     source: Field
     target: Field
     condition: expr.Expr = expr.TRUE
-    length: expr.Expr = expr.UNDEFINED
+    size: expr.Expr = expr.UNDEFINED
     first: expr.Expr = expr.UNDEFINED
     location: Optional[Location] = dataclass_field(default=None, repr=False)
 
@@ -59,8 +59,8 @@ class Link(Base):
             f"\nif {indent_next(str(self.condition), 3)}" if self.condition != expr.TRUE else "", 3
         )
         aspects = []
-        if self.length != expr.UNDEFINED:
-            aspects.append(f"Length => {self.length}")
+        if self.size != expr.UNDEFINED:
+            aspects.append(f"Size => {self.size}")
         if self.first != expr.UNDEFINED:
             aspects.append(f"First => {self.first}")
         with_clause = indent_next("\nwith " + ", ".join(aspects) if aspects else "", 3)
@@ -73,7 +73,7 @@ class Link(Base):
                 self.source == other.source
                 and self.target == other.target
                 and self.condition == other.condition
-                and self.length == other.length
+                and self.size == other.size
                 and self.first == other.first
             )
         return NotImplemented
@@ -159,7 +159,7 @@ class AbstractMessage(mty.Type):
             if not (
                 len(outgoing) == 1
                 and outgoing[0].condition == expr.TRUE
-                and outgoing[0].length == expr.UNDEFINED
+                and outgoing[0].size == expr.UNDEFINED
                 and outgoing[0].first == expr.UNDEFINED
                 and (i >= len(field_list) - 1 or field_list[i + 1] == outgoing[0].target)
             ):
@@ -328,9 +328,9 @@ class AbstractMessage(mty.Type):
             source = Field(prefix + l.source.identifier) if l.source != INITIAL else INITIAL
             target = Field(prefix + l.target.identifier) if l.target != FINAL else FINAL
             condition = prefixed_expression(l.condition)
-            length = prefixed_expression(l.length)
+            size = prefixed_expression(l.size)
             first = prefixed_expression(l.first)
-            structure.append(Link(source, target, condition, length, first, l.location))
+            structure.append(Link(source, target, condition, size, first, l.location))
 
         types = {Field(prefix + f.identifier): t for f, t in self.types.items()}
 
@@ -344,13 +344,11 @@ class AbstractMessage(mty.Type):
             if not any(l.target == field for l in p):
                 continue
             conditions = [l.condition for l in p if l.condition != expr.TRUE]
-            lengths = [
-                expr.Equal(expr.Length(l.target.name), l.length)
-                for l in p
-                if l.length != expr.UNDEFINED
+            sizes = [
+                expr.Equal(expr.Size(l.target.name), l.size) for l in p if l.size != expr.UNDEFINED
             ]
-            empty_field = expr.Equal(expr.Length(field.name), expr.Number(0))
-            proof = empty_field.check([*self.type_constraints(empty_field), *conditions, *lengths])
+            empty_field = expr.Equal(expr.Size(field.name), expr.Number(0))
+            proof = empty_field.check([*self.type_constraints(empty_field), *conditions, *sizes])
             if proof.result == expr.ProofResult.sat:
                 return True
 
@@ -456,8 +454,7 @@ class AbstractMessage(mty.Type):
 
         for l in self.structure:
             exponentiations = itertools.chain.from_iterable(
-                e.findall(lambda x: isinstance(x, expr.Pow))
-                for e in [l.condition, l.first, l.length]
+                e.findall(lambda x: isinstance(x, expr.Pow)) for e in [l.condition, l.first, l.size]
             )
             for e in exponentiations:
                 assert isinstance(e, expr.Pow)
@@ -501,10 +498,10 @@ class AbstractMessage(mty.Type):
                     types[l.source.identifier] = self.types[l.source]
 
                 l.condition = l.condition.substituted(typed_variable)
-                l.length = l.length.substituted(typed_variable)
+                l.size = l.size.substituted(typed_variable)
                 l.first = l.first.substituted(typed_variable)
 
-                for t in [l.condition, l.length, l.first]:
+                for t in [l.condition, l.size, l.first]:
                     if t == expr.UNDEFINED:
                         continue
 
@@ -525,11 +522,11 @@ class AbstractMessage(mty.Type):
             for l in self.outgoing(f):
                 self.__check_attributes(l.condition, l.condition.location)
                 self.__check_first_expression(l, l.first.location)
-                self.__check_length_expression(l)
+                self.__check_size_expression(l)
 
     def __check_attributes(self, expression: expr.Expr, location: Location = None) -> None:
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
-            if isinstance(a, expr.Length) and not (
+            if isinstance(a, expr.Size) and not (
                 isinstance(a.prefix, expr.Variable)
                 and (
                     a.prefix.name == "Message"
@@ -540,7 +537,7 @@ class AbstractMessage(mty.Type):
                 )
             ):
                 self.error.append(
-                    f'invalid use of length attribute for "{a.prefix}"',
+                    f'invalid use of size attribute for "{a.prefix}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     location,
@@ -555,27 +552,27 @@ class AbstractMessage(mty.Type):
                 location,
             )
 
-    def __check_length_expression(self, link: Link) -> None:
-        if link.target == FINAL and link.length != expr.UNDEFINED:
+    def __check_size_expression(self, link: Link) -> None:
+        if link.target == FINAL and link.size != expr.UNDEFINED:
             self.error.append(
-                f'length attribute for final field in "{self.identifier}"',
+                f'size attribute for final field in "{self.identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                link.length.location,
+                link.size.location,
             )
         if link.target != FINAL and link.target in self.types:
             t = self.types[link.target]
             unconstrained = isinstance(t, (mty.Opaque, mty.Array))
-            if not unconstrained and link.length != expr.UNDEFINED:
+            if not unconstrained and link.size != expr.UNDEFINED:
                 self.error.append(
-                    f'fixed size field "{link.target.name}" with length expression',
+                    f'fixed size field "{link.target.name}" with size aspect',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     link.target.identifier.location,
                 )
-            if unconstrained and link.length == expr.UNDEFINED:
+            if unconstrained and link.size == expr.UNDEFINED:
                 self.error.append(
-                    f'unconstrained field "{link.target.name}" without length expression',
+                    f'unconstrained field "{link.target.name}" without size aspect',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     link.target.identifier.location,
@@ -587,7 +584,7 @@ class AbstractMessage(mty.Type):
             assert isinstance(comp, mty.Composite)
             result = expr.Equal(
                 expr.Mul(aggregate.length, comp.element_size),
-                expr.Length(field),
+                expr.Size(field),
                 location=expression.location,
             )
             if isinstance(comp, mty.Array) and isinstance(comp.element_type, mty.Scalar):
@@ -616,7 +613,7 @@ class AbstractMessage(mty.Type):
 
         message_constraints: List[expr.Expr] = [
             expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
-            expr.Equal(expr.Mod(expr.Length("Message"), expr.Number(8)), expr.Number(0)),
+            expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
         ]
 
         scalar_constraints = [
@@ -654,7 +651,7 @@ class AbstractMessage(mty.Type):
 
             for e in expressions:
                 if not (
-                    isinstance(e, (expr.Variable, expr.Length))
+                    isinstance(e, (expr.Variable, expr.Size))
                     or (
                         isinstance(e, expr.ValueRange)
                         and valid_lower(e.lower)
@@ -859,14 +856,14 @@ class AbstractMessage(mty.Type):
             return link.first
         return expr.Add(expr.Last(link.source.name), expr.Number(1), location=link.location)
 
-    def __target_length(self, link: Link) -> expr.Expr:
-        if link.length != expr.UNDEFINED:
-            return link.length
+    def __target_size(self, link: Link) -> expr.Expr:
+        if link.size != expr.UNDEFINED:
+            return link.size
         return self.field_size(link.target)
 
     def __target_last(self, link: Link) -> expr.Expr:
         return expr.Sub(
-            expr.Add(self.__target_first(link), self.__target_length(link)),
+            expr.Add(self.__target_first(link), self.__target_size(link)),
             expr.Number(1),
             link.target.identifier.location,
         )
@@ -874,17 +871,17 @@ class AbstractMessage(mty.Type):
     def __link_expression(self, link: Link) -> List[expr.Expr]:
         name = link.target.name
         target_first = self.__target_first(link)
-        target_length = self.__target_length(link)
+        target_size = self.__target_size(link)
         target_last = self.__target_last(link)
         return [
             expr.Equal(expr.First(name), target_first, target_first.location or self.location),
-            expr.Equal(expr.Length(name), target_length, target_length.location or self.location),
+            expr.Equal(expr.Size(name), target_size, target_size.location or self.location),
             expr.Equal(expr.Last(name), target_last, target_last.location or self.location),
             expr.GreaterEqual(expr.First("Message"), expr.Number(0), self.location),
             expr.GreaterEqual(expr.Last("Message"), expr.Last(name), self.location),
             expr.GreaterEqual(expr.Last("Message"), expr.First("Message"), self.location),
             expr.Equal(
-                expr.Length("Message"),
+                expr.Size("Message"),
                 expr.Add(expr.Sub(expr.Last("Message"), expr.First("Message")), expr.Number(1)),
                 self.location,
             ),
@@ -896,9 +893,7 @@ class AbstractMessage(mty.Type):
             for path in self.paths(f):
 
                 last = path[-1]
-                negative = expr.Less(
-                    self.__target_length(last), expr.Number(0), last.length.location
-                )
+                negative = expr.Less(self.__target_size(last), expr.Number(0), last.size.location)
                 start = expr.GreaterEqual(
                     self.__target_first(last), expr.First("Message"), last.location
                 )
@@ -924,7 +919,7 @@ class AbstractMessage(mty.Type):
                 if proof.result != expr.ProofResult.unsat:
                     path_message = " -> ".join([l.target.name for l in path])
                     self.error.append(
-                        f'negative length for field "{f.name}" ({path_message})',
+                        f'negative size for field "{f.name}" ({path_message})',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         f.identifier.location,
@@ -972,20 +967,20 @@ class AbstractMessage(mty.Type):
                         )
                         return
 
-                    length_multiple_element_size = expr.Not(
+                    is_multiple_of_element_size = expr.Not(
                         expr.Equal(
-                            expr.Mod(self.__target_length(last), element_size),
+                            expr.Mod(self.__target_size(last), element_size),
                             expr.Number(0),
                             last.location,
                         )
                     )
-                    proof = length_multiple_element_size.check(
-                        [*facts, *self.type_constraints(length_multiple_element_size)]
+                    proof = is_multiple_of_element_size.check(
+                        [*facts, *self.type_constraints(is_multiple_of_element_size)]
                     )
                     if proof.result != expr.ProofResult.unsat:
                         path_message = " -> ".join([p.target.name for p in path])
                         self.error.append(
-                            f'length of opaque field "{f.name}" not multiple of {element_size} bit'
+                            f'size of opaque field "{f.name}" not multiple of {element_size} bit'
                             f" ({path_message})",
                             Subsystem.MODEL,
                             Severity.ERROR,
@@ -1340,7 +1335,7 @@ class UnprovenMessage(AbstractMessage):
                             link.source,
                             initial_link.target,
                             link.condition,
-                            initial_link.length,
+                            initial_link.size,
                             link.first,
                             link.location,
                         )
@@ -1360,7 +1355,7 @@ class UnprovenMessage(AbstractMessage):
                                     final_link.source,
                                     link.target,
                                     merged_condition.simplified(),
-                                    link.length,
+                                    link.size,
                                     link.first,
                                     link.location,
                                 )

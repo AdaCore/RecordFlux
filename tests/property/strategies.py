@@ -192,14 +192,14 @@ def messages(
         source_type: Type
         target_type: Type
 
-    def length(pair: FieldPair) -> expr.Expr:
-        max_length = 2 ** 29 - 1
+    def size(pair: FieldPair) -> expr.Expr:
+        max_size = 2 ** 29 - 1
         if isinstance(pair.target_type, (Opaque, Array)):
             if isinstance(pair.source_type, Integer):
-                if pair.source_type.last.value <= max_length:
+                if pair.source_type.last.value <= max_size:
                     return expr.Mul(expr.Variable(pair.source.name), expr.Number(8))
             return expr.Number(
-                draw(st.integers(min_value=1, max_value=max_length).map(lambda x: x * 8))
+                draw(st.integers(min_value=1, max_value=max_size).map(lambda x: x * 8))
             )
         return expr.UNDEFINED
 
@@ -258,7 +258,7 @@ def messages(
                 types_[source] if source != INITIAL else None,
                 types_[target],
             )
-            structure.append(Link(source, target, condition=condition(pair), length=length(pair)))
+            structure.append(Link(source, target, condition=condition(pair), size=size(pair)))
 
         for i, source in enumerate(fields_):
             out = outgoing(source)
@@ -283,7 +283,7 @@ def messages(
                         source,
                         target,
                         condition=expr.Not(out[0].condition).simplified(),
-                        length=length(pair),
+                        size=size(pair),
                     )
                 )
 
@@ -357,7 +357,7 @@ def variables(draw: Callable, elements: st.SearchStrategy[str]) -> expr.Variable
 
 @st.composite
 def attributes(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
-    attribute = draw(st.sampled_from([expr.Length, expr.First, expr.Last]))
+    attribute = draw(st.sampled_from([expr.Size, expr.First, expr.Last]))
     return attribute(draw(elements))
 
 

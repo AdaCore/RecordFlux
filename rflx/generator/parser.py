@@ -180,8 +180,8 @@ class ParserGenerator:
                     Variable("Ctx"),
                     Variable("Value"),
                     *(
-                        [Call("Field_Length", [Variable("Ctx"), Variable("Fld")])]
-                        if common.length_dependent_condition(message)
+                        [Call("Field_Size", [Variable("Ctx"), Variable("Fld")])]
+                        if common.size_dependent_condition(message)
                         else []
                     ),
                 ],

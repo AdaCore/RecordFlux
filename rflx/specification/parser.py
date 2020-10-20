@@ -371,7 +371,7 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
             error.extend(
                 [
                     (
-                        "invalid first expression",
+                        "invalid first aspect",
                         Subsystem.PARSER,
                         Severity.ERROR,
                         then.first.location,
@@ -390,7 +390,7 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
 
         if (
             component.first != expr.UNDEFINED
-            or component.length != expr.UNDEFINED
+            or component.size != expr.UNDEFINED
             or component.condition != expr.TRUE
         ):
             for l in (l for l in structure if l.target.identifier == component.name):
@@ -412,22 +412,22 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
                             l.first.location,
                         )
 
-                if component.length != expr.UNDEFINED:
-                    if l.length == expr.UNDEFINED:
-                        l.length = component.length
+                if component.size != expr.UNDEFINED:
+                    if l.size == expr.UNDEFINED:
+                        l.size = component.size
                     else:
                         error.append(
-                            f'length aspect of field "{component.name}" conflicts with previous'
+                            f'size aspect of field "{component.name}" conflicts with previous'
                             " specification",
                             Subsystem.MODEL,
                             Severity.ERROR,
-                            component.length.location,
+                            component.size.location,
                         )
                         error.append(
-                            "previous specification of length",
+                            "previous specification of size",
                             Subsystem.MODEL,
                             Severity.INFO,
-                            l.length.location,
+                            l.size.location,
                         )
 
                 if component.condition != expr.TRUE:
@@ -448,9 +448,7 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
                 continue
             target_node = Field(then.name) if then.name else FINAL
             structure.append(
-                Link(
-                    source_node, target_node, then.condition, then.length, then.first, then.location
-                )
+                Link(source_node, target_node, then.condition, then.size, then.first, then.location)
             )
 
     return structure

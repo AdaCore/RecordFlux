@@ -13,12 +13,12 @@ package TLV_With_Checksum is
                if Tag = Msg_Error;
          Length   : Length
             then Value
-               with Length => Length * 8;
+               with Size => Length * 8;
          Value    : Opaque;
          Checksum : Checksum
             then null
                if Checksum'Valid_Checksum;
        end message
-          with Checksum => (Checksum => (Tag, Value'Length, Value));
+          with Checksum => (Checksum => (Tag, Value'Size, Value));
 
 end TLV_With_Checksum;

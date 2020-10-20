@@ -14,7 +14,7 @@ package Array_Message is
       message
           Length : Byte
              then Bar
-                with Length => Length * 8;
+                with Size => Length * 8;
           Bar : Bar;
       end message;
 

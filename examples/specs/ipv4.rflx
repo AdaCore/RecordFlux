@@ -27,7 +27,7 @@ package IPv4 is
                if Option_Number > 1;
          Option_Length : Option_Length;
          Option_Data : Opaque
-            with Length => (Option_Length - 2) * 8
+            with Size => (Option_Length - 2) * 8
             if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
                or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
                or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
@@ -56,10 +56,10 @@ package IPv4 is
          Source : Address;
          Destination : Address
             then Options
-               with Length => (IHL - 5) * 32;
+               with Size => (IHL - 5) * 32;
          Options : Options
             then Payload
-               with Length => Total_Length * 8 - (IHL * 32);
+               with Size => Total_Length * 8 - (IHL * 32);
          Payload : Opaque;
       end message;
 

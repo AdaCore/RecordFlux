@@ -49,7 +49,7 @@ def test_comparison_big_integers(condition: str, tmp_path: Path) -> None:
                     A : D;
                     B : D
                        then C
-                          with Length => 8
+                          with Size => 8
                           if {condition};
                     C : Opaque;
                  end message;
@@ -80,7 +80,7 @@ def test_comparison_opaque(condition: str, tmp_path: Path) -> None:
                  message
                     null
                        then A
-                          with Length => 7 * 8;
+                          with Size => 7 * 8;
                     A : Opaque
                        then null
                           if {condition};
@@ -152,7 +152,7 @@ def test_array_with_imported_element_type_message(tmp_path: Path) -> None:
                  message
                     null
                        then A
-                          with Length => 8;
+                          with Size => 8;
                     A : Opaque;
                  end message;
            end Test;
@@ -170,7 +170,7 @@ def test_unbounded_message(tmp_path: Path) -> None:
                  message
                     null
                        then A
-                          with Length => Message'Length;
+                          with Size => Message'Size;
                     A : Opaque;
                  end message;
 
