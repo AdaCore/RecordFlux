@@ -9,9 +9,9 @@ from . import message, session, type_
 
 class Model(Base):
     def __init__(
-        self, types: Sequence[type_.Type], sessions: Sequence[session.Session] = None
+        self, types: Sequence[type_.Type] = None, sessions: Sequence[session.Session] = None
     ) -> None:
-        self.types = types
+        self.types = types or []
         self.sessions = sessions or []
         self.__check_types()
 

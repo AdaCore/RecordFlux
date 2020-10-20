@@ -20,10 +20,9 @@ def assert_equal_code(spec_files: List[str]) -> None:
 
     model = parser.create_model()
 
-    generator = Generator("RFLX", reproducible=True)
-    generator.generate(model)
+    generator = Generator(model, "RFLX", reproducible=True)
 
-    for unit in generator.units.values():
+    for unit in generator._units.values():  # pylint: disable=protected-access
         filename = f"{GENERATED_DIR}/{unit.name}.ads"
         with open(filename, "r") as f:
             assert unit.ads == f.read(), filename
