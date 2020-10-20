@@ -416,7 +416,7 @@ class SerializerGenerator:
                                     *self.unbounded_composite_setter_preconditions(message, f),
                                     Equal(
                                         Call(
-                                            "Field_Length",
+                                            "Field_Size",
                                             [
                                                 Variable("Ctx"),
                                                 Variable(f.affixed_name),
@@ -521,7 +521,7 @@ class SerializerGenerator:
         def specification_bounded(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Set_Bounded_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], const.TYPES_BIT_LENGTH)],
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Size"], const.TYPES_BIT_LENGTH)],
             )
 
         def formal_parameters(field: Field) -> Sequence[FormalSubprogramDeclaration]:
@@ -558,7 +558,7 @@ class SerializerGenerator:
                                             [
                                                 Div(
                                                     Call(
-                                                        "Field_Length",
+                                                        "Field_Size",
                                                         [
                                                             Variable("Ctx"),
                                                             Variable(f.affixed_name),
@@ -596,7 +596,7 @@ class SerializerGenerator:
                                     [
                                         Call(
                                             const.TYPES_LENGTH,
-                                            [Div(Variable("Length"), Size(const.TYPES_BYTE))],
+                                            [Div(Variable("Size"), Size(const.TYPES_BYTE))],
                                         )
                                     ],
                                 ),
@@ -660,7 +660,7 @@ class SerializerGenerator:
                         ObjectDeclaration(
                             ["Last"],
                             const.TYPES_BIT_INDEX,
-                            Add(Variable("First"), Variable("Length"), -Number(1)),
+                            Add(Variable("First"), Variable("Size"), -Number(1)),
                             True,
                         ),
                         ExpressionFunctionDeclaration(
@@ -674,7 +674,7 @@ class SerializerGenerator:
                     ],
                     [
                         CallStatement(
-                            f"Initialize_Bounded_{f.name}", [Variable("Ctx"), Variable("Length")]
+                            f"Initialize_Bounded_{f.name}", [Variable("Ctx"), Variable("Size")]
                         ),
                         CallStatement(
                             f"Process_{f.name}",
@@ -702,7 +702,7 @@ class SerializerGenerator:
         def specification_bounded(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Initialize_Bounded_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], const.TYPES_BIT_LENGTH)],
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Size"], const.TYPES_BIT_LENGTH)],
             )
 
         return UnitPart(
@@ -767,7 +767,7 @@ class SerializerGenerator:
                         ObjectDeclaration(
                             ["Last"],
                             const.TYPES_BIT_INDEX,
-                            Add(Variable("First"), Variable("Length"), -Number(1)),
+                            Add(Variable("First"), Variable("Size"), -Number(1)),
                             True,
                         ),
                     ],
@@ -841,11 +841,11 @@ class SerializerGenerator:
                 + (
                     [
                         Call(
-                            "Field_Length",
+                            "Field_Size",
                             [Variable("Ctx"), Variable(field.affixed_name)],
                         )
                     ]
-                    if common.length_dependent_condition(message)
+                    if common.size_dependent_condition(message)
                     else []
                 ),
             ),
@@ -863,7 +863,7 @@ class SerializerGenerator:
             Equal(
                 Mod(
                     Call(
-                        "Field_Length",
+                        "Field_Size",
                         [Variable("Ctx"), Variable(field.affixed_name)],
                     ),
                     Size(const.TYPES_BYTE),
@@ -881,14 +881,14 @@ class SerializerGenerator:
                     Variable("Ctx"),
                     NamedAggregate(("Fld", Variable(field.affixed_name))),
                 ]
-                + ([Variable("Length")] if common.length_dependent_condition(message) else []),
+                + ([Variable("Size")] if common.size_dependent_condition(message) else []),
             ),
             GreaterEqual(
                 Call(
                     "Available_Space",
                     [Variable("Ctx"), Variable(field.affixed_name)],
                 ),
-                Variable("Length"),
+                Variable("Size"),
             ),
             LessEqual(
                 Add(
@@ -896,7 +896,7 @@ class SerializerGenerator:
                         "Field_First",
                         [Variable("Ctx"), Variable(field.affixed_name)],
                     ),
-                    Variable("Length"),
+                    Variable("Size"),
                 ),
                 Div(Last(const.TYPES_BIT_INDEX), Number(2)),
             ),
@@ -922,7 +922,7 @@ class SerializerGenerator:
                         ).ada_expr(),
                     )
                     for l in message.incoming(field)
-                    if expr.Last("Message") in l.length
+                    if expr.Last("Message") in l.size
                 ]
             ),
             Equal(
@@ -936,7 +936,7 @@ class SerializerGenerator:
                 Number(1),
             ),
             Equal(
-                Mod(Variable("Length"), Size(const.TYPES_BYTE)),
+                Mod(Variable("Size"), Size(const.TYPES_BYTE)),
                 Number(0),
             ),
         ]
@@ -946,7 +946,7 @@ def unbounded_setter_required(message: Message, field: Field) -> bool:
     return any(
         True
         for l in message.incoming(field)
-        if expr.Length("Message") not in l.length and expr.Last("Message") not in l.length
+        if expr.Size("Message") not in l.size and expr.Last("Message") not in l.size
     )
 
 
@@ -954,5 +954,5 @@ def bounded_setter_required(message: Message, field: Field) -> bool:
     return any(
         True
         for l in message.incoming(field)
-        if expr.Length("Message") in l.length or expr.Last("Message") in l.length
+        if expr.Size("Message") in l.size or expr.Last("Message") in l.size
     )

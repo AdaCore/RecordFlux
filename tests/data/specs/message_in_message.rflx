@@ -6,7 +6,7 @@ package Message_In_Message is
       message
          Length : Length
             then Value
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Value : Opaque;
       end message;
 

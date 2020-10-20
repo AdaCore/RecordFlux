@@ -20,14 +20,14 @@ package Ethernet is
          TCI : TCI;
          Type_Length : Type_Length
             then Payload
-               with Length => Type_Length * 8
+               with Size => Type_Length * 8
                if Type_Length <= 1500
             then Payload
-               with Length => Message'Last - Type_Length'Last
+               with Size => Message'Last - Type_Length'Last
                if Type_Length >= 1536;
          Payload : Opaque
             then null
-               if Payload'Length / 8 >= 46 and Payload'Length / 8 <= 1500;
+               if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
       end message;
 
 end Ethernet;

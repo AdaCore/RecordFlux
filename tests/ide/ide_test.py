@@ -68,7 +68,7 @@ def test_multiple_errors() -> None:
             f'{path}:86:4: model: error: unsupported element type size of array "A3"',
             f'{path}:85:4: model: info: type "E6" has size 4, must be multiple of 8',
             f'{path}:93:30: model: error: invalid First for field "Final"',
-            f'{path}:103:26: model: error: length of opaque field "Data" not multiple of 8 bit'
+            f'{path}:103:26: model: error: size of opaque field "Data" not multiple of 8 bit'
             " (Length -> Data)",
             f'{path}:106:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
             f'{path}:109:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
@@ -97,7 +97,7 @@ def test_multiple_errors() -> None:
             f"{path}:156:24: model: info: found aggregate with element type universal integer"
             " (1 .. 100)",
             f"{path}:156:19: model: info: on path Length -> Data -> F1 -> F2 -> Final",
-            f'{path}:152:19: model: error: invalid use of length attribute for "F1"',
+            f'{path}:152:19: model: error: invalid use of size attribute for "F1"',
             f'{path}:168:10: model: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
             f'{path}:159:4: model: info: when merging message "RFLX_Invalid::M4"',
             f'{path}:166:10: model: info: into field "F2"',
@@ -117,17 +117,17 @@ def test_multiple_errors() -> None:
             f"{path}:208:19: model: info: condition 0 (F1 -> F2): F1 < 80",
             f"{path}:206:19: model: info: condition 1 (F1 -> Final): F1 > 50",
             f'{path}:216:10: model: error: unreachable field "F2" in "RFLX_Invalid::M9"',
-            f'{path}:231:18: model: error: fixed size field "F1" with length expression',
-            f"{path}:241:30: parser: error: invalid first expression",
+            f'{path}:231:18: model: error: fixed size field "F1" with size aspect',
+            f"{path}:241:30: parser: error: invalid first aspect",
             f'{path}:250:19: model: error: undefined variable "F1"',
             f"{path}:250:19: model: info: on path F1",
-            f'{path}:257:18: model: error: negative length for field "F2" (F1 -> F2)',
-            f'{path}:266:10: model: error: unconstrained field "F1" without length expression',
+            f'{path}:257:18: model: error: negative size for field "F2" (F1 -> F2)',
+            f'{path}:266:10: model: error: unconstrained field "F1" without size aspect',
             f'{path}:271:9: model: error: field "F3" not congruent with overlaid field "F1"',
             f"{path}:271:4: model: info: unsatisfied \"F1'First = Message'First\"",
             f"{path}:273:10: model: info: unsatisfied \"F1'Last = (Message'First + 8) - 1\"",
             f"{path}:275:13: model: info: unsatisfied \"(F1'First + 16) - 1 = F1'Last\"",
-            f'{path}:287:31: model: error: length attribute for final field in "RFLX_Invalid::M17"',
+            f'{path}:287:29: model: error: size attribute for final field in "RFLX_Invalid::M17"',
             f"{path}:290:4: model: error: unnecessary always-valid aspect"
             ' on "Unnecessary_Always_Valid_Enum"',
             f"{path}:53:4: model: error: conflicting literals: False, True",
@@ -161,6 +161,6 @@ def test_parse_error_invalid_location() -> None:
         [
             f"{path}:7:21: parser: error: Expected"
             ' {{"First" - "=>" - MathematicalExpression}'
-            ' | {"Length" - "=>" - MathematicalExpression}}',
+            ' | {"Size" - "=>" - MathematicalExpression}}',
         ],
     )

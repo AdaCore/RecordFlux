@@ -65,7 +65,7 @@ def test_message_field_first_conflict() -> None:
     )
 
 
-def test_message_field_length_conflict() -> None:
+def test_message_field_size_conflict() -> None:
     assert_error_string(
         """
             package Test is
@@ -76,17 +76,17 @@ def test_message_field_length_conflict() -> None:
                   message
                      A : T
                         then B
-                           with Length => 8;
+                           with Size => 8;
                      B : T
-                        with Length => 8;
+                        with Size => 8;
                   end message;
 
             end Test;
         """,
         r"^"
-        r'<stdin>:12:40: model: error: length aspect of field "B" conflicts with previous'
+        r'<stdin>:12:38: model: error: size aspect of field "B" conflicts with previous'
         r" specification\n"
-        r"<stdin>:10:43: model: info: previous specification of length"
+        r"<stdin>:10:41: model: info: previous specification of size"
         r"$",
     )
 
@@ -174,7 +174,7 @@ def test_refinement_invalid_field() -> None:
     )
 
 
-def test_message_with_two_length_fields() -> None:
+def test_message_with_two_size_fields() -> None:
     p = parser.Parser()
     p.parse_string(
         """
@@ -185,7 +185,7 @@ def test_message_with_two_length_fields() -> None:
                     Length_1 : Length;
                     Length_2 : Length
                        then Payload
-                          with Length => 8 * (Length_1 + Length_2);
+                          with Size => 8 * (Length_1 + Length_2);
                     Payload : Opaque;
                  end message;
            end Test;

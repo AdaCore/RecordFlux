@@ -16,9 +16,9 @@ from rflx.expression import (
     Expr,
     First,
     Last,
-    Length,
     Name,
     Number,
+    Size,
     Sub,
     ValidChecksum,
     ValueRange,
@@ -169,7 +169,7 @@ class IntegerValue(ScalarValue):
         if check and (
             And(*self._type.constraints("__VALUE__", check))
             .substituted(
-                mapping={Variable("__VALUE__"): Number(value), Length("__VALUE__"): self._type.size}
+                mapping={Variable("__VALUE__"): Number(value), Size("__VALUE__"): self._type.size}
             )
             .simplified()
             != TRUE
@@ -234,7 +234,7 @@ class EnumValue(ScalarValue):
                     mapping={
                         **self.literals,
                         **{Variable("__VALUE__"): self._type.literals[prefixed_value.name]},
-                        **{Length("__VALUE__"): self._type.size},
+                        **{Size("__VALUE__"): self._type.size},
                     }
                 )
                 .simplified()
@@ -304,25 +304,25 @@ class CompositeValue(TypeValue):
     def set_expected_size(self, expected_size: Expr) -> None:
         self._expected_size = expected_size
 
-    def _check_length_of_assigned_value(
+    def _check_size_of_assigned_value(
         self, value: Union[bytes, Bitstring, List[TypeValue]]
     ) -> None:
         if isinstance(value, bytes):
-            length_of_value = len(value) * 8
+            size_of_value = len(value) * 8
         elif isinstance(value, Bitstring):
-            length_of_value = len(value)
+            size_of_value = len(value)
         else:
             bits = [element.bitstring for element in value]
-            length_of_value = len(Bitstring.join(bits))
+            size_of_value = len(Bitstring.join(bits))
 
         if (
             self._expected_size is not None
             and isinstance(self._expected_size, Number)
-            and length_of_value != self._expected_size.value
+            and size_of_value != self._expected_size.value
         ):
             raise ValueError(
-                f"invalid data length: input length is {len(value) * 8} "
-                f"while expected input length is {self._expected_size.value}"
+                f"invalid data size: input size is {len(value) * 8} "
+                f"while expected input size is {self._expected_size.value}"
             )
 
     @property
@@ -346,7 +346,7 @@ class OpaqueValue(CompositeValue):
 
     def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
         if check:
-            self._check_length_of_assigned_value(value)
+            self._check_size_of_assigned_value(value)
         if self._refinement_message is not None:
             nested_msg = MessageValue(self._refinement_message, self._all_refinements)
             try:
@@ -408,7 +408,7 @@ class ArrayValue(CompositeValue):
 
     def assign(self, value: List[TypeValue], check: bool = True) -> None:
         if check:
-            self._check_length_of_assigned_value(value)
+            self._check_size_of_assigned_value(value)
         for v in value:
             if self._is_message_array:
                 if isinstance(v, MessageValue):
@@ -437,7 +437,7 @@ class ArrayValue(CompositeValue):
         self._value = value
 
     def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
-        self._check_length_of_assigned_value(value)
+        self._check_size_of_assigned_value(value)
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         if self._is_message_array:
@@ -555,7 +555,7 @@ class MessageValue(TypeValue):
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._simplified_mapping: Dict[Name, Expr] = dict.fromkeys(
-            [initial.name_length, initial.name_last, initial.name_first], Number(0)
+            [initial.name_size, initial.name_last, initial.name_first], Number(0)
         )
         self.accessible_fields: List[str] = []
         if self._skip_verification:
@@ -577,7 +577,7 @@ class MessageValue(TypeValue):
                         v.name_variable,
                         v.name_first,
                         v.name_last,
-                        v.name_length,
+                        v.name_size,
                     )
                     for k, v in self._fields.items()
                 },
@@ -629,7 +629,7 @@ class MessageValue(TypeValue):
                 return field
         return ""
 
-    def _get_length(self, fld: str) -> Optional[Number]:
+    def _get_size(self, fld: str) -> Optional[Number]:
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
             return typeval.size
@@ -637,11 +637,11 @@ class MessageValue(TypeValue):
         for l in self._type.incoming(Field(fld)):
             if (
                 self._fields[l.source.name].set
-                and l.length != UNDEFINED
+                and l.size != UNDEFINED
                 and (self._skip_verification or self.__simplified(l.condition) == TRUE)
             ):
-                length = self.__simplified(l.length)
-                return length if isinstance(length, Number) else None
+                size = self.__simplified(l.size)
+                return size if isinstance(size, Number) else None
         return None
 
     def _get_first(self, fld: str) -> Optional[Number]:
@@ -654,10 +654,10 @@ class MessageValue(TypeValue):
         prv = self._prev_field(fld)
         if self._skip_verification and prv:
             first = self._fields[prv].first
-            length = self._fields[prv].typeval.size
+            size = self._fields[prv].typeval.size
             assert isinstance(first, Number)
-            assert isinstance(length, Number)
-            return first + length
+            assert isinstance(size, Number)
+            return first + size
         if prv and UNDEFINED not in (self._fields[prv].first, self._fields[prv].typeval.size):
             first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
             return first if isinstance(first, Number) else None
@@ -696,7 +696,7 @@ class MessageValue(TypeValue):
                 else current_field_first_in_bitstr
             )
 
-        def set_field_without_length(field_name: str, field: MessageValue.Field) -> Tuple[int, int]:
+        def set_field_without_size(field_name: str, field: MessageValue.Field) -> Tuple[int, int]:
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
             assert isinstance(field.typeval, OpaqueValue)
             first = self._get_first(field_name)
@@ -705,17 +705,17 @@ class MessageValue(TypeValue):
             self.set(field_name, value[current_pos_in_bitstring:])
             return last_pos_in_bitstr, current_pos_in_bitstring
 
-        def set_field_with_length(field_name: str, field_length: int) -> Tuple[int, int]:
+        def set_field_with_size(field_name: str, field_size: int) -> Tuple[int, int]:
             assert isinstance(value, Bitstring)
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
-            if field_length < 8 or field_length % 8 == 0:
+            if field_size < 8 or field_size % 8 == 0:
                 self.set(
                     field_name,
-                    value[current_pos_in_bitstring : current_pos_in_bitstring + field_length],
+                    value[current_pos_in_bitstring : current_pos_in_bitstring + field_size],
                 )
-                current_pos_in_bitstring += field_length
+                current_pos_in_bitstring += field_size
             else:
-                bytes_used_for_field = field_length // 8 + 1
+                bytes_used_for_field = field_size // 8 + 1
                 first_pos = current_pos_in_bitstring
                 field_bits = Bitstring()
 
@@ -723,29 +723,29 @@ class MessageValue(TypeValue):
                     field_bits += value[current_pos_in_bitstring : current_pos_in_bitstring + 8]
                     current_pos_in_bitstring += 8
 
-                k = field_length // bytes_used_for_field + 1
-                field_bits += value[current_pos_in_bitstring + 8 - k : first_pos + field_length]
-                current_pos_in_bitstring = first_pos + field_length
+                k = field_size // bytes_used_for_field + 1
+                field_bits += value[current_pos_in_bitstring + 8 - k : first_pos + field_size]
+                current_pos_in_bitstring = first_pos + field_size
                 self.set(field_name, field_bits)
             return last_pos_in_bitstr, current_pos_in_bitstring
 
         while current_field_name != FINAL.name:
             current_field = self._fields[current_field_name]
-            length = self._get_length(current_field_name)
-            if isinstance(current_field.typeval, OpaqueValue) and length is None:
+            size = self._get_size(current_field_name)
+            if isinstance(current_field.typeval, OpaqueValue) and size is None:
                 (
                     last_field_first_in_bitstr,
                     current_field_first_in_bitstr,
-                ) = set_field_without_length(current_field_name, current_field)
+                ) = set_field_without_size(current_field_name, current_field)
 
             else:
-                assert length is not None
-                current_field_length = length.value
+                assert size is not None
+                current_field_size = size.value
                 try:
                     (
                         last_field_first_in_bitstr,
                         current_field_first_in_bitstr,
-                    ) = set_field_with_length(current_field_name, current_field_length)
+                    ) = set_field_with_size(current_field_name, current_field_size)
                 except IndexError:
                     raise IndexError(
                         f"Bitstring representing the message is too short - "
@@ -761,11 +761,11 @@ class MessageValue(TypeValue):
         self._fields[self._last_field].next = field_name
         self._last_field = field_name
         f_first = self._get_first(field_name)
-        f_length = self._get_length(field_name)
+        f_size = self._get_size(field_name)
         assert isinstance(f_first, Number)
         field.first = f_first
-        if isinstance(field.typeval, CompositeValue) and f_length is not None:
-            field.typeval.set_expected_size(f_length)
+        if isinstance(field.typeval, CompositeValue) and f_size is not None:
+            field.typeval.set_expected_size(f_size)
         field.typeval.assign(value, not self._skip_verification)
         self.__update_simplified_mapping(field)
         self.accessible_fields.append(field_name)
@@ -806,21 +806,21 @@ class MessageValue(TypeValue):
         if field_name in self.accessible_fields:
             field = self._fields[field_name]
             f_first = field.first
-            f_length = field.typeval.size
+            f_size = field.typeval.size
             field_first = (
                 f_first
                 if self._skip_verification and isinstance(f_first, Number)
                 else self._get_first(field_name)
             )
-            field_length = (
-                f_length
-                if self._skip_verification and isinstance(f_length, Number)
-                else self._get_length(field_name)
+            field_size = (
+                f_size
+                if self._skip_verification and isinstance(f_size, Number)
+                else self._get_size(field_name)
             )
             assert field_first is not None
             field.first = field_first
-            if isinstance(field.typeval, CompositeValue) and field_length is not None:
-                field.typeval.set_expected_size(field_length)
+            if isinstance(field.typeval, CompositeValue) and field_size is not None:
+                field.typeval.set_expected_size(field_size)
             set_refinement(field, field_name)
             try:
                 if isinstance(value, Bitstring):
@@ -855,23 +855,23 @@ class MessageValue(TypeValue):
         while nxt and nxt != FINAL.name:
             field = self._fields[nxt]
             first = self._get_first(nxt)
-            length = self._get_length(nxt)
+            size = self._get_size(nxt)
             if first is None:
                 break
 
             if (self.__simplified(self._type.field_condition(Field(nxt))) == TRUE) and (
                 self._is_valid_opaque_field(nxt)
                 if isinstance(self._fields[nxt].typeval, OpaqueValue)
-                else length is not None
+                else size is not None
             ):
                 fields.append(nxt)
 
-            if length is None:
+            if size is None:
                 break
 
             field.first = first
             if isinstance(field.typeval, OpaqueValue):
-                field.typeval.set_expected_size(length)
+                field.typeval.set_expected_size(size)
 
             if field.set and isinstance(field.typeval, OpaqueValue):
                 field.first = UNDEFINED
@@ -1057,7 +1057,7 @@ class MessageValue(TypeValue):
 
         for l in incoming:
             if (
-                l.length != UNDEFINED
+                l.size != UNDEFINED
                 and self._fields[l.source.name].set
                 and self.__simplified(l.condition) == TRUE
             ):
@@ -1068,7 +1068,7 @@ class MessageValue(TypeValue):
 
         return all(
             (v.name in self._fields and self._fields[v.name].set) or v.name == "Message"
-            for v in valid_edge.length.variables()
+            for v in valid_edge.size.variables()
         )
 
     @property
@@ -1107,7 +1107,7 @@ class MessageValue(TypeValue):
         if field:
             if isinstance(field.typeval, ScalarValue):
                 self._simplified_mapping[field.name_variable] = field.typeval.expr
-            self._simplified_mapping[field.name_length] = field.typeval.size
+            self._simplified_mapping[field.name_size] = field.typeval.size
             self._simplified_mapping[field.name_first] = field.first
             self._simplified_mapping[field.name_last] = field.last
             self._simplified_mapping[self.__message_last_name] = field.last
@@ -1118,7 +1118,7 @@ class MessageValue(TypeValue):
             if isinstance(v.typeval, ScalarValue) and v.set:
                 self._simplified_mapping[v.name_variable] = v.typeval.expr
             if isinstance(v.typeval, ScalarValue) or v.set:
-                self._simplified_mapping[v.name_length] = v.typeval.size
+                self._simplified_mapping[v.name_size] = v.typeval.size
             if isinstance(v.first, Number):
                 self._simplified_mapping[v.name_first] = v.first
             if isinstance(v.last, Number):
@@ -1170,7 +1170,7 @@ class MessageValue(TypeValue):
         name_variable: Variable
         name_first: First
         name_last: Last
-        name_length: Length
+        name_size: Size
         prev: str
         next: str
 
@@ -1181,17 +1181,17 @@ class MessageValue(TypeValue):
             name_variable: Variable = None,
             name_first: First = None,
             name_last: Last = None,
-            name_length: Length = None,
+            name_size: Size = None,
         ):
             # pylint: disable=too-many-arguments
-            assert name or (name_variable and name_first and name_last and name_length)
+            assert name or (name_variable and name_first and name_last and name_size)
             self.typeval = t
             self.__is_scalar = isinstance(self.typeval, ScalarValue)
             self.first: Expr = UNDEFINED
             self.name_variable = name_variable if name_variable else Variable(name)
             self.name_first = name_first if name_first else First(name)
             self.name_last = name_last if name_last else Last(name)
-            self.name_length = name_length if name_length else Length(name)
+            self.name_size = name_size if name_size else Size(name)
             self.prev = ""
             self.next = ""
 

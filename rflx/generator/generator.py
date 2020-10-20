@@ -351,7 +351,7 @@ class Generator:
         unit += self.__create_message_last_function(message)
         unit += self.__create_path_condition_function(message)
         unit += self.__create_field_condition_function(message)
-        unit += self.__create_field_length_function(message)
+        unit += self.__create_field_size_function(message)
         unit += self.__create_field_first_function(message)
         unit += self.__create_field_last_function()
         unit += self.__create_predecessor_function()
@@ -927,8 +927,8 @@ class Generator:
             ],
         )
 
-    def __create_field_length_function(self, message: Message) -> UnitPart:
-        def length(field: Field, message: Message) -> Expr:
+    def __create_field_size_function(self, message: Message) -> UnitPart:
+        def size(field: Field, message: Message) -> Expr:
             def substituted(expression: expr.Expr) -> Expr:
                 return (
                     expression.substituted(
@@ -946,21 +946,21 @@ class Generator:
             cases: List[Tuple[Expr, Expr]] = []
             for target, links in target_links:
                 field_type = message.types[target]
-                length: Expr
+                size: Expr
                 if isinstance(field_type, Scalar):
-                    length = Size(self.prefix * common.full_base_type_name(field_type))
+                    size = Size(self.prefix * common.full_base_type_name(field_type))
                 else:
                     if len(links) == 1:
-                        length = substituted(links[0].length)
+                        size = substituted(links[0].size)
                     else:
-                        length = If(
-                            [(substituted(l.condition), substituted(l.length)) for l in links],
+                        size = If(
+                            [(substituted(l.condition), substituted(l.size)) for l in links],
                             Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
                         )
                 cases.append(
                     (
                         Variable(target.affixed_name),
-                        length,
+                        size,
                     )
                 )
 
@@ -972,7 +972,7 @@ class Generator:
             return Case(Variable("Fld"), cases)
 
         specification = FunctionSpecification(
-            "Field_Length",
+            "Field_Size",
             const.TYPES_BIT_LENGTH,
             [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
@@ -995,10 +995,7 @@ class Generator:
                     specification,
                     Case(
                         Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
-                        [
-                            (Variable(f.affixed_name), length(f, message))
-                            for f in message.all_fields
-                        ],
+                        [(Variable(f.affixed_name), size(f, message)) for f in message.all_fields],
                     ),
                 )
             ],
@@ -1109,7 +1106,7 @@ class Generator:
                     specification,
                     Add(
                         Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                        Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
+                        Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                         -Number(1),
                     ),
                 )
@@ -1122,7 +1119,7 @@ class Generator:
             c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
             c = c.substituted(
                 mapping={
-                    expr.Length(field.name): expr.Variable("Length"),
+                    expr.Size(field.name): expr.Variable("Size"),
                     expr.Last(field.name): expr.Call(
                         "Field_Last",
                         [expr.Variable("Ctx"), expr.Variable(field.affixed_name, immutable=True)],
@@ -1143,8 +1140,8 @@ class Generator:
 
         parameters = [Parameter(["Ctx"], "Context"), Parameter(["Val"], "Field_Dependent_Value")]
 
-        if common.length_dependent_condition(message):
-            parameters.append(Parameter(["Length"], const.TYPES_BIT_LENGTH, Number(0)))
+        if common.size_dependent_condition(message):
+            parameters.append(Parameter(["Size"], const.TYPES_BIT_LENGTH, Number(0)))
 
         specification = FunctionSpecification("Field_Condition", "Boolean", parameters)
 
@@ -1318,8 +1315,8 @@ class Generator:
                         Variable("First"),
                     ),
                     Equal(
-                        Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
-                        Variable("Length"),
+                        Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                        Variable("Size"),
                     ),
                 )
             ],
@@ -1339,9 +1336,9 @@ class Generator:
                             [Ghost()],
                         ),
                         ObjectDeclaration(
-                            ["Length"],
+                            ["Size"],
                             const.TYPES_BIT_LENGTH,
-                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
+                            Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                             True,
                             [Ghost()],
                         ),
@@ -1428,7 +1425,7 @@ class Generator:
                                             [Variable("Ctx"), Variable("Fld")],
                                         ),
                                         Call(
-                                            "Field_Length",
+                                            "Field_Size",
                                             [Variable("Ctx"), Variable("Fld")],
                                         ),
                                     ]
@@ -1656,16 +1653,16 @@ class Generator:
                             Div(Last(const.TYPES_BIT_INDEX), Number(2)),
                         ),
                         GreaterEqual(
-                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]), Number(0)
+                            Call("Field_Size", [Variable("Ctx"), Variable("Fld")]), Number(0)
                         ),
                         LessEqual(
-                            Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
+                            Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                             Div(Last(const.TYPES_BIT_LENGTH), Number(2)),
                         ),
                         LessEqual(
                             Add(
                                 Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                                Call("Field_Length", [Variable("Ctx"), Variable("Fld")]),
+                                Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                             ),
                             Div(Last(const.TYPES_BIT_LENGTH), Number(2)),
                         ),
@@ -1801,7 +1798,7 @@ class Generator:
                                 ),
                                 Greater(
                                     Call(
-                                        "Field_Length",
+                                        "Field_Size",
                                         [Variable("Ctx"), Variable(f.affixed_name)],
                                     ),
                                     Number(0),
@@ -1822,14 +1819,14 @@ class Generator:
                                     + (
                                         [
                                             Call(
-                                                "Field_Length",
+                                                "Field_Size",
                                                 [
                                                     Variable("Ctx"),
                                                     Variable(f.affixed_name),
                                                 ],
                                             ),
                                         ]
-                                        if common.length_dependent_condition(message)
+                                        if common.size_dependent_condition(message)
                                         else []
                                     ),
                                 ),
@@ -2063,7 +2060,7 @@ class Generator:
                                             ],
                                         ),
                                         Call(
-                                            "Field_Length",
+                                            "Field_Size",
                                             [
                                                 Variable("Ctx"),
                                                 Variable(f.affixed_name),

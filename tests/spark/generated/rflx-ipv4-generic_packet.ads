@@ -149,7 +149,7 @@ is
        and Val.Fld in Field'Range
        and Valid_Predecessor (Ctx, Val.Fld);
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length with
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
        Valid_Next (Ctx, Fld);
 
@@ -300,7 +300,7 @@ is
        and then Field_Last (Ctx, F_Version) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Version, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Version) >= Field_Length (Ctx, F_Version),
+       and then Available_Space (Ctx, F_Version) >= Field_Size (Ctx, F_Version),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Version)
@@ -337,7 +337,7 @@ is
        and then Field_Last (Ctx, F_IHL) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_IHL, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_IHL) >= Field_Length (Ctx, F_IHL),
+       and then Available_Space (Ctx, F_IHL) >= Field_Size (Ctx, F_IHL),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_IHL)
@@ -375,7 +375,7 @@ is
        and then Field_Last (Ctx, F_DSCP) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_DSCP, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_DSCP) >= Field_Length (Ctx, F_DSCP),
+       and then Available_Space (Ctx, F_DSCP) >= Field_Size (Ctx, F_DSCP),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_DSCP)
@@ -414,7 +414,7 @@ is
        and then Field_Last (Ctx, F_ECN) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_ECN, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_ECN) >= Field_Length (Ctx, F_ECN),
+       and then Available_Space (Ctx, F_ECN) >= Field_Size (Ctx, F_ECN),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_ECN)
@@ -454,7 +454,7 @@ is
        and then Field_Last (Ctx, F_Total_Length) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Total_Length, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Total_Length) >= Field_Length (Ctx, F_Total_Length),
+       and then Available_Space (Ctx, F_Total_Length) >= Field_Size (Ctx, F_Total_Length),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Total_Length)
@@ -498,7 +498,7 @@ is
        and then Field_Last (Ctx, F_Identification) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Identification, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Identification) >= Field_Length (Ctx, F_Identification),
+       and then Available_Space (Ctx, F_Identification) >= Field_Size (Ctx, F_Identification),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Identification)
@@ -540,7 +540,7 @@ is
        and then Field_Last (Ctx, F_Flag_R) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Flag_R, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Flag_R) >= Field_Length (Ctx, F_Flag_R),
+       and then Available_Space (Ctx, F_Flag_R) >= Field_Size (Ctx, F_Flag_R),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_R)
@@ -586,7 +586,7 @@ is
        and then Field_Last (Ctx, F_Flag_DF) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Flag_DF, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Flag_DF) >= Field_Length (Ctx, F_Flag_DF),
+       and then Available_Space (Ctx, F_Flag_DF) >= Field_Size (Ctx, F_Flag_DF),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_DF)
@@ -630,7 +630,7 @@ is
        and then Field_Last (Ctx, F_Flag_MF) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Flag_MF, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Flag_MF) >= Field_Length (Ctx, F_Flag_MF),
+       and then Available_Space (Ctx, F_Flag_MF) >= Field_Size (Ctx, F_Flag_MF),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_MF)
@@ -675,7 +675,7 @@ is
        and then Field_Last (Ctx, F_Fragment_Offset) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Fragment_Offset, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Fragment_Offset) >= Field_Length (Ctx, F_Fragment_Offset),
+       and then Available_Space (Ctx, F_Fragment_Offset) >= Field_Size (Ctx, F_Fragment_Offset),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Fragment_Offset)
@@ -721,7 +721,7 @@ is
        and then Field_Last (Ctx, F_TTL) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_TTL, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_TTL) >= Field_Length (Ctx, F_TTL),
+       and then Available_Space (Ctx, F_TTL) >= Field_Size (Ctx, F_TTL),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_TTL)
@@ -768,7 +768,7 @@ is
        and then Field_Last (Ctx, F_Protocol) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Protocol, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Protocol) >= Field_Length (Ctx, F_Protocol),
+       and then Available_Space (Ctx, F_Protocol) >= Field_Size (Ctx, F_Protocol),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Protocol)
@@ -816,7 +816,7 @@ is
        and then Field_Last (Ctx, F_Header_Checksum) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Header_Checksum, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Header_Checksum) >= Field_Length (Ctx, F_Header_Checksum),
+       and then Available_Space (Ctx, F_Header_Checksum) >= Field_Size (Ctx, F_Header_Checksum),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Header_Checksum)
@@ -865,7 +865,7 @@ is
        and then Field_Last (Ctx, F_Source) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Source, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Source) >= Field_Length (Ctx, F_Source),
+       and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Source)
@@ -915,7 +915,7 @@ is
        and then Field_Last (Ctx, F_Destination) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Destination, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Destination) >= Field_Length (Ctx, F_Destination),
+       and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Destination)
@@ -965,10 +965,10 @@ is
        and then Valid_Next (Ctx, F_Options)
        and then Field_Last (Ctx, F_Options) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Options))
-       and then Available_Space (Ctx, F_Options) >= Field_Length (Ctx, F_Options)
+       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
        and then Field_First (Ctx, F_Options) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Options) mod Types.Byte'Size = 0
-       and then Field_Length (Ctx, F_Options) = 0,
+       and then Field_Size (Ctx, F_Options) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Options) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Invalid (Ctx, F_Payload)
@@ -1003,10 +1003,10 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Payload) mod Types.Byte'Size = 0
-       and then Field_Length (Ctx, F_Payload) = 0,
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Payload) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1041,10 +1041,10 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Payload) mod Types.Byte'Size = 0
-       and then Valid_Length (Types.Length (Field_Length (Ctx, F_Payload) / Types.Byte'Size)),
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Valid_Length (Types.Length (Field_Size (Ctx, F_Payload) / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1076,9 +1076,9 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Payload) mod Types.Byte'Size = 0,
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1109,10 +1109,10 @@ is
        and then not Seq_Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Options)
-       and then Field_Length (Ctx, F_Options) > 0
+       and then Field_Size (Ctx, F_Options) > 0
        and then Field_Last (Ctx, F_Options) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Options))
-       and then Available_Space (Ctx, F_Options) >= Field_Length (Ctx, F_Options),
+       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options),
      Post =>
        not Has_Buffer (Ctx)
        and Options_Sequence.Has_Buffer (Seq_Ctx)
@@ -1170,7 +1170,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
-       and Field_Length (Ctx, F_Options) = Field_Length (Ctx, F_Options)'Old
+       and Field_Size (Ctx, F_Options) = Field_Size (Ctx, F_Options)'Old
        and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
        and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
        and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old

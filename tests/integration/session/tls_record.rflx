@@ -13,10 +13,10 @@ package TLS_Record is
          Legacy_Record_Version : Protocol_Version;
          Length : Length
             then Fragment
-               with Length => Length * 8
+               with Size => Length * 8
                if Tag /= APPLICATION_DATA and Length <= 2**14
             then Encrypted_Record
-               with Length => Length * 8
+               with Size => Length * 8
                if Tag = APPLICATION_DATA and Legacy_Record_Version = TLS_1_2;
          Fragment : Opaque
             then null;
@@ -33,8 +33,8 @@ package TLS_Record is
       message
          Tag : Content_Type
             then Content
-               with Length => Message'Length - 16
-               if Message'Length > 16;
+               with Size => Message'Size - 16
+               if Message'Size > 16;
          Content : Opaque;
       end message;
 

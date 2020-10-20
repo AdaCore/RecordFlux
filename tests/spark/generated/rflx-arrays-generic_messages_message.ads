@@ -118,7 +118,7 @@ is
        and Val.Fld in Field'Range
        and Valid_Predecessor (Ctx, Val.Fld);
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length with
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
        Valid_Next (Ctx, Fld);
 
@@ -206,7 +206,7 @@ is
        and then Field_Last (Ctx, F_Length) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Length, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Length) >= Field_Length (Ctx, F_Length),
+       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Length)
@@ -227,10 +227,10 @@ is
        and then Valid_Next (Ctx, F_Messages)
        and then Field_Last (Ctx, F_Messages) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Messages))
-       and then Available_Space (Ctx, F_Messages) >= Field_Length (Ctx, F_Messages)
+       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
        and then Field_First (Ctx, F_Messages) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Messages) mod Types.Byte'Size = 0
-       and then Field_Length (Ctx, F_Messages) = 0,
+       and then Field_Size (Ctx, F_Messages) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Messages) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -247,10 +247,10 @@ is
        and then not Seq_Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Messages)
-       and then Field_Length (Ctx, F_Messages) > 0
+       and then Field_Size (Ctx, F_Messages) > 0
        and then Field_Last (Ctx, F_Messages) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Messages))
-       and then Available_Space (Ctx, F_Messages) >= Field_Length (Ctx, F_Messages),
+       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages),
      Post =>
        not Has_Buffer (Ctx)
        and Inner_Messages_Sequence.Has_Buffer (Seq_Ctx)
@@ -292,7 +292,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
-       and Field_Length (Ctx, F_Messages) = Field_Length (Ctx, F_Messages)'Old
+       and Field_Size (Ctx, F_Messages) = Field_Size (Ctx, F_Messages)'Old
        and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old,
      Depends =>
        (Ctx => (Ctx, Seq_Ctx), Seq_Ctx => Seq_Ctx);

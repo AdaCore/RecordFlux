@@ -88,14 +88,14 @@ package ICMP is
                if Tag = Redirect;
          Gateway_Internet_Address : Gateway_Internet_Address
             then Data
-               with Length => 224;
+               with Size => 224;
          Pointer : Pointer;
          Unused_24 : Unused_24
             then Data
-               with Length => 224;
+               with Size => 224;
          Unused_32 : Unused_32
             then Data
-               with Length => 224;
+               with Size => 224;
          Identifier : Identifier;
          Sequence_Number : Sequence_Number
             then Originate_Timestamp
@@ -103,7 +103,7 @@ package ICMP is
             then null
                if Tag = Information_Request or Tag = Information_Reply
             then Data
-               with Length => Message'Last - Sequence_Number'Last
+               with Size => Message'Last - Sequence_Number'Last
                if Tag = Echo_Reply or Tag = Echo_Request;
          Originate_Timestamp : Timestamp;
          Receive_Timestamp : Timestamp;

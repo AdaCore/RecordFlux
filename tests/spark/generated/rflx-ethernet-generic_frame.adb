@@ -97,7 +97,7 @@ is
           when F_Payload | F_Final =>
              False));
 
-   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value; Length : Types.Bit_Length := 0) return Boolean is
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value; Size : Types.Bit_Length := 0) return Boolean is
      ((case Val.Fld is
           when F_Initial | F_Destination | F_Source =>
              True,
@@ -110,12 +110,12 @@ is
              Types.U64 (Val.Type_Length_Value) <= 1500
              or Types.U64 (Val.Type_Length_Value) >= 1536,
           when F_Payload =>
-             Length / 8 >= 46
-             and Length / 8 <= 1500,
+             Size / 8 >= 46
+             and Size / 8 <= 1500,
           when F_Final =>
              False));
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length is
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
      ((case Ctx.Cursors (Fld).Predecessor is
           when F_Initial =>
              (case Fld is
@@ -233,7 +233,7 @@ is
                  Types.Unreachable_Bit_Length)));
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1);
+     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
      ((case Fld is
@@ -347,9 +347,9 @@ is
      (Ctx.Buffer /= null
       and Ctx.First <= Types.Bit_Index'Last / 2
       and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
-      and Field_Length (Ctx, Fld) >= 0
-      and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_Size (Ctx, Fld) >= 0
+      and Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
       and Ctx.First <= Field_First (Ctx, Fld)
       and Ctx.Last >= Field_Last (Ctx, Fld))
     with
@@ -379,7 +379,7 @@ is
        and Ctx.Cursors (Fld).Predecessor = Ctx.Cursors (Fld).Predecessor'Old
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
-       and Field_Length (Ctx, Fld) = Field_Length (Ctx, Fld)'Old
+       and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
        and (case Fld is
                when F_Destination =>
                   Invalid (Ctx, F_Destination)
@@ -440,11 +440,11 @@ is
    is
       First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
-      Length : constant Types.Bit_Length := Field_Length (Ctx, Fld) with
+      Size : constant Types.Bit_Length := Field_Size (Ctx, Fld) with
         Ghost;
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
-                     and Field_Length (Ctx, Fld) = Length);
+                     and Field_Size (Ctx, Fld) = Size);
       case Fld is
          when F_Destination =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
@@ -455,7 +455,7 @@ is
             Ctx.Cursors (F_Source) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Destination) := (S_Invalid, Ctx.Cursors (F_Destination).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Source =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Type_Length) := (S_Invalid, F_Final);
@@ -464,7 +464,7 @@ is
             Ctx.Cursors (F_Type_Length_TPID) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Source) := (S_Invalid, Ctx.Cursors (F_Source).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Type_Length_TPID =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Type_Length) := (S_Invalid, F_Final);
@@ -472,29 +472,29 @@ is
             Ctx.Cursors (F_TPID) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Type_Length_TPID) := (S_Invalid, Ctx.Cursors (F_Type_Length_TPID).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_TPID =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Type_Length) := (S_Invalid, F_Final);
             Ctx.Cursors (F_TCI) := (S_Invalid, F_Final);
             Ctx.Cursors (F_TPID) := (S_Invalid, Ctx.Cursors (F_TPID).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_TCI =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Type_Length) := (S_Invalid, F_Final);
             Ctx.Cursors (F_TCI) := (S_Invalid, Ctx.Cursors (F_TCI).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Type_Length =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Type_Length) := (S_Invalid, Ctx.Cursors (F_Type_Length).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Payload =>
             Ctx.Cursors (F_Payload) := (S_Invalid, Ctx.Cursors (F_Payload).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
       end case;
    end Reset_Dependent_Fields;
 
@@ -556,7 +556,7 @@ is
             Value := Get_Field_Value (Ctx, Fld);
             if
               Valid_Value (Value)
-              and Field_Condition (Ctx, Value, Field_Length (Ctx, Fld))
+              and Field_Condition (Ctx, Value, Field_Size (Ctx, Fld))
             then
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
@@ -783,7 +783,7 @@ is
        and then Has_Buffer (Ctx)
        and then Val.Fld in Field'Range
        and then Valid_Next (Ctx, Val.Fld)
-       and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
+       and then Available_Space (Ctx, Val.Fld) >= Field_Size (Ctx, Val.Fld)
        and then (for all F in Field'Range =>
                     (if
                         Structural_Valid (Ctx.Cursors (F))
@@ -919,15 +919,15 @@ is
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Payload;
 
-   procedure Set_Bounded_Payload (Ctx : in out Context; Length : Types.Bit_Length) is
+   procedure Set_Bounded_Payload (Ctx : in out Context; Size : Types.Bit_Length) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant Types.Bit_Index := First + Length - 1;
+      Last : constant Types.Bit_Index := First + Size - 1;
       function Buffer_First return Types.Index is
         (Types.Byte_Index (First));
       function Buffer_Last return Types.Index is
         (Types.Byte_Index (Last));
    begin
-      Initialize_Bounded_Payload (Ctx, Length);
+      Initialize_Bounded_Payload (Ctx, Size);
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Bounded_Payload;
 
@@ -1013,9 +1013,9 @@ is
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload;
 
-   procedure Initialize_Bounded_Payload (Ctx : in out Context; Length : Types.Bit_Length) is
+   procedure Initialize_Bounded_Payload (Ctx : in out Context; Size : Types.Bit_Length) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant Types.Bit_Index := First + Length - 1;
+      Last : constant Types.Bit_Index := First + Size - 1;
    begin
       Reset_Dependent_Fields (Ctx, F_Payload);
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);

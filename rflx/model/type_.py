@@ -146,7 +146,7 @@ class ModularInteger(Integer):
             return [
                 expr.Less(expr.Variable(name), self.__modulus, location=self.location),
                 expr.GreaterEqual(expr.Variable(name), expr.Number(0), location=self.location),
-                expr.Equal(expr.Length(name), self.size, location=self.location),
+                expr.Equal(expr.Size(name), self.size, location=self.location),
             ]
         return [expr.TRUE]
 
@@ -282,7 +282,7 @@ class RangeInteger(Integer):
             return [
                 expr.GreaterEqual(expr.Variable(name), self.first, location=self.location),
                 expr.LessEqual(expr.Variable(name), self.last, location=self.location),
-                expr.Equal(expr.Length(name), self.size, location=self.location),
+                expr.Equal(expr.Size(name), self.size, location=self.location),
             ]
 
         if self.first.simplified() == self.last.simplified():
@@ -450,7 +450,7 @@ class Enumeration(Scalar):
             result.extend(
                 [expr.Equal(expr.Variable(l), v, self.location) for l, v in literals.items()]
             )
-            result.append(expr.Equal(expr.Length(name), self.size, self.location))
+            result.append(expr.Equal(expr.Size(name), self.size, self.location))
             return result
         return [expr.TRUE]
 
@@ -524,7 +524,7 @@ class Array(Composite):
 
     @property
     def element_size(self) -> expr.Expr:
-        return expr.Length(self.element_type.name)
+        return expr.Size(self.element_type.name)
 
     @property
     def serialize(self) -> Dict[str, Any]:

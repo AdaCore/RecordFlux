@@ -75,7 +75,7 @@ def fixture_icmp_checksum_message_value(icmp_message: model.Message) -> pyrflx.M
                         expr.ValueRange(
                             expr.First("Tag"), expr.Sub(expr.First("Checksum"), expr.Number(1))
                         ),
-                        expr.Length("Checksum"),
+                        expr.Size("Checksum"),
                         expr.ValueRange(
                             expr.Add(expr.Last("Checksum"), expr.Number(1)), expr.Last("Message")
                         ),

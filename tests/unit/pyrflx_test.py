@@ -223,7 +223,12 @@ def test_message_value_set_value(tlv_message_value: MessageValue) -> None:
     tlv_message_value.set("Value", v1)
     with pytest.raises(
         ValueError,
-        match="invalid data length: input length is 80 while expected input length is 64",
+        match=(
+            "^"
+            "Error while setting value for field Value:"
+            " invalid data size: input size is 80 while expected input size is 64"
+            "$"
+        ),
     ):
         tlv_message_value.set("Value", v2)
 
@@ -773,7 +778,12 @@ def test_array_assign_invalid(
     array_type_foo_value.set("Length", 42)
     with pytest.raises(
         ValueError,
-        match="invalid data length: input length is 8 while expected input length is 336",
+        match=(
+            "^"
+            "Error while setting value for field Bytes:"
+            " invalid data size: input size is 8 while expected input size is 336"
+            "$"
+        ),
     ):
         array_type_foo_value.set("Bytes", [intval])
 
@@ -787,12 +797,12 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, data_last = second_arg
     assert checksum_last_plus_one == 32 and data_last == 511
-    checksum_length = kwargs.get("Checksum'Length")
-    assert isinstance(checksum_length, int)
-    assert checksum_length == 16
+    checksum_size = kwargs.get("Checksum'Size")
+    assert isinstance(checksum_size, int)
+    assert checksum_size == 16
 
     checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
-    checksum_bytes += b"\x00" * (checksum_length // 8)
+    checksum_bytes += b"\x00" * (checksum_size // 8)
     checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
     return utils.internet_checksum(checksum_bytes)
 

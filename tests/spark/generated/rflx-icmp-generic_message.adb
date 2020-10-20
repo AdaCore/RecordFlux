@@ -217,7 +217,7 @@ is
           when F_Final =>
              False));
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length is
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
      ((case Ctx.Cursors (Fld).Predecessor is
           when F_Initial =>
              (case Fld is
@@ -471,7 +471,7 @@ is
                  Types.Unreachable_Bit_Length)));
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1);
+     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
      ((case Fld is
@@ -678,9 +678,9 @@ is
      (Ctx.Buffer /= null
       and Ctx.First <= Types.Bit_Index'Last / 2
       and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
-      and Field_Length (Ctx, Fld) >= 0
-      and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_Size (Ctx, Fld) >= 0
+      and Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
       and Ctx.First <= Field_First (Ctx, Fld)
       and Ctx.Last >= Field_Last (Ctx, Fld))
     with
@@ -710,7 +710,7 @@ is
        and Ctx.Cursors (Fld).Predecessor = Ctx.Cursors (Fld).Predecessor'Old
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
-       and Field_Length (Ctx, Fld) = Field_Length (Ctx, Fld)'Old
+       and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
        and (case Fld is
                when F_Tag =>
                   Invalid (Ctx, F_Tag)
@@ -987,11 +987,11 @@ is
    is
       First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
-      Length : constant Types.Bit_Length := Field_Length (Ctx, Fld) with
+      Size : constant Types.Bit_Length := Field_Size (Ctx, Fld) with
         Ghost;
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
-                     and Field_Length (Ctx, Fld) = Length);
+                     and Field_Size (Ctx, Fld) = Size);
       case Fld is
          when F_Tag =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
@@ -1011,7 +1011,7 @@ is
             Ctx.Cursors (F_Code_Destination_Unreachable) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Tag) := (S_Invalid, Ctx.Cursors (F_Tag).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Code_Destination_Unreachable =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1029,7 +1029,7 @@ is
             Ctx.Cursors (F_Code_Redirect) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Code_Destination_Unreachable) := (S_Invalid, Ctx.Cursors (F_Code_Destination_Unreachable).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Code_Redirect =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1046,7 +1046,7 @@ is
             Ctx.Cursors (F_Code_Time_Exceeded) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Code_Redirect) := (S_Invalid, Ctx.Cursors (F_Code_Redirect).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Code_Time_Exceeded =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1062,7 +1062,7 @@ is
             Ctx.Cursors (F_Code_Zero) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Code_Time_Exceeded) := (S_Invalid, Ctx.Cursors (F_Code_Time_Exceeded).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Code_Zero =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1077,7 +1077,7 @@ is
             Ctx.Cursors (F_Checksum) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Code_Zero) := (S_Invalid, Ctx.Cursors (F_Code_Zero).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Checksum =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1091,7 +1091,7 @@ is
             Ctx.Cursors (F_Gateway_Internet_Address) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Checksum) := (S_Invalid, Ctx.Cursors (F_Checksum).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Gateway_Internet_Address =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1104,7 +1104,7 @@ is
             Ctx.Cursors (F_Identifier) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Gateway_Internet_Address) := (S_Invalid, Ctx.Cursors (F_Gateway_Internet_Address).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Identifier =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1116,7 +1116,7 @@ is
             Ctx.Cursors (F_Pointer) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Identifier) := (S_Invalid, Ctx.Cursors (F_Identifier).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Pointer =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1127,7 +1127,7 @@ is
             Ctx.Cursors (F_Unused_32) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Pointer) := (S_Invalid, Ctx.Cursors (F_Pointer).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Unused_32 =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1137,7 +1137,7 @@ is
             Ctx.Cursors (F_Sequence_Number) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Unused_32) := (S_Invalid, Ctx.Cursors (F_Unused_32).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Sequence_Number =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1146,7 +1146,7 @@ is
             Ctx.Cursors (F_Unused_24) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Sequence_Number) := (S_Invalid, Ctx.Cursors (F_Sequence_Number).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Unused_24 =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
@@ -1154,29 +1154,29 @@ is
             Ctx.Cursors (F_Originate_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Unused_24) := (S_Invalid, Ctx.Cursors (F_Unused_24).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Originate_Timestamp =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Data) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Originate_Timestamp) := (S_Invalid, Ctx.Cursors (F_Originate_Timestamp).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Data =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Data) := (S_Invalid, Ctx.Cursors (F_Data).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Receive_Timestamp =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Receive_Timestamp) := (S_Invalid, Ctx.Cursors (F_Receive_Timestamp).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Transmit_Timestamp =>
             Ctx.Cursors (F_Transmit_Timestamp) := (S_Invalid, Ctx.Cursors (F_Transmit_Timestamp).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
       end case;
    end Reset_Dependent_Fields;
 
@@ -2152,7 +2152,7 @@ is
        and then Has_Buffer (Ctx)
        and then Val.Fld in Field'Range
        and then Valid_Next (Ctx, Val.Fld)
-       and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
+       and then Available_Space (Ctx, Val.Fld) >= Field_Size (Ctx, Val.Fld)
        and then (for all F in Field'Range =>
                     (if
                         Structural_Valid (Ctx.Cursors (F))
@@ -2426,15 +2426,15 @@ is
       Process_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Data;
 
-   procedure Set_Bounded_Data (Ctx : in out Context; Length : Types.Bit_Length) is
+   procedure Set_Bounded_Data (Ctx : in out Context; Size : Types.Bit_Length) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
-      Last : constant Types.Bit_Index := First + Length - 1;
+      Last : constant Types.Bit_Index := First + Size - 1;
       function Buffer_First return Types.Index is
         (Types.Byte_Index (First));
       function Buffer_Last return Types.Index is
         (Types.Byte_Index (Last));
    begin
-      Initialize_Bounded_Data (Ctx, Length);
+      Initialize_Bounded_Data (Ctx, Size);
       Process_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Bounded_Data;
 
@@ -2885,9 +2885,9 @@ is
       Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
    end Initialize_Data;
 
-   procedure Initialize_Bounded_Data (Ctx : in out Context; Length : Types.Bit_Length) is
+   procedure Initialize_Bounded_Data (Ctx : in out Context; Size : Types.Bit_Length) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
-      Last : constant Types.Bit_Index := First + Length - 1;
+      Last : constant Types.Bit_Index := First + Size - 1;
    begin
       Reset_Dependent_Fields (Ctx, F_Data);
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);

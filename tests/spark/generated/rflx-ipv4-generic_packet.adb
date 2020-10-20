@@ -177,7 +177,7 @@ is
           when F_Final =>
              False));
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length is
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
      ((case Ctx.Cursors (Fld).Predecessor is
           when F_Initial =>
              (case Fld is
@@ -404,7 +404,7 @@ is
                  Types.Unreachable_Bit_Length)));
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     (Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) - 1);
+     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
      ((case Fld is
@@ -571,9 +571,9 @@ is
      (Ctx.Buffer /= null
       and Ctx.First <= Types.Bit_Index'Last / 2
       and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
-      and Field_Length (Ctx, Fld) >= 0
-      and Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and Field_First (Ctx, Fld) + Field_Length (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_Size (Ctx, Fld) >= 0
+      and Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
       and Ctx.First <= Field_First (Ctx, Fld)
       and Ctx.Last >= Field_Last (Ctx, Fld))
     with
@@ -603,7 +603,7 @@ is
        and Ctx.Cursors (Fld).Predecessor = Ctx.Cursors (Fld).Predecessor'Old
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
-       and Field_Length (Ctx, Fld) = Field_Length (Ctx, Fld)'Old
+       and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
        and (case Fld is
                when F_Version =>
                   Invalid (Ctx, F_Version)
@@ -914,11 +914,11 @@ is
    is
       First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
-      Length : constant Types.Bit_Length := Field_Length (Ctx, Fld) with
+      Size : constant Types.Bit_Length := Field_Size (Ctx, Fld) with
         Ghost;
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
-                     and Field_Length (Ctx, Fld) = Length);
+                     and Field_Size (Ctx, Fld) = Size);
       case Fld is
          when F_Version =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
@@ -939,7 +939,7 @@ is
             Ctx.Cursors (F_IHL) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Version) := (S_Invalid, Ctx.Cursors (F_Version).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_IHL =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -958,7 +958,7 @@ is
             Ctx.Cursors (F_DSCP) := (S_Invalid, F_Final);
             Ctx.Cursors (F_IHL) := (S_Invalid, Ctx.Cursors (F_IHL).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_DSCP =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -976,7 +976,7 @@ is
             Ctx.Cursors (F_ECN) := (S_Invalid, F_Final);
             Ctx.Cursors (F_DSCP) := (S_Invalid, Ctx.Cursors (F_DSCP).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_ECN =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -993,7 +993,7 @@ is
             Ctx.Cursors (F_Total_Length) := (S_Invalid, F_Final);
             Ctx.Cursors (F_ECN) := (S_Invalid, Ctx.Cursors (F_ECN).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Total_Length =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1009,7 +1009,7 @@ is
             Ctx.Cursors (F_Identification) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Total_Length) := (S_Invalid, Ctx.Cursors (F_Total_Length).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Identification =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1024,7 +1024,7 @@ is
             Ctx.Cursors (F_Flag_R) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Identification) := (S_Invalid, Ctx.Cursors (F_Identification).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Flag_R =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1038,7 +1038,7 @@ is
             Ctx.Cursors (F_Flag_DF) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Flag_R) := (S_Invalid, Ctx.Cursors (F_Flag_R).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Flag_DF =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1051,7 +1051,7 @@ is
             Ctx.Cursors (F_Flag_MF) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Flag_DF) := (S_Invalid, Ctx.Cursors (F_Flag_DF).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Flag_MF =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1063,7 +1063,7 @@ is
             Ctx.Cursors (F_Fragment_Offset) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Flag_MF) := (S_Invalid, Ctx.Cursors (F_Flag_MF).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Fragment_Offset =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1074,7 +1074,7 @@ is
             Ctx.Cursors (F_TTL) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Fragment_Offset) := (S_Invalid, Ctx.Cursors (F_Fragment_Offset).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_TTL =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1084,7 +1084,7 @@ is
             Ctx.Cursors (F_Protocol) := (S_Invalid, F_Final);
             Ctx.Cursors (F_TTL) := (S_Invalid, Ctx.Cursors (F_TTL).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Protocol =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1093,7 +1093,7 @@ is
             Ctx.Cursors (F_Header_Checksum) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Protocol) := (S_Invalid, Ctx.Cursors (F_Protocol).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Header_Checksum =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
@@ -1101,29 +1101,29 @@ is
             Ctx.Cursors (F_Source) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Header_Checksum) := (S_Invalid, Ctx.Cursors (F_Header_Checksum).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Source =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Destination) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Source) := (S_Invalid, Ctx.Cursors (F_Source).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Destination =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Destination) := (S_Invalid, Ctx.Cursors (F_Destination).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Options =>
             Ctx.Cursors (F_Payload) := (S_Invalid, F_Final);
             Ctx.Cursors (F_Options) := (S_Invalid, Ctx.Cursors (F_Options).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
          when F_Payload =>
             Ctx.Cursors (F_Payload) := (S_Invalid, Ctx.Cursors (F_Payload).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Length (Ctx, Fld) = Length);
+                           and Field_Size (Ctx, Fld) = Size);
       end case;
    end Reset_Dependent_Fields;
 
@@ -1534,7 +1534,7 @@ is
        and then Has_Buffer (Ctx)
        and then Val.Fld in Field'Range
        and then Valid_Next (Ctx, Val.Fld)
-       and then Available_Space (Ctx, Val.Fld) >= Field_Length (Ctx, Val.Fld)
+       and then Available_Space (Ctx, Val.Fld) >= Field_Size (Ctx, Val.Fld)
        and then (for all F in Field'Range =>
                     (if
                         Structural_Valid (Ctx.Cursors (F))

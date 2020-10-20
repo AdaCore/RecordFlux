@@ -6,12 +6,12 @@ from rflx.expression import (
     First,
     GreaterEqual,
     Last,
-    Length,
     LessEqual,
     Mul,
     NotEqual,
     Number,
     Pow,
+    Size,
     Sub,
     Variable,
 )
@@ -45,7 +45,7 @@ TLV_MESSAGE = Message(
         Link(INITIAL, Field("Tag")),
         Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("Msg_Data"))),
         Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("Msg_Error"))),
-        Link(Field("Length"), Field("Value"), length=Mul(Variable("Length"), Number(8))),
+        Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Value"), FINAL),
     ],
     {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): Opaque()},
@@ -100,8 +100,8 @@ ETHERNET_FRAME = Message(
             Field("Payload"),
             FINAL,
             And(
-                GreaterEqual(Div(Length("Payload"), Number(8)), Number(46)),
-                LessEqual(Div(Length("Payload"), Number(8)), Number(1500)),
+                GreaterEqual(Div(Size("Payload"), Number(8)), Number(46)),
+                LessEqual(Div(Size("Payload"), Number(8)), Number(1500)),
             ),
         ),
     ],
@@ -157,10 +157,10 @@ ARRAYS_MESSAGE = Message(
     "Arrays::Message",
     [
         Link(INITIAL, Field("Length")),
-        Link(Field("Length"), Field("Modular_Vector"), length=Mul(Variable("Length"), Number(8))),
-        Link(Field("Modular_Vector"), Field("Range_Vector"), length=Number(16)),
-        Link(Field("Range_Vector"), Field("Enumeration_Vector"), length=Number(16)),
-        Link(Field("Enumeration_Vector"), Field("AV_Enumeration_Vector"), length=Number(16)),
+        Link(Field("Length"), Field("Modular_Vector"), size=Mul(Variable("Length"), Number(8))),
+        Link(Field("Modular_Vector"), Field("Range_Vector"), size=Number(16)),
+        Link(Field("Range_Vector"), Field("Enumeration_Vector"), size=Number(16)),
+        Link(Field("Enumeration_Vector"), Field("AV_Enumeration_Vector"), size=Number(16)),
         Link(Field("AV_Enumeration_Vector"), FINAL),
     ],
     {
@@ -176,7 +176,7 @@ ARRAYS_INNER_MESSAGE = Message(
     "Arrays::Inner_Message",
     [
         Link(INITIAL, Field("Length")),
-        Link(Field("Length"), Field("Payload"), length=Mul(Variable("Length"), Number(8))),
+        Link(Field("Length"), Field("Payload"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Payload"), FINAL),
     ],
     {Field("Length"): ARRAYS_LENGTH, Field("Payload"): Opaque()},
@@ -187,7 +187,7 @@ ARRAYS_MESSAGES_MESSAGE = Message(
     "Arrays::Messages_Message",
     [
         Link(INITIAL, Field("Length")),
-        Link(Field("Length"), Field("Messages"), length=Mul(Variable("Length"), Number(8))),
+        Link(Field("Length"), Field("Messages"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Messages"), FINAL),
     ],
     {Field("Length"): ARRAYS_LENGTH, Field("Messages"): ARRAYS_INNER_MESSAGES},
@@ -214,7 +214,7 @@ ARRAYS_MODEL = Model(
 EXPRESSION_MESSAGE = Message(
     "Expression::Message",
     [
-        Link(INITIAL, Field("Payload"), length=Number(16)),
+        Link(INITIAL, Field("Payload"), size=Number(16)),
         Link(Field("Payload"), FINAL, Equal(Variable("Payload"), Aggregate(Number(1), Number(2)))),
     ],
     {Field("Payload"): Opaque()},
@@ -228,7 +228,7 @@ DERIVATION_MODEL = Model([*ARRAYS_MODEL.types, DERIVATION_MESSAGE])
 VALID_MESSAGE = UnprovenMessage(
     "P::M",
     [
-        Link(INITIAL, Field("F"), length=Number(16)),
+        Link(INITIAL, Field("F"), size=Number(16)),
         Link(Field("F"), FINAL),
     ],
     {Field("F"): Opaque()},

@@ -9,7 +9,7 @@ package GreenTLS is
       message
          null
             then Data
-               with Length => Message'Length;
+               with Size => Message'Size;
          Data : Opaque;
       end message;
 
@@ -23,7 +23,7 @@ package GreenTLS is
          Tag : Control_Message_Type;
          Length : Control_Message_Length
             then Data
-               with Length => Length * 8;
+               with Size => Length * 8;
          Data : Opaque;
       end message;
 
@@ -33,11 +33,11 @@ package GreenTLS is
       message
          Key_Length : Key_Length
             then Key
-               with Length => Key_Length * 8;
+               with Size => Key_Length * 8;
          Key : Opaque;
          IV_Length : Key_Length
             then IV
-               with Length => IV_Length * 8;
+               with Size => IV_Length * 8;
          IV : Opaque;
       end message;
 
@@ -72,7 +72,7 @@ package GreenTLS is
          Tag : Application_Control_Message_Type;
          Length : Application_Control_Message_Length
             then Data
-               with Length => Length * 8;
+               with Size => Length * 8;
          Data : Opaque;
       end message;
 
@@ -103,7 +103,7 @@ package GreenTLS is
       message
          Length : Heartbeat_Data_Length
             then Data
-               with Length => Length * 8;
+               with Size => Length * 8;
          Data : Opaque;
       end message;
 
@@ -112,7 +112,7 @@ package GreenTLS is
          PSK_Key_Exchange_Modes : TLS_Handshake::PSK_Key_Exchange_Modes;  -- FIXME: must only contain PSK_KE and/or PSK_DHE_KE
          Cipher_Suites_Length : TLS_Handshake::Cipher_Suites_Length
             then Cipher_Suites
-               with Length => Cipher_Suites_Length * 8;
+               with Size => Cipher_Suites_Length * 8;
          Cipher_Suites : TLS_Handshake::Cipher_Suites;
          Supported_Groups : TLS_Handshake::Supported_Groups;
          Signature_Algorithms : TLS_Handshake::Signature_Algorithms;
@@ -140,7 +140,7 @@ package GreenTLS is
       message
          Name_Length : Name_Length
             then Name
-               with Length => Name_Length * 8;
+               with Size => Name_Length * 8;
          Name : Opaque;
          Port : Port;
       end message;
@@ -161,7 +161,7 @@ package GreenTLS is
          Request : Keystore_Request_Type;
          Length : Keystore_Payload_Length
             then Payload
-               with Length => Length * 8;
+               with Size => Length * 8;
          Payload : Opaque;
       end message;
 
@@ -180,7 +180,7 @@ package GreenTLS is
          Key_Type : Key_Type;
          Key_Length : Key_Length
             then Key
-               with Length => Key_Length * 8;
+               with Size => Key_Length * 8;
          Key : Opaque;
       end message;
 
@@ -190,7 +190,7 @@ package GreenTLS is
       message
          null
             then PSKs
-               with Length => Message'Length;
+               with Size => Message'Size;
          PSKs : PSKs;
       end message;
 
@@ -215,7 +215,7 @@ package GreenTLS is
          ID : Certificate_ID;
          Length : TLS_Handshake::Certificate_List_Length
             then Certificate_List
-               with Length => Length * 8;
+               with Size => Length * 8;
          Certificate_List : TLS_Handshake::Certificate_Entries;
       end message;
 
@@ -227,7 +227,7 @@ package GreenTLS is
          ID : Certificate_ID;
          Length : KM_Length
             then Data
-               with Length => Length * 8;
+               with Size => Length * 8;
          Data : Opaque;
       end message;
 
@@ -243,7 +243,7 @@ package GreenTLS is
          Session : TLS_Handshake::New_Session_Ticket;
          PSK_Length : KM_Length
             then PSK
-               with Length => PSK_Length * 8;
+               with Size => PSK_Length * 8;
          PSK : Opaque;
       end message;
 
@@ -277,7 +277,7 @@ package GreenTLS is
          Tag : RNG_Message_Type;
          Length : KM_Length
             then Data
-               with Length => Length * 8
+               with Size => Length * 8
                if Tag = RNG_RESPONSE
             then null
                if Tag = RNG_REQUEST;

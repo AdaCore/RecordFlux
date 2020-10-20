@@ -116,7 +116,7 @@ is
        and Val.Fld in Field'Range
        and Valid_Predecessor (Ctx, Val.Fld);
 
-   function Field_Length (Ctx : Context; Fld : Field) return Types.Bit_Length with
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length with
      Pre =>
        Valid_Next (Ctx, Fld);
 
@@ -204,7 +204,7 @@ is
        and then Field_Last (Ctx, F_Length) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Length, To_Base (Val)))
        and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Length) >= Field_Length (Ctx, F_Length),
+       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Length)
@@ -225,10 +225,10 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Payload) mod Types.Byte'Size = 0
-       and then Field_Length (Ctx, F_Payload) = 0,
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Payload) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -249,10 +249,10 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Payload) mod Types.Byte'Size = 0
-       and then Valid_Length (Types.Length (Field_Length (Ctx, F_Payload) / Types.Byte'Size)),
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Valid_Length (Types.Length (Field_Size (Ctx, F_Payload) / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -270,9 +270,9 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Length (Ctx, F_Payload)
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Length (Ctx, F_Payload) mod Types.Byte'Size = 0,
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

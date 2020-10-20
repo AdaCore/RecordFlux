@@ -12,7 +12,7 @@ package TLV is
                if Tag = Msg_Error;
          Length : Length
             then Value
-               with Length => Length * 8;
+               with Size => Length * 8;
          Value  : Opaque;
        end message;
 

@@ -72,7 +72,7 @@ def test_variable(string: str, expected: decl.Declaration) -> None:
     [
         ("X'First", expr.First(expr.Variable("X"))),
         ("X'Last", expr.Last(expr.Variable("X"))),
-        ("X'Length", expr.Length(expr.Variable("X"))),
+        ("X'Size", expr.Size(expr.Variable("X"))),
         ("X'Head", expr.Head(expr.Variable("X"))),
         ("X'Opaque", expr.Opaque(expr.Variable("X"))),
         ("X'Present", expr.Present(expr.Variable("X"))),
@@ -375,7 +375,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
         ),
         ("X::Y (Z) = 42", expr.Equal(expr.Conversion("X::Y", expr.Variable("Z")), expr.Number(42))),
         ("X (Y).Z", expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z")),
-        ("X (Y).Z'Length", expr.Length(expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z"))),
+        ("X (Y).Z'Size", expr.Size(expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z"))),
         (
             "G::E not in P::S (E.D).V",
             expr.NotIn(

@@ -22,7 +22,7 @@ package TLS_Handshake is
          Tag : Handshake_Type;
          Length : Length
             then Payload
-               with Length => Length * 8;
+               with Size => Length * 8;
          Payload : Opaque;
       end message;
 
@@ -60,7 +60,7 @@ package TLS_Handshake is
          Tag : Extension_Type;
          Data_Length : Data_Length
             then Data
-               with Length => 8 * Data_Length;
+               with Size => 8 * Data_Length;
          Data : Opaque;
       end message;
 
@@ -118,20 +118,20 @@ package TLS_Handshake is
       message
          Legacy_Version : Protocol_Version
             then Random
-               with Length => 32 * 8
+               with Size => 32 * 8
                if Legacy_Version = TLS_1_2;
          Random : Opaque;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length
             then Legacy_Session_ID
-               with Length => Legacy_Session_ID_Length * 8;
+               with Size => Legacy_Session_ID_Length * 8;
          Legacy_Session_ID : Opaque;
          Cipher_Suites_Length : Cipher_Suites_Length
             then Cipher_Suites
-               with Length => Cipher_Suites_Length * 8;
+               with Size => Cipher_Suites_Length * 8;
          Cipher_Suites : Cipher_Suites;
          Legacy_Compression_Methods_Length : Legacy_Compression_Methods_Length
             then Legacy_Compression_Methods
-               with Length => Legacy_Compression_Methods_Length * 8;
+               with Size => Legacy_Compression_Methods_Length * 8;
          Legacy_Compression_Methods : Opaque
             then null
                if Message'Last / 8 = Legacy_Compression_Methods'Last / 8
@@ -139,7 +139,7 @@ package TLS_Handshake is
                if Message'Last / 8 /= Legacy_Compression_Methods'Last / 8;
          Extensions_Length : Client_Hello_Extensions_Length
             then Extensions
-               with Length => Extensions_Length * 8;
+               with Size => Extensions_Length * 8;
          Extensions : CH_Extensions;
       end message;
 
@@ -153,21 +153,21 @@ package TLS_Handshake is
       message
          Legacy_Version : Protocol_Version
             then Random
-               with Length => 32 * 8
+               with Size => 32 * 8
                if Legacy_Version = TLS_1_2;
          Random : Opaque;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length
             then Legacy_Session_ID
-               with Length => Legacy_Session_ID_Length * 8;
+               with Size => Legacy_Session_ID_Length * 8;
          Legacy_Session_ID : Opaque;
          Cipher_Suite : Cipher_Suite;
          Legacy_Compression_Method : Legacy_Compression_Method;
          Extensions_Length : Server_Hello_Extensions_Length
             then Extensions
-               with Length => Extensions_Length * 8
+               with Size => Extensions_Length * 8
                if Random /= [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#, 16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#, 16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#, 16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#]
             then HRR_Extensions
-               with Length => Extensions_Length * 8
+               with Size => Extensions_Length * 8
                if Random = [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#, 16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#, 16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#, 16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#];
          Extensions : SH_Extensions
             then null;
@@ -185,7 +185,7 @@ package TLS_Handshake is
       message
          Length : Encrypted_Extensions_Length
             then Extensions
-               with Length => Length * 8;
+               with Size => Length * 8;
          Extensions : EE_Extensions;
       end message;
 
@@ -199,11 +199,11 @@ package TLS_Handshake is
       message
          Certificate_Request_Context_Length : Certificate_Request_Context_Length
             then Certificate_Request_Context
-               with Length => Certificate_Request_Context_Length * 8;
+               with Size => Certificate_Request_Context_Length * 8;
          Certificate_Request_Context : Opaque;
          Extensions_Length : Certificate_Request_Extensions_Length
             then Extensions
-               with Length => Extensions_Length * 8;
+               with Size => Extensions_Length * 8;
          Extensions : CR_Extensions;
       end message;
 
@@ -221,12 +221,12 @@ package TLS_Handshake is
       message
          Cert_Data_Length : Cert_Data_Length
             then Cert_Data
-               with Length => Cert_Data_Length * 8;
+               with Size => Cert_Data_Length * 8;
          Cert_Data : Opaque
             then Extensions_Length;
          Extensions_Length : Certificate_Extensions_Length
             then Extensions
-               with Length => Extensions_Length * 8;
+               with Size => Extensions_Length * 8;
          Extensions : CT_Extensions;
       end message;
 
@@ -237,11 +237,11 @@ package TLS_Handshake is
       message
          Certificate_Request_Context_Length : Certificate_Request_Context_Length
             then Certificate_Request_Context
-               with Length => Certificate_Request_Context_Length * 8;
+               with Size => Certificate_Request_Context_Length * 8;
          Certificate_Request_Context : Opaque;
          Certificate_List_Length : Certificate_List_Length
             then Certificate_List
-               with Length => Certificate_List_Length * 8;
+               with Size => Certificate_List_Length * 8;
          Certificate_List : Certificate_Entries;
       end message;
 
@@ -280,7 +280,7 @@ package TLS_Handshake is
          Algorithm : Signature_Scheme;
          Signature_Length : Signature_Length
             then Signature
-               with Length => Signature_Length * 8;
+               with Size => Signature_Length * 8;
          Signature : Opaque;
       end message;
 
@@ -291,7 +291,7 @@ package TLS_Handshake is
       message
          null
             then Verify_Data
-               with Length => Message'Length;
+               with Size => Message'Size;
          Verify_Data : Opaque;
       end message;
 
@@ -319,15 +319,15 @@ package TLS_Handshake is
          Ticket_Age_Add : Ticket_Age_Add;
          Ticket_Nonce_Length : Ticket_Nonce_Length
             then Ticket_Nonce
-               with Length => Ticket_Nonce_Length * 8;
+               with Size => Ticket_Nonce_Length * 8;
          Ticket_Nonce : Opaque;
          Ticket_Length : Ticket_Length
             then Ticket
-               with Length => Ticket_Length * 8;
+               with Size => Ticket_Length * 8;
          Ticket : Opaque;
          Extensions_Length : New_Session_Ticket_Extensions_Length
             then Extensions
-               with Length => Extensions_Length * 8;
+               with Size => Extensions_Length * 8;
          Extensions : NST_Extensions;
       end message;
 
@@ -354,7 +354,7 @@ package TLS_Handshake is
          Name_Type : Name_Type;
          Length : Name_Length
             then Name
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Name : Opaque;
       end message;
 
@@ -365,7 +365,7 @@ package TLS_Handshake is
       message
          Length : Server_Name_List_Length
             then Server_Name_List
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Server_Name_List : Server_Names;
       end message;
 
@@ -402,7 +402,7 @@ package TLS_Handshake is
       message
          Length : Supported_Versions_Length
             then Versions
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Versions : Protocol_Versions;
       end message;
 
@@ -426,7 +426,7 @@ package TLS_Handshake is
       message
          Length : Cookie_Length
             then Cookie
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Cookie : Opaque;
       end message;
 
@@ -444,7 +444,7 @@ package TLS_Handshake is
       message
          Length : Signature_Algorithms_Length
             then Algorithms
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Algorithms : Signature_Schemes;
       end message;
 
@@ -457,7 +457,7 @@ package TLS_Handshake is
       message
          Length : Signature_Algorithms_Length
             then Algorithms
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Algorithms : Signature_Schemes;
       end message;
 
@@ -487,7 +487,7 @@ package TLS_Handshake is
       message
          Length : Distinguished_Name_Length
             then Name
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Name : Opaque;
       end message;
 
@@ -497,7 +497,7 @@ package TLS_Handshake is
       message
          Length : Certificate_Authorities_Length
             then Authorities
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Authorities : Distinguished_Names;
       end message;
 
@@ -516,11 +516,11 @@ package TLS_Handshake is
       message
          OID_Length : OID_Length
             then OID
-               with Length => 8 * OID_Length;
+               with Size => 8 * OID_Length;
          OID : Opaque;
          Values_Length : Values_Length
             then Values
-               with Length => 8 * Values_Length;
+               with Size => 8 * Values_Length;
          Values : Opaque;
       end message;
 
@@ -530,7 +530,7 @@ package TLS_Handshake is
       message
          Length : Filters_Length
             then Filters
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Filters : Filters;
       end message;
 
@@ -569,7 +569,7 @@ package TLS_Handshake is
       message
          Length : Supported_Groups_Length
             then Groups
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Groups : Named_Groups;
       end message;
 
@@ -587,7 +587,7 @@ package TLS_Handshake is
          Group : Named_Group;
          Length : Key_Exchange_Length
             then Key_Exchange
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Key_Exchange : Opaque;
       end message;
 
@@ -599,7 +599,7 @@ package TLS_Handshake is
       message
          Length : Key_Shares_Length
             then Shares
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Shares : Key_Share_Entries;
       end message;
 
@@ -632,7 +632,7 @@ package TLS_Handshake is
       message
          Length : PSK_Key_Exchange_Modes_Length
             then Modes
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Modes : Key_Exchange_Modes;
       end message;
 
@@ -666,7 +666,7 @@ package TLS_Handshake is
       message
          Length : Identity_Length
             then Identity
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Identity : Opaque;
          Obfuscated_Ticket_Age : Obfuscated_Ticket_Age;
       end message;
@@ -679,7 +679,7 @@ package TLS_Handshake is
       message
          Length : PSK_Binder_Entry_Length
             then PSK_Binder_Entry
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          PSK_Binder_Entry : Opaque;
       end message;
 
@@ -692,11 +692,11 @@ package TLS_Handshake is
       message
          Identities_Length : Identities_Length
             then Identities
-               with Length => 8 * Identities_Length;
+               with Size => 8 * Identities_Length;
          Identities : PSK_Identities;
          Binders_Length : Binders_Length
             then Binders
-               with Length => 8 * Binders_Length;
+               with Size => 8 * Binders_Length;
          Binders : PSK_Binder_Entries;
       end message;
 
@@ -720,7 +720,7 @@ package TLS_Handshake is
       message
          Length : Protocol_Name_Length
             then Name
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Name : Opaque;
       end message;
 
@@ -731,7 +731,7 @@ package TLS_Handshake is
       message
          Length : Protocol_Name_List_Length
             then Protocol_Name_List
-               with Length => 8 * Length;
+               with Size => 8 * Length;
          Protocol_Name_List : Protocol_Names;
       end message;
 

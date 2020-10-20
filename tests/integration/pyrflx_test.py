@@ -3,7 +3,7 @@ from typing import List
 
 import pytest
 
-from rflx.expression import Add, And, First, Last, Length, Number, Sub, ValidChecksum, ValueRange
+from rflx.expression import Add, And, First, Last, Number, Size, Sub, ValidChecksum, ValueRange
 from rflx.identifier import ID
 from rflx.model import FINAL, Link, Message
 from rflx.pyrflx import MessageValue, Package, PyRFLX, TypeValue, utils
@@ -300,12 +300,12 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, data_last = second_arg
     assert checksum_last_plus_one == 32 and data_last == 511
-    checksum_length = kwargs.get("Checksum'Length")
-    assert isinstance(checksum_length, int)
-    assert checksum_length == 16
+    checksum_size = kwargs.get("Checksum'Size")
+    assert isinstance(checksum_size, int)
+    assert checksum_size == 16
 
     checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
-    checksum_bytes += b"\x00" * (checksum_length // 8)
+    checksum_bytes += b"\x00" * (checksum_size // 8)
     checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
     return utils.internet_checksum(checksum_bytes)
 
@@ -331,7 +331,7 @@ def test_no_verification_icmp_checksum(
                 ID("Checksum"): {
                     ID("Checksum"): [
                         ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
-                        Length("Checksum"),
+                        Size("Checksum"),
                         ValueRange(Add(Last("Checksum"), Number(1)), Last("Message")),
                     ]
                 }

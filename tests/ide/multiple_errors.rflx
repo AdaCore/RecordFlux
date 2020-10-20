@@ -59,11 +59,11 @@ package RFLX_Invalid is
       message
          null
             then X
-               with Length => 2 * 8;
+               with Size => 2 * 8;
          -- error: Aggregate element out of range (2 times)
          X : Opaque
             then Y
-               with Length => 5 * 8
+               with Size => 5 * 8
                if X = [1, 256, 20, 500];
          -- error: Aggregate element out of range (3 times)
          Y : R_Array
@@ -89,7 +89,7 @@ package RFLX_Invalid is
       message
          Field : Boolean
             then null
-               --  error: invalid first expression
+               --  error: invalid first aspect
                with First => 0;
       end message;
 
@@ -100,7 +100,7 @@ package RFLX_Invalid is
 
    type PDU1 is
       message
-         Length : R then Data with Length => Length;
+         Length : R then Data with Size => Length;
          Data : Opaque;
       end message;
    for RFLX_Invalid::PDU1 use (Data => RFLX_Invalid::SDU2);
@@ -137,7 +137,7 @@ package RFLX_Invalid is
       message
          Length : R
             then Data
-               with Length => Length
+               with Size => Length
                -- error: Undefined variable
                if Undef_Var > 5
                   -- error: Subsequent field F1 referenced
@@ -148,8 +148,8 @@ package RFLX_Invalid is
                if F1 <= [5, 20];
          F1 : R
             then F2
-               -- error: invalid use of length attribute
-               if F1'Length = 42;
+               -- error: invalid use of size attribute
+               if F1'Size = 42;
          F2 : R
             then null
                -- error: invalid relation between F2 and aggregate
@@ -172,10 +172,10 @@ package RFLX_Invalid is
       message
          Length : R
             then Data1
-               with Length => Length;
+               with Size => Length;
          Data1  : R_Array
             then Data2
-               with Length => Length
+               with Size => Length
                -- error: aggregate element out of range, 2 times
                if Data1 = [1, 7, 1000];
          Data2  : Opaque
@@ -189,7 +189,7 @@ package RFLX_Invalid is
       message
          Length : R
             then Data
-               with Length => Length;
+               with Size => Length;
          Data : M5_Array
             then null
                -- error: invalid array element type
@@ -227,9 +227,9 @@ package RFLX_Invalid is
    type M11 is
       message
          null
-            -- error: fixed size field with length expression
+            -- error: fixed size field with size aspect
             then F1
-               with Length => 24;
+               with Size => 24;
          F1 : Modular_32;
       end message;
 
@@ -255,14 +255,14 @@ package RFLX_Invalid is
       message
          F1 : Modular_32
             then F2
-               -- error: negative length
-               with Length => F1 - 2**33;
+               -- error: negative size
+               with Size => F1 - 2**33;
          F2 : Opaque;
       end message;
 
    type M15 is
       message
-         -- error: unconstrainted field without length expression
+         -- error: unconstrainted field without size aspect
          F1 : Opaque;
       end message;
 
@@ -283,8 +283,8 @@ package RFLX_Invalid is
       message
          F1 : Modular_32
             then null
-               --  error: Length attribute for final field
-               with Length => 32;
+               --  error: size aspect for final field
+               with Size => 32;
       end message;
 
    type Unnecessary_Always_Valid_Enum is (UAVE1, UAVE2, UAVE3, UAVE4) with

@@ -18,7 +18,6 @@ from rflx.expression import (
     Greater,
     GreaterEqual,
     Last,
-    Length,
     Less,
     LessEqual,
     Mod,
@@ -27,6 +26,7 @@ from rflx.expression import (
     Number,
     Or,
     Pow,
+    Size,
     Sub,
     ValidChecksum,
     ValueRange,
@@ -66,7 +66,7 @@ from tests.utils import assert_equal, assert_message_model_error, assert_type_er
 M_NO_REF = UnprovenMessage(
     "P::No_Ref",
     [
-        Link(INITIAL, Field("F1"), length=Number(16)),
+        Link(INITIAL, Field("F1"), size=Number(16)),
         Link(Field("F1"), Field("F2")),
         Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2")),
         Link(
@@ -128,7 +128,7 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
     "P::No_Ref_Deri",
     M_NO_REF,
     [
-        Link(INITIAL, Field("F1"), length=Number(16)),
+        Link(INITIAL, Field("F1"), size=Number(16)),
         Link(Field("F1"), Field("F2")),
         Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2")),
         Link(
@@ -435,8 +435,8 @@ def test_incoming() -> None:
                 Field("Payload"),
                 FINAL,
                 And(
-                    GreaterEqual(Div(Length("Payload"), Number(8)), Number(46)),
-                    LessEqual(Div(Length("Payload"), Number(8)), Number(1500)),
+                    GreaterEqual(Div(Size("Payload"), Number(8)), Number(46)),
+                    LessEqual(Div(Size("Payload"), Number(8)), Number(1500)),
                 ),
             )
         ],
@@ -684,23 +684,23 @@ def test_reference_to_optional_field() -> None:
     )
 
 
-def test_invalid_use_of_length_attribute() -> None:
+def test_invalid_use_of_size_attribute() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, Equal(Length("F1"), Number(32), Location((400, 17)))),
+        Link(Field("F1"), FINAL, Equal(Size("F1"), Number(32), Location((400, 17)))),
     ]
     types = {Field("F1"): MODULAR_INTEGER}
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:400:17: model: error: invalid use of length attribute for "F1"$',
+        r'^<stdin>:400:17: model: error: invalid use of size attribute for "F1"$',
     )
 
 
 def test_invalid_relation_to_opaque() -> None:
     structure = [
         Link(INITIAL, Field("Length")),
-        Link(Field("Length"), Field("Data"), length=Variable("Length")),
+        Link(Field("Length"), Field("Data"), size=Variable("Length")),
         Link(
             Field("Data"),
             FINAL,
@@ -720,7 +720,7 @@ def test_invalid_relation_to_opaque() -> None:
 
 def test_invalid_relation_to_aggregate() -> None:
     structure = [
-        Link(INITIAL, Field("F1"), length=Number(16)),
+        Link(INITIAL, Field("F1"), size=Number(16)),
         Link(
             Field("F1"),
             FINAL,
@@ -770,7 +770,7 @@ def test_opaque_aggregate_out_of_range() -> None:
     f = Field("F")
 
     structure = [
-        Link(INITIAL, f, length=Number(24)),
+        Link(INITIAL, f, size=Number(24)),
         Link(
             f,
             FINAL,
@@ -798,7 +798,7 @@ def test_array_aggregate_out_of_range() -> None:
     f = Field("F")
 
     structure = [
-        Link(INITIAL, f, length=Number(18)),
+        Link(INITIAL, f, size=Number(18)),
         Link(
             f,
             FINAL,
@@ -832,7 +832,7 @@ def test_array_aggregate_invalid_element_type() -> None:
     f = Field("F")
 
     structure = [
-        Link(INITIAL, f, length=Number(18)),
+        Link(INITIAL, f, size=Number(18)),
         Link(
             f,
             FINAL,
@@ -865,7 +865,7 @@ def test_opaque_not_byte_aligned() -> None:
         o = Field(ID("O", location=Location((44, 3))))
         Message(
             "P::M",
-            [Link(INITIAL, Field("P")), Link(Field("P"), o, length=Number(128)), Link(o, FINAL)],
+            [Link(INITIAL, Field("P")), Link(Field("P"), o, size=Number(128)), Link(o, FINAL)],
             {Field("P"): ModularInteger("P::T", Number(4)), o: Opaque()},
         )
 
@@ -884,11 +884,11 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
                 Link(
                     Field("L1"),
                     Field("O1"),
-                    length=Variable("L1"),
+                    size=Variable("L1"),
                     condition=Equal(Mod(Variable("L1"), Number(8)), Number(0)),
                 ),
                 Link(Field("O1"), Field("L2")),
-                Link(Field("L2"), o2, length=Number(128)),
+                Link(Field("L2"), o2, size=Number(128)),
                 Link(o2, FINAL),
             ],
             {
@@ -905,7 +905,7 @@ def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
         "P::M",
         [
             Link(INITIAL, Field("L")),
-            Link(Field("L"), Field("O1"), length=Mul(Number(8), Variable("L"))),
+            Link(Field("L"), Field("O1"), size=Mul(Number(8), Variable("L"))),
             Link(Field("O1"), FINAL),
         ],
         {Field("L"): MODULAR_INTEGER, Field("O1"): Opaque()},
@@ -920,45 +920,45 @@ def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
             Link(
                 Field("L"),
                 Field("O1"),
-                length=Variable("L"),
+                size=Variable("L"),
                 condition=Equal(Mod(Variable("L"), Number(8)), Number(0)),
             ),
-            Link(Field("O1"), Field("O2"), length=Number(128)),
+            Link(Field("O1"), Field("O2"), size=Number(128)),
             Link(Field("O2"), FINAL),
         ],
         {Field("L"): MODULAR_INTEGER, Field("O1"): Opaque(), Field("O2"): Opaque()},
     )
 
 
-def test_opaque_length_not_multiple_of_8() -> None:
+def test_opaque_size_not_multiple_of_8() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: length of opaque field "O"'
+        match=r'^<stdin>:44:3: model: error: size of opaque field "O"'
         " not multiple of 8 bit [(]O[)]",
     ):
         o = Field(ID("O", location=Location((44, 3))))
         Message(
             "P::M",
-            [Link(INITIAL, o, length=Number(68)), Link(o, FINAL)],
+            [Link(INITIAL, o, size=Number(68)), Link(o, FINAL)],
             {o: Opaque()},
         )
 
 
-def test_opaque_length_not_multiple_of_8_dynamic() -> None:
+def test_opaque_size_not_multiple_of_8_dynamic() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: length of opaque field "O" not multiple of 8 bit'
+        match=r'^<stdin>:44:3: model: error: size of opaque field "O" not multiple of 8 bit'
         " [(]L -> O[)]",
     ):
         o = Field(ID("O", location=Location((44, 3))))
         Message(
             "P::M",
-            [Link(INITIAL, Field("L")), Link(Field("L"), o, length=Variable("L")), Link(o, FINAL)],
+            [Link(INITIAL, Field("L")), Link(Field("L"), o, size=Variable("L")), Link(o, FINAL)],
             {Field("L"): MODULAR_INTEGER, o: Opaque()},
         )
 
 
-def test_opaque_length_valid_multiple_of_8_dynamic_cond() -> None:
+def test_opaque_size_valid_multiple_of_8_dynamic_cond() -> None:
     Message(
         "P::M",
         [
@@ -966,7 +966,7 @@ def test_opaque_length_valid_multiple_of_8_dynamic_cond() -> None:
             Link(
                 Field("L"),
                 Field("O"),
-                length=Variable("L"),
+                size=Variable("L"),
                 condition=Equal(Mod(Variable("L"), Number(8)), Number(0)),
             ),
             Link(Field("O"), FINAL),
@@ -993,7 +993,7 @@ def test_prefixed_message_attribute() -> None:
                 first=First("F1"),
             ),
             Link(Field("F2"), FINAL, Equal(Variable("F2"), Number(42))),
-            Link(Field("F3"), Field("F4"), length=Sub(Last("Message"), Last("F3"))),
+            Link(Field("F3"), Field("F4"), size=Sub(Last("Message"), Last("F3"))),
             Link(Field("F4"), FINAL),
         ],
         {
@@ -1021,7 +1021,7 @@ def test_prefixed_message_attribute() -> None:
                 first=First("X_F1"),
             ),
             Link(Field("X_F2"), FINAL, Equal(Variable("X_F2"), Number(42))),
-            Link(Field("X_F3"), Field("X_F4"), length=Add(Last("Message"), -Last("X_F3"))),
+            Link(Field("X_F3"), Field("X_F4"), size=Add(Last("Message"), -Last("X_F3"))),
             Link(Field("X_F4"), FINAL),
         ],
         {
@@ -1105,19 +1105,19 @@ def test_exclusive_conflict() -> None:
     )
 
 
-def test_exclusive_with_length_valid() -> None:
+def test_exclusive_with_size_valid() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), length=Number(32)),
+        Link(Field("F1"), Field("F2"), size=Number(32)),
         Link(
             Field("F2"),
             FINAL,
-            condition=And(Equal(Length("F2"), Number(32)), Less(Variable("F1"), Number(50))),
+            condition=And(Equal(Size("F2"), Number(32)), Less(Variable("F1"), Number(50))),
         ),
         Link(
             Field("F2"),
             Field("F3"),
-            condition=And(Equal(Length("F2"), Number(32)), Greater(Variable("F1"), Number(80))),
+            condition=And(Equal(Size("F2"), Number(32)), Greater(Variable("F1"), Number(80))),
         ),
         Link(Field("F3"), FINAL),
     ]
@@ -1129,12 +1129,12 @@ def test_exclusive_with_length_valid() -> None:
     Message("P::M", structure, types)
 
 
-def test_exclusive_with_length_invalid() -> None:
+def test_exclusive_with_size_invalid() -> None:
     f1 = Field(ID("F1", Location((98, 10))))
     structure = [
-        Link(INITIAL, f1, length=Number(32)),
-        Link(f1, FINAL, condition=Equal(Length("F1"), Number(32), Location((10, 2)))),
-        Link(f1, Field("F2"), condition=Equal(Length("F1"), Number(32), Location((12, 4)))),
+        Link(INITIAL, f1, size=Number(32)),
+        Link(f1, FINAL, condition=Equal(Size("F1"), Number(32), Location((10, 2)))),
+        Link(f1, Field("F2"), condition=Equal(Size("F1"), Number(32), Location((12, 4)))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -1146,8 +1146,8 @@ def test_exclusive_with_length_invalid() -> None:
         types,
         r"^"
         r'<stdin>:98:10: model: error: conflicting conditions for field "F1"\n'
-        r"<stdin>:12:4: model: info: condition 0 [(]F1 -> F2[)]: F1\'Length = 32\n"
-        r"<stdin>:10:2: model: info: condition 1 [(]F1 -> Final[)]: F1\'Length = 32"
+        r"<stdin>:12:4: model: info: condition 0 [(]F1 -> F2[)]: F1\'Size = 32\n"
+        r"<stdin>:10:2: model: info: condition 1 [(]F1 -> Final[)]: F1\'Size = 32"
         r"$",
     )
 
@@ -1387,7 +1387,7 @@ def test_tlv_valid_enum() -> None:
         Link(
             Field("T"),
             Field("V"),
-            length=Mul(Number(8), Variable("L")),
+            size=Mul(Number(8), Variable("L")),
             condition=And(
                 NotEqual(Variable("T"), Variable("TWO")), LessEqual(Variable("L"), Number(8192))
             ),
@@ -1402,10 +1402,10 @@ def test_tlv_valid_enum() -> None:
     Message("P::M", structure, types)
 
 
-def test_invalid_fixed_size_field_with_length() -> None:
+def test_invalid_fixed_size_field_with_size() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), length=Number(300)),
+        Link(Field("F1"), Field("F2"), size=Number(300)),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -1415,7 +1415,7 @@ def test_invalid_fixed_size_field_with_length() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^model: error: fixed size field "F2" with length expression$',
+        r'^model: error: fixed size field "F2" with size aspect$',
     )
 
 
@@ -1488,10 +1488,10 @@ def test_invalid_first_forward_reference() -> None:
     )
 
 
-def test_valid_length_reference() -> None:
+def test_valid_size_reference() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), length=Mul(Number(8), Variable("F1"))),
+        Link(Field("F1"), Field("F2"), size=Mul(Number(8), Variable("F1"))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -1501,10 +1501,10 @@ def test_valid_length_reference() -> None:
     Message("P::M", structure, types)
 
 
-def test_invalid_length_forward_reference() -> None:
+def test_invalid_size_forward_reference() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), length=Variable("F2", location=Location((10, 20)))),
+        Link(Field("F1"), Field("F2"), size=Variable("F2", location=Location((10, 20)))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -1519,10 +1519,10 @@ def test_invalid_length_forward_reference() -> None:
     )
 
 
-def test_invalid_negative_field_length_modular() -> None:
+def test_invalid_negative_field_size_modular() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), length=Sub(Variable("F1"), Number(2))),
+        Link(Field("F1"), Field("F2"), size=Sub(Variable("F1"), Number(2))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -1532,18 +1532,18 @@ def test_invalid_negative_field_length_modular() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^model: error: negative length for field "F2" [(]F1 -> F2[)]$',
+        r'^model: error: negative size for field "F2" [(]F1 -> F2[)]$',
     )
 
 
-def test_invalid_negative_field_length_range_integer() -> None:
+def test_invalid_negative_field_size_range_integer() -> None:
     o = Field(ID("O", location=Location((44, 3))))
     structure = [
         Link(INITIAL, Field("L")),
         Link(
             Field("L"),
             o,
-            length=Mul(Number(8), Sub(Variable("L"), Number(50))),
+            size=Mul(Number(8), Sub(Variable("L"), Number(50))),
         ),
         Link(o, FINAL),
     ]
@@ -1551,11 +1551,11 @@ def test_invalid_negative_field_length_range_integer() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:44:3: model: error: negative length for field "O" [(]L -> O[)]$',
+        r'^<stdin>:44:3: model: error: negative size for field "O" [(]L -> O[)]$',
     )
 
 
-def test_payload_no_length() -> None:
+def test_payload_no_size() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
@@ -1566,11 +1566,11 @@ def test_payload_no_length() -> None:
         Field("F2"): Opaque(),
     }
     assert_message_model_error(
-        structure, types, r'^model: error: unconstrained field "F2" without length expression$'
+        structure, types, r'^model: error: unconstrained field "F2" without size aspect$'
     )
 
 
-def test_array_no_length() -> None:
+def test_array_no_size() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
@@ -1581,7 +1581,7 @@ def test_array_no_length() -> None:
         Field("F2"): ARRAYS_MODULAR_VECTOR,
     }
     assert_message_model_error(
-        structure, types, '^model: error: unconstrained field "F2" without length expression$'
+        structure, types, '^model: error: unconstrained field "F2" without size aspect$'
     )
 
 
@@ -1687,9 +1687,9 @@ def test_field_after_message_start(monkeypatch: Any) -> None:
     )
 
 
-def test_valid_use_message_length() -> None:
+def test_valid_use_message_size() -> None:
     structure = [
-        Link(INITIAL, Field("Verify_Data"), length=Length("Message")),
+        Link(INITIAL, Field("Verify_Data"), size=Size("Message")),
         Link(Field("Verify_Data"), FINAL),
     ]
     types = {Field("Verify_Data"): Opaque()}
@@ -1701,7 +1701,7 @@ def test_valid_use_message_first_last() -> None:
         Link(
             INITIAL,
             Field("Verify_Data"),
-            length=Add(Sub(Last("Message"), First("Message")), Number(1)),
+            size=Add(Sub(Last("Message"), First("Message")), Number(1)),
         ),
         Link(Field("Verify_Data"), FINAL),
     ]
@@ -1983,24 +1983,24 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
     )
 
 
-def test_length_attribute_final() -> None:
+def test_size_attribute_final() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), FINAL, length=Number(100, location=Location((4, 12)))),
+        Link(Field("F2"), FINAL, size=Number(100, location=Location((4, 12)))),
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure, types, '^<stdin>:4:12: model: error: length attribute for final field in "P::M"$'
+        structure, types, '^<stdin>:4:12: model: error: size attribute for final field in "P::M"$'
     )
 
 
-def test_aggregate_equal_valid_length() -> None:
+def test_aggregate_equal_valid_size() -> None:
     structure = [
-        Link(INITIAL, Field("Magic"), length=Number(40)),
+        Link(INITIAL, Field("Magic"), size=Number(40)),
         Link(
             Field("Magic"),
             FINAL,
@@ -2016,9 +2016,9 @@ def test_aggregate_equal_valid_length() -> None:
     Message("P::M", structure, types)
 
 
-def test_aggregate_equal_invalid_length1() -> None:
+def test_aggregate_equal_invalid_size1() -> None:
     structure = [
-        Link(INITIAL, Field("Magic"), length=Number(40)),
+        Link(INITIAL, Field("Magic"), size=Number(40)),
         Link(
             Field("Magic"),
             FINAL,
@@ -2034,14 +2034,14 @@ def test_aggregate_equal_invalid_length1() -> None:
         r"^"
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
-        r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
-        r'model: info: unsatisfied "Magic\'Length = 40"',
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
+        r'model: info: unsatisfied "Magic\'Size = 40"',
     )
 
 
-def test_aggregate_equal_invalid_length2() -> None:
+def test_aggregate_equal_invalid_size2() -> None:
     structure = [
-        Link(INITIAL, Field("Magic"), length=Number(40)),
+        Link(INITIAL, Field("Magic"), size=Number(40)),
         Link(
             Field("Magic"),
             FINAL,
@@ -2057,14 +2057,14 @@ def test_aggregate_equal_invalid_length2() -> None:
         r"^"
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
-        r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
-        r'model: info: unsatisfied "Magic\'Length = 40"',
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
+        r'model: info: unsatisfied "Magic\'Size = 40"',
     )
 
 
-def test_aggregate_inequal_valid_length() -> None:
+def test_aggregate_inequal_valid_size() -> None:
     structure = [
-        Link(INITIAL, Field("Magic"), length=Number(40)),
+        Link(INITIAL, Field("Magic"), size=Number(40)),
         Link(
             Field("Magic"),
             FINAL,
@@ -2080,9 +2080,9 @@ def test_aggregate_inequal_valid_length() -> None:
     Message("P::M", structure, types)
 
 
-def test_aggregate_inequal_invalid_length() -> None:
+def test_aggregate_inequal_invalid_size() -> None:
     structure = [
-        Link(INITIAL, Field("Magic"), length=Number(40)),
+        Link(INITIAL, Field("Magic"), size=Number(40)),
         Link(
             Field("Magic"),
             FINAL,
@@ -2098,14 +2098,14 @@ def test_aggregate_inequal_invalid_length() -> None:
         r"^"
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
-        r'model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
-        r'model: info: unsatisfied "Magic\'Length = 40"',
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
+        r'model: info: unsatisfied "Magic\'Size = 40"',
     )
 
 
-def test_aggregate_equal_array_valid_length() -> None:
+def test_aggregate_equal_array_valid_size() -> None:
     structure = [
-        Link(INITIAL, Field("Magic"), length=Number(14)),
+        Link(INITIAL, Field("Magic"), size=Number(14)),
         Link(
             Field("Magic"),
             FINAL,
@@ -2118,10 +2118,10 @@ def test_aggregate_equal_array_valid_length() -> None:
     Message("P::M", structure, types)
 
 
-def test_aggregate_equal_array_invalid_length() -> None:
+def test_aggregate_equal_array_invalid_size() -> None:
     magic = Field(ID("Magic", Location((3, 5))))
     structure = [
-        Link(INITIAL, magic, length=Number(40, location=Location((19, 17)))),
+        Link(INITIAL, magic, size=Number(40, location=Location((19, 17)))),
         Link(
             magic,
             FINAL,
@@ -2141,20 +2141,20 @@ def test_aggregate_equal_array_invalid_length() -> None:
         r"^"
         r'<stdin>:17:3: model: error: contradicting condition in "P::M"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
-        r'<stdin>:17:3: model: info: unsatisfied "2 [*] Modular\'Length = Magic\'Length"\n'
-        r'<stdin>:66:3: model: info: unsatisfied "Modular\'Length = 7"\n'
-        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Length = 40"',
+        r'<stdin>:17:3: model: info: unsatisfied "2 [*] Modular\'Size = Magic\'Size"\n'
+        r'<stdin>:66:3: model: info: unsatisfied "Modular\'Size = 7"\n'
+        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Size = 40"',
     )
 
 
-def test_aggregate_equal_invalid_length_field() -> None:
+def test_aggregate_equal_invalid_size_field() -> None:
 
     length = Field(ID("Length", Location((2, 5))))
     magic = Field(ID("Magic", Location((3, 5))))
 
     structure = [
         Link(INITIAL, length),
-        Link(length, magic, length=Mul(Number(8), Variable("Length"), location=Location((6, 5)))),
+        Link(length, magic, size=Mul(Number(8), Variable("Length"), location=Location((6, 5)))),
         Link(
             magic,
             FINAL,
@@ -2176,8 +2176,8 @@ def test_aggregate_equal_invalid_length_field() -> None:
         r'<stdin>:10:5: model: error: contradicting condition in "P::M"\n'
         r'<stdin>:2:5: model: info: on path: "Length"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
-        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Length = 8 [*] Length"\n'
-        r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic\'Length"\n'
+        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Size = 8 [*] Length"\n'
+        r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
         r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"'
         r"$",
     )
@@ -2221,7 +2221,7 @@ def test_no_contradiction_multi() -> None:
             ValidChecksum("F3"),
         ),
         (
-            {ID("F2"): [Variable("F1")], ID("F3"): [Variable("F1"), Length("F2")]},
+            {ID("F2"): [Variable("F1")], ID("F3"): [Variable("F1"), Size("F2")]},
             And(ValidChecksum("F2"), ValidChecksum("F3")),
         ),
         (
@@ -2374,9 +2374,9 @@ def test_is_possibly_empty() -> None:
         "P::M",
         [
             Link(INITIAL, a),
-            Link(a, c, condition=Less(Variable("A"), Number(10)), length=Variable("A")),
-            Link(a, b, condition=Greater(Variable("A"), Number(20)), length=Variable("A")),
-            Link(b, c, length=Variable("A")),
+            Link(a, c, condition=Less(Variable("A"), Number(10)), size=Variable("A")),
+            Link(a, b, condition=Greater(Variable("A"), Number(20)), size=Variable("A")),
+            Link(b, c, size=Variable("A")),
             Link(c, FINAL),
         ],
         {a: MODULAR_INTEGER, b: array, c: array},
@@ -2425,7 +2425,7 @@ def test_prefixed_message() -> None:
                     first=First("F1"),
                 ),
                 Link(Field("F2"), FINAL, Equal(Variable("F2"), Variable("True"))),
-                Link(Field("F3"), Field("F4"), length=Variable("F3")),
+                Link(Field("F3"), Field("F4"), size=Variable("F3")),
                 Link(Field("F4"), FINAL),
             ],
             {
@@ -2452,7 +2452,7 @@ def test_prefixed_message() -> None:
                     first=First("X_F1"),
                 ),
                 Link(Field("X_F2"), FINAL, Equal(Variable("X_F2"), Variable("True"))),
-                Link(Field("X_F3"), Field("X_F4"), length=Variable("X_F3")),
+                Link(Field("X_F3"), Field("X_F4"), size=Variable("X_F3")),
                 Link(Field("X_F4"), FINAL),
             ],
             {
@@ -2471,7 +2471,7 @@ def test_merge_message_simple() -> None:
         UnprovenMessage(
             "P::Smpl_Ref",
             [
-                Link(INITIAL, Field("NR_F1"), length=Number(16)),
+                Link(INITIAL, Field("NR_F1"), size=Number(16)),
                 Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("NR_F1"), Field("NR_F2")),
@@ -2511,13 +2511,13 @@ def test_merge_message_complex() -> None:
                     Field("F2"),
                     Field("NR_F1"),
                     LessEqual(Variable("F1"), Number(10)),
-                    length=Number(16),
+                    size=Number(16),
                 ),
                 Link(
                     Field("F3"),
                     Field("NR_F1"),
                     GreaterEqual(Variable("F1"), Number(220)),
-                    length=Number(16),
+                    size=Number(16),
                 ),
                 Link(
                     Field("NR_F3"),
@@ -2574,14 +2574,14 @@ def test_merge_message_recursive() -> None:
         UnprovenMessage(
             "P::Dbl_Ref",
             [
-                Link(INITIAL, Field("SR_NR_F1"), length=Number(16)),
+                Link(INITIAL, Field("SR_NR_F1"), size=Number(16)),
                 Link(
                     Field("SR_NR_F3"),
                     Field("NR_F1"),
                     Equal(Variable("SR_NR_F3"), Variable("P::ONE")),
-                    length=Number(16),
+                    size=Number(16),
                 ),
-                Link(Field("SR_NR_F4"), Field("NR_F1"), length=Number(16)),
+                Link(Field("SR_NR_F4"), Field("NR_F1"), size=Number(16)),
                 Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("SR_NR_F1"), Field("SR_NR_F2")),
@@ -2632,7 +2632,7 @@ def test_merge_message_simple_derived() -> None:
             "P::Smpl_Ref_Deri",
             M_SMPL_REF,
             [
-                Link(INITIAL, Field("NR_F1"), length=Number(16)),
+                Link(INITIAL, Field("NR_F1"), size=Number(16)),
                 Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("NR_F1"), Field("NR_F2")),
@@ -2843,7 +2843,7 @@ def test_message_serialize() -> None:
                         "source": {"kind": "Field", "data": {"identifier": ["Initial"]}},
                         "target": {"kind": "Field", "data": {"identifier": ["Tag"]}},
                         "condition": {"kind": "BooleanTrue", "data": {}},
-                        "length": {
+                        "size": {
                             "kind": "UndefinedExpr",
                             "data": {"negative": False},
                         },
@@ -2859,7 +2859,7 @@ def test_message_serialize() -> None:
                         "source": {"kind": "Field", "data": {"identifier": ["Length"]}},
                         "target": {"kind": "Field", "data": {"identifier": ["Value"]}},
                         "condition": {"kind": "BooleanTrue", "data": {}},
-                        "length": {
+                        "size": {
                             "kind": "Mul",
                             "data": {
                                 "terms": [
@@ -2895,7 +2895,7 @@ def test_message_serialize() -> None:
                                 },
                             },
                         },
-                        "length": {
+                        "size": {
                             "kind": "UndefinedExpr",
                             "data": {"negative": False},
                         },
@@ -2923,7 +2923,7 @@ def test_message_serialize() -> None:
                                 },
                             },
                         },
-                        "length": {
+                        "size": {
                             "kind": "UndefinedExpr",
                             "data": {"negative": False},
                         },
@@ -2939,7 +2939,7 @@ def test_message_serialize() -> None:
                         "source": {"kind": "Field", "data": {"identifier": ["Value"]}},
                         "target": {"kind": "Field", "data": {"identifier": ["Final"]}},
                         "condition": {"kind": "BooleanTrue", "data": {}},
-                        "length": {
+                        "size": {
                             "kind": "UndefinedExpr",
                             "data": {"negative": False},
                         },
