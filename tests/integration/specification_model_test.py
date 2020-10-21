@@ -188,6 +188,30 @@ def test_refinement_invalid_field() -> None:
     )
 
 
+def test_refinement_invalid_condition() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type PDU is
+                  message
+                     null
+                        then Foo
+                           with Size => 8;
+                     Foo : Opaque;
+                  end message;
+               for PDU use (Foo => PDU)
+                  if X < Y + 1;
+            end Test;
+        """,
+        r"^"
+        r'<stdin>:11:22: model: error: unknown field or literal "X"'
+        r' in refinement condition of "Test::PDU"\n'
+        r'<stdin>:11:26: model: error: unknown field or literal "Y"'
+        r' in refinement condition of "Test::PDU"'
+        r"$",
+    )
+
+
 def test_model_name_conflict_messages() -> None:
     assert_error_string(
         """

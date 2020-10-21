@@ -37,6 +37,7 @@ from rflx.model import (
     BOOLEAN,
     FINAL,
     INITIAL,
+    OPAQUE,
     Array,
     DerivedMessage,
     Enumeration,
@@ -3017,4 +3018,24 @@ def test_refinement_invalid_field() -> None:
     assert_type_error(
         Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
         r'^<stdin>:33:22: model: error: invalid field "X" in refinement of "P::M"$',
+    )
+
+
+def test_refinement_invalid_condition() -> None:
+    x = Field("X")
+
+    message = Message("P::M", [Link(INITIAL, x, size=Number(8)), Link(x, FINAL)], {x: OPAQUE})
+
+    assert_type_error(
+        Refinement(
+            "P",
+            message,
+            Field("X"),
+            message,
+            Equal(Variable("Y", location=Location((10, 20))), Number(1)),
+        ),
+        r"^"
+        r'<stdin>:10:20: model: error: unknown field or literal "Y" in refinement condition'
+        r' of "P::M"'
+        r"$",
     )
