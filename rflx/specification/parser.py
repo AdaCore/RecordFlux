@@ -331,20 +331,6 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
     structure: List[Link] = []
 
     for i, component in enumerate(components):
-        if not component.name:
-            error.extend(
-                [
-                    (
-                        "invalid first aspect",
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        then.first.location,
-                    )
-                    for then in component.thens
-                    if then.first != expr.UNDEFINED
-                ]
-            )
-
         source_node = Field(component.name) if component.name else INITIAL
 
         if not component.thens:
