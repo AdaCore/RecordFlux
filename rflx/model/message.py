@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import rflx.typing_ as rty
 from rflx import expression as expr
@@ -1205,7 +1205,7 @@ class DerivedMessage(Message):
     def __init__(
         self,
         identifier: StrID,
-        base: AbstractMessage,
+        base: Message,
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
@@ -1402,7 +1402,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
     def __init__(
         self,
         identifier: StrID,
-        base: AbstractMessage,
+        base: Union[UnprovenMessage, Message],
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
@@ -1420,6 +1420,21 @@ class UnprovenDerivedMessage(UnprovenMessage):
         )
         self.error.extend(base.error)
         self.base = base
+
+        if isinstance(base, (UnprovenDerivedMessage, DerivedMessage)):
+            self.error.append(
+                f'illegal derivation "{self.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+            self.error.append(
+                f'illegal base message type "{base.identifier}"',
+                Subsystem.MODEL,
+                Severity.INFO,
+                base.location,
+            )
+            self.error.propagate()
 
     def copy(
         self,
@@ -1443,7 +1458,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
     def proven(self, skip_proof: bool = False) -> DerivedMessage:
         return DerivedMessage(
             self.identifier,
-            self.base,
+            self.base if isinstance(self.base, Message) else self.base.proven(),
             self.structure,
             self.types,
             self.aspects,

@@ -91,6 +91,20 @@ def test_message_field_size_conflict() -> None:
     )
 
 
+def test_message_derivation_of_derived_type() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type Foo is null message;
+               type Bar is new Foo;
+               type Baz is new Bar;
+            end Test;
+        """,
+        r'^<stdin>:5:16: model: error: illegal derivation "Test::Baz"\n'
+        r'<stdin>:4:16: model: info: illegal base message type "Test::Bar"$',
+    )
+
+
 def test_illegal_redefinition() -> None:
     assert_error_string(
         """
