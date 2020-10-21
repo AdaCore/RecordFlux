@@ -1488,6 +1488,11 @@ class Refinement(mty.Type):
             error,
         )
 
+        self.pdu = pdu
+        self.field = field
+        self.sdu = sdu
+        self.condition = condition
+
         self.error = error or RecordFluxError()
         if len(package.parts) != 1:
             self.error.append(
@@ -1521,10 +1526,22 @@ class Refinement(mty.Type):
                 field.identifier.location,
             )
 
-        self.pdu = pdu
-        self.field = field
-        self.sdu = sdu
-        self.condition = condition
+        for variable in condition.variables():
+            literals = [
+                l
+                for e in pdu.types.values()
+                if isinstance(e, mty.Enumeration)
+                for k in e.literals.keys()
+                for l in [e.package * k, k]
+            ]
+            if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
+                self.error.append(
+                    f'unknown field or literal "{variable.identifier}" in refinement'
+                    f' condition of "{pdu.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    variable.location,
+                )
 
     def __str__(self) -> str:
         condition = f"\n   if {self.condition}" if self.condition != expr.TRUE else ""

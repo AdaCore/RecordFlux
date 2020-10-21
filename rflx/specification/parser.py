@@ -23,7 +23,6 @@ from rflx.model import (
     INITIAL,
     INTERNAL_TYPES,
     Array,
-    Enumeration,
     Field,
     Link,
     Message,
@@ -472,47 +471,23 @@ def create_refinement(refinement: RefinementSpec, types: Sequence[Type]) -> Refi
             refinement.location,
         )
 
-    pdu = messages[refinement.pdu]
-
-    error = RecordFluxError()
-    for variable in refinement.condition.variables():
-        literals = [
-            l for e in pdu.types.values() if isinstance(e, Enumeration) for l in e.literals.keys()
-        ] + [e.package * l for e in types if isinstance(e, Enumeration) for l in e.literals.keys()]
-
-        if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
-            error.append(
-                f'unknown field or literal "{variable.identifier}" in refinement'
-                f' condition of "{refinement.pdu}"',
-                Subsystem.PARSER,
-                Severity.ERROR,
-                variable.location,
-            )
-
     refinement.sdu = qualified_type_name(refinement.sdu, refinement.package)
     if refinement.sdu not in messages:
-        error.append(
+        fail(
             f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"',
             Subsystem.PARSER,
             Severity.ERROR,
             refinement.sdu.location,
         )
-        error.propagate()
 
-    sdu = messages[refinement.sdu]
-
-    result = Refinement(
+    return Refinement(
         refinement.package,
-        pdu,
+        messages[refinement.pdu],
         Field(refinement.field),
-        sdu,
+        messages[refinement.sdu],
         refinement.condition,
         refinement.location,
     )
-
-    result.error.extend(error)
-
-    return result
 
 
 def check_naming(error: RecordFluxError, package: PackageSpec, filename: str = None) -> None:

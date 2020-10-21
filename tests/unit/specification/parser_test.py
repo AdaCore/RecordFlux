@@ -642,30 +642,6 @@ def test_parse_error_refinement_undefined_sdu() -> None:
     )
 
 
-def test_parse_error_refinement_invalid_condition() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type PDU is
-                  message
-                     null
-                        then Foo
-                           with Size => 8;
-                     Foo : Opaque;
-                  end message;
-               for PDU use (Foo => PDU)
-                  if X < Y + 1;
-            end Test;
-        """,
-        r"^"
-        r'<stdin>:11:22: parser: error: unknown field or literal "X"'
-        r' in refinement condition of "Test::PDU"\n'
-        r'<stdin>:11:26: parser: error: unknown field or literal "Y"'
-        r' in refinement condition of "Test::PDU"'
-        r"$",
-    )
-
-
 def test_parse_error_derivation_undefined_type() -> None:
     assert_error_string(
         """
