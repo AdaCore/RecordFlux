@@ -2,7 +2,7 @@ import logging
 from collections import OrderedDict
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from pyparsing import ParseException, ParseFatalException
 
@@ -59,8 +59,8 @@ class Parser:
         self.skip_verification = skip_verification
         self.__specifications: OrderedDict[Path, Optional[Specification]] = OrderedDict()
         self.__evaluated_specifications: Set[ID] = set()
-        self.__types: Dict[ID, Type] = {**BUILTIN_TYPES, **INTERNAL_TYPES}
-        self.__sessions: Dict[ID, Session] = {}
+        self.__types: List[Type] = [*BUILTIN_TYPES.values(), *INTERNAL_TYPES.values()]
+        self.__sessions: List[Session] = []
         self.__cache = Cache(cached)
 
     def parse(self, *specfiles: Path) -> None:
@@ -195,7 +195,7 @@ class Parser:
                 except RecordFluxError as e:
                     error.extend(e)
         try:
-            result = Model(list(self.__types.values()), list(self.__sessions.values()))
+            result = Model(self.__types, self.__sessions)
         except RecordFluxError as e:
             error.extend(e)
 
@@ -211,27 +211,12 @@ class Parser:
 
         error = RecordFluxError()
         self.__evaluate_types(specification, error)
-        self.__evaluate_sessions(specification, error)
+        self.__evaluate_sessions(specification)
         error.propagate()
 
     def __evaluate_types(self, spec: Specification, error: RecordFluxError) -> None:
         for t in spec.package.types:
             t.identifier = ID(spec.package.identifier, t.identifier.location) * t.name
-
-            if t.identifier in self.__types:
-                error.append(
-                    f'duplicate type "{t.identifier}"',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    t.location,
-                )
-                error.append(
-                    f'previous occurrence of "{t.identifier}"',
-                    Subsystem.PARSER,
-                    Severity.INFO,
-                    self.__types[t.identifier].location,
-                )
-                continue
 
             new_type: Type
 
@@ -256,57 +241,36 @@ class Parser:
                 else:
                     raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
 
-                self.__types[t.identifier] = new_type
+                self.__types.append(new_type)
                 error.extend(new_type.error)
 
             except RecordFluxError as e:
                 error.extend(e)
 
-    def __evaluate_sessions(self, spec: Specification, error: RecordFluxError) -> None:
+    def __evaluate_sessions(self, spec: Specification) -> None:
         for s in spec.package.sessions:
-            s.identifier = ID(spec.package.identifier, s.identifier.location) * s.identifier.name
-
-            if s.identifier in self.__types or s.identifier in self.__sessions:
-                error.append(
-                    f'name conflict for session "{s.identifier}"',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
+            self.__sessions.append(
+                Session(
+                    ID(spec.package.identifier, s.identifier.location) * s.identifier.name,
+                    s.initial,
+                    s.final,
+                    s.states,
+                    s.declarations,
+                    s.parameters,
+                    self.__types,
                     s.location,
                 )
-                error.append(
-                    f'previous occurrence of "{s.identifier}"',
-                    Subsystem.PARSER,
-                    Severity.INFO,
-                    self.__types[s.identifier].location
-                    if s.identifier in self.__types
-                    else self.__sessions[s.identifier].location,
-                )
-                continue
-
-            self.__sessions[s.identifier] = Session(
-                s.identifier,
-                s.initial,
-                s.final,
-                s.states,
-                s.declarations,
-                s.parameters,
-                list(self.__types.values()),
-                s.location,
             )
 
 
-def message_types(types: Mapping[ID, Type]) -> Mapping[ID, Message]:
-    return {n: m for n, m in types.items() if isinstance(m, Message)}
-
-
-def create_array(array: ArraySpec, types: Mapping[ID, Type]) -> Array:
+def create_array(array: ArraySpec, types: Sequence[Type]) -> Array:
     array.element_type.identifier = ID(
         array.element_type.full_name.replace("__PACKAGE__", str(array.package)), array.location
     )
 
-    if array.element_type.identifier in types:
-        element_type = types[array.element_type.identifier]
-    else:
+    try:
+        element_type = [t for t in types if array.element_type.identifier == t.identifier][0]
+    except IndexError:
         fail(
             f'undefined element type "{array.element_type.identifier}"',
             Subsystem.PARSER,
@@ -319,7 +283,7 @@ def create_array(array: ArraySpec, types: Mapping[ID, Type]) -> Array:
 
 def create_message(
     message: MessageSpec,
-    types: Mapping[ID, Type],
+    types: Sequence[Type],
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
@@ -345,7 +309,7 @@ def create_message(
 
 def create_message_types(
     message: MessageSpec,
-    types: Mapping[ID, Type],
+    types: Sequence[Type],
     components: Sequence[Component],
 ) -> Dict[Field, Type]:
 
@@ -354,9 +318,9 @@ def create_message_types(
     for component in components:
         if component.name and component.type_name:
             type_name = qualified_type_name(component.type_name, message.package)
-            if type_name not in types:
-                continue
-            field_types[Field(component.name)] = types[type_name]
+            field_type = [t for t in types if t.identifier == type_name]
+            if field_type:
+                field_types[Field(component.name)] = field_type[0]
 
     return field_types
 
@@ -456,15 +420,16 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
 
 def create_derived_message(
     derivation: DerivationSpec,
-    types: Mapping[ID, Type],
+    types: Sequence[Type],
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
     base_name = qualified_type_name(derivation.base, derivation.package)
-    messages = message_types(types)
     error = RecordFluxError()
 
-    if base_name not in types:
+    base_types = [t for t in types if t.identifier == base_name]
+
+    if not base_types:
         fail(
             f'undefined base message "{base_name}" in derived message',
             Subsystem.PARSER,
@@ -472,7 +437,9 @@ def create_derived_message(
             derivation.location,
         )
 
-    if base_name not in messages:
+    base_messages = [t for t in base_types if isinstance(t, Message)]
+
+    if not base_messages:
         error.append(
             f'illegal derivation "{derivation.identifier}"',
             Subsystem.PARSER,
@@ -483,11 +450,11 @@ def create_derived_message(
             f'invalid base message type "{base_name}"',
             Subsystem.PARSER,
             Severity.INFO,
-            types[base_name].location,
+            base_types[0].location,
         )
         error.propagate()
 
-    base = messages[base_name]
+    base = base_messages[0]
 
     if isinstance(base, DerivedMessage):
         error.append(
@@ -520,8 +487,8 @@ def create_proven_message(
     return proven_message
 
 
-def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> Refinement:
-    messages = message_types(types)
+def create_refinement(refinement: RefinementSpec, types: Sequence[Type]) -> Refinement:
+    messages = {t.identifier: t for t in types if isinstance(t, Message)}
 
     refinement.pdu = qualified_type_name(refinement.pdu, refinement.package)
     if refinement.pdu not in messages:
@@ -538,12 +505,7 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
     for variable in refinement.condition.variables():
         literals = [
             l for e in pdu.types.values() if isinstance(e, Enumeration) for l in e.literals.keys()
-        ] + [
-            e.package * l
-            for e in types.values()
-            if isinstance(e, Enumeration)
-            for l in e.literals.keys()
-        ]
+        ] + [e.package * l for e in types if isinstance(e, Enumeration) for l in e.literals.keys()]
 
         if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
             error.append(
@@ -576,19 +538,6 @@ def create_refinement(refinement: RefinementSpec, types: Mapping[ID, Type]) -> R
     )
 
     result.error.extend(error)
-    if result in types.values():
-        result.error.append(
-            f'duplicate refinement with "{refinement.sdu}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            refinement.location,
-        )
-        result.error.append(
-            "previous occurrence",
-            Subsystem.PARSER,
-            Severity.INFO,
-            types[result.identifier].location,
-        )
 
     return result
 

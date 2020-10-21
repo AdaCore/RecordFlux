@@ -174,6 +174,85 @@ def test_refinement_invalid_field() -> None:
     )
 
 
+def test_model_name_conflict_messages() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 256;
+               type PDU is
+                  message
+                     Foo : T;
+                  end message;
+               type PDU is
+                  message
+                     Foo : T;
+                  end message;
+            end Test;
+        """,
+        r'^<stdin>:8:16: model: error: name conflict for type "Test::PDU"\n'
+        r'<stdin>:4:16: model: info: previous occurrence of "Test::PDU"$',
+    )
+
+
+def test_model_conflicting_refinements() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type PDU is
+                  message
+                     null
+                        then Foo
+                           with Size => 8;
+                     Foo : Opaque;
+                  end message;
+               for Test::PDU use (Foo => Test::PDU);
+               for PDU use (Foo => PDU);
+            end Test;
+        """,
+        r'^<stdin>:11:16: model: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
+        r"<stdin>:10:16: model: info: previous occurrence of refinement",
+    )
+
+
+def test_model_name_conflict_derivations() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 256;
+               type Foo is
+                  message
+                     Foo : T;
+                  end message;
+               type Bar is new Test::Foo;
+               type Bar is new Foo;
+            end Test;
+        """,
+        r'^<stdin>:9:16: model: error: name conflict for type "Test::Bar"\n'
+        r'<stdin>:8:16: model: info: previous occurrence of "Test::Bar"',
+    )
+
+
+def test_model_name_conflict_sessions() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type X is mod 2**8;
+
+               generic
+               session X with
+                  Initial => A,
+                  Final => A
+               is
+               begin
+                  state A is null state;
+               end X;
+            end Test;
+        """,
+        r'^<stdin>:5:16: model: error: name conflict for session "Test::X"\n'
+        r'<stdin>:3:16: model: info: previous occurrence of "Test::X"$',
+    )
+
+
 def test_message_with_two_size_fields() -> None:
     p = parser.Parser()
     p.parse_string(

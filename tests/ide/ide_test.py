@@ -52,8 +52,6 @@ def test_multiple_errors() -> None:
             f'{path}:28:18: model: error: modulus of "S" exceeds limit (2**64)',
             f'{path}:31:4: model: error: modulus of "T" not power of two',
             f'{path}:34:4: model: error: modulus of "Mod3" contains variable',
-            f'{path}:37:4: parser: error: duplicate type "RFLX_Invalid::R"',
-            f'{path}:8:4: parser: info: previous occurrence of "RFLX_Invalid::R"',
             f'{path}:47:28: model: error: duplicate literal "E2_2"',
             f"{path}:47:22: model: info: previous occurrence",
             f'{path}:47:4: model: error: size of "E2" too small',
@@ -130,6 +128,8 @@ def test_multiple_errors() -> None:
             f'{path}:287:29: model: error: size attribute for final field in "RFLX_Invalid::M17"',
             f"{path}:290:4: model: error: unnecessary always-valid aspect"
             ' on "Unnecessary_Always_Valid_Enum"',
+            f'{path}:37:4: model: error: name conflict for type "RFLX_Invalid::R"',
+            f'{path}:8:4: model: info: previous occurrence of "RFLX_Invalid::R"',
             f"{path}:53:4: model: error: conflicting literals: False, True",
             '__BUILTINS__:0:0: model: info: previous occurrence of "False"',
             '__BUILTINS__:0:0: model: info: previous occurrence of "True"',

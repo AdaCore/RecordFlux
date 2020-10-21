@@ -569,15 +569,6 @@ def test_parse_error_context_dependency_cycle() -> None:
     )
 
 
-def test_parse_error_duplicate_type() -> None:
-    assert_error_files(
-        [f"{SPEC_DIR}/duplicate_type.rflx"],
-        f'{SPEC_DIR}/duplicate_type.rflx:3:4: parser: error: duplicate type "Duplicate_Type::T"\n'
-        f"{SPEC_DIR}/duplicate_type.rflx:2:4: parser: info:"
-        f' previous occurrence of "Duplicate_Type::T"',
-    )
-
-
 def test_parse_error_message_undefined_component() -> None:
     assert_error_string(
         """
@@ -621,46 +612,6 @@ def test_parse_error_array_undefined_type() -> None:
             end Test;
         """,
         r'^<stdin>:3:35: parser: error: undefined element type "Test::Foo"$',
-    )
-
-
-def test_parse_error_duplicate_message() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     Foo : T;
-                  end message;
-               type PDU is
-                  message
-                     Foo : T;
-                  end message;
-            end Test;
-        """,
-        r'^<stdin>:8:16: parser: error: duplicate type "Test::PDU"\n'
-        r'<stdin>:4:16: parser: info: previous occurrence of "Test::PDU"$',
-    )
-
-
-def test_parse_error_duplicate_refinement() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type PDU is
-                  message
-                     null
-                        then Foo
-                           with Size => 8;
-                     Foo : Opaque;
-                  end message;
-               for Test::PDU use (Foo => Test::PDU);
-               for PDU use (Foo => PDU);
-            end Test;
-        """,
-        r'^<stdin>:11:16: parser: error: duplicate refinement with "Test::PDU"\n'
-        r"<stdin>:10:16: parser: info: previous occurrence",
     )
 
 
@@ -712,24 +663,6 @@ def test_parse_error_refinement_invalid_condition() -> None:
         r'<stdin>:11:26: parser: error: unknown field or literal "Y"'
         r' in refinement condition of "Test::PDU"'
         r"$",
-    )
-
-
-def test_parse_error_derivation_duplicate_type() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type Foo is
-                  message
-                     Foo : T;
-                  end message;
-               type Bar is new Test::Foo;
-               type Bar is new Foo;
-            end Test;
-        """,
-        r'^<stdin>:9:16: parser: error: duplicate type "Test::Bar"\n'
-        r'<stdin>:8:16: parser: info: previous occurrence of "Test::Bar"',
     )
 
 
@@ -851,27 +784,6 @@ def test_parse_error_reserved_word_in_message_component() -> None:
             end Test;
         """,
         r'^<stdin>:6:22: parser: error: Found unwanted token, "Message"',
-    )
-
-
-def test_parse_error_session_name_conflict() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type X is mod 2**8;
-
-               generic
-               session X with
-                  Initial => A,
-                  Final => A
-               is
-               begin
-                  state A is null state;
-               end X;
-            end Test;
-        """,
-        r'^<stdin>:5:16: parser: error: name conflict for session "Test::X"\n'
-        r'<stdin>:3:16: parser: info: previous occurrence of "Test::X"$',
     )
 
 
