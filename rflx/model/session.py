@@ -42,7 +42,7 @@ class Transition(Base):
 class State(Base):
     def __init__(
         self,
-        name: StrID,
+        identifier: StrID,
         transitions: Sequence[Transition] = None,
         actions: Sequence[stmt.Statement] = None,
         declarations: Sequence[decl.Declaration] = None,
@@ -50,7 +50,7 @@ class State(Base):
         location: Location = None,
     ):
         # pylint: disable=too-many-arguments
-        self.__name = ID(name)
+        self.__identifier = ID(identifier)
         self.__transitions = transitions or []
         self.__actions = actions or []
         self.declarations = {d.identifier: d for d in declarations} if declarations else {}
@@ -58,24 +58,24 @@ class State(Base):
         self.location = location
 
     def __repr__(self) -> str:
-        return verbose_repr(self, ["name", "transitions", "actions", "declarations"])
+        return verbose_repr(self, ["identifier", "transitions", "actions", "declarations"])
 
     def __str__(self) -> str:
         with_aspects = f'\n   with Desc => "{self.description}"\n' if self.description else " "
         if not self.declarations and not self.actions and not self.transitions:
-            return f"state {self.name}{with_aspects}is null state"
+            return f"state {self.identifier}{with_aspects}is null state"
         declarations = "".join([f"{d};\n" for d in self.declarations.values()])
         actions = "".join([f"{a};\n" for a in self.actions])
         transitions = "\n".join([f"{p}" for p in self.transitions])
         return (
-            f"state {self.name}{with_aspects}is\n{indent(declarations, 3)}begin\n"
+            f"state {self.identifier}{with_aspects}is\n{indent(declarations, 3)}begin\n"
             f"{indent(actions, 3)}"
-            f"transition\n{indent(transitions, 3)}\nend {self.name}"
+            f"transition\n{indent(transitions, 3)}\nend {self.identifier}"
         )
 
     @property
-    def name(self) -> ID:
-        return self.__name
+    def identifier(self) -> ID:
+        return self.__identifier
 
     @property
     def transitions(self) -> Sequence[Transition]:
@@ -171,15 +171,15 @@ class Session(Base):
         self.__validate_state_reachability()
 
     def __validate_state_existence(self) -> None:
-        state_names = [s.name for s in self.states]
-        if self.initial not in state_names:
+        state_identifiers = [s.identifier for s in self.states]
+        if self.initial not in state_identifiers:
             self.error.append(
                 f'initial state "{self.initial}" does not exist in "{self.identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.initial.location,
             )
-        if self.final not in state_names:
+        if self.final not in state_identifiers:
             self.error.append(
                 f'final state "{self.final}" does not exist in "{self.identifier}"',
                 Subsystem.MODEL,
@@ -188,9 +188,9 @@ class Session(Base):
             )
         for s in self.states:
             for t in s.transitions:
-                if t.target not in state_names:
+                if t.target not in state_identifiers:
                     self.error.append(
-                        f'transition from state "{s.name}" to non-existent state'
+                        f'transition from state "{s.identifier}" to non-existent state'
                         f' "{t.target}" in "{self.identifier}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
@@ -198,21 +198,21 @@ class Session(Base):
                     )
 
     def __validate_duplicate_states(self) -> None:
-        name_states = defaultdict(list)
+        identifier_states = defaultdict(list)
         for s in self.states:
-            name_states[s.name].append(s)
+            identifier_states[s.identifier].append(s)
 
-        for name, states in name_states.items():
+        for identifier, states in identifier_states.items():
             if len(states) >= 2:
                 for s in states[1:]:
                     self.error.append(
-                        f'duplicate state "{name}"',
+                        f'duplicate state "{identifier}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         s.location,
                     )
                     self.error.append(
-                        f'previous definition of state "{name}"',
+                        f'previous definition of state "{identifier}"',
                         Subsystem.MODEL,
                         Severity.INFO,
                         states[0].location,
@@ -223,21 +223,21 @@ class Session(Base):
         for s in self.states:
             for t in s.transitions:
                 if t.target in inputs:
-                    inputs[t.target].append(s.name)
+                    inputs[t.target].append(s.identifier)
                 else:
-                    inputs[t.target] = [s.name]
+                    inputs[t.target] = [s.identifier]
 
-            if s.name != self.initial and s.name not in inputs:
+            if s.identifier != self.initial and s.identifier not in inputs:
                 self.error.append(
-                    f'unreachable state "{s.name}"',
+                    f'unreachable state "{s.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     s.location,
                 )
 
-            if s.name != self.final and not s.transitions:
+            if s.identifier != self.final and not s.transitions:
                 self.error.append(
-                    f'detached state "{s.name}"',
+                    f'detached state "{s.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     s.location,
@@ -252,9 +252,9 @@ class Session(Base):
 
         visible_declarations = dict(visible_declarations)
 
-        def undefined_type(type_name: StrID, location: Optional[Location]) -> None:
+        def undefined_type(type_identifier: StrID, location: Optional[Location]) -> None:
             self.error.append(
-                f'undefined type "{type_name}"',
+                f'undefined type "{type_identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 location,
@@ -286,27 +286,30 @@ class Session(Base):
             self.__reference_variable_declaration(d.variables(), visible_declarations)
 
             if isinstance(d, decl.TypeDeclaration):
-                type_name = mty.qualified_type_name(k, self.identifier.parent)
-                if type_name in self.types:
+                type_identifier = mty.qualified_type_identifier(k, self.identifier.parent)
+                if type_identifier in self.types:
                     self.error.append(
                         f'type "{k}" shadows type',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         d.location,
                     )
-                self.types[type_name] = d.type_definition
+                self.types[type_identifier] = d.type_definition
 
             elif isinstance(d, decl.TypeCheckableDeclaration):
-                type_name = mty.qualified_type_name(d.type_name, self.identifier.parent)
-                if type_name in self.types:
-                    model_type = self.types[type_name]
+                type_identifier = mty.qualified_type_identifier(
+                    d.type_identifier, self.identifier.parent
+                )
+                if type_identifier in self.types:
+                    model_type = self.types[type_identifier]
                     self.error.extend(
                         d.check_type(
                             model_type.refined_type(
                                 [
                                     t
                                     for t in self.types.values()
-                                    if isinstance(t, Refinement) and t.pdu.identifier == d.type_name
+                                    if isinstance(t, Refinement)
+                                    and t.pdu.identifier == d.type_identifier
                                 ]
                             )
                             if isinstance(model_type, Message)
@@ -315,22 +318,24 @@ class Session(Base):
                         )
                     )
                 else:
-                    undefined_type(d.type_name, d.location)
+                    undefined_type(d.type_identifier, d.location)
                     d.type_ = rty.Any()
 
                 if isinstance(d, decl.FunctionDeclaration):
                     argument_types = []
                     for a in d.arguments:
-                        type_name = mty.qualified_type_name(a.type_name, self.identifier.parent)
-                        if type_name in self.types:
-                            argument_types.append(self.types[type_name].type_)
+                        type_identifier = mty.qualified_type_identifier(
+                            a.type_identifier, self.identifier.parent
+                        )
+                        if type_identifier in self.types:
+                            argument_types.append(self.types[type_identifier].type_)
                         else:
                             argument_types.append(rty.Any())
-                            undefined_type(a.type_name, d.location)
+                            undefined_type(a.type_identifier, d.location)
                     d.argument_types = argument_types
 
-                if d.type_name in self.__global_declarations:
-                    self.__global_declarations[d.type_name].reference()
+                if d.type_identifier in self.__global_declarations:
+                    self.__global_declarations[d.type_identifier].reference()
 
             visible_declarations[k] = d
 
@@ -378,7 +383,7 @@ class Session(Base):
         if isinstance(
             expression, (expr.Variable, expr.Call, expr.Conversion, expr.MessageAggregate)
         ):
-            identifier = ID(expression.name)
+            identifier = expression.identifier
 
             if isinstance(expression, expr.Variable):
                 if identifier in declarations:

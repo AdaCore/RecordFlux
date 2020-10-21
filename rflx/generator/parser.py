@@ -54,18 +54,18 @@ class ParserGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
 
-    def extract_function(self, type_name: ID) -> Subprogram:
+    def extract_function(self, type_identifier: ID) -> Subprogram:
         return GenericFunctionInstantiation(
             "Extract",
             FunctionSpecification(
                 const.TYPES * "Extract",
-                type_name,
+                type_identifier,
                 [
                     Parameter(["Buffer"], const.TYPES_BYTES),
                     Parameter(["Offset"], const.TYPES_OFFSET),
                 ],
             ),
-            [common.prefixed_type_name(type_name, self.prefix)],
+            [common.prefixed_type_identifier(type_identifier, self.prefix)],
         )
 
     def create_internal_functions(
@@ -632,12 +632,12 @@ class ParserGenerator:
     def create_scalar_accessor_functions(self, scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
         def specification(field: Field, field_type: Type) -> FunctionSpecification:
             if field_type.package == BUILTINS_PACKAGE:
-                type_name = ID(field_type.name)
+                type_identifier = ID(field_type.name)
             else:
-                type_name = self.prefix * ID(field_type.identifier)
+                type_identifier = self.prefix * ID(field_type.identifier)
 
             return FunctionSpecification(
-                f"Get_{field.name}", type_name, [Parameter(["Ctx"], "Context")]
+                f"Get_{field.name}", type_identifier, [Parameter(["Ctx"], "Context")]
             )
 
         def result(field: Field) -> Expr:

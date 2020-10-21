@@ -186,19 +186,19 @@ def test_session_graph() -> None:
         final=ID("END"),
         states=[
             State(
-                name=ID("START"),
+                "START",
                 transitions=[
                     Transition(target=ID("STATE"), condition=Equal(Variable("Global"), TRUE)),
                     Transition(target=ID("END")),
                 ],
             ),
             State(
-                name=ID("STATE"),
+                "STATE",
                 transitions=[Transition(target=ID("END"))],
                 actions=[Assignment("Global", FALSE), Reset("Local")],
                 declarations=[VariableDeclaration("Local", "Opaque")],
             ),
-            State(name=ID("END")),
+            State("END"),
         ],
         declarations=[VariableDeclaration("Global", "Boolean")],
         parameters=[],

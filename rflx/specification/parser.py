@@ -34,7 +34,7 @@ from rflx.model import (
     UnprovenDerivedMessage,
     UnprovenMessage,
     is_builtin_type,
-    qualified_type_name,
+    qualified_type_identifier,
 )
 
 from . import grammar
@@ -288,7 +288,7 @@ def create_message(
 
     components = list(message.components)
 
-    if components and components[0].name:
+    if components and components[0].identifier:
         components.insert(0, Component())
 
     error = RecordFluxError()
@@ -314,11 +314,11 @@ def create_message_types(
     field_types: Dict[Field, Type] = {}
 
     for component in components:
-        if component.name and component.type_name:
-            type_name = qualified_type_name(component.type_name, message.package)
-            field_type = [t for t in types if t.identifier == type_name]
+        if component.identifier and component.type_identifier:
+            type_identifier = qualified_type_identifier(component.type_identifier, message.package)
+            field_type = [t for t in types if t.identifier == type_identifier]
             if field_type:
-                field_types[Field(component.name)] = field_type[0]
+                field_types[Field(component.identifier)] = field_type[0]
 
     return field_types
 
@@ -329,11 +329,11 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
     structure: List[Link] = []
 
     for i, component in enumerate(components):
-        source_node = Field(component.name) if component.name else INITIAL
+        source_node = Field(component.identifier) if component.identifier else INITIAL
 
         if not component.thens:
-            name = components[i + 1].name if i + 1 < len(components) else None
-            target_node = Field(name) if name else FINAL
+            identifier = components[i + 1].identifier if i + 1 < len(components) else None
+            target_node = Field(identifier) if identifier else FINAL
             structure.append(Link(source_node, target_node))
 
         if (
@@ -341,13 +341,14 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
             or component.size != expr.UNDEFINED
             or component.condition != expr.TRUE
         ):
-            for l in (l for l in structure if l.target.identifier == component.name):
+            for l in (l for l in structure if l.target.identifier == component.identifier):
                 if component.first != expr.UNDEFINED:
                     if l.first == expr.UNDEFINED:
                         l.first = component.first
                     else:
                         error.append(
-                            f'first aspect of field "{component.name}" conflicts with previous'
+                            f'first aspect of field "{component.identifier}"'
+                            " conflicts with previous"
                             " specification",
                             Subsystem.MODEL,
                             Severity.ERROR,
@@ -365,7 +366,7 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
                         l.size = component.size
                     else:
                         error.append(
-                            f'size aspect of field "{component.name}" conflicts with previous'
+                            f'size aspect of field "{component.identifier}" conflicts with previous'
                             " specification",
                             Subsystem.MODEL,
                             Severity.ERROR,
@@ -386,15 +387,15 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
                     )
 
         for then in component.thens:
-            if then.name and not any(then.name == c.name for c in components):
+            if then.identifier and not any(then.identifier == c.identifier for c in components):
                 error.append(
-                    f'undefined field "{then.name}"',
+                    f'undefined field "{then.identifier}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
-                    then.name.location if then.name else None,
+                    then.identifier.location if then.identifier else None,
                 )
                 continue
-            target_node = Field(then.name) if then.name else FINAL
+            target_node = Field(then.identifier) if then.identifier else FINAL
             structure.append(
                 Link(source_node, target_node, then.condition, then.size, then.first, then.location)
             )
@@ -408,7 +409,7 @@ def create_derived_message(
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
-    base_name = qualified_type_name(derivation.base, derivation.package)
+    base_name = qualified_type_identifier(derivation.base, derivation.package)
     error = RecordFluxError()
 
     base_types = [t for t in types if t.identifier == base_name]
@@ -462,7 +463,7 @@ def create_proven_message(
 def create_refinement(refinement: RefinementSpec, types: Sequence[Type]) -> Refinement:
     messages = {t.identifier: t for t in types if isinstance(t, Message)}
 
-    refinement.pdu = qualified_type_name(refinement.pdu, refinement.package)
+    refinement.pdu = qualified_type_identifier(refinement.pdu, refinement.package)
     if refinement.pdu not in messages:
         fail(
             f'undefined type "{refinement.pdu}" in refinement',
@@ -471,7 +472,7 @@ def create_refinement(refinement: RefinementSpec, types: Sequence[Type]) -> Refi
             refinement.location,
         )
 
-    refinement.sdu = qualified_type_name(refinement.sdu, refinement.package)
+    refinement.sdu = qualified_type_identifier(refinement.sdu, refinement.package)
     if refinement.sdu not in messages:
         fail(
             f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"',

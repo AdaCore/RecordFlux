@@ -62,18 +62,18 @@ class SerializerGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
 
-    def insert_function(self, type_name: ID) -> Subprogram:
+    def insert_function(self, type_identifier: ID) -> Subprogram:
         return GenericProcedureInstantiation(
             "Insert",
             ProcedureSpecification(
                 const.TYPES * "Insert",
                 [
-                    Parameter(["Val"], type_name),
+                    Parameter(["Val"], type_identifier),
                     InOutParameter(["Buffer"], const.TYPES_BYTES),
                     Parameter(["Offset"], const.TYPES_OFFSET),
                 ],
             ),
-            [common.prefixed_type_name(type_name, self.prefix)],
+            [common.prefixed_type_identifier(type_identifier, self.prefix)],
         )
 
     def create_internal_functions(
@@ -240,17 +240,19 @@ class SerializerGenerator:
     ) -> UnitPart:
         def specification(field: Field, field_type: Type) -> ProcedureSpecification:
             if field_type.package == BUILTINS_PACKAGE:
-                type_name = ID(field_type.name)
+                type_identifier = ID(field_type.name)
             elif isinstance(field_type, Enumeration) and field_type.always_valid:
-                type_name = common.prefixed_type_name(
+                type_identifier = common.prefixed_type_identifier(
                     common.full_enum_name(field_type), self.prefix
                 )
             else:
-                type_name = common.prefixed_type_name(ID(field_type.identifier), self.prefix)
+                type_identifier = common.prefixed_type_identifier(
+                    ID(field_type.identifier), self.prefix
+                )
 
             return ProcedureSpecification(
                 f"Set_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Val"], type_name)],
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Val"], type_identifier)],
             )
 
         return UnitPart(

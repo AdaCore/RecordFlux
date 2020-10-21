@@ -138,10 +138,10 @@ def test_substitution_relation_scalar(
     )
 
 
-def test_prefixed_type_name() -> None:
-    assert common.prefixed_type_name(ID("Modular"), "P") == ID("P.Modular")
+def test_prefixed_type_identifier() -> None:
+    assert common.prefixed_type_identifier(ID("Modular"), "P") == ID("P.Modular")
     for t in BUILTIN_TYPES:
-        assert common.prefixed_type_name(ID(t), "P") == t
+        assert common.prefixed_type_identifier(ID(t), "P") == t
 
 
 def test_base_type_name() -> None:

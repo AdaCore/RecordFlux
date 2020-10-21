@@ -229,7 +229,7 @@ class Generator:
 
     def __create_unit(
         self,
-        name: ID,
+        identifier: ID,
         declaration_context: List[ContextItem],
         formal_parameters: List[FormalDeclaration] = None,
         terminating: bool = True,
@@ -240,7 +240,7 @@ class Generator:
         unit = PackageUnit(
             declaration_context,
             PackageDeclaration(
-                self.__prefix * name,
+                self.__prefix * identifier,
                 formal_parameters=formal_parameters,
                 aspects=[
                     SparkMode(),
@@ -248,15 +248,15 @@ class Generator:
                 ],
             ),
             list(CONFIGURATION_PRAGMAS),
-            PackageBody(self.__prefix * name, aspects=[SparkMode()]),
+            PackageBody(self.__prefix * identifier, aspects=[SparkMode()]),
         )
-        self._units[name] = unit
+        self._units[identifier] = unit
 
         return unit
 
     def __create_instantiation_unit(
         self,
-        name: ID,
+        identifier: ID,
         context: List[ContextItem],
         instantiation: GenericPackageInstantiation,
     ) -> InstantiationUnit:
@@ -264,7 +264,7 @@ class Generator:
             context.insert(0, p)
 
         unit = InstantiationUnit(context, instantiation)
-        self._units[name] = unit
+        self._units[identifier] = unit
 
         return unit
 
@@ -2302,30 +2302,34 @@ class Generator:
                 ]
             )
 
-        generic_pdu_name = self.__prefix * (
+        generic_pdu_identifier = self.__prefix * (
             generic_name(ID(refinement.pdu.base.identifier))
             if isinstance(refinement.pdu, DerivedMessage)
             else generic_name(ID(refinement.pdu.identifier))
         )
 
-        unit.declaration_context.append(WithClause(generic_pdu_name))
+        unit.declaration_context.append(WithClause(generic_pdu_identifier))
         unit.declaration.formal_parameters.append(
             FormalPackageDeclaration(
-                flat_name(refinement.pdu.full_name), generic_pdu_name, ["Types", "others => <>"]
+                flat_name(refinement.pdu.full_name),
+                generic_pdu_identifier,
+                ["Types", "others => <>"],
             )
         )
 
-        generic_sdu_name = self.__prefix * (
+        generic_sdu_identifier = self.__prefix * (
             generic_name(ID(refinement.sdu.base.identifier))
             if isinstance(refinement.sdu, DerivedMessage)
             else generic_name(ID(refinement.sdu.identifier))
         )
 
         if not null_sdu:
-            unit.declaration_context.append(WithClause(generic_sdu_name))
+            unit.declaration_context.append(WithClause(generic_sdu_identifier))
             unit.declaration.formal_parameters.append(
                 FormalPackageDeclaration(
-                    flat_name(refinement.sdu.full_name), generic_sdu_name, ["Types", "others => <>"]
+                    flat_name(refinement.sdu.full_name),
+                    generic_sdu_identifier,
+                    ["Types", "others => <>"],
                 ),
             )
 
@@ -2362,17 +2366,17 @@ class Generator:
 
         assert isinstance(unit, InstantiationUnit), "unexpected unit type"
 
-        pdu_name = self.__prefix * ID(refinement.pdu.identifier)
+        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
 
-        if pdu_name not in unit.declaration.associations:
-            unit.context.append(WithClause(pdu_name))
-            unit.declaration.associations.append(pdu_name)
+        if pdu_identifier not in unit.declaration.associations:
+            unit.context.append(WithClause(pdu_identifier))
+            unit.declaration.associations.append(pdu_identifier)
 
-        sdu_name = self.__prefix * ID(refinement.sdu.identifier)
+        sdu_identifier = self.__prefix * ID(refinement.sdu.identifier)
 
-        if not null_sdu and sdu_name not in unit.declaration.associations:
-            unit.context.append(WithClause(sdu_name))
-            unit.declaration.associations.append(sdu_name)
+        if not null_sdu and sdu_identifier not in unit.declaration.associations:
+            unit.context.append(WithClause(sdu_identifier))
+            unit.declaration.associations.append(sdu_identifier)
 
     def __create_type(self, field_type: Type, message_package: ID) -> None:
         unit = self._units[message_package]
@@ -2396,7 +2400,7 @@ class Generator:
         else:
             assert False, f'unexpected type "{type(field_type).__name__}"'
 
-    def __create_array_unit(self, array_type: Array, package_name: ID) -> None:
+    def __create_array_unit(self, array_type: Array, package_identifier: ID) -> None:
         element_type = array_type.element_type
         element_type_identifier = ID(element_type.identifier)
         element_type_package = ID(element_type.package.name)
@@ -2432,7 +2436,7 @@ class Generator:
                 WithClause(self.__prefix * const.TYPES_PACKAGE),
             ]
             array_package = GenericPackageInstantiation(
-                self.__prefix * package_name * array_type.name,
+                self.__prefix * package_identifier * array_type.name,
                 self.__prefix * const.SCALAR_SEQUENCE_PACKAGE,
                 [
                     self.__prefix * const.TYPES_PACKAGE,
@@ -2626,23 +2630,23 @@ class Generator:
     def __create_contains_function(
         refinement: Refinement, condition_fields: Mapping[Field, Type], null_sdu: bool
     ) -> SubprogramUnitPart:
-        pdu_name = expr.ID(flat_name(refinement.pdu.full_name))
+        pdu_identifier = expr.ID(flat_name(refinement.pdu.full_name))
         condition = refinement.condition
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
                 condition = expr.AndThen(
                     expr.Selected(
-                        expr.Call(pdu_name * f"Get_{f.name}", [expr.Variable("Ctx")]), "Known"
+                        expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]), "Known"
                     ),
                     condition,
                 )
         condition = condition.substituted(
             mapping={
                 expr.Variable(f.name): expr.Selected(
-                    expr.Call(pdu_name * f"Get_{f.name}", [expr.Variable("Ctx")]), "Enum"
+                    expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]), "Enum"
                 )
                 if isinstance(t, Enumeration) and t.always_valid
-                else expr.Call(pdu_name * f"Get_{f.name}", [expr.Variable("Ctx")])
+                else expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")])
                 for f, t in condition_fields.items()
             }
         ).simplified()
@@ -2650,7 +2654,7 @@ class Generator:
         specification = FunctionSpecification(
             contains_function_name(refinement),
             "Boolean",
-            [Parameter(["Ctx"], ID(pdu_name) * "Context")],
+            [Parameter(["Ctx"], ID(pdu_identifier) * "Context")],
         )
 
         return SubprogramUnitPart(
@@ -3013,26 +3017,28 @@ def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
 def refinement_conditions(
     refinement: Refinement, pdu_context: str, condition_fields: Mapping[Field, Type], null_sdu: bool
 ) -> Sequence[expr.Expr]:
-    pdu_name = expr.ID(flat_name(refinement.pdu.full_name))
+    pdu_identifier = expr.ID(flat_name(refinement.pdu.full_name))
 
-    conditions: List[expr.Expr] = [expr.Call(pdu_name * "Has_Buffer", [expr.Variable(pdu_context)])]
+    conditions: List[expr.Expr] = [
+        expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])
+    ]
 
     if null_sdu:
         conditions.extend(
             [
                 expr.Call(
-                    pdu_name * "Structural_Valid",
+                    pdu_identifier * "Structural_Valid",
                     [
                         expr.Variable(pdu_context),
-                        expr.Variable(pdu_name * refinement.field.affixed_name),
+                        expr.Variable(pdu_identifier * refinement.field.affixed_name),
                     ],
                 ),
                 expr.Not(
                     expr.Call(
-                        pdu_name * "Present",
+                        pdu_identifier * "Present",
                         [
                             expr.Variable(pdu_context),
-                            expr.Variable(pdu_name * refinement.field.affixed_name),
+                            expr.Variable(pdu_identifier * refinement.field.affixed_name),
                         ],
                     )
                 ),
@@ -3041,10 +3047,10 @@ def refinement_conditions(
     else:
         conditions.append(
             expr.Call(
-                pdu_name * "Present",
+                pdu_identifier * "Present",
                 [
                     expr.Variable(pdu_context),
-                    expr.Variable(pdu_name * refinement.field.affixed_name),
+                    expr.Variable(pdu_identifier * refinement.field.affixed_name),
                 ],
             )
         )
@@ -3052,8 +3058,8 @@ def refinement_conditions(
     conditions.extend(
         [
             expr.Call(
-                pdu_name * "Valid",
-                [expr.Variable(pdu_context), expr.Variable(pdu_name * f.affixed_name)],
+                pdu_identifier * "Valid",
+                [expr.Variable(pdu_context), expr.Variable(pdu_identifier * f.affixed_name)],
             )
             for f in condition_fields
         ]

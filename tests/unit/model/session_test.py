@@ -99,8 +99,8 @@ def test_invalid_name() -> None:
             initial=ID("Start"),
             final=ID("End"),
             states=[
-                State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
-                State(name=ID("End")),
+                State("Start", transitions=[Transition(target=ID("End"))]),
+                State("End"),
             ],
             declarations=[],
             parameters=[],
@@ -141,11 +141,11 @@ def test_invalid_initial() -> None:
             final=ID("End"),
             states=[
                 State(
-                    name=ID("Start"),
+                    "Start",
                     transitions=[Transition(target=ID("End"))],
                     location=Location((10, 20)),
                 ),
-                State(name=ID("End")),
+                State("End"),
             ],
             declarations=[],
             parameters=[],
@@ -169,8 +169,8 @@ def test_invalid_final() -> None:
             initial=ID("Start"),
             final=ID("NonExistent", location=Location((1, 3))),
             states=[
-                State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
-                State(name=ID("End"), location=Location((10, 20))),
+                State("Start", transitions=[Transition(target=ID("End"))]),
+                State("End", location=Location((10, 20))),
             ],
             declarations=[],
             parameters=[],
@@ -182,13 +182,13 @@ def test_invalid_target_state() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(target=ID("NonExistent", location=Location((10, 20)))),
                     Transition(target=ID("End")),
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -206,16 +206,16 @@ def test_duplicate_state() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 location=Location((10, 20)),
             ),
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 location=Location((10, 30)),
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -233,41 +233,41 @@ def test_multiple_duplicate_states() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("Foo"))],
                 location=Location((10, 20)),
             ),
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("Foo"))],
                 location=Location((10, 30)),
             ),
             State(
-                name=ID("Foo"),
+                "Foo",
                 transitions=[Transition(target=ID("Bar"))],
                 location=Location((10, 40)),
             ),
             State(
-                name=ID("Bar"),
+                "Bar",
                 transitions=[Transition(target=ID("End"))],
                 location=Location((10, 50)),
             ),
             State(
-                name=ID("Foo"),
+                "Foo",
                 transitions=[Transition(target=ID("Bar"))],
                 location=Location((10, 60)),
             ),
             State(
-                name=ID("Bar"),
+                "Bar",
                 transitions=[Transition(target=ID("End"))],
                 location=Location((10, 70)),
             ),
             State(
-                name=ID("Foo"),
+                "Foo",
                 transitions=[Transition(target=ID("Bar"))],
                 location=Location((10, 80)),
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -290,13 +290,13 @@ def test_multiple_duplicate_states() -> None:
 def test_unreachable_state() -> None:
     assert_session_model_error(
         states=[
-            State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
+            State("Start", transitions=[Transition(target=ID("End"))]),
             State(
-                name=ID("Unreachable"),
+                "Unreachable",
                 transitions=[Transition(target=ID("End"))],
                 location=Location((10, 20)),
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -308,18 +308,18 @@ def test_unreachable_state() -> None:
 def test_multiple_unreachable_states() -> None:
     assert_session_model_error(
         states=[
-            State(name=ID("Start"), transitions=[Transition(target=ID("End"))]),
+            State("Start", transitions=[Transition(target=ID("End"))]),
             State(
-                name=ID("Unreachable1"),
+                "Unreachable1",
                 transitions=[Transition(target=ID("End"))],
                 location=Location((10, 20)),
             ),
             State(
-                name=ID("Unreachable2"),
+                "Unreachable2",
                 transitions=[Transition(target=ID("End"))],
                 location=Location((10, 30)),
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -337,11 +337,11 @@ def test_detached_state() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End")), Transition(target=ID("Detached"))],
             ),
-            State(name=ID("Detached"), location=Location((10, 20))),
-            State(name=ID("End")),
+            State("Detached", location=Location((10, 20))),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -354,16 +354,16 @@ def test_multiple_detached_states() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(target=ID("End")),
                     Transition(target=ID("Detached1")),
                     Transition(target=ID("Detached2")),
                 ],
             ),
-            State(name=ID("Detached1"), location=Location((10, 20))),
-            State(name=ID("Detached2"), location=Location((10, 30))),
-            State(name=ID("End")),
+            State("Detached1", location=Location((10, 20))),
+            State("Detached2", location=Location((10, 30))),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -381,7 +381,7 @@ def test_undeclared_variable() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -391,7 +391,7 @@ def test_undeclared_variable() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -404,7 +404,7 @@ def test_undefinded_type() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -412,7 +412,7 @@ def test_undefinded_type() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Defined", "Undefined_Type", location=Location((10, 20)))
@@ -430,7 +430,7 @@ def test_declared_variable() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -440,7 +440,7 @@ def test_declared_variable() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Defined", "TLV::Tag")],
         parameters=[],
@@ -455,7 +455,7 @@ def test_declared_local_variable() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -464,7 +464,7 @@ def test_declared_local_variable() -> None:
                 ],
                 declarations=[decl.VariableDeclaration("Local", "Boolean")],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -476,12 +476,12 @@ def test_undeclared_local_variable() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("State"), condition=expr.Variable("Global"))],
                 declarations=[],
             ),
             State(
-                name=ID("State"),
+                "State",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -493,7 +493,7 @@ def test_undeclared_local_variable() -> None:
                 ],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -509,7 +509,7 @@ def test_declared_local_variable_valid() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -518,7 +518,7 @@ def test_declared_local_variable_valid() -> None:
                 ],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
@@ -533,7 +533,7 @@ def test_declared_local_variable_message_field() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -544,7 +544,7 @@ def test_declared_local_variable_message_field() -> None:
                 ],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
@@ -556,12 +556,12 @@ def test_assignment_to_undeclared_variable() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[stmt.Assignment("Undefined", expr.FALSE, location=Location((10, 20)))],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -574,7 +574,7 @@ def test_assignment_from_undeclared_variable() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -583,7 +583,7 @@ def test_assignment_from_undeclared_variable() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -596,12 +596,12 @@ def test_reset_of_undeclared_list() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[stmt.Reset("Undefined", location=Location((10, 20)))],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -614,12 +614,12 @@ def test_reset_incompatible() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[stmt.Reset("Global", location=Location((10, 20)))],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -635,7 +635,7 @@ def test_call_to_undeclared_function() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -647,7 +647,7 @@ def test_call_to_undeclared_function() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -660,7 +660,7 @@ def test_call_undeclared_variable() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
@@ -676,7 +676,7 @@ def test_call_undeclared_variable() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -693,7 +693,7 @@ def test_call_invalid_argument_type() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -706,7 +706,7 @@ def test_call_invalid_argument_type() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -729,7 +729,7 @@ def test_call_missing_arguments() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -742,7 +742,7 @@ def test_call_missing_arguments() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -759,7 +759,7 @@ def test_call_too_many_arguments() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -773,7 +773,7 @@ def test_call_too_many_arguments() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -793,12 +793,12 @@ def test_channel_read() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[stmt.Read("Some_Channel", expr.Variable("Global"))],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Global", "TLV::Message"),
@@ -817,12 +817,12 @@ def test_channel_write() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[stmt.Write("Some_Channel", expr.Variable("M"))],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("M", "TLV::Message"),
@@ -838,14 +838,14 @@ def test_channel_read_undeclared() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
                     stmt.Read("Undeclared", expr.Variable("Result"), location=Location((10, 20)))
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
         parameters=[],
@@ -858,7 +858,7 @@ def test_channel_read_invalid_type() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -869,7 +869,7 @@ def test_channel_read_invalid_type() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
         parameters=[],
@@ -889,14 +889,14 @@ def test_channel_read_invalid_mode() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
                     stmt.Read("Channel", expr.Variable("Result"), location=Location((10, 20)))
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "TLV::Message"),
@@ -918,14 +918,14 @@ def test_channel_write_invalid_mode() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
                     stmt.Write("Out_Channel", expr.Variable("Result"), location=Location((10, 20)))
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "TLV::Message"),
@@ -950,7 +950,7 @@ def test_channel_function_data_available() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -959,7 +959,7 @@ def test_channel_function_data_available() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -975,7 +975,7 @@ def test_channel_function_data_available_invalid_mode() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -988,7 +988,7 @@ def test_channel_function_data_available_invalid_mode() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -1010,7 +1010,7 @@ def test_undeclared_variable_in_function_call() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
@@ -1026,7 +1026,7 @@ def test_undeclared_variable_in_function_call() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -1043,11 +1043,11 @@ def test_function_shadows_builtin_data_available() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[
@@ -1073,11 +1073,11 @@ def test_renaming_shadows_builtin_data_available() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1104,7 +1104,7 @@ def test_local_variable_shadows_global() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("Global"), expr.TRUE)
@@ -1114,7 +1114,7 @@ def test_local_variable_shadows_global() -> None:
                     decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean", location=Location((10, 30)))],
         parameters=[],
@@ -1133,11 +1133,11 @@ def test_unused_global_variable() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))],
         parameters=[],
@@ -1150,13 +1150,13 @@ def test_unused_local_variable() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[
                     decl.VariableDeclaration("Data", "Boolean", location=Location((10, 20)))
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -1168,8 +1168,8 @@ def test_unused_local_variable() -> None:
 def test_unused_channel() -> None:
     assert_session_model_error(
         states=[
-            State(name=ID("Start"), transitions=[Transition(target=ID("End"))], declarations=[]),
-            State(name=ID("End")),
+            State("Start", transitions=[Transition(target=ID("End"))], declarations=[]),
+            State("End"),
         ],
         declarations=[],
         parameters=[
@@ -1183,8 +1183,8 @@ def test_unused_channel() -> None:
 def test_unused_private_type() -> None:
     assert_session_model_error(
         states=[
-            State(name=ID("Start"), transitions=[Transition(target=ID("End"))], declarations=[]),
-            State(name=ID("End")),
+            State("Start", transitions=[Transition(target=ID("End"))], declarations=[]),
+            State("End"),
         ],
         declarations=[],
         parameters=[
@@ -1198,8 +1198,8 @@ def test_unused_private_type() -> None:
 def test_unused_function() -> None:
     assert_session_model_error(
         states=[
-            State(name=ID("Start"), transitions=[Transition(target=ID("End"))], declarations=[]),
-            State(name=ID("End")),
+            State("Start", transitions=[Transition(target=ID("End"))], declarations=[]),
+            State("End"),
         ],
         declarations=[],
         parameters=[
@@ -1217,7 +1217,7 @@ def test_renaming() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -1228,7 +1228,7 @@ def test_renaming() -> None:
                 ],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1247,7 +1247,7 @@ def test_renaming_invalid() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -1258,7 +1258,7 @@ def test_renaming_invalid() -> None:
                 ],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1285,7 +1285,7 @@ def test_renaming_undefined() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -1294,7 +1294,7 @@ def test_renaming_undefined() -> None:
                 ],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.RenamingDeclaration(
@@ -1316,7 +1316,7 @@ def test_binding_as_function_parameter() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -1329,7 +1329,7 @@ def test_binding_as_function_parameter() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -1349,7 +1349,7 @@ def test_for_all() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -1363,7 +1363,7 @@ def test_for_all() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
@@ -1378,12 +1378,12 @@ def test_append() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[stmt.Append("List", expr.Variable("Element"))],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("List", "TLV::Messages"),
@@ -1398,14 +1398,14 @@ def test_append_incompatible() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
                     stmt.Append("Global", expr.Variable("Global"), location=Location((10, 20)))
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -1424,12 +1424,12 @@ def test_extend() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[stmt.Extend("List", expr.Variable("Element"))],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("List", "TLV::Messages"),
@@ -1444,14 +1444,14 @@ def test_extend_incompatible() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
                     stmt.Extend("Global", expr.Variable("Global"), location=Location((10, 20)))
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -1467,7 +1467,7 @@ def test_message_aggregate_with_undefined_parameter() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -1480,7 +1480,7 @@ def test_message_aggregate_with_undefined_parameter() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Data", "TLV::Message")],
         parameters=[],
@@ -1493,7 +1493,7 @@ def test_message_aggregate_with_undefined_type() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
@@ -1507,7 +1507,7 @@ def test_message_aggregate_with_undefined_type() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Data", "P::Undefined", location=Location((10, 20)))
@@ -1528,7 +1528,7 @@ def test_comprehension() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
@@ -1544,7 +1544,7 @@ def test_comprehension() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("List", "TLV::Messages"),
@@ -1559,7 +1559,7 @@ def test_assignment_opaque_function_undef_parameter() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
@@ -1572,7 +1572,7 @@ def test_assignment_opaque_function_undef_parameter() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Data", "Opaque"),
@@ -1592,7 +1592,7 @@ def test_assignment_opaque_function_result() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
@@ -1603,7 +1603,7 @@ def test_assignment_opaque_function_result() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Data", "Opaque"),
@@ -1622,7 +1622,7 @@ def test_assignment_opaque_function_binding() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
@@ -1634,7 +1634,7 @@ def test_assignment_opaque_function_binding() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Data", "Opaque"),
@@ -1653,7 +1653,7 @@ def test_conversion() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
@@ -1665,7 +1665,7 @@ def test_conversion() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1680,7 +1680,7 @@ def test_conversion_undefined() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
@@ -1693,7 +1693,7 @@ def test_conversion_undefined() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1715,7 +1715,7 @@ def test_conversion_invalid_argument() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
@@ -1727,7 +1727,7 @@ def test_conversion_invalid_argument() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "Opaque"),
@@ -1746,7 +1746,7 @@ def test_conversion_invalid() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 actions=[
                     stmt.Assignment(
@@ -1759,7 +1759,7 @@ def test_conversion_invalid() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1784,7 +1784,7 @@ def test_private_type() -> None:
         final=ID("End"),
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 declarations=[
                     decl.VariableDeclaration("X", "P::T"),
                 ],
@@ -1795,7 +1795,7 @@ def test_private_type() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[decl.TypeDeclaration(Private("P::T"))],
@@ -1807,11 +1807,11 @@ def test_private_type_shadows_builtin_data_available() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[decl.TypeDeclaration(Private("Data_Available", location=Location((10, 20))))],
@@ -1828,7 +1828,7 @@ def test_private_type_shadows_type() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -1836,7 +1836,7 @@ def test_private_type_shadows_type() -> None:
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("X", "Boolean"),
@@ -1869,7 +1869,7 @@ def test_undefined_type_in_parameters(parameters: Sequence[decl.FormalDeclaratio
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -1877,7 +1877,7 @@ def test_undefined_type_in_parameters(parameters: Sequence[decl.FormalDeclaratio
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=parameters,
@@ -1905,14 +1905,14 @@ def test_undefined_type_in_declarations(declarations: Sequence[decl.BasicDeclara
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
                     )
                 ],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=declarations,
         parameters=[],
@@ -1940,7 +1940,7 @@ def test_undefined_type_in_local_declarations(declarations: Sequence[decl.Declar
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
@@ -1948,7 +1948,7 @@ def test_undefined_type_in_local_declarations(declarations: Sequence[decl.Declar
                 ],
                 declarations=declarations,
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -1961,7 +1961,7 @@ def test_type_error_in_variable_declaration() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
@@ -1969,7 +1969,7 @@ def test_type_error_in_variable_declaration() -> None:
                 ],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("X", "Boolean", expr.Number(1, location=Location((10, 20))))
@@ -1989,7 +1989,7 @@ def test_type_error_in_renaming_declaration() -> None:
     assert_session_model_error(
         states=[
             State(
-                name=ID("Start"),
+                "Start",
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
@@ -1997,7 +1997,7 @@ def test_type_error_in_renaming_declaration() -> None:
                 ],
                 declarations=[],
             ),
-            State(name=ID("End")),
+            State("End"),
         ],
         declarations=[
             decl.RenamingDeclaration(
