@@ -690,20 +690,6 @@ def test_parse_error_derivation_unsupported_type() -> None:
     )
 
 
-def test_parse_error_derivation_of_derived_type() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type Foo is null message;
-               type Bar is new Foo;
-               type Baz is new Bar;
-            end Test;
-        """,
-        r'^<stdin>:5:16: parser: error: illegal derivation "Test::Baz"\n'
-        r'<stdin>:4:16: parser: info: invalid base message "Test::Bar"$',
-    )
-
-
 def test_parse_error_multiple_initial_node_edges() -> None:
     assert_error_string(
         """

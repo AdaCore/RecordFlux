@@ -23,7 +23,6 @@ from rflx.model import (
     INITIAL,
     INTERNAL_TYPES,
     Array,
-    DerivedMessage,
     Enumeration,
     Field,
     Link,
@@ -440,22 +439,10 @@ def create_derived_message(
         )
         error.propagate()
 
-    base = base_messages[0]
-
-    if isinstance(base, DerivedMessage):
-        error.append(
-            f'illegal derivation "{derivation.identifier}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            derivation.location,
-        )
-        error.append(
-            f'invalid base message "{base_name}"', Subsystem.PARSER, Severity.INFO, base.location
-        )
-        error.propagate()
-
     return create_proven_message(
-        UnprovenDerivedMessage(derivation.identifier, base, location=derivation.location).merged(),
+        UnprovenDerivedMessage(
+            derivation.identifier, base_messages[0], location=derivation.location
+        ).merged(),
         skip_verification,
         cache,
     )
