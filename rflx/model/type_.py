@@ -599,27 +599,29 @@ BUILTIN_TYPES = {
 BUILTIN_LITERALS = {l for t in BUILTIN_TYPES.values() for l in t.literals}
 
 
-def is_internal_type(name: StrID) -> bool:
-    return ID(name) in INTERNAL_TYPES or any(
-        ID(name) == ID(t.name) for t in INTERNAL_TYPES.values()
+def is_internal_type(identifier: StrID) -> bool:
+    return ID(identifier) in INTERNAL_TYPES or any(
+        ID(identifier) == ID(t.name) for t in INTERNAL_TYPES.values()
     )
 
 
-def is_builtin_type(name: StrID) -> bool:
-    return ID(name) in BUILTIN_TYPES or any(ID(name) == ID(t.name) for t in BUILTIN_TYPES.values())
+def is_builtin_type(identifier: StrID) -> bool:
+    return ID(identifier) in BUILTIN_TYPES or any(
+        ID(identifier) == ID(t.name) for t in BUILTIN_TYPES.values()
+    )
 
 
-def qualified_type_name(name: ID, package: ID) -> ID:
-    if is_builtin_type(name):
-        return const.BUILTINS_PACKAGE * name
+def qualified_type_identifier(identifier: ID, package: ID) -> ID:
+    if is_builtin_type(identifier):
+        return const.BUILTINS_PACKAGE * identifier
 
-    if is_internal_type(name):
-        return const.INTERNAL_PACKAGE * name
+    if is_internal_type(identifier):
+        return const.INTERNAL_PACKAGE * identifier
 
-    if len(name.parts) == 1:
-        return package * name
+    if len(identifier.parts) == 1:
+        return package * identifier
 
-    return name
+    return identifier
 
 
 def qualified_literals(types: Iterable[Type], package: ID) -> Mapping[ID, Enumeration]:

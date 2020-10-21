@@ -661,11 +661,11 @@ def field_byte_location_declarations() -> Sequence[ada.Declaration]:
     ]
 
 
-def prefixed_type_name(type_name: ada.ID, prefix: str) -> ada.ID:
-    if is_builtin_type(type_name):
-        return type_name
+def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:
+    if is_builtin_type(type_identifier):
+        return type_identifier
 
-    return prefix * type_name
+    return prefix * type_identifier
 
 
 def base_type_name(scalar_type: Scalar) -> ada.ID:

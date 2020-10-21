@@ -48,16 +48,16 @@ class TypeCheckableDeclaration(Declaration):
     def __init__(
         self,
         identifier: StrID,
-        type_name: StrID,
+        type_identifier: StrID,
         location: Location = None,
     ):
         super().__init__(identifier, location)
-        self.__type_name = ID(type_name)
+        self.__type_identifier = ID(type_identifier)
         self.__type: rty.Type = rty.Undefined()
 
     @property
-    def type_name(self) -> ID:
-        return self.__type_name
+    def type_identifier(self) -> ID:
+        return self.__type_identifier
 
     @property
     def type_(self) -> rty.Type:
@@ -81,16 +81,16 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     def __init__(
         self,
         identifier: StrID,
-        type_name: StrID,
+        type_identifier: StrID,
         expression: Expr = None,
         location: Location = None,
     ):
-        super().__init__(identifier, type_name, location)
+        super().__init__(identifier, type_identifier, location)
         self.expression = expression
 
     def __str__(self) -> str:
         expression = f" := {self.expression}" if self.expression else ""
-        return f"{self.identifier} : {self.type_name}{expression}"
+        return f"{self.identifier} : {self.type_identifier}{expression}"
 
     def check_type(
         self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
@@ -113,13 +113,17 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     descriptive_name: ClassVar[str] = "renaming"
 
     def __init__(
-        self, identifier: StrID, type_name: StrID, expression: Selected, location: Location = None
+        self,
+        identifier: StrID,
+        type_identifier: StrID,
+        expression: Selected,
+        location: Location = None,
     ):
-        super().__init__(identifier, type_name, location)
+        super().__init__(identifier, type_identifier, location)
         self.expression = expression
 
     def __str__(self) -> str:
-        return f"{self.identifier} : {self.type_name} renames {self.expression}"
+        return f"{self.identifier} : {self.type_identifier} renames {self.expression}"
 
     def check_type(
         self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
@@ -165,17 +169,17 @@ class FormalDeclaration(Declaration):
 
 
 class Argument(Base):
-    def __init__(self, name: StrID, type_name: StrID):
+    def __init__(self, identifier: StrID, type_identifier: StrID):
         super().__init__()
-        self.__name = ID(name)
-        self.__type_name = ID(type_name)
+        self.__identifier = ID(identifier)
+        self.__type_identifier = ID(type_identifier)
 
     def __str__(self) -> str:
-        return f"{self.__name} : {self.__type_name}"
+        return f"{self.__identifier} : {self.__type_identifier}"
 
     @property
-    def type_name(self) -> ID:
-        return self.__type_name
+    def type_identifier(self) -> ID:
+        return self.__type_identifier
 
 
 class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):

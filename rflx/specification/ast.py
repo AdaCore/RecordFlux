@@ -16,13 +16,13 @@ class SyntaxTree(Base):
 class Then(SyntaxTree):
     def __init__(
         self,
-        name: StrID = None,
+        identifier: StrID = None,
         first: Expr = UNDEFINED,
         size: Expr = UNDEFINED,
         condition: Expr = TRUE,
         location: Location = None,
     ) -> None:
-        self.name = ID(name) if name else None
+        self.identifier = ID(identifier) if identifier else None
         self.first = first
         self.size = size
         self.condition = condition
@@ -31,7 +31,7 @@ class Then(SyntaxTree):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return (
-                self.name == other.name
+                self.identifier == other.identifier
                 and self.first == other.first
                 and self.size == other.size
                 and self.condition == other.condition
@@ -42,16 +42,16 @@ class Then(SyntaxTree):
 class Component(SyntaxTree):
     def __init__(
         self,
-        name: StrID = None,
-        type_name: StrID = None,
+        identifier: StrID = None,
+        type_identifier: StrID = None,
         thens: List[Then] = None,
         first: Expr = UNDEFINED,
         size: Expr = UNDEFINED,
         condition: Expr = TRUE,
     ) -> None:
         # pylint: disable=too-many-arguments
-        self.name = ID(name) if name else None
-        self.type_name = ID(type_name) if type_name else None
+        self.identifier = ID(identifier) if identifier else None
+        self.type_identifier = ID(type_identifier) if type_identifier else None
         self.thens = thens or []
         self.first = first
         self.size = size

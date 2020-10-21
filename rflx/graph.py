@@ -19,12 +19,12 @@ class Graph:
     def __init__(self, data: Union[Session, Message]) -> None:
         self.__data = copy(data)
         if isinstance(self.__data, Session):
-            self.__degree = {s.name.name: len(s.transitions) for s in self.__data.states}
+            self.__degree = {s.identifier.name: len(s.transitions) for s in self.__data.states}
             for s in self.__data.states:
                 for p in self.__data.states:
                     for t in p.transitions:
-                        if t.target == s.name:
-                            self.__degree[s.name.name] += 1
+                        if t.target == s.identifier:
+                            self.__degree[s.identifier.name] += 1
 
     def __target_size(self, link: Link) -> str:
         assert isinstance(self.__data, Message)
@@ -73,25 +73,25 @@ class Graph:
 
         assert isinstance(self.__data, Session)
 
-        height = sqrt(self.__degree[state.name.name] + 1)
-        width = 1.3 * sqrt(self.__degree[state.name.name] + 1)
+        height = sqrt(self.__degree[state.identifier.name] + 1)
+        width = 1.3 * sqrt(self.__degree[state.identifier.name] + 1)
         variables_read: Counter[ID] = collections.Counter()
         variables_write: Counter[ID] = collections.Counter()
 
-        if state.name == self.__data.initial:
+        if state.identifier == self.__data.initial:
             result.add_node(
                 Node(
-                    name=str(state.name.name),
+                    name=str(state.identifier.name),
                     fillcolor="#ffffff",
                     fontcolor="black",
                     width=f"{width:.2f}",
                     height=f"{height:.2f}",
                 )
             )
-        elif state.name == self.__data.final:
+        elif state.identifier == self.__data.final:
             result.add_node(
                 Node(
-                    name=str(state.name.name),
+                    name=str(state.identifier.name),
                     fillcolor="#6f6f6f",
                     width=f"{width:.2f}",
                     height=f"{height:.2f}",
@@ -99,16 +99,18 @@ class Graph:
             )
         else:
             result.add_node(
-                Node(name=str(state.name.name), width=f"{width:.2f}", height=f"{height:.2f}")
+                Node(name=str(state.identifier.name), width=f"{width:.2f}", height=f"{height:.2f}")
             )
 
         for index, t in enumerate(state.transitions):
             label = (
-                f"{state.name.name} → {t.target.name}\n\n[{index}] {t.condition}"
+                f"{state.identifier.name} → {t.target.name}\n\n[{index}] {t.condition}"
                 if t.condition != TRUE
                 else ""
             )
-            result.add_edge(Edge(src=str(state.name.name), dst=str(t.target.name), tooltip=label))
+            result.add_edge(
+                Edge(src=str(state.identifier.name), dst=str(t.target.name), tooltip=label)
+            )
             variables_read.update(
                 [
                     v.identifier
@@ -131,11 +133,19 @@ class Graph:
 
         for v in variables_read:
             result.add_edge(
-                Edge(src=str(v), dst=str(state.name.name), tooltip=f"{state.name.name}: read {v}")
+                Edge(
+                    src=str(v),
+                    dst=str(state.identifier.name),
+                    tooltip=f"{state.identifier.name}: read {v}",
+                )
             )
         for v in variables_write:
             result.add_edge(
-                Edge(src=str(state.name.name), dst=str(v), tooltip=f"{state.name.name}: write {v}")
+                Edge(
+                    src=str(state.identifier.name),
+                    dst=str(v),
+                    tooltip=f"{state.identifier.name}: write {v}",
+                )
             )
 
         variables.update(variables_read)

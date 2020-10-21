@@ -85,7 +85,7 @@ from rflx.model import (
     State,
     Transition,
     Type,
-    qualified_type_name,
+    qualified_type_identifier,
 )
 
 from . import const
@@ -972,7 +972,7 @@ def parse_type(string: str, location: int, tokens: ParseResults) -> Type:
     if tokens[3] == "array of":
         return ArraySpec(
             identifier,
-            ReferenceSpec(qualified_type_name(tokens[4], package), tokens[4].location),
+            ReferenceSpec(qualified_type_identifier(tokens[4], package), tokens[4].location),
             locn,
         )
 

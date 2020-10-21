@@ -270,8 +270,8 @@ SESSION = Session(
     initial="A",
     final="B",
     states=[
-        State(name="A", transitions=[Transition(target="B")]),
-        State(name="B"),
+        State("A", transitions=[Transition(target="B")]),
+        State("B"),
     ],
     declarations=[],
     parameters=[],

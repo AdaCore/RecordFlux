@@ -1309,7 +1309,7 @@ class Selected(Name):
 class Call(Name):
     def __init__(
         self,
-        name: StrID,
+        identifier: StrID,
         args: Sequence[Expr] = None,
         negative: bool = False,
         immutable: bool = False,
@@ -1317,13 +1317,13 @@ class Call(Name):
         argument_types: Sequence[rty.Type] = None,
         location: Location = None,
     ) -> None:
-        self.name = ID(name)
+        self.identifier = ID(identifier)
         self.args = args or []
         self.argument_types = argument_types or []
         super().__init__(negative, immutable, type_, location)
 
     def __neg__(self) -> "Call":
-        return self.__class__(self.name, self.args, not self.negative)
+        return self.__class__(self.identifier, self.args, not self.negative)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
@@ -1357,18 +1357,18 @@ class Call(Name):
         args = ", ".join(map(str, self.args))
         if args:
             args = f" ({args})"
-        call = f"{self.name}{args}"
+        call = f"{self.identifier}{args}"
         return call
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Call(ada.ID(self.name), [a.ada_expr() for a in self.args], self.negative)
+        return ada.Call(ada.ID(self.identifier), [a.ada_expr() for a in self.args], self.negative)
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def variables(self) -> List["Variable"]:
-        result = [Variable(self.name, location=self.location)]
+        result = [Variable(self.identifier, location=self.location)]
         for t in self.args:
             result.extend(t.variables())
         return result
@@ -1380,7 +1380,7 @@ class Call(Name):
         expr = func(self)
         assert isinstance(expr, Call)
         return expr.__class__(
-            expr.name,
+            expr.identifier,
             [a.substituted(func) for a in expr.args],
             expr.negative,
             expr.immutable,
@@ -1722,26 +1722,25 @@ class NotIn(Relation):
 class QuantifiedExpression(Expr):
     def __init__(
         self,
-        parameter_name: StrID,
+        parameter_identifier: StrID,
         iterable: Expr,
         predicate: Expr,
         location: Location = None,
     ) -> None:
         super().__init__(rty.BOOLEAN, location)
-        self.parameter_name = ID(parameter_name)
+        self.parameter_identifier = ID(parameter_identifier)
         self.iterable = iterable
         self.predicate = predicate
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"(for {self.quantifier} {self.parameter_name} {self.keyword} {self.iterable} =>\n"
-            + indent(str(self.predicate), 4)
-            + ")"
+            f"(for {self.quantifier} {self.parameter_identifier} {self.keyword} {self.iterable}"
+            f" =>\n{indent(str(self.predicate), 4)})"
         )
 
     def _check_type_subexpr(self) -> RecordFluxError:
         def typify_variable(expr: Expr) -> Expr:
-            if isinstance(expr, Variable) and expr.identifier == self.parameter_name:
+            if isinstance(expr, Variable) and expr.identifier == self.parameter_identifier:
                 if isinstance(self.iterable.type_, (rty.Aggregate, rty.Array)):
                     expr.type_ = self.iterable.type_.element
                 else:
@@ -1773,13 +1772,13 @@ class QuantifiedExpression(Expr):
             unique(
                 v
                 for v in self.iterable.variables() + self.predicate.variables()
-                if v.identifier != self.parameter_name
+                if v.identifier != self.parameter_identifier
             )
         )
 
     def ada_expr(self) -> ada.Expr:
         return getattr(ada, self.__class__.__name__)(
-            self.parameter_name, self.iterable.ada_expr(), self.predicate.ada_expr()
+            self.parameter_identifier, self.iterable.ada_expr(), self.predicate.ada_expr()
         )
 
     @lru_cache(maxsize=None)
@@ -1793,7 +1792,7 @@ class QuantifiedExpression(Expr):
         expr = func(self)
         assert isinstance(expr, QuantifiedExpression)
         return expr.__class__(
-            expr.parameter_name,
+            expr.parameter_identifier,
             expr.iterable.substituted(func),
             expr.predicate.substituted(func),
             location=expr.location,
@@ -1801,7 +1800,7 @@ class QuantifiedExpression(Expr):
 
     def simplified(self) -> Expr:
         return self.__class__(
-            self.parameter_name, self.iterable.simplified(), self.predicate.simplified()
+            self.parameter_identifier, self.iterable.simplified(), self.predicate.simplified()
         )
 
 
@@ -1892,19 +1891,19 @@ class ValueRange(Expr):
 class Conversion(Expr):
     def __init__(
         self,
-        name: StrID,
+        identifier: StrID,
         argument: Expr,
         type_: rty.Type = rty.Undefined(),
         argument_types: Sequence[rty.Type] = None,
         location: Location = None,
     ) -> None:
         super().__init__(type_, location)
-        self.name = ID(name)
+        self.identifier = ID(identifier)
         self.argument = argument
         self.argument_types = argument_types or []
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self.name} ({self.argument})")
+        self._str = intern(f"{self.identifier} ({self.argument})")
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = self.argument.check_type(rty.OPAQUE)
@@ -1914,7 +1913,7 @@ class Conversion(Expr):
                 error += self.argument.prefix.check_type(tuple(self.argument_types))
             else:
                 error.append(
-                    f'invalid conversion to "{self.name}"',
+                    f'invalid conversion to "{self.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     self.location,
@@ -1951,7 +1950,7 @@ class Conversion(Expr):
         expr = func(self)
         if isinstance(expr, Conversion):
             return expr.__class__(
-                expr.name,
+                expr.identifier,
                 expr.argument.substituted(func),
                 expr.type_,
                 expr.argument_types,
@@ -1961,7 +1960,7 @@ class Conversion(Expr):
 
     def simplified(self) -> Expr:
         return Conversion(
-            self.name,
+            self.identifier,
             self.argument.simplified(),
             self.type_,
             self.argument_types,
@@ -1969,7 +1968,7 @@ class Conversion(Expr):
         )
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Conversion(ada.ID(self.name), self.argument.ada_expr())
+        return ada.Conversion(ada.ID(self.identifier), self.argument.ada_expr())
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -2069,13 +2068,13 @@ class Comprehension(Expr):
 class MessageAggregate(Expr):
     def __init__(
         self,
-        name: StrID,
+        identifier: StrID,
         field_values: Mapping[StrID, Expr],
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
         super().__init__(type_, location)
-        self.name = ID(name)
+        self.identifier = ID(identifier)
         self.field_values = {ID(k): v for k, v in field_values.items()}
 
     def _update_str(self) -> None:
@@ -2084,7 +2083,7 @@ class MessageAggregate(Expr):
             if self.field_values
             else "null message"
         )
-        self._str = intern(f"{self.name}'({field_values})")
+        self._str = intern(f"{self.identifier}'({field_values})")
 
     def _check_type_subexpr(self) -> RecordFluxError:
         if not isinstance(self.type_, rty.Message):
@@ -2155,7 +2154,7 @@ class MessageAggregate(Expr):
 
     def simplified(self) -> Expr:
         return MessageAggregate(
-            self.name,
+            self.identifier,
             {k: self.field_values[k].simplified() for k in self.field_values},
             self.type_,
             self.location,
@@ -2168,7 +2167,7 @@ class MessageAggregate(Expr):
         expr = func(self)
         if isinstance(expr, MessageAggregate):
             return expr.__class__(
-                expr.name,
+                expr.identifier,
                 {k: expr.field_values[k].substituted(func) for k in expr.field_values},
                 type_=expr.type_,
                 location=expr.location,
@@ -2289,7 +2288,7 @@ def _entity_name(expr: Expr) -> str:
         else "expression"
     )
     expr_name = (
-        str(expr.name)
+        str(expr.identifier)
         if isinstance(expr, (Variable, Call, Conversion, MessageAggregate))
         else str(expr)
     )
