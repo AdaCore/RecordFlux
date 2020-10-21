@@ -253,6 +253,24 @@ def test_model_name_conflict_sessions() -> None:
     )
 
 
+def test_model_illegal_first_aspect_at_initial_link() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 256;
+               type PDU is
+                  message
+                     null
+                        then Foo
+                           with First => 0;
+                     Foo : T;
+                  end message;
+            end Test;
+        """,
+        r"^<stdin>:8:42: model: error: illegal first aspect at initial link$",
+    )
+
+
 def test_message_with_two_size_fields() -> None:
     p = parser.Parser()
     p.parse_string(

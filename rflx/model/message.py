@@ -354,8 +354,9 @@ class AbstractMessage(mty.Type):
 
         return False
 
-    # pylint: disable=too-many-branches
     def __verify(self) -> None:
+        # pylint: disable=too-many-branches, too-many-locals
+
         type_fields = self.__types.keys() | {INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
 
@@ -375,7 +376,9 @@ class AbstractMessage(mty.Type):
                 f.identifier.location,
             )
 
-        if len(self.outgoing(INITIAL)) != 1:
+        initial_links = self.outgoing(INITIAL)
+
+        if len(initial_links) != 1:
             self.error.append(
                 f'ambiguous first field in "{self.identifier}"',
                 Subsystem.MODEL,
@@ -388,6 +391,14 @@ class AbstractMessage(mty.Type):
                     for l in self.outgoing(INITIAL)
                     if l.target.identifier.location
                 ]
+            )
+
+        if initial_links[0].first != expr.UNDEFINED:
+            self.error.append(
+                "illegal first aspect at initial link",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                initial_links[0].first.location,
             )
 
         name_conflicts = [

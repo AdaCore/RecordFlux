@@ -704,24 +704,6 @@ def test_parse_error_derivation_of_derived_type() -> None:
     )
 
 
-def test_parse_error_invalid_first_in_initial_node() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     null
-                        then Foo
-                           with First => 0;
-                     Foo : T;
-                  end message;
-            end Test;
-        """,
-        r"^<stdin>:8:42: parser: error: invalid first aspect$",
-    )
-
-
 def test_parse_error_multiple_initial_node_edges() -> None:
     assert_error_string(
         """

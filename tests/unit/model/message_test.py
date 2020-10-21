@@ -221,6 +221,23 @@ def test_ambiguous_first_field() -> None:
     )
 
 
+def test_illegal_first_aspect_at_initial_link() -> None:
+    t = ModularInteger("P::T", Number(2))
+
+    structure = [
+        Link(INITIAL, Field("X"), first=Number(2, location=Location((10, 20)))),
+        Link(Field("X"), FINAL),
+    ]
+
+    types = {Field("X"): t}
+
+    assert_message_model_error(
+        structure,
+        types,
+        "^<stdin>:10:20: model: error: illegal first aspect at initial link",
+    )
+
+
 def test_name_conflict_field_enum() -> None:
     t = Enumeration(
         "P::T",
