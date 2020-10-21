@@ -29,6 +29,9 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
+    Session,
+    State,
+    Transition,
     UnprovenMessage,
 )
 
@@ -223,7 +226,7 @@ EXPRESSION_MESSAGE = Message(
 EXPRESSION_MODEL = Model([EXPRESSION_MESSAGE])
 
 DERIVATION_MESSAGE = DerivedMessage("Derivation::Message", ARRAYS_MESSAGE)
-DERIVATION_MODEL = Model([*ARRAYS_MODEL.types, DERIVATION_MESSAGE])
+DERIVATION_MODEL = Model([DERIVATION_MESSAGE])
 
 VALID_MESSAGE = UnprovenMessage(
     "P::M",
@@ -250,4 +253,27 @@ ENUMERATION = Enumeration(
     [("ZERO", Number(0)), ("ONE", Number(1)), ("TWO", Number(2))],
     Number(8),
     False,
+)
+
+MESSAGE = Message(
+    "P::M",
+    [
+        Link(INITIAL, Field("F"), size=Number(16)),
+        Link(Field("F"), FINAL),
+    ],
+    {Field("F"): Opaque()},
+)
+REFINEMENT = Refinement("In_Message", MESSAGE, Field("F"), MESSAGE)
+
+SESSION = Session(
+    identifier="P::S",
+    initial="A",
+    final="B",
+    states=[
+        State(name="A", transitions=[Transition(target="B")]),
+        State(name="B"),
+    ],
+    declarations=[],
+    parameters=[],
+    types=[],
 )

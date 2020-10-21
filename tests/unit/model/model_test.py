@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Sequence
 
 import pytest
@@ -5,12 +6,59 @@ import pytest
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Number
 from rflx.identifier import ID
-from rflx.model import BUILTIN_TYPES, Enumeration, Model, ModularInteger, Type
+from rflx.model import BUILTIN_TYPES, Enumeration, Model, ModularInteger, RangeInteger, Type
+from tests.data import models
 
 
 def assert_model_error(types: Sequence[Type], regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         Model([*BUILTIN_TYPES.values(), *types])
+
+
+def test_name_conflict_types() -> None:
+    assert_model_error(
+        [
+            ModularInteger("P::T", Number(256), location=Location((10, 20))),
+            RangeInteger("P::T", Number(1), Number(100), Number(8), location=Location((10, 30))),
+        ],
+        r"^"
+        r'<stdin>:10:30: model: error: name conflict for type "P::T"\n'
+        r'<stdin>:10:20: model: info: previous occurrence of "P::T"'
+        r"$",
+    )
+
+
+def test_conflicting_refinements() -> None:
+    r1 = copy(models.REFINEMENT)
+    r1.location = Location((10, 20))
+    r2 = copy(models.REFINEMENT)
+    r2.location = Location((10, 30))
+
+    assert_model_error(
+        [models.MESSAGE, r1, r2],
+        r"^"
+        r'<stdin>:10:30: model: error: conflicting refinement of "P::M" with "P::M"\n'
+        r"<stdin>:10:20: model: info: previous occurrence of refinement"
+        r"$",
+    )
+
+
+def test_name_conflict_sessions() -> None:
+    s1 = copy(models.SESSION)
+    s1.location = Location((10, 20))
+    s2 = copy(models.SESSION)
+    s2.location = Location((10, 30))
+
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:10:30: model: error: name conflict for session "P::S"\n'
+            r'<stdin>:10:20: model: info: previous occurrence of "P::S"'
+            r"$"
+        ),
+    ):
+        Model([], [s1, s2])
 
 
 def test_conflicting_literal_builtin_type() -> None:
