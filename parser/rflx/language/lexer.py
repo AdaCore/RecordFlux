@@ -34,6 +34,7 @@ class Token(LexerToken):
     First = WithText()
     Last = WithText()
     Checksum = WithText()
+    AlwaysValid = WithText()
 
     # Symbols
     Dot = WithText()
@@ -85,6 +86,7 @@ rflx_lexer.add_rules(
     (Literal("First"), Token.First),
     (Literal("Last"), Token.Last),
     (Literal("Checksum"), Token.Checksum),
+    (Literal("AlwaysValid"), Token.AlwaysValid),
     (Literal(";"), Token.Semicolon),
     (Literal(":"), Token.Colon),
     (Literal("("), Token.LPar),
@@ -108,6 +110,7 @@ rflx_lexer.add_rules(
     (Literal("and"), Token.And),
     (Literal("or"), Token.Or),
     (Literal("=>"), Token.Arrow),
-    (Pattern(r"[0-9A-F]+(_?[0-9A-F]+)*"), Token.Numeral),
+    (Pattern(r"[0-9]+(_?[0-9]+)*"), Token.Numeral),
+    (Pattern(r"[0-9]+#[0-9A-F]+(_?[0-9A-F]+)*#"), Token.Numeral),
     (Pattern(r"[a-zA-Z][a-zA-Z0-9_]*"), Token.UnqualifiedIdentifier),
 )

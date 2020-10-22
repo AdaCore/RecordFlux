@@ -13,9 +13,7 @@ rflx_grammar.add_rules(
 rflx_grammar.add_rules(
     unqualified_identifier=ast.UnqualifiedID(lexer.UnqualifiedIdentifier),
     qualified_identifier=ast.ID(List(grammar.unqualified_identifier, sep=".")),
-    based_literal=ast.BasedLiteral(Pick(lexer.Numeral, "#", lexer.Numeral, "#")),
-    num_literal=Or(grammar.based_literal, ast.BasedLiteral(lexer.Numeral)),
-    numeric_literal=ast.NumericLiteral(grammar.num_literal),
+    numeric_literal=ast.NumericLiteral(lexer.Numeral),
     qualified_variable=ast.Variable(grammar.qualified_identifier),
     primary=Or(grammar.numeric_literal, grammar.qualified_variable, grammar.paren_expression),
     binop=Or(
@@ -66,7 +64,7 @@ rflx_grammar.add_rules(
     then=ast.Then(
         "then",
         Or(ast.NullID("null"), grammar.unqualified_identifier),
-        Opt("with", List(grammar.first_aspect or grammar.last_aspect, sep=",")),
+        Opt("with", List(Or(grammar.first_aspect, grammar.last_aspect), sep=",")),
         Opt(grammar.if_condition),
     ),
     null_component_item=ast.NullComponent("null", grammar.then, ";"),
@@ -92,20 +90,38 @@ rflx_grammar.add_rules(
         "Checksum", "=>", "(", List(grammar.checksum_association), ")"
     ),
     message_type_definition=Or(
-        ast.Message(
+        ast.MessageTypeDef(
             "message",
             grammar.component_list,
             "end",
             "message",
             Opt("with", grammar.checksum_aspect),
         ),
-        ast.NullMessage("null", "message"),
+        ast.NullMessageTypeDef("null", "message"),
+    ),
+    positional_enumeration=ast.NamedEnumeration(List(grammar.unqualified_identifier, sep=",")),
+    element_value_association=ast.ElementValueAssoc(
+        grammar.unqualified_identifier, "=>", grammar.numeric_literal
+    ),
+    named_enumeration=ast.PositionalEnumeration(List(grammar.element_value_association, sep=",")),
+    always_valid_aspect=ast.AlwaysValidAspect("AlwaysValid", "=>", grammar.boolean_expression),
+    enumeration_aspects=List(Or(grammar.size_aspect, grammar.always_valid_aspect)),
+    enumeration_type_definition=ast.EnumerationTypeDef(
+        "(",
+        Or(grammar.named_enumeration, grammar.positional_enumeration),
+        ")",
+        "with",
+        grammar.enumeration_aspects,
     ),
     type_declaration=ast.Type(
         "type",
         grammar.unqualified_identifier,
         "is",
-        Or(grammar.integer_type_definition, grammar.message_type_definition),
+        Or(
+            grammar.enumeration_type_definition,
+            grammar.integer_type_definition,
+            grammar.message_type_definition,
+        ),
     ),
     basic_declaration=Or(grammar.type_declaration),
     package_declaration=ast.PackageDeclarationNode(

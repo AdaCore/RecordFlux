@@ -45,15 +45,37 @@ class ModularTypeDef(IntegerTypeDef):
 
 
 @abstract
-class AbstractMessage(TypeDef):
+class AbstractMessageTypeDef(TypeDef):
     pass
 
 
-class NullMessage(AbstractMessage):
+class NullMessageTypeDef(AbstractMessageTypeDef):
     pass
 
 
-class Message(AbstractMessage):
+class Enumeration(TypeDef):
+    pass
+
+
+class NamedEnumeration(Enumeration):
+    elements = Field()
+
+
+class PositionalEnumeration(Enumeration):
+    elements = Field()
+
+
+class EnumerationTypeDef(TypeDef):
+    elements = Field()
+    aspects = Field()
+
+
+class ElementValueAssoc(TypeDef):
+    name = Field()
+    literal = Field()
+
+
+class MessageTypeDef(AbstractMessageTypeDef):
     components = Field()
     checksums = Field()
 
@@ -70,11 +92,20 @@ class BasedLiteral(RFLXNode):
 
 
 class NumericLiteral(RFLXNode):
-    value = Field()
+    token_node = True
 
 
-class SizeAspect(RFLXNode):
+@abstract
+class Aspect(RFLXNode):
+    pass
+
+
+class SizeAspect(Aspect):
     size = Field()
+
+
+class AlwaysValidAspect(Aspect):
+    value = Field()
 
 
 class Then(RFLXNode):
