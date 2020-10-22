@@ -30,11 +30,10 @@ class Token(LexerToken):
     Then = WithText()
 
     # Aspect names
-    Size = WithText()
     First = WithText()
+    Length = WithText()
     Last = WithText()
     Checksum = WithText()
-    AlwaysValid = WithText()
 
     # Symbols
     Dot = WithText()
@@ -82,11 +81,7 @@ rflx_lexer.add_rules(
     (Literal("mod"), Token.Mod),
     (Literal("message"), Token.Message),
     (Literal("then"), Token.Then),
-    (Literal("Size"), Token.Size),
-    (Literal("First"), Token.First),
-    (Literal("Last"), Token.Last),
     (Literal("Checksum"), Token.Checksum),
-    (Literal("AlwaysValid"), Token.AlwaysValid),
     (Literal(";"), Token.Semicolon),
     (Literal(":"), Token.Colon),
     (Literal("("), Token.LPar),

@@ -53,6 +53,7 @@ class NullMessageTypeDef(AbstractMessageTypeDef):
     pass
 
 
+@abstract
 class Enumeration(TypeDef):
     pass
 
@@ -85,12 +86,6 @@ class Type(RFLXNode):
     type_definition = Field(type=TypeDef)
 
 
-class BasedLiteral(RFLXNode):
-    # base = Field()
-    # value = Field()
-    pass
-
-
 class NumericLiteral(RFLXNode):
     token_node = True
 
@@ -100,25 +95,19 @@ class Aspect(RFLXNode):
     pass
 
 
-class SizeAspect(Aspect):
-    size = Field()
+class MathematicalAspect(Aspect):
+    name = Field()
+    value = Field()
 
 
-class AlwaysValidAspect(Aspect):
+class BooleanAspect(Aspect):
+    name = Field()
     value = Field()
 
 
 class Then(RFLXNode):
     name = Field()
     aspects = Field()
-    condition = Field()
-
-
-class First(RFLXNode):
-    condition = Field()
-
-
-class Last(RFLXNode):
     condition = Field()
 
 

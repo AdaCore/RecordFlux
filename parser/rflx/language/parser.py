@@ -47,24 +47,27 @@ rflx_grammar.add_rules(
 )
 
 rflx_grammar.add_rules(
-    size_aspect=ast.SizeAspect("Size", "=>", grammar.mathematical_expression),
+    mathematical_aspect=ast.MathematicalAspect(
+        grammar.unqualified_identifier, "=>", grammar.mathematical_expression
+    ),
+    boolean_aspect=ast.BooleanAspect(
+        grammar.unqualified_identifier, Opt("=>", grammar.boolean_expression)
+    ),
     range_type_definition=ast.RangeTypeDef(
         "range",
         grammar.mathematical_expression,
         "..",
         grammar.mathematical_expression,
         "with",
-        grammar.size_aspect,
+        grammar.mathematical_aspect,
     ),
     modular_type_definition=ast.ModularTypeDef("mod", grammar.mathematical_expression),
     integer_type_definition=Or(grammar.range_type_definition, grammar.modular_type_definition),
-    first_aspect=ast.First("First", "=>", grammar.mathematical_expression),
-    last_aspect=ast.Last("Last", "=>", grammar.mathematical_expression),
     if_condition=ast.If("if", grammar.boolean_expression),
     then=ast.Then(
         "then",
         Or(ast.NullID("null"), grammar.unqualified_identifier),
-        Opt("with", List(Or(grammar.first_aspect, grammar.last_aspect), sep=",")),
+        Opt("with", List(grammar.mathematical_aspect, sep=",")),
         Opt(grammar.if_condition),
     ),
     null_component_item=ast.NullComponent("null", grammar.then, ";"),
@@ -104,8 +107,7 @@ rflx_grammar.add_rules(
         grammar.unqualified_identifier, "=>", grammar.numeric_literal
     ),
     named_enumeration=ast.PositionalEnumeration(List(grammar.element_value_association, sep=",")),
-    always_valid_aspect=ast.AlwaysValidAspect("AlwaysValid", "=>", grammar.boolean_expression),
-    enumeration_aspects=List(Or(grammar.size_aspect, grammar.always_valid_aspect)),
+    enumeration_aspects=List(Or(grammar.mathematical_aspect, grammar.boolean_aspect), sep=","),
     enumeration_type_definition=ast.EnumerationTypeDef(
         "(",
         Or(grammar.named_enumeration, grammar.positional_enumeration),
