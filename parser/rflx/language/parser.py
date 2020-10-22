@@ -1,83 +1,40 @@
-from langkit.dsl import ASTNode, Field, abstract  # type: ignore
 from langkit.parsers import Grammar, List, Opt, Or, Pick  # type: ignore
 
+import rflx.language.ast as ast
 from rflx.language.lexer import rflx_lexer as lexer
 
-
-@abstract
-class RFLXNode(ASTNode):
-    pass
-
-
-class ID(RFLXNode):
-    token_node = True
-
-
-class PackageDeclarationNode(RFLXNode):
-    name_start = Field()
-    content = Field()
-    name_end = Field()
-
-
-@abstract
-class IntegerTypeDef(RFLXNode):
-    pass
-
-
-class RangeTypeDef(IntegerTypeDef):
-    lower = Field()
-    upper = Field()
-    size = Field()
-
-
-class ModularTypeDef(IntegerTypeDef):
-    mod = Field()
-
-
-class Type(RFLXNode):
-    identifier = Field()
-    type_definition = Field(type=IntegerTypeDef)
-
-
-class BasedLiteral(RFLXNode):
-    # base = Field()
-    # value = Field()
-    pass
-
-
-class NumericLiteral(RFLXNode):
-    value = Field()
-
-
-class SizeAspect(RFLXNode):
-    size = Field()
-
-
 rflx_grammar = Grammar("main_rule")
-G = rflx_grammar
+grammar = rflx_grammar
 
 rflx_grammar.add_rules(
-    main_rule=Opt(G.package_declaration),
-    unqualified_identifier=ID(lexer.UnqualifiedIdentifier),
-    based_literal=BasedLiteral(Pick(lexer.Numeral, "#", lexer.Numeral, "#")),
-    num_literal=Or(G.based_literal, BasedLiteral(lexer.Numeral)),
-    numeric_literal=NumericLiteral(G.num_literal),
-    mathematical_expression=Or(G.numeric_literal),
-    size_aspect=SizeAspect("Size", "=>", G.mathematical_expression),
-    range_type_definition=RangeTypeDef(
-        "range", G.mathematical_expression, "..", G.mathematical_expression, "with", G.size_aspect
+    main_rule=Opt(grammar.package_declaration),
+    unqualified_identifier=ast.ID(lexer.UnqualifiedIdentifier),
+    based_literal=ast.BasedLiteral(Pick(lexer.Numeral, "#", lexer.Numeral, "#")),
+    num_literal=Or(grammar.based_literal, ast.BasedLiteral(lexer.Numeral)),
+    numeric_literal=ast.NumericLiteral(grammar.num_literal),
+    mathematical_expression=Or(grammar.numeric_literal),
+    size_aspect=ast.SizeAspect("Size", "=>", grammar.mathematical_expression),
+    range_type_definition=ast.RangeTypeDef(
+        "range",
+        grammar.mathematical_expression,
+        "..",
+        grammar.mathematical_expression,
+        "with",
+        grammar.size_aspect,
     ),
-    modular_type_definition=ModularTypeDef("mod", G.mathematical_expression),
-    integer_type_definition=Or(G.range_type_definition, G.modular_type_definition),
-    type_declaration=Type("type", G.unqualified_identifier, "is", Or(G.integer_type_definition)),
-    basic_declaration=Or(G.type_declaration),
-    package_declaration=PackageDeclarationNode(
+    modular_type_definition=ast.ModularTypeDef("mod", grammar.mathematical_expression),
+    integer_type_definition=Or(grammar.range_type_definition, grammar.modular_type_definition),
+    type_declaration=ast.Type(
+        "type", grammar.unqualified_identifier, "is", Or(grammar.integer_type_definition)
+    ),
+    basic_declaration=Or(grammar.type_declaration),
+    package_declaration=ast.PackageDeclarationNode(
         "package",
-        G.unqualified_identifier,
+        grammar.unqualified_identifier,
         "is",
-        Opt(List(G.basic_declaration, sep=";"), ";"),
+        Opt(List(grammar.basic_declaration, sep=";"), ";"),
         "end",
-        G.unqualified_identifier,
+        grammar.unqualified_identifier,
         ";",
     ),
 )
