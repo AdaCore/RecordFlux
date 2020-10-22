@@ -235,7 +235,7 @@ jobs:
     - name: Show proof results
       if: ${{ always() }}
       run: |
-        run_spat -Ptest -ca -ra
+        run_spat -Ptest -ca -ra -d
         run_spat -Ptest -g
 
   verification_cached:
@@ -270,5 +270,5 @@ jobs:
     - name: Show proof results
       if: ${{ always() }}
       run: |
-        run_spat -Ptest -ca -ra
+        run_spat -Ptest -ca -ra -d
         run_spat -Ptest -g
