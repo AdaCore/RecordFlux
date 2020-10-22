@@ -183,3 +183,20 @@ class BooleanExpression(RFLXNode):
 
 class MathematicalExpression(RFLXNode):
     expr = Field()
+
+
+@abstract
+class Attribute(RFLXNode):
+    pass
+
+
+class FirstAttribute(Attribute):
+    variable = Field()
+
+
+class LengthAttribute(Attribute):
+    variable = Field()
+
+
+class LastAttribute(Attribute):
+    variable = Field()

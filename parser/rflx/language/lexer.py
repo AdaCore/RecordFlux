@@ -1,4 +1,6 @@
 from langkit.lexer import (  # type: ignore
+    Alt,
+    Case,
     Ignore,
     Lexer,
     LexerToken,
@@ -39,6 +41,7 @@ class Token(LexerToken):
     Dot = WithText()
     Comma = WithText()
     DoubleDot = WithText()
+    Tick = WithText()
     Hash = WithText()
     Minus = WithText()
     Arrow = WithText()
@@ -67,9 +70,51 @@ class Token(LexerToken):
 
 
 rflx_lexer = Lexer(Token)
+
 rflx_lexer.add_rules(
     (Pattern(r"[ \t\r\n]+"), Ignore()),
     (Pattern(r"--.*"), Token.Comment),
+)
+
+# Hack to support keywords that equal attributes
+# Inspired by Libadalang grammar (ada/language/lexer.py)
+rflx_lexer.add_rules(
+    *[
+        Case(
+            Literal(text),
+            Alt(
+                prev_token_cond=(Token.Tick,),
+                send=token,
+                match_size=len(text),
+            ),
+            Alt(send=Token.UnqualifiedIdentifier, match_size=len(text)),
+        )
+        for text, token in [
+            ("First", Token.First),
+            ("Last", Token.Last),
+            ("Length", Token.Length),
+        ]
+    ]
+)
+
+rflx_lexer.add_rules(
+    *[
+        Case(
+            Literal(text),
+            Alt(
+                prev_token_cond=(Token.Tick,),
+                send=token,
+                match_size=len(text),
+            ),
+            Alt(send=Token.UnqualifiedIdentifier, match_size=len(text)),
+        )
+        for text, token in [
+            ("Checksum", Token.Checksum),
+        ]
+    ]
+)
+
+rflx_lexer.add_rules(
     (Literal("package"), Token.Package),
     (Literal("is"), Token.Is),
     (Literal("if"), Token.Is),
@@ -89,8 +134,8 @@ rflx_lexer.add_rules(
     (Literal(".."), Token.DoubleDot),
     (Literal("."), Token.Dot),
     (Literal(","), Token.Comma),
+    (Literal("'"), Token.Tick),
     (Literal("#"), Token.Hash),
-    (Literal("-"), Token.Minus),
     (Literal("**"), Token.Exp),
     (Literal("*"), Token.Mul),
     (Literal("/="), Token.Neq),

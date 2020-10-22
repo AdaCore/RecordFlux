@@ -14,8 +14,18 @@ rflx_grammar.add_rules(
     unqualified_identifier=ast.UnqualifiedID(lexer.UnqualifiedIdentifier),
     qualified_identifier=ast.ID(List(grammar.unqualified_identifier, sep=".")),
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
-    qualified_variable=ast.Variable(grammar.qualified_identifier),
-    primary=Or(grammar.numeric_literal, grammar.qualified_variable, grammar.paren_expression),
+    variable=ast.Variable(grammar.unqualified_identifier),
+    first_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.First),
+    length_attribute=ast.LengthAttribute(grammar.unqualified_identifier, "'", lexer.Length),
+    last_attribute=ast.LastAttribute(grammar.unqualified_identifier, "'", lexer.Last),
+    primary=Or(
+        grammar.numeric_literal,
+        grammar.first_attribute,
+        grammar.length_attribute,
+        grammar.last_attribute,
+        grammar.variable,
+        grammar.paren_expression,
+    ),
     binop=Or(
         # pylint: disable=no-member
         ast.Op.alt_pow("**"),
