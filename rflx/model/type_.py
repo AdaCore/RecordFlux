@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
 import rflx.typing_ as rty
 from rflx import const, expression as expr
@@ -20,7 +20,7 @@ class Type(Base):
 
         if len(identifier.parts) != 2:
             self.error.append(
-                f'unexpected format of type name "{identifier}"',
+                f'invalid format of type identifier "{identifier}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 location,
@@ -624,7 +624,7 @@ def qualified_type_identifier(identifier: ID, package: ID) -> ID:
     return identifier
 
 
-def qualified_literals(types: Iterable[Type], package: ID) -> Mapping[ID, Enumeration]:
+def qualified_enum_literals(types: Iterable[Type], package: ID) -> Dict[ID, Enumeration]:
     literals = {}
 
     for t in types:
@@ -638,7 +638,7 @@ def qualified_literals(types: Iterable[Type], package: ID) -> Mapping[ID, Enumer
     return literals
 
 
-def qualified_type_literals(types: Iterable[Type], package: ID) -> Mapping[ID, Type]:
+def qualified_type_literals(types: Iterable[Type], package: ID) -> Dict[ID, Type]:
     literals = {}
 
     for t in types:

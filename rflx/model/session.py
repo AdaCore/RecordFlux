@@ -124,7 +124,7 @@ class Session(Base):
                 self.identifier.location,
             )
 
-        self.__literals = mty.qualified_literals(self.types.values(), self.identifier.parent)
+        self.__literals = mty.qualified_enum_literals(self.types.values(), self.identifier.parent)
 
         self.__validate()
         self.error.propagate()

@@ -166,11 +166,12 @@ def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
     assert actual.fields == expected.fields, msg
 
 
-def test_incorrect_name() -> None:
+def test_invalid_identifier() -> None:
     with pytest.raises(
-        RecordFluxError, match='^<stdin>:10:8: model: error: unexpected format of type name "M"$'
+        RecordFluxError,
+        match='^<stdin>:10:8: model: error: invalid format of type identifier "A::B::C"$',
     ):
-        Message("M", [], {}, location=Location((10, 8)))
+        Message("A::B::C", [], {}, location=Location((10, 8)))
 
 
 def test_missing_type() -> None:
@@ -590,7 +591,7 @@ def test_invalid_message_field_type() -> None:
         Message(
             "P::M",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): NewType("T")},
+            {Field("F"): NewType("P::T")},
         )
 
 
@@ -1220,7 +1221,7 @@ def test_invalid_path_1(monkeypatch: Any) -> None:
     types = {
         Field("F1"): RANGE_INTEGER,
     }
-    monkeypatch.setattr(Message, "_AbstractMessage__prove_reachability", lambda x: None)
+    monkeypatch.setattr(Message, "_Message__prove_reachability", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1241,7 +1242,7 @@ def test_invalid_path_2(monkeypatch: Any) -> None:
         Field("F1"): RANGE_INTEGER,
         Field("F2"): RANGE_INTEGER,
     }
-    monkeypatch.setattr(Message, "_AbstractMessage__prove_reachability", lambda x: None)
+    monkeypatch.setattr(Message, "_Message__prove_reachability", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1639,7 +1640,7 @@ def test_field_coverage_1(monkeypatch: Any) -> None:
     ]
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
-    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_Message__verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1672,7 +1673,7 @@ def test_field_coverage_2(monkeypatch: Any) -> None:
         Field("F3"): MODULAR_INTEGER,
         Field("F4"): MODULAR_INTEGER,
     }
-    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_Message__verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1694,7 +1695,7 @@ def test_field_after_message_start(monkeypatch: Any) -> None:
     ]
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
-    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_Message__verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -2407,9 +2408,10 @@ def test_is_possibly_empty() -> None:
 
 def test_derived_message_incorrect_base_name() -> None:
     with pytest.raises(
-        RecordFluxError, match='^<stdin>:40:8: model: error: unexpected format of type name "M"$'
+        RecordFluxError,
+        match='^<stdin>:40:8: model: error: invalid format of type identifier "A::B::C"$',
     ):
-        DerivedMessage("P::M", Message("M", [], {}, location=Location((40, 8))))
+        DerivedMessage("P::M", Message("A::B::C", [], {}, location=Location((40, 8))))
 
 
 def test_derived_message_proven() -> None:
