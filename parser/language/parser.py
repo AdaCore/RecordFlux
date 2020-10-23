@@ -127,6 +127,10 @@ rflx_grammar.add_rules(
         "with",
         grammar.enumeration_aspects,
     ),
+    type_derivation_definition=ast.TypeDerivationDef(
+        "new",
+        grammar.qualified_identifier,
+    ),
     array_type_definition=ast.ArrayTypeDef(
         "array",
         "of",
@@ -140,6 +144,7 @@ rflx_grammar.add_rules(
             grammar.enumeration_type_definition,
             grammar.integer_type_definition,
             grammar.message_type_definition,
+            grammar.type_derivation_definition,
             grammar.array_type_definition,
         ),
     ),

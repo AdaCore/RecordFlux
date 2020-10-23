@@ -54,6 +54,10 @@ class NullMessageTypeDef(AbstractMessageTypeDef):
     pass
 
 
+class TypeDerivationDef(TypeDef):
+    type_name = Field()
+
+
 class ArrayTypeDef(TypeDef):
     type_name = Field()
 
