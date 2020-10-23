@@ -30,6 +30,8 @@ class Token(LexerToken):
     Mod = WithText()
     Message = WithText()
     Then = WithText()
+    Array = WithText()
+    Of = WithText()
 
     # Aspect names
     First = WithText()
@@ -126,6 +128,8 @@ rflx_lexer.add_rules(
     (Literal("mod"), Token.Mod),
     (Literal("message"), Token.Message),
     (Literal("then"), Token.Then),
+    (Literal("array"), Token.Array),
+    (Literal("of"), Token.Of),
     (Literal("Checksum"), Token.Checksum),
     (Literal(";"), Token.Semicolon),
     (Literal(":"), Token.Colon),

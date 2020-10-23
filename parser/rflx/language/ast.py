@@ -53,6 +53,10 @@ class NullMessageTypeDef(AbstractMessageTypeDef):
     pass
 
 
+class ArrayTypeDef(TypeDef):
+    type_name = Field()
+
+
 @abstract
 class Enumeration(TypeDef):
     pass

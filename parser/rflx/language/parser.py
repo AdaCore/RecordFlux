@@ -125,6 +125,11 @@ rflx_grammar.add_rules(
         "with",
         grammar.enumeration_aspects,
     ),
+    array_type_definition=ast.ArrayTypeDef(
+        "array",
+        "of",
+        grammar.qualified_identifier,
+    ),
     type_declaration=ast.Type(
         "type",
         grammar.unqualified_identifier,
@@ -133,6 +138,7 @@ rflx_grammar.add_rules(
             grammar.enumeration_type_definition,
             grammar.integer_type_definition,
             grammar.message_type_definition,
+            grammar.array_type_definition,
         ),
     ),
     basic_declaration=Or(grammar.type_declaration),
