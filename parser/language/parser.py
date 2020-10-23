@@ -141,12 +141,11 @@ rflx_grammar.add_rules(
             grammar.array_type_definition,
         ),
     ),
-    basic_declaration=Or(grammar.type_declaration),
     package_declaration=ast.PackageDeclarationNode(
         "package",
         grammar.unqualified_identifier,
         "is",
-        Opt(List(grammar.basic_declaration, sep=";"), ";"),
+        Opt(List(grammar.type_declaration, sep=";"), ";"),
         "end",
         grammar.unqualified_identifier,
         ";",
