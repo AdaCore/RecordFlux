@@ -34,6 +34,8 @@ class Token(LexerToken):
     Array = WithText()
     Of = WithText()
     New = WithText()
+    For = WithText()
+    Use = WithText()
 
     # Aspect names
     First = WithText()
@@ -133,6 +135,8 @@ rflx_lexer.add_rules(
     (Literal("array"), Token.Array),
     (Literal("of"), Token.Of),
     (Literal("new"), Token.New),
+    (Literal("for"), Token.For),
+    (Literal("use"), Token.Use),
     (Literal("Checksum"), Token.Checksum),
     (Literal(";"), Token.Semicolon),
     (Literal("::"), Token.DoubleColon),

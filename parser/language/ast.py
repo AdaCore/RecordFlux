@@ -95,6 +95,13 @@ class Type(RFLXNode):
     type_definition = Field(type=TypeDef)
 
 
+class Refinement(RFLXNode):
+    pdu = Field()
+    field = Field()
+    sdu = Field()
+    condition = Field()
+
+
 class NumericLiteral(RFLXNode):
     token_node = True
 
