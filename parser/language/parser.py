@@ -7,23 +7,25 @@ rflx_grammar = Grammar("main_rule")
 grammar = rflx_grammar
 
 rflx_grammar.add_rules(
-    main_rule=Opt(grammar.package_declaration),
+    main_rule=Opt(grammar.specification),
 )
 
 rflx_grammar.add_rules(
     unqualified_identifier=ast.UnqualifiedID(lexer.UnqualifiedIdentifier),
-    qualified_identifier=ast.ID(List(grammar.unqualified_identifier, sep=".")),
+    qualified_identifier=ast.ID(
+        Opt(grammar.unqualified_identifier, "::"), grammar.unqualified_identifier
+    ),
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
-    variable=ast.Variable(grammar.unqualified_identifier),
+    qualified_variable=ast.Variable(grammar.qualified_identifier),
     first_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.First),
-    length_attribute=ast.LengthAttribute(grammar.unqualified_identifier, "'", lexer.Length),
+    length_attribute=ast.SizeAttribute(grammar.unqualified_identifier, "'", lexer.Size),
     last_attribute=ast.LastAttribute(grammar.unqualified_identifier, "'", lexer.Last),
     primary=Or(
         grammar.numeric_literal,
         grammar.first_attribute,
         grammar.length_attribute,
         grammar.last_attribute,
-        grammar.variable,
+        grammar.qualified_variable,
         grammar.paren_expression,
     ),
     binop=Or(
@@ -149,5 +151,9 @@ rflx_grammar.add_rules(
         "end",
         grammar.unqualified_identifier,
         ";",
+    ),
+    context_item=List("with", grammar.unqualified_identifier, ";"),
+    specification=ast.Specification(
+        List(grammar.context_item, empty_valid=True), grammar.package_declaration
     ),
 )

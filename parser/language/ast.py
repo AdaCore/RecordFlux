@@ -15,7 +15,8 @@ class UnqualifiedID(RFLXNode):
 
 
 class ID(RFLXNode):
-    parts = Field()
+    package = Field()
+    name = Field()
 
 
 class PackageDeclarationNode(RFLXNode):
@@ -198,9 +199,14 @@ class FirstAttribute(Attribute):
     variable = Field()
 
 
-class LengthAttribute(Attribute):
+class SizeAttribute(Attribute):
     variable = Field()
 
 
 class LastAttribute(Attribute):
     variable = Field()
+
+
+class Specification(RFLXNode):
+    context_clause = Field()
+    package_declaration = Field()

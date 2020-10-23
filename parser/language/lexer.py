@@ -23,6 +23,7 @@ class Token(LexerToken):
     End = WithText()
     Null = WithText()
     Semicolon = WithText()
+    DoubleColon = WithText()
     Colon = WithText()
     Type = WithText()
     Range = WithText()
@@ -35,7 +36,7 @@ class Token(LexerToken):
 
     # Aspect names
     First = WithText()
-    Length = WithText()
+    Size = WithText()
     Last = WithText()
     Checksum = WithText()
 
@@ -94,7 +95,7 @@ rflx_lexer.add_rules(
         for text, token in [
             ("First", Token.First),
             ("Last", Token.Last),
-            ("Length", Token.Length),
+            ("Size", Token.Size),
         ]
     ]
 )
@@ -132,6 +133,7 @@ rflx_lexer.add_rules(
     (Literal("of"), Token.Of),
     (Literal("Checksum"), Token.Checksum),
     (Literal(";"), Token.Semicolon),
+    (Literal("::"), Token.DoubleColon),
     (Literal(":"), Token.Colon),
     (Literal("("), Token.LPar),
     (Literal(")"), Token.RPar),

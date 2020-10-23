@@ -16,9 +16,9 @@ def test_empty_package() -> None:
             end Empty_Package;
         """,
     )
-    assert unit.root.f_name_start.text == "Empty_Package"
-    assert not unit.root.f_content.text
-    assert unit.root.f_name_end.text == "Empty_Package"
+    assert unit.root.f_package_declaration.f_name_start.text == "Empty_Package"
+    assert not unit.root.f_package_declaration.f_content.text
+    assert unit.root.f_package_declaration.f_name_end.text == "Empty_Package"
 
 
 def test_modular_type() -> None:
