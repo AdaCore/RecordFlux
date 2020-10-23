@@ -636,3 +636,15 @@ def qualified_literals(types: Iterable[Type], package: ID) -> Mapping[ID, Enumer
                     literals[t.package * l] = t
 
     return literals
+
+
+def qualified_type_literals(types: Iterable[Type], package: ID) -> Mapping[ID, Type]:
+    literals = {}
+
+    for t in types:
+        if t.package == const.BUILTINS_PACKAGE or t.package == package:
+            literals[t.identifier.name] = t
+        if t.package != const.BUILTINS_PACKAGE:
+            literals[t.identifier] = t
+
+    return literals

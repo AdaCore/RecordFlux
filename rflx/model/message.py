@@ -487,6 +487,7 @@ class AbstractMessage(mty.Type):
 
     def _verify_expression_types(self) -> None:
         literals = mty.qualified_literals(self.types.values(), self.package)
+        type_literals = mty.qualified_type_literals(self.types.values(), self.package)
         types: Dict[ID, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
@@ -497,6 +498,8 @@ class AbstractMessage(mty.Type):
                     expression.type_ = types[ID(expression.name)].type_
                 if ID(expression.name) in literals:
                     expression.type_ = literals[ID(expression.name)].type_
+                if ID(expression.name) in type_literals:
+                    expression.type_ = type_literals[ID(expression.name)].type_
             return expression
 
         for p in self.paths(FINAL):
@@ -536,6 +539,7 @@ class AbstractMessage(mty.Type):
                 self.__check_size_expression(l)
 
     def __check_attributes(self, expression: expr.Expr, location: Location = None) -> None:
+        type_literals = mty.qualified_type_literals(self.types.values(), self.package)
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
             if isinstance(a, expr.Size) and not (
                 isinstance(a.prefix, expr.Variable)
@@ -545,6 +549,7 @@ class AbstractMessage(mty.Type):
                         Field(a.prefix.name) in self.fields
                         and isinstance(self.types[Field(a.prefix.name)], mty.Composite)
                     )
+                    or a.prefix.identifier in type_literals
                 )
             ):
                 self.error.append(
@@ -633,7 +638,19 @@ class AbstractMessage(mty.Type):
             for c in t.constraints(name=n, proof=True, same_package=self.package == t.package)
         ]
 
-        return [*message_constraints, *aggregate_constraints, *scalar_constraints]
+        type_literals = mty.qualified_type_literals(self.types.values(), self.package)
+        type_size_constraints = [
+            expr.Equal(expr.Size(l), t.size)
+            for l, t in type_literals.items()
+            if isinstance(t, mty.Scalar)
+        ]
+
+        return [
+            *message_constraints,
+            *aggregate_constraints,
+            *scalar_constraints,
+            *type_size_constraints,
+        ]
 
     def _verify_checksums(self) -> None:
         def valid_lower(expression: expr.Expr) -> bool:
