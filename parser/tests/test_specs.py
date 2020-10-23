@@ -12,5 +12,9 @@ ctx = rflxdsl.AnalysisContext()
 )
 def test_file(spec: Path) -> None:
     unit = ctx.get_from_file(str(spec))
-    assert unit.root is not None, "\n".join(f"{spec}:{d}" for d in unit.diagnostics)
-    assert unit.root.kind_name == "Specification"
+    if spec.name.startswith("incorrect_"):
+        assert len(unit.diagnostics) > 0, f"{spec}"
+    else:
+        assert len(unit.diagnostics) == 0, f"{spec}: " + "\n".join(f"{spec}:{d}" for d in unit.diagnostics)
+        if unit.root:
+            assert unit.root.kind_name == "Specification"
