@@ -1,0 +1,11 @@
+package Integer_Type is
+
+   type Page_Num is range 1 .. 2_000
+      with Size => 16;
+   type Line_Size is range 0 .. 255
+      with Size => 8;
+
+   type Byte is mod 256;
+   type Hash_Index is mod 64;
+
+end Integer_Type;

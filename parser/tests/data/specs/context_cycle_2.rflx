@@ -1,0 +1,5 @@
+with Context_Cycle_3;
+
+package Context_Cycle_2 is
+
+end Context_Cycle_2;

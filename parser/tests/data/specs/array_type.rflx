@@ -1,0 +1,16 @@
+package Array_Type is
+
+   type Byte is mod 256;
+   type Bytes is array of Byte;
+
+   type Foo is
+      message
+         Length : Byte
+            then Bytes
+               with Size => Length * 8;
+         Bytes : Bytes;
+      end message;
+
+   type Bar is array of Foo;
+
+end Array_Type;

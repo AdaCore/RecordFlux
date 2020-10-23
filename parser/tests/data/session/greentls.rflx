@@ -1,0 +1,289 @@
+with TLS_Alert;
+with TLS_Handshake;
+
+package GreenTLS is
+
+   type KM_Length is range 0 .. 16320 with Size => 16;
+
+   type Content is
+      message
+         null
+            then Data
+               with Size => Message'Size;
+         Data : Opaque;
+      end message;
+
+   for Content use (Data => TLS_Alert::Alert);
+
+   type Control_Message_Type is (KEY_UPDATE_CLIENT, KEY_UPDATE_SERVER, HEARTBEAT_MODE, ALERT) with Size => 8;
+   type Control_Message_Length is range 0 .. 2**16 - 1 with Size => 16;
+
+   type Control_Message is
+      message
+         Tag : Control_Message_Type;
+         Length : Control_Message_Length
+            then Data
+               with Size => Length * 8;
+         Data : Opaque;
+      end message;
+
+   type Key_Length is range 8 .. 64 with Size => 8;
+
+   type Key_Update_Message is
+      message
+         Key_Length : Key_Length
+            then Key
+               with Size => Key_Length * 8;
+         Key : Opaque;
+         IV_Length : Key_Length
+            then IV
+               with Size => IV_Length * 8;
+         IV : Opaque;
+      end message;
+
+   for Control_Message use (Data => Key_Update_Message)
+      if Tag = KEY_UPDATE_CLIENT or Tag = KEY_UPDATE_SERVER;
+
+   type Heartbeat_Mode is (HEARTBEAT_ENABLED, HEARTBEAT_DISABLED) with Size => 4;
+
+   type Heartbeat_Control_Message is
+      message
+         Local : Heartbeat_Mode;
+         Remote : TLS_Handshake::Heartbeat_Mode;
+      end message;
+
+   for Control_Message use (Data => Heartbeat_Control_Message)
+      if Tag = HEARTBEAT_MODE;
+
+   type Alert_Message is
+      message
+         Description : TLS_Alert::Alert_Description;
+      end message;
+
+   for Control_Message use (Data => Alert_Message)
+      if Tag = ALERT;
+
+   type Application_Control_Message_Type is (APPLICATION_SHUTDOWN, APPLICATION_ALERT, APPLICATION_PROTOCOL, APPLICATION_NO_EARLY_DATA) with Size => 8;
+
+   type Application_Control_Message_Length is range 0 .. 2**8 - 1 with Size => 8;
+
+   type Application_Control_Message is
+      message
+         Tag : Application_Control_Message_Type;
+         Length : Application_Control_Message_Length
+            then Data
+               with Size => Length * 8;
+         Data : Opaque;
+      end message;
+
+   type Application_Shutdown_Message is null message;
+
+   for Application_Control_Message use (Data => Application_Shutdown_Message)
+      if Tag = APPLICATION_SHUTDOWN;
+
+   for Application_Control_Message use (Data => Alert_Message)
+      if Tag = APPLICATION_ALERT;
+
+   type Application_Protocol_Message is
+      message
+         Protocol : TLS_Handshake::Protocol_Name;
+      end message;
+
+   for Application_Control_Message use (Data => Application_Protocol_Message)
+      if Tag = APPLICATION_PROTOCOL;
+
+   type Application_No_Early_Data_Message is null message;
+
+   for Application_Control_Message use (Data => Application_No_Early_Data_Message)
+      if Tag = APPLICATION_NO_EARLY_DATA;
+
+   type Heartbeat_Data_Length is range 0 .. 2**14 with Size => 16;
+
+   type Heartbeat_Data_Message is
+      message
+         Length : Heartbeat_Data_Length
+            then Data
+               with Size => Length * 8;
+         Data : Opaque;
+      end message;
+
+   type Configuration is
+      message
+         PSK_Key_Exchange_Modes : TLS_Handshake::PSK_Key_Exchange_Modes;  -- FIXME: must only contain PSK_KE and/or PSK_DHE_KE
+         Cipher_Suites_Length : TLS_Handshake::Cipher_Suites_Length
+            then Cipher_Suites
+               with Size => Cipher_Suites_Length * 8;
+         Cipher_Suites : TLS_Handshake::Cipher_Suites;
+         Supported_Groups : TLS_Handshake::Supported_Groups;
+         Signature_Algorithms : TLS_Handshake::Signature_Algorithms;
+         Signature_Algorithms_Cert_Enabled : Boolean
+            then Signature_Algorithms_Cert
+               if Signature_Algorithms_Cert_Enabled = True
+            then Key_Shares
+               if Signature_Algorithms_Cert_Enabled = False;
+         Signature_Algorithms_Cert : TLS_Handshake::Signature_Algorithms_Cert;
+         Key_Shares : TLS_Handshake::Key_Share_CH;
+         Protocols : TLS_Handshake::Protocol_Name_List;
+         Server_Authentication_Enabled : Boolean;
+         Post_Handshake_Auth_Enabled : Boolean;
+         Early_Data_Enabled : Boolean;
+         Server_Name_Enabled : Boolean;
+         Max_Fragment_Length_Enabled : Boolean;
+         Max_Fragment_Length : TLS_Handshake::Max_Fragment_Length_Value;
+         Heartbeat_Mode : Heartbeat_Mode;
+      end message;
+
+   type Name_Length is range 1 .. 253 with Size => 8;
+   type Port is range 1 .. 65535 with Size => 16;
+
+   type Connection is
+      message
+         Name_Length : Name_Length
+            then Name
+               with Size => Name_Length * 8;
+         Name : Opaque;
+         Port : Port;
+      end message;
+
+   type Keystore_Message_Type is (KEYSTORE_REQUEST, KEYSTORE_RESPONSE) with Size => 8;
+   type Keystore_Request_Type is (
+      KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS,
+      KEYSTORE_REQUEST_PSKS,
+      KEYSTORE_REQUEST_CERTIFICATES,
+      KEYSTORE_REQUEST_SIGNATURE,
+      KEYSTORE_REQUEST_NEW_SESSION_TICKET
+      ) with Size => 8;
+   type Keystore_Payload_Length is range 0 .. 2**16 - 1 with Size => 16;
+
+   type Keystore_Message is
+      message
+         Tag : Keystore_Message_Type;
+         Request : Keystore_Request_Type;
+         Length : Keystore_Payload_Length
+            then Payload
+               with Size => Length * 8;
+         Payload : Opaque;
+      end message;
+
+   for Keystore_Message use (Payload => Connection)
+      if Tag = KEYSTORE_REQUEST and (Request = KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS or Request = KEYSTORE_REQUEST_PSKS);
+
+   for Keystore_Message use (Payload => TLS_Handshake::Supported_Groups)
+      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS;
+
+   type Key_Type is (EXTERNAL, RESUMPTION) with Size => 8;
+
+   type PSK is
+      message
+         Identity : TLS_Handshake::PSK_Identity;
+         Cipher_Suite : TLS_Handshake::Cipher_Suite;
+         Key_Type : Key_Type;
+         Key_Length : Key_Length
+            then Key
+               with Size => Key_Length * 8;
+         Key : Opaque;
+      end message;
+
+   type PSKs is array of PSK;
+
+   type PSK_Message is
+      message
+         null
+            then PSKs
+               with Size => Message'Size;
+         PSKs : PSKs;
+      end message;
+
+   for Keystore_Message use (Payload => PSK_Message)
+      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_PSKS;
+
+   type Certificate_Query is
+      message
+         Certificate_Authorities : TLS_Handshake::Certificate_Authorities;
+         OID_Filters : TLS_Handshake::OID_Filters;
+         Signature_Algorithms : TLS_Handshake::Signature_Algorithms;
+         Signature_Algorithms_Cert : TLS_Handshake::Signature_Algorithms_Cert;
+      end message;
+
+   for Keystore_Message use (Payload => Certificate_Query)
+      if Tag = KEYSTORE_REQUEST and Request = KEYSTORE_REQUEST_CERTIFICATES;
+
+   type Certificate_ID is mod 2**16;
+
+   type Certificate is
+      message
+         ID : Certificate_ID;
+         Length : TLS_Handshake::Certificate_List_Length
+            then Certificate_List
+               with Size => Length * 8;
+         Certificate_List : TLS_Handshake::Certificate_Entries;
+      end message;
+
+   for Keystore_Message use (Payload => Certificate)
+      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_CERTIFICATES;
+
+   type Signature_Query is
+      message
+         ID : Certificate_ID;
+         Length : KM_Length
+            then Data
+               with Size => Length * 8;
+         Data : Opaque;
+      end message;
+
+   for Keystore_Message use (Payload => Signature_Query)
+      if Tag = KEYSTORE_REQUEST and Request = KEYSTORE_REQUEST_SIGNATURE;
+
+   for Keystore_Message use (Payload => TLS_Handshake::Certificate_Verify)
+      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_SIGNATURE;
+
+   type New_Session_Ticket is
+      message
+         Connection : Connection;
+         Session : TLS_Handshake::New_Session_Ticket;
+         PSK_Length : KM_Length
+            then PSK
+               with Size => PSK_Length * 8;
+         PSK : Opaque;
+      end message;
+
+   for Keystore_Message use (Payload => New_Session_Ticket)
+      if Tag = KEYSTORE_REQUEST and Request = KEYSTORE_REQUEST_NEW_SESSION_TICKET;
+
+   type Done is null message;
+
+   for Keystore_Message use (Payload => Done)
+      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_NEW_SESSION_TICKET;
+
+   type Certificate_Validation_Result is (
+      VALID_CERTIFICATE,
+      BAD_CERTIFICATE,
+      UNSUPPORTED_CERTIFICATE,
+      CERTIFICATE_REVOKED,
+      CERTIFICATE_EXPIRED,
+      CERTIFICATE_UNKNOWN
+   ) with Size => 8;
+
+   type Signature_Validation_Result is (
+      VALID_SIGNATURE,
+      ILLEGAL_PARAMETER,
+      DECRYPT_ERROR
+   ) with Size => 8;
+
+   type RNG_Message_Type is (RNG_REQUEST, RNG_RESPONSE) with Size => 8;
+
+   type RNG_Message is
+      message
+         Tag : RNG_Message_Type;
+         Length : KM_Length
+            then Data
+               with Size => Length * 8
+               if Tag = RNG_RESPONSE
+            then null
+               if Tag = RNG_REQUEST;
+         Data : Opaque;
+      end message;
+
+   type Sequence_Number is mod 2**16;
+
+end GreenTLS;

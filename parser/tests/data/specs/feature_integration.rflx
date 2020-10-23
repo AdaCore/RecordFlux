@@ -1,0 +1,35 @@
+with Integer_Type;
+with Enumeration_Type;
+with Array_Type;
+with Message_Type;
+with Message_In_Message;
+with TLV_With_Checksum;
+
+package Feature_Integration is
+
+   type Message is
+      message
+         Enumeration : Enumeration_Type::Priority
+            then Integer
+               if Enumeration = Enumeration_Type::HIGH;
+         Integer : Integer_Type::Byte
+            then Scalar_Array
+               with Size => 8 * Integer;
+         Scalar_Array : Array_Type::Bytes
+            then Message_Array
+               with Size => 8 * Integer;
+         Message_Array : Array_Type::Bar;
+         Message_Type : Message_Type::PDU;
+         Message_In_Message : Message_In_Message::Message;
+         Derived_Message_In_Message : Message_In_Message::Derived_Message
+            then Opaque
+               with Size => 8 * Integer;
+         Opaque : Opaque;
+      end message;
+
+   type Derived_Message is new Message_In_Message::Message;
+
+   for TLV_With_Checksum::Message use (Value => Message_Type::PDU)
+      if Tag = TLV_With_Checksum::Msg_Data;
+
+end Feature_Integration;

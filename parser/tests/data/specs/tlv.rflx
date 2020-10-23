@@ -1,0 +1,19 @@
+package TLV is
+
+   type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 2;
+   type Length is mod 2**14;
+
+   type Message is
+      message
+         Tag    : Tag
+            then Length
+               if Tag = Msg_Data
+            then null
+               if Tag = Msg_Error;
+         Length : Length
+            then Value
+               with Size => Length * 8;
+         Value  : Opaque;
+       end message;
+
+end TLV;
