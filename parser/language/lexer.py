@@ -42,6 +42,7 @@ class Token(LexerToken):
     Size = WithText()
     Last = WithText()
     Checksum = WithText()
+    ValidChecksum = WithText()
 
     # Symbols
     Dot = WithText()
@@ -99,6 +100,7 @@ rflx_lexer.add_rules(
             ("First", Token.First),
             ("Last", Token.Last),
             ("Size", Token.Size),
+            ("Valid_Checksum", Token.Size),
         ]
     ]
 )
@@ -108,7 +110,7 @@ rflx_lexer.add_rules(
         Case(
             Literal(text),
             Alt(
-                prev_token_cond=(Token.Tick,),
+                prev_token_cond=(Token.With,),
                 send=token,
                 match_size=len(text),
             ),
@@ -138,6 +140,7 @@ rflx_lexer.add_rules(
     (Literal("for"), Token.For),
     (Literal("use"), Token.Use),
     (Literal("Checksum"), Token.Checksum),
+    (Literal("Valid_Checksum"), Token.ValidChecksum),
     (Literal(";"), Token.Semicolon),
     (Literal("::"), Token.DoubleColon),
     (Literal(":"), Token.Colon),

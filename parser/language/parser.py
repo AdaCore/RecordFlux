@@ -20,11 +20,15 @@ rflx_grammar.add_rules(
     first_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.First),
     length_attribute=ast.SizeAttribute(grammar.unqualified_identifier, "'", lexer.Size),
     last_attribute=ast.LastAttribute(grammar.unqualified_identifier, "'", lexer.Last),
+    valid_checksum_attribute=ast.ValidChecksumAttribute(
+        grammar.unqualified_identifier, "'", lexer.ValidChecksum
+    ),
     primary=Or(
         grammar.numeric_literal,
         grammar.first_attribute,
         grammar.length_attribute,
         grammar.last_attribute,
+        grammar.valid_checksum_attribute,
         grammar.qualified_variable,
         grammar.paren_expression,
     ),
@@ -98,7 +102,7 @@ rflx_grammar.add_rules(
         grammar.unqualified_identifier,
         "=>",
         "(",
-        List(Or(grammar.value_range, grammar.mathematical_expression)),
+        List(Or(grammar.value_range, grammar.mathematical_expression), sep=","),
         ")",
     ),
     checksum_aspect=ast.ChecksumAspect(

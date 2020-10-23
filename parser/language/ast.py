@@ -218,6 +218,10 @@ class LastAttribute(Attribute):
     variable = Field()
 
 
+class ValidChecksumAttribute(Attribute):
+    variable = Field()
+
+
 class Specification(RFLXNode):
     context_clause = Field()
     package_declaration = Field()
