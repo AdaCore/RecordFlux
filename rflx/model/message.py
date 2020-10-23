@@ -1,4 +1,5 @@
 # pylint: disable=too-many-lines
+
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
@@ -99,7 +100,7 @@ class MessageState(Base):
 @invariant(lambda self: valid_message_field_types(self))
 @invariant(lambda self: not self.types if not self.structure else True)
 class AbstractMessage(mty.Type):
-    # pylint: disable=too-many-arguments,too-many-public-methods
+    # pylint: disable=too-many-arguments,too-many-public-methods,too-many-instance-attributes
     def __init__(
         self,
         identifier: StrID,
@@ -121,9 +122,14 @@ class AbstractMessage(mty.Type):
         self._state = state or MessageState()
         self.__paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
 
+        assert len(self.identifier.parts) > 1, "type identifier must contain package"
+
+        self._enum_literals = mty.qualified_enum_literals(self.types.values(), self.package)
+        self._type_literals = mty.qualified_type_literals(self.types.values(), self.package)
+
         if not state and (structure or types):
             try:
-                self.__verify()
+                self.__validate()
                 self._state.fields = self.__compute_topological_sorting()
                 if self._state.fields:
                     self.__types = {f: self.__types[f] for f in self._state.fields}
@@ -169,6 +175,17 @@ class AbstractMessage(mty.Type):
             if fields:
                 fields += ";"
         return f"type {self.name} is\n   message\n{indent(fields, 6)}\n   end message"
+
+    @property
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "kind": "Message",
+            "data": {
+                "identifier": self.identifier.serialize,
+                "structure": [l.serialize for l in self.structure],
+                "types": {f.name: t.identifier.serialize for f, t in self.types.items()},
+            },
+        }
 
     @property
     def type_(self) -> rty.Message:
@@ -354,7 +371,63 @@ class AbstractMessage(mty.Type):
 
         return False
 
-    def __verify(self) -> None:
+    def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
+        def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
+            comp = self.types[Field(field.name)]
+            assert isinstance(comp, mty.Composite)
+            result = expr.Equal(
+                expr.Mul(aggregate.length, comp.element_size),
+                expr.Size(field),
+                location=expression.location,
+            )
+            if isinstance(comp, mty.Array) and isinstance(comp.element_type, mty.Scalar):
+                return [
+                    result,
+                    *comp.element_type.constraints(name=comp.element_type.name, proof=True),
+                ]
+            return [result]
+
+        scalar_types = [
+            (f.name, t)
+            for f, t in self.types.items()
+            if isinstance(t, mty.Scalar)
+            and ID(f.name) not in self._enum_literals
+            and f.name not in ["Message", "Final"]
+        ]
+
+        aggregate_constraints: List[expr.Expr] = []
+        for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
+            assert isinstance(r, (expr.Equal, expr.NotEqual))
+            if isinstance(r.left, expr.Aggregate) and isinstance(r.right, expr.Variable):
+                aggregate_constraints.extend(get_constraints(r.left, r.right))
+            if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
+                aggregate_constraints.extend(get_constraints(r.right, r.left))
+
+        message_constraints: List[expr.Expr] = [
+            expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
+            expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
+        ]
+
+        scalar_constraints = [
+            c
+            for n, t in scalar_types
+            for c in t.constraints(name=n, proof=True, same_package=self.package == t.package)
+        ]
+
+        type_size_constraints = [
+            expr.Equal(expr.Size(l), t.size)
+            for l, t in self._type_literals.items()
+            if isinstance(t, mty.Scalar)
+        ]
+
+        return [
+            *message_constraints,
+            *aggregate_constraints,
+            *scalar_constraints,
+            *type_size_constraints,
+        ]
+
+    def __validate(self) -> None:
         # pylint: disable=too-many-branches, too-many-locals
 
         type_fields = self.__types.keys() | {INITIAL, FINAL}
@@ -402,10 +475,7 @@ class AbstractMessage(mty.Type):
             )
 
         name_conflicts = [
-            (f, l)
-            for f in type_fields
-            for l in mty.qualified_literals(self.types.values(), self.package)
-            if f.identifier == l
+            (f, l) for f in type_fields for l in self._enum_literals if f.identifier == l
         ]
 
         if name_conflicts:
@@ -485,21 +555,119 @@ class AbstractMessage(mty.Type):
                             v.location,
                         )
 
-    def _verify_expression_types(self) -> None:
-        literals = mty.qualified_literals(self.types.values(), self.package)
-        type_literals = mty.qualified_type_literals(self.types.values(), self.package)
+    def __compute_topological_sorting(self) -> Optional[Tuple[Field, ...]]:
+        """Return fields topologically sorted (Kahn's algorithm)."""
+        result: Tuple[Field, ...] = ()
+        fields = [INITIAL]
+        visited = set()
+        while fields:
+            n = fields.pop(0)
+            result += (n,)
+            for e in self.outgoing(n):
+                visited.add(e)
+                if set(self.incoming(e.target)) <= visited:
+                    fields.append(e.target)
+        if not self.__has_unreachable and set(self.structure) - visited:
+            self.error.append(
+                f'structure of "{self.identifier}" contains cycle',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+            # ISSUE: Componolit/RecordFlux#256
+            return None
+        return tuple(f for f in result if f not in [INITIAL, FINAL])
+
+    def __compute_definite_predecessors(self, final: Field) -> Tuple[Field, ...]:
+        return tuple(
+            f
+            for f in self.fields
+            if all(any(f == pf.source for pf in p) for p in self.paths(final))
+        )
+
+    def __compute_field_condition(self, final: Field) -> expr.Expr:
+        if final == INITIAL:
+            return expr.TRUE
+        return expr.Or(
+            *[
+                expr.And(self.__compute_field_condition(l.source), l.condition)
+                for l in self.incoming(final)
+            ],
+            location=final.identifier.location,
+        )
+
+
+class Message(AbstractMessage):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        identifier: StrID,
+        structure: Sequence[Link],
+        types: Mapping[Field, mty.Type],
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        location: Location = None,
+        error: RecordFluxError = None,
+        state: MessageState = None,
+        skip_proof: bool = False,
+    ) -> None:
+        super().__init__(identifier, structure, types, aspects, location, error, state)
+
+        if not self.error.check() and not skip_proof:
+            self.verify()
+
+        self.error.propagate()
+
+    def verify(self) -> None:
+        if self.structure or self.types:
+            self.__verify_expression_types()
+            self.__verify_expressions()
+            self.__verify_checksums()
+
+            self.error.propagate()
+
+            self.__prove_conflicting_conditions()
+            self.__prove_reachability()
+            self.__prove_contradictions()
+            self.__prove_coverage()
+            self.__prove_overlays()
+            self.__prove_field_positions()
+
+            self.error.propagate()
+
+    def copy(
+        self,
+        identifier: StrID = None,
+        structure: Sequence[Link] = None,
+        types: Mapping[Field, mty.Type] = None,
+        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        location: Location = None,
+        error: RecordFluxError = None,
+    ) -> "Message":
+        return Message(
+            identifier if identifier else self.identifier,
+            structure if structure else copy(self.structure),
+            types if types else copy(self.types),
+            aspects if aspects else copy(self.aspects),
+            location if location else self.location,
+            error if error else self.error,
+        )
+
+    def proven(self, skip_proof: bool = False) -> "Message":
+        return copy(self)
+
+    def __verify_expression_types(self) -> None:
         types: Dict[ID, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
             if isinstance(expression, expr.Variable):
                 if expression.name.lower() == "message":
                     expression.type_ = rty.OPAQUE
-                if ID(expression.name) in types:
-                    expression.type_ = types[ID(expression.name)].type_
-                if ID(expression.name) in literals:
-                    expression.type_ = literals[ID(expression.name)].type_
-                if ID(expression.name) in type_literals:
-                    expression.type_ = type_literals[ID(expression.name)].type_
+                elif expression.identifier in types:
+                    expression.type_ = types[expression.identifier].type_
+                elif expression.identifier in self._enum_literals:
+                    expression.type_ = self._enum_literals[expression.identifier].type_
+                elif expression.identifier in self._type_literals:
+                    expression.type_ = self._type_literals[expression.identifier].type_
             return expression
 
         for p in self.paths(FINAL):
@@ -531,7 +699,7 @@ class AbstractMessage(mty.Type):
                             t.location,
                         )
 
-    def _verify_expressions(self) -> None:
+    def __verify_expressions(self) -> None:
         for f in (INITIAL, *self.fields):
             for l in self.outgoing(f):
                 self.__check_attributes(l.condition, l.condition.location)
@@ -539,7 +707,6 @@ class AbstractMessage(mty.Type):
                 self.__check_size_expression(l)
 
     def __check_attributes(self, expression: expr.Expr, location: Location = None) -> None:
-        type_literals = mty.qualified_type_literals(self.types.values(), self.package)
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
             if isinstance(a, expr.Size) and not (
                 isinstance(a.prefix, expr.Variable)
@@ -549,7 +716,7 @@ class AbstractMessage(mty.Type):
                         Field(a.prefix.name) in self.fields
                         and isinstance(self.types[Field(a.prefix.name)], mty.Composite)
                     )
-                    or a.prefix.identifier in type_literals
+                    or a.prefix.identifier in self._type_literals
                 )
             ):
                 self.error.append(
@@ -594,65 +761,7 @@ class AbstractMessage(mty.Type):
                     link.target.identifier.location,
                 )
 
-    def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
-        def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
-            comp = self.types[Field(field.name)]
-            assert isinstance(comp, mty.Composite)
-            result = expr.Equal(
-                expr.Mul(aggregate.length, comp.element_size),
-                expr.Size(field),
-                location=expression.location,
-            )
-            if isinstance(comp, mty.Array) and isinstance(comp.element_type, mty.Scalar):
-                return [
-                    result,
-                    *comp.element_type.constraints(name=comp.element_type.name, proof=True),
-                ]
-            return [result]
-
-        literals = mty.qualified_literals(self.types.values(), self.package)
-        scalar_types = [
-            (f.name, t)
-            for f, t in self.types.items()
-            if isinstance(t, mty.Scalar)
-            and ID(f.name) not in literals
-            and f.name not in ["Message", "Final"]
-        ]
-
-        aggregate_constraints: List[expr.Expr] = []
-        for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
-            assert isinstance(r, (expr.Equal, expr.NotEqual))
-            if isinstance(r.left, expr.Aggregate) and isinstance(r.right, expr.Variable):
-                aggregate_constraints.extend(get_constraints(r.left, r.right))
-            if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
-                aggregate_constraints.extend(get_constraints(r.right, r.left))
-
-        message_constraints: List[expr.Expr] = [
-            expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
-            expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
-        ]
-
-        scalar_constraints = [
-            c
-            for n, t in scalar_types
-            for c in t.constraints(name=n, proof=True, same_package=self.package == t.package)
-        ]
-
-        type_literals = mty.qualified_type_literals(self.types.values(), self.package)
-        type_size_constraints = [
-            expr.Equal(expr.Size(l), t.size)
-            for l, t in type_literals.items()
-            if isinstance(t, mty.Scalar)
-        ]
-
-        return [
-            *message_constraints,
-            *aggregate_constraints,
-            *scalar_constraints,
-            *type_size_constraints,
-        ]
-
-    def _verify_checksums(self) -> None:
+    def __verify_checksums(self) -> None:
         def valid_lower(expression: expr.Expr) -> bool:
             return isinstance(expression, expr.First) or (
                 isinstance(expression, expr.Add)
@@ -876,146 +985,6 @@ class AbstractMessage(mty.Type):
                         ]
                     )
 
-    @staticmethod
-    def __target_first(link: Link) -> expr.Expr:
-        if link.source == INITIAL:
-            return expr.First("Message")
-        if link.first != expr.UNDEFINED:
-            return link.first
-        return expr.Add(expr.Last(link.source.name), expr.Number(1), location=link.location)
-
-    def __target_size(self, link: Link) -> expr.Expr:
-        if link.size != expr.UNDEFINED:
-            return link.size
-        return self.field_size(link.target)
-
-    def __target_last(self, link: Link) -> expr.Expr:
-        return expr.Sub(
-            expr.Add(self.__target_first(link), self.__target_size(link)),
-            expr.Number(1),
-            link.target.identifier.location,
-        )
-
-    def __link_expression(self, link: Link) -> List[expr.Expr]:
-        name = link.target.name
-        target_first = self.__target_first(link)
-        target_size = self.__target_size(link)
-        target_last = self.__target_last(link)
-        return [
-            expr.Equal(expr.First(name), target_first, target_first.location or self.location),
-            expr.Equal(expr.Size(name), target_size, target_size.location or self.location),
-            expr.Equal(expr.Last(name), target_last, target_last.location or self.location),
-            expr.GreaterEqual(expr.First("Message"), expr.Number(0), self.location),
-            expr.GreaterEqual(expr.Last("Message"), expr.Last(name), self.location),
-            expr.GreaterEqual(expr.Last("Message"), expr.First("Message"), self.location),
-            expr.Equal(
-                expr.Size("Message"),
-                expr.Add(expr.Sub(expr.Last("Message"), expr.First("Message")), expr.Number(1)),
-                self.location,
-            ),
-            *expression_list(link.condition),
-        ]
-
-    def __prove_field_positions(self) -> None:
-        for f in (*self.fields, FINAL):
-            for path in self.paths(f):
-
-                last = path[-1]
-                negative = expr.Less(self.__target_size(last), expr.Number(0), last.size.location)
-                start = expr.GreaterEqual(
-                    self.__target_first(last), expr.First("Message"), last.location
-                )
-
-                facts = [fact for link in path for fact in self.__link_expression(link)]
-
-                outgoing = self.outgoing(f)
-                if f != FINAL and outgoing:
-                    facts.append(
-                        expr.Or(*[o.condition for o in outgoing], location=f.identifier.location)
-                    )
-
-                facts.extend(self.type_constraints(negative))
-                facts.extend(self.type_constraints(start))
-
-                proof = expr.TRUE.check(facts)
-
-                # Only check positions of reachable paths
-                if proof.result != expr.ProofResult.sat:
-                    continue
-
-                proof = negative.check(facts)
-                if proof.result != expr.ProofResult.unsat:
-                    path_message = " -> ".join([l.target.name for l in path])
-                    self.error.append(
-                        f'negative size for field "{f.name}" ({path_message})',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        f.identifier.location,
-                    )
-                    return
-
-                proof = start.check(facts)
-                if proof.result != expr.ProofResult.sat:
-                    path_message = " -> ".join([last.target.name for last in path])
-                    self.error.append(
-                        f'negative start for field "{f.name}" ({path_message})',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.identifier.location,
-                    )
-                    self.error.extend(
-                        [
-                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
-                            for m, locn in proof.error
-                        ]
-                    )
-                    return
-
-                if f in self.__types:
-                    t = self.__types[f]
-                    if not isinstance(t, mty.Opaque):
-                        continue
-                    element_size = t.element_size
-                    start_aligned = expr.Not(
-                        expr.Equal(
-                            expr.Mod(self.__target_first(last), element_size),
-                            expr.Number(1),
-                            last.location,
-                        )
-                    )
-                    proof = start_aligned.check([*facts, *self.type_constraints(start_aligned)])
-                    if proof.result != expr.ProofResult.unsat:
-                        path_message = " -> ".join([p.target.name for p in path])
-                        self.error.append(
-                            f'opaque field "{f.name}" not aligned to {element_size} bit boundary'
-                            f" ({path_message})",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            f.identifier.location,
-                        )
-                        return
-
-                    is_multiple_of_element_size = expr.Not(
-                        expr.Equal(
-                            expr.Mod(self.__target_size(last), element_size),
-                            expr.Number(0),
-                            last.location,
-                        )
-                    )
-                    proof = is_multiple_of_element_size.check(
-                        [*facts, *self.type_constraints(is_multiple_of_element_size)]
-                    )
-                    if proof.result != expr.ProofResult.unsat:
-                        path_message = " -> ".join([p.target.name for p in path])
-                        self.error.append(
-                            f'size of opaque field "{f.name}" not multiple of {element_size} bit'
-                            f" ({path_message})",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            f.identifier.location,
-                        )
-                        return
-
     def __prove_coverage(self) -> None:
         """
         Prove that the fields of a message cover all message bits, i.e. there are no holes in the
@@ -1105,116 +1074,145 @@ class AbstractMessage(mty.Type):
                             ]
                         )
 
-    def _prove(self) -> None:
-        self.__prove_conflicting_conditions()
-        self.__prove_reachability()
-        self.__prove_contradictions()
-        self.__prove_coverage()
-        self.__prove_overlays()
-        self.__prove_field_positions()
+    def __prove_field_positions(self) -> None:
+        for f in (*self.fields, FINAL):
+            for path in self.paths(f):
 
-    def __compute_topological_sorting(self) -> Optional[Tuple[Field, ...]]:
-        """Return fields topologically sorted (Kahn's algorithm)."""
-        result: Tuple[Field, ...] = ()
-        fields = [INITIAL]
-        visited = set()
-        while fields:
-            n = fields.pop(0)
-            result += (n,)
-            for e in self.outgoing(n):
-                visited.add(e)
-                if set(self.incoming(e.target)) <= visited:
-                    fields.append(e.target)
-        if not self.__has_unreachable and set(self.structure) - visited:
-            self.error.append(
-                f'structure of "{self.identifier}" contains cycle',
-                Subsystem.MODEL,
-                Severity.ERROR,
+                last = path[-1]
+                negative = expr.Less(self.__target_size(last), expr.Number(0), last.size.location)
+                start = expr.GreaterEqual(
+                    self.__target_first(last), expr.First("Message"), last.location
+                )
+
+                facts = [fact for link in path for fact in self.__link_expression(link)]
+
+                outgoing = self.outgoing(f)
+                if f != FINAL and outgoing:
+                    facts.append(
+                        expr.Or(*[o.condition for o in outgoing], location=f.identifier.location)
+                    )
+
+                facts.extend(self.type_constraints(negative))
+                facts.extend(self.type_constraints(start))
+
+                proof = expr.TRUE.check(facts)
+
+                # Only check positions of reachable paths
+                if proof.result != expr.ProofResult.sat:
+                    continue
+
+                proof = negative.check(facts)
+                if proof.result != expr.ProofResult.unsat:
+                    path_message = " -> ".join([l.target.name for l in path])
+                    self.error.append(
+                        f'negative size for field "{f.name}" ({path_message})',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        f.identifier.location,
+                    )
+                    return
+
+                proof = start.check(facts)
+                if proof.result != expr.ProofResult.sat:
+                    path_message = " -> ".join([last.target.name for last in path])
+                    self.error.append(
+                        f'negative start for field "{f.name}" ({path_message})',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.identifier.location,
+                    )
+                    self.error.extend(
+                        [
+                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                            for m, locn in proof.error
+                        ]
+                    )
+                    return
+
+                if f in self.types:
+                    t = self.types[f]
+                    if not isinstance(t, mty.Opaque):
+                        continue
+                    element_size = t.element_size
+                    start_aligned = expr.Not(
+                        expr.Equal(
+                            expr.Mod(self.__target_first(last), element_size),
+                            expr.Number(1),
+                            last.location,
+                        )
+                    )
+                    proof = start_aligned.check([*facts, *self.type_constraints(start_aligned)])
+                    if proof.result != expr.ProofResult.unsat:
+                        path_message = " -> ".join([p.target.name for p in path])
+                        self.error.append(
+                            f'opaque field "{f.name}" not aligned to {element_size} bit boundary'
+                            f" ({path_message})",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            f.identifier.location,
+                        )
+                        return
+
+                    is_multiple_of_element_size = expr.Not(
+                        expr.Equal(
+                            expr.Mod(self.__target_size(last), element_size),
+                            expr.Number(0),
+                            last.location,
+                        )
+                    )
+                    proof = is_multiple_of_element_size.check(
+                        [*facts, *self.type_constraints(is_multiple_of_element_size)]
+                    )
+                    if proof.result != expr.ProofResult.unsat:
+                        path_message = " -> ".join([p.target.name for p in path])
+                        self.error.append(
+                            f'size of opaque field "{f.name}" not multiple of {element_size} bit'
+                            f" ({path_message})",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            f.identifier.location,
+                        )
+                        return
+
+    @staticmethod
+    def __target_first(link: Link) -> expr.Expr:
+        if link.source == INITIAL:
+            return expr.First("Message")
+        if link.first != expr.UNDEFINED:
+            return link.first
+        return expr.Add(expr.Last(link.source.name), expr.Number(1), location=link.location)
+
+    def __target_size(self, link: Link) -> expr.Expr:
+        if link.size != expr.UNDEFINED:
+            return link.size
+        return self.field_size(link.target)
+
+    def __target_last(self, link: Link) -> expr.Expr:
+        return expr.Sub(
+            expr.Add(self.__target_first(link), self.__target_size(link)),
+            expr.Number(1),
+            link.target.identifier.location,
+        )
+
+    def __link_expression(self, link: Link) -> List[expr.Expr]:
+        name = link.target.name
+        target_first = self.__target_first(link)
+        target_size = self.__target_size(link)
+        target_last = self.__target_last(link)
+        return [
+            expr.Equal(expr.First(name), target_first, target_first.location or self.location),
+            expr.Equal(expr.Size(name), target_size, target_size.location or self.location),
+            expr.Equal(expr.Last(name), target_last, target_last.location or self.location),
+            expr.GreaterEqual(expr.First("Message"), expr.Number(0), self.location),
+            expr.GreaterEqual(expr.Last("Message"), expr.Last(name), self.location),
+            expr.GreaterEqual(expr.Last("Message"), expr.First("Message"), self.location),
+            expr.Equal(
+                expr.Size("Message"),
+                expr.Add(expr.Sub(expr.Last("Message"), expr.First("Message")), expr.Number(1)),
                 self.location,
-            )
-            # ISSUE: Componolit/RecordFlux#256
-            return None
-        return tuple(f for f in result if f not in [INITIAL, FINAL])
-
-    def __compute_definite_predecessors(self, final: Field) -> Tuple[Field, ...]:
-        return tuple(
-            f
-            for f in self.fields
-            if all(any(f == pf.source for pf in p) for p in self.paths(final))
-        )
-
-    def __compute_field_condition(self, final: Field) -> expr.Expr:
-        if final == INITIAL:
-            return expr.TRUE
-        return expr.Or(
-            *[
-                expr.And(self.__compute_field_condition(l.source), l.condition)
-                for l in self.incoming(final)
-            ],
-            location=final.identifier.location,
-        )
-
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            "kind": "Message",
-            "data": {
-                "identifier": self.identifier.serialize,
-                "structure": [l.serialize for l in self.structure],
-                "types": {f.name: t.identifier.serialize for f, t in self.types.items()},
-            },
-        }
-
-
-class Message(AbstractMessage):
-    # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        identifier: StrID,
-        structure: Sequence[Link],
-        types: Mapping[Field, mty.Type],
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
-        state: MessageState = None,
-        skip_proof: bool = False,
-    ) -> None:
-        super().__init__(identifier, structure, types, aspects, location, error, state)
-
-        if not self.error.check() and not skip_proof:
-            self.verify()
-
-        self.error.propagate()
-
-    def verify(self) -> None:
-        if self.structure or self.types:
-            self._verify_expression_types()
-            self._verify_expressions()
-            self._verify_checksums()
-            self.error.propagate()
-            self._prove()
-            self.error.propagate()
-
-    def copy(
-        self,
-        identifier: StrID = None,
-        structure: Sequence[Link] = None,
-        types: Mapping[Field, mty.Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
-    ) -> "Message":
-        return Message(
-            identifier if identifier else self.identifier,
-            structure if structure else copy(self.structure),
-            types if types else copy(self.types),
-            aspects if aspects else copy(self.aspects),
-            location if location else self.location,
-            error if error else self.error,
-        )
-
-    def proven(self, skip_proof: bool = False) -> "Message":
-        return copy(self)
+            ),
+            *expression_list(link.condition),
+        ]
 
 
 class DerivedMessage(Message):
