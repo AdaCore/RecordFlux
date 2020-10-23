@@ -1,7 +1,7 @@
-from langkit.parsers import Grammar, List, NoBacktrack as cut, Opt, Or, Pick  # type: ignore
+from langkit.parsers import Grammar, List, NoBacktrack as cut, Opt, Or  # type: ignore
 
-import rflx.language.ast as ast
-from rflx.language.lexer import rflx_lexer as lexer
+import language.ast as ast
+from language.lexer import rflx_lexer as lexer
 
 rflx_grammar = Grammar("main_rule")
 grammar = rflx_grammar

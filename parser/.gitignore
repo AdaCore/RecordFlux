@@ -1,0 +1,15 @@
+*-loc.xml
+*.ali
+*.egg-info
+*.o
+*.pyc
+.coverage
+.hypothesis
+.mypy_cache
+\.*.swp
+__pycache__
+build
+dist
+gnatinspect.db
+htmlcov
+.venv
