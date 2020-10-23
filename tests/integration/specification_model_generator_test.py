@@ -178,3 +178,30 @@ def test_unbounded_message(tmp_path: Path) -> None:
         """,
         tmp_path,
     )
+
+
+@pytest.mark.parametrize(
+    "aspects",
+    [
+        "with Size => T'Size if A = T'Size",
+        "with Size => Test::T'Size if A = Test::T'Size",
+    ],
+)
+def test_static_type_size(tmp_path: Path, aspects: str) -> None:
+    utils.assert_compilable_code_string(
+        f"""
+           package Test is
+
+              type T is mod 2**8;
+
+              type M is
+                 message
+                    A : T;
+                    B : Opaque
+                       {aspects};
+                 end message;
+
+           end Test;
+        """,
+        tmp_path,
+    )
