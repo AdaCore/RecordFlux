@@ -1,14 +1,14 @@
 VERBOSE ?= @
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := language # tests
+python-packages := language tests
 
 build-dir := build
 
 .PHONY: check check_black check_isort check_flake8 check_pylint check_mypy format \
 	test test_python clean
 
-check: generate_parser check_black check_isort check_flake8 check_pylint check_mypy check_contracts
+check: check_black check_isort check_flake8 check_pylint check_mypy check_contracts
 
 check_black:
 	black --check --diff --line-length 100 $(python-packages)
@@ -32,13 +32,10 @@ format:
 	black -l 100 $(python-packages)
 	isort $(python-packages)
 
-test: check test_python_coverage
+test: check test_python
 
-test_python:
-	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis"
-
-test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
+test_python: generate_parser
+	LD_LIBRARY_PATH=build/langkit/lib/librecordfluxdsllang/relocatable/dev python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis"
 
 generate_parser:
 	mkdir -p $(build-dir)
@@ -46,4 +43,4 @@ generate_parser:
 	pip3 install build/langkit/python
 
 clean:
-	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
+	rm -rf $(build-dir) .hypothesis .mypy_cache .pytest_cache

@@ -1,9 +1,0 @@
-[report]
-exclude_lines =
-    pragma: no cover
-    assert False
-    def __repr__
-    def __str__
-    if TYPE_CHECKING:
-    raise NotImplementedError
-    return NotImplemented
