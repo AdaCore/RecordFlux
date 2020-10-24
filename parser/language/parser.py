@@ -91,6 +91,8 @@ rflx_grammar.add_rules(
         grammar.unqualified_identifier,
         ":",
         grammar.qualified_identifier,
+        Opt("with", List(grammar.mathematical_aspect, sep=",")),
+        Opt(grammar.if_condition),
         List(grammar.then, empty_valid=True),
         ";",
     ),

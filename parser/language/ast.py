@@ -138,6 +138,8 @@ class NullComponent(RFLXNode):
 class Component(RFLXNode):
     name = Field()
     type_name = Field()
+    first = Field()
+    size = Field()
     thens = Field()
 
 
