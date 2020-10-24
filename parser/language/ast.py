@@ -240,3 +240,122 @@ class ArrayAggregate(RFLXNode):
 
 class StringLiteral(RFLXNode):
     token_node = True
+
+
+class Session(RFLXNode):
+    parameters = Field()
+    name = Field()
+    aspects = Field()
+    declarations = Field()
+    states = Field()
+    end_identifier = Field()
+
+
+class VariableDecl(RFLXNode):
+    name = Field()
+    type_name = Field()
+    initializer = Field()
+
+
+class Selected(RFLXNode):
+    prefix = Field()
+    selector = Field()
+
+
+class RenamingDecl(RFLXNode):
+    name = Field()
+    type_name = Field()
+    expression = Field(type=Selected)
+
+
+class PrivateTypeDecl(RFLXNode):
+    name = Field()
+
+
+class Parameter(RFLXNode):
+    name = Field()
+    type_name = Field()
+
+
+class Parameters(RFLXNode):
+    parameters = Field()
+
+
+class FunctionDecl(RFLXNode):
+    name = Field()
+    parameters = Field()
+    return_type_name = Field()
+
+
+class Readable(RFLXNode):
+    pass
+
+
+class Writable(RFLXNode):
+    pass
+
+
+class ChannelDecl(RFLXNode):
+    name = Field()
+    parameters = Field()
+
+
+class SessionAspects(RFLXNode):
+    initial = Field(type=UnqualifiedID)
+    final = Field(type=UnqualifiedID)
+
+
+class State(RFLXNode):
+    name = Field()
+    description = Field()
+    body = Field()
+
+
+class NullStateBody(RFLXNode):
+    pass
+
+
+class StateBody(RFLXNode):
+    declarations = Field()
+    actions = Field()
+    conditional_transitions = Field()
+    final_transition = Field()
+    end_identifier = Field()
+
+
+class Description(RFLXNode):
+    content = Field()
+
+
+class Assignment(RFLXNode):
+    name = Field()
+    expression = Field()
+
+
+class Attr(RFLXNode):
+    enum_node = True
+    alternatives = [
+        "Append",
+        "Extend",
+        "Read",
+        "Write",
+    ]
+
+
+class ListAttribute(RFLXNode):
+    name = Field()
+    attr = Field(type=Attr)
+    expression = Field()
+
+
+class Reset(RFLXNode):
+    name = Field()
+
+
+class Transition(RFLXNode):
+    target = Field()
+    description = Field()
+
+
+class ConditionalTransition(Transition):
+    condition = Field()

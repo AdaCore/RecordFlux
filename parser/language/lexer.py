@@ -24,6 +24,7 @@ class Token(LexerToken):
     Null = WithText()
     Semicolon = WithText()
     DoubleColon = WithText()
+    Assignment = WithText()
     Colon = WithText()
     Type = WithText()
     Range = WithText()
@@ -36,6 +37,24 @@ class Token(LexerToken):
     New = WithText()
     For = WithText()
     Use = WithText()
+    Generic = WithText()
+    Session = WithText()
+    Begin = WithText()
+    Private = WithText()
+    Return = WithText()
+    Function = WithText()
+    State = WithText()
+    Transition = WithText()
+    Renames = WithText()
+    Channel = WithText()
+    Readable = WithText()
+    Writable = WithText()
+    Desc = WithText()
+    Append = WithText()
+    Extend = WithText()
+    Read = WithText()
+    Write = WithText()
+    Reset = WithText()
 
     # Aspect names
     First = WithText()
@@ -43,6 +62,8 @@ class Token(LexerToken):
     Last = WithText()
     Checksum = WithText()
     ValidChecksum = WithText()
+    Initial = WithText()
+    Final = WithText()
 
     # Symbols
     Dot = WithText()
@@ -145,10 +166,31 @@ rflx_lexer.add_rules(
     (Literal("new"), Token.New),
     (Literal("for"), Token.For),
     (Literal("use"), Token.Use),
+    (Literal("generic"), Token.Generic),
+    (Literal("session"), Token.Session),
+    (Literal("begin"), Token.Begin),
+    (Literal("private"), Token.Private),
+    (Literal("return"), Token.Return),
+    (Literal("function"), Token.Function),
+    (Literal("state"), Token.State),
+    (Literal("transition"), Token.Transition),
+    (Literal("renames"), Token.Renames),
+    (Literal("Channel"), Token.Channel),
+    (Literal("Readable"), Token.Readable),
+    (Literal("Writable"), Token.Writable),
+    (Literal("Desc"), Token.Desc),
+    (Literal("Append"), Token.Append),
+    (Literal("Extend"), Token.Extend),
+    (Literal("Read"), Token.Read),
+    (Literal("Write"), Token.Write),
+    (Literal("Reset"), Token.Reset),
     (Literal("Checksum"), Token.Checksum),
     (Literal("Valid_Checksum"), Token.ValidChecksum),
+    (Literal("Initial"), Token.Initial),
+    (Literal("Final"), Token.Final),
     (Literal(";"), Token.Semicolon),
     (Literal("::"), Token.DoubleColon),
+    (Literal(":="), Token.Assignment),
     (Literal(":"), Token.Colon),
     (Literal("("), Token.LPar),
     (Literal(")"), Token.RPar),
