@@ -34,6 +34,8 @@ class Token(LexerToken):
     Then = WithText()
     Array = WithText()
     Of = WithText()
+    In = WithText()
+    Not = WithText()
     New = WithText()
     For = WithText()
     Use = WithText()
@@ -62,6 +64,10 @@ class Token(LexerToken):
     Last = WithText()
     Checksum = WithText()
     ValidChecksum = WithText()
+    Head = WithText()
+    Opaque = WithText()
+    Present = WithText()
+    Valid = WithText()
     Initial = WithText()
     Final = WithText()
 
@@ -128,6 +134,10 @@ rflx_lexer.add_rules(
             ("Last", Token.Last),
             ("Size", Token.Size),
             ("Valid_Checksum", Token.Size),
+            ("Head", Token.Head),
+            ("Opaque", Token.Opaque),
+            ("Present", Token.Present),
+            ("Valid", Token.Valid),
         ]
     ]
 )
@@ -163,6 +173,8 @@ rflx_lexer.add_rules(
     (Literal("then"), Token.Then),
     (Literal("array"), Token.Array),
     (Literal("of"), Token.Of),
+    (Literal("in"), Token.In),
+    (Literal("not"), Token.Not),
     (Literal("new"), Token.New),
     (Literal("for"), Token.For),
     (Literal("use"), Token.Use),
@@ -186,6 +198,10 @@ rflx_lexer.add_rules(
     (Literal("Reset"), Token.Reset),
     (Literal("Checksum"), Token.Checksum),
     (Literal("Valid_Checksum"), Token.ValidChecksum),
+    (Literal("Head"), Token.Head),
+    (Literal("Opaque"), Token.Opaque),
+    (Literal("Present"), Token.Present),
+    (Literal("Valid"), Token.Valid),
     (Literal("Initial"), Token.Initial),
     (Literal("Final"), Token.Final),
     (Literal(";"), Token.Semicolon),

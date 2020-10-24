@@ -166,6 +166,10 @@ class Variable(RFLXNode):
     name = Field()
 
 
+class QualifiedVariable(RFLXNode):
+    name = Field()
+
+
 class Op(RFLXNode):
     enum_node = True
     alternatives = [
@@ -182,6 +186,8 @@ class Op(RFLXNode):
         "ge",
         "and",
         "or",
+        "in",
+        "notin",
     ]
 
 

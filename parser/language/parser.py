@@ -16,13 +16,18 @@ rflx_grammar.add_rules(
         Opt(grammar.unqualified_identifier, "::"), grammar.unqualified_identifier
     ),
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
-    qualified_variable=ast.Variable(grammar.qualified_identifier),
+    qualified_variable=ast.QualifiedVariable(grammar.qualified_identifier),
+    variable=ast.Variable(grammar.unqualified_identifier),
     first_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.First),
-    length_attribute=ast.SizeAttribute(grammar.unqualified_identifier, "'", lexer.Size),
+    size_attribute=ast.SizeAttribute(grammar.unqualified_identifier, "'", lexer.Size),
     last_attribute=ast.LastAttribute(grammar.unqualified_identifier, "'", lexer.Last),
     valid_checksum_attribute=ast.ValidChecksumAttribute(
         grammar.unqualified_identifier, "'", lexer.ValidChecksum
     ),
+    head_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Head),
+    opaque_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Opaque),
+    present_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Present),
+    valid_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Valid),
     array_aggregate=ast.ArrayAggregate("[", List(grammar.numeric_literal, sep=","), "]"),
     string_literal=ast.StringLiteral(lexer.StringLiteral),
     concatenation=Or(
@@ -37,8 +42,9 @@ rflx_grammar.add_rules(
     primary=Or(
         grammar.concatenation,
         grammar.numeric_literal,
+        grammar.string_literal,
         grammar.first_attribute,
-        grammar.length_attribute,
+        grammar.size_attribute,
         grammar.last_attribute,
         grammar.valid_checksum_attribute,
         grammar.qualified_variable,
@@ -72,6 +78,50 @@ rflx_grammar.add_rules(
     ),
     mathematical_expression=ast.MathematicalExpression(grammar.expression),
     boolean_expression=ast.BooleanExpression(grammar.expression),
+    paren_extended_expression=ast.ParenExpression("(", grammar.extended_expression, ")"),
+    extended_primary=Or(
+        grammar.concatenation,
+        grammar.numeric_literal,
+        grammar.string_literal,
+        grammar.first_attribute,
+        grammar.size_attribute,
+        grammar.last_attribute,
+        grammar.valid_checksum_attribute,
+        grammar.head_attribute,
+        grammar.opaque_attribute,
+        grammar.present_attribute,
+        grammar.valid_attribute,
+        grammar.variable,
+        grammar.paren_extended_expression,
+    ),
+    extended_binop=Or(
+        # pylint: disable=no-member
+        ast.Op.alt_pow("**"),
+        ast.Op.alt_mul("*"),
+        ast.Op.alt_div("/"),
+        ast.Op.alt_add("+"),
+        ast.Op.alt_sub("-"),
+        ast.Op.alt_eq("="),
+        ast.Op.alt_neq("/="),
+        ast.Op.alt_le("<="),
+        ast.Op.alt_lt("<"),
+        ast.Op.alt_ge(">="),
+        ast.Op.alt_gt(">"),
+        ast.Op.alt_in("in"),
+        ast.Op.alt_notin("not", "in"),
+        ast.Op.alt_and("and"),
+        ast.Op.alt_or("or"),
+    ),
+    extended_expression=Or(
+        ast.BinOp(
+            grammar.extended_expression,
+            grammar.extended_binop,
+            cut(),
+            grammar.extended_primary,
+        ),
+        grammar.extended_primary,
+    ),
+    extended_boolean_expression=ast.BooleanExpression(grammar.extended_expression),
 )
 
 rflx_grammar.add_rules(
@@ -92,6 +142,7 @@ rflx_grammar.add_rules(
     modular_type_definition=ast.ModularTypeDef("mod", grammar.mathematical_expression),
     integer_type_definition=Or(grammar.range_type_definition, grammar.modular_type_definition),
     if_condition=ast.If("if", grammar.boolean_expression),
+    extended_if_condition=ast.If("if", grammar.extended_boolean_expression),
     then=ast.Then(
         "then",
         Or(ast.NullID("null"), grammar.unqualified_identifier),
@@ -252,7 +303,7 @@ rflx_grammar.add_rules(
         "then",
         grammar.unqualified_identifier,
         Opt(grammar.description_aspect),
-        grammar.if_condition,
+        grammar.extended_if_condition,
     ),
     transition=ast.Transition(
         "then", grammar.unqualified_identifier, Opt(grammar.description_aspect)
