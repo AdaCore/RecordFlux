@@ -188,6 +188,7 @@ class Op(RFLXNode):
         "or",
         "in",
         "notin",
+        "select",
     ]
 
 
@@ -348,6 +349,21 @@ class Attr(RFLXNode):
     ]
 
 
+class Quant(RFLXNode):
+    enum_node = True
+    alternatives = [
+        "all",
+        "some",
+    ]
+
+
+class QuantifiedExpression(RFLXNode):
+    operation = Field(type=Quant)
+    parameter_identifier = Field()
+    iterable = Field()
+    predicate = Field()
+
+
 class ListAttribute(RFLXNode):
     name = Field()
     attr = Field(type=Attr)
@@ -365,3 +381,38 @@ class Transition(RFLXNode):
 
 class ConditionalTransition(Transition):
     condition = Field()
+
+
+class Comprehension(RFLXNode):
+    iterator = Field()
+    array = Field()
+    selector = Field()
+    condition = Field()
+
+
+class Call(RFLXNode):
+    name = Field()
+    arguments = Field()
+
+
+class Conversion(RFLXNode):
+    name = Field()
+    argument = Field()
+
+
+class MessageAggregate(RFLXNode):
+    name = Field()
+    values = Field()
+
+
+class NullComponents(RFLXNode):
+    pass
+
+
+class MessageComponent(RFLXNode):
+    name = Field()
+    expression = Field()
+
+
+class MessageComponents(NullComponents):
+    components = Field()

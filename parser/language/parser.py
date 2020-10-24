@@ -28,7 +28,9 @@ rflx_grammar.add_rules(
     opaque_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Opaque),
     present_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Present),
     valid_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Valid),
-    array_aggregate=ast.ArrayAggregate("[", List(grammar.numeric_literal, sep=","), "]"),
+    array_aggregate=ast.ArrayAggregate(
+        "[", List(grammar.numeric_literal, sep=",", empty_valid=True), "]"
+    ),
     string_literal=ast.StringLiteral(lexer.StringLiteral),
     concatenation=Or(
         ast.Concatenation(
@@ -79,10 +81,47 @@ rflx_grammar.add_rules(
     mathematical_expression=ast.MathematicalExpression(grammar.expression),
     boolean_expression=ast.BooleanExpression(grammar.expression),
     paren_extended_expression=ast.ParenExpression("(", grammar.extended_expression, ")"),
-    extended_primary=Or(
-        grammar.concatenation,
-        grammar.numeric_literal,
-        grammar.string_literal,
+    quantified_expression=ast.QuantifiedExpression(
+        "for",
+        Or(
+            # pylint: disable=no-member
+            ast.Quant.alt_all("all"),
+            ast.Quant.alt_some("some"),
+        ),
+        grammar.unqualified_identifier,
+        "in",
+        grammar.extended_expression,
+        "=>",
+        grammar.extended_expression,
+    ),
+    comprehension=ast.Comprehension(
+        "[",
+        "for",
+        grammar.unqualified_identifier,
+        "in",
+        grammar.extended_expression,
+        "=>",
+        grammar.extended_expression,
+        Opt("when", grammar.extended_expression),
+        "]",
+    ),
+    call=ast.Call(
+        grammar.unqualified_identifier, "(", List(grammar.extended_expression, sep=","), ")"
+    ),
+    conversion=ast.Conversion(grammar.qualified_identifier, "(", grammar.extended_expression, ")"),
+    null_message=ast.NullComponents("null", "message"),
+    message_component=ast.MessageComponent(
+        grammar.unqualified_identifier, "=>", grammar.extended_expression
+    ),
+    message_components=ast.MessageComponents(List(grammar.message_component, sep=",")),
+    message_aggregate=ast.MessageAggregate(
+        grammar.qualified_identifier,
+        "'",
+        "(",
+        Or(grammar.null_message, grammar.message_components),
+        ")",
+    ),
+    extended_attribute=Or(
         grammar.first_attribute,
         grammar.size_attribute,
         grammar.last_attribute,
@@ -91,7 +130,18 @@ rflx_grammar.add_rules(
         grammar.opaque_attribute,
         grammar.present_attribute,
         grammar.valid_attribute,
-        grammar.variable,
+    ),
+    extended_primary=Or(
+        grammar.concatenation,
+        grammar.numeric_literal,
+        grammar.string_literal,
+        grammar.extended_attribute,
+        grammar.quantified_expression,
+        grammar.comprehension,
+        grammar.call,
+        grammar.conversion,
+        grammar.message_aggregate,
+        grammar.qualified_variable,
         grammar.paren_extended_expression,
     ),
     extended_binop=Or(
@@ -111,6 +161,7 @@ rflx_grammar.add_rules(
         ast.Op.alt_notin("not", "in"),
         ast.Op.alt_and("and"),
         ast.Op.alt_or("or"),
+        ast.Op.alt_select("."),
     ),
     extended_expression=Or(
         ast.BinOp(
@@ -155,7 +206,7 @@ rflx_grammar.add_rules(
         ":",
         grammar.qualified_identifier,
         Opt("with", List(grammar.mathematical_aspect, sep=",")),
-        Opt(grammar.if_condition),
+        Opt(grammar.extended_if_condition),
         List(grammar.then, empty_valid=True),
         ";",
     ),
@@ -276,12 +327,14 @@ rflx_grammar.add_rules(
         grammar.unqualified_identifier,
         ":",
         grammar.qualified_identifier,
-        Opt(":=", grammar.expression),
+        Opt(":=", grammar.extended_expression),
     ),
     declaration=Or(grammar.renaming_declaration, grammar.variable_declaration),
     description_aspect=ast.Description("Desc", "=>", grammar.string_literal),
     null_state_body=ast.NullStateBody("null", "state"),
-    assignment_statement=ast.Assignment(grammar.unqualified_identifier, ":=", grammar.expression),
+    assignment_statement=ast.Assignment(
+        grammar.unqualified_identifier, ":=", grammar.extended_expression
+    ),
     list_attribute=ast.ListAttribute(
         grammar.unqualified_identifier,
         "'",
@@ -293,7 +346,7 @@ rflx_grammar.add_rules(
             ast.Attr.alt_write("Write"),
         ),
         "(",
-        grammar.expression,
+        grammar.extended_expression,
         ")",
     ),
     reset=ast.Reset(grammar.unqualified_identifier, "'", "Reset"),
@@ -302,11 +355,11 @@ rflx_grammar.add_rules(
     conditional_transition=ast.ConditionalTransition(
         "then",
         grammar.unqualified_identifier,
-        Opt(grammar.description_aspect),
+        Opt("with", grammar.description_aspect),
         grammar.extended_if_condition,
     ),
     transition=ast.Transition(
-        "then", grammar.unqualified_identifier, Opt(grammar.description_aspect)
+        "then", grammar.unqualified_identifier, Opt("with", grammar.description_aspect)
     ),
     state_body=ast.StateBody(
         Opt(List(grammar.declaration, sep=";"), ";"),
@@ -321,7 +374,7 @@ rflx_grammar.add_rules(
     state=ast.State(
         "state",
         grammar.unqualified_identifier,
-        Opt(grammar.description_aspect),
+        Opt("with", grammar.description_aspect),
         "is",
         Or(grammar.null_state_body, grammar.state_body),
     ),

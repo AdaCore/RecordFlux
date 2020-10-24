@@ -38,7 +38,10 @@ class Token(LexerToken):
     Not = WithText()
     New = WithText()
     For = WithText()
+    When = WithText()
     Use = WithText()
+    All = WithText()
+    Some = WithText()
     Generic = WithText()
     Session = WithText()
     Begin = WithText()
@@ -162,7 +165,7 @@ rflx_lexer.add_rules(
 rflx_lexer.add_rules(
     (Literal("package"), Token.Package),
     (Literal("is"), Token.Is),
-    (Literal("if"), Token.Is),
+    (Literal("if"), Token.If),
     (Literal("end"), Token.End),
     (Literal("null"), Token.Null),
     (Literal("type"), Token.Type),
@@ -177,7 +180,10 @@ rflx_lexer.add_rules(
     (Literal("not"), Token.Not),
     (Literal("new"), Token.New),
     (Literal("for"), Token.For),
+    (Literal("when"), Token.When),
     (Literal("use"), Token.Use),
+    (Literal("all"), Token.All),
+    (Literal("some"), Token.Some),
     (Literal("generic"), Token.Generic),
     (Literal("session"), Token.Session),
     (Literal("begin"), Token.Begin),
