@@ -54,6 +54,8 @@ class Token(LexerToken):
     Arrow = WithText()
     LPar = WithText()
     RPar = WithText()
+    LBrack = WithText()
+    RBrack = WithText()
     Exp = WithText()
     Mul = WithText()
     Div = WithText()
@@ -68,12 +70,16 @@ class Token(LexerToken):
     Ge = WithText()
     And = WithText()
     Or = WithText()
+    Ampersand = WithText()
 
     # Comment
     Comment = WithTrivia()
 
     # Numeric
     Numeral = WithText()
+
+    # String
+    StringLiteral = WithText()
 
 
 rflx_lexer = Lexer(Token)
@@ -146,6 +152,8 @@ rflx_lexer.add_rules(
     (Literal(":"), Token.Colon),
     (Literal("("), Token.LPar),
     (Literal(")"), Token.RPar),
+    (Literal("["), Token.LBrack),
+    (Literal("]"), Token.RBrack),
     (Literal(".."), Token.DoubleDot),
     (Literal("."), Token.Dot),
     (Literal(","), Token.Comma),
@@ -164,7 +172,9 @@ rflx_lexer.add_rules(
     (Literal(">"), Token.Gt),
     (Literal("and"), Token.And),
     (Literal("or"), Token.Or),
+    (Literal("&"), Token.Ampersand),
     (Literal("=>"), Token.Arrow),
+    (Pattern(r'"[^"]*"'), Token.StringLiteral),
     (Pattern(r"[0-9]+(_?[0-9]+)*"), Token.Numeral),
     (Pattern(r"[0-9]+#[0-9A-F]+(_?[0-9A-F]+)*#"), Token.Numeral),
     (Pattern(r"[a-zA-Z][a-zA-Z0-9_]*"), Token.UnqualifiedIdentifier),

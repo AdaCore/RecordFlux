@@ -227,3 +227,16 @@ class ValidChecksumAttribute(Attribute):
 class Specification(RFLXNode):
     context_clause = Field()
     package_declaration = Field()
+
+
+class Concatenation(RFLXNode):
+    left = Field()
+    right = Field()
+
+
+class ArrayAggregate(RFLXNode):
+    values = Field()
+
+
+class StringLiteral(RFLXNode):
+    token_node = True

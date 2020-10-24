@@ -23,7 +23,19 @@ rflx_grammar.add_rules(
     valid_checksum_attribute=ast.ValidChecksumAttribute(
         grammar.unqualified_identifier, "'", lexer.ValidChecksum
     ),
+    array_aggregate=ast.ArrayAggregate("[", List(grammar.numeric_literal, sep=","), "]"),
+    string_literal=ast.StringLiteral(lexer.StringLiteral),
+    concatenation=Or(
+        ast.Concatenation(
+            grammar.concatenation,
+            "&",
+            cut(),
+            Or(grammar.array_aggregate, grammar.string_literal),
+        ),
+        Or(grammar.array_aggregate, grammar.string_literal),
+    ),
     primary=Or(
+        grammar.concatenation,
         grammar.numeric_literal,
         grammar.first_attribute,
         grammar.length_attribute,
