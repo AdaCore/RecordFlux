@@ -16,9 +16,9 @@ def test_empty_package() -> None:
             end Empty_Package;
         """,
     )
-    assert unit.root.f_package_declaration.f_name_start.text == "Empty_Package"
-    assert not unit.root.f_package_declaration.f_content.text
-    assert unit.root.f_package_declaration.f_name_end.text == "Empty_Package"
+    assert unit.root.f_package_declaration.f_identifier.text == "Empty_Package"
+    assert not unit.root.f_package_declaration.f_declarations.text
+    assert unit.root.f_package_declaration.f_end_identifier.text == "Empty_Package"
 
 
 def test_modular_type() -> None:
@@ -30,6 +30,6 @@ def test_modular_type() -> None:
         rule=rflxdsl.GrammarRule.type_declaration_rule,
     )
     assert unit.root.f_identifier.text == "Modular_Type"
-    assert unit.root.f_type_definition.kind_name == "ModularTypeDef"
-    assert unit.root.f_type_definition.f_mod.kind_name == "MathematicalExpression"
-    assert unit.root.f_type_definition.f_mod.text == "2 ** 9"
+    assert unit.root.f_definition.kind_name == "ModularTypeDef"
+    assert unit.root.f_definition.f_mod.kind_name == "MathematicalExpression"
+    assert unit.root.f_definition.f_mod.text == "2 ** 9"

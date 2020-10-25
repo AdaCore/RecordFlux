@@ -1,4 +1,4 @@
-from langkit.parsers import Grammar, List, NoBacktrack as cut, Opt, Or  # type: ignore
+from langkit.parsers import Grammar, List, NoBacktrack as cut, Opt, Or, Pick  # type: ignore
 
 import language.ast as ast
 from language.lexer import rflx_lexer as lexer
@@ -17,7 +17,6 @@ rflx_grammar.add_rules(
     ),
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
     qualified_variable=ast.QualifiedVariable(grammar.qualified_identifier),
-    variable=ast.Variable(grammar.unqualified_identifier),
     array_aggregate=ast.ArrayAggregate(
         "[", List(grammar.numeric_literal, sep=",", empty_valid=True), "]"
     ),
@@ -99,7 +98,7 @@ rflx_grammar.add_rules(
         grammar.extended_expression,
         "=>",
         grammar.extended_expression,
-        Opt("when", grammar.extended_expression),
+        Opt("when", grammar.extended_boolean_expression),
         "]",
     ),
     call=ast.Call(
@@ -200,8 +199,8 @@ rflx_grammar.add_rules(
     ),
     modular_type_definition=ast.ModularTypeDef("mod", grammar.mathematical_expression),
     integer_type_definition=Or(grammar.range_type_definition, grammar.modular_type_definition),
-    if_condition=ast.If("if", grammar.boolean_expression),
-    extended_if_condition=ast.If("if", grammar.extended_boolean_expression),
+    if_condition=Pick("if", grammar.boolean_expression),
+    extended_if_condition=Pick("if", grammar.extended_boolean_expression),
     then=ast.Then(
         "then",
         Or(ast.NullID("null"), grammar.unqualified_identifier),
@@ -219,14 +218,14 @@ rflx_grammar.add_rules(
         ";",
     ),
     component_list=ast.Components(Opt(grammar.null_component_item), List(grammar.component_item)),
-    value_range=ast.ValueRange(
+    value_range=ast.ChecksumValueRange(
         grammar.mathematical_expression, "..", grammar.mathematical_expression
     ),
     checksum_association=ast.ChecksumAssoc(
         grammar.unqualified_identifier,
         "=>",
         "(",
-        List(Or(grammar.value_range, grammar.mathematical_expression), sep=","),
+        List(Or(grammar.value_range, ast.ChecksumVal(grammar.mathematical_expression)), sep=","),
         ")",
     ),
     checksum_aspect=ast.ChecksumAspect(
@@ -264,7 +263,7 @@ rflx_grammar.add_rules(
         "of",
         grammar.qualified_identifier,
     ),
-    type_declaration=ast.Type(
+    type_declaration=ast.TypeSpec(
         "type",
         grammar.unqualified_identifier,
         "is",
@@ -276,7 +275,7 @@ rflx_grammar.add_rules(
             grammar.array_type_definition,
         ),
     ),
-    type_refinement=ast.Refinement(
+    type_refinement=ast.RefinementSpec(
         "for",
         grammar.qualified_identifier,
         "use",
@@ -329,7 +328,7 @@ rflx_grammar.add_rules(
         ":",
         grammar.qualified_identifier,
         "renames",
-        ast.Selected(grammar.unqualified_identifier, ".", grammar.unqualified_identifier),
+        grammar.extended_expression,
     ),
     variable_declaration=ast.VariableDecl(
         grammar.unqualified_identifier,
@@ -386,7 +385,7 @@ rflx_grammar.add_rules(
         "is",
         Or(grammar.null_state_body, grammar.state_body),
     ),
-    session_declaration=ast.Session(
+    session_declaration=ast.SessionSpec(
         "generic",
         Opt(List(grammar.session_parameter, sep=";"), ";"),
         "session",
@@ -402,7 +401,7 @@ rflx_grammar.add_rules(
     basic_declaration=Or(
         grammar.type_declaration, grammar.type_refinement, grammar.session_declaration
     ),
-    package_declaration=ast.PackageDeclarationNode(
+    package_declaration=ast.PackageSpec(
         "package",
         grammar.unqualified_identifier,
         "is",
@@ -411,7 +410,7 @@ rflx_grammar.add_rules(
         grammar.unqualified_identifier,
         ";",
     ),
-    context_item=List("with", grammar.unqualified_identifier, ";"),
+    context_item=ast.ContextItem(List("with", grammar.unqualified_identifier, ";")),
     specification=ast.Specification(
         List(grammar.context_item, empty_valid=True), grammar.package_declaration
     ),
