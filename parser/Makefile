@@ -19,10 +19,10 @@ check_isort:
 check_flake8:
 	flake8 $(python-packages)
 
-check_pylint:
+check_pylint: generate_parser
 	pylint $(python-packages)
 
-check_mypy:
+check_mypy: generate_parser
 	mypy --pretty $(python-packages)
 
 check_contracts:
@@ -39,7 +39,7 @@ test_python: generate_parser
 
 generate_parser:
 	mkdir -p $(build-dir)
-	PYTHONPATH=. ./manage.py --build-dir $(build-dir)/langkit make
+	GNATCOLL_ICONV_OPT="-v" ADA_PROJECT_PATH=contrib/gnatcoll-bindings/iconv:contrib/gnatcoll-bindings/gmp PYTHONPATH=. ./manage.py --build-dir $(build-dir)/langkit make
 	pip3 install build/langkit/python
 
 clean:

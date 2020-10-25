@@ -1,0 +1,3 @@
+[submodule "contrib/gnatcoll-bindings"]
+	path = contrib/gnatcoll-bindings
+	url = https://github.com/AdaCore/gnatcoll-bindings
