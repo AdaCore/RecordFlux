@@ -35,7 +35,7 @@ format:
 test: check test_python
 
 test_python: generate_parser
-	LD_LIBRARY_PATH=build/langkit/lib/librecordfluxdsllang/relocatable/dev python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis"
+	LD_LIBRARY_PATH=build/langkit/lib/librecordfluxdsllang/relocatable/dev python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
 
 generate_parser:
 	mkdir -p $(build-dir)
