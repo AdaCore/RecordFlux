@@ -1,0 +1,21 @@
+name: tests
+
+on:
+  push:
+  schedule:
+    - cron:  '0 2 * * *'
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        git submodule update --init --recursive
+    - name: Test
+      run: |
+        docker run -v $PWD:/data -w /data componolit/ci:gnat-community-2020 /bin/sh -c "apt-get update && apt-get install -y python3-pip && pip3 install .[Devel] && make generate_parser test"
