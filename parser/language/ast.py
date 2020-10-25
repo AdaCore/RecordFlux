@@ -210,25 +210,33 @@ class MathematicalExpression(RFLXNode):
     expr = Field()
 
 
-@abstract
-class Attribute(RFLXNode):
+class AttrBase(RFLXNode):
     pass
 
 
-class FirstAttribute(Attribute):
-    variable = Field()
+class Attr(AttrBase):
+    enum_node = True
+    alternatives = [
+        "First",
+        "Size",
+        "Last",
+        "Valid_Checksum",
+    ]
 
 
-class SizeAttribute(Attribute):
-    variable = Field()
+class ExtAttr(AttrBase):
+    enum_node = True
+    alternatives = [
+        "Head",
+        "Opaque",
+        "Present",
+        "Valid",
+    ]
 
 
-class LastAttribute(Attribute):
-    variable = Field()
-
-
-class ValidChecksumAttribute(Attribute):
-    variable = Field()
+class Attribute(RFLXNode):
+    expression = Field()
+    kind = Field(type=AttrBase)
 
 
 class Specification(RFLXNode):
@@ -339,7 +347,7 @@ class Assignment(RFLXNode):
     expression = Field()
 
 
-class Attr(RFLXNode):
+class ListAttr(RFLXNode):
     enum_node = True
     alternatives = [
         "Append",
@@ -366,7 +374,7 @@ class QuantifiedExpression(RFLXNode):
 
 class ListAttribute(RFLXNode):
     name = Field()
-    attr = Field(type=Attr)
+    attr = Field(type=ListAttr)
     expression = Field()
 
 
@@ -416,3 +424,9 @@ class MessageComponent(RFLXNode):
 
 class MessageComponents(NullComponents):
     components = Field()
+
+
+class Where(RFLXNode):
+    expression = Field()
+    variable_name = Field()
+    substitution = Field()

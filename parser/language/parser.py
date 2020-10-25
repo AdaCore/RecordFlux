@@ -18,16 +18,6 @@ rflx_grammar.add_rules(
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
     qualified_variable=ast.QualifiedVariable(grammar.qualified_identifier),
     variable=ast.Variable(grammar.unqualified_identifier),
-    first_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.First),
-    size_attribute=ast.SizeAttribute(grammar.unqualified_identifier, "'", lexer.Size),
-    last_attribute=ast.LastAttribute(grammar.unqualified_identifier, "'", lexer.Last),
-    valid_checksum_attribute=ast.ValidChecksumAttribute(
-        grammar.unqualified_identifier, "'", lexer.ValidChecksum
-    ),
-    head_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Head),
-    opaque_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Opaque),
-    present_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Present),
-    valid_attribute=ast.FirstAttribute(grammar.unqualified_identifier, "'", lexer.Valid),
     array_aggregate=ast.ArrayAggregate(
         "[", List(grammar.numeric_literal, sep=",", empty_valid=True), "]"
     ),
@@ -45,10 +35,6 @@ rflx_grammar.add_rules(
         grammar.concatenation,
         grammar.numeric_literal,
         grammar.string_literal,
-        grammar.first_attribute,
-        grammar.size_attribute,
-        grammar.last_attribute,
-        grammar.valid_checksum_attribute,
         grammar.qualified_variable,
         grammar.paren_expression,
     ),
@@ -75,6 +61,17 @@ rflx_grammar.add_rules(
             grammar.binop,
             cut(),
             grammar.primary,
+        ),
+        ast.Attribute(
+            grammar.expression,
+            "'",
+            Or(
+                # pylint: disable=no-member
+                ast.Attr.alt_first(lexer.First),
+                ast.Attr.alt_size(lexer.Size),
+                ast.Attr.alt_last(lexer.Last),
+                ast.Attr.alt_valid_checksum(lexer.ValidChecksum),
+            ),
         ),
         grammar.primary,
     ),
@@ -121,21 +118,10 @@ rflx_grammar.add_rules(
         Or(grammar.null_message, grammar.message_components),
         ")",
     ),
-    extended_attribute=Or(
-        grammar.first_attribute,
-        grammar.size_attribute,
-        grammar.last_attribute,
-        grammar.valid_checksum_attribute,
-        grammar.head_attribute,
-        grammar.opaque_attribute,
-        grammar.present_attribute,
-        grammar.valid_attribute,
-    ),
     extended_primary=Or(
         grammar.concatenation,
         grammar.numeric_literal,
         grammar.string_literal,
-        grammar.extended_attribute,
         grammar.quantified_expression,
         grammar.comprehension,
         grammar.call,
@@ -169,6 +155,28 @@ rflx_grammar.add_rules(
             grammar.extended_binop,
             cut(),
             grammar.extended_primary,
+        ),
+        ast.Attribute(
+            grammar.extended_expression,
+            "'",
+            Or(
+                # pylint: disable=no-member
+                ast.Attr.alt_first(lexer.First),
+                ast.Attr.alt_size(lexer.Size),
+                ast.Attr.alt_last(lexer.Last),
+                ast.Attr.alt_valid_checksum(lexer.ValidChecksum),
+                ast.ExtAttr.alt_head(lexer.Head),
+                ast.ExtAttr.alt_opaque(lexer.Opaque),
+                ast.ExtAttr.alt_present(lexer.Present),
+                ast.ExtAttr.alt_valid(lexer.Valid),
+            ),
+        ),
+        ast.Where(
+            grammar.extended_expression,
+            "where",
+            grammar.unqualified_identifier,
+            "=",
+            grammar.extended_expression,
         ),
         grammar.extended_primary,
     ),
@@ -340,10 +348,10 @@ rflx_grammar.add_rules(
         "'",
         Or(
             # pylint: disable=no-member
-            ast.Attr.alt_append("Append"),
-            ast.Attr.alt_extend("Extend"),
-            ast.Attr.alt_read("Read"),
-            ast.Attr.alt_write("Write"),
+            ast.ListAttr.alt_append("Append"),
+            ast.ListAttr.alt_extend("Extend"),
+            ast.ListAttr.alt_read("Read"),
+            ast.ListAttr.alt_write("Write"),
         ),
         "(",
         grammar.extended_expression,
@@ -390,7 +398,6 @@ rflx_grammar.add_rules(
         Opt(List(grammar.state, sep=";"), ";"),
         "end",
         grammar.unqualified_identifier,
-        ";",
     ),
     basic_declaration=Or(
         grammar.type_declaration, grammar.type_refinement, grammar.session_declaration

@@ -39,6 +39,7 @@ class Token(LexerToken):
     New = WithText()
     For = WithText()
     When = WithText()
+    Where = WithText()
     Use = WithText()
     All = WithText()
     Some = WithText()
@@ -136,7 +137,7 @@ rflx_lexer.add_rules(
             ("First", Token.First),
             ("Last", Token.Last),
             ("Size", Token.Size),
-            ("Valid_Checksum", Token.Size),
+            ("Valid_Checksum", Token.ValidChecksum),
             ("Head", Token.Head),
             ("Opaque", Token.Opaque),
             ("Present", Token.Present),
@@ -181,6 +182,7 @@ rflx_lexer.add_rules(
     (Literal("new"), Token.New),
     (Literal("for"), Token.For),
     (Literal("when"), Token.When),
+    (Literal("where"), Token.Where),
     (Literal("use"), Token.Use),
     (Literal("all"), Token.All),
     (Literal("some"), Token.Some),
