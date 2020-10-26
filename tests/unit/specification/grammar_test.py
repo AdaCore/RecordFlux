@@ -145,6 +145,13 @@ def test_expression_suffix(string: str, expected: expr.Expr) -> None:
             "A + B * (-8)",
             expr.Add(expr.Variable("A"), expr.Mul(expr.Variable("B"), expr.Number(-8))),
         ),
+        (
+            "A + B mod 8 * 2",
+            expr.Add(
+                expr.Variable("A"),
+                expr.Mul(expr.Mod(expr.Variable("B"), expr.Number(8)), expr.Number(2)),
+            ),
+        ),
     ],
 )
 def test_expression_mathematical(string: str, expected: expr.Expr) -> None:

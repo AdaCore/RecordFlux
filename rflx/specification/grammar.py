@@ -57,6 +57,7 @@ from rflx.expression import (
     Less,
     LessEqual,
     MessageAggregate,
+    Mod,
     Mul,
     NotEqual,
     NotIn,
@@ -202,7 +203,7 @@ def expression(restricted: bool = False) -> Token:
     expr = Forward()
 
     highest_precedence_operator = Literal("**")
-    multiplying_operator = Literal("*") | Literal("/")
+    multiplying_operator = Literal("*") | Literal("/") | Literal("mod")
     binary_adding_operator = Literal("+") | Literal("-")
     relational_operator = (
         Keyword("=") | Keyword("/=") | Keyword("<=") | Keyword("<") | Keyword(">=") | Keyword(">")
@@ -784,6 +785,7 @@ def parse_mathematical_operator(string: str, location: int, tokens: ParseResults
         "-": Sub,
         "*": Mul,
         "/": Div,
+        "mod": Mod,
         "**": Pow,
     }
     return parse_operator(operators, string, location, tokens)
