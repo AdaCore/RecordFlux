@@ -199,11 +199,6 @@ class Number(Expr):
     def __neg__(self) -> "Number":
         return Number(-self.value)
 
-    def __lt__(self, other: object) -> bool:
-        if isinstance(other, Number):
-            return self.value < other.value
-        return NotImplemented
-
     def _update_str(self) -> None:
         value = self.value if self.value >= 0 else -self.value
         if self.base == 0:
@@ -1126,7 +1121,11 @@ class EnumerationType(TypeDeclaration):
     ) -> None:
         super().__init__(identifier, aspects=([SizeAspect(size)] if size else []))
         self.literals = (
-            OrderedDict(sorted(literals.items(), key=lambda t: t[1]))
+            OrderedDict(
+                sorted(
+                    literals.items(), key=lambda t: t[1].value if isinstance(t[1], Number) else 0
+                )
+            )
             if None not in literals.values()
             else literals
         )
