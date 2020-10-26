@@ -47,7 +47,6 @@ setup(
         "pydotplus >=2, <3",
         "pyparsing >=2.4.0, <3",
         "z3-solver >=4, <5",
-        "PyYAML",
     ],
     extras_require={
         "devel": [
