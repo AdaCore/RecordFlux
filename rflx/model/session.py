@@ -463,8 +463,9 @@ class Session(AbstractSession):
                         if isinstance(t, Refinement) and t.sdu.identifier == identifier
                     ]
             if isinstance(expression, expr.MessageAggregate):
-                if identifier in self.types:
-                    message = self.types[identifier]
+                type_identifier = mty.qualified_type_identifier(identifier, self.package)
+                if type_identifier in self.types:
+                    message = self.types[type_identifier]
                     assert isinstance(message, Message)
                     expression.type_ = message.refined_type(
                         [
