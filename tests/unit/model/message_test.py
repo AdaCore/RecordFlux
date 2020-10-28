@@ -706,13 +706,13 @@ def test_reference_to_optional_field() -> None:
 def test_invalid_use_of_size_attribute() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, Equal(Size("F1"), Number(32), Location((400, 17)))),
+        Link(Field("F1"), FINAL, Equal(Size(Number(1)), Number(32), Location((400, 17)))),
     ]
     types = {Field("F1"): MODULAR_INTEGER}
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:400:17: model: error: invalid use of size attribute for "F1"$',
+        r'^<stdin>:400:17: model: error: invalid use of size attribute for "1"$',
     )
 
 

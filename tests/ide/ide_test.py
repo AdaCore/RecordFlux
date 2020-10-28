@@ -95,7 +95,7 @@ def test_multiple_errors() -> None:
             f"{path}:156:24: model: info: found aggregate with element type universal integer"
             " (1 .. 100)",
             f"{path}:156:19: model: info: on path Length -> Data -> F1 -> F2 -> Final",
-            f'{path}:152:19: model: error: invalid use of size attribute for "F1"',
+            f'{path}:152:19: model: error: invalid use of size attribute for "1"',
             f'{path}:168:10: model: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
             f'{path}:159:4: model: info: when merging message "RFLX_Invalid::M4"',
             f'{path}:166:10: model: info: into field "F2"',

@@ -712,10 +712,7 @@ class Message(AbstractMessage):
                 isinstance(a.prefix, expr.Variable)
                 and (
                     a.prefix.name == "Message"
-                    or (
-                        Field(a.prefix.name) in self.fields
-                        and isinstance(self.types[Field(a.prefix.name)], mty.Composite)
-                    )
+                    or Field(a.prefix.name) in self.fields
                     or a.prefix.identifier in self._type_literals
                 )
             ):
