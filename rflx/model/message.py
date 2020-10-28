@@ -125,7 +125,7 @@ class AbstractMessage(mty.Type):
         assert len(self.identifier.parts) > 1, "type identifier must contain package"
 
         self._enum_literals = mty.qualified_enum_literals(self.types.values(), self.package)
-        self._type_literals = mty.qualified_type_literals(self.types.values(), self.package)
+        self._type_literals = mty.qualified_type_literals(self.types.values())
 
         if not state and (structure or types):
             try:

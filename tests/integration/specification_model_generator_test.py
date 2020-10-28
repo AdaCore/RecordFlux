@@ -183,7 +183,6 @@ def test_unbounded_message(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "aspects",
     [
-        "with Size => T'Size if A = T'Size",
         "with Size => Test::T'Size if A = Test::T'Size",
     ],
 )
