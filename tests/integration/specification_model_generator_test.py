@@ -184,9 +184,10 @@ def test_unbounded_message(tmp_path: Path) -> None:
     "aspects",
     [
         "with Size => Test::T'Size if A = Test::T'Size",
+        "with Size => A'Size if A'Size = 8",
     ],
 )
-def test_static_type_size(tmp_path: Path, aspects: str) -> None:
+def test_size_attribute(tmp_path: Path, aspects: str) -> None:
     utils.assert_compilable_code_string(
         f"""
            package Test is

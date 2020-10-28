@@ -149,7 +149,7 @@ package RFLX_Invalid is
          F1 : R
             then F2
                -- error: invalid use of size attribute
-               if F1'Size = 42;
+               if 1'Size = 42;
          F2 : R
             then null
                -- error: invalid relation between F2 and aggregate
