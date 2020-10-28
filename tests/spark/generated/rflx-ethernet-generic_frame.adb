@@ -40,8 +40,8 @@ is
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      ((if
           Structural_Valid (Ctx.Cursors (F_Payload))
-          and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                    and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500)
+          and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                    and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500)
        then
           Ctx.Cursors (F_Payload).Last
        else
@@ -110,8 +110,8 @@ is
              Types.U64 (Val.Type_Length_Value) <= 1500
              or Types.U64 (Val.Type_Length_Value) >= 1536,
           when F_Payload =>
-             Size / 8 >= 46
-             and Size / 8 <= 1500,
+             Types.U64 (Size) / 8 >= 46
+             and Types.U64 (Size) / 8 <= 1500,
           when F_Final =>
              False));
 
@@ -276,8 +276,8 @@ is
                  F_Initial),
           when F_Payload =>
              (if
-                 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                 and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500
+                 Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                 and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500
               then
                  F_Final
               else
@@ -699,22 +699,22 @@ is
                  and then Valid (Ctx, F_Type_Length)
                  and then ((Structural_Valid (Ctx, F_Payload)
                             and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                            and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                      and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
+                            and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                                      and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
                            or (Structural_Valid (Ctx, F_Payload)
                                and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                         and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))
+                               and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                                         and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))
                 or (Valid (Ctx, F_Type_Length)
                     and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
                     and then ((Structural_Valid (Ctx, F_Payload)
                                and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                         and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
+                               and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                                         and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
                               or (Structural_Valid (Ctx, F_Payload)
                                   and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                                  and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                            and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))));
+                                  and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                                            and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Destination)
@@ -726,22 +726,22 @@ is
                  and then Valid (Ctx, F_Type_Length)
                  and then ((Valid (Ctx, F_Payload)
                             and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                            and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                      and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
+                            and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                                      and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
                            or (Valid (Ctx, F_Payload)
                                and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                         and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))
+                               and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                                         and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))
                 or (Valid (Ctx, F_Type_Length)
                     and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
                     and then ((Valid (Ctx, F_Payload)
                                and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                               and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                         and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
+                               and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                                         and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
                               or (Valid (Ctx, F_Payload)
                                   and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                                  and then ((Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                            and (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))));
+                                  and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                                            and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Destination)

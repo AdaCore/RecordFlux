@@ -184,7 +184,7 @@ def test_unbounded_message(tmp_path: Path) -> None:
     "aspects",
     [
         "with Size => Test::T'Size if A = Test::T'Size",
-        "with Size => A'Size if A'Size = 8",
+        "with Size => A'Size if A = A'Size",
     ],
 )
 def test_size_attribute(tmp_path: Path, aspects: str) -> None:
