@@ -153,14 +153,28 @@ def substitution_facts(
     def field_size(field: Field) -> expr.Expr:
         if public:
             return expr.Call(
-                "Field_Size", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
+                target_type,
+                [
+                    expr.Call(
+                        "Field_Size", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
+                    )
+                ],
             )
-        return expr.Add(
-            expr.Sub(
-                expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last"),
-                expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First"),
-            ),
-            expr.Number(1),
+        return expr.Call(
+            target_type,
+            [
+                expr.Add(
+                    expr.Sub(
+                        expr.Selected(
+                            expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last"
+                        ),
+                        expr.Selected(
+                            expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First"
+                        ),
+                    ),
+                    expr.Number(1),
+                )
+            ],
         )
 
     def field_value(field: Field, field_type: Type) -> expr.Expr:

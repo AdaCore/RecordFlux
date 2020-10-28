@@ -1121,7 +1121,7 @@ class Generator:
             c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
             c = c.substituted(
                 mapping={
-                    expr.Size(field.name): expr.Variable("Size"),
+                    expr.Size(field.name): expr.Call(const.TYPES_U64, [expr.Variable("Size")]),
                     expr.Last(field.name): expr.Call(
                         "Field_Last",
                         [expr.Variable("Ctx"), expr.Variable(field.affixed_name, immutable=True)],
