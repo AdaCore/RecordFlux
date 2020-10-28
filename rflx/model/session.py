@@ -124,7 +124,10 @@ class Session(Base):
                 self.identifier.location,
             )
 
-        self.__literals = mty.qualified_enum_literals(self.types.values(), self.identifier.parent)
+        self.__literals = {
+            **mty.qualified_type_literals(self.types.values()),
+            **mty.qualified_enum_literals(self.types.values(), self.package),
+        }
 
         self.__validate()
         self.error.propagate()
@@ -141,6 +144,10 @@ class Session(Base):
             f"   Initial => {self.initial},\n   Final => {self.final}\n"
             f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.identifier.name}"
         )
+
+    @property
+    def package(self) -> ID:
+        return self.identifier.parent
 
     def __validate(self) -> None:
         self.__validate_states()
@@ -286,7 +293,7 @@ class Session(Base):
             self.__reference_variable_declaration(d.variables(), visible_declarations)
 
             if isinstance(d, decl.TypeDeclaration):
-                type_identifier = mty.qualified_type_identifier(k, self.identifier.parent)
+                type_identifier = mty.qualified_type_identifier(k, self.package)
                 if type_identifier in self.types:
                     self.error.append(
                         f'type "{k}" shadows type',
@@ -297,9 +304,7 @@ class Session(Base):
                 self.types[type_identifier] = d.type_definition
 
             elif isinstance(d, decl.TypeCheckableDeclaration):
-                type_identifier = mty.qualified_type_identifier(
-                    d.type_identifier, self.identifier.parent
-                )
+                type_identifier = mty.qualified_type_identifier(d.type_identifier, self.package)
                 if type_identifier in self.types:
                     model_type = self.types[type_identifier]
                     self.error.extend(
@@ -325,7 +330,7 @@ class Session(Base):
                     argument_types = []
                     for a in d.arguments:
                         type_identifier = mty.qualified_type_identifier(
-                            a.type_identifier, self.identifier.parent
+                            a.type_identifier, self.package
                         )
                         if type_identifier in self.types:
                             argument_types.append(self.types[type_identifier].type_)
