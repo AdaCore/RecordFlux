@@ -638,13 +638,7 @@ def qualified_enum_literals(types: Iterable[Type], package: ID) -> Dict[ID, Enum
     return literals
 
 
-def qualified_type_literals(types: Iterable[Type], package: ID) -> Dict[ID, Type]:
-    literals = {}
-
-    for t in types:
-        if t.package == const.BUILTINS_PACKAGE or t.package == package:
-            literals[t.identifier.name] = t
-        if t.package != const.BUILTINS_PACKAGE:
-            literals[t.identifier] = t
-
-    return literals
+def qualified_type_literals(types: Iterable[Type]) -> Dict[ID, Type]:
+    return {
+        t.identifier.name if t.package == const.BUILTINS_PACKAGE else t.identifier: t for t in types
+    }

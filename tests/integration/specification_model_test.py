@@ -327,3 +327,24 @@ def test_message_with_two_size_fields() -> None:
         """
     )
     p.create_model()
+
+
+def test_message_same_field_and_type_name_with_different_size() -> None:
+    p = parser.Parser()
+    p.parse_string(
+        """
+           package Test is
+
+              type T is mod 2**8;
+
+              type M is
+                 message
+                    A : T;
+                    T : Opaque
+                       with Size => 16;
+                 end message;
+
+           end Test;
+        """
+    )
+    p.create_model()
