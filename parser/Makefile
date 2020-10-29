@@ -38,7 +38,7 @@ test_python: install_parser
 	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
 
 install_parser:
-	pip3 install --verbose .
+	pip3 install --verbose .[Devel]
 
 clean:
 	rm -rf $(build-dir) .hypothesis .mypy_cache .pytest_cache

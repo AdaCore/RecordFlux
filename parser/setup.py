@@ -6,12 +6,7 @@ import sys
 from pathlib import Path
 
 import setuptools.command.build_py as orig
-from langkit.compile_context import CompileCtx
-from langkit.libmanage import ManageScript
 from setuptools import setup
-
-from language.lexer import rflx_lexer as lexer
-from language.parser import rflx_grammar as grammar
 
 package_directory = (
     f"lib/python{sys.version_info.major}.{sys.version_info.minor}"
@@ -34,15 +29,25 @@ def patch_rpath():
     )
 
 
-class Manage(ManageScript):
-    def create_context(self, args):
-        return CompileCtx(lang_name="RecordFluxDSL", lexer=lexer, grammar=grammar)
+# We cannot import langkit.* or language.* globally, as langkit needs to be installed first.
+def manage_factory():
+    from langkit.compile_context import CompileCtx
+    from langkit.libmanage import ManageScript
+
+    from language.lexer import rflx_lexer as lexer
+    from language.parser import rflx_grammar as grammar
+
+    class Manage(ManageScript):
+        def create_context(self, args):
+            return CompileCtx(lang_name="RecordFluxDSL", lexer=lexer, grammar=grammar)
+
+    return Manage()
 
 
 class BuildWithParser(orig.build_py):
     def initialize_options(self):
         Path("build/langkit").mkdir(parents=True, exist_ok=True)
-        Manage().run(["--build-dir", "build/langkit", "make"])
+        manage_factory().run(["--build-dir", "build/langkit", "make"])
         patch_rpath()
         super().initialize_options()
 
@@ -52,7 +57,7 @@ class BuildParser(orig.build_py):
 
     def run(self):
         Path("build/langkit").mkdir(parents=True, exist_ok=True)
-        Manage().run(["--build-dir", "build/langkit", "make"])
+        manage_factory().run(["--build-dir", "build/langkit", "make"])
 
 
 with open("README.md") as f:
