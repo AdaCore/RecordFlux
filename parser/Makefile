@@ -1,7 +1,7 @@
 VERBOSE ?= @
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := language tests
+python-packages := language tests setup.py
 
 build-dir := build
 
@@ -19,10 +19,10 @@ check_isort:
 check_flake8:
 	flake8 $(python-packages)
 
-check_pylint: generate_parser
+check_pylint: install_parser
 	pylint $(python-packages)
 
-check_mypy: generate_parser
+check_mypy: install_parser
 	mypy --pretty $(python-packages)
 
 check_contracts:
@@ -34,13 +34,11 @@ format:
 
 test: check test_python
 
-test_python: generate_parser
-	LD_LIBRARY_PATH=build/langkit/lib/librecordfluxdsllang/relocatable/dev python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
+test_python: install_parser
+	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
 
-generate_parser:
-	mkdir -p $(build-dir)
-	GNATCOLL_ICONV_OPT="-v" ADA_PROJECT_PATH=contrib/gnatcoll-bindings/iconv:contrib/gnatcoll-bindings/gmp PYTHONPATH=. ./manage.py --build-dir $(build-dir)/langkit make
-	pip3 install build/langkit/python
+install_parser:
+	pip3 install --verbose .
 
 clean:
 	rm -rf $(build-dir) .hypothesis .mypy_cache .pytest_cache

@@ -1,12 +1,65 @@
-import re
+#!/usr/bin/env python3
 
-from setuptools import find_packages, setup  # type: ignore
+# type: ignore
+import subprocess
+import sys
+from pathlib import Path
+
+import setuptools.command.build_py as orig
+from langkit.compile_context import CompileCtx
+from langkit.libmanage import ManageScript
+from setuptools import setup
+
+from language.lexer import rflx_lexer as lexer
+from language.parser import rflx_grammar as grammar
+
+package_directory = (
+    f"lib/python{sys.version_info.major}.{sys.version_info.minor}"
+    "/site-packages/librecordfluxdsllang"
+)
+
+
+# Hack: To be able to place the shared libraries into the Python package
+# (without setting LD_LIBRARY_PATH before starting the python interpreter)
+# we need patch the RPATH of the parser library. While the parse library
+# itself is loaded via dlopen() directly, the langkit_base library which
+# is placed in the same directory cannot be found. To fix that, we add
+# "$ORIGIN" to the RPATH of librecordfluxdsllang.so. The simplest way to
+# do this is the `patchelf` tool.
+def patch_rpath():
+    sopath = "build/langkit/lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so"
+    rpath = subprocess.check_output(["patchelf", "--print-rpath", sopath])
+    subprocess.run(
+        ["patchelf", "--set-rpath", "$ORIGIN:" + rpath.decode("utf-8"), sopath], check=True
+    )
+
+
+class Manage(ManageScript):
+    def create_context(self, args):
+        return CompileCtx(lang_name="RecordFluxDSL", lexer=lexer, grammar=grammar)
+
+
+class BuildWithParser(orig.build_py):
+    def initialize_options(self):
+        Path("build/langkit").mkdir(parents=True, exist_ok=True)
+        Manage().run(["--build-dir", "build/langkit", "make"])
+        patch_rpath()
+        super().initialize_options()
+
+
+class BuildParser(orig.build_py):
+    description = "Build RecordFlux langkit parser"
+
+    def run(self):
+        Path("build/langkit").mkdir(parents=True, exist_ok=True)
+        Manage().run(["--build-dir", "build/langkit", "make"])
+
 
 with open("README.md") as f:
     readme = f.read()
 
 setup(
-    name="RecordFlux",
+    name="RecordFlux-language",
     version="0.1",
     description=("RecordFlux language"),
     long_description=readme,
@@ -31,9 +84,8 @@ setup(
         "Topic :: Software Development :: Code Generators",
         "Topic :: System :: Networking",
     ],
-    packages=find_packages(exclude=("tests",)),
-    package_data={"rflx": ["py.typed", "templates/*"]},
     python_requires=">=3.7",
+    setup_requires=["langkit@git+https://github.com/AdaCore/langkit.git@master#egg=langkit"],
     install_requires=["icontract >=2.3.4, <3"],
     extras_require={
         "devel": [
@@ -47,7 +99,18 @@ setup(
             "pytest >=5, <6",
             "pytest-xdist >=1.32.0, <2",
             "tqdm >=4, <5",
-            "langkit@git+https://github.com/AdaCore/langkit.git@master#egg=langkit",
         ]
     },
+    cmdclass={"build_py": BuildWithParser, "generate_parser": BuildParser},
+    packages=["librecordfluxdsllang"],
+    package_dir={"librecordfluxdsllang": "build/langkit/python/librecordfluxdsllang"},
+    data_files=[
+        (
+            package_directory,
+            [
+                "build/langkit/lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so",
+                "build/langkit/lib/langkit_support/relocatable/dev/liblangkit_support.so",
+            ],
+        ),
+    ],
 )
