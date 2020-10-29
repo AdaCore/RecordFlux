@@ -8,7 +8,10 @@ from pathlib import Path
 import setuptools.command.build_py as orig
 from setuptools import setup
 
-LANGKIT = "langkit@git+https://github.com/AdaCore/langkit.git@45df9412#egg=langkit"
+LANGKIT = (
+    "git+https://github.com/AdaCore/langkit.git"
+    "@45df941275a0844fafc960cfc6b775b1108f42f3#egg=langkit"
+)
 package_directory = (
     f"lib/python{sys.version_info.major}.{sys.version_info.minor}"
     "/site-packages/librecordfluxdsllang"
@@ -91,7 +94,8 @@ setup(
         "Topic :: System :: Networking",
     ],
     python_requires=">=3.7",
-    setup_requires=[LANGKIT],
+    setup_requires=["langkit@" + LANGKIT],
+    dependency_links=[LANGKIT],
     install_requires=["icontract >=2.3.4, <3"],
     extras_require={
         "devel": [
@@ -105,7 +109,7 @@ setup(
             "pytest >=5, <6",
             "pytest-xdist >=1.32.0, <2",
             "tqdm >=4, <5",
-            LANGKIT,
+            "langkit@" + LANGKIT,
         ]
     },
     cmdclass={"build_py": BuildWithParser, "generate_parser": BuildParser},
