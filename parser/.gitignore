@@ -13,3 +13,4 @@ dist
 gnatinspect.db
 htmlcov
 .venv
+.eggs

@@ -1,7 +1,7 @@
 VERBOSE ?= @
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := language tests setup.py
+python-packages := tests setup.py
 
 build-dir := build
 
@@ -38,7 +38,7 @@ test_python: install_parser
 	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
 
 install_parser:
-	pip3 install --verbose .[Devel]
+	pip3 install .[Devel]
 
 clean:
-	rm -rf $(build-dir) .hypothesis .mypy_cache .pytest_cache
+	rm -rf $(build-dir) .hypothesis .mypy_cache .pytest_cache .egg

@@ -8,6 +8,7 @@ from pathlib import Path
 import setuptools.command.build_py as orig
 from setuptools import setup
 
+LANGKIT = "langkit@git+https://github.com/AdaCore/langkit.git@45df9412#egg=langkit"
 package_directory = (
     f"lib/python{sys.version_info.major}.{sys.version_info.minor}"
     "/site-packages/librecordfluxdsllang"
@@ -22,7 +23,7 @@ package_directory = (
 # "$ORIGIN" to the RPATH of librecordfluxdsllang.so. The simplest way to
 # do this is the `patchelf` tool.
 def patch_rpath():
-    sopath = "build/langkit/lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so"
+    sopath = "lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so"
     rpath = subprocess.check_output(["patchelf", "--print-rpath", sopath])
     subprocess.run(
         ["patchelf", "--set-rpath", "$ORIGIN:" + rpath.decode("utf-8"), sopath], check=True
@@ -31,6 +32,7 @@ def patch_rpath():
 
 # We cannot import langkit.* or language.* globally, as langkit needs to be installed first.
 def manage_factory():
+    # pylint: disable=import-outside-toplevel
     from langkit.compile_context import CompileCtx
     from langkit.libmanage import ManageScript
 
@@ -46,8 +48,7 @@ def manage_factory():
 
 class BuildWithParser(orig.build_py):
     def initialize_options(self):
-        Path("build/langkit").mkdir(parents=True, exist_ok=True)
-        manage_factory().run(["--build-dir", "build/langkit", "make"])
+        manage_factory().run(["--build-dir", ".", "make"])
         patch_rpath()
         super().initialize_options()
 
@@ -90,7 +91,7 @@ setup(
         "Topic :: System :: Networking",
     ],
     python_requires=">=3.7",
-    setup_requires=["langkit@git+https://github.com/AdaCore/langkit.git@master#egg=langkit"],
+    setup_requires=[LANGKIT],
     install_requires=["icontract >=2.3.4, <3"],
     extras_require={
         "devel": [
@@ -104,17 +105,18 @@ setup(
             "pytest >=5, <6",
             "pytest-xdist >=1.32.0, <2",
             "tqdm >=4, <5",
+            LANGKIT,
         ]
     },
     cmdclass={"build_py": BuildWithParser, "generate_parser": BuildParser},
     packages=["librecordfluxdsllang"],
-    package_dir={"librecordfluxdsllang": "build/langkit/python/librecordfluxdsllang"},
+    package_dir={"librecordfluxdsllang": "python/librecordfluxdsllang"},
     data_files=[
         (
             package_directory,
             [
-                "build/langkit/lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so",
-                "build/langkit/lib/langkit_support/relocatable/dev/liblangkit_support.so",
+                "lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so",
+                "lib/langkit_support/relocatable/dev/liblangkit_support.so",
             ],
         ),
     ],
