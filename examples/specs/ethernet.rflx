@@ -1,0 +1,33 @@
+package Ethernet is
+
+   type Address is mod 2**48;
+   type Type_Length is range 46 .. 2**16 - 1 with Size => 16;
+   type TPID is range 16#8100# .. 16#8100# with Size => 16;
+   type TCI is mod 2**16;
+
+   type Frame is
+      message
+         Destination : Address;
+         Source : Address;
+         Type_Length_TPID : Type_Length
+            then TPID
+               with First => Type_Length_TPID'First
+               if Type_Length_TPID = 16#8100#
+            then Type_Length
+               with First => Type_Length_TPID'First
+               if Type_Length_TPID /= 16#8100#;
+         TPID : TPID;
+         TCI : TCI;
+         Type_Length : Type_Length
+            then Payload
+               with Size => Type_Length * 8
+               if Type_Length <= 1500
+            then Payload
+               with Size => Message'Last - Type_Length'Last
+               if Type_Length >= 1536;
+         Payload : Opaque
+            then null
+               if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
+      end message;
+
+end Ethernet;
