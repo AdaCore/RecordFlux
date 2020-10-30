@@ -15,6 +15,8 @@ jobs:
         target: [dependencies, black, isort, flake8, pylint, mypy, contracts, doc]
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -51,6 +53,8 @@ jobs:
         python-version: [3.7]
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -84,6 +88,8 @@ jobs:
             python-version: 3.7
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -130,6 +136,8 @@ jobs:
         python-version: [3.8]
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -176,6 +184,8 @@ jobs:
           - "spark_optimized"
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Install GNAT
       run: |
         mkdir $HOME/bin
@@ -191,6 +201,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Install GNAT
       run: |
         mkdir $HOME/bin
@@ -221,6 +233,8 @@ jobs:
           - "clean"
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Install SPARK
       run: |
         mkdir $HOME/bin
@@ -250,6 +264,8 @@ jobs:
           - "cached"
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Install SPARK
       run: |
         mkdir $HOME/bin
