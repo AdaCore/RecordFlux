@@ -13,9 +13,8 @@ jobs:
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: |
-        git submodule update --init --recursive
+      with:
+         submodules: true
     - name: Test
       run: |
         docker run -v $PWD:/data -w /data componolit/ci:gnat-community-2020 /bin/sh -c "apt-get update && apt-get install -y libgmp-dev python3-pip patchelf && pip3 install .[Devel] && make test"
