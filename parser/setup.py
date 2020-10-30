@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # type: ignore
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -16,6 +17,7 @@ package_directory = (
     f"lib/python{sys.version_info.major}.{sys.version_info.minor}"
     "/site-packages/librecordfluxdsllang"
 )
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 # Hack: To be able to place the shared libraries into the Python package
@@ -51,7 +53,17 @@ def manage_factory():
 
 class BuildWithParser(orig.build_py):
     def initialize_options(self):
-        manage_factory().run(["--build-dir", ".", "make"])
+        os.environ["GNATCOLL_ICONV_OPT"] = "-v"
+        manage_factory().run(
+            [
+                "--build-dir",
+                ".",
+                "make",
+                "--gargs",
+                f"-aP {base_dir}/contrib/gnatcoll-bindings/iconv "
+                f"-aP {base_dir}/contrib/gnatcoll-bindings/gmp",
+            ]
+        )
         patch_rpath()
         super().initialize_options()
 
@@ -121,6 +133,9 @@ setup(
             [
                 "lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so",
                 "lib/langkit_support/relocatable/dev/liblangkit_support.so",
+                f"{base_dir}/contrib/gnatcoll-bindings/iconv/"
+                "lib/relocatable/libgnatcoll_iconv.so.0",
+                f"{base_dir}/contrib/gnatcoll-bindings/gmp/lib/relocatable/libgnatcoll_gmp.so.0",
             ],
         ),
     ],
