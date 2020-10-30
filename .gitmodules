@@ -1,0 +1,3 @@
+[submodule "examples/specs"]
+	path = examples/specs
+	url = https://github.com/Componolit/RecordFlux-specifications.git
