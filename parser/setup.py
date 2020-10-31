@@ -2,8 +2,8 @@
 
 # type: ignore
 import os
+import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import setuptools.command.build_py as orig
@@ -13,10 +13,8 @@ LANGKIT = (
     "git+https://github.com/AdaCore/langkit.git"
     "@45df941275a0844fafc960cfc6b775b1108f42f3#egg=langkit"
 )
-package_directory = (
-    f"lib/python{sys.version_info.major}.{sys.version_info.minor}"
-    "/site-packages/librecordfluxdsllang"
-)
+
+
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -65,6 +63,14 @@ class BuildWithParser(orig.build_py):
             ]
         )
         patch_rpath()
+        for l in [
+            "lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so",
+            "lib/langkit_support/relocatable/dev/liblangkit_support.so",
+            f"{base_dir}/contrib/gnatcoll-bindings/iconv/lib/relocatable/libgnatcoll_iconv.so.0",
+            f"{base_dir}/contrib/gnatcoll-bindings/gmp/lib/relocatable/libgnatcoll_gmp.so.0",
+        ]:
+            source = Path(l)
+            shutil.copy(source, Path("python/librecordfluxdsllang/") / source.name)
         super().initialize_options()
 
 
@@ -127,16 +133,12 @@ setup(
     cmdclass={"build_py": BuildWithParser, "generate_parser": BuildParser},
     packages=["librecordfluxdsllang"],
     package_dir={"librecordfluxdsllang": "python/librecordfluxdsllang"},
-    data_files=[
-        (
-            package_directory,
-            [
-                "lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so",
-                "lib/langkit_support/relocatable/dev/liblangkit_support.so",
-                f"{base_dir}/contrib/gnatcoll-bindings/iconv/"
-                "lib/relocatable/libgnatcoll_iconv.so.0",
-                f"{base_dir}/contrib/gnatcoll-bindings/gmp/lib/relocatable/libgnatcoll_gmp.so.0",
-            ],
-        ),
-    ],
+    package_data={
+        "librecordfluxdsllang": [
+            "librecordfluxdsllang.so",
+            "liblangkit_support.so",
+            "libgnatcoll_iconv.so.0",
+            "libgnatcoll_gmp.so.0",
+        ],
+    },
 )
