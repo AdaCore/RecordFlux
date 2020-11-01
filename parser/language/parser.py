@@ -241,11 +241,11 @@ rflx_grammar.add_rules(
         ),
         ast.NullMessageTypeDef("null", "message"),
     ),
-    positional_enumeration=ast.NamedEnumeration(List(grammar.unqualified_identifier, sep=",")),
+    positional_enumeration=ast.NamedEnumerationDef(List(grammar.unqualified_identifier, sep=",")),
     element_value_association=ast.ElementValueAssoc(
         grammar.unqualified_identifier, "=>", grammar.numeric_literal
     ),
-    named_enumeration=ast.PositionalEnumeration(List(grammar.element_value_association, sep=",")),
+    named_enumeration=ast.PositionalEnumerationDef(List(grammar.element_value_association, sep=",")),
     enumeration_aspects=List(Or(grammar.mathematical_aspect, grammar.boolean_aspect), sep=","),
     enumeration_type_definition=ast.EnumerationTypeDef(
         "(",

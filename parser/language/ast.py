@@ -426,13 +426,13 @@ class ArrayTypeDef(TypeDef):
 
 
 @abstract
-class Enumeration(TypeDef):
+class EnumerationDef(TypeDef):
     """
     Base class for enumeration
     """
 
 
-class NamedEnumeration(Enumeration):
+class NamedEnumerationDef(EnumerationDef):
     """
     Named enumeration
     """
@@ -448,7 +448,7 @@ class NumericLiteral(Expr):
     token_node = True
 
 
-class ElementValueAssoc(TypeDef):
+class ElementValueAssoc(RFLXNode):
     """
     Element/value association
     """
@@ -457,7 +457,7 @@ class ElementValueAssoc(TypeDef):
     literal = Field(type=NumericLiteral)
 
 
-class PositionalEnumeration(Enumeration):
+class PositionalEnumerationDef(EnumerationDef):
     """
     Positional enumeration
     """
@@ -470,7 +470,7 @@ class EnumerationTypeDef(TypeDef):
     Enumeration type definition
     """
 
-    elements = Field(type=Enumeration)
+    elements = Field(type=EnumerationDef)
     aspects = Field(type=Aspect.list)
 
 
