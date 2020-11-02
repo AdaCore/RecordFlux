@@ -509,7 +509,7 @@ class Components(RFLXNode):
     Message components
     """
 
-    null_component = Field(type=NullComponent)
+    initial_component = Field(type=NullComponent)
     components = Field(type=Component.list)
 
 
