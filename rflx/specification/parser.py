@@ -1,21 +1,31 @@
 import logging
 from collections import OrderedDict
-from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
-from pyparsing import ParseException, ParseFatalException
-
-from rflx import common, expression as expr
-from rflx.error import (
-    RecordFluxError,
-    Severity,
-    Subsystem,
-    fail,
-    parser_location,
-    pop_source,
-    push_source,
+from librecordfluxdsllang import (
+    AnalysisContext,
+    ArrayTypeDef,
+    ChecksumAspect,
+    Component,
+    Components,
+    Diagnostic,
+    Expr,
+    MathematicalAspect,
+    MessageTypeDef,
+    ModularTypeDef,
+    NullID,
+    PackageSpec,
+    RefinementSpec,
+    RFLXNode,
+    Specification,
+    ThenNode,
+    TypeDerivationDef,
 )
+
+import rflx.expression as rexpr
+from rflx import common, expression as expr
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
@@ -27,8 +37,8 @@ from rflx.model import (
     Link,
     Message,
     Model,
+    ModularInteger,
     Refinement,
-    Scalar,
     Session,
     Type,
     UnprovenDerivedMessage,
@@ -37,19 +47,48 @@ from rflx.model import (
     qualified_type_identifier,
 )
 
-from . import grammar
-from .ast import (
-    ArraySpec,
-    Component,
-    DerivationSpec,
-    MessageSpec,
-    PackageSpec,
-    RefinementSpec,
-    Specification,
-)
 from .cache import Cache
 
 log = logging.getLogger(__name__)
+
+
+class ParseFatalException(Exception):
+    pass
+
+
+def node_location(node: RFLXNode, filename: str = None) -> Location:
+    start = node.token_start.sloc_range
+    end = node.token_end.sloc_range
+    return Location(
+        start=(start.start.line, start.start.column),
+        source=filename,
+        end=(end.end.line, end.end.column),
+    )
+
+
+def diagnostics_to_error(
+    diagnostics: List[Diagnostic], error: RecordFluxError, specfile: Path = None
+) -> bool:
+    """
+    Return langkit diagnostics to RecordFlux error. Return True if error occured.
+    """
+
+    if len(diagnostics) == 0:
+        return False
+
+    for diag in diagnostics:
+        loc = diag.sloc_range
+        error.append(
+            diag.message,
+            Subsystem.PARSER,
+            Severity.ERROR,
+            Location(
+                start=(loc.start.line, loc.start.column),
+                source=specfile,
+                end=(loc.end.line, loc.end.column),
+            ),
+        )
+    return True
 
 
 class Parser:
@@ -61,135 +100,97 @@ class Parser:
         self.__sessions: List[Session] = []
         self.__cache = Cache(cached)
 
-    def parse(self, *specfiles: Path) -> None:
+    def __parse_unit(
+        self, spec: Specification, specfile: Path, transitions: List[Tuple[str, ID]] = None
+    ) -> RecordFluxError:
+        transitions = transitions or []
         error = RecordFluxError()
 
-        for f in specfiles:
-            error.extend(self.__determine_dependencies(f))
+        self.__specifications[specfile] = spec
+        if spec:
+            for context in spec.f_context_clause:
+                item = context.f_item.text
+                transition = (specfile.name, item)
+                if transition in transitions:
+                    error.append(
+                        f'dependency cycle when including "{transitions[0][1]}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        transitions[0][1].location,
+                    )
+                    error.extend(
+                        [
+                            (
+                                f'when including "{i}"',
+                                Subsystem.PARSER,
+                                Severity.INFO,
+                                i.location,
+                            )
+                            for _, i in transitions[1:]
+                        ]
+                    )
+                    continue
+                transitions.append(transition)
+                error.extend(
+                    self.__parse_specfile(specfile.parent / f"{item.lower()}.rflx", transitions)
+                )
 
-        with Pool() as p:
-            for f, s, e in p.map(
-                self._parse, [f for f, s in self.__specifications.items() if s is None]
-            ):
-                self.__specifications[f] = s
-                error.extend(e)
+        return error
 
-            p.close()
-            p.join()
-
-        error.propagate()
-
-    def __determine_dependencies(
+    def __parse_specfile(
         self, specfile: Path, transitions: List[Tuple[str, ID]] = None
     ) -> RecordFluxError:
+        error = RecordFluxError()
         if specfile in self.__specifications:
             self.__specifications.move_to_end(specfile)
         else:
             self.__specifications[specfile] = None
 
-        if not transitions:
-            transitions = []
+        transitions = transitions or []
 
-        error = RecordFluxError()
-
-        with open(specfile, "r") as filehandle:
-            push_source(specfile)
-            try:
-                for context in grammar.context_clause().parseFile(filehandle):
-                    for item in context.items:
-                        transition = (specfile.name, item)
-                        if transition in transitions:
-                            error.append(
-                                f'dependency cycle when including "{transitions[0][1]}"',
-                                Subsystem.PARSER,
-                                Severity.ERROR,
-                                transitions[0][1].location,
-                            )
-                            error.extend(
-                                [
-                                    (
-                                        f'when including "{i}"',
-                                        Subsystem.PARSER,
-                                        Severity.INFO,
-                                        i.location,
-                                    )
-                                    for _, i in transitions[1:]
-                                ]
-                            )
-                            continue
-                        transitions.append(transition)
-                        error.extend(
-                            self.__determine_dependencies(
-                                specfile.parent / f"{str(item).lower()}.rflx", transitions
-                            )
-                        )
-            except (ParseException, ParseFatalException) as e:
-                error.append(
-                    e.msg,
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    parser_location(e.loc, e.loc, e.pstr, specfile),
-                )
-                error.propagate()
-            finally:
-                pop_source()
-
-        return error
-
-    @staticmethod
-    def _parse(specfile: Path) -> Tuple[Path, Optional[Specification], RecordFluxError]:
-        error = RecordFluxError()
         log.info("Parsing %s", specfile)
+        unit = AnalysisContext().get_from_file(str(specfile))
+        if diagnostics_to_error(unit.diagnostics, error, specfile):
+            return error
+        return self.__parse_unit(unit.root, specfile, transitions)
 
-        specification = None
+    def parse(self, *specfiles: Path) -> None:
+        error = RecordFluxError()
 
-        with open(specfile, "r") as filehandle:
-            push_source(specfile)
-            try:
-                specifications = grammar.unit().parseFile(filehandle)
-                if specifications:
-                    assert len(specifications) == 1
-                    specification = specifications[0]
-                    check_naming(error, specification.package, specfile.name)
-            except (ParseException, ParseFatalException) as e:
-                error.append(
-                    e.msg,
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    parser_location(e.loc, e.loc, e.pstr, specfile),
-                )
-            finally:
-                pop_source()
+        for f in specfiles:
+            error.extend(self.__parse_specfile(f))
 
-        return (specfile, specification, error)
+        for f, s in self.__specifications.items():
+            if s:
+                check_naming(error, s.f_package_declaration, f)
+        error.propagate()
 
     def parse_string(self, string: str) -> None:
         error = RecordFluxError()
-        try:
-            for specification in grammar.unit().parseString(string):
-                check_naming(error, specification.package)
-                self.__specifications[
-                    Path(common.file_name(str(specification.package.identifier)))
-                ] = specification
-        except (ParseException, ParseFatalException) as e:
-            error.append(
-                e.msg,
-                Subsystem.PARSER,
-                Severity.ERROR,
-                parser_location(e.loc, e.loc, e.pstr),
+        unit = AnalysisContext().get_from_buffer("<stdin>", string)
+        if not diagnostics_to_error(unit.diagnostics, error):
+            specfile = Path(
+                f"{common.file_name(unit.root.f_package_declaration.f_identifier.text)}.rflx"
             )
+            error = self.__parse_unit(unit.root, specfile)
+            for f, s in self.__specifications.items():
+                if s:
+                    check_naming(error, s.f_package_declaration, f)
         error.propagate()
 
     def create_model(self) -> Model:
         error = RecordFluxError()
-        for specification in reversed(self.__specifications.values()):
+        for filename, specification in reversed(self.__specifications.items()):
             if (
                 specification
-                and specification.package.identifier not in self.__evaluated_specifications
+                and specification.f_package_declaration.f_identifier.text
+                not in self.__evaluated_specifications
             ):
-                self.__evaluated_specifications.add(specification.package.identifier)
+                self.__evaluated_specifications.add(
+                    specification.f_package_declaration.f_identifier.text
+                )
                 try:
-                    self.__evaluate_specification(specification)
+                    self.__evaluate_specification(filename, specification)
                 except RecordFluxError as e:
                     error.extend(e)
         try:
@@ -202,50 +203,38 @@ class Parser:
 
     @property
     def specifications(self) -> Dict[str, Specification]:
-        return {str(s.package.identifier): s for s in self.__specifications.values() if s}
+        return {
+            s.f_package_declaration.f_identifier.text: s
+            for s in self.__specifications.values()
+            if s
+        }
 
-    def __evaluate_specification(self, specification: Specification) -> None:
-        log.info("Processing %s", specification.package.identifier)
+    def __evaluate_specification(self, filename: str, specification: Specification) -> None:
+        log.info("Processing %s", specification.f_package_declaration.f_identifier.text)
 
         error = RecordFluxError()
-        self.__evaluate_types(specification, error)
-        self.__evaluate_sessions(specification)
+        self.__evaluate_types(filename, specification, error)
+        self.__evaluate_sessions(filename, specification)
         error.propagate()
 
-    def __evaluate_types(self, spec: Specification, error: RecordFluxError) -> None:
-        for t in spec.package.types:
-            t.identifier = ID(spec.package.identifier, t.identifier.location) * t.name
+    def __evaluate_types(self, filename: str, spec: Specification, error: RecordFluxError) -> None:
+        package_id = create_id(spec.f_package_declaration.f_identifier, filename)
+        for t in spec.f_package_declaration.f_declarations:
+            identifier = package_id * create_id(t.f_identifier, filename).name
+            if t.f_definition.kind_name == "ArrayTypeDef":
+                new_type = create_array(identifier, t.f_definition, self.__types)
+            elif t.f_definition.kind_name == "ModularTypeDef":
+                new_type = create_modular(identifier, t.f_definition)
+            elif t.f_definition.kind_name == "MessageTypeDef":
+                new_type = create_message(
+                    identifier, t.f_definition, self.__types, self.skip_verification, self.__cache
+                )
+            else:
+                raise ParseFatalException(f"Unknown type {t.f_definition.kind_name}")
+            self.__types.append(new_type)
+            error.extend(new_type.error)
 
-            new_type: Type
-
-            try:
-                if isinstance(t, Scalar):
-                    new_type = t
-
-                elif isinstance(t, ArraySpec):
-                    new_type = create_array(t, self.__types)
-
-                elif isinstance(t, MessageSpec):
-                    new_type = create_message(t, self.__types, self.skip_verification, self.__cache)
-
-                elif isinstance(t, DerivationSpec):
-                    new_type = create_derived_message(
-                        t, self.__types, self.skip_verification, self.__cache
-                    )
-
-                elif isinstance(t, RefinementSpec):
-                    new_type = create_refinement(t, self.__types)
-
-                else:
-                    raise NotImplementedError(f'unsupported type "{type(t).__name__}"')
-
-                self.__types.append(new_type)
-                error.extend(new_type.error)
-
-            except RecordFluxError as e:
-                error.extend(e)
-
-    def __evaluate_sessions(self, spec: Specification) -> None:
+    def __evaluate_sessions(self, filename: str, spec: Specification) -> None:
         for s in spec.package.sessions:
             self.__sessions.append(
                 Session(
@@ -261,44 +250,114 @@ class Parser:
             )
 
 
-def create_array(array: ArraySpec, types: Sequence[Type]) -> Array:
-    array.element_type.identifier = ID(
-        array.element_type.full_name.replace("__PACKAGE__", str(array.package)), array.location
+def create_id(identifier: NullID, filename: str = None) -> ID:
+    if identifier.kind_name == "UnqualifiedID":
+        return ID(identifier.text, location=node_location(identifier, filename))
+    elif identifier.kind_name == "ID":
+        name = ID(identifier.f_name.text, location=node_location(identifier.f_name, filename))
+        if identifier.f_package:
+            return (
+                ID(
+                    identifier.f_package.text,
+                    location=node_location(identifier.f_package, filename),
+                )
+                * name
+            )
+        else:
+            return name
+
+    raise RecordFluxError(f"Invalid ID: {identifier.text}")
+
+
+def create_array(identifier: ID, array: ArrayTypeDef, types: Sequence[Type]) -> Array:
+    element_identifier = ID(
+        identifier.parent * create_id(array.f_element_type), node_location(array.f_element_type)
     )
 
     try:
-        element_type = [t for t in types if array.element_type.identifier == t.identifier][0]
+        element_type = [t for t in types if element_identifier == t.identifier][0]
     except IndexError:
         fail(
-            f'undefined element type "{array.element_type.identifier}"',
+            f'undefined element type "{element_identifier}"',
             Subsystem.PARSER,
             Severity.ERROR,
-            array.element_type.location,
+            element_identifier.location,
         )
 
-    return Array(array.identifier, element_type, array.location)
+    return Array(identifier, element_type, node_location(array))
+
+
+def create_expression(expression: Expr) -> rexpr.Expr:
+    if expression.kind_name == "MathematicalExpression":
+        return create_expression(expression.f_data)
+    elif expression.kind_name == "NumericLiteral":
+        return rexpr.Number(int(expression.text))
+    elif expression.kind_name == "BinOp":
+        if expression.f_op.kind_name == "OpAnd":
+            return rexpr.And(
+                create_expression(expression.f_left), create_expression(expression.f_right)
+            )
+        elif expression.f_op.kind_name == "OpLt":
+            return rexpr.Less(
+                create_expression(expression.f_left), create_expression(expression.f_right)
+            )
+        elif expression.f_op.kind_name == "OpGt":
+            return rexpr.Greater(
+                create_expression(expression.f_left), create_expression(expression.f_right)
+            )
+        elif expression.f_op.kind_name == "OpPow":
+            return rexpr.Pow(
+                create_expression(expression.f_left), create_expression(expression.f_right)
+            )
+        elif expression.f_op.kind_name == "OpAdd":
+            return rexpr.Add(
+                create_expression(expression.f_left), create_expression(expression.f_right)
+            )
+        elif expression.f_op.kind_name == "OpSub":
+            return rexpr.Sub(
+                create_expression(expression.f_left), create_expression(expression.f_right)
+            )
+        else:
+            raise NotImplementedError(
+                f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
+            )
+    elif expression.kind_name == "QualifiedVariable":
+        return expr.Variable(expression.f_identifier.text)
+    elif expression.kind_name == "Attribute":
+        if expression.f_kind.kind_name == "AttrLast":
+            return expr.Last(create_expression(expression.f_expression))
+        if expression.f_kind.kind_name == "AttrFirst":
+            return expr.First(create_expression(expression.f_expression))
+        else:
+            raise NotImplementedError(
+                f"Invalid Attribute {expression.f_kind.kind_name} => {expression.text}"
+            )
+    raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
+
+
+def create_modular(identifier: ID, modular: ModularTypeDef) -> ModularInteger:
+    return ModularInteger(identifier, create_expression(modular.f_mod), node_location(modular))
 
 
 def create_message(
-    message: MessageSpec,
+    identifier: ID,
+    message: MessageTypeDef,
     types: Sequence[Type],
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
 
-    components = list(message.components)
-
-    if components and components[0].identifier:
-        components.insert(0, Component())
+    components = message.f_components
 
     error = RecordFluxError()
 
-    field_types = create_message_types(message, types, components)
+    field_types = create_message_types(identifier, message, types, components)
     structure = create_message_structure(components, error)
+    aspects = create_message_aspects(message.f_checksums)
 
     return create_proven_message(
         UnprovenMessage(
-            message.identifier, structure, field_types, message.aspects, message.location, error
+            identifier, structure, field_types, aspects, node_location(message), error
         ).merged(),
         skip_verification,
         cache,
@@ -306,53 +365,81 @@ def create_message(
 
 
 def create_message_types(
-    message: MessageSpec,
+    identifier: ID,
+    message: MessageTypeDef,
     types: Sequence[Type],
-    components: Sequence[Component],
+    components: Components,
 ) -> Dict[Field, Type]:
 
     field_types: Dict[Field, Type] = {}
 
-    for component in components:
-        if component.identifier and component.type_identifier:
-            type_identifier = qualified_type_identifier(component.type_identifier, message.package)
-            field_type = [t for t in types if t.identifier == type_identifier]
-            if field_type:
-                field_types[Field(component.identifier)] = field_type[0]
+    for component in components.f_components:
+        type_identifier = qualified_type_identifier(
+            create_id(component.f_type_identifier), identifier.parent
+        )
+        field_type = [t for t in types if t.identifier == type_identifier]
+        if field_type:
+            field_types[Field(component.f_identifier.text)] = field_type[0]
 
     return field_types
 
 
-def create_message_structure(components: Sequence[Component], error: RecordFluxError) -> List[Link]:
+def create_message_structure(components: Components, error: RecordFluxError) -> List[Link]:
     # pylint: disable=too-many-branches
+
+    def extract_aspect(aspects: List[MathematicalAspect]) -> Tuple[rexpr.Expr, rexpr.Expr]:
+        size = expr.UNDEFINED
+        first = expr.UNDEFINED
+        for aspect in aspects:
+            if aspect.f_identifier.text == "Size":
+                size = create_expression(aspect.f_value)
+            elif aspect.f_identifier.text == "First":
+                first = create_expression(aspect.f_value)
+            else:
+                raise ParseFatalException(f"Invalid aspect {aspect.f_identifier.text}")
+        return size, first
+
+    def extract_then(then: ThenNode) -> Tuple[Field, expr.Expr, expr.Expr, expr.Expr, Location]:
+        target = FINAL if then.f_target.text == "null" else create_id(then.f_target)
+        condition = create_expression(then.f_condition) if then.f_condition else expr.TRUE
+        size, first = extract_aspect(then.aspects)
+        return target, condition, size, first, node_location(then)
 
     structure: List[Link] = []
 
-    for i, component in enumerate(components):
-        source_node = Field(component.identifier) if component.identifier else INITIAL
+    if components.f_initial_component:
+        structure.append(Link(INITIAL, *extract_then(components.f_initial_component.f_then)))
 
-        if not component.thens:
-            identifier = components[i + 1].identifier if i + 1 < len(components) else None
+    for i, component in enumerate(components.f_components):
+        source_node = Field(component.f_identifier.text) if component.f_identifier else INITIAL
+        component_identifier = ID(component.f_identifier.text)
+
+        if not component.f_thens:
+            identifier = (
+                components.f_components[i + 1].f_identifier.text
+                if i + 1 < len(components.f_components)
+                else None
+            )
             target_node = Field(identifier) if identifier else FINAL
             structure.append(Link(source_node, target_node))
 
-        if (
-            component.first != expr.UNDEFINED
-            or component.size != expr.UNDEFINED
-            or component.condition != expr.TRUE
-        ):
-            for l in (l for l in structure if l.target.identifier == component.identifier):
-                if component.first != expr.UNDEFINED:
+        condition = (
+            create_expression(component.f_condition.f_data) if component.f_condition else expr.TRUE
+        )
+        size, first = extract_aspect(component.f_aspects)
+        if first != expr.UNDEFINED or size != expr.UNDEFINED or condition != expr.TRUE:
+            for l in (l for l in structure if l.target.identifier == component_identifier):
+                if first != expr.UNDEFINED:
                     if l.first == expr.UNDEFINED:
-                        l.first = component.first
+                        l.first = first
                     else:
                         error.append(
-                            f'first aspect of field "{component.identifier}"'
+                            f'first aspect of field "{component_identifier}"'
                             " conflicts with previous"
                             " specification",
                             Subsystem.MODEL,
                             Severity.ERROR,
-                            component.first.location,
+                            first.location,
                         )
                         error.append(
                             "previous specification of first",
@@ -361,16 +448,16 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
                             l.first.location,
                         )
 
-                if component.size != expr.UNDEFINED:
+                if size != expr.UNDEFINED:
                     if l.size == expr.UNDEFINED:
-                        l.size = component.size
+                        l.size = component_size
                     else:
                         error.append(
-                            f'size aspect of field "{component.identifier}" conflicts with previous'
+                            f'size aspect of field "{component_identifier}" conflicts with previous'
                             " specification",
                             Subsystem.MODEL,
                             Severity.ERROR,
-                            component.size.location,
+                            size.location,
                         )
                         error.append(
                             "previous specification of size",
@@ -379,32 +466,52 @@ def create_message_structure(components: Sequence[Component], error: RecordFluxE
                             l.size.location,
                         )
 
-                if component.condition != expr.TRUE:
+                if condition != expr.TRUE:
                     l.condition = (
-                        expr.And(component.condition, l.condition, location=l.condition.location)
+                        expr.And(condition, l.condition, location=l.condition.location)
                         if l.condition != expr.TRUE
-                        else component.condition
+                        else condition
                     )
 
-        for then in component.thens:
-            if then.identifier and not any(then.identifier == c.identifier for c in components):
+        for then in component.f_thens:
+            if then.f_target and not any(
+                then.f_target == c.f_identifier for c in components.f_components
+            ):
                 error.append(
-                    f'undefined field "{then.identifier}"',
+                    f'undefined field "{then.f_target}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
-                    then.identifier.location if then.identifier else None,
+                    node_location(then.f_target) if then.f_target else None,
                 )
                 continue
-            target_node = Field(then.identifier) if then.identifier else FINAL
-            structure.append(
-                Link(source_node, target_node, then.condition, then.size, then.first, then.location)
-            )
+            structure.append(Link(source_node, *extract_then(then)))
 
     return structure
 
 
+def create_message_aspects(checksum: ChecksumAspect) -> Mapping[ID, Sequence[rexpr.Expr]]:
+    result = {}
+    if checksum:
+        for assoc in checksum.f_associations:
+            exprs = []
+            for value in assoc.f_covered_fields:
+                if value.kind_name == "ChecksumVal":
+                    exprs.append(create_expression(value.f_data))
+                elif value.kind_name == "ChecksumValueRange":
+                    exprs.append(
+                        rexpr.ValueRange(
+                            create_expression(value.f_lower), create_expression(value.f_upper)
+                        )
+                    )
+                else:
+                    raise ParseFatalException(f"Invalid checksum association {value.kind_name}")
+            result[create_id(assoc.f_identifier)] = exprs
+    return result
+
+
 def create_derived_message(
-    derivation: DerivationSpec,
+    identifier: ID,
+    derivation: TypeDerivationDef,
     types: Sequence[Type],
     skip_verification: bool,
     cache: Cache,
@@ -460,7 +567,9 @@ def create_proven_message(
     return proven_message
 
 
-def create_refinement(refinement: RefinementSpec, types: Sequence[Type]) -> Refinement:
+def create_refinement(
+    identifie: ID, refinement: RefinementSpec, types: Sequence[Type]
+) -> Refinement:
     messages = {t.identifier: t for t in types if isinstance(t, Message)}
 
     refinement.pdu = qualified_type_identifier(refinement.pdu, refinement.package)
@@ -491,41 +600,42 @@ def create_refinement(refinement: RefinementSpec, types: Sequence[Type]) -> Refi
     )
 
 
-def check_naming(error: RecordFluxError, package: PackageSpec, filename: str = None) -> None:
-    if str(package.identifier).startswith("RFLX"):
+def check_naming(error: RecordFluxError, package: PackageSpec, filename: Path = None) -> None:
+    identifier = package.f_identifier.text
+    if identifier.startswith("RFLX"):
         error.append(
-            f'illegal prefix "RFLX" in package identifier "{package.identifier}"',
+            f'illegal prefix "RFLX" in package identifier "{identifier}"',
             Subsystem.PARSER,
             Severity.ERROR,
-            package.identifier.location,
+            node_location(package.f_identifier, filename),
         )
-    if package.identifier != package.end_identifier:
+    if identifier != identifier:
         error.append(
-            f'inconsistent package identifier "{package.end_identifier}"',
+            f'inconsistent package identifier "{package.f_end_identifier.text}"',
             Subsystem.PARSER,
             Severity.ERROR,
-            package.end_identifier.location,
+            node_location(package.f_end_identifier, filename),
         )
         error.append(
-            f'previous identifier was "{package.identifier}"',
+            f'previous identifier was "{identifier}"',
             Subsystem.PARSER,
             Severity.INFO,
-            package.identifier.location,
+            node_location(package.f_identifier, filename),
         )
     if filename:
-        expected_filename = f"{str(package.identifier).lower()}.rflx"
-        if filename != expected_filename:
+        expected_filename = f"{identifier.lower()}.rflx"
+        if filename.name != expected_filename:
             error.append(
-                f'file name does not match unit name "{package.identifier}",'
+                f'file name does not match unit name "{identifier}",'
                 f' should be "{expected_filename}"',
                 Subsystem.PARSER,
                 Severity.ERROR,
-                package.identifier.location,
+                node_location(package.f_identifier, filename),
             )
-    for t in package.types:
-        if is_builtin_type(t.identifier.name):
+    for t in package.f_declarations:
+        if is_builtin_type(create_id(t.f_identifier).name):
             error.append(
-                f'illegal redefinition of built-in type "{t.identifier.name}"',
+                f'illegal redefinition of built-in type "{t.f_identifier.text}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 t.location,

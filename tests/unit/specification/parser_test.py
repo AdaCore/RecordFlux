@@ -2,36 +2,43 @@
 
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Dict, List, Mapping, Sequence
 
 import pytest
+from librecordfluxdsllang import RFLXNode
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, ModularInteger
-from rflx.specification import ast, cache, parser
+from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, Model, ModularInteger
+from rflx.specification import cache, parser
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 from tests.data import models
 
 T = ModularInteger("Test::T", expr.Number(256))
 
 
-def assert_specifications_files(
-    filenames: Sequence[str], specifications: Mapping[str, ast.Specification]
-) -> None:
+def to_dict(node: Any) -> Dict[str, Any]:
+    if node.is_list_type:
+        return [to_dict(e) for e in node.children]
+    result = {name[2:]: to_dict(getattr(node, name)) for name in dir(node) if name.startswith("f_")}
+    if result:
+        return result
+    return node.text
+
+
+def assert_ast_files(filenames: Sequence[str], expected: Dict[str, Any]) -> None:
     p = parser.Parser()
     for filename in filenames:
         p.parse(Path(filename))
-    assert p.specifications == specifications, filenames
+    result = {f: to_dict(s) for f, s in p.specifications.items()}
+    assert result == expected, filenames
 
 
-def assert_specifications_string(
-    string: str, specifications: Mapping[str, ast.Specification]
-) -> None:
+def assert_model_string(string: str, model: Model) -> None:
     p = parser.Parser()
     p.parse_string(string)
-    assert p.specifications == specifications
+    assert p.create_model() == model
 
 
 def assert_error_files(filenames: Sequence[str], regex: str) -> None:
@@ -117,12 +124,12 @@ def test_create_proven_message_error(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("spec", ["empty_file", "comment_only"])
 def test_parse_empty_specfication(spec: str) -> None:
-    assert_specifications_files([f"{SPEC_DIR}/{spec}.rflx"], {})
+    assert_ast_files([f"{SPEC_DIR}/{spec}.rflx"], [])
 
 
 def test_parse_duplicate_specifications() -> None:
     files = [f"{SPEC_DIR}/empty_package.rflx", f"{SPEC_DIR}/empty_package.rflx"]
-    assert_specifications_files(
+    assert_ast_files(
         files,
         {
             "Empty_Package": ast.Specification(
@@ -133,7 +140,7 @@ def test_parse_duplicate_specifications() -> None:
 
 
 def test_parse_empty_package_spec() -> None:
-    assert_specifications_files(
+    assert_ast_files(
         [f"{SPEC_DIR}/empty_package.rflx"],
         {
             "Empty_Package": ast.Specification(
@@ -144,16 +151,25 @@ def test_parse_empty_package_spec() -> None:
 
 
 def test_parse_context_spec() -> None:
-    assert_specifications_files(
+    assert_ast_files(
         [f"{SPEC_DIR}/context.rflx"],
         {
-            "Context": ast.Specification(
-                ast.ContextSpec(["Empty_File", "Empty_Package"]),
-                ast.PackageSpec("Context", [], []),
-            ),
-            "Empty_Package": ast.Specification(
-                ast.ContextSpec([]), ast.PackageSpec("Empty_Package", [], [])
-            ),
+            "Context": {
+                "context_clause": [{"item": "Empty_File"}, {"item": "Empty_Package"}],
+                "package_declaration": {
+                    "declarations": [],
+                    "end_identifier": "Context",
+                    "identifier": "Context",
+                },
+            },
+            "Empty_Package": {
+                "context_clause": [],
+                "package_declaration": {
+                    "declarations": [],
+                    "end_identifier": "Empty_Package",
+                    "identifier": "Empty_Package",
+                },
+            },
         },
     )
 
@@ -178,7 +194,7 @@ def test_parse_integer_type_spec() -> None:
             ),
         )
     }
-    assert_specifications_files([f"{SPEC_DIR}/integer_type.rflx"], spec)
+    assert_ast_files([f"{SPEC_DIR}/integer_type.rflx"], spec)
 
 
 def test_parse_enumeration_type_spec() -> None:
@@ -223,7 +239,7 @@ def test_parse_enumeration_type_spec() -> None:
             ),
         )
     }
-    assert_specifications_files([f"{SPEC_DIR}/enumeration_type.rflx"], spec)
+    assert_ast_files([f"{SPEC_DIR}/enumeration_type.rflx"], spec)
 
 
 def test_parse_array_type_spec() -> None:
@@ -258,7 +274,7 @@ def test_parse_array_type_spec() -> None:
             ),
         )
     }
-    assert_specifications_files([f"{SPEC_DIR}/array_type.rflx"], spec)
+    assert_ast_files([f"{SPEC_DIR}/array_type.rflx"], spec)
 
 
 def test_parse_message_type_spec() -> None:
@@ -304,7 +320,7 @@ def test_parse_message_type_spec() -> None:
             ),
         )
     }
-    assert_specifications_files([f"{SPEC_DIR}/message_type.rflx"], spec)
+    assert_ast_files([f"{SPEC_DIR}/message_type.rflx"], spec)
 
 
 def test_parse_type_refinement_spec() -> None:
@@ -366,13 +382,11 @@ def test_parse_type_refinement_spec() -> None:
             ),
         ),
     }
-    assert_specifications_files(
-        [f"{SPEC_DIR}/message_type.rflx", f"{SPEC_DIR}/type_refinement.rflx"], spec
-    )
+    assert_ast_files([f"{SPEC_DIR}/message_type.rflx", f"{SPEC_DIR}/type_refinement.rflx"], spec)
 
 
 def test_parse_type_derivation_spec() -> None:
-    assert_specifications_string(
+    assert_model_string(
         """
             package Test is
                type T is mod 256;
@@ -504,7 +518,7 @@ def test_parse_ethernet_spec() -> None:
         )
     }
 
-    assert_specifications_files([f"{EX_SPEC_DIR}/ethernet.rflx"], spec)
+    assert_ast_files([f"{EX_SPEC_DIR}/ethernet.rflx"], spec)
 
 
 def test_parse_error_illegal_package_identifiers() -> None:
