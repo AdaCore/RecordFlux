@@ -7,14 +7,6 @@ from pyparsing import col, lineno
 
 from rflx.common import Base, verbose_repr
 
-__current_source: List[Path] = []
-
-
-def current_source() -> Optional[Path]:
-    if __current_source:
-        return __current_source[-1]
-    return None
-
 
 class Location(Base):
     def __init__(
@@ -24,13 +16,7 @@ class Location(Base):
         end: Tuple[int, int] = None,
         verbose: bool = False,
     ):
-        self.__source: Optional[Path]
-
-        if source:
-            self.__source = source
-        else:
-            self.__source = current_source()
-
+        self.__source = source
         self.__start = start
         self.__end = end
         self.__verbose = verbose
@@ -191,11 +177,3 @@ def parser_location(start: int, end: int, string: str, source: Path = None) -> L
         end=(lineno(end - 1, string), col(end - 1, string)),
         source=source,
     )
-
-
-def push_source(source: Path) -> None:
-    __current_source.append(source)
-
-
-def pop_source() -> None:
-    __current_source.pop()

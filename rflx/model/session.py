@@ -98,6 +98,7 @@ class Session(Base):
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[mty.Type],
         location: Location = None,
+        skip_validation: bool = False,
     ):
         self.identifier = ID(identifier)
         self.initial = ID(initial)
@@ -129,7 +130,8 @@ class Session(Base):
             **mty.qualified_enum_literals(self.types.values(), self.package),
         }
 
-        self.__validate()
+        if not skip_validation:
+            self.__validate()
         self.error.propagate()
 
     def __repr__(self) -> str:

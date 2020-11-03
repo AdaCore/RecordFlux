@@ -5,7 +5,9 @@ import pytest
 from rflx import declaration as decl, expression as expr, model, statement as stmt
 from rflx.error import Location
 from rflx.identifier import ID
-from rflx.specification import ast, grammar, parser
+from rflx.model import BOOLEAN
+from rflx.model.session import Session
+from rflx.specification import parser
 from rflx.specification.parser import ParseFatalException
 
 
@@ -693,46 +695,49 @@ def test_state_error(string: str, error: str) -> None:
                   Initial => A,
                   Final => B
                is
-                  Y : Boolean := 0;
+                  Y : Boolean := True;
                begin
                   state A is
                      Z : Boolean := Y;
                   begin
-                     Z := 1;
+                     Z := False;
                   transition
                      then B
-                        if Z = 1
+                        if Z = False
                      then A
                   end A;
 
                   state B is null state;
                end Session;
          """,
-            ast.SessionSpec(
-                ID("Session"),
+            Session(
+                ID("Package::Session"),
                 ID("A"),
                 ID("B"),
                 [
                     model.State(
                         "A",
                         declarations=[decl.VariableDeclaration("Z", "Boolean", expr.Variable("Y"))],
-                        actions=[stmt.Assignment("Z", expr.Number(1))],
+                        actions=[stmt.Assignment("Z", expr.Variable("False"))],
                         transitions=[
                             model.Transition(
-                                "B", condition=expr.Equal(expr.Variable("Z"), expr.Number(1))
+                                "B",
+                                condition=expr.Equal(expr.Variable("Z"), expr.Variable("False")),
                             ),
                             model.Transition("A"),
                         ],
                     ),
                     model.State("B"),
                 ],
-                [decl.VariableDeclaration("Y", "Boolean", expr.Number(0))],
+                [decl.VariableDeclaration("Y", "Boolean", expr.Variable("True"))],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
                     decl.TypeDeclaration(model.Private("T")),
                     decl.FunctionDeclaration("F", [], "T"),
                 ],
+                [BOOLEAN],
                 Location((2, 16), None, (23, 27)),
+                skip_validation=True,
             ),
         ),
     ],
