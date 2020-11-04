@@ -251,12 +251,20 @@ class StringLiteral(ArrayLiteral):
     token_node = True
 
 
+class NumericLiteral(Expr):
+    """
+    Numeric literal
+    """
+
+    token_node = True
+
+
 class ArrayAggregate(ArrayLiteral):
     """
     List of literal array values
     """
 
-    values = Field()
+    values = Field(type=NumericLiteral.list)
 
 
 class Concatenation(ArrayLiteral):
@@ -350,7 +358,7 @@ class MathematicalExpression(Expr):
     Mathematical expression
     """
 
-    data = Field()
+    data = Field(type=Expr)
 
 
 @abstract
@@ -438,14 +446,6 @@ class NamedEnumerationDef(EnumerationDef):
     """
 
     elements = Field(type=UnqualifiedID.list)
-
-
-class NumericLiteral(Expr):
-    """
-    Numeric literal
-    """
-
-    token_node = True
 
 
 class ElementValueAssoc(RFLXNode):
@@ -620,7 +620,7 @@ class ContextItem(Expr):
     Import statement (with Package)
     """
 
-    item = Field()
+    item = Field(type=UnqualifiedID)
 
 
 class Specification(RFLXNode):
