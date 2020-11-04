@@ -229,7 +229,7 @@ rflx_grammar.add_rules(
         ")",
     ),
     checksum_aspect=ast.ChecksumAspect(
-        "Checksum", "=>", "(", List(grammar.checksum_association), ")"
+        "Checksum", "=>", "(", List(grammar.checksum_association, sep=","), ")"
     ),
     message_type_definition=Or(
         ast.MessageTypeDef(
@@ -410,7 +410,7 @@ rflx_grammar.add_rules(
         grammar.unqualified_identifier,
         ";",
     ),
-    context_item=ast.ContextItem(List("with", grammar.unqualified_identifier, ";")),
+    context_item=ast.ContextItem("with", grammar.unqualified_identifier, ";"),
     specification=ast.Specification(
         List(grammar.context_item, empty_valid=True), grammar.package_declaration
     ),
