@@ -30,10 +30,22 @@ rflx_grammar.add_rules(
         ),
         Or(grammar.array_aggregate, grammar.string_literal),
     ),
+    attribute=ast.Attribute(
+            grammar.unqualified_identifier,
+            "'",
+            Or(
+                # pylint: disable=no-member
+                ast.Attr.alt_first(lexer.First),
+                ast.Attr.alt_size(lexer.Size),
+                ast.Attr.alt_last(lexer.Last),
+                ast.Attr.alt_valid_checksum(lexer.ValidChecksum),
+            ),
+        ),
     primary=Or(
         grammar.concatenation,
         grammar.numeric_literal,
         grammar.string_literal,
+        grammar.attribute,
         grammar.qualified_variable,
         grammar.paren_expression,
     ),
@@ -60,17 +72,6 @@ rflx_grammar.add_rules(
             grammar.binop,
             cut(),
             grammar.primary,
-        ),
-        ast.Attribute(
-            grammar.expression,
-            "'",
-            Or(
-                # pylint: disable=no-member
-                ast.Attr.alt_first(lexer.First),
-                ast.Attr.alt_size(lexer.Size),
-                ast.Attr.alt_last(lexer.Last),
-                ast.Attr.alt_valid_checksum(lexer.ValidChecksum),
-            ),
         ),
         grammar.primary,
     ),
@@ -126,6 +127,7 @@ rflx_grammar.add_rules(
         grammar.call,
         grammar.conversion,
         grammar.message_aggregate,
+        grammar.attribute,
         grammar.qualified_variable,
         grammar.paren_extended_expression,
     ),
@@ -155,19 +157,15 @@ rflx_grammar.add_rules(
             cut(),
             grammar.extended_primary,
         ),
-        ast.Attribute(
+        ast.ExpressionAttribute(
             grammar.extended_expression,
             "'",
             Or(
                 # pylint: disable=no-member
-                ast.Attr.alt_first(lexer.First),
-                ast.Attr.alt_size(lexer.Size),
-                ast.Attr.alt_last(lexer.Last),
-                ast.Attr.alt_valid_checksum(lexer.ValidChecksum),
-                ast.ExtAttr.alt_head(lexer.Head),
-                ast.ExtAttr.alt_opaque(lexer.Opaque),
-                ast.ExtAttr.alt_present(lexer.Present),
-                ast.ExtAttr.alt_valid(lexer.Valid),
+                ast.ExprAttr.alt_head(lexer.Head),
+                ast.ExprAttr.alt_opaque(lexer.Opaque),
+                ast.ExprAttr.alt_present(lexer.Present),
+                ast.ExprAttr.alt_valid(lexer.Valid),
             ),
         ),
         ast.Where(

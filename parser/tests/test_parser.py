@@ -6,6 +6,8 @@ ctx = rflxdsl.AnalysisContext()
 
 
 def to_dict(node: Any) -> Any:
+    if node is None:
+        return ""
     if node.is_list_type:
         return [to_dict(e) for e in node.children]
     result = {name[2:]: to_dict(getattr(node, name)) for name in dir(node) if name.startswith("f_")}
@@ -48,4 +50,21 @@ def test_modular_type() -> None:
     assert to_dict(unit.root) == {
         "identifier": "Modular_Type",
         "definition": {"mod": {"data": {"left": "2", "op": "**", "right": "9"}}},
+    }
+
+
+def test_checksum_attributes() -> None:
+    unit = ctx.get_from_buffer(
+        "test.rflx",
+        """
+            A'Valid_Checksum and B'Valid_Checksum;
+        """,
+        rule=rflxdsl.GrammarRule.boolean_expression_rule,
+    )
+    assert to_dict(unit.root) == {
+        "data": {
+            "left": {"identifier": "A", "kind": "Valid_Checksum"},
+            "op": "and",
+            "right": {"identifier": "B", "kind": "Valid_Checksum"},
+        }
     }

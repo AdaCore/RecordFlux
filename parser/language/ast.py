@@ -580,7 +580,7 @@ class AttrBase(RFLXNode):
 
 class Attr(AttrBase):
     """
-    Attributes used in expressions
+    Attributes used on variables
     """
 
     enum_node = True
@@ -592,9 +592,9 @@ class Attr(AttrBase):
     ]
 
 
-class ExtAttr(AttrBase):
+class ExprAttr(AttrBase):
     """
-    Attributes used in extended expressions
+    Attributes used on expressions
     """
 
     enum_node = True
@@ -609,6 +609,15 @@ class ExtAttr(AttrBase):
 class Attribute(Expr):
     """
     Attribute
+    """
+
+    identifier = Field(type=UnqualifiedID)
+    kind = Field(type=AttrBase)
+
+
+class ExpressionAttribute(Expr):
+    """
+    Expression attribute
     """
 
     expression = Field(type=Expr)
