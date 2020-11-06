@@ -952,17 +952,17 @@ def test_create_model_array_with_imported_element_type() -> None:
     p = parser.Parser()
     p.parse_string(
         """
-           with Test;
-           package Array_Test is
-              type T is array of Test::T;
-           end Array_Test;
+           package Test is
+              type T is mod 256;
+           end Test;
         """
     )
     p.parse_string(
         """
-           package Test is
-              type T is mod 256;
-           end Test;
+           with Test;
+           package Array_Test is
+              type T is array of Test::T;
+           end Array_Test;
         """
     )
     m = p.create_model()

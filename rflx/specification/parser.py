@@ -16,11 +16,13 @@ from librecordfluxdsllang import (
     ModularTypeDef,
     NullID,
     PackageSpec,
+    RangeTypeDef,
     RefinementSpec,
     RFLXNode,
     Specification,
     ThenNode,
     TypeDerivationDef,
+    TypeSpec,
 )
 
 import rflx.expression as rexpr
@@ -38,6 +40,7 @@ from rflx.model import (
     Message,
     Model,
     ModularInteger,
+    RangeInteger,
     Refinement,
     Session,
     Type,
@@ -131,9 +134,8 @@ class Parser:
                     )
                     continue
                 transitions.append(transition)
-                error.extend(
-                    self.__parse_specfile(specfile.parent / f"{item.lower()}.rflx", transitions)
-                )
+                withed_file = specfile.parent / f"{item.lower()}.rflx"
+                error.extend(self.__parse_specfile(withed_file, transitions))
 
         return error
 
@@ -143,8 +145,7 @@ class Parser:
         error = RecordFluxError()
         if specfile in self.__specifications:
             self.__specifications.move_to_end(specfile)
-        else:
-            self.__specifications[specfile] = None
+            return error
 
         transitions = transitions or []
 
@@ -220,34 +221,62 @@ class Parser:
     def __evaluate_types(self, filename: str, spec: Specification, error: RecordFluxError) -> None:
         package_id = create_id(spec.f_package_declaration.f_identifier, filename)
         for t in spec.f_package_declaration.f_declarations:
-            identifier = package_id * create_id(t.f_identifier, filename).name
-            if t.f_definition.kind_name == "ArrayTypeDef":
-                new_type = create_array(identifier, t.f_definition, self.__types)
-            elif t.f_definition.kind_name == "ModularTypeDef":
-                new_type = create_modular(identifier, t.f_definition)
-            elif t.f_definition.kind_name == "MessageTypeDef":
-                new_type = create_message(
-                    identifier, t.f_definition, self.__types, self.skip_verification, self.__cache
+            if isinstance(t, TypeSpec):
+                identifier = qualified_type_identifier(
+                    create_id(t.f_identifier, filename), package_id
                 )
+                if t.f_definition.kind_name == "ArrayTypeDef":
+                    new_type = create_array(identifier, t.f_definition, self.__types)
+                elif t.f_definition.kind_name == "ModularTypeDef":
+                    new_type = create_modular(identifier, t.f_definition)
+                elif t.f_definition.kind_name == "RangeTypeDef":
+                    new_type = create_range(identifier, t.f_definition)
+                elif t.f_definition.kind_name == "MessageTypeDef":
+                    new_type = create_message(
+                        identifier,
+                        t.f_definition,
+                        self.__types,
+                        self.skip_verification,
+                        self.__cache,
+                    )
+                elif t.f_definition.kind_name == "TypeDerivationDef":
+                    new_type = create_derived_message(
+                        identifier,
+                        t.f_definition,
+                        package_id,
+                        self.__types,
+                        self.skip_verification,
+                        self.__cache,
+                    )
+                else:
+                    raise ParseFatalException(f"Unknown type {t.f_definition.kind_name}")
             else:
-                raise ParseFatalException(f"Unknown type {t.f_definition.kind_name}")
+                if t.kind_name == "RefinementSpec":
+                    new_type = create_refinement(t, package_id, self.__types)
+                else:
+                    raise ParseFatalException(f"Unknown type {t}")
             self.__types.append(new_type)
             error.extend(new_type.error)
 
     def __evaluate_sessions(self, filename: str, spec: Specification) -> None:
-        for s in spec.package.sessions:
-            self.__sessions.append(
-                Session(
-                    ID(spec.package.identifier, s.identifier.location) * s.identifier.name,
-                    s.initial,
-                    s.final,
-                    s.states,
-                    s.declarations,
-                    s.parameters,
-                    self.__types,
-                    s.location,
+        for s in spec.f_package_declaration.f_declarations:
+            if s.kind_name == "Session_Spec":
+                self.__sessions.append(
+                    Session(
+                        ID(
+                            spec.f_package_declaration.f_identifier.text,
+                            node_location(s.f_identifier),
+                        )
+                        * s.f_identifier.text,
+                        s.f_aspects.f_initial.text,
+                        s.f_aspects.f_final.text,
+                        s.states,
+                        s.declarations,
+                        s.parameters,
+                        self.__types,
+                        s.location,
+                    )
                 )
-            )
 
 
 def create_id(identifier: NullID, filename: str = None) -> ID:
@@ -270,9 +299,7 @@ def create_id(identifier: NullID, filename: str = None) -> ID:
 
 
 def create_array(identifier: ID, array: ArrayTypeDef, types: Sequence[Type]) -> Array:
-    element_identifier = ID(
-        identifier.parent * create_id(array.f_element_type), node_location(array.f_element_type)
-    )
+    element_identifier = create_id(array.f_element_type, node_location(array.f_element_type))
 
     try:
         element_type = [t for t in types if element_identifier == t.identifier][0]
@@ -317,26 +344,49 @@ def create_expression(expression: Expr) -> rexpr.Expr:
             return rexpr.Sub(
                 create_expression(expression.f_left), create_expression(expression.f_right)
             )
+        elif expression.f_op.kind_name == "OpMul":
+            return rexpr.Mul(
+                create_expression(expression.f_left), create_expression(expression.f_right)
+            )
         else:
             raise NotImplementedError(
                 f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
             )
+    elif expression.kind_name == "BooleanExpression":
+        return create_expression(expression.f_data)
     elif expression.kind_name == "QualifiedVariable":
         return expr.Variable(expression.f_identifier.text)
     elif expression.kind_name == "Attribute":
         if expression.f_kind.kind_name == "AttrLast":
-            return expr.Last(create_expression(expression.f_expression))
-        if expression.f_kind.kind_name == "AttrFirst":
-            return expr.First(create_expression(expression.f_expression))
+            return expr.Last(create_id(expression.f_identifier))
+        elif expression.f_kind.kind_name == "AttrFirst":
+            return expr.First(create_id(expression.f_identifier))
+        elif expression.f_kind.kind_name == "AttrValidChecksum":
+            return expr.ValidChecksum(create_id(expression.f_identifier))
         else:
             raise NotImplementedError(
-                f"Invalid Attribute {expression.f_kind.kind_name} => {expression.text}"
+                f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
             )
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
 
 def create_modular(identifier: ID, modular: ModularTypeDef) -> ModularInteger:
     return ModularInteger(identifier, create_expression(modular.f_mod), node_location(modular))
+
+
+def create_range(identifier: ID, rangetype: RangeTypeDef) -> RangeInteger:
+    if rangetype.f_size.f_identifier.text != "Size":
+        raise ParseFatalException(
+            f"Invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}"
+        )
+    size = create_expression(rangetype.f_size.f_value)
+    return RangeInteger(
+        identifier,
+        create_expression(rangetype.f_lower),
+        create_expression(rangetype.f_upper),
+        size,
+        node_location(rangetype),
+    )
 
 
 def create_message(
@@ -353,7 +403,7 @@ def create_message(
 
     field_types = create_message_types(identifier, message, types, components)
     structure = create_message_structure(components, error)
-    aspects = create_message_aspects(message.f_checksums)
+    aspects = {ID("Checksum"): create_message_aspects(message.f_checksums)}
 
     return create_proven_message(
         UnprovenMessage(
@@ -400,27 +450,29 @@ def create_message_structure(components: Components, error: RecordFluxError) -> 
         return size, first
 
     def extract_then(then: ThenNode) -> Tuple[Field, expr.Expr, expr.Expr, expr.Expr, Location]:
-        target = FINAL if then.f_target.text == "null" else create_id(then.f_target)
+        target = FINAL if then.f_target.text == "null" else Field(then.f_target.text)
         condition = create_expression(then.f_condition) if then.f_condition else expr.TRUE
-        size, first = extract_aspect(then.aspects)
+        size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then)
 
     structure: List[Link] = []
 
     if components.f_initial_component:
         structure.append(Link(INITIAL, *extract_then(components.f_initial_component.f_then)))
+    else:
+        structure.append(Link(INITIAL, Field(components.f_components[0].f_identifier.text)))
 
     for i, component in enumerate(components.f_components):
         source_node = Field(component.f_identifier.text) if component.f_identifier else INITIAL
         component_identifier = ID(component.f_identifier.text)
 
-        if not component.f_thens:
-            identifier = (
+        if len(component.f_thens) == 0:
+            target_name = (
                 components.f_components[i + 1].f_identifier.text
                 if i + 1 < len(components.f_components)
                 else None
             )
-            target_node = Field(identifier) if identifier else FINAL
+            target_node = Field(target_name) if target_name else FINAL
             structure.append(Link(source_node, target_node))
 
         condition = (
@@ -450,7 +502,7 @@ def create_message_structure(components: Components, error: RecordFluxError) -> 
 
                 if size != expr.UNDEFINED:
                     if l.size == expr.UNDEFINED:
-                        l.size = component_size
+                        l.size = size
                     else:
                         error.append(
                             f'size aspect of field "{component_identifier}" conflicts with previous'
@@ -475,7 +527,7 @@ def create_message_structure(components: Components, error: RecordFluxError) -> 
 
         for then in component.f_thens:
             if then.f_target and not any(
-                then.f_target == c.f_identifier for c in components.f_components
+                then.f_target.text == c.f_identifier.text for c in components.f_components
             ):
                 error.append(
                     f'undefined field "{then.f_target}"',
@@ -512,11 +564,13 @@ def create_message_aspects(checksum: ChecksumAspect) -> Mapping[ID, Sequence[rex
 def create_derived_message(
     identifier: ID,
     derivation: TypeDerivationDef,
+    package: ID,
     types: Sequence[Type],
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
-    base_name = qualified_type_identifier(derivation.base, derivation.package)
+    base_id = create_id(derivation.f_base)
+    base_name = qualified_type_identifier(base_id, package)
     error = RecordFluxError()
 
     base_types = [t for t in types if t.identifier == base_name]
@@ -548,7 +602,7 @@ def create_derived_message(
 
     return create_proven_message(
         UnprovenDerivedMessage(
-            derivation.identifier, base_messages[0], location=derivation.location
+            identifier, base_messages[0], location=node_location(derivation)
         ).merged(),
         skip_verification,
         cache,
@@ -567,36 +621,39 @@ def create_proven_message(
     return proven_message
 
 
-def create_refinement(
-    identifie: ID, refinement: RefinementSpec, types: Sequence[Type]
-) -> Refinement:
+def create_refinement(refinement: RefinementSpec, package: ID, types: Sequence[Type]) -> Refinement:
     messages = {t.identifier: t for t in types if isinstance(t, Message)}
 
-    refinement.pdu = qualified_type_identifier(refinement.pdu, refinement.package)
-    if refinement.pdu not in messages:
+    pdu = qualified_type_identifier(create_id(refinement.f_pdu), package)
+    if pdu not in messages:
         fail(
-            f'undefined type "{refinement.pdu}" in refinement',
+            f'undefined type "{pdu}" in refinement',
             Subsystem.PARSER,
             Severity.ERROR,
-            refinement.location,
+            node_location(refinement),
         )
 
-    refinement.sdu = qualified_type_identifier(refinement.sdu, refinement.package)
-    if refinement.sdu not in messages:
+    sdu = qualified_type_identifier(create_id(refinement.f_sdu), package)
+    if sdu not in messages:
         fail(
-            f'undefined type "{refinement.sdu}" in refinement of "{refinement.pdu}"',
+            f'undefined type "{sdu}" in refinement of "{pdu}"',
             Subsystem.PARSER,
             Severity.ERROR,
-            refinement.sdu.location,
+            sdu.location,
         )
+
+    if refinement.f_condition:
+        condition = create_expression(refinement.f_condition.f_condition)
+    else:
+        condition = expr.TRUE
 
     return Refinement(
-        refinement.package,
-        messages[refinement.pdu],
-        Field(refinement.field),
-        messages[refinement.sdu],
-        refinement.condition,
-        refinement.location,
+        package,
+        messages[pdu],
+        Field(refinement.f_field.text),
+        messages[sdu],
+        condition,
+        node_location(refinement),
     )
 
 
@@ -633,10 +690,10 @@ def check_naming(error: RecordFluxError, package: PackageSpec, filename: Path = 
                 node_location(package.f_identifier, filename),
             )
     for t in package.f_declarations:
-        if is_builtin_type(create_id(t.f_identifier).name):
+        if isinstance(t, TypeSpec) and is_builtin_type(create_id(t.f_identifier).name):
             error.append(
                 f'illegal redefinition of built-in type "{t.f_identifier.text}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                t.location,
+                node_location(t, filename),
             )
