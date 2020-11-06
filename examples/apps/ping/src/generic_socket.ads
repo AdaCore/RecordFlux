@@ -1,6 +1,3 @@
-private with Interfaces.C;
-with RFLX.IPv4;
-
 generic
    type Element_Type is (<>);
    type Index_Type is (<>);

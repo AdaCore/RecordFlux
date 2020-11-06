@@ -1,3 +1,5 @@
+with "../../../defaults";
+
 project Ping is
 
    for Languages use ("RecordFlux", "Python", "Ada", "C");
@@ -17,6 +19,14 @@ project Ping is
    package Recordflux is
       for Output_Dir use "generated";
    end Recordflux;
+
+   package Builder is
+      for Default_Switches ("Ada") use Defaults.Builder_Switches & Defaults.Compiler_Switches;
+   end Builder;
+
+   package Binder is
+      for Default_Switches ("Ada") use Defaults.Binder_Switches;
+   end Binder;
 
    package Prove is
       for Proof_Switches ("Ada") use (
