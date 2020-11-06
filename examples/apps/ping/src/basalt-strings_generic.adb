@@ -68,9 +68,13 @@ is
       end if;
    end Image_Ranged;
 
+   pragma Warnings (Off, "condition can only be False if invalid values present");
+
    procedure Lemma_U64_Le16 (B : Base) with
      Ghost,
      Post => SI.Unsigned_64 (B) <= 16;
+
+   pragma Warnings (On, "condition can only be False if invalid values present");
 
    procedure Lemma_U64_Le16 (B : Base) is
    begin

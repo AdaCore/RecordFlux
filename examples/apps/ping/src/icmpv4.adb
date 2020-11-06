@@ -8,7 +8,6 @@ with RFLX.ICMP.Message;
 with RFLX.RFLX_Types;
 with Generic_Checksum;
 with Generic_Socket;
-with Ada.Text_IO;
 
 package body ICMPv4 with
    SPARK_Mode,
@@ -50,8 +49,6 @@ is
 
    procedure Ping (Addr : String)
    is
-      use type RFLX.RFLX_Builtin_Types.Length;
-      use type RFLX.RFLX_Builtin_Types.Bytes_Ptr;
       package Socket is new Generic_Socket (RFLX.RFLX_Builtin_Types.Byte,
                                             RFLX.RFLX_Builtin_Types.Index,
                                             RFLX.RFLX_Builtin_Types.Bytes,

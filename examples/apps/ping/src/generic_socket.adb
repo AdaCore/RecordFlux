@@ -1,5 +1,4 @@
-with System;
-with RFLX;
+with Interfaces.C;
 
 package body Generic_Socket with
    SPARK_Mode,
@@ -37,7 +36,7 @@ is
          C_Perror ("C_Socket (PF_INET, SOCK_RAW, IPPROTO_ICMP)" & ASCII.NUL);
          return;
       end if;
-      FD_Out := C_Socket (PF_Inet, SOCK_RAW, IPPROTO_RAW);
+      FD_Out := C_Socket (PF_INET, SOCK_RAW, IPPROTO_RAW);
       if FD_Out < 0 then
          C_Perror ("C_Socket (PF_Inet, SOCK_RAW, IPPROTO_RAW)" & ASCII.NUL);
          return;
@@ -95,7 +94,7 @@ is
          Success := True;
          return;
       end if;
-      Result  := C_Send (Fd_Out, Destination, Buffer, IC.size_t (Buffer'Length));
+      Result  := C_Send (FD_Out, Destination, Buffer, IC.size_t (Buffer'Length));
       Success := Result >= IC.int (Buffer'Length);
       if not Success then
          C_Perror ("Error sending packet len: " & Buffer'Length'Img & ASCII.NUL);
