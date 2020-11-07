@@ -73,6 +73,7 @@ class Op(RFLXNode):
         "div",
         "add",
         "sub",
+        "mod",
         "eq",
         "neq",
         "le",

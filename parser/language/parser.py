@@ -31,16 +31,16 @@ rflx_grammar.add_rules(
         Or(grammar.array_aggregate, grammar.string_literal),
     ),
     attribute=ast.Attribute(
-            grammar.unqualified_identifier,
-            "'",
-            Or(
-                # pylint: disable=no-member
-                ast.Attr.alt_first(lexer.First),
-                ast.Attr.alt_size(lexer.Size),
-                ast.Attr.alt_last(lexer.Last),
-                ast.Attr.alt_valid_checksum(lexer.ValidChecksum),
-            ),
+        grammar.unqualified_identifier,
+        "'",
+        Or(
+            # pylint: disable=no-member
+            ast.Attr.alt_first(lexer.First),
+            ast.Attr.alt_size(lexer.Size),
+            ast.Attr.alt_last(lexer.Last),
+            ast.Attr.alt_valid_checksum(lexer.ValidChecksum),
         ),
+    ),
     primary=Or(
         grammar.concatenation,
         grammar.numeric_literal,
@@ -49,31 +49,68 @@ rflx_grammar.add_rules(
         grammar.qualified_variable,
         grammar.paren_expression,
     ),
-    binop=Or(
-        # pylint: disable=no-member
-        ast.Op.alt_pow("**"),
-        ast.Op.alt_mul("*"),
-        ast.Op.alt_div("/"),
-        ast.Op.alt_add("+"),
-        ast.Op.alt_sub("-"),
-        ast.Op.alt_eq("="),
-        ast.Op.alt_neq("/="),
-        ast.Op.alt_le("<="),
-        ast.Op.alt_lt("<"),
-        ast.Op.alt_ge(">="),
-        ast.Op.alt_gt(">"),
-        ast.Op.alt_and("and"),
-        ast.Op.alt_or("or"),
-    ),
     paren_expression=ast.ParenExpression("(", grammar.expression, ")"),
+    factor=Or(
+        # pylint: disable=no-member
+        ast.BinOp(grammar.primary, ast.Op.alt_pow("**"), cut(), grammar.primary),
+        grammar.primary,
+    ),
+    term=Or(
+        ast.BinOp(
+            grammar.term,
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_mul("*"),
+                ast.Op.alt_mul("/"),
+                ast.Op.alt_mod("mod"),
+            ),
+            cut(),
+            grammar.factor,
+        ),
+        grammar.factor,
+    ),
+    simple_expr=Or(
+        ast.BinOp(
+            grammar.simple_expr,
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_add("+"),
+                ast.Op.alt_sub("-"),
+            ),
+            cut(),
+            grammar.term,
+        ),
+        grammar.term,
+    ),
+    relation=Or(
+        ast.BinOp(
+            grammar.relation,
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_eq("="),
+                ast.Op.alt_neq("/="),
+                ast.Op.alt_le("<="),
+                ast.Op.alt_lt("<"),
+                ast.Op.alt_ge(">="),
+                ast.Op.alt_gt(">"),
+            ),
+            cut(),
+            grammar.simple_expr,
+        ),
+        grammar.simple_expr,
+    ),
     expression=Or(
         ast.BinOp(
             grammar.expression,
-            grammar.binop,
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_and("and"),
+                ast.Op.alt_or("or"),
+            ),
             cut(),
-            grammar.primary,
+            grammar.relation,
         ),
-        grammar.primary,
+        grammar.relation,
     ),
     mathematical_expression=ast.MathematicalExpression(grammar.expression),
     boolean_expression=ast.BooleanExpression(grammar.expression),
@@ -243,7 +280,9 @@ rflx_grammar.add_rules(
     element_value_association=ast.ElementValueAssoc(
         grammar.unqualified_identifier, "=>", grammar.numeric_literal
     ),
-    named_enumeration=ast.PositionalEnumerationDef(List(grammar.element_value_association, sep=",")),
+    named_enumeration=ast.PositionalEnumerationDef(
+        List(grammar.element_value_association, sep=",")
+    ),
     enumeration_aspects=List(Or(grammar.mathematical_aspect, grammar.boolean_aspect), sep=","),
     enumeration_type_definition=ast.EnumerationTypeDef(
         "(",

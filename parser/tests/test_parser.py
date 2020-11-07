@@ -68,3 +68,36 @@ def test_checksum_attributes() -> None:
             "right": {"identifier": "B", "kind": "Valid_Checksum"},
         }
     }
+
+
+def test_operator_precedence() -> None:
+    unit = ctx.get_from_buffer(
+        "test.rflx",
+        """
+            A / 8 >= 46 and A / 8 <= 1500;
+        """,
+        rule=rflxdsl.GrammarRule.boolean_expression_rule,
+    )
+    assert to_dict(unit.root) == {
+        "data": {
+            "left": {
+                "left": {
+                    "left": {"identifier": {"name": "A", "package": ""}},
+                    "op": "/",
+                    "right": "8",
+                },
+                "op": ">=",
+                "right": "46",
+            },
+            "op": "and",
+            "right": {
+                "left": {
+                    "left": {"identifier": {"name": "A", "package": ""}},
+                    "op": "/",
+                    "right": "8",
+                },
+                "op": "<=",
+                "right": "1500",
+            },
+        }
+    }

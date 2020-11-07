@@ -1,7 +1,7 @@
 VERBOSE ?= @
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := tests setup.py
+python-packages := language tests setup.py
 
 build-dir := build
 
