@@ -106,7 +106,7 @@ class Parser:
         self.__sessions: List[Session] = []
         self.__cache = Cache(cached)
 
-    def __parse_unit(
+    def __convert_unit(
         self, spec: Specification, specfile: Path, transitions: List[Tuple[str, ID]] = None
     ) -> RecordFluxError:
         transitions = transitions or []
@@ -156,7 +156,7 @@ class Parser:
         unit = AnalysisContext().get_from_file(str(specfile))
         if diagnostics_to_error(unit.diagnostics, error, specfile):
             return error
-        return self.__parse_unit(unit.root, specfile, transitions)
+        return self.__convert_unit(unit.root, specfile, transitions)
 
     def parse(self, *specfiles: Path) -> None:
         error = RecordFluxError()
@@ -173,10 +173,7 @@ class Parser:
         error = RecordFluxError()
         unit = AnalysisContext().get_from_buffer("<stdin>", string)
         if not diagnostics_to_error(unit.diagnostics, error):
-            specfile = Path(
-                f"{common.file_name(unit.root.f_package_declaration.f_identifier.text)}.rflx"
-            )
-            error = self.__parse_unit(unit.root, specfile)
+            error = self.__convert_unit(unit.root, Path("<stdin>"))
             for f, s in self.__specifications.items():
                 if s:
                     check_naming(error, s.f_package_declaration, f)
