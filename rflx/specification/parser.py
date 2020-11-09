@@ -61,7 +61,7 @@ class ParseFatalException(Exception):
     pass
 
 
-def node_location(node: RFLXNode, filename: str = None) -> Location:
+def node_location(node: RFLXNode, filename: str) -> Location:
     start = node.token_start.sloc_range
     end = node.token_end.sloc_range
     return Location(
@@ -228,7 +228,7 @@ class Parser:
                     create_id(t.f_identifier, filename), package_id
                 )
                 if t.f_definition.kind_name == "ArrayTypeDef":
-                    new_type = create_array(identifier, t.f_definition, self.__types, package_id)
+                    new_type = create_array(identifier, t.f_definition, self.__types, filename)
                 elif t.f_definition.kind_name == "ModularTypeDef":
                     new_type = create_modular(identifier, t.f_definition, filename)
                 elif t.f_definition.kind_name == "RangeTypeDef":
@@ -243,24 +243,23 @@ class Parser:
                         self.__cache,
                     )
                 elif t.f_definition.kind_name == "NullMessageTypeDef":
-                    new_type = Message(identifier, [], {}, location=node_location(t))
+                    new_type = Message(identifier, [], {}, location=node_location(t, filename))
                 elif t.f_definition.kind_name == "TypeDerivationDef":
                     new_type = create_derived_message(
                         identifier,
                         t.f_definition,
-                        package_id,
                         filename,
                         self.__types,
                         self.skip_verification,
                         self.__cache,
                     )
                 elif t.f_definition.kind_name == "EnumerationTypeDef":
-                    new_type = create_enumeration(identifier, t.f_definition, package_id, filename)
+                    new_type = create_enumeration(identifier, t.f_definition, filename)
                 else:
                     raise ParseFatalException(f"Unknown type {t.f_definition.kind_name}")
             else:
                 if t.kind_name == "RefinementSpec":
-                    new_type = create_refinement(t, package_id, self.__types)
+                    new_type = create_refinement(t, package_id, self.__types, filename)
                 else:
                     raise ParseFatalException(f"Unknown type {t}")
             self.__types.append(new_type)
@@ -287,7 +286,7 @@ class Parser:
                 )
 
 
-def create_id(identifier: NullID, filename: str) -> ID:
+def create_id(identifier: NullID, filename: Path) -> ID:
     if identifier.kind_name == "UnqualifiedID":
         return ID(identifier.text, location=node_location(identifier, filename))
     elif identifier.kind_name == "ID":
@@ -311,9 +310,11 @@ def create_id(identifier: NullID, filename: str) -> ID:
     )
 
 
-def create_array(identifier: ID, array: ArrayTypeDef, types: Sequence[Type], package) -> Array:
+def create_array(
+    identifier: ID, array: ArrayTypeDef, types: Sequence[Type], filename: Path
+) -> Array:
     element_identifier = qualified_type_identifier(
-        create_id(array.f_element_type, node_location(array.f_element_type)), package
+        create_id(array.f_element_type, filename), identifier.parent
     )
 
     try:
@@ -326,12 +327,12 @@ def create_array(identifier: ID, array: ArrayTypeDef, types: Sequence[Type], pac
             element_identifier.location,
         )
 
-    return Array(identifier, element_type, node_location(array))
+    return Array(identifier, element_type, node_location(array, filename))
 
 
-def create_expression(expression: Expr, filename: Path) -> rexpr.Expr:
+def create_expression(expression: Expr, filename: Path, package: ID = None) -> rexpr.Expr:
     if expression.kind_name == "MathematicalExpression":
-        return create_expression(expression.f_data, filename)
+        return create_expression(expression.f_data, filename, package)
     elif expression.kind_name == "NumericLiteral":
         num = expression.text.split("#")
         if len(num) == 1:
@@ -343,75 +344,96 @@ def create_expression(expression: Expr, filename: Path) -> rexpr.Expr:
     elif expression.kind_name == "BinOp":
         if expression.f_op.kind_name == "OpAnd":
             return rexpr.And(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         if expression.f_op.kind_name == "OpOr":
             return rexpr.Or(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpLt":
             return rexpr.Less(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpGt":
             return rexpr.Greater(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpLe":
             return rexpr.LessEqual(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpGe":
             return rexpr.GreaterEqual(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpPow":
             return rexpr.Pow(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpAdd":
             return rexpr.Add(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpSub":
             return rexpr.Sub(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpMul":
             return rexpr.Mul(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpDiv":
             return rexpr.Div(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpEq":
             return rexpr.Equal(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         elif expression.f_op.kind_name == "OpNeq":
             return rexpr.NotEqual(
-                create_expression(expression.f_left, filename), create_expression(expression.f_right, filename)
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
             )
         else:
             raise NotImplementedError(
                 f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
             )
     elif expression.kind_name == "ParenExpression":
-        return create_expression(expression.f_data, filename)
+        return create_expression(expression.f_data, filename, package)
     elif expression.kind_name == "BooleanExpression":
-        return create_expression(expression.f_data, filename)
+        return create_expression(expression.f_data, filename, package)
     elif expression.kind_name == "QualifiedVariable":
-        return expr.Variable(expression.f_identifier.text)
+        if expression.f_identifier.text.lower() == "true":
+            return expr.TRUE
+        elif expression.f_identifier.text.lower() == "false":
+            return expr.FALSE
+        var_id = create_id(expression.f_identifier, filename)
+        if package:
+            return expr.Variable(qualified_type_identifier(var_id, package))
+        return expr.Variable(var_id)
     elif expression.kind_name == "Attribute":
+        attr_id = create_id(expression.f_identifier, filename)
         if expression.f_kind.kind_name == "AttrLast":
-            return expr.Last(create_id(expression.f_identifier))
+            return expr.Last(attr_id)
         elif expression.f_kind.kind_name == "AttrFirst":
-            return expr.First(create_id(expression.f_identifier))
+            return expr.First(attr_id)
         elif expression.f_kind.kind_name == "AttrSize":
-            return expr.Size(create_id(expression.f_identifier, filename))
+            return expr.Size(attr_id)
         elif expression.f_kind.kind_name == "AttrValidChecksum":
-            return expr.ValidChecksum(create_id(expression.f_identifier, filename))
+            return expr.ValidChecksum(attr_id)
         else:
             raise NotImplementedError(
                 f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
@@ -420,7 +442,11 @@ def create_expression(expression: Expr, filename: Path) -> rexpr.Expr:
 
 
 def create_modular(identifier: ID, modular: ModularTypeDef, filename: Path) -> ModularInteger:
-    return ModularInteger(identifier, create_expression(modular.f_mod, filename), node_location(modular))
+    return ModularInteger(
+        identifier,
+        create_expression(modular.f_mod, filename, identifier.parent),
+        node_location(modular, filename),
+    )
 
 
 def create_range(identifier: ID, rangetype: RangeTypeDef, filename: Path) -> RangeInteger:
@@ -428,13 +454,13 @@ def create_range(identifier: ID, rangetype: RangeTypeDef, filename: Path) -> Ran
         raise ParseFatalException(
             f"Invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}"
         )
-    size = create_expression(rangetype.f_size.f_value, filename)
+    size = create_expression(rangetype.f_size.f_value, filename, identifier.parent)
     return RangeInteger(
         identifier,
-        create_expression(rangetype.f_lower, filename),
-        create_expression(rangetype.f_upper, filename),
+        create_expression(rangetype.f_lower, filename, identifier.parent),
+        create_expression(rangetype.f_upper, filename, identifier.parent),
         size,
-        node_location(rangetype),
+        node_location(rangetype, filename),
     )
 
 
@@ -452,12 +478,14 @@ def create_message(
     error = RecordFluxError()
 
     field_types = create_message_types(identifier, message, types, components, filename)
-    structure = create_message_structure(components, filename, error)
-    aspects = {ID("Checksum"): create_message_aspects(message.f_checksums, filename)}
+    structure = create_message_structure(components, identifier.parent, filename, error)
+    aspects = {
+        ID("Checksum"): create_message_aspects(message.f_checksums, identifier.parent, filename)
+    }
 
     return create_proven_message(
         UnprovenMessage(
-            identifier, structure, field_types, aspects, node_location(message), error
+            identifier, structure, field_types, aspects, node_location(message, filename), error
         ).merged(),
         skip_verification,
         cache,
@@ -485,7 +513,9 @@ def create_message_types(
     return field_types
 
 
-def create_message_structure(components: Components, filename: Path, error: RecordFluxError) -> List[Link]:
+def create_message_structure(
+    components: Components, package: ID, filename: Path, error: RecordFluxError
+) -> List[Link]:
     # pylint: disable=too-many-branches
 
     def extract_aspect(aspects: List[MathematicalAspect]) -> Tuple[rexpr.Expr, rexpr.Expr]:
@@ -504,7 +534,7 @@ def create_message_structure(components: Components, filename: Path, error: Reco
         target = FINAL if then.f_target.text == "null" else Field(then.f_target.text)
         condition = create_expression(then.f_condition, filename) if then.f_condition else expr.TRUE
         size, first = extract_aspect(then.f_aspects)
-        return target, condition, size, first, node_location(then)
+        return target, condition, size, first, node_location(then, filename)
 
     structure: List[Link] = []
 
@@ -527,7 +557,9 @@ def create_message_structure(components: Components, filename: Path, error: Reco
             structure.append(Link(source_node, target_node))
 
         condition = (
-            create_expression(component.f_condition.f_data, filename) if component.f_condition else expr.TRUE
+            create_expression(component.f_condition.f_data, filename)
+            if component.f_condition
+            else expr.TRUE
         )
         size, first = extract_aspect(component.f_aspects)
         if first != expr.UNDEFINED or size != expr.UNDEFINED or condition != expr.TRUE:
@@ -592,7 +624,9 @@ def create_message_structure(components: Components, filename: Path, error: Reco
     return structure
 
 
-def create_message_aspects(checksum: ChecksumAspect, filename: Path) -> Mapping[ID, Sequence[rexpr.Expr]]:
+def create_message_aspects(
+    checksum: ChecksumAspect, package: ID, filename: Path
+) -> Mapping[ID, Sequence[rexpr.Expr]]:
     result = {}
     if checksum:
         for assoc in checksum.f_associations:
@@ -603,7 +637,8 @@ def create_message_aspects(checksum: ChecksumAspect, filename: Path) -> Mapping[
                 elif value.kind_name == "ChecksumValueRange":
                     exprs.append(
                         rexpr.ValueRange(
-                            create_expression(value.f_lower, filename), create_expression(value.f_upper, filename)
+                            create_expression(value.f_lower, filename),
+                            create_expression(value.f_upper, filename),
                         )
                     )
                 else:
@@ -615,14 +650,13 @@ def create_message_aspects(checksum: ChecksumAspect, filename: Path) -> Mapping[
 def create_derived_message(
     identifier: ID,
     derivation: TypeDerivationDef,
-    package: ID,
     filename: Path,
     types: Sequence[Type],
     skip_verification: bool,
     cache: Cache,
 ) -> Message:
     base_id = create_id(derivation.f_base, filename)
-    base_name = qualified_type_identifier(base_id, package)
+    base_name = qualified_type_identifier(base_id, identifier.parent)
     error = RecordFluxError()
 
     base_types = [t for t in types if t.identifier == base_name]
@@ -654,7 +688,7 @@ def create_derived_message(
 
     return create_proven_message(
         UnprovenDerivedMessage(
-            identifier, base_messages[0], location=node_location(derivation)
+            identifier, base_messages[0], location=node_location(derivation, filename)
         ).merged(),
         skip_verification,
         cache,
@@ -664,7 +698,6 @@ def create_derived_message(
 def create_enumeration(
     identifier: ID,
     enumeration: EnumerationTypeDef,
-    package: ID,
     filename: Path,
 ) -> Message:
     always_valid = False
@@ -673,9 +706,7 @@ def create_enumeration(
 
     if enumeration.f_elements.kind_name == "NamedEnumerationDef":
         for e in enumeration.f_elements.f_elements:
-            element_identifier = qualified_type_identifier(
-                create_id(e.f_identifier, filename), package
-            )
+            element_identifier = create_id(e.f_identifier, filename)
             value = create_expression(e.f_literal, filename)
             literals.append((element_identifier, value))
     elif enumeration.f_elements.kind_name == "PositionalEnumerationDef":
@@ -689,9 +720,18 @@ def create_enumeration(
 
     for a in enumeration.f_aspects:
         if a.f_identifier.text == "Size":
-            size = create_expression(a.f_value, filename)
+            size = create_expression(a.f_value, filename, identifier.parent)
         if a.f_identifier.text == "Always_Valid":
-            always_valid = True
+            if a.f_value:
+                av_expr = create_expression(a.f_value, filename)
+                if av_expr == expr.TRUE:
+                    always_valid = True
+                elif av_expr == expr.FALSE:
+                    always_valid = False
+                else:
+                    raise ParseFatalException(f"Invalid Always_Valid expression: {av_expr}")
+            else:
+                always_valid = True
 
     if not size:
         raise ParseFatalException(f"Not size set for {identifier}")
@@ -710,10 +750,12 @@ def create_proven_message(
     return proven_message
 
 
-def create_refinement(refinement: RefinementSpec, package: ID, types: Sequence[Type], filename: Path) -> Refinement:
+def create_refinement(
+    refinement: RefinementSpec, package: ID, types: Sequence[Type], filename: Path
+) -> Refinement:
     messages = {t.identifier: t for t in types if isinstance(t, Message)}
 
-    pdu = qualified_type_identifier(create_id(refinement.f_pdu), package)
+    pdu = qualified_type_identifier(create_id(refinement.f_pdu, filename), package)
     if pdu not in messages:
         fail(
             f'undefined type "{pdu}" in refinement',
@@ -722,7 +764,7 @@ def create_refinement(refinement: RefinementSpec, package: ID, types: Sequence[T
             node_location(refinement),
         )
 
-    sdu = qualified_type_identifier(create_id(refinement.f_sdu), package)
+    sdu = qualified_type_identifier(create_id(refinement.f_sdu, filename), package)
     if sdu not in messages:
         fail(
             f'undefined type "{sdu}" in refinement of "{pdu}"',
@@ -732,7 +774,7 @@ def create_refinement(refinement: RefinementSpec, package: ID, types: Sequence[T
         )
 
     if refinement.f_condition:
-        condition = create_expression(refinement.f_condition.f_condition, filename)
+        condition = create_expression(refinement.f_condition.f_data, filename)
     else:
         condition = expr.TRUE
 
@@ -742,7 +784,7 @@ def create_refinement(refinement: RefinementSpec, package: ID, types: Sequence[T
         Field(refinement.f_field.text),
         messages[sdu],
         condition,
-        node_location(refinement),
+        node_location(refinement, filename),
     )
 
 
