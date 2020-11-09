@@ -28,6 +28,7 @@ from librecordfluxdsllang import (
 
 import rflx.expression as rexpr
 from rflx import common, expression as expr
+from rflx.specification.const import RESERVED_WORDS
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
 from rflx.model import (
@@ -288,6 +289,13 @@ class Parser:
 
 def create_id(identifier: NullID, filename: Path) -> ID:
     if identifier.kind_name == "UnqualifiedID":
+        if identifier.text.lower() in RESERVED_WORDS:
+            fail(
+                f'reserved word "{identifier.text}" used as identifier',
+                Subsystem.PARSER,
+                Severity.ERROR,
+                node_location(identifier, filename),
+            )
         return ID(identifier.text, location=node_location(identifier, filename))
     elif identifier.kind_name == "ID":
         name = ID(identifier.f_name.text, location=node_location(identifier.f_name, filename))
