@@ -564,9 +564,17 @@ class MessageTypeDef(AbstractMessageTypeDef):
     checksums = Field(type=ChecksumAspect)
 
 
-class QualifiedVariable(Expr):
+class UnqualifiedVariable(Expr):
     """
-    Qualified variable
+    Unqualified variable
+    """
+
+    identifier = Field(type=UnqualifiedID)
+
+
+class Variable(Expr):
+    """
+    Variable
     """
 
     identifier = Field(type=ID)
@@ -613,7 +621,7 @@ class Attribute(Expr):
     """
 
     identifier = Field(type=UnqualifiedID)
-    kind = Field(type=AttrBase)
+    kind = Field(type=Attr)
 
 
 class ExpressionAttribute(Expr):
@@ -622,7 +630,7 @@ class ExpressionAttribute(Expr):
     """
 
     expression = Field(type=Expr)
-    kind = Field(type=AttrBase)
+    kind = Field(type=ExprAttr)
 
 
 class ContextItem(Expr):
