@@ -74,9 +74,9 @@ def test_operator_precedence() -> None:
     unit = ctx.get_from_buffer(
         "test.rflx",
         """
-            A / 8 >= 46 and A / 8 <= 1500;
+            A / 8 >= 46 and A / 8 <= 1500
         """,
-        rule=rflxdsl.GrammarRule.boolean_expression_rule,
+        rule=rflxdsl.GrammarRule.expression_rule,
     )
     assert to_dict(unit.root) == {
         "data": {

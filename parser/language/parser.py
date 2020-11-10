@@ -248,7 +248,7 @@ rflx_grammar.add_rules(
         ":",
         grammar.qualified_identifier,
         Opt("with", List(grammar.mathematical_aspect, sep=",")),
-        Opt(grammar.extended_if_condition),
+        Opt(grammar.if_condition),
         List(grammar.then, empty_valid=True),
         ";",
     ),
