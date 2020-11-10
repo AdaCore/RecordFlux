@@ -441,9 +441,9 @@ class EnumerationDef(TypeDef):
     """
 
 
-class NamedEnumerationDef(EnumerationDef):
+class PositionalEnumerationDef(EnumerationDef):
     """
-    Named enumeration
+    Positional enumeration
     """
 
     elements = Field(type=UnqualifiedID.list)
@@ -458,9 +458,9 @@ class ElementValueAssoc(RFLXNode):
     literal = Field(type=NumericLiteral)
 
 
-class PositionalEnumerationDef(EnumerationDef):
+class NamedEnumerationDef(EnumerationDef):
     """
-    Positional enumeration
+    Named enumeration
     """
 
     elements = Field(type=ElementValueAssoc.list)
