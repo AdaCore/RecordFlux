@@ -83,17 +83,25 @@ test_spark_optimized: $(test-files)
 test_examples:
 	python3 -m pytest -n$(shell nproc) -vv -m "root or not root" tests/integration/example_apps_test.py
 
-prove_spark: $(test-files)
+prove:
+	prove_tests
+	prove_apps
+
+prove_tests: $(test-files)
 	gnatprove -P$(project) $(GNATPROVE_ARGS)
 
-prove_spark_cvc4: $(test-files)
+prove_tests_cvc4: $(test-files)
 	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(GNATPROVE_ARGS)
+
+prove_apps:
+	$(MAKE) -C examples/apps/ping prove
 
 install_gnatstudio:
 	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
 
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
+	$(MAKE) -C examples/apps/ping clean
 
 remove-prefix = $(VERBOSE) \
 	mkdir -p $(dir $@) && \
