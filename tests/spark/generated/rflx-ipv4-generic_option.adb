@@ -13,13 +13,13 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, Buffer, (F_Copied => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First, Buffer, (F_Copied => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    function Initialized (Ctx : Context) return Boolean is
      (Valid_Next (Ctx, F_Copied)
-      and then Available_Space (Ctx, F_Copied) = Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1
+      and then Available_Space (Ctx, F_Copied) = Ctx.Last - Ctx.First + 1
       and then Invalid (Ctx, F_Copied)
       and then Invalid (Ctx, F_Option_Class)
       and then Invalid (Ctx, F_Option_Number)
@@ -36,18 +36,7 @@ is
      (Ctx.Buffer /= null);
 
    function Message_Last (Ctx : Context) return Types.Bit_Index is
-     ((if
-          Structural_Valid (Ctx.Cursors (F_Option_Data))
-       then
-          Ctx.Cursors (F_Option_Data).Last
-       elsif
-          Structural_Valid (Ctx.Cursors (F_Option_Number))
-          and then (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
-                    and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)
-       then
-          Ctx.Cursors (F_Option_Number).Last
-       else
-          Types.Unreachable_Bit_Length));
+     (Ctx.Message_Last);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
@@ -298,7 +287,7 @@ is
       and then Path_Condition (Ctx, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
-     (Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1);
+     (Ctx.Last - Field_First (Ctx, Fld) + 1);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -466,6 +455,7 @@ is
               Valid_Value (Value)
               and Field_Condition (Ctx, Value)
             then
+               Ctx.Message_Last := Field_Last (Ctx, Fld);
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
@@ -650,7 +640,7 @@ is
        and Lst = Field_Last (Ctx, Val.Fld)
        and Fst >= Ctx.First
        and Fst <= Lst + 1
-       and Types.Byte_Index (Lst) <= Ctx.Buffer_Last
+       and Lst <= Ctx.Last
        and (for all F in Field'Range =>
                (if
                    Structural_Valid (Ctx.Cursors (F))
@@ -659,6 +649,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Ctx.Cursors = Ctx.Cursors'Old
    is
       First : constant Types.Bit_Index := Field_First (Ctx, Val.Fld);
@@ -698,7 +689,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Copied);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Copied) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Copied).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Copied)) := (State => S_Invalid, Predecessor => F_Copied);
    end Set_Copied;
@@ -709,7 +700,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Class);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Option_Class) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Option_Class).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Option_Class)) := (State => S_Invalid, Predecessor => F_Option_Class);
    end Set_Option_Class;
@@ -720,7 +711,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Number);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Option_Number) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Option_Number).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Option_Number)) := (State => S_Invalid, Predecessor => F_Option_Number);
    end Set_Option_Number;
@@ -731,7 +722,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Length);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Option_Length) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Option_Length).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Option_Length)) := (State => S_Invalid, Predecessor => F_Option_Length);
    end Set_Option_Length;
@@ -741,7 +732,7 @@ is
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Data);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Option_Data) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Option_Data), Predecessor => Ctx.Cursors (F_Option_Data).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Option_Data)) := (State => S_Invalid, Predecessor => F_Option_Data);
    end Set_Option_Data_Empty;
@@ -763,7 +754,7 @@ is
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Data);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       pragma Assert ((if
                          Structural_Valid (Ctx.Cursors (F_Copied))
                       then

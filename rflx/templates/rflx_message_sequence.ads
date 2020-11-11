@@ -16,6 +16,8 @@ is
 
    pragma Annotate (GNATprove, Terminating, RFLX_Message_Sequence);
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    use type Types.Bytes_Ptr, Types.Index, Types.Bit_Index;
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
@@ -105,6 +107,7 @@ is
      Post =>
        (Has_Buffer (Ctx)
         and not Element_Has_Buffer (Element_Ctx)
+        and Index (Ctx) = (if Element_Valid_Message (Element_Ctx)'Old then Element_Last (Element_Ctx)'Old + 1 else Index (Ctx)'Old)
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
         and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
         and Ctx.First = Ctx.First'Old

@@ -92,11 +92,13 @@ package body RFLX.Enumeration.Tests is
 
       Enumeration.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Enumeration.Message.Message_Last (Context))
               - RFLX_Types.Byte_Index (Context.First) + 1),
               Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+      Assert (Buffer.all
+                (RFLX_Types.Byte_Index (Context.First)
+                 .. RFLX_Types.Byte_Index (Enumeration.Message.Message_Last (Context))),
               Expected.all,
               "Invalid binary representation");
 

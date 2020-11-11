@@ -12,6 +12,7 @@ with RFLX.Arrays.AV_Enumeration_Vector;
 with RFLX.Arrays.Messages_Message;
 with RFLX.Arrays.Inner_Message;
 with RFLX.Arrays.Inner_Messages;
+with RFLX.Arrays.Array_Size_Defined_By_Message_Size;
 
 package body RFLX.Arrays.Tests is
 
@@ -1061,6 +1062,108 @@ package body RFLX.Arrays.Tests is
       Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Sequence_Context.Last");
    end Test_Generating_Arrays_Messages_Message;
 
+   procedure Test_Parsing_Array_Size_Defined_By_Message_Size (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 1, 0, 2);
+      Context          : Arrays.Array_Size_Defined_By_Message_Size.Context;
+      Sequence_Context : Arrays.Modular_Vector.Context;
+      Header           : Arrays.Enumeration;
+      Element          : Arrays.Modular_Integer;
+      I                : Natural := 1;
+      package Message renames Arrays.Array_Size_Defined_By_Message_Size;
+   begin
+      Message.Initialize (Context, Buffer);
+
+      Message.Verify_Message (Context);
+
+      if Message.Valid (Context, Message.F_Header) then
+         Header := Message.Get_Header (Context);
+
+         Assert (Header'Image, Arrays.ONE'Image, "Invalid value of Header");
+
+         if Message.Present (Context, Message.F_Vector) then
+            Message.Switch_To_Vector (Context, Sequence_Context);
+
+            while I <= 10 and then Arrays.Modular_Vector.Valid_Element (Sequence_Context) loop
+               pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
+               pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
+               pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
+               pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
+               pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+               Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
+
+               Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
+
+               Arrays.Modular_Vector.Next (Sequence_Context);
+               I := I + 1;
+            end loop;
+
+            Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+            Assert (Arrays.Modular_Vector.Valid (Sequence_Context), "Invalid Vector after parsing");
+            Assert (not Message.Valid (Context, Message.F_Vector),
+                    "Valid Vector before context update");
+
+            Message.Update_Vector (Context, Sequence_Context);
+
+            Assert (Message.Valid (Context, Message.F_Vector),
+                    "Invalid Vector after context update");
+         else
+            Assert (False, "Invalid Vector or Buffer");
+         end if;
+      end if;
+
+      Assert (Message.Valid_Message (Context), "Invalid Message");
+
+      if Message.Has_Buffer (Context) then
+         Message.Take_Buffer (Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
+   end Test_Parsing_Array_Size_Defined_By_Message_Size;
+
+   procedure Test_Generating_Array_Size_Defined_By_Message_Size (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0);
+      Context          : Arrays.Array_Size_Defined_By_Message_Size.Context;
+      Sequence_Context : Arrays.Modular_Vector.Context;
+      package Message renames Arrays.Array_Size_Defined_By_Message_Size;
+   begin
+      Message.Initialize (Context, Buffer);
+
+      Message.Set_Header (Context, Arrays.ONE);
+      Message.Switch_To_Vector (Context, Sequence_Context);
+      Arrays.Modular_Vector.Append_Element (Sequence_Context, 1);
+      Arrays.Modular_Vector.Append_Element (Sequence_Context, 2);
+
+      Assert (not Arrays.Modular_Vector.Valid_Element (Sequence_Context),
+              "Invalid acceptance of further element");
+      Assert (not Message.Valid (Context, Message.F_Vector),
+              "Valid Modular_Vector before context update");
+      Assert (not Message.Valid (Context, Message.F_Vector),
+              "Valid Modular_Vector before context update");
+
+      Message.Update_Vector (Context, Sequence_Context);
+
+      Assert (Message.Valid (Context, Message.F_Vector),
+              "Invalid Modular_Vector after context update");
+      Assert (Message.Valid_Message (Context), "Invalid Message");
+
+      if Message.Has_Buffer (Context) then
+         Message.Take_Buffer (Context, Buffer);
+      end if;
+      Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Context.Last");
+      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
+   end Test_Generating_Array_Size_Defined_By_Message_Size;
+
    overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
@@ -1079,6 +1182,10 @@ package body RFLX.Arrays.Tests is
       Register_Routine (T, Test_Parsing_Arrays_Messages_Message_Loop'Access, "Parsing Messages Message Loop");
       Register_Routine (T, Test_Generating_Arrays_Message'Access, "Generating Message");
       Register_Routine (T, Test_Generating_Arrays_Messages_Message'Access, "Generating Messages Message");
+      Register_Routine (T, Test_Parsing_Array_Size_Defined_By_Message_Size'Access,
+                        "Parsing message with array size defined by message size");
+      Register_Routine (T, Test_Generating_Array_Size_Defined_By_Message_Size'Access,
+                        "Generating message with array size defined by message size");
    end Register_Tests;
 
 end RFLX.Arrays.Tests;

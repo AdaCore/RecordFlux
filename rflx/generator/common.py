@@ -459,6 +459,8 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
             ]
         ),
         public_context_predicate(),
+        ada.LessEqual(ada.Variable("First"), ada.Variable("Message_Last")),
+        ada.LessEqual(ada.Variable("Message_Last"), ada.Variable("Last")),
         ada.ForAllIn(
             "F",
             ada.ValueRange(ada.First("Field"), ada.Last("Field")),
@@ -480,7 +482,7 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                                 ada.Selected(
                                     ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "Last"
                                 ),
-                                ada.Variable("Last"),
+                                ada.Variable("Message_Last"),
                             ),
                             ada.LessEqual(
                                 ada.Selected(
@@ -576,17 +578,7 @@ def initialize_field_statements(
             "Reset_Dependent_Fields",
             [ada.Variable("Ctx"), ada.Variable(field.affixed_name)],
         ),
-        ada.Assignment(
-            "Ctx",
-            ada.Aggregate(
-                ada.Variable("Ctx.Buffer_First"),
-                ada.Variable("Ctx.Buffer_Last"),
-                ada.Variable("Ctx.First"),
-                ada.Variable("Last"),
-                ada.Variable("Ctx.Buffer"),
-                ada.Variable("Ctx.Cursors"),
-            ),
-        ),
+        ada.Assignment("Ctx.Message_Last", ada.Variable("Last")),
         # WORKAROUND:
         # Limitation of GNAT Community 2019 / SPARK Pro 20.0
         # Provability of predicate is increased by adding part of

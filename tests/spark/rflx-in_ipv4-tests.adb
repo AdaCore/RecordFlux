@@ -2,7 +2,7 @@ with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
 with RFLX.RFLX_Types;
 
 with RFLX.UDP.Datagram;
@@ -133,7 +133,7 @@ package body RFLX.In_IPv4.Tests is
          Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
-                                      .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
+                                      .. RFLX_Builtin_Types.Index'First + 59 => 0);
       Ethernet_Frame_Context : Ethernet.Frame.Context;
       IPv4_Packet_Context    : IPv4.Packet.Context;
       UDP_Datagram_Context   : UDP.Datagram.Context;
@@ -143,7 +143,8 @@ package body RFLX.In_IPv4.Tests is
       Ethernet.Frame.Set_Source (Ethernet_Frame_Context, 16#000000000000#);
       Ethernet.Frame.Set_Type_Length_TPID (Ethernet_Frame_Context, 16#0800#);
       Ethernet.Frame.Set_Type_Length (Ethernet_Frame_Context, 16#0800#);
-      Ethernet.Frame.Initialize_Bounded_Payload (Ethernet_Frame_Context, 368);
+      pragma Assert (Ethernet.Frame.Field_Size (Ethernet_Frame_Context, Ethernet.Frame.F_Payload) = 368);
+      Ethernet.Frame.Initialize_Payload (Ethernet_Frame_Context);
 
       Assert (Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context), "Structural invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Ethernet_Frame_Context), "Valid frame");
@@ -184,8 +185,10 @@ package body RFLX.In_IPv4.Tests is
 
             UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
 
-            Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (UDP_Datagram_Context.Last)
-                    - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
+            Assert (RFLX_Builtin_Types.Length'Image
+                    (RFLX_Types.Byte_Index (UDP.Datagram.Message_Last (UDP_Datagram_Context))
+                       - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1),
+                    Expected'Length'Img,
                     "Invalid buffer length");
             Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First)
                     .. RFLX_Types.Byte_Index (Ethernet_Frame_Context.Last)), Expected.all,

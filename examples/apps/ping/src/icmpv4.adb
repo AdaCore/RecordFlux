@@ -57,6 +57,7 @@ is
       Success     : Boolean;
       Ignore_Last : RFLX.RFLX_Builtin_Types.Index;
       Buffer      : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(1 .. 1024 => 0);
+      Last        : RFLX.RFLX_Builtin_Types.Index;
    begin
       Socket.Setup;
       if
@@ -79,8 +80,8 @@ is
          pragma Loop_Invariant (Buffer /= null);
          pragma Loop_Invariant (Buffer'First = 1);
          pragma Loop_Invariant (Buffer'Length = 1024);
-         ICMPv4.Generate (Buffer, Address);
-         Socket.Send (Buffer.all (Buffer'First .. Buffer'First + 35), Address, Success);
+         ICMPv4.Generate (Buffer, Address, Last);
+         Socket.Send (Buffer.all (Buffer'First .. Last), Address, Success);
          if not Success then
             Ada.Text_IO.Put_Line ("Failed to send packet");
             Free_Bytes_Ptr (Buffer);
@@ -168,12 +169,14 @@ is
    --------------
 
    procedure Generate (Buf  : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr;
-                       Addr :        RFLX.IPv4.Address) is
+                       Addr :        RFLX.IPv4.Address;
+                       Last :    out RFLX.RFLX_Builtin_Types.Index)
+   is
       use type RFLX.ICMP.Sequence_Number;
       use type RFLX.RFLX_Builtin_Types.Bit_Length;
       IP_Context   : RFLX.IPv4.Packet.Context;
       ICMP_Context : RFLX.ICMP.Message.Context;
-      Data         : constant RFLX.RFLX_Builtin_Types.Bytes (1 .. 8) := (others => 65);
+      Data         : constant RFLX.RFLX_Builtin_Types.Bytes (1 .. 56) := (others => 65);
       function Valid_Length (L : RFLX.RFLX_Builtin_Types.Length) return Boolean is
          (L = Data'Length);
       procedure Process_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes) with
@@ -183,7 +186,7 @@ is
       begin
          Buffer := Data;
       end Process_Data;
-      procedure Set_Data is new RFLX.ICMP.Message.Set_Bounded_Data (Process_Data, Valid_Length);
+      procedure Set_Data is new RFLX.ICMP.Message.Set_Data (Process_Data, Valid_Length);
    begin
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
@@ -191,7 +194,7 @@ is
       RFLX.IPv4.Packet.Set_IHL (IP_Context, 5);
       RFLX.IPv4.Packet.Set_DSCP (IP_Context, 0);
       RFLX.IPv4.Packet.Set_ECN (IP_Context, 0);
-      RFLX.IPv4.Packet.Set_Total_Length (IP_Context, 24);
+      RFLX.IPv4.Packet.Set_Total_Length (IP_Context, 84);
       RFLX.IPv4.Packet.Set_Identification (IP_Context, 1);
       RFLX.IPv4.Packet.Set_Flag_R (IP_Context, False);
       RFLX.IPv4.Packet.Set_Flag_DF (IP_Context, False);
@@ -214,12 +217,13 @@ is
                                              0, 0, Sequence, Data));
          RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
          RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
-         Set_Data (ICMP_Context, 64);
+         Set_Data (ICMP_Context);
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          Sequence := Sequence + 1;
       else
          RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
       end if;
+      Last := RFLX.RFLX_Types.Byte_Index (RFLX.IPv4.Packet.Message_Last (IP_Context));
       pragma Warnings (On, "unused assignment to ""*_Context""");
    end Generate;
 
