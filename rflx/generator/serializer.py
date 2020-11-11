@@ -35,7 +35,6 @@ from rflx.ada import (
     Number,
     ObjectDeclaration,
     Old,
-    Or,
     OutParameter,
     Parameter,
     Postcondition,
@@ -184,10 +183,7 @@ class SerializerGenerator:
                                 ),
                                 GreaterEqual(Variable("Fst"), Variable("Ctx.First")),
                                 LessEqual(Variable("Fst"), Add(Variable("Lst"), Number(1))),
-                                LessEqual(
-                                    Call(const.TYPES_BYTE_INDEX, [Variable("Lst")]),
-                                    Variable("Ctx.Buffer_Last"),
-                                ),
+                                LessEqual(Variable("Lst"), Variable("Ctx.Last")),
                                 ForAllIn(
                                     "F",
                                     Range("Field"),
@@ -217,12 +213,10 @@ class SerializerGenerator:
                                         ]
                                     ),
                                 ),
+                                *const.CONTEXT_INVARIANT,
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
-                                        Variable("Ctx.Buffer_First"),
-                                        Variable("Ctx.Buffer_Last"),
-                                        Variable("Ctx.First"),
                                         Variable("Ctx.Cursors"),
                                     ]
                                 ],
@@ -351,17 +345,7 @@ class SerializerGenerator:
                                 Variable("Last"),
                             ],
                         ),
-                        Assignment(
-                            "Ctx",
-                            Aggregate(
-                                Variable("Ctx.Buffer_First"),
-                                Variable("Ctx.Buffer_Last"),
-                                Variable("Ctx.First"),
-                                Variable("Last"),
-                                Variable("Ctx.Buffer"),
-                                Variable("Ctx.Cursors"),
-                            ),
-                        ),
+                        Assignment(Variable("Ctx.Message_Last"), Variable("Last")),
                         Assignment(
                             Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
                             NamedAggregate(
@@ -415,7 +399,7 @@ class SerializerGenerator:
                             Precondition(
                                 AndThen(
                                     *self.setter_preconditions(f),
-                                    *self.unbounded_composite_setter_preconditions(message, f),
+                                    *self.composite_setter_preconditions(message, f),
                                     Equal(
                                         Call(
                                             "Field_Size",
@@ -463,17 +447,7 @@ class SerializerGenerator:
                             "Reset_Dependent_Fields",
                             [Variable("Ctx"), Variable(f.affixed_name)],
                         ),
-                        Assignment(
-                            "Ctx",
-                            Aggregate(
-                                Variable("Ctx.Buffer_First"),
-                                Variable("Ctx.Buffer_Last"),
-                                Variable("Ctx.First"),
-                                Variable("Last"),
-                                Variable("Ctx.Buffer"),
-                                Variable("Ctx.Cursors"),
-                            ),
-                        ),
+                        Assignment(Variable("Ctx.Message_Last"), Variable("Last")),
                         Assignment(
                             Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
                             NamedAggregate(
@@ -520,12 +494,6 @@ class SerializerGenerator:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(f"Set_{field.name}", [InOutParameter(["Ctx"], "Context")])
 
-        def specification_bounded(field: Field) -> ProcedureSpecification:
-            return ProcedureSpecification(
-                f"Set_Bounded_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Size"], const.TYPES_BIT_LENGTH)],
-            )
-
         def formal_parameters(field: Field) -> Sequence[FormalSubprogramDeclaration]:
             return [
                 FormalSubprogramDeclaration(
@@ -551,7 +519,7 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f),
-                                *self.unbounded_composite_setter_preconditions(message, f),
+                                *self.composite_setter_preconditions(message, f),
                                 Call(
                                     "Valid_Length",
                                     [
@@ -583,37 +551,7 @@ class SerializerGenerator:
                     formal_parameters(f),
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and unbounded_setter_required(message, f)
-            ]
-            + [
-                SubprogramDeclaration(
-                    specification_bounded(f),
-                    [
-                        Precondition(
-                            AndThen(
-                                *self.setter_preconditions(f),
-                                *self.bounded_composite_setter_preconditions(message, f),
-                                Call(
-                                    "Valid_Length",
-                                    [
-                                        Call(
-                                            const.TYPES_LENGTH,
-                                            [Div(Variable("Size"), Size(const.TYPES_BYTE))],
-                                        )
-                                    ],
-                                ),
-                            )
-                        ),
-                        Postcondition(
-                            And(
-                                *self.composite_setter_postconditions(message, f),
-                            )
-                        ),
-                    ],
-                    formal_parameters(f),
-                )
-                for f, t in message.types.items()
-                if isinstance(t, Opaque) and bounded_setter_required(message, f)
+                if isinstance(t, Opaque) and setter_required(message, f)
             ],
             [
                 SubprogramBody(
@@ -644,54 +582,7 @@ class SerializerGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and unbounded_setter_required(message, f)
-            ]
-            + [
-                SubprogramBody(
-                    specification_bounded(f),
-                    [
-                        ObjectDeclaration(
-                            ["First"],
-                            const.TYPES_BIT_INDEX,
-                            Call(
-                                "Field_First",
-                                [Variable("Ctx"), Variable(f.affixed_name)],
-                            ),
-                            True,
-                        ),
-                        ObjectDeclaration(
-                            ["Last"],
-                            const.TYPES_BIT_INDEX,
-                            Add(Variable("First"), Variable("Size"), -Number(1)),
-                            True,
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_First", const.TYPES_INDEX),
-                            Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
-                            Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
-                        ),
-                    ],
-                    [
-                        CallStatement(
-                            f"Initialize_Bounded_{f.name}", [Variable("Ctx"), Variable("Size")]
-                        ),
-                        CallStatement(
-                            f"Process_{f.name}",
-                            [
-                                Slice(
-                                    Selected(Variable("Ctx.Buffer"), "all"),
-                                    Variable("Buffer_First"),
-                                    Variable("Buffer_Last"),
-                                ),
-                            ],
-                        ),
-                    ],
-                )
-                for f, t in message.types.items()
-                if isinstance(t, Opaque) and bounded_setter_required(message, f)
+                if isinstance(t, Opaque) and setter_required(message, f)
             ],
         )
 
@@ -699,12 +590,6 @@ class SerializerGenerator:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Initialize_{field.name}", [InOutParameter(["Ctx"], "Context")]
-            )
-
-        def specification_bounded(field: Field) -> ProcedureSpecification:
-            return ProcedureSpecification(
-                f"Initialize_Bounded_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Size"], const.TYPES_BIT_LENGTH)],
             )
 
         return UnitPart(
@@ -715,7 +600,7 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f),
-                                *self.unbounded_composite_setter_preconditions(message, f),
+                                *self.composite_setter_preconditions(message, f),
                             )
                         ),
                         Postcondition(
@@ -726,23 +611,7 @@ class SerializerGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and unbounded_setter_required(message, f)
-            ]
-            + [
-                SubprogramDeclaration(
-                    specification_bounded(f),
-                    [
-                        Precondition(
-                            AndThen(
-                                *self.setter_preconditions(f),
-                                *self.bounded_composite_setter_preconditions(message, f),
-                            )
-                        ),
-                        Postcondition(And(*self.composite_setter_postconditions(message, f))),
-                    ],
-                )
-                for f, t in message.types.items()
-                if isinstance(t, Opaque) and bounded_setter_required(message, f)
+                if isinstance(t, Opaque) and setter_required(message, f)
             ],
             [
                 SubprogramBody(
@@ -751,32 +620,7 @@ class SerializerGenerator:
                     common.initialize_field_statements(message, f, self.prefix),
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and unbounded_setter_required(message, f)
-            ]
-            + [
-                SubprogramBody(
-                    specification_bounded(f),
-                    [
-                        ObjectDeclaration(
-                            ["First"],
-                            const.TYPES_BIT_INDEX,
-                            Call(
-                                "Field_First",
-                                [Variable("Ctx"), Variable(f.affixed_name)],
-                            ),
-                            True,
-                        ),
-                        ObjectDeclaration(
-                            ["Last"],
-                            const.TYPES_BIT_INDEX,
-                            Add(Variable("First"), Variable("Size"), -Number(1)),
-                            True,
-                        ),
-                    ],
-                    common.initialize_field_statements(message, f, self.prefix),
-                )
-                for f, t in message.types.items()
-                if isinstance(t, Opaque) and bounded_setter_required(message, f)
+                if isinstance(t, Opaque) and setter_required(message, f)
             ],
         )
 
@@ -795,18 +639,20 @@ class SerializerGenerator:
     @staticmethod
     def setter_postconditions(message: Message, field: Field) -> Sequence[Expr]:
         return [
+            Equal(
+                Call("Message_Last", [Variable("Ctx")]),
+                Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]),
+            ),
             *[
                 Call("Invalid", [Variable("Ctx"), Variable(p.affixed_name)])
                 for p in message.successors(field)
                 if p != FINAL
             ],
             *common.valid_path_to_next_field_condition(message, field),
+            *const.CONTEXT_INVARIANT,
             *[
                 Equal(e, Old(e))
                 for e in [
-                    Variable("Ctx.Buffer_First"),
-                    Variable("Ctx.Buffer_Last"),
-                    Variable("Ctx.First"),
                     Call(
                         "Predecessor",
                         [Variable("Ctx"), Variable(field.affixed_name)],
@@ -832,7 +678,7 @@ class SerializerGenerator:
         ]
 
     @staticmethod
-    def unbounded_composite_setter_preconditions(message: Message, field: Field) -> Sequence[Expr]:
+    def composite_setter_preconditions(message: Message, field: Field) -> Sequence[Expr]:
         return [
             Call(
                 "Field_Condition",
@@ -874,87 +720,10 @@ class SerializerGenerator:
             ),
         ]
 
-    @staticmethod
-    def bounded_composite_setter_preconditions(message: Message, field: Field) -> Sequence[Expr]:
-        return [
-            Call(
-                "Field_Condition",
-                [
-                    Variable("Ctx"),
-                    NamedAggregate(("Fld", Variable(field.affixed_name))),
-                ]
-                + ([Variable("Size")] if common.size_dependent_condition(message) else []),
-            ),
-            GreaterEqual(
-                Call(
-                    "Available_Space",
-                    [Variable("Ctx"), Variable(field.affixed_name)],
-                ),
-                Variable("Size"),
-            ),
-            LessEqual(
-                Add(
-                    Call(
-                        "Field_First",
-                        [Variable("Ctx"), Variable(field.affixed_name)],
-                    ),
-                    Variable("Size"),
-                ),
-                Div(Last(const.TYPES_BIT_INDEX), Number(2)),
-            ),
-            Or(
-                *[
-                    And(
-                        *[
-                            Call(
-                                "Valid",
-                                [Variable("Ctx"), Variable(field.affixed_name)],
-                            )
-                            for field in message.fields
-                            if expr.Variable(field.name) in l.condition.variables()
-                        ],
-                        l.condition.substituted(
-                            mapping={
-                                expr.Variable(field.name): expr.Call(
-                                    f"Get_{field.name}", [expr.Variable("Ctx")]
-                                )
-                                for field in message.fields
-                                if expr.Variable(field.name) in l.condition.variables()
-                            }
-                        ).ada_expr(),
-                    )
-                    for l in message.incoming(field)
-                    if expr.Last("Message") in l.size
-                ]
-            ),
-            Equal(
-                Mod(
-                    Call(
-                        "Field_First",
-                        [Variable("Ctx"), Variable(field.affixed_name)],
-                    ),
-                    Size(const.TYPES_BYTE),
-                ),
-                Number(1),
-            ),
-            Equal(
-                Mod(Variable("Size"), Size(const.TYPES_BYTE)),
-                Number(0),
-            ),
-        ]
 
-
-def unbounded_setter_required(message: Message, field: Field) -> bool:
+def setter_required(message: Message, field: Field) -> bool:
     return any(
         True
         for l in message.incoming(field)
         if expr.Size("Message") not in l.size and expr.Last("Message") not in l.size
-    )
-
-
-def bounded_setter_required(message: Message, field: Field) -> bool:
-    return any(
-        True
-        for l in message.incoming(field)
-        if expr.Size("Message") in l.size or expr.Last("Message") in l.size
     )

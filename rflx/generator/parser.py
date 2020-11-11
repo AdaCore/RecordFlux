@@ -162,9 +162,7 @@ class ParserGenerator:
             ],
         )
 
-    def create_verify_procedure(
-        self, message: Message, context_invariant: Sequence[Expr]
-    ) -> UnitPart:
+    def create_verify_procedure(self, message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             "Verify", [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
         )
@@ -189,6 +187,9 @@ class ParserGenerator:
         )
 
         set_cursors_statements = [
+            Assignment(
+                Variable("Ctx.Message_Last"), Call("Field_Last", [Variable("Ctx"), Variable("Fld")])
+            ),
             IfStatement(
                 [
                     (
@@ -279,7 +280,7 @@ class ParserGenerator:
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Old(Call("Has_Buffer", [Variable("Ctx")])),
                                 ),
-                                *context_invariant,
+                                *const.CONTEXT_INVARIANT,
                             )
                         ),
                     ],
@@ -376,9 +377,7 @@ class ParserGenerator:
         )
 
     @staticmethod
-    def create_verify_message_procedure(
-        message: Message, context_invariant: Sequence[Expr]
-    ) -> UnitPart:
+    def create_verify_message_procedure(message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             "Verify_Message", [InOutParameter(["Ctx"], "Context")]
         )
@@ -394,7 +393,7 @@ class ParserGenerator:
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Old(Call("Has_Buffer", [Variable("Ctx")])),
                                 ),
-                                *context_invariant,
+                                *const.CONTEXT_INVARIANT,
                             )
                         ),
                     ],

@@ -13,13 +13,13 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, Buffer, (F_Destination => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First, Buffer, (F_Destination => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    function Initialized (Ctx : Context) return Boolean is
      (Valid_Next (Ctx, F_Destination)
-      and then Available_Space (Ctx, F_Destination) = Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1
+      and then Available_Space (Ctx, F_Destination) = Ctx.Last - Ctx.First + 1
       and then Invalid (Ctx, F_Destination)
       and then Invalid (Ctx, F_Source)
       and then Invalid (Ctx, F_Type_Length_TPID)
@@ -38,14 +38,7 @@ is
      (Ctx.Buffer /= null);
 
    function Message_Last (Ctx : Context) return Types.Bit_Index is
-     ((if
-          Structural_Valid (Ctx.Cursors (F_Payload))
-          and then (Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                    and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500)
-       then
-          Ctx.Cursors (F_Payload).Last
-       else
-          Types.Unreachable_Bit_Length));
+     (Ctx.Message_Last);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
@@ -341,7 +334,7 @@ is
       and then Path_Condition (Ctx, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
-     (Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1);
+     (Ctx.Last - Field_First (Ctx, Fld) + 1);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -558,6 +551,7 @@ is
               Valid_Value (Value)
               and Field_Condition (Ctx, Value, Field_Size (Ctx, Fld))
             then
+               Ctx.Message_Last := Field_Last (Ctx, Fld);
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
@@ -795,7 +789,7 @@ is
        and Lst = Field_Last (Ctx, Val.Fld)
        and Fst >= Ctx.First
        and Fst <= Lst + 1
-       and Types.Byte_Index (Lst) <= Ctx.Buffer_Last
+       and Lst <= Ctx.Last
        and (for all F in Field'Range =>
                (if
                    Structural_Valid (Ctx.Cursors (F))
@@ -804,6 +798,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Ctx.Cursors = Ctx.Cursors'Old
    is
       First : constant Types.Bit_Index := Field_First (Ctx, Val.Fld);
@@ -847,7 +842,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Destination);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Destination) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Destination).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Destination)) := (State => S_Invalid, Predecessor => F_Destination);
    end Set_Destination;
@@ -858,7 +853,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Source);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Source) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Source).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Source)) := (State => S_Invalid, Predecessor => F_Source);
    end Set_Source;
@@ -869,7 +864,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Type_Length_TPID);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Type_Length_TPID) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Type_Length_TPID).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Type_Length_TPID)) := (State => S_Invalid, Predecessor => F_Type_Length_TPID);
    end Set_Type_Length_TPID;
@@ -880,7 +875,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_TPID);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_TPID) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_TPID).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_TPID)) := (State => S_Invalid, Predecessor => F_TPID);
    end Set_TPID;
@@ -891,7 +886,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_TCI);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_TCI) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_TCI).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_TCI)) := (State => S_Invalid, Predecessor => F_TCI);
    end Set_TCI;
@@ -902,7 +897,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Type_Length);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Type_Length) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Type_Length).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Type_Length)) := (State => S_Invalid, Predecessor => F_Type_Length);
    end Set_Type_Length;
@@ -919,24 +914,12 @@ is
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Payload;
 
-   procedure Set_Bounded_Payload (Ctx : in out Context; Size : Types.Bit_Length) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant Types.Bit_Index := First + Size - 1;
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-   begin
-      Initialize_Bounded_Payload (Ctx, Size);
-      Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Set_Bounded_Payload;
-
    procedure Initialize_Payload (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Payload);
    begin
       Reset_Dependent_Fields (Ctx, F_Payload);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       pragma Assert ((if
                          Structural_Valid (Ctx.Cursors (F_Destination))
                       then
@@ -1012,87 +995,5 @@ is
       Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload;
-
-   procedure Initialize_Bounded_Payload (Ctx : in out Context; Size : Types.Bit_Length) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant Types.Bit_Index := First + Size - 1;
-   begin
-      Reset_Dependent_Fields (Ctx, F_Payload);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
-      pragma Assert ((if
-                         Structural_Valid (Ctx.Cursors (F_Destination))
-                      then
-                         Ctx.Cursors (F_Destination).Last - Ctx.Cursors (F_Destination).First + 1 = RFLX.Ethernet.Address'Size
-                         and then Ctx.Cursors (F_Destination).Predecessor = F_Initial
-                         and then Ctx.Cursors (F_Destination).First = Ctx.First
-                         and then (if
-                                      Structural_Valid (Ctx.Cursors (F_Source))
-                                   then
-                                      Ctx.Cursors (F_Source).Last - Ctx.Cursors (F_Source).First + 1 = RFLX.Ethernet.Address'Size
-                                      and then Ctx.Cursors (F_Source).Predecessor = F_Destination
-                                      and then Ctx.Cursors (F_Source).First = Ctx.Cursors (F_Destination).Last + 1
-                                      and then (if
-                                                   Structural_Valid (Ctx.Cursors (F_Type_Length_TPID))
-                                                then
-                                                   Ctx.Cursors (F_Type_Length_TPID).Last - Ctx.Cursors (F_Type_Length_TPID).First + 1 = RFLX.Ethernet.Type_Length_Base'Size
-                                                   and then Ctx.Cursors (F_Type_Length_TPID).Predecessor = F_Source
-                                                   and then Ctx.Cursors (F_Type_Length_TPID).First = Ctx.Cursors (F_Source).Last + 1
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_TPID))
-                                                                and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#
-                                                             then
-                                                                Ctx.Cursors (F_TPID).Last - Ctx.Cursors (F_TPID).First + 1 = RFLX.Ethernet.TPID_Base'Size
-                                                                and then Ctx.Cursors (F_TPID).Predecessor = F_Type_Length_TPID
-                                                                and then Ctx.Cursors (F_TPID).First = Ctx.Cursors (F_Type_Length_TPID).First
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_TCI))
-                                                                          then
-                                                                             Ctx.Cursors (F_TCI).Last - Ctx.Cursors (F_TCI).First + 1 = RFLX.Ethernet.TCI'Size
-                                                                             and then Ctx.Cursors (F_TCI).Predecessor = F_TPID
-                                                                             and then Ctx.Cursors (F_TCI).First = Ctx.Cursors (F_TPID).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Type_Length))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Type_Length).Last - Ctx.Cursors (F_Type_Length).First + 1 = RFLX.Ethernet.Type_Length_Base'Size
-                                                                                          and then Ctx.Cursors (F_Type_Length).Predecessor = F_TCI
-                                                                                          and then Ctx.Cursors (F_Type_Length).First = Ctx.Cursors (F_TCI).Last + 1
-                                                                                          and then (if
-                                                                                                       Structural_Valid (Ctx.Cursors (F_Payload))
-                                                                                                       and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                                                                                                    then
-                                                                                                       Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Type_Length).Value.Type_Length_Value) * 8
-                                                                                                       and then Ctx.Cursors (F_Payload).Predecessor = F_Type_Length
-                                                                                                       and then Ctx.Cursors (F_Payload).First = Ctx.Cursors (F_Type_Length).Last + 1)
-                                                                                          and then (if
-                                                                                                       Structural_Valid (Ctx.Cursors (F_Payload))
-                                                                                                       and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                                                                                                    then
-                                                                                                       Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = Ctx.Last - Ctx.Cursors (F_Type_Length).Last
-                                                                                                       and then Ctx.Cursors (F_Payload).Predecessor = F_Type_Length
-                                                                                                       and then Ctx.Cursors (F_Payload).First = Ctx.Cursors (F_Type_Length).Last + 1))))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Type_Length))
-                                                                and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
-                                                             then
-                                                                Ctx.Cursors (F_Type_Length).Last - Ctx.Cursors (F_Type_Length).First + 1 = RFLX.Ethernet.Type_Length_Base'Size
-                                                                and then Ctx.Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
-                                                                and then Ctx.Cursors (F_Type_Length).First = Ctx.Cursors (F_Type_Length_TPID).First
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Payload))
-                                                                             and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                                                                          then
-                                                                             Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Type_Length).Value.Type_Length_Value) * 8
-                                                                             and then Ctx.Cursors (F_Payload).Predecessor = F_Type_Length
-                                                                             and then Ctx.Cursors (F_Payload).First = Ctx.Cursors (F_Type_Length).Last + 1)
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Payload))
-                                                                             and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                                                                          then
-                                                                             Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = Ctx.Last - Ctx.Cursors (F_Type_Length).Last
-                                                                             and then Ctx.Cursors (F_Payload).Predecessor = F_Type_Length
-                                                                             and then Ctx.Cursors (F_Payload).First = Ctx.Cursors (F_Type_Length).Last + 1))))));
-      Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
-   end Initialize_Bounded_Payload;
 
 end RFLX.Ethernet.Generic_Frame;

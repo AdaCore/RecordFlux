@@ -1,9 +1,11 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 with RFLX.RFLX_Generic_Types;
+with RFLX.RFLX_Scalar_Sequence;
 
 generic
    with package Types is new RFLX.RFLX_Generic_Types (<>);
-package RFLX.TLV.Generic_Message with
+   with package Modular_Vector_Sequence is new RFLX.RFLX_Scalar_Sequence (Types, others => <>);
+package RFLX.Arrays.Generic_Array_Size_Defined_By_Message_Size with
   SPARK_Mode,
   Annotate =>
     (GNATprove, Terminating)
@@ -15,9 +17,9 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
-   type Virtual_Field is (F_Initial, F_Tag, F_Length, F_Value, F_Final);
+   type Virtual_Field is (F_Initial, F_Header, F_Vector, F_Final);
 
-   subtype Field is Virtual_Field range F_Tag .. F_Value;
+   subtype Field is Virtual_Field range F_Header .. F_Vector;
 
    type Field_Cursor is private with
      Default_Initial_Condition =>
@@ -37,12 +39,10 @@ is
    type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
          case Fld is
-            when F_Initial | F_Value | F_Final =>
+            when F_Initial | F_Vector | F_Final =>
                null;
-            when F_Tag =>
-               Tag_Value : RFLX.TLV.Tag_Base;
-            when F_Length =>
-               Length_Value : RFLX.TLV.Length;
+            when F_Header =>
+               Header_Value : RFLX.Arrays.Enumeration_Base;
          end case;
       end record;
 
@@ -187,148 +187,122 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
-   function Get_Tag (Ctx : Context) return RFLX.TLV.Tag with
+   function Get_Header (Ctx : Context) return RFLX.Arrays.Enumeration with
      Pre =>
-       Valid (Ctx, F_Tag);
-
-   function Get_Length (Ctx : Context) return RFLX.TLV.Length with
-     Pre =>
-       Valid (Ctx, F_Length);
+       Valid (Ctx, F_Header);
 
    generic
-      with procedure Process_Value (Value : Types.Bytes);
-   procedure Get_Value (Ctx : Context) with
+      with procedure Process_Vector (Vector : Types.Bytes);
+   procedure Get_Vector (Ctx : Context) with
      Pre =>
        Has_Buffer (Ctx)
-       and Present (Ctx, F_Value);
+       and Present (Ctx, F_Vector);
 
-   procedure Set_Tag (Ctx : in out Context; Val : RFLX.TLV.Tag) with
+   procedure Set_Header (Ctx : in out Context; Val : RFLX.Arrays.Enumeration) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Tag)
-       and then Field_Last (Ctx, F_Tag) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (F_Tag, To_Base (Val)))
+       and then Valid_Next (Ctx, F_Header)
+       and then Field_Last (Ctx, F_Header) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (F_Header, To_Base (Val)))
        and then True
-       and then Available_Space (Ctx, F_Tag) >= Field_Size (Ctx, F_Tag),
+       and then Available_Space (Ctx, F_Header) >= Field_Size (Ctx, F_Header),
      Post =>
        Has_Buffer (Ctx)
-       and Valid (Ctx, F_Tag)
-       and Get_Tag (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Tag)
-       and Invalid (Ctx, F_Length)
-       and Invalid (Ctx, F_Value)
-       and (if
-               Types.U64 (To_Base (Get_Tag (Ctx))) = Types.U64 (To_Base (Msg_Data))
-            then
-               Predecessor (Ctx, F_Length) = F_Tag
-               and Valid_Next (Ctx, F_Length))
+       and Valid (Ctx, F_Header)
+       and Get_Header (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Header)
+       and Invalid (Ctx, F_Vector)
+       and (Predecessor (Ctx, F_Vector) = F_Header
+            and Valid_Next (Ctx, F_Vector))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Tag) = Predecessor (Ctx, F_Tag)'Old
-       and Valid_Next (Ctx, F_Tag) = Valid_Next (Ctx, F_Tag)'Old;
+       and Predecessor (Ctx, F_Header) = Predecessor (Ctx, F_Header)'Old
+       and Valid_Next (Ctx, F_Header) = Valid_Next (Ctx, F_Header)'Old;
 
-   procedure Set_Length (Ctx : in out Context; Val : RFLX.TLV.Length) with
+   procedure Set_Vector_Empty (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Length)
-       and then Field_Last (Ctx, F_Length) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (F_Length, To_Base (Val)))
-       and then Valid (To_Base (Val))
-       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
+       and then Valid_Next (Ctx, F_Vector)
+       and then Field_Last (Ctx, F_Vector) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Vector))
+       and then Available_Space (Ctx, F_Vector) >= Field_Size (Ctx, F_Vector)
+       and then Field_First (Ctx, F_Vector) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_Vector) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Vector) = 0,
      Post =>
        Has_Buffer (Ctx)
-       and Valid (Ctx, F_Length)
-       and Get_Length (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Length)
-       and Invalid (Ctx, F_Value)
-       and (Predecessor (Ctx, F_Value) = F_Length
-            and Valid_Next (Ctx, F_Value))
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
-       and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
-       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old;
+       and Predecessor (Ctx, F_Vector) = Predecessor (Ctx, F_Vector)'Old
+       and Valid_Next (Ctx, F_Vector) = Valid_Next (Ctx, F_Vector)'Old
+       and Get_Header (Ctx) = Get_Header (Ctx)'Old
+       and Structural_Valid (Ctx, F_Vector);
 
-   procedure Set_Value_Empty (Ctx : in out Context) with
+   procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) with
      Pre =>
        not Ctx'Constrained
+       and then not Seq_Ctx'Constrained
        and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Value)
-       and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (Fld => F_Value))
-       and then Available_Space (Ctx, F_Value) >= Field_Size (Ctx, F_Value)
-       and then Field_First (Ctx, F_Value) mod Types.Byte'Size = 1
-       and then Field_Size (Ctx, F_Value) mod Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Value) = 0,
+       and then Valid_Next (Ctx, F_Vector)
+       and then Field_Size (Ctx, F_Vector) > 0
+       and then Field_Last (Ctx, F_Vector) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Vector))
+       and then Available_Space (Ctx, F_Vector) >= Field_Size (Ctx, F_Vector),
      Post =>
-       Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Value)
+       not Has_Buffer (Ctx)
+       and Modular_Vector_Sequence.Has_Buffer (Seq_Ctx)
+       and Ctx.Buffer_First = Seq_Ctx.Buffer_First
+       and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
+       and Seq_Ctx.First = Field_First (Ctx, F_Vector)
+       and Seq_Ctx.Last = Field_Last (Ctx, F_Vector)
+       and Modular_Vector_Sequence.Index (Seq_Ctx) = Seq_Ctx.First
+       and Present (Ctx, F_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
-       and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
-       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Structural_Valid (Ctx, F_Value);
+       and Predecessor (Ctx, F_Vector) = Predecessor (Ctx, F_Vector)'Old
+       and Path_Condition (Ctx, F_Vector) = Path_Condition (Ctx, F_Vector)'Old
+       and Context_Cursor (Ctx, F_Header) = Context_Cursor (Ctx, F_Header)'Old,
+     Contract_Cases =>
+       (Structural_Valid (Ctx, F_Vector) =>
+           True,
+        others =>
+           True);
 
-   generic
-      with procedure Process_Value (Value : out Types.Bytes);
-      with function Valid_Length (Length : Types.Length) return Boolean;
-   procedure Set_Value (Ctx : in out Context) with
+   procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out Modular_Vector_Sequence.Context) with
      Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Value)
-       and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (Fld => F_Value))
-       and then Available_Space (Ctx, F_Value) >= Field_Size (Ctx, F_Value)
-       and then Field_First (Ctx, F_Value) mod Types.Byte'Size = 1
-       and then Field_Size (Ctx, F_Value) mod Types.Byte'Size = 0
-       and then Valid_Length (Types.Length (Field_Size (Ctx, F_Value) / Types.Byte'Size)),
+       Present (Ctx, F_Vector)
+       and then not Has_Buffer (Ctx)
+       and then Modular_Vector_Sequence.Has_Buffer (Seq_Ctx)
+       and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
+       and then Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
+       and then Seq_Ctx.First = Field_First (Ctx, F_Vector)
+       and then Seq_Ctx.Last = Field_Last (Ctx, F_Vector),
      Post =>
-       Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Value)
+       Present (Ctx, F_Vector)
+       and Has_Buffer (Ctx)
+       and not Modular_Vector_Sequence.Has_Buffer (Seq_Ctx)
+       and Seq_Ctx.First = Field_First (Ctx, F_Vector)
+       and Seq_Ctx.Last = Field_Last (Ctx, F_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
-       and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
-       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Structural_Valid (Ctx, F_Value);
-
-   procedure Initialize_Value (Ctx : in out Context) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Value)
-       and then Field_Last (Ctx, F_Value) <= Types.Bit_Index'Last / 2
-       and then Field_Condition (Ctx, (Fld => F_Value))
-       and then Available_Space (Ctx, F_Value) >= Field_Size (Ctx, F_Value)
-       and then Field_First (Ctx, F_Value) mod Types.Byte'Size = 1
-       and then Field_Size (Ctx, F_Value) mod Types.Byte'Size = 0,
-     Post =>
-       Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Value)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
-       and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
-       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Structural_Valid (Ctx, F_Value);
+       and Seq_Ctx.First = Seq_Ctx.First'Old
+       and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
+       and Field_Size (Ctx, F_Vector) = Field_Size (Ctx, F_Vector)'Old
+       and Context_Cursor (Ctx, F_Header) = Context_Cursor (Ctx, F_Header)'Old,
+     Depends =>
+       (Ctx => (Ctx, Seq_Ctx), Seq_Ctx => Seq_Ctx);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
@@ -346,11 +320,9 @@ private
 
    function Valid_Value (Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is
-          when F_Tag =>
-             Valid (Val.Tag_Value),
-          when F_Length =>
-             Valid (Val.Length_Value),
-          when F_Value =>
+          when F_Header =>
+             Valid (Val.Header_Value),
+          when F_Vector =>
              True,
           when F_Initial | F_Final =>
              False));
@@ -408,43 +380,26 @@ private
                        and Cursors (F).First <= Cursors (F).Last + 1
                        and Cursors (F).Value.Fld = F))
       and then ((if
-                    Structural_Valid (Cursors (F_Length))
+                    Structural_Valid (Cursors (F_Vector))
                  then
-                    (Valid (Cursors (F_Tag))
-                     and then Cursors (F_Length).Predecessor = F_Tag
-                     and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))))
-                and then (if
-                             Structural_Valid (Cursors (F_Value))
-                          then
-                             (Valid (Cursors (F_Length))
-                              and then Cursors (F_Value).Predecessor = F_Length)))
+                    (Valid (Cursors (F_Header))
+                     and then Cursors (F_Vector).Predecessor = F_Header)))
       and then ((if
-                    Invalid (Cursors (F_Tag))
+                    Invalid (Cursors (F_Header))
                  then
-                    Invalid (Cursors (F_Length)))
-                and then (if
-                             Invalid (Cursors (F_Length))
-                          then
-                             Invalid (Cursors (F_Value))))
+                    Invalid (Cursors (F_Vector))))
       and then (if
-                   Structural_Valid (Cursors (F_Tag))
+                   Structural_Valid (Cursors (F_Header))
                 then
-                   Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = RFLX.TLV.Tag_Base'Size
-                   and then Cursors (F_Tag).Predecessor = F_Initial
-                   and then Cursors (F_Tag).First = First
+                   Cursors (F_Header).Last - Cursors (F_Header).First + 1 = RFLX.Arrays.Enumeration_Base'Size
+                   and then Cursors (F_Header).Predecessor = F_Initial
+                   and then Cursors (F_Header).First = First
                    and then (if
-                                Structural_Valid (Cursors (F_Length))
-                                and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
+                                Structural_Valid (Cursors (F_Vector))
                              then
-                                Cursors (F_Length).Last - Cursors (F_Length).First + 1 = RFLX.TLV.Length'Size
-                                and then Cursors (F_Length).Predecessor = F_Tag
-                                and then Cursors (F_Length).First = Cursors (F_Tag).Last + 1
-                                and then (if
-                                             Structural_Valid (Cursors (F_Value))
-                                          then
-                                             Cursors (F_Value).Last - Cursors (F_Value).First + 1 = Types.Bit_Length (Cursors (F_Length).Value.Length_Value) * 8
-                                             and then Cursors (F_Value).Predecessor = F_Length
-                                             and then Cursors (F_Value).First = Cursors (F_Length).Last + 1))));
+                                Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = Last - First + 1 - Types.Bit_Length (Cursors (F_Header).Last - Cursors (F_Header).First + 1)
+                                and then Cursors (F_Vector).Predecessor = F_Header
+                                and then Cursors (F_Vector).First = Cursors (F_Header).Last + 1)));
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
       record
@@ -461,4 +416,4 @@ private
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
-end RFLX.TLV.Generic_Message;
+end RFLX.Arrays.Generic_Array_Size_Defined_By_Message_Size;

@@ -2,7 +2,7 @@ with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
 with RFLX.RFLX_Types;
 
 with RFLX.IPv4.Packet;
@@ -78,8 +78,7 @@ package body RFLX.In_Ethernet.Tests is
       Expected               : RFLX_Builtin_Types.Bytes_Ptr :=
          Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First
-                                      .. RFLX_Builtin_Types.Index'First + Expected'Size - 1 => 0);
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 59 => 0);
       Ethernet_Frame_Context : Ethernet.Frame.Context;
       IPv4_Packet_Context    : IPv4.Packet.Context;
    begin
@@ -88,7 +87,8 @@ package body RFLX.In_Ethernet.Tests is
       Ethernet.Frame.Set_Source (Ethernet_Frame_Context, 16#000000000000#);
       Ethernet.Frame.Set_Type_Length_TPID (Ethernet_Frame_Context, 16#0800#);
       Ethernet.Frame.Set_Type_Length (Ethernet_Frame_Context, 16#0800#);
-      Ethernet.Frame.Initialize_Bounded_Payload (Ethernet_Frame_Context, 368);
+      pragma Assert (Ethernet.Frame.Field_Size (Ethernet_Frame_Context, Ethernet.Frame.F_Payload) = 368);
+      Ethernet.Frame.Initialize_Payload (Ethernet_Frame_Context);
 
       Assert (Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context), "Structural invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Ethernet_Frame_Context), "Valid frame");
@@ -113,6 +113,7 @@ package body RFLX.In_Ethernet.Tests is
          IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
          IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
          Data := (0, 53, 0, 53, 0, 26, 1, 78, others => 0);
+         pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);
          Set_Payload (IPv4_Packet_Context);
 
          Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
@@ -120,17 +121,14 @@ package body RFLX.In_Ethernet.Tests is
 
          IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
 
-         Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (IPv4_Packet_Context.Last)
+         Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (IPv4.Packet.Message_Last (IPv4_Packet_Context))
                  - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
                  "Invalid buffer length");
          Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First)
-                 .. RFLX_Types.Byte_Index (Ethernet_Frame_Context.Last)), Expected.all,
+                 .. RFLX_Types.Byte_Index (Ethernet.Frame.Message_Last (Ethernet_Frame_Context))), Expected.all,
                  "Invalid binary representation");
       end if;
 
-      if Ethernet.Frame.Has_Buffer (Ethernet_Frame_Context) then
-         Ethernet.Frame.Take_Buffer (Ethernet_Frame_Context, Buffer);
-      end if;
       Free_Bytes_Ptr (Expected);
       Free_Bytes_Ptr (Buffer);
 

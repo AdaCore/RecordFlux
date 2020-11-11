@@ -89,6 +89,8 @@ is
        and Ctx.Buffer_First = Buffer'First'Old
        and Ctx.Buffer_Last = Buffer'Last'Old
        and Ctx.First = Types.First_Bit_Index (Ctx.Buffer_First)
+       and Ctx.Last = Types.Last_Bit_Index (Ctx.Buffer_Last)
+       and Message_Last (Ctx) = Ctx.First
        and Initialized (Ctx),
      Depends =>
        (Ctx => Buffer, Buffer => null);
@@ -109,6 +111,7 @@ is
        and Ctx.Buffer_Last = Buffer'Last'Old
        and Ctx.First = First
        and Ctx.Last = Last
+       and Message_Last (Ctx) = Ctx.First
        and Initialized (Ctx),
      Depends =>
        (Ctx => (Buffer, First, Last), Buffer => null);
@@ -134,10 +137,7 @@ is
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
-   function Message_Last (Ctx : Context) return Types.Bit_Index with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+   function Message_Last (Ctx : Context) return Types.Bit_Index;
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
@@ -305,6 +305,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Version)
        and Get_Version (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Version)
        and Invalid (Ctx, F_IHL)
        and Invalid (Ctx, F_DSCP)
        and Invalid (Ctx, F_ECN)
@@ -326,6 +327,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Version) = Predecessor (Ctx, F_Version)'Old
        and Valid_Next (Ctx, F_Version) = Valid_Next (Ctx, F_Version)'Old;
 
@@ -342,6 +344,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_IHL)
        and Get_IHL (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_IHL)
        and Invalid (Ctx, F_DSCP)
        and Invalid (Ctx, F_ECN)
        and Invalid (Ctx, F_Total_Length)
@@ -362,6 +365,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_IHL) = Predecessor (Ctx, F_IHL)'Old
        and Valid_Next (Ctx, F_IHL) = Valid_Next (Ctx, F_IHL)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -380,6 +384,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_DSCP)
        and Get_DSCP (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_DSCP)
        and Invalid (Ctx, F_ECN)
        and Invalid (Ctx, F_Total_Length)
        and Invalid (Ctx, F_Identification)
@@ -399,6 +404,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_DSCP) = Predecessor (Ctx, F_DSCP)'Old
        and Valid_Next (Ctx, F_DSCP) = Valid_Next (Ctx, F_DSCP)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -419,6 +425,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_ECN)
        and Get_ECN (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_ECN)
        and Invalid (Ctx, F_Total_Length)
        and Invalid (Ctx, F_Identification)
        and Invalid (Ctx, F_Flag_R)
@@ -437,6 +444,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_ECN) = Predecessor (Ctx, F_ECN)'Old
        and Valid_Next (Ctx, F_ECN) = Valid_Next (Ctx, F_ECN)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -459,6 +467,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Total_Length)
        and Get_Total_Length (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Total_Length)
        and Invalid (Ctx, F_Identification)
        and Invalid (Ctx, F_Flag_R)
        and Invalid (Ctx, F_Flag_DF)
@@ -479,6 +488,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Total_Length) = Predecessor (Ctx, F_Total_Length)'Old
        and Valid_Next (Ctx, F_Total_Length) = Valid_Next (Ctx, F_Total_Length)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -503,6 +513,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Identification)
        and Get_Identification (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Identification)
        and Invalid (Ctx, F_Flag_R)
        and Invalid (Ctx, F_Flag_DF)
        and Invalid (Ctx, F_Flag_MF)
@@ -519,6 +530,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Identification) = Predecessor (Ctx, F_Identification)'Old
        and Valid_Next (Ctx, F_Identification) = Valid_Next (Ctx, F_Identification)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -545,6 +557,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_R)
        and Get_Flag_R (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Flag_R)
        and Invalid (Ctx, F_Flag_DF)
        and Invalid (Ctx, F_Flag_MF)
        and Invalid (Ctx, F_Fragment_Offset)
@@ -563,6 +576,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Flag_R) = Predecessor (Ctx, F_Flag_R)'Old
        and Valid_Next (Ctx, F_Flag_R) = Valid_Next (Ctx, F_Flag_R)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -591,6 +605,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_DF)
        and Get_Flag_DF (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Flag_DF)
        and Invalid (Ctx, F_Flag_MF)
        and Invalid (Ctx, F_Fragment_Offset)
        and Invalid (Ctx, F_TTL)
@@ -605,6 +620,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Flag_DF) = Predecessor (Ctx, F_Flag_DF)'Old
        and Valid_Next (Ctx, F_Flag_DF) = Valid_Next (Ctx, F_Flag_DF)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -635,6 +651,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_MF)
        and Get_Flag_MF (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Flag_MF)
        and Invalid (Ctx, F_Fragment_Offset)
        and Invalid (Ctx, F_TTL)
        and Invalid (Ctx, F_Protocol)
@@ -648,6 +665,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Flag_MF) = Predecessor (Ctx, F_Flag_MF)'Old
        and Valid_Next (Ctx, F_Flag_MF) = Valid_Next (Ctx, F_Flag_MF)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -680,6 +698,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Fragment_Offset)
        and Get_Fragment_Offset (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Fragment_Offset)
        and Invalid (Ctx, F_TTL)
        and Invalid (Ctx, F_Protocol)
        and Invalid (Ctx, F_Header_Checksum)
@@ -692,6 +711,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Fragment_Offset) = Predecessor (Ctx, F_Fragment_Offset)'Old
        and Valid_Next (Ctx, F_Fragment_Offset) = Valid_Next (Ctx, F_Fragment_Offset)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -726,6 +746,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_TTL)
        and Get_TTL (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_TTL)
        and Invalid (Ctx, F_Protocol)
        and Invalid (Ctx, F_Header_Checksum)
        and Invalid (Ctx, F_Source)
@@ -737,6 +758,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_TTL) = Predecessor (Ctx, F_TTL)'Old
        and Valid_Next (Ctx, F_TTL) = Valid_Next (Ctx, F_TTL)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -773,6 +795,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Protocol)
        and Get_Protocol (Ctx) = (True, Val)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Protocol)
        and Invalid (Ctx, F_Header_Checksum)
        and Invalid (Ctx, F_Source)
        and Invalid (Ctx, F_Destination)
@@ -783,6 +806,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Protocol) = Predecessor (Ctx, F_Protocol)'Old
        and Valid_Next (Ctx, F_Protocol) = Valid_Next (Ctx, F_Protocol)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -821,6 +845,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Header_Checksum)
        and Get_Header_Checksum (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Header_Checksum)
        and Invalid (Ctx, F_Source)
        and Invalid (Ctx, F_Destination)
        and Invalid (Ctx, F_Options)
@@ -830,6 +855,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Header_Checksum) = Predecessor (Ctx, F_Header_Checksum)'Old
        and Valid_Next (Ctx, F_Header_Checksum) = Valid_Next (Ctx, F_Header_Checksum)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -870,6 +896,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Source)
        and Get_Source (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Source)
        and Invalid (Ctx, F_Destination)
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
@@ -878,6 +905,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Source) = Predecessor (Ctx, F_Source)'Old
        and Valid_Next (Ctx, F_Source) = Valid_Next (Ctx, F_Source)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -920,6 +948,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Destination)
        and Get_Destination (Ctx) = Val
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Destination)
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (Predecessor (Ctx, F_Options) = F_Destination
@@ -927,6 +956,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Destination) = Predecessor (Ctx, F_Destination)'Old
        and Valid_Next (Ctx, F_Destination) = Valid_Next (Ctx, F_Destination)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -971,12 +1001,14 @@ is
        and then Field_Size (Ctx, F_Options) = 0,
      Post =>
        Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (Predecessor (Ctx, F_Payload) = F_Options
             and Valid_Next (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -1009,9 +1041,11 @@ is
        and then Field_Size (Ctx, F_Payload) = 0,
      Post =>
        Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -1047,9 +1081,11 @@ is
        and then Valid_Length (Types.Length (Field_Size (Ctx, F_Payload) / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -1081,9 +1117,11 @@ is
        and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Version (Ctx) = Get_Version (Ctx)'Old
@@ -1125,6 +1163,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Path_Condition (Ctx, F_Options) = Path_Condition (Ctx, F_Options)'Old
        and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
@@ -1165,10 +1204,12 @@ is
        and not Options_Sequence.Has_Buffer (Seq_Ctx)
        and Seq_Ctx.First = Field_First (Ctx, F_Options)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Options)
-       and Seq_Ctx.First = Seq_Ctx.First'Old
-       and Seq_Ctx.Last = Seq_Ctx.Last'Old
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Seq_Ctx.First = Seq_Ctx.First'Old
+       and Seq_Ctx.Last = Seq_Ctx.Last'Old
        and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
        and Field_Size (Ctx, F_Options) = Field_Size (Ctx, F_Options)'Old
        and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
@@ -1273,7 +1314,7 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
-   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index; Buffer : access constant Types.Bytes; Cursors : Field_Cursors) return Boolean is
+   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last, Message_Last : Types.Bit_Index; Buffer : access constant Types.Bytes; Cursors : Field_Cursors) return Boolean is
      ((if
           Buffer /= null
        then
@@ -1283,12 +1324,14 @@ private
                 and Types.Byte_Index (Last) <= Buffer_Last
                 and First <= Last
                 and Last <= Types.Bit_Index'Last / 2)
+      and then First <= Message_Last
+      and then Message_Last <= Last
       and then (for all F in Field'First .. Field'Last =>
                    (if
                        Structural_Valid (Cursors (F))
                     then
                        Cursors (F).First >= First
-                       and Cursors (F).Last <= Last
+                       and Cursors (F).Last <= Message_Last
                        and Cursors (F).First <= Cursors (F).Last + 1
                        and Cursors (F).Value.Fld = F))
       and then ((if
@@ -1544,11 +1587,12 @@ private
 
    type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
       record
+         Message_Last : Types.Bit_Index := First;
          Buffer : Types.Bytes_Ptr := null;
          Cursors : Field_Cursors := (others => (State => S_Invalid, Predecessor => F_Final));
       end record with
      Dynamic_Predicate =>
-       Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Buffer, Context.Cursors);
+       Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

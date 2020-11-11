@@ -327,16 +327,6 @@ class Generator:
             if isinstance(t, Array):
                 sequence_fields[f] = t
 
-        context_invariant = [
-            Equal(e, Old(e))
-            for e in (
-                Variable("Ctx.Buffer_First"),
-                Variable("Ctx.Buffer_Last"),
-                Variable("Ctx.First"),
-                Variable("Ctx.Last"),
-            )
-        ]
-
         unit += self.__create_use_type_clause(composite_fields)
         unit += self.__create_field_type(message)
         unit += self.__create_state_type()
@@ -348,9 +338,9 @@ class Generator:
         unit += self.__create_initialize_procedure()
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
-        unit += self.__create_take_buffer_procedure(context_invariant)
+        unit += self.__create_take_buffer_procedure()
         unit += self.__create_has_buffer_function()
-        unit += self.__create_message_last_function(message)
+        unit += self.__create_message_last_function()
         unit += self.__create_path_condition_function(message)
         unit += self.__create_field_condition_function(message)
         unit += self.__create_field_size_function(message)
@@ -365,11 +355,11 @@ class Generator:
         unit += self.__create_sufficient_buffer_length_function()
         if composite_fields:
             unit += self.__create_equal_function(scalar_fields, composite_fields)
-        unit += self.__create_reset_dependent_fields_procedure(message, context_invariant)
+        unit += self.__create_reset_dependent_fields_procedure(message)
 
         unit += self.__parser.create_internal_functions(message, scalar_fields, composite_fields)
-        unit += self.__parser.create_verify_procedure(message, context_invariant)
-        unit += self.__parser.create_verify_message_procedure(message, context_invariant)
+        unit += self.__parser.create_verify_procedure(message)
+        unit += self.__parser.create_verify_message_procedure(message)
         unit += self.__parser.create_present_function()
         unit += self.__parser.create_structural_valid_function()
         unit += self.__parser.create_valid_function()
@@ -538,6 +528,28 @@ class Generator:
 
     @staticmethod
     def __create_context_type() -> UnitPart:
+        """
+        Components of a context type:
+
+            Buffer_First, Buffer_Last:
+                The bounds of `Buffer` which are used to ensure that not a completely different
+                buffer is moved back into the context.
+
+            First, Last:
+                The positions of the first and last usable bit of `Buffer`. These are hard bounds
+                which must not be changed during the lifetime of the context.
+
+            Message_Last:
+                The position of the last bit of the message. The value is increased after each
+                parsed or set field.
+
+            Buffer:
+                An access type refering to memory containing the binary message.
+
+            Cursors:
+                An array of cursors representing the internal parser or serializer state.
+        """
+
         discriminants = [
             Discriminant(
                 ["Buffer_First", "Buffer_Last"], const.TYPES_INDEX, First(const.TYPES_INDEX)
@@ -558,6 +570,7 @@ class Generator:
                 RecordType(
                     "Context",
                     [
+                        Component("Message_Last", const.TYPES_BIT_INDEX, Variable("First")),
                         Component("Buffer", const.TYPES_BYTES_PTR, NULL),
                         Component(
                             "Cursors",
@@ -587,6 +600,7 @@ class Generator:
                                     Variable("Context.Buffer_Last"),
                                     Variable("Context.First"),
                                     Variable("Context.Last"),
+                                    Variable("Context.Message_Last"),
                                     Variable("Context.Buffer"),
                                     Variable("Context.Cursors"),
                                 ],
@@ -660,6 +674,17 @@ class Generator:
                                         [Variable("Ctx.Buffer_First")],
                                     ),
                                 ),
+                                Equal(
+                                    Variable("Ctx.Last"),
+                                    Call(
+                                        const.TYPES * "Last_Bit_Index",
+                                        [Variable("Ctx.Buffer_Last")],
+                                    ),
+                                ),
+                                Equal(
+                                    Call("Message_Last", [Variable("Ctx")]),
+                                    Variable("Ctx.First"),
+                                ),
                                 Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
@@ -730,6 +755,10 @@ class Generator:
                                 Equal(Variable("Ctx.Buffer_Last"), Old(Last("Buffer"))),
                                 Equal(Variable("Ctx.First"), Variable("First")),
                                 Equal(Variable("Ctx.Last"), Variable("Last")),
+                                Equal(
+                                    Call("Message_Last", [Variable("Ctx")]),
+                                    Variable("Ctx.First"),
+                                ),
                                 Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
@@ -754,6 +783,7 @@ class Generator:
                                 Variable("Buffer_Last"),
                                 Variable("First"),
                                 Variable("Last"),
+                                Variable("First"),
                                 Variable("Buffer"),
                                 NamedAggregate(
                                     (
@@ -813,10 +843,7 @@ class Generator:
                                 ],
                             ),
                             Add(
-                                Call(
-                                    const.TYPES * "Last_Bit_Index",
-                                    [Variable("Ctx.Buffer_Last")],
-                                ),
+                                Variable("Ctx.Last"),
                                 -Variable("Ctx.First"),
                                 Number(1),
                             ),
@@ -834,7 +861,7 @@ class Generator:
         )
 
     @staticmethod
-    def __create_take_buffer_procedure(context_invariant: Sequence[Expr]) -> UnitPart:
+    def __create_take_buffer_procedure() -> UnitPart:
         specification = ProcedureSpecification(
             "Take_Buffer",
             [InOutParameter(["Ctx"], "Context"), OutParameter(["Buffer"], const.TYPES_BYTES_PTR)],
@@ -852,7 +879,7 @@ class Generator:
                                 NotEqual(Variable("Buffer"), NULL),
                                 Equal(Variable("Ctx.Buffer_First"), First("Buffer")),
                                 Equal(Variable("Ctx.Buffer_Last"), Last("Buffer")),
-                                *context_invariant,
+                                *const.CONTEXT_INVARIANT,
                                 *[
                                     Equal(e, Old(e))
                                     for e in [Call("Context_Cursors", [Variable("Ctx")])]
@@ -1300,9 +1327,7 @@ class Generator:
         )
 
     @staticmethod
-    def __create_reset_dependent_fields_procedure(
-        message: Message, context_invariant: Sequence[Expr]
-    ) -> UnitPart:
+    def __create_reset_dependent_fields_procedure(message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             "Reset_Dependent_Fields",
             [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
@@ -1413,7 +1438,7 @@ class Generator:
                                     if len(message.fields) > 1
                                     else []
                                 ),
-                                *context_invariant,
+                                *const.CONTEXT_INVARIANT,
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
@@ -1548,62 +1573,14 @@ class Generator:
         )
 
     @staticmethod
-    def __create_message_last_function(message: Message) -> UnitPart:
+    def __create_message_last_function() -> UnitPart:
         specification = FunctionSpecification(
             "Message_Last", const.TYPES_BIT_INDEX, [Parameter(["Ctx"], "Context")]
         )
 
         return UnitPart(
-            [
-                SubprogramDeclaration(
-                    specification,
-                    [
-                        Precondition(
-                            AndThen(
-                                Call("Has_Buffer", [Variable("Ctx")]),
-                                Call("Structural_Valid_Message", [Variable("Ctx")]),
-                            )
-                        )
-                    ],
-                )
-            ],
-            [
-                ExpressionFunctionDeclaration(
-                    specification,
-                    If(
-                        [
-                            (
-                                expr.AndThen(
-                                    expr.Call(
-                                        "Structural_Valid",
-                                        [
-                                            expr.Indexed(
-                                                expr.Variable(expr.ID("Ctx") * "Cursors"),
-                                                expr.Variable(
-                                                    l.source.affixed_name, immutable=True
-                                                ),
-                                            )
-                                        ],
-                                    ),
-                                    l.condition,
-                                )
-                                .substituted(common.substitution(message))
-                                .simplified()
-                                .ada_expr(),
-                                Selected(
-                                    Indexed(
-                                        Variable("Ctx.Cursors"),
-                                        Variable(l.source.affixed_name),
-                                    ),
-                                    "Last",
-                                ),
-                            )
-                            for l in message.incoming(FINAL)
-                        ],
-                        Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
-                    ),
-                )
-            ],
+            [SubprogramDeclaration(specification)],
+            [ExpressionFunctionDeclaration(specification, Variable("Ctx.Message_Last"))],
         )
 
     @staticmethod
@@ -1625,7 +1602,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     Add(
-                        Call(const.TYPES_LAST_BIT_INDEX, [Variable("Ctx.Buffer_Last")]),
+                        Variable("Ctx.Last"),
                         -Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                         Number(1),
                     ),
@@ -1851,12 +1828,10 @@ class Generator:
                                     "Present",
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
+                                *const.CONTEXT_INVARIANT,
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
-                                        Variable("Ctx.Buffer_First"),
-                                        Variable("Ctx.Buffer_Last"),
-                                        Variable("Ctx.First"),
                                         Call(
                                             "Predecessor",
                                             [
@@ -2046,14 +2021,12 @@ class Generator:
                                         [Variable("Ctx"), Variable(f.affixed_name)],
                                     ),
                                 ),
+                                *const.CONTEXT_INVARIANT,
                                 *[
                                     Equal(e, Old(e))
-                                    for e in cast(List[Expr], [])
-                                    + [
+                                    for e in [
                                         Variable("Seq_Ctx.First"),
                                         Variable("Seq_Ctx.Last"),
-                                        Variable("Ctx.Buffer_First"),
-                                        Variable("Ctx.Buffer_Last"),
                                         Call(
                                             "Field_First",
                                             [
@@ -2187,7 +2160,7 @@ class Generator:
             "Boolean",
             [
                 Parameter(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
-                Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
+                Parameter(["First", "Last", "Message_Last"], const.TYPES_BIT_INDEX),
                 AccessParameter(["Buffer"], const.TYPES_BYTES, constant=True),
                 Parameter(["Cursors"], "Field_Cursors"),
             ],

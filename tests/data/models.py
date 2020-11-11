@@ -196,6 +196,19 @@ ARRAYS_MESSAGES_MESSAGE = Message(
     {Field("Length"): ARRAYS_LENGTH, Field("Messages"): ARRAYS_INNER_MESSAGES},
     skip_proof=True,
 )
+ARRAYS_ARRAY_SIZE_DEFINED_BY_MESSAGE_SIZE = Message(
+    "Arrays::Array_Size_Defined_By_Message_Size",
+    [
+        Link(INITIAL, Field("Header")),
+        Link(Field("Header"), Field("Vector"), size=Sub(Size("Message"), Size("Header"))),
+        Link(Field("Vector"), FINAL),
+    ],
+    {
+        Field("Header"): ARRAYS_ENUMERATION,
+        Field("Vector"): ARRAYS_MODULAR_VECTOR,
+    },
+    skip_proof=True,
+)
 ARRAYS_MODEL = Model(
     [
         ARRAYS_LENGTH,
@@ -211,6 +224,7 @@ ARRAYS_MODEL = Model(
         ARRAYS_INNER_MESSAGE,
         ARRAYS_INNER_MESSAGES,
         ARRAYS_MESSAGES_MESSAGE,
+        ARRAYS_ARRAY_SIZE_DEFINED_BY_MESSAGE_SIZE,
     ]
 )
 

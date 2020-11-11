@@ -9,5 +9,9 @@ test_spark:
 	gprbuild -Pping
 	sudo -n timeout 3 obj/ping 127.0.0.1 || test $$? -eq 124
 
+prove:
+	rflx generate -d generated specs/ipv4.rflx
+	gnatprove -Pping
+
 clean:
 	rm -rf generated/* obj python

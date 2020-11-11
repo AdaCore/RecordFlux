@@ -1,4 +1,4 @@
-import rflx.ada as ada
+from rflx import ada
 from rflx.common import file_name
 
 REFINEMENT_PACKAGE = ada.ID("Contains")
@@ -48,3 +48,13 @@ TYPES_LAST_BIT_INDEX = TYPES * "Last_Bit_Index"
 TYPES_OFFSET = TYPES * "Offset"
 TYPES_UNREACHABLE_BIT_LENGTH = TYPES * "Unreachable_Bit_Length"
 TYPES_U64 = TYPES * "U64"
+
+CONTEXT_INVARIANT = [
+    ada.Equal(e, ada.Old(e))
+    for e in (
+        ada.Variable("Ctx.Buffer_First"),
+        ada.Variable("Ctx.Buffer_Last"),
+        ada.Variable("Ctx.First"),
+        ada.Variable("Ctx.Last"),
+    )
+]

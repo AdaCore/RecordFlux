@@ -13,13 +13,13 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, Buffer, (F_Tag => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First, Buffer, (F_Tag => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    function Initialized (Ctx : Context) return Boolean is
      (Valid_Next (Ctx, F_Tag)
-      and then Available_Space (Ctx, F_Tag) = Types.Last_Bit_Index (Ctx.Buffer_Last) - Ctx.First + 1
+      and then Available_Space (Ctx, F_Tag) = Ctx.Last - Ctx.First + 1
       and then Invalid (Ctx, F_Tag)
       and then Invalid (Ctx, F_Code_Destination_Unreachable)
       and then Invalid (Ctx, F_Code_Redirect)
@@ -47,22 +47,7 @@ is
      (Ctx.Buffer /= null);
 
    function Message_Last (Ctx : Context) return Types.Bit_Index is
-     ((if
-          Structural_Valid (Ctx.Cursors (F_Data))
-       then
-          Ctx.Cursors (F_Data).Last
-       elsif
-          Structural_Valid (Ctx.Cursors (F_Sequence_Number))
-          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
-                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply)))
-       then
-          Ctx.Cursors (F_Sequence_Number).Last
-       elsif
-          Structural_Valid (Ctx.Cursors (F_Transmit_Timestamp))
-       then
-          Ctx.Cursors (F_Transmit_Timestamp).Last
-       else
-          Types.Unreachable_Bit_Length));
+     (Ctx.Message_Last);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
@@ -672,7 +657,7 @@ is
       and then Path_Condition (Ctx, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
-     (Types.Last_Bit_Index (Ctx.Buffer_Last) - Field_First (Ctx, Fld) + 1);
+     (Ctx.Last - Field_First (Ctx, Fld) + 1);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -1269,6 +1254,7 @@ is
               Valid_Value (Value)
               and Field_Condition (Ctx, Value)
             then
+               Ctx.Message_Last := Field_Last (Ctx, Fld);
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
@@ -2164,7 +2150,7 @@ is
        and Lst = Field_Last (Ctx, Val.Fld)
        and Fst >= Ctx.First
        and Fst <= Lst + 1
-       and Types.Byte_Index (Lst) <= Ctx.Buffer_Last
+       and Lst <= Ctx.Last
        and (for all F in Field'Range =>
                (if
                    Structural_Valid (Ctx.Cursors (F))
@@ -2173,6 +2159,7 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
        and Ctx.Cursors = Ctx.Cursors'Old
    is
       First : constant Types.Bit_Index := Field_First (Ctx, Val.Fld);
@@ -2245,7 +2232,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Tag);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Tag) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Tag).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Tag)) := (State => S_Invalid, Predecessor => F_Tag);
    end Set_Tag;
@@ -2256,7 +2243,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Code_Destination_Unreachable);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Code_Destination_Unreachable) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Code_Destination_Unreachable).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Code_Destination_Unreachable)) := (State => S_Invalid, Predecessor => F_Code_Destination_Unreachable);
    end Set_Code_Destination_Unreachable;
@@ -2267,7 +2254,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Code_Redirect);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Code_Redirect) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Code_Redirect).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Code_Redirect)) := (State => S_Invalid, Predecessor => F_Code_Redirect);
    end Set_Code_Redirect;
@@ -2278,7 +2265,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Code_Time_Exceeded);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Code_Time_Exceeded) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Code_Time_Exceeded).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Code_Time_Exceeded)) := (State => S_Invalid, Predecessor => F_Code_Time_Exceeded);
    end Set_Code_Time_Exceeded;
@@ -2289,7 +2276,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Code_Zero);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Code_Zero) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Code_Zero).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Code_Zero)) := (State => S_Invalid, Predecessor => F_Code_Zero);
    end Set_Code_Zero;
@@ -2300,7 +2287,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Checksum);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Checksum) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Checksum).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Checksum)) := (State => S_Invalid, Predecessor => F_Checksum);
    end Set_Checksum;
@@ -2311,7 +2298,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Gateway_Internet_Address);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Gateway_Internet_Address) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Gateway_Internet_Address).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Gateway_Internet_Address)) := (State => S_Invalid, Predecessor => F_Gateway_Internet_Address);
    end Set_Gateway_Internet_Address;
@@ -2322,7 +2309,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Identifier);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Identifier) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Identifier).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Identifier)) := (State => S_Invalid, Predecessor => F_Identifier);
    end Set_Identifier;
@@ -2333,7 +2320,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Pointer);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Pointer) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Pointer).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Pointer)) := (State => S_Invalid, Predecessor => F_Pointer);
    end Set_Pointer;
@@ -2344,7 +2331,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Unused_32);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Unused_32) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Unused_32).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Unused_32)) := (State => S_Invalid, Predecessor => F_Unused_32);
    end Set_Unused_32;
@@ -2355,7 +2342,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Sequence_Number);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Sequence_Number) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Sequence_Number).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Sequence_Number)) := (State => S_Invalid, Predecessor => F_Sequence_Number);
    end Set_Sequence_Number;
@@ -2366,7 +2353,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Unused_24);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Unused_24) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Unused_24).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Unused_24)) := (State => S_Invalid, Predecessor => F_Unused_24);
    end Set_Unused_24;
@@ -2377,7 +2364,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Originate_Timestamp);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Originate_Timestamp) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Originate_Timestamp).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Originate_Timestamp)) := (State => S_Invalid, Predecessor => F_Originate_Timestamp);
    end Set_Originate_Timestamp;
@@ -2388,7 +2375,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Receive_Timestamp);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Receive_Timestamp) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Receive_Timestamp).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Receive_Timestamp)) := (State => S_Invalid, Predecessor => F_Receive_Timestamp);
    end Set_Receive_Timestamp;
@@ -2399,7 +2386,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Transmit_Timestamp);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Transmit_Timestamp) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Transmit_Timestamp).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Transmit_Timestamp)) := (State => S_Invalid, Predecessor => F_Transmit_Timestamp);
    end Set_Transmit_Timestamp;
@@ -2409,7 +2396,7 @@ is
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Data);
    begin
       Reset_Dependent_Fields (Ctx, F_Data);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       Ctx.Cursors (F_Data) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Data), Predecessor => Ctx.Cursors (F_Data).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
    end Set_Data_Empty;
@@ -2426,24 +2413,12 @@ is
       Process_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Data;
 
-   procedure Set_Bounded_Data (Ctx : in out Context; Size : Types.Bit_Length) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
-      Last : constant Types.Bit_Index := First + Size - 1;
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-   begin
-      Initialize_Bounded_Data (Ctx, Size);
-      Process_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Set_Bounded_Data;
-
    procedure Initialize_Data (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Data);
    begin
       Reset_Dependent_Fields (Ctx, F_Data);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
+      Ctx.Message_Last := Last;
       pragma Assert ((if
                          Structural_Valid (Ctx.Cursors (F_Tag))
                       then
@@ -2884,452 +2859,5 @@ is
       Ctx.Cursors (F_Data) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Data), Predecessor => Ctx.Cursors (F_Data).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
    end Initialize_Data;
-
-   procedure Initialize_Bounded_Data (Ctx : in out Context; Size : Types.Bit_Length) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
-      Last : constant Types.Bit_Index := First + Size - 1;
-   begin
-      Reset_Dependent_Fields (Ctx, F_Data);
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, Ctx.First, Last, Ctx.Buffer, Ctx.Cursors);
-      pragma Assert ((if
-                         Structural_Valid (Ctx.Cursors (F_Tag))
-                      then
-                         Ctx.Cursors (F_Tag).Last - Ctx.Cursors (F_Tag).First + 1 = RFLX.ICMP.Tag_Base'Size
-                         and then Ctx.Cursors (F_Tag).Predecessor = F_Initial
-                         and then Ctx.Cursors (F_Tag).First = Ctx.First
-                         and then (if
-                                      Structural_Valid (Ctx.Cursors (F_Code_Destination_Unreachable))
-                                      and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
-                                   then
-                                      Ctx.Cursors (F_Code_Destination_Unreachable).Last - Ctx.Cursors (F_Code_Destination_Unreachable).First + 1 = RFLX.ICMP.Code_Destination_Unreachable_Base'Size
-                                      and then Ctx.Cursors (F_Code_Destination_Unreachable).Predecessor = F_Tag
-                                      and then Ctx.Cursors (F_Code_Destination_Unreachable).First = Ctx.Cursors (F_Tag).Last + 1
-                                      and then (if
-                                                   Structural_Valid (Ctx.Cursors (F_Checksum))
-                                                then
-                                                   Ctx.Cursors (F_Checksum).Last - Ctx.Cursors (F_Checksum).First + 1 = RFLX.ICMP.Checksum'Size
-                                                   and then Ctx.Cursors (F_Checksum).Predecessor = F_Code_Destination_Unreachable
-                                                   and then Ctx.Cursors (F_Checksum).First = Ctx.Cursors (F_Code_Destination_Unreachable).Last + 1
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Gateway_Internet_Address))
-                                                                and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
-                                                             then
-                                                                Ctx.Cursors (F_Gateway_Internet_Address).Last - Ctx.Cursors (F_Gateway_Internet_Address).First + 1 = RFLX.ICMP.Gateway_Internet_Address'Size
-                                                                and then Ctx.Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Gateway_Internet_Address).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Data))
-                                                                          then
-                                                                             Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                             and then Ctx.Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
-                                                                             and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Gateway_Internet_Address).Last + 1))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Identifier))
-                                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
-                                                             then
-                                                                Ctx.Cursors (F_Identifier).Last - Ctx.Cursors (F_Identifier).First + 1 = RFLX.ICMP.Identifier'Size
-                                                                and then Ctx.Cursors (F_Identifier).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Identifier).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Sequence_Number))
-                                                                          then
-                                                                             Ctx.Cursors (F_Sequence_Number).Last - Ctx.Cursors (F_Sequence_Number).First + 1 = RFLX.ICMP.Sequence_Number'Size
-                                                                             and then Ctx.Cursors (F_Sequence_Number).Predecessor = F_Identifier
-                                                                             and then Ctx.Cursors (F_Sequence_Number).First = Ctx.Cursors (F_Identifier).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Data))
-                                                                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
-                                                                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
-                                                                                          and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
-                                                                                          and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Originate_Timestamp))
-                                                                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Originate_Timestamp).Last - Ctx.Cursors (F_Originate_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                          and then Ctx.Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                                                                                          and then Ctx.Cursors (F_Originate_Timestamp).First = Ctx.Cursors (F_Sequence_Number).Last + 1
-                                                                                          and then (if
-                                                                                                       Structural_Valid (Ctx.Cursors (F_Receive_Timestamp))
-                                                                                                    then
-                                                                                                       Ctx.Cursors (F_Receive_Timestamp).Last - Ctx.Cursors (F_Receive_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                                       and then Ctx.Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
-                                                                                                       and then Ctx.Cursors (F_Receive_Timestamp).First = Ctx.Cursors (F_Originate_Timestamp).Last + 1
-                                                                                                       and then (if
-                                                                                                                    Structural_Valid (Ctx.Cursors (F_Transmit_Timestamp))
-                                                                                                                 then
-                                                                                                                    Ctx.Cursors (F_Transmit_Timestamp).Last - Ctx.Cursors (F_Transmit_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                                                    and then Ctx.Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
-                                                                                                                    and then Ctx.Cursors (F_Transmit_Timestamp).First = Ctx.Cursors (F_Receive_Timestamp).Last + 1)))))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Pointer))
-                                                                and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
-                                                             then
-                                                                Ctx.Cursors (F_Pointer).Last - Ctx.Cursors (F_Pointer).First + 1 = RFLX.ICMP.Pointer'Size
-                                                                and then Ctx.Cursors (F_Pointer).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Pointer).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Unused_24))
-                                                                          then
-                                                                             Ctx.Cursors (F_Unused_24).Last - Ctx.Cursors (F_Unused_24).First + 1 = RFLX.ICMP.Unused_24_Base'Size
-                                                                             and then Ctx.Cursors (F_Unused_24).Predecessor = F_Pointer
-                                                                             and then Ctx.Cursors (F_Unused_24).First = Ctx.Cursors (F_Pointer).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Data))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                                          and then Ctx.Cursors (F_Data).Predecessor = F_Unused_24
-                                                                                          and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_24).Last + 1)))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Unused_32))
-                                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
-                                                             then
-                                                                Ctx.Cursors (F_Unused_32).Last - Ctx.Cursors (F_Unused_32).First + 1 = RFLX.ICMP.Unused_32_Base'Size
-                                                                and then Ctx.Cursors (F_Unused_32).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Unused_32).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Data))
-                                                                          then
-                                                                             Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                             and then Ctx.Cursors (F_Data).Predecessor = F_Unused_32
-                                                                             and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_32).Last + 1))))
-                         and then (if
-                                      Structural_Valid (Ctx.Cursors (F_Code_Redirect))
-                                      and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
-                                   then
-                                      Ctx.Cursors (F_Code_Redirect).Last - Ctx.Cursors (F_Code_Redirect).First + 1 = RFLX.ICMP.Code_Redirect_Base'Size
-                                      and then Ctx.Cursors (F_Code_Redirect).Predecessor = F_Tag
-                                      and then Ctx.Cursors (F_Code_Redirect).First = Ctx.Cursors (F_Tag).Last + 1
-                                      and then (if
-                                                   Structural_Valid (Ctx.Cursors (F_Checksum))
-                                                then
-                                                   Ctx.Cursors (F_Checksum).Last - Ctx.Cursors (F_Checksum).First + 1 = RFLX.ICMP.Checksum'Size
-                                                   and then Ctx.Cursors (F_Checksum).Predecessor = F_Code_Redirect
-                                                   and then Ctx.Cursors (F_Checksum).First = Ctx.Cursors (F_Code_Redirect).Last + 1
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Gateway_Internet_Address))
-                                                                and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
-                                                             then
-                                                                Ctx.Cursors (F_Gateway_Internet_Address).Last - Ctx.Cursors (F_Gateway_Internet_Address).First + 1 = RFLX.ICMP.Gateway_Internet_Address'Size
-                                                                and then Ctx.Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Gateway_Internet_Address).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Data))
-                                                                          then
-                                                                             Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                             and then Ctx.Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
-                                                                             and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Gateway_Internet_Address).Last + 1))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Identifier))
-                                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
-                                                             then
-                                                                Ctx.Cursors (F_Identifier).Last - Ctx.Cursors (F_Identifier).First + 1 = RFLX.ICMP.Identifier'Size
-                                                                and then Ctx.Cursors (F_Identifier).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Identifier).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Sequence_Number))
-                                                                          then
-                                                                             Ctx.Cursors (F_Sequence_Number).Last - Ctx.Cursors (F_Sequence_Number).First + 1 = RFLX.ICMP.Sequence_Number'Size
-                                                                             and then Ctx.Cursors (F_Sequence_Number).Predecessor = F_Identifier
-                                                                             and then Ctx.Cursors (F_Sequence_Number).First = Ctx.Cursors (F_Identifier).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Data))
-                                                                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
-                                                                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
-                                                                                          and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
-                                                                                          and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Originate_Timestamp))
-                                                                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Originate_Timestamp).Last - Ctx.Cursors (F_Originate_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                          and then Ctx.Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                                                                                          and then Ctx.Cursors (F_Originate_Timestamp).First = Ctx.Cursors (F_Sequence_Number).Last + 1
-                                                                                          and then (if
-                                                                                                       Structural_Valid (Ctx.Cursors (F_Receive_Timestamp))
-                                                                                                    then
-                                                                                                       Ctx.Cursors (F_Receive_Timestamp).Last - Ctx.Cursors (F_Receive_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                                       and then Ctx.Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
-                                                                                                       and then Ctx.Cursors (F_Receive_Timestamp).First = Ctx.Cursors (F_Originate_Timestamp).Last + 1
-                                                                                                       and then (if
-                                                                                                                    Structural_Valid (Ctx.Cursors (F_Transmit_Timestamp))
-                                                                                                                 then
-                                                                                                                    Ctx.Cursors (F_Transmit_Timestamp).Last - Ctx.Cursors (F_Transmit_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                                                    and then Ctx.Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
-                                                                                                                    and then Ctx.Cursors (F_Transmit_Timestamp).First = Ctx.Cursors (F_Receive_Timestamp).Last + 1)))))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Pointer))
-                                                                and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
-                                                             then
-                                                                Ctx.Cursors (F_Pointer).Last - Ctx.Cursors (F_Pointer).First + 1 = RFLX.ICMP.Pointer'Size
-                                                                and then Ctx.Cursors (F_Pointer).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Pointer).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Unused_24))
-                                                                          then
-                                                                             Ctx.Cursors (F_Unused_24).Last - Ctx.Cursors (F_Unused_24).First + 1 = RFLX.ICMP.Unused_24_Base'Size
-                                                                             and then Ctx.Cursors (F_Unused_24).Predecessor = F_Pointer
-                                                                             and then Ctx.Cursors (F_Unused_24).First = Ctx.Cursors (F_Pointer).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Data))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                                          and then Ctx.Cursors (F_Data).Predecessor = F_Unused_24
-                                                                                          and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_24).Last + 1)))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Unused_32))
-                                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
-                                                             then
-                                                                Ctx.Cursors (F_Unused_32).Last - Ctx.Cursors (F_Unused_32).First + 1 = RFLX.ICMP.Unused_32_Base'Size
-                                                                and then Ctx.Cursors (F_Unused_32).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Unused_32).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Data))
-                                                                          then
-                                                                             Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                             and then Ctx.Cursors (F_Data).Predecessor = F_Unused_32
-                                                                             and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_32).Last + 1))))
-                         and then (if
-                                      Structural_Valid (Ctx.Cursors (F_Code_Time_Exceeded))
-                                      and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
-                                   then
-                                      Ctx.Cursors (F_Code_Time_Exceeded).Last - Ctx.Cursors (F_Code_Time_Exceeded).First + 1 = RFLX.ICMP.Code_Time_Exceeded_Base'Size
-                                      and then Ctx.Cursors (F_Code_Time_Exceeded).Predecessor = F_Tag
-                                      and then Ctx.Cursors (F_Code_Time_Exceeded).First = Ctx.Cursors (F_Tag).Last + 1
-                                      and then (if
-                                                   Structural_Valid (Ctx.Cursors (F_Checksum))
-                                                then
-                                                   Ctx.Cursors (F_Checksum).Last - Ctx.Cursors (F_Checksum).First + 1 = RFLX.ICMP.Checksum'Size
-                                                   and then Ctx.Cursors (F_Checksum).Predecessor = F_Code_Time_Exceeded
-                                                   and then Ctx.Cursors (F_Checksum).First = Ctx.Cursors (F_Code_Time_Exceeded).Last + 1
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Gateway_Internet_Address))
-                                                                and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
-                                                             then
-                                                                Ctx.Cursors (F_Gateway_Internet_Address).Last - Ctx.Cursors (F_Gateway_Internet_Address).First + 1 = RFLX.ICMP.Gateway_Internet_Address'Size
-                                                                and then Ctx.Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Gateway_Internet_Address).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Data))
-                                                                          then
-                                                                             Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                             and then Ctx.Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
-                                                                             and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Gateway_Internet_Address).Last + 1))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Identifier))
-                                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
-                                                             then
-                                                                Ctx.Cursors (F_Identifier).Last - Ctx.Cursors (F_Identifier).First + 1 = RFLX.ICMP.Identifier'Size
-                                                                and then Ctx.Cursors (F_Identifier).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Identifier).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Sequence_Number))
-                                                                          then
-                                                                             Ctx.Cursors (F_Sequence_Number).Last - Ctx.Cursors (F_Sequence_Number).First + 1 = RFLX.ICMP.Sequence_Number'Size
-                                                                             and then Ctx.Cursors (F_Sequence_Number).Predecessor = F_Identifier
-                                                                             and then Ctx.Cursors (F_Sequence_Number).First = Ctx.Cursors (F_Identifier).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Data))
-                                                                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
-                                                                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
-                                                                                          and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
-                                                                                          and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Originate_Timestamp))
-                                                                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Originate_Timestamp).Last - Ctx.Cursors (F_Originate_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                          and then Ctx.Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                                                                                          and then Ctx.Cursors (F_Originate_Timestamp).First = Ctx.Cursors (F_Sequence_Number).Last + 1
-                                                                                          and then (if
-                                                                                                       Structural_Valid (Ctx.Cursors (F_Receive_Timestamp))
-                                                                                                    then
-                                                                                                       Ctx.Cursors (F_Receive_Timestamp).Last - Ctx.Cursors (F_Receive_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                                       and then Ctx.Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
-                                                                                                       and then Ctx.Cursors (F_Receive_Timestamp).First = Ctx.Cursors (F_Originate_Timestamp).Last + 1
-                                                                                                       and then (if
-                                                                                                                    Structural_Valid (Ctx.Cursors (F_Transmit_Timestamp))
-                                                                                                                 then
-                                                                                                                    Ctx.Cursors (F_Transmit_Timestamp).Last - Ctx.Cursors (F_Transmit_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                                                    and then Ctx.Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
-                                                                                                                    and then Ctx.Cursors (F_Transmit_Timestamp).First = Ctx.Cursors (F_Receive_Timestamp).Last + 1)))))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Pointer))
-                                                                and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
-                                                             then
-                                                                Ctx.Cursors (F_Pointer).Last - Ctx.Cursors (F_Pointer).First + 1 = RFLX.ICMP.Pointer'Size
-                                                                and then Ctx.Cursors (F_Pointer).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Pointer).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Unused_24))
-                                                                          then
-                                                                             Ctx.Cursors (F_Unused_24).Last - Ctx.Cursors (F_Unused_24).First + 1 = RFLX.ICMP.Unused_24_Base'Size
-                                                                             and then Ctx.Cursors (F_Unused_24).Predecessor = F_Pointer
-                                                                             and then Ctx.Cursors (F_Unused_24).First = Ctx.Cursors (F_Pointer).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Data))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                                          and then Ctx.Cursors (F_Data).Predecessor = F_Unused_24
-                                                                                          and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_24).Last + 1)))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Unused_32))
-                                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
-                                                             then
-                                                                Ctx.Cursors (F_Unused_32).Last - Ctx.Cursors (F_Unused_32).First + 1 = RFLX.ICMP.Unused_32_Base'Size
-                                                                and then Ctx.Cursors (F_Unused_32).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Unused_32).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Data))
-                                                                          then
-                                                                             Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                             and then Ctx.Cursors (F_Data).Predecessor = F_Unused_32
-                                                                             and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_32).Last + 1))))
-                         and then (if
-                                      Structural_Valid (Ctx.Cursors (F_Code_Zero))
-                                      and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
-                                                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
-                                                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
-                                                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
-                                                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench))
-                                                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
-                                                or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
-                                   then
-                                      Ctx.Cursors (F_Code_Zero).Last - Ctx.Cursors (F_Code_Zero).First + 1 = RFLX.ICMP.Code_Zero_Base'Size
-                                      and then Ctx.Cursors (F_Code_Zero).Predecessor = F_Tag
-                                      and then Ctx.Cursors (F_Code_Zero).First = Ctx.Cursors (F_Tag).Last + 1
-                                      and then (if
-                                                   Structural_Valid (Ctx.Cursors (F_Checksum))
-                                                then
-                                                   Ctx.Cursors (F_Checksum).Last - Ctx.Cursors (F_Checksum).First + 1 = RFLX.ICMP.Checksum'Size
-                                                   and then Ctx.Cursors (F_Checksum).Predecessor = F_Code_Zero
-                                                   and then Ctx.Cursors (F_Checksum).First = Ctx.Cursors (F_Code_Zero).Last + 1
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Gateway_Internet_Address))
-                                                                and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
-                                                             then
-                                                                Ctx.Cursors (F_Gateway_Internet_Address).Last - Ctx.Cursors (F_Gateway_Internet_Address).First + 1 = RFLX.ICMP.Gateway_Internet_Address'Size
-                                                                and then Ctx.Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Gateway_Internet_Address).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Data))
-                                                                          then
-                                                                             Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                             and then Ctx.Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
-                                                                             and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Gateway_Internet_Address).Last + 1))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Identifier))
-                                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
-                                                             then
-                                                                Ctx.Cursors (F_Identifier).Last - Ctx.Cursors (F_Identifier).First + 1 = RFLX.ICMP.Identifier'Size
-                                                                and then Ctx.Cursors (F_Identifier).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Identifier).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Sequence_Number))
-                                                                          then
-                                                                             Ctx.Cursors (F_Sequence_Number).Last - Ctx.Cursors (F_Sequence_Number).First + 1 = RFLX.ICMP.Sequence_Number'Size
-                                                                             and then Ctx.Cursors (F_Sequence_Number).Predecessor = F_Identifier
-                                                                             and then Ctx.Cursors (F_Sequence_Number).First = Ctx.Cursors (F_Identifier).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Data))
-                                                                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
-                                                                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
-                                                                                          and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
-                                                                                          and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Originate_Timestamp))
-                                                                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
-                                                                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Originate_Timestamp).Last - Ctx.Cursors (F_Originate_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                          and then Ctx.Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                                                                                          and then Ctx.Cursors (F_Originate_Timestamp).First = Ctx.Cursors (F_Sequence_Number).Last + 1
-                                                                                          and then (if
-                                                                                                       Structural_Valid (Ctx.Cursors (F_Receive_Timestamp))
-                                                                                                    then
-                                                                                                       Ctx.Cursors (F_Receive_Timestamp).Last - Ctx.Cursors (F_Receive_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                                       and then Ctx.Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
-                                                                                                       and then Ctx.Cursors (F_Receive_Timestamp).First = Ctx.Cursors (F_Originate_Timestamp).Last + 1
-                                                                                                       and then (if
-                                                                                                                    Structural_Valid (Ctx.Cursors (F_Transmit_Timestamp))
-                                                                                                                 then
-                                                                                                                    Ctx.Cursors (F_Transmit_Timestamp).Last - Ctx.Cursors (F_Transmit_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
-                                                                                                                    and then Ctx.Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
-                                                                                                                    and then Ctx.Cursors (F_Transmit_Timestamp).First = Ctx.Cursors (F_Receive_Timestamp).Last + 1)))))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Pointer))
-                                                                and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
-                                                             then
-                                                                Ctx.Cursors (F_Pointer).Last - Ctx.Cursors (F_Pointer).First + 1 = RFLX.ICMP.Pointer'Size
-                                                                and then Ctx.Cursors (F_Pointer).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Pointer).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Unused_24))
-                                                                          then
-                                                                             Ctx.Cursors (F_Unused_24).Last - Ctx.Cursors (F_Unused_24).First + 1 = RFLX.ICMP.Unused_24_Base'Size
-                                                                             and then Ctx.Cursors (F_Unused_24).Predecessor = F_Pointer
-                                                                             and then Ctx.Cursors (F_Unused_24).First = Ctx.Cursors (F_Pointer).Last + 1
-                                                                             and then (if
-                                                                                          Structural_Valid (Ctx.Cursors (F_Data))
-                                                                                       then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                                          and then Ctx.Cursors (F_Data).Predecessor = F_Unused_24
-                                                                                          and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_24).Last + 1)))
-                                                   and then (if
-                                                                Structural_Valid (Ctx.Cursors (F_Unused_32))
-                                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
-                                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
-                                                             then
-                                                                Ctx.Cursors (F_Unused_32).Last - Ctx.Cursors (F_Unused_32).First + 1 = RFLX.ICMP.Unused_32_Base'Size
-                                                                and then Ctx.Cursors (F_Unused_32).Predecessor = F_Checksum
-                                                                and then Ctx.Cursors (F_Unused_32).First = Ctx.Cursors (F_Checksum).Last + 1
-                                                                and then (if
-                                                                             Structural_Valid (Ctx.Cursors (F_Data))
-                                                                          then
-                                                                             Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = 224
-                                                                             and then Ctx.Cursors (F_Data).Predecessor = F_Unused_32
-                                                                             and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_32).Last + 1))))));
-      Ctx.Cursors (F_Data) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Data), Predecessor => Ctx.Cursors (F_Data).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
-   end Initialize_Bounded_Data;
 
 end RFLX.ICMP.Generic_Message;
