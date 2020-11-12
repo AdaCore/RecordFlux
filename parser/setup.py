@@ -79,7 +79,7 @@ class BuildParser(orig.build_py):
 
     def run(self):
         Path("build/langkit").mkdir(parents=True, exist_ok=True)
-        manage_factory().run(["--build-dir", "build/langkit", "make"])
+        manage_factory().run(["--build-dir", "build/langkit", "--verbosity", "debug", "make"])
 
 
 with open("README.md") as f:
