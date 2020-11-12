@@ -61,7 +61,7 @@ rflx_grammar.add_rules(
             Or(
                 # pylint: disable=no-member
                 ast.Op.alt_mul("*"),
-                ast.Op.alt_mul("/"),
+                ast.Op.alt_div("/"),
                 ast.Op.alt_mod("mod"),
             ),
             cut(),
