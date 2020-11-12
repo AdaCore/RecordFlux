@@ -16,7 +16,7 @@ rflx_grammar.add_rules(
         Opt(grammar.unqualified_identifier, "::"), grammar.unqualified_identifier
     ),
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
-    qualified_variable=ast.QualifiedVariable(grammar.qualified_identifier),
+    qualified_variable=ast.Variable(grammar.qualified_identifier),
     array_aggregate=ast.ArrayAggregate(
         "[", List(grammar.numeric_literal, sep=",", empty_valid=True), "]"
     ),
@@ -205,14 +205,6 @@ rflx_grammar.add_rules(
                 ast.ExprAttr.alt_valid(lexer.Valid),
             ),
         ),
-        ast.Where(
-            grammar.extended_expression,
-            "where",
-            grammar.unqualified_identifier,
-            "=",
-            grammar.extended_expression,
-        ),
-        grammar.extended_primary,
     ),
     extended_boolean_expression=ast.BooleanExpression(grammar.extended_expression),
 )
