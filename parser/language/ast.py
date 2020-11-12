@@ -796,11 +796,18 @@ class MessageAggregate(Expr):
     values = Field(type=BaseComponents)
 
 
-class Where(Expr):
+class TermAssoc(RFLXNode):
+    """
+    Term association
+    """
+
+    identifier = Field()
+    expression = Field()
+
+
+class Binding(Expr):
     """
     Term binding expression
     """
 
-    expression = Field(type=Expr)
-    variable_identifier = Field(type=UnqualifiedID)
-    substitution = Field(type=Expr)
+    associations = Field(type=TermAssoc.list)
