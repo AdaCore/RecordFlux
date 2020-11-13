@@ -60,6 +60,7 @@ from rflx.expression import (
     ValidChecksum,
     ValueRange,
     Variable,
+    Z3TypeError,
 )
 from rflx.identifier import ID, StrID
 from tests.utils import assert_equal, multilinestr
@@ -177,7 +178,7 @@ def test_not_simplified() -> None:
 def test_not_z3expr() -> None:
     assert Not(TRUE).z3expr() == z3.Not(z3.BoolVal(True))
     assert Not(FALSE).z3expr() == z3.Not(z3.BoolVal(False))
-    with pytest.raises(AssertionError):
+    with pytest.raises(Z3TypeError):
         Not(Variable("X")).z3expr()
 
 
@@ -300,6 +301,12 @@ def test_bool_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
     result = expression(Variable("X"), Variable("Y")).ada_expr()
     expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
     assert result == expected
+
+
+@pytest.mark.parametrize("expression", [And, AndThen, Or, OrElse])
+def test_bool_expr_z3expr_error(expression: Callable[[Expr, Expr], Expr]) -> None:
+    with pytest.raises(Z3TypeError):
+        expression(Number(1), Number(2)).z3expr()
 
 
 def test_and_neg() -> None:
@@ -511,6 +518,12 @@ def test_math_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
     result = expression(Variable("X"), Variable("Y")).ada_expr()
     expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
     assert result == expected
+
+
+@pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod])
+def test_math_expr_z3expr_error(expression: Callable[[Expr, Expr], Expr]) -> None:
+    with pytest.raises(Z3TypeError):
+        expression(String("X"), Number(1)).z3expr()
 
 
 def test_add_neg() -> None:
@@ -875,7 +888,7 @@ def test_attribute_z3expr(attribute: Expr, z3name: str) -> None:
 
 
 def test_attribute_z3expr_error() -> None:
-    with pytest.raises(AssertionError):
+    with pytest.raises(Z3TypeError):
         First(Call("X")).z3expr()
 
 
@@ -1046,6 +1059,12 @@ def test_relation_contains() -> None:
 
 def test_relation_variables() -> None:
     assert Less(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
+
+
+@pytest.mark.parametrize("relation", [Less, LessEqual, GreaterEqual, Greater])
+def test_relation_z3expr_error(relation: Callable[[Expr, Expr], Expr]) -> None:
+    with pytest.raises(Z3TypeError):
+        relation(String("X"), Number(1)).z3expr()
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
