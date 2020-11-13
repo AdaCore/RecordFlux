@@ -18,6 +18,10 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
 
+class Z3TypeError(TypeError):
+    pass
+
+
 class Precedence(Enum):
     undefined = 0
     boolean_operator = 1
@@ -291,7 +295,8 @@ class Not(Expr):
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.BoolRef:
         z3expr = self.expr.z3expr()
-        assert isinstance(z3expr, z3.BoolRef)
+        if not isinstance(z3expr, z3.BoolRef):
+            raise Z3TypeError("negating non-boolean term")
         return z3.Not(z3expr)
 
 
@@ -558,7 +563,8 @@ class And(BoolAssExpr):
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
         boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
-        assert len(z3exprs) == len(boolexprs)
+        if len(z3exprs) != len(boolexprs):
+            raise Z3TypeError("conjunction of non-boolean terms")
         return z3.And(*boolexprs)
 
 
@@ -602,7 +608,8 @@ class Or(BoolAssExpr):
     def z3expr(self) -> z3.BoolRef:
         z3exprs = [t.z3expr() for t in self.terms]
         boolexprs = [t for t in z3exprs if isinstance(t, z3.BoolRef)]
-        assert len(z3exprs) == len(boolexprs)
+        if len(z3exprs) != len(boolexprs):
+            raise Z3TypeError("disjunction of non-boolean terms")
         return z3.Or(*boolexprs)
 
 
@@ -798,7 +805,8 @@ class Add(MathAssExpr):
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         terms = [t for t in map(lambda e: e.z3expr(), self.terms) if isinstance(t, z3.ArithRef)]
-        assert len(terms) == len(self.terms), "Adding non-arithmetic terms"
+        if len(terms) != len(self.terms):
+            raise Z3TypeError("adding non-arithmetic terms")
         return z3.Sum(*terms)
 
 
@@ -826,7 +834,8 @@ class Mul(MathAssExpr):
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
         terms = [t for t in map(lambda e: e.z3expr(), self.terms) if isinstance(t, z3.ArithRef)]
-        assert len(terms) == len(self.terms), "Multiplying non-arithmetic terms"
+        if len(terms) != len(self.terms):
+            raise Z3TypeError("multiplying non-arithmetic terms")
         return z3.Product(*terms)
 
 
@@ -867,7 +876,8 @@ class Sub(MathBinExpr):
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
+            raise Z3TypeError("subtracting non-arithmetic terms")
         return left - right
 
 
@@ -894,7 +904,8 @@ class Div(MathBinExpr):
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
+            raise Z3TypeError("dividing non-arithmetic terms")
         return left / right
 
 
@@ -921,7 +932,8 @@ class Pow(MathBinExpr):
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
+            raise Z3TypeError("exponentiating non-arithmetic terms")
         return left ** right
 
 
@@ -948,7 +960,8 @@ class Mod(MathBinExpr):
     def z3expr(self) -> z3.ArithRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
+            raise Z3TypeError("modulo operation on non-arithmetic terms")
         return left % right
 
 
@@ -1085,7 +1098,8 @@ class Attribute(Name):
         return getattr(ada, self.__class__.__name__)(self.prefix.ada_expr(), self.negative)
 
     def z3expr(self) -> z3.ExprRef:
-        assert isinstance(self.prefix, Variable)
+        if not isinstance(self.prefix, Variable):
+            raise Z3TypeError("illegal prefix of attribute")
         name = f"{self.prefix}'{self.__class__.__name__}"
         if self.negative:
             return -z3.Int(name)
@@ -1537,7 +1551,8 @@ class Less(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
+            raise Z3TypeError("less relation between non-arithmetic terms")
         return left < right
 
 
@@ -1565,7 +1580,8 @@ class LessEqual(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
+            raise Z3TypeError("less-equal relation between non-arithmetic terms")
         return left <= right
 
 
@@ -1619,7 +1635,8 @@ class GreaterEqual(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
+            raise Z3TypeError("greater-equal relation between non-arithmetic terms")
         return left >= right
 
 
@@ -1647,7 +1664,8 @@ class Greater(Relation):
     def z3expr(self) -> z3.BoolRef:
         left = self.left.z3expr()
         right = self.right.z3expr()
-        assert isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)
+        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
+            raise Z3TypeError("greater relation between non-arithmetic terms")
         return left > right
 
 

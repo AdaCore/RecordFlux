@@ -8,6 +8,7 @@ from rflx.error import Location, RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
+    UNDEFINED,
     Add,
     Aggregate,
     And,
@@ -2225,6 +2226,45 @@ def test_no_contradiction_multi() -> None:
     Message("P::M", structure, types)
 
 
+def test_discontiguous_optional_fields() -> None:
+    structure = [
+        Link(INITIAL, Field("Flag")),
+        Link(
+            Field("Flag"),
+            Field("Opt1"),
+            condition=Equal(Variable("Flag"), Number(1)),
+        ),
+        Link(
+            Field("Flag"),
+            Field("Data"),
+            condition=NotEqual(Variable("Flag"), Number(1)),
+        ),
+        Link(Field("Opt1"), Field("Data")),
+        Link(
+            Field("Data"),
+            Field("Opt2"),
+            condition=Equal(Variable("Flag"), Number(1)),
+            size=Mul(Variable("Opt1"), Number(8)),
+        ),
+        Link(
+            Field("Data"),
+            FINAL,
+            condition=NotEqual(Variable("Flag"), Number(1)),
+        ),
+        Link(
+            Field("Opt2"),
+            FINAL,
+        ),
+    ]
+    types = {
+        Field("Flag"): MODULAR_INTEGER,
+        Field("Opt1"): MODULAR_INTEGER,
+        Field("Data"): MODULAR_INTEGER,
+        Field("Opt2"): Opaque(),
+    }
+    Message("P::M", structure, types)
+
+
 @pytest.mark.parametrize(
     "checksums,condition",
     [
@@ -2333,13 +2373,18 @@ def test_checksum_error(
 def test_field_size() -> None:
     message = Message(
         "P::M",
-        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): MODULAR_INTEGER},
+        [
+            Link(INITIAL, Field("A")),
+            Link(Field("A"), Field("B"), size=Number(8)),
+            Link(Field("B"), FINAL),
+        ],
+        {Field("A"): MODULAR_INTEGER, Field("B"): OPAQUE},
         location=Location((30, 10)),
     )
 
     assert message.field_size(FINAL) == Number(0)
-    assert message.field_size(Field("F")) == Number(8)
+    assert message.field_size(Field("A")) == Number(8)
+    assert message.field_size(Field("B")) == UNDEFINED
 
     with pytest.raises(AssertionError, match='^field "X" not found$'):
         message.field_size(Field("X"))

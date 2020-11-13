@@ -296,7 +296,7 @@ class AbstractMessage(mty.Type):
         if isinstance(field_type, mty.Scalar):
             return field_type.size
 
-        raise NotImplementedError
+        return expr.UNDEFINED
 
     def paths(self, field: Field) -> Set[Tuple[Link, ...]]:
         if field == INITIAL:
@@ -352,24 +352,6 @@ class AbstractMessage(mty.Type):
         types = {Field(prefix + f.identifier): t for f, t in self.types.items()}
 
         return self.copy(structure=structure, types=types)
-
-    def is_possibly_empty(self, field: Field) -> bool:
-        if isinstance(self.types[field], mty.Scalar):
-            return False
-
-        for p in self.paths(FINAL):
-            if not any(l.target == field for l in p):
-                continue
-            conditions = [l.condition for l in p if l.condition != expr.TRUE]
-            sizes = [
-                expr.Equal(expr.Size(l.target.name), l.size) for l in p if l.size != expr.UNDEFINED
-            ]
-            empty_field = expr.Equal(expr.Size(field.name), expr.Number(0))
-            proof = empty_field.check([*self.type_constraints(empty_field), *conditions, *sizes])
-            if proof.result == expr.ProofResult.sat:
-                return True
-
-        return False
 
     def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
@@ -655,6 +637,20 @@ class Message(AbstractMessage):
     def proven(self, skip_proof: bool = False) -> "Message":
         return copy(self)
 
+    def is_possibly_empty(self, field: Field) -> bool:
+        if isinstance(self.types[field], mty.Scalar):
+            return False
+
+        for p in self.paths(FINAL):
+            if not any(l.target == field for l in p):
+                continue
+            empty_field = expr.Equal(expr.Size(field.name), expr.Number(0))
+            proof = self.__prove_path_property(empty_field, p)
+            if proof.result == expr.ProofResult.sat:
+                return True
+
+        return False
+
     def __verify_expression_types(self) -> None:
         types: Dict[ID, mty.Type] = {}
 
@@ -674,6 +670,14 @@ class Message(AbstractMessage):
             types = {}
             path = []
             for l in p:
+                try:
+                    # check for contradictions in conditions of path
+                    proof = self.__prove_path_property(expr.TRUE, p)
+                    if proof.result == expr.ProofResult.unsat:
+                        break
+                except expr.Z3TypeError:
+                    pass
+
                 path.append(l.target)
 
                 if l.source in self.types:
@@ -909,10 +913,14 @@ class Message(AbstractMessage):
             paths = []
             for path in self.paths(f):
                 facts = [fact for link in path for fact in self.__link_expression(link)]
-                outgoing = self.outgoing(f)
-                if f != FINAL and outgoing:
+                last_field = path[-1].target
+                outgoing = self.outgoing(last_field)
+                if last_field != FINAL and outgoing:
                     facts.append(
-                        expr.Or(*[o.condition for o in outgoing], location=f.identifier.location)
+                        expr.Or(
+                            *[o.condition for o in outgoing],
+                            location=last_field.identifier.location,
+                        )
                     )
                 proof = expr.TRUE.check(facts)
                 if proof.result == expr.ProofResult.sat:
@@ -1171,6 +1179,13 @@ class Message(AbstractMessage):
                         )
                         return
 
+    def __prove_path_property(self, prop: expr.Expr, path: Sequence[Link]) -> expr.Proof:
+        conditions = [l.condition for l in path if l.condition != expr.TRUE]
+        sizes = [
+            expr.Equal(expr.Size(l.target.name), l.size) for l in path if l.size != expr.UNDEFINED
+        ]
+        return prop.check([*self.type_constraints(prop), *conditions, *sizes])
+
     @staticmethod
     def __target_first(link: Link) -> expr.Expr:
         if link.source == INITIAL:
@@ -1198,8 +1213,14 @@ class Message(AbstractMessage):
         target_last = self.__target_last(link)
         return [
             expr.Equal(expr.First(name), target_first, target_first.location or self.location),
-            expr.Equal(expr.Size(name), target_size, target_size.location or self.location),
-            expr.Equal(expr.Last(name), target_last, target_last.location or self.location),
+            *(
+                [
+                    expr.Equal(expr.Size(name), target_size, target_size.location or self.location),
+                    expr.Equal(expr.Last(name), target_last, target_last.location or self.location),
+                ]
+                if target_size != expr.UNDEFINED
+                else []
+            ),
             expr.GreaterEqual(expr.First("Message"), expr.Number(0), self.location),
             expr.GreaterEqual(expr.Last("Message"), expr.Last(name), self.location),
             expr.GreaterEqual(expr.Last("Message"), expr.First("Message"), self.location),
