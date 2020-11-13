@@ -16,7 +16,8 @@ rflx_grammar.add_rules(
         Opt(grammar.unqualified_identifier, "::"), grammar.unqualified_identifier
     ),
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
-    qualified_variable=ast.Variable(grammar.qualified_identifier),
+    variable=ast.Variable(grammar.qualified_identifier),
+    unqualified_variable=ast.UnqualifiedVariable(grammar.unqualified_identifier),
     array_aggregate=ast.ArrayAggregate(
         "[", List(grammar.numeric_literal, sep=",", empty_valid=True), "]"
     ),
@@ -46,13 +47,13 @@ rflx_grammar.add_rules(
         grammar.numeric_literal,
         grammar.string_literal,
         grammar.attribute,
-        grammar.qualified_variable,
+        grammar.variable,
         grammar.paren_expression,
     ),
     paren_expression=ast.ParenExpression("(", grammar.expression, ")"),
     factor=Or(
         # pylint: disable=no-member
-        ast.BinOp(grammar.primary, ast.Op.alt_pow("**"), cut(), grammar.primary),
+        ast.BinOp(grammar.factor, ast.Op.alt_pow("**"), cut(), grammar.primary),
         grammar.primary,
     ),
     term=Or(
@@ -114,7 +115,6 @@ rflx_grammar.add_rules(
     ),
     mathematical_expression=ast.MathematicalExpression(grammar.expression),
     boolean_expression=ast.BooleanExpression(grammar.expression),
-    paren_extended_expression=ast.ParenExpression("(", grammar.extended_expression, ")"),
     quantified_expression=ast.QuantifiedExpression(
         "for",
         Or(
@@ -155,6 +155,18 @@ rflx_grammar.add_rules(
         Or(grammar.null_message, grammar.message_components),
         ")",
     ),
+    extended_attribute=ast.ExpressionAttribute(
+        # grammar.extended_expression,
+        grammar.unqualified_variable,
+        "'",
+        Or(
+            # pylint: disable=no-member
+            ast.ExprAttr.alt_head(lexer.Head),
+            ast.ExprAttr.alt_opaque(lexer.Opaque),
+            ast.ExprAttr.alt_present(lexer.Present),
+            ast.ExprAttr.alt_valid(lexer.Valid),
+        ),
+    ),
     extended_primary=Or(
         grammar.concatenation,
         grammar.numeric_literal,
@@ -164,47 +176,80 @@ rflx_grammar.add_rules(
         grammar.call,
         grammar.conversion,
         grammar.message_aggregate,
+        grammar.extended_attribute,
         grammar.attribute,
-        grammar.qualified_variable,
-        grammar.paren_extended_expression,
+        grammar.variable,
+        grammar.extended_paren_expression,
     ),
-    extended_binop=Or(
+    extended_paren_expression=ast.ParenExpression("(", grammar.extended_expression, ")"),
+    extended_factor=Or(
         # pylint: disable=no-member
-        ast.Op.alt_pow("**"),
-        ast.Op.alt_mul("*"),
-        ast.Op.alt_div("/"),
-        ast.Op.alt_add("+"),
-        ast.Op.alt_sub("-"),
-        ast.Op.alt_eq("="),
-        ast.Op.alt_neq("/="),
-        ast.Op.alt_le("<="),
-        ast.Op.alt_lt("<"),
-        ast.Op.alt_ge(">="),
-        ast.Op.alt_gt(">"),
-        ast.Op.alt_in("in"),
-        ast.Op.alt_notin("not", "in"),
-        ast.Op.alt_and("and"),
-        ast.Op.alt_or("or"),
-        ast.Op.alt_select("."),
+        ast.BinOp(
+            grammar.extended_primary,
+            Or(ast.Op.alt_pow("**"), ast.Op.alt_select(".")),
+            cut(),
+            grammar.extended_primary,
+        ),
+        grammar.extended_primary,
+    ),
+    extended_term=Or(
+        ast.BinOp(
+            grammar.extended_term,
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_mul("*"),
+                ast.Op.alt_div("/"),
+                ast.Op.alt_mod("mod"),
+            ),
+            cut(),
+            grammar.extended_factor,
+        ),
+        grammar.extended_factor,
+    ),
+    extended_simple_expr=Or(
+        ast.BinOp(
+            grammar.extended_simple_expr,
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_add("+"),
+                ast.Op.alt_sub("-"),
+            ),
+            cut(),
+            grammar.extended_term,
+        ),
+        grammar.extended_term,
+    ),
+    extended_relation=Or(
+        ast.BinOp(
+            grammar.extended_relation,
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_eq("="),
+                ast.Op.alt_neq("/="),
+                ast.Op.alt_le("<="),
+                ast.Op.alt_lt("<"),
+                ast.Op.alt_ge(">="),
+                ast.Op.alt_gt(">"),
+                ast.Op.alt_in("in"),
+                ast.Op.alt_notin("not", "in"),
+            ),
+            cut(),
+            grammar.extended_simple_expr,
+        ),
+        grammar.extended_simple_expr,
     ),
     extended_expression=Or(
         ast.BinOp(
             grammar.extended_expression,
-            grammar.extended_binop,
-            cut(),
-            grammar.extended_primary,
-        ),
-        ast.ExpressionAttribute(
-            grammar.extended_expression,
-            "'",
             Or(
                 # pylint: disable=no-member
-                ast.ExprAttr.alt_head(lexer.Head),
-                ast.ExprAttr.alt_opaque(lexer.Opaque),
-                ast.ExprAttr.alt_present(lexer.Present),
-                ast.ExprAttr.alt_valid(lexer.Valid),
+                ast.Op.alt_and("and"),
+                ast.Op.alt_or("or"),
             ),
+            cut(),
+            grammar.extended_relation,
         ),
+        grammar.extended_relation,
     ),
     extended_boolean_expression=ast.BooleanExpression(grammar.extended_expression),
 )
