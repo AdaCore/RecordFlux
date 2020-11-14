@@ -175,7 +175,7 @@ class Parser:
         if not diagnostics_to_error(unit.diagnostics, error):
             error = self.__convert_unit(unit.root, Path("<stdin>"))
             for f, s in self.__specifications.items():
-                if s:
+                if f.name != "<stdin>" and s:
                     check_naming(error, s.f_package_declaration, f)
         error.propagate()
 
@@ -270,7 +270,7 @@ class Parser:
                     Session(
                         ID(
                             spec.f_package_declaration.f_identifier.text,
-                            node_location(s.f_identifier),
+                            node_location(s.f_identifier, filename),
                         )
                         * s.f_identifier.text,
                         s.f_aspects.f_initial.text,
@@ -420,7 +420,7 @@ def create_expression(expression: Expr, filename: Path, package: ID = None) -> r
         return create_expression(expression.f_data, filename, package)
     elif expression.kind_name == "BooleanExpression":
         return create_expression(expression.f_data, filename, package)
-    elif expression.kind_name == "QualifiedVariable":
+    elif expression.kind_name == "Variable":
         if expression.f_identifier.text.lower() == "true":
             return expr.TRUE
         elif expression.f_identifier.text.lower() == "false":
@@ -562,7 +562,7 @@ def create_message_structure(
             structure.append(Link(source_node, target_node))
 
         condition = (
-            create_expression(component.f_condition.f_data, filename)
+            create_expression(component.f_condition, filename)
             if component.f_condition
             else expr.TRUE
         )
@@ -621,7 +621,7 @@ def create_message_structure(
                     f'undefined field "{then.f_target}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
-                    node_location(then.f_target) if then.f_target else None,
+                    node_location(then.f_target, filename) if then.f_target else None,
                 )
                 continue
             structure.append(Link(source_node, *extract_then(then)))
@@ -766,7 +766,7 @@ def create_refinement(
             f'undefined type "{pdu}" in refinement',
             Subsystem.PARSER,
             Severity.ERROR,
-            node_location(refinement),
+            node_location(refinement, filename),
         )
 
     sdu = qualified_type_identifier(create_id(refinement.f_sdu, filename), package)
