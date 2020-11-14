@@ -35,7 +35,9 @@ format:
 test: check test_python
 
 test_python: install_parser
-	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
+	# FIXME: Disable parallelism, as the langkit-based parser yields invalid results
+	# when executing in parallel.
+	python3 -m pytest -n1 -vv -m "not hypothesis" tests
 
 install_parser:
 	pip3 install .[Devel]
