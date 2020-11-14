@@ -794,3 +794,21 @@ class MessageAggregate(Expr):
 
     identifier = Field(type=ID)
     values = Field(type=BaseComponents)
+
+
+class TermAssoc(RFLXNode):
+    """
+    Term association
+    """
+
+    identifier = Field(type=UnqualifiedID)
+    expression = Field(type=Expr)
+
+
+class Binding(Expr):
+    """
+    Variable binding
+    """
+
+    expression = Field(type=Expr)
+    bindings = Field(type=TermAssoc.list)

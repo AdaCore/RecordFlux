@@ -155,18 +155,6 @@ rflx_grammar.add_rules(
         Or(grammar.null_message, grammar.message_components),
         ")",
     ),
-    extended_attribute=ast.ExpressionAttribute(
-        # grammar.extended_expression,
-        grammar.unqualified_variable,
-        "'",
-        Or(
-            # pylint: disable=no-member
-            ast.ExprAttr.alt_head(lexer.Head),
-            ast.ExprAttr.alt_opaque(lexer.Opaque),
-            ast.ExprAttr.alt_present(lexer.Present),
-            ast.ExprAttr.alt_valid(lexer.Valid),
-        ),
-    ),
     extended_primary=Or(
         grammar.concatenation,
         grammar.numeric_literal,
@@ -176,19 +164,39 @@ rflx_grammar.add_rules(
         grammar.call,
         grammar.conversion,
         grammar.message_aggregate,
-        grammar.extended_attribute,
         grammar.attribute,
         grammar.variable,
         grammar.extended_paren_expression,
     ),
     extended_paren_expression=ast.ParenExpression("(", grammar.extended_expression, ")"),
     extended_factor=Or(
-        # pylint: disable=no-member
         ast.BinOp(
             grammar.extended_primary,
-            Or(ast.Op.alt_pow("**"), ast.Op.alt_select(".")),
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_pow("**"),
+            ),
             cut(),
             grammar.extended_primary,
+        ),
+        ast.ExpressionAttribute(
+            grammar.extended_factor,
+            "'",
+            Or(
+                # pylint: disable=no-member
+                ast.ExprAttr.alt_head(lexer.Head),
+                ast.ExprAttr.alt_opaque(lexer.Opaque),
+                ast.ExprAttr.alt_present(lexer.Present),
+                ast.ExprAttr.alt_valid(lexer.Valid),
+            ),
+        ),
+        ast.Binding(
+            grammar.extended_factor,
+            "where",
+            List(
+                ast.TermAssoc(grammar.unqualified_identifier, "=", grammar.extended_expression),
+                sep=",",
+            ),
         ),
         grammar.extended_primary,
     ),
@@ -245,6 +253,7 @@ rflx_grammar.add_rules(
                 # pylint: disable=no-member
                 ast.Op.alt_and("and"),
                 ast.Op.alt_or("or"),
+                ast.Op.alt_select("."),
             ),
             cut(),
             grammar.extended_relation,
