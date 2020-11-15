@@ -2,10 +2,19 @@ import math
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 
+from librecordfluxdsllang import AnalysisContext
+
 import rflx.expression as expr
 from rflx.model import Model
 from rflx.specification import Parser
+from rflx.specification.parser import create_expression, GrammarRule
 from tests.property import strategies
+
+
+def parse_expression(data: str, rule: GrammarRule) -> expr.Expr:
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    assert unit.root, "\n".join(str(d) for d in unit.diagnostics)
+    return create_expression(unit.root)
 
 
 @given(
@@ -19,9 +28,10 @@ from tests.property import strategies
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
-    parsed_expression = grammar.mathematical_expression().parseString(
-        str(expression), parseAll=True
-    )[0]
+    parsed_expression = parse_expression(
+        str(expression),
+        GrammarRule.mathematical_expression_rule
+    )
     assert parsed_expression == expression
 
 
@@ -42,7 +52,10 @@ def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
-    parsed_expression = grammar.boolean_expression().parseString(str(expression), parseAll=True)[0]
+    parsed_expression = parse_expression(
+        str(expression),
+        GrammarRule.extended_boolean_expression_rule
+    )
     assert parsed_expression == expression
 
 
@@ -86,7 +99,10 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_expressions(expression: expr.Expr) -> None:
-    parsed_expression = grammar.expression().parseString(str(expression), parseAll=True)[0]
+    parsed_expression = parse_expression(
+        str(expression),
+        GrammarRule.extended_expression_rule
+    )
     assert parsed_expression == expression
 
 
