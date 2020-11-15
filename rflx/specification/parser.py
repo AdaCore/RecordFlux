@@ -429,6 +429,16 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
             )
+        elif expression.f_op.kind_name == "OpIn":
+            return rexpr.In(
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
+            )
+        elif expression.f_op.kind_name == "OpNotin":
+            return rexpr.NotIn(
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
+            )
         else:
             raise NotImplementedError(
                 f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
@@ -470,6 +480,22 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             expression.text.split('"')[1],
             location=node_location(expression, filename),
         )
+    elif expression.kind_name == "Call":
+        return rexpr.Call(
+            create_id(expression.f_identifier, filename),
+            [create_expression(a, filename, package) for a in expression.f_arguments],
+            location=node_location(expression, filename),
+        )
+    elif expression.kind_name == "QuantifiedExpression":
+        param_id = create_id(expression.f_parameter_identifier, filename)
+        iterable = create_expression(expression.f_iterable, filename, package)
+        predicate = create_expression(expression.f_predicate, filename, package)
+        if expression.f_operation.kind_name == "QuantAll":
+            return rexpr.ForAllIn(param_id, iterable, predicate, node_location(expression, filename))
+        elif expression.f_operation.kind_name == "QuantSome":
+            return rexpr.ForSomeIn(param_id, iterable, predicate, node_location(expression, filename))
+        else:
+            raise NotImplementedError(f"Invalid quantified: {rexpr.f_operation.text}")
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
