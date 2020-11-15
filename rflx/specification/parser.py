@@ -12,6 +12,7 @@ from librecordfluxdsllang import (
     Diagnostic,
     EnumerationTypeDef,
     Expr,
+    GrammarRule,
     MathematicalAspect,
     MessageTypeDef,
     ModularTypeDef,
@@ -58,12 +59,12 @@ from .cache import Cache
 log = logging.getLogger(__name__)
 
 
-def node_location(node: RFLXNode, filename: str) -> Location:
+def node_location(node: RFLXNode, filename: Path = None) -> Location:
     start = node.token_start.sloc_range
     end = node.token_end.sloc_range
     return Location(
         start=(start.start.line, start.start.column),
-        source=filename,
+        source=str(filename) if filename else "<stdin>",
         end=(end.end.line, end.end.column),
     )
 
@@ -103,15 +104,16 @@ class Parser:
         self.__cache = Cache(cached)
 
     def __convert_unit(
-        self, spec: Specification, specfile: Path, transitions: List[ID] = None
+        self, spec: Specification, specfile: Path = None, transitions: List[ID] = None
     ) -> RecordFluxError:
         transitions = transitions or []
         error = RecordFluxError()
 
-        self.__specifications[specfile] = spec
         if spec:
+            filename = Path(f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx")
+            self.__specifications[filename] = (specfile, spec)
             for context in spec.f_context_clause:
-                item = create_id(context.f_item, str(specfile))
+                item = create_id(context.f_item, specfile)
                 if item in transitions:
                     error.append(
                         f'dependency cycle when including "{transitions[0]}"',
@@ -132,7 +134,8 @@ class Parser:
                     )
                     continue
                 transitions.append(item)
-                withed_file = specfile.parent / f"{str(item).lower()}.rflx"
+                parent = specfile.parent if specfile else filename.parent
+                withed_file = parent / f"{str(item).lower()}.rflx"
                 error.extend(self.__parse_specfile(withed_file, transitions))
 
         return error
@@ -157,24 +160,28 @@ class Parser:
         for f in specfiles:
             error.extend(self.__parse_specfile(f))
 
-        for f, s in self.__specifications.items():
+        for f, (origname, s) in self.__specifications.items():
             if s:
-                check_naming(error, s.f_package_declaration, f)
+                check_naming(error, s.f_package_declaration, f, origname)
         error.propagate()
 
-    def parse_string(self, string: str) -> None:
+    def parse_string(
+        self,
+        string: str,
+        rule: GrammarRule = GrammarRule.main_rule_rule,
+    ) -> None:
         error = RecordFluxError()
-        unit = AnalysisContext().get_from_buffer("<stdin>", string)
+        unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error):
-            error = self.__convert_unit(unit.root, Path("<stdin>"))
-            for f, s in self.__specifications.items():
+            error = self.__convert_unit(unit.root)
+            for f, (origname, s) in self.__specifications.items():
                 if s:
-                    check_naming(error, s.f_package_declaration, f, True)
+                    check_naming(error, s.f_package_declaration, f, origname)
         error.propagate()
 
     def create_model(self) -> Model:
         error = RecordFluxError()
-        for filename, specification in reversed(self.__specifications.items()):
+        for filename, (origname, specification) in reversed(self.__specifications.items()):
             if (
                 specification
                 and specification.f_package_declaration.f_identifier.text
@@ -184,7 +191,7 @@ class Parser:
                     specification.f_package_declaration.f_identifier.text
                 )
                 try:
-                    self.__evaluate_specification(filename, specification)
+                    self.__evaluate_specification(specification, origname)
                 except RecordFluxError as e:
                     error.extend(e)
         try:
@@ -199,19 +206,21 @@ class Parser:
     def specifications(self) -> Dict[str, Specification]:
         return {
             s.f_package_declaration.f_identifier.text: s
-            for s in self.__specifications.values()
+            for _, s in self.__specifications.values()
             if s
         }
 
-    def __evaluate_specification(self, filename: str, specification: Specification) -> None:
+    def __evaluate_specification(self, specification: Specification, filename: str = Path) -> None:
         log.info("Processing %s", specification.f_package_declaration.f_identifier.text)
 
         error = RecordFluxError()
-        self.__evaluate_types(filename, specification, error)
-        self.__evaluate_sessions(filename, specification)
+        self.__evaluate_types(specification, error, filename)
+        self.__evaluate_sessions(specification, filename)
         error.propagate()
 
-    def __evaluate_types(self, filename: str, spec: Specification, error: RecordFluxError) -> None:
+    def __evaluate_types(
+        self, spec: Specification, error: RecordFluxError, filename: Path = None
+    ) -> None:
         package_id = create_id(spec.f_package_declaration.f_identifier, filename)
         for t in spec.f_package_declaration.f_declarations:
             if isinstance(t, TypeSpec):
@@ -229,9 +238,9 @@ class Parser:
                         identifier,
                         t.f_definition,
                         self.__types,
-                        filename,
                         self.skip_verification,
                         self.__cache,
+                        filename,
                     )
                 elif t.f_definition.kind_name == "NullMessageTypeDef":
                     new_type = Message(identifier, [], {}, location=node_location(t, filename))
@@ -266,7 +275,7 @@ class Parser:
             self.__types.append(new_type)
             error.extend(new_type.error)
 
-    def __evaluate_sessions(self, filename: str, spec: Specification) -> None:
+    def __evaluate_sessions(self, spec: Specification, filename: Path = None) -> None:
         for s in spec.f_package_declaration.f_declarations:
             if s.kind_name == "Session_Spec":
                 self.__sessions.append(
@@ -287,7 +296,7 @@ class Parser:
                 )
 
 
-def create_id(identifier: NullID, filename: Path) -> ID:
+def create_id(identifier: NullID, filename: Path = None) -> ID:
     if identifier.kind_name == "UnqualifiedID":
         if identifier.text.lower() in RESERVED_WORDS:
             fail(
@@ -319,7 +328,7 @@ def create_id(identifier: NullID, filename: Path) -> ID:
 
 
 def create_array(
-    identifier: ID, array: ArrayTypeDef, types: Sequence[Type], filename: Path
+    identifier: ID, array: ArrayTypeDef, types: Sequence[Type], filename: Path = None
 ) -> Array:
     element_identifier = qualified_type_identifier(
         create_id(array.f_element_type, filename), identifier.parent
@@ -338,7 +347,7 @@ def create_array(
     return Array(identifier, element_type, node_location(array, filename))
 
 
-def create_expression(expression: Expr, filename: Path, package: ID = None) -> rexpr.Expr:
+def create_expression(expression: Expr, filename: Path = None, package: ID = None) -> rexpr.Expr:
     if expression.kind_name == "MathematicalExpression":
         return create_expression(expression.f_data, filename, package)
     elif expression.kind_name == "NumericLiteral":
@@ -456,11 +465,18 @@ def create_expression(expression: Expr, filename: Path, package: ID = None) -> r
             *[create_expression(v, filename, package) for v in expression.f_values],
             location=node_location(expression, filename),
         )
+    elif expression.kind_name == "StringLiteral":
+        return rexpr.String(
+            expression.text.split('"')[1],
+            location=node_location(expression, filename),
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
 
-def create_modular(identifier: ID, modular: ModularTypeDef, filename: Path) -> ModularInteger:
+def create_modular(
+    identifier: ID, modular: ModularTypeDef, filename: Path = None
+) -> ModularInteger:
     return ModularInteger(
         identifier,
         create_expression(modular.f_mod, filename, identifier.parent),
@@ -468,7 +484,7 @@ def create_modular(identifier: ID, modular: ModularTypeDef, filename: Path) -> M
     )
 
 
-def create_range(identifier: ID, rangetype: RangeTypeDef, filename: Path) -> RangeInteger:
+def create_range(identifier: ID, rangetype: RangeTypeDef, filename: Path = None) -> RangeInteger:
     if rangetype.f_size.f_identifier.text != "Size":
         fail(
             f"invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}",
@@ -490,9 +506,9 @@ def create_message(
     identifier: ID,
     message: MessageTypeDef,
     types: Sequence[Type],
-    filename: Path,
     skip_verification: bool,
     cache: Cache,
+    filename: Path = None,
 ) -> Message:
 
     components = message.f_components
@@ -500,7 +516,7 @@ def create_message(
     error = RecordFluxError()
 
     field_types = create_message_types(identifier, message, types, components, filename)
-    structure = create_message_structure(components, identifier.parent, filename, error)
+    structure = create_message_structure(components, identifier.parent, error, filename)
     aspects = {
         ID("Checksum"): create_message_aspects(message.f_checksums, identifier.parent, filename)
     }
@@ -519,7 +535,7 @@ def create_message_types(
     message: MessageTypeDef,
     types: Sequence[Type],
     components: Components,
-    filename: Path,
+    filename: Path = None,
 ) -> Dict[Field, Type]:
 
     field_types: Dict[Field, Type] = {}
@@ -536,7 +552,7 @@ def create_message_types(
 
 
 def create_message_structure(
-    components: Components, package: ID, filename: Path, error: RecordFluxError
+    components: Components, package: ID, error: RecordFluxError, filename: Path = None
 ) -> List[Link]:
     # pylint: disable=too-many-branches
 
@@ -838,44 +854,45 @@ def create_refinement(
 
 
 def check_naming(
-    error: RecordFluxError, package: PackageSpec, filename: Path = None, stdin: bool = False
+    error: RecordFluxError, package: PackageSpec, filename: Path, origname: Path = None
 ) -> None:
+    name = "<stdin>" or origname
     identifier = package.f_identifier.text
     if identifier.startswith("RFLX"):
         error.append(
             f'illegal prefix "RFLX" in package identifier "{identifier}"',
             Subsystem.PARSER,
             Severity.ERROR,
-            node_location(package.f_identifier, filename),
+            node_location(package.f_identifier, name),
         )
     if identifier != package.f_end_identifier.text:
         error.append(
             f'inconsistent package identifier "{package.f_end_identifier.text}"',
             Subsystem.PARSER,
             Severity.ERROR,
-            node_location(package.f_end_identifier, filename),
+            node_location(package.f_end_identifier, name),
         )
         error.append(
             f'previous identifier was "{identifier}"',
             Subsystem.PARSER,
             Severity.INFO,
-            node_location(package.f_identifier, filename),
+            node_location(package.f_identifier, name),
         )
-    if not stdin and filename:
+    if origname:
         expected_filename = f"{identifier.lower()}.rflx"
-        if filename.name != expected_filename:
+        if origname.name != expected_filename:
             error.append(
                 f'file name does not match unit name "{identifier}",'
                 f' should be "{expected_filename}"',
                 Subsystem.PARSER,
                 Severity.ERROR,
-                node_location(package.f_identifier, filename),
+                node_location(package.f_identifier, origname),
             )
     for t in package.f_declarations:
-        if isinstance(t, TypeSpec) and is_builtin_type(create_id(t.f_identifier, filename).name):
+        if isinstance(t, TypeSpec) and is_builtin_type(create_id(t.f_identifier, name).name):
             error.append(
                 f'illegal redefinition of built-in type "{t.f_identifier.text}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                node_location(t, filename),
+                node_location(t, name),
             )
