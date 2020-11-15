@@ -10,7 +10,17 @@ from librecordfluxdsllang import RFLXNode
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, Model, ModularInteger
+from rflx.model import (
+    FINAL,
+    INITIAL,
+    OPAQUE,
+    Enumeration,
+    Field,
+    Link,
+    Message,
+    Model,
+    ModularInteger,
+)
 from rflx.specification import cache, parser
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 from tests.data import models
@@ -19,6 +29,8 @@ T = ModularInteger("Test::T", expr.Number(256))
 
 
 def to_dict(node: Any) -> Dict[str, Any]:
+    if not node:
+        return None
     if node.is_list_type:
         return [to_dict(e) for e in node.children]
     result = {name[2:]: to_dict(getattr(node, name)) for name in dir(node) if name.startswith("f_")}
@@ -132,9 +144,14 @@ def test_parse_duplicate_specifications() -> None:
     assert_ast_files(
         files,
         {
-            "Empty_Package": ast.Specification(
-                ast.ContextSpec([]), ast.PackageSpec("Empty_Package", [], [])
-            )
+            "Empty_Package": {
+                "context_clause": [],
+                "package_declaration": {
+                    "declarations": [],
+                    "end_identifier": "Empty_Package",
+                    "identifier": "Empty_Package",
+                },
+            }
         },
     )
 
@@ -143,9 +160,14 @@ def test_parse_empty_package_spec() -> None:
     assert_ast_files(
         [f"{SPEC_DIR}/empty_package.rflx"],
         {
-            "Empty_Package": ast.Specification(
-                ast.ContextSpec([]), ast.PackageSpec("Empty_Package", [], [])
-            )
+            "Empty_Package": {
+                "context_clause": [],
+                "package_declaration": {
+                    "declarations": [],
+                    "end_identifier": "Empty_Package",
+                    "identifier": "Empty_Package",
+                },
+            }
         },
     )
 
@@ -176,216 +198,421 @@ def test_parse_context_spec() -> None:
 
 def test_parse_integer_type_spec() -> None:
     spec = {
-        "Integer_Type": ast.Specification(
-            ast.ContextSpec([]),
-            ast.PackageSpec(
-                "Integer_Type",
-                [
-                    model.RangeInteger(
-                        "__PACKAGE__::Page_Num", expr.Number(1), expr.Number(2000), expr.Number(16)
-                    ),
-                    model.RangeInteger(
-                        "__PACKAGE__::Line_Size", expr.Number(0), expr.Number(255), expr.Number(8)
-                    ),
-                    model.ModularInteger("__PACKAGE__::Byte", expr.Number(256)),
-                    model.ModularInteger("__PACKAGE__::Hash_Index", expr.Number(64)),
+        "Integer_Type": {
+            "context_clause": [],
+            "package_declaration": {
+                "declarations": [
+                    {
+                        "definition": {
+                            "lower": {"data": "1"},
+                            "size": {"identifier": "Size", "value": {"data": "16"}},
+                            "upper": {"data": "2_000"},
+                        },
+                        "identifier": "Page_Num",
+                    },
+                    {
+                        "definition": {
+                            "lower": {"data": "0"},
+                            "size": {"identifier": "Size", "value": {"data": "8"}},
+                            "upper": {"data": "255"},
+                        },
+                        "identifier": "Line_Size",
+                    },
+                    {"definition": {"mod": {"data": "256"}}, "identifier": "Byte"},
+                    {"definition": {"mod": {"data": "64"}}, "identifier": "Hash_Index"},
                 ],
-                [],
-            ),
-        )
+                "end_identifier": "Integer_Type",
+                "identifier": "Integer_Type",
+            },
+        },
     }
     assert_ast_files([f"{SPEC_DIR}/integer_type.rflx"], spec)
 
 
 def test_parse_enumeration_type_spec() -> None:
     spec = {
-        "Enumeration_Type": ast.Specification(
-            ast.ContextSpec([]),
-            ast.PackageSpec(
-                "Enumeration_Type",
-                [
-                    model.Enumeration(
-                        "__PACKAGE__::Day",
-                        [
-                            ("Mon", expr.Number(1)),
-                            ("Tue", expr.Number(2)),
-                            ("Wed", expr.Number(3)),
-                            ("Thu", expr.Number(4)),
-                            ("Fri", expr.Number(5)),
-                            ("Sat", expr.Number(6)),
-                            ("Sun", expr.Number(7)),
-                        ],
-                        expr.Number(3),
-                        False,
-                    ),
-                    model.Enumeration(
-                        "__PACKAGE__::Gender",
-                        [("M", expr.Number(0)), ("F", expr.Number(1))],
-                        expr.Number(1),
-                        False,
-                    ),
-                    model.Enumeration(
-                        "__PACKAGE__::Priority",
-                        [
-                            ("Low", expr.Number(1)),
-                            ("Medium", expr.Number(4)),
-                            ("High", expr.Number(7)),
-                        ],
-                        expr.Number(8),
-                        True,
-                    ),
+        "Enumeration_Type": {
+            "context_clause": [],
+            "package_declaration": {
+                "declarations": [
+                    {
+                        "definition": {
+                            "aspects": [{"identifier": "Size", "value": {"data": "3"}}],
+                            "elements": {
+                                "elements": [
+                                    {"identifier": "Mon", "literal": "1"},
+                                    {"identifier": "Tue", "literal": "2"},
+                                    {"identifier": "Wed", "literal": "3"},
+                                    {"identifier": "Thu", "literal": "4"},
+                                    {"identifier": "Fri", "literal": "5"},
+                                    {"identifier": "Sat", "literal": "6"},
+                                    {"identifier": "Sun", "literal": "7"},
+                                ]
+                            },
+                        },
+                        "identifier": "Day",
+                    },
+                    {
+                        "definition": {
+                            "aspects": [
+                                {"identifier": "Size", "value": {"data": "1"}},
+                                {
+                                    "identifier": "Always_Valid",
+                                    "value": {
+                                        "data": {"identifier": {"name": "False", "package": None}}
+                                    },
+                                },
+                            ],
+                            "elements": {"elements": ["M", "F"]},
+                        },
+                        "identifier": "Gender",
+                    },
+                    {
+                        "definition": {
+                            "aspects": [
+                                {"identifier": "Always_Valid", "value": None},
+                                {"identifier": "Size", "value": {"data": "8"}},
+                            ],
+                            "elements": {
+                                "elements": [
+                                    {"identifier": "Low", "literal": "1"},
+                                    {"identifier": "Medium", "literal": "4"},
+                                    {"identifier": "High", "literal": "7"},
+                                ]
+                            },
+                        },
+                        "identifier": "Priority",
+                    },
                 ],
-                [],
-            ),
-        )
+                "end_identifier": "Enumeration_Type",
+                "identifier": "Enumeration_Type",
+            },
+        },
     }
     assert_ast_files([f"{SPEC_DIR}/enumeration_type.rflx"], spec)
 
 
 def test_parse_array_type_spec() -> None:
     spec = {
-        "Array_Type": ast.Specification(
-            ast.ContextSpec([]),
-            ast.PackageSpec(
-                "Array_Type",
-                [
-                    model.ModularInteger("__PACKAGE__::Byte", expr.Number(256)),
-                    ast.ArraySpec("__PACKAGE__::Bytes", ast.ReferenceSpec("__PACKAGE__::Byte")),
-                    ast.MessageSpec(
-                        "__PACKAGE__::Foo",
-                        [
-                            ast.Component(
-                                "Length",
-                                "Byte",
-                                [
-                                    ast.Then(
-                                        "Bytes",
-                                        expr.UNDEFINED,
-                                        expr.Mul(expr.Variable("Length"), expr.Number(8)),
-                                    )
+        "Array_Type": {
+            "context_clause": [],
+            "package_declaration": {
+                "declarations": [
+                    {"definition": {"mod": {"data": "256"}}, "identifier": "Byte"},
+                    {
+                        "definition": {"element_type": {"name": "Byte", "package": None}},
+                        "identifier": "Bytes",
+                    },
+                    {
+                        "definition": {
+                            "checksums": None,
+                            "components": {
+                                "components": [
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Length",
+                                        "thens": [
+                                            {
+                                                "aspects": [
+                                                    {
+                                                        "identifier": "Size",
+                                                        "value": {
+                                                            "data": {
+                                                                "left": {
+                                                                    "identifier": {
+                                                                        "name": "Length",
+                                                                        "package": None,
+                                                                    }
+                                                                },
+                                                                "op": "*",
+                                                                "right": "8",
+                                                            }
+                                                        },
+                                                    }
+                                                ],
+                                                "condition": None,
+                                                "target": "Bytes",
+                                            }
+                                        ],
+                                        "type_identifier": {"name": "Byte", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Bytes",
+                                        "thens": [],
+                                        "type_identifier": {"name": "Bytes", "package": None},
+                                    },
                                 ],
-                            ),
-                            ast.Component("Bytes", "Bytes"),
-                        ],
-                    ),
-                    ast.ArraySpec("__PACKAGE__::Bar", ast.ReferenceSpec("__PACKAGE__::Foo")),
+                                "initial_component": None,
+                            },
+                        },
+                        "identifier": "Foo",
+                    },
+                    {
+                        "definition": {"element_type": {"name": "Foo", "package": None}},
+                        "identifier": "Bar",
+                    },
                 ],
-                [],
-            ),
-        )
+                "end_identifier": "Array_Type",
+                "identifier": "Array_Type",
+            },
+        },
     }
     assert_ast_files([f"{SPEC_DIR}/array_type.rflx"], spec)
 
 
 def test_parse_message_type_spec() -> None:
     spec = {
-        "Message_Type": ast.Specification(
-            ast.ContextSpec([]),
-            ast.PackageSpec(
-                "Message_Type",
-                [
-                    model.ModularInteger("__PACKAGE__::T", expr.Number(256)),
-                    ast.MessageSpec(
-                        "__PACKAGE__::PDU",
-                        [
-                            ast.Component(
-                                "Foo",
-                                "T",
-                                [
-                                    ast.Then(
-                                        "Bar",
-                                        expr.UNDEFINED,
-                                        expr.UNDEFINED,
-                                        expr.LessEqual(expr.Variable("Foo"), expr.Number(30, 16)),
-                                    ),
-                                    ast.Then(
-                                        "Baz",
-                                        expr.UNDEFINED,
-                                        expr.UNDEFINED,
-                                        expr.Greater(expr.Variable("Foo"), expr.Number(30, 16)),
-                                    ),
+        "Message_Type": {
+            "context_clause": [],
+            "package_declaration": {
+                "declarations": [
+                    {"definition": {"mod": {"data": "256"}}, "identifier": "T"},
+                    {
+                        "definition": {
+                            "checksums": None,
+                            "components": {
+                                "components": [
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Foo",
+                                        "thens": [
+                                            {
+                                                "aspects": [],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "identifier": {
+                                                                "name": "Foo",
+                                                                "package": None,
+                                                            }
+                                                        },
+                                                        "op": "<=",
+                                                        "right": "16#1E#",
+                                                    }
+                                                },
+                                                "target": "Bar",
+                                            },
+                                            {
+                                                "aspects": [],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "identifier": {
+                                                                "name": "Foo",
+                                                                "package": None,
+                                                            }
+                                                        },
+                                                        "op": ">",
+                                                        "right": "16#1E#",
+                                                    }
+                                                },
+                                                "target": "Baz",
+                                            },
+                                        ],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Bar",
+                                        "thens": [],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Baz",
+                                        "thens": [],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
                                 ],
-                            ),
-                            ast.Component("Bar", "T"),
-                            ast.Component("Baz", "T"),
-                        ],
-                    ),
-                    ast.MessageSpec(
-                        "__PACKAGE__::Simple_PDU",
-                        [ast.Component("Bar", "T"), ast.Component("Baz", "T")],
-                    ),
-                    ast.MessageSpec("__PACKAGE__::Empty_PDU", []),
+                                "initial_component": None,
+                            },
+                        },
+                        "identifier": "PDU",
+                    },
+                    {
+                        "definition": {
+                            "checksums": None,
+                            "components": {
+                                "components": [
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Bar",
+                                        "thens": [],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Baz",
+                                        "thens": [],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
+                                ],
+                                "initial_component": None,
+                            },
+                        },
+                        "identifier": "Simple_PDU",
+                    },
+                    {"definition": "null " "message", "identifier": "Empty_PDU"},
                 ],
-                [],
-            ),
-        )
+                "end_identifier": "Message_Type",
+                "identifier": "Message_Type",
+            },
+        },
     }
     assert_ast_files([f"{SPEC_DIR}/message_type.rflx"], spec)
 
 
 def test_parse_type_refinement_spec() -> None:
     spec = {
-        "Message_Type": ast.Specification(
-            ast.ContextSpec([]),
-            ast.PackageSpec(
-                "Message_Type",
-                [
-                    model.ModularInteger("__PACKAGE__::T", expr.Number(256)),
-                    ast.MessageSpec(
-                        "__PACKAGE__::PDU",
-                        [
-                            ast.Component(
-                                "Foo",
-                                "T",
-                                [
-                                    ast.Then(
-                                        "Bar",
-                                        expr.UNDEFINED,
-                                        expr.UNDEFINED,
-                                        expr.LessEqual(expr.Variable("Foo"), expr.Number(30, 16)),
-                                    ),
-                                    ast.Then(
-                                        "Baz",
-                                        expr.UNDEFINED,
-                                        expr.UNDEFINED,
-                                        expr.Greater(expr.Variable("Foo"), expr.Number(30, 16)),
-                                    ),
+        "Message_Type": {
+            "context_clause": [],
+            "package_declaration": {
+                "declarations": [
+                    {"definition": {"mod": {"data": "256"}}, "identifier": "T"},
+                    {
+                        "definition": {
+                            "checksums": None,
+                            "components": {
+                                "components": [
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Foo",
+                                        "thens": [
+                                            {
+                                                "aspects": [],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "identifier": {
+                                                                "name": "Foo",
+                                                                "package": None,
+                                                            }
+                                                        },
+                                                        "op": "<=",
+                                                        "right": "16#1E#",
+                                                    }
+                                                },
+                                                "target": "Bar",
+                                            },
+                                            {
+                                                "aspects": [],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "identifier": {
+                                                                "name": "Foo",
+                                                                "package": None,
+                                                            }
+                                                        },
+                                                        "op": ">",
+                                                        "right": "16#1E#",
+                                                    }
+                                                },
+                                                "target": "Baz",
+                                            },
+                                        ],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Bar",
+                                        "thens": [],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Baz",
+                                        "thens": [],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
                                 ],
-                            ),
-                            ast.Component("Bar", "T"),
-                            ast.Component("Baz", "T"),
-                        ],
-                    ),
-                    ast.MessageSpec(
-                        "__PACKAGE__::Simple_PDU",
-                        [ast.Component("Bar", "T"), ast.Component("Baz", "T")],
-                    ),
-                    ast.MessageSpec("__PACKAGE__::Empty_PDU", []),
+                                "initial_component": None,
+                            },
+                        },
+                        "identifier": "PDU",
+                    },
+                    {
+                        "definition": {
+                            "checksums": None,
+                            "components": {
+                                "components": [
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Bar",
+                                        "thens": [],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Baz",
+                                        "thens": [],
+                                        "type_identifier": {"name": "T", "package": None},
+                                    },
+                                ],
+                                "initial_component": None,
+                            },
+                        },
+                        "identifier": "Simple_PDU",
+                    },
+                    {"definition": "null " "message", "identifier": "Empty_PDU"},
                 ],
-                [],
-            ),
-        ),
-        "Type_Refinement": ast.Specification(
-            ast.ContextSpec(["Message_Type"]),
-            ast.PackageSpec(
-                "Type_Refinement",
-                [
-                    ast.RefinementSpec(
-                        "Message_Type::Simple_PDU",
-                        "Bar",
-                        "Message_Type::PDU",
-                        expr.Equal(expr.Variable("Baz"), expr.Number(42)),
-                    ),
-                    ast.RefinementSpec("Message_Type::PDU", "Bar", "Message_Type::Simple_PDU"),
+                "end_identifier": "Message_Type",
+                "identifier": "Message_Type",
+            },
+        },
+        "Type_Refinement": {
+            "context_clause": [{"item": "Message_Type"}],
+            "package_declaration": {
+                "declarations": [
+                    {
+                        "condition": {
+                            "data": {
+                                "left": {"identifier": {"name": "Baz", "package": None}},
+                                "op": "=",
+                                "right": "42",
+                            }
+                        },
+                        "field": "Bar",
+                        "pdu": {"name": "Simple_PDU", "package": "Message_Type"},
+                        "sdu": {"name": "PDU", "package": "Message_Type"},
+                    },
+                    {
+                        "condition": None,
+                        "field": "Bar",
+                        "pdu": {"name": "PDU", "package": "Message_Type"},
+                        "sdu": {"name": "Simple_PDU", "package": "Message_Type"},
+                    },
                 ],
-                [],
-            ),
-        ),
+                "end_identifier": "Type_Refinement",
+                "identifier": "Type_Refinement",
+            },
+        },
     }
     assert_ast_files([f"{SPEC_DIR}/message_type.rflx", f"{SPEC_DIR}/type_refinement.rflx"], spec)
 
 
 def test_parse_type_derivation_spec() -> None:
+    foo_message = model.Message(
+        identifier=ID("Test::Foo"),
+        structure=[
+            Link(Field("Initial"), Field("N")),
+            Link(Field("N"), Field("Final")),
+        ],
+        types={Field("N"): model.ModularInteger("Test::T", expr.Number(256))},
+    )
     assert_model_string(
         """
             package Test is
@@ -397,125 +624,288 @@ def test_parse_type_derivation_spec() -> None:
                type Bar is new Foo;
             end Test;
         """,
-        {
-            "Test": ast.Specification(
-                ast.ContextSpec([]),
-                ast.PackageSpec(
-                    "Test",
-                    [
-                        model.ModularInteger("__PACKAGE__::T", expr.Number(256)),
-                        ast.MessageSpec("__PACKAGE__::Foo", [ast.Component("N", "T")]),
-                        ast.DerivationSpec("__PACKAGE__::Bar", "Foo"),
+        Model(
+            types=[
+                model.Enumeration(
+                    identifier=ID("__BUILTINS__::Boolean"),
+                    literals=[
+                        (ID("False"), expr.Number(0)),
+                        (ID("True"), expr.Number(1)),
                     ],
-                    [],
+                    size=expr.Number(1),
+                    always_valid=False,
                 ),
-            )
-        },
+                model.Opaque(),
+                model.ModularInteger("Test::T", expr.Number(256)),
+                foo_message,
+                model.DerivedMessage(
+                    identifier=ID("Test::Bar"),
+                    base=foo_message,
+                    structure=[
+                        Link(Field("Initial"), Field("N")),
+                        Link(Field("N"), Field("Final")),
+                    ],
+                    types={Field("N"): model.ModularInteger("Test::T", expr.Number(256))},
+                ),
+            ],
+        ),
     )
 
 
 def test_parse_ethernet_spec() -> None:
     spec = {
-        "Ethernet": ast.Specification(
-            ast.ContextSpec([]),
-            ast.PackageSpec(
-                "Ethernet",
-                [
-                    model.ModularInteger(
-                        "__PACKAGE__::Address", expr.Pow(expr.Number(2), expr.Number(48))
-                    ),
-                    model.RangeInteger(
-                        "__PACKAGE__::Type_Length",
-                        expr.Number(46),
-                        expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
-                        expr.Number(16),
-                    ),
-                    model.RangeInteger(
-                        "__PACKAGE__::TPID",
-                        expr.Number(0x8100, 16),
-                        expr.Number(0x8100, 16),
-                        expr.Number(16),
-                    ),
-                    model.ModularInteger(
-                        "__PACKAGE__::TCI", expr.Pow(expr.Number(2), expr.Number(16))
-                    ),
-                    ast.MessageSpec(
-                        "__PACKAGE__::Frame",
-                        [
-                            ast.Component("Destination", "Address"),
-                            ast.Component("Source", "Address"),
-                            ast.Component(
-                                "Type_Length_TPID",
-                                "Type_Length",
-                                [
-                                    ast.Then(
-                                        "TPID",
-                                        expr.First("Type_Length_TPID"),
-                                        expr.UNDEFINED,
-                                        expr.Equal(
-                                            expr.Variable("Type_Length_TPID"),
-                                            expr.Number(33024, 16),
-                                        ),
-                                    ),
-                                    ast.Then(
-                                        "Type_Length",
-                                        expr.First("Type_Length_TPID"),
-                                        expr.UNDEFINED,
-                                        expr.NotEqual(
-                                            expr.Variable("Type_Length_TPID"),
-                                            expr.Number(33024, 16),
-                                        ),
-                                    ),
+        "Ethernet": {
+            "context_clause": [],
+            "package_declaration": {
+                "declarations": [
+                    {
+                        "definition": {"mod": {"data": {"left": "2", "op": "**", "right": "48"}}},
+                        "identifier": "Address",
+                    },
+                    {
+                        "definition": {
+                            "lower": {"data": "46"},
+                            "size": {"identifier": "Size", "value": {"data": "16"}},
+                            "upper": {
+                                "data": {
+                                    "left": {"left": "2", "op": "**", "right": "16"},
+                                    "op": "-",
+                                    "right": "1",
+                                }
+                            },
+                        },
+                        "identifier": "Type_Length",
+                    },
+                    {
+                        "definition": {
+                            "lower": {"data": "16#8100#"},
+                            "size": {"identifier": "Size", "value": {"data": "16"}},
+                            "upper": {"data": "16#8100#"},
+                        },
+                        "identifier": "TPID",
+                    },
+                    {
+                        "definition": {"mod": {"data": {"left": "2", "op": "**", "right": "16"}}},
+                        "identifier": "TCI",
+                    },
+                    {
+                        "definition": {
+                            "checksums": None,
+                            "components": {
+                                "components": [
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Destination",
+                                        "thens": [],
+                                        "type_identifier": {"name": "Address", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Source",
+                                        "thens": [],
+                                        "type_identifier": {"name": "Address", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Type_Length_TPID",
+                                        "thens": [
+                                            {
+                                                "aspects": [
+                                                    {
+                                                        "identifier": "First",
+                                                        "value": {
+                                                            "data": {
+                                                                "identifier": "Type_Length_TPID",
+                                                                "kind": "First",
+                                                            }
+                                                        },
+                                                    }
+                                                ],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "identifier": {
+                                                                "name": "Type_Length_TPID",
+                                                                "package": None,
+                                                            }
+                                                        },
+                                                        "op": "=",
+                                                        "right": "16#8100#",
+                                                    }
+                                                },
+                                                "target": "TPID",
+                                            },
+                                            {
+                                                "aspects": [
+                                                    {
+                                                        "identifier": "First",
+                                                        "value": {
+                                                            "data": {
+                                                                "identifier": "Type_Length_TPID",
+                                                                "kind": "First",
+                                                            }
+                                                        },
+                                                    }
+                                                ],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "identifier": {
+                                                                "name": "Type_Length_TPID",
+                                                                "package": None,
+                                                            }
+                                                        },
+                                                        "op": "/=",
+                                                        "right": "16#8100#",
+                                                    }
+                                                },
+                                                "target": "Type_Length",
+                                            },
+                                        ],
+                                        "type_identifier": {"name": "Type_Length", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "TPID",
+                                        "thens": [],
+                                        "type_identifier": {"name": "TPID", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "TCI",
+                                        "thens": [],
+                                        "type_identifier": {"name": "TCI", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Type_Length",
+                                        "thens": [
+                                            {
+                                                "aspects": [
+                                                    {
+                                                        "identifier": "Size",
+                                                        "value": {
+                                                            "data": {
+                                                                "left": {
+                                                                    "identifier": {
+                                                                        "name": "Type_Length",
+                                                                        "package": None,
+                                                                    }
+                                                                },
+                                                                "op": "*",
+                                                                "right": "8",
+                                                            }
+                                                        },
+                                                    }
+                                                ],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "identifier": {
+                                                                "name": "Type_Length",
+                                                                "package": None,
+                                                            }
+                                                        },
+                                                        "op": "<=",
+                                                        "right": "1500",
+                                                    }
+                                                },
+                                                "target": "Payload",
+                                            },
+                                            {
+                                                "aspects": [
+                                                    {
+                                                        "identifier": "Size",
+                                                        "value": {
+                                                            "data": {
+                                                                "left": {
+                                                                    "identifier": "Message",
+                                                                    "kind": "Last",
+                                                                },
+                                                                "op": "-",
+                                                                "right": {
+                                                                    "identifier": "Type_Length",
+                                                                    "kind": "Last",
+                                                                },
+                                                            }
+                                                        },
+                                                    }
+                                                ],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "identifier": {
+                                                                "name": "Type_Length",
+                                                                "package": None,
+                                                            }
+                                                        },
+                                                        "op": ">=",
+                                                        "right": "1536",
+                                                    }
+                                                },
+                                                "target": "Payload",
+                                            },
+                                        ],
+                                        "type_identifier": {"name": "Type_Length", "package": None},
+                                    },
+                                    {
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": "Payload",
+                                        "thens": [
+                                            {
+                                                "aspects": [],
+                                                "condition": {
+                                                    "data": {
+                                                        "left": {
+                                                            "left": {
+                                                                "left": {
+                                                                    "identifier": "Payload",
+                                                                    "kind": "Size",
+                                                                },
+                                                                "op": "/",
+                                                                "right": "8",
+                                                            },
+                                                            "op": ">=",
+                                                            "right": "46",
+                                                        },
+                                                        "op": "and",
+                                                        "right": {
+                                                            "left": {
+                                                                "left": {
+                                                                    "identifier": "Payload",
+                                                                    "kind": "Size",
+                                                                },
+                                                                "op": "/",
+                                                                "right": "8",
+                                                            },
+                                                            "op": "<=",
+                                                            "right": "1500",
+                                                        },
+                                                    }
+                                                },
+                                                "target": "null",
+                                            }
+                                        ],
+                                        "type_identifier": {"name": "Opaque", "package": None},
+                                    },
                                 ],
-                            ),
-                            ast.Component("TPID", "TPID"),
-                            ast.Component("TCI", "TCI"),
-                            ast.Component(
-                                "Type_Length",
-                                "Type_Length",
-                                [
-                                    ast.Then(
-                                        "Payload",
-                                        expr.UNDEFINED,
-                                        expr.Mul(expr.Variable("Type_Length"), expr.Number(8)),
-                                        expr.LessEqual(
-                                            expr.Variable("Type_Length"), expr.Number(1500)
-                                        ),
-                                    ),
-                                    ast.Then(
-                                        "Payload",
-                                        expr.UNDEFINED,
-                                        expr.Sub(expr.Last("Message"), expr.Last("Type_Length")),
-                                        expr.GreaterEqual(
-                                            expr.Variable("Type_Length"), expr.Number(1536)
-                                        ),
-                                    ),
-                                ],
-                            ),
-                            ast.Component(
-                                "Payload",
-                                "Opaque",
-                                [
-                                    ast.Then(
-                                        condition=expr.And(
-                                            expr.GreaterEqual(
-                                                expr.Div(expr.Size("Payload"), expr.Number(8)),
-                                                expr.Number(46),
-                                            ),
-                                            expr.LessEqual(
-                                                expr.Div(expr.Size("Payload"), expr.Number(8)),
-                                                expr.Number(1500),
-                                            ),
-                                        ),
-                                    )
-                                ],
-                            ),
-                        ],
-                    ),
+                                "initial_component": None,
+                            },
+                        },
+                        "identifier": "Frame",
+                    },
                 ],
-                [],
-            ),
-        )
+                "end_identifier": "Ethernet",
+                "identifier": "Ethernet",
+            },
+        },
     }
 
     assert_ast_files([f"{EX_SPEC_DIR}/ethernet.rflx"], spec)
@@ -560,7 +950,7 @@ def test_parse_error_incorrect_specification() -> None:
 def test_parse_error_unexpected_exception_in_parser(monkeypatch: Any) -> None:
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=r"parser: error: TEST"):
-        monkeypatch.setattr(parser, "check_naming", lambda x, e, f, s: raise_parser_error())
+        monkeypatch.setattr(parser, "check_naming", lambda x, e, f, o: raise_parser_error())
         p.parse_string(
             """
                 package Test is
