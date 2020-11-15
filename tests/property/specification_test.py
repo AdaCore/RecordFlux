@@ -4,7 +4,7 @@ from hypothesis import HealthCheck, given, settings, strategies as st
 
 import rflx.expression as expr
 from rflx.model import Model
-from rflx.specification import Parser, grammar
+from rflx.specification import Parser
 from tests.property import strategies
 
 

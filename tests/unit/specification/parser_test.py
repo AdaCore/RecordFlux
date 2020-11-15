@@ -560,7 +560,7 @@ def test_parse_error_incorrect_specification() -> None:
 def test_parse_error_unexpected_exception_in_parser(monkeypatch: Any) -> None:
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=r"parser: error: TEST"):
-        monkeypatch.setattr(parser, "check_naming", lambda x, e: raise_parser_error())
+        monkeypatch.setattr(parser, "check_naming", lambda x, e, f, s: raise_parser_error())
         p.parse_string(
             """
                 package Test is
@@ -663,7 +663,7 @@ def test_parse_error_derivation_undefined_type() -> None:
                type Bar is new Foo;
             end Test;
         """,
-        r'^<stdin>:3:16: parser: error: undefined base message "Test::Foo" in derived message$',
+        r'^<stdin>:3:32: parser: error: undefined base message "Test::Foo" in derived message$',
     )
 
 
@@ -675,8 +675,8 @@ def test_parse_error_derivation_unsupported_type() -> None:
                type Bar is new Foo;
             end Test;
         """,
-        r'^<stdin>:4:16: parser: error: illegal derivation "Test::Bar"\n'
-        r'<stdin>:3:16: parser: info: invalid base message type "Test::Foo"',
+        r'^<stdin>:4:21: parser: error: illegal derivation "Test::Bar"\n'
+        r'<stdin>:3:21: parser: info: invalid base message type "Test::Foo"',
     )
 
 
@@ -695,7 +695,7 @@ def test_parse_error_multiple_initial_node_edges() -> None:
                   end message;
             end Test;
         """,
-        r'^<stdin>:7:33: parser: error: Expected ";"',
+        r"^<stdin>:7:33: parser: error: Expected ';', got ','",
     )
 
 
@@ -715,7 +715,7 @@ def test_parse_error_multiple_initial_nodes() -> None:
                   end message;
             end Test;
         """,
-        r'^<stdin>:8:22: parser: error: reserved word "null" used as identifier',
+        r"^<stdin>:8:22: parser: error: Expected 'First', got 'null'",
     )
 
 
@@ -741,7 +741,7 @@ def test_parse_error_reserved_word_in_message_component() -> None:
                   end message;
             end Test;
         """,
-        r'^<stdin>:6:22: parser: error: Found unwanted token, "Message"',
+        r'^<stdin>:6:22: parser: error: reserved word "Message" used as identifier',
     )
 
 
@@ -753,7 +753,9 @@ def test_parse_error_invalid_context_clause(tmp_path: Path) -> None:
 
     p = parser.Parser()
 
-    with pytest.raises(RecordFluxError, match=rf'^{test_file}:1:13: parser: error: Expected ";"$'):
+    with pytest.raises(
+        RecordFluxError, match=rf"^{test_file}:1:13: parser: error: Expected ';', got Termination$"
+    ):
         p.parse(test_file)
 
 

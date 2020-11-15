@@ -28,7 +28,6 @@ from librecordfluxdsllang import (
 
 import rflx.expression as rexpr
 from rflx import common, expression as expr
-from rflx.specification.const import RESERVED_WORDS
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
 from rflx.model import (
@@ -52,6 +51,7 @@ from rflx.model import (
     is_builtin_type,
     qualified_type_identifier,
 )
+from rflx.specification.const import RESERVED_WORDS
 
 from .cache import Cache
 
@@ -107,7 +107,7 @@ class Parser:
         self.__cache = Cache(cached)
 
     def __convert_unit(
-        self, spec: Specification, specfile: Path, transitions: List[Tuple[str, ID]] = None
+        self, spec: Specification, specfile: Path, transitions: List[ID] = None
     ) -> RecordFluxError:
         transitions = transitions or []
         error = RecordFluxError()
@@ -115,14 +115,13 @@ class Parser:
         self.__specifications[specfile] = spec
         if spec:
             for context in spec.f_context_clause:
-                item = context.f_item.text
-                transition = (specfile.name, item)
-                if transition in transitions:
+                item = create_id(context.f_item, str(specfile))
+                if item in transitions:
                     error.append(
-                        f'dependency cycle when including "{transitions[0][1]}"',
+                        f'dependency cycle when including "{transitions[0]}"',
                         Subsystem.PARSER,
                         Severity.ERROR,
-                        transitions[0][1].location,
+                        transitions[0].location,
                     )
                     error.extend(
                         [
@@ -132,19 +131,17 @@ class Parser:
                                 Severity.INFO,
                                 i.location,
                             )
-                            for _, i in transitions[1:]
+                            for i in transitions[1:] + [item]
                         ]
                     )
                     continue
-                transitions.append(transition)
-                withed_file = specfile.parent / f"{item.lower()}.rflx"
+                transitions.append(item)
+                withed_file = specfile.parent / f"{str(item).lower()}.rflx"
                 error.extend(self.__parse_specfile(withed_file, transitions))
 
         return error
 
-    def __parse_specfile(
-        self, specfile: Path, transitions: List[Tuple[str, ID]] = None
-    ) -> RecordFluxError:
+    def __parse_specfile(self, specfile: Path, transitions: List[ID] = None) -> RecordFluxError:
         error = RecordFluxError()
         if specfile in self.__specifications:
             self.__specifications.move_to_end(specfile)
@@ -175,8 +172,8 @@ class Parser:
         if not diagnostics_to_error(unit.diagnostics, error):
             error = self.__convert_unit(unit.root, Path("<stdin>"))
             for f, s in self.__specifications.items():
-                if f.name != "<stdin>" and s:
-                    check_naming(error, s.f_package_declaration, f)
+                if s:
+                    check_naming(error, s.f_package_declaration, f, True)
         error.propagate()
 
     def create_model(self) -> Model:
@@ -443,6 +440,12 @@ def create_expression(expression: Expr, filename: Path, package: ID = None) -> r
             raise NotImplementedError(
                 f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
             )
+    elif expression.kind_name == "ArrayAggregate":
+        return rexpr.Aggregate(
+            *[create_expression(v, filename, package) for v in expression.f_values],
+            location=node_location(expression, filename),
+        )
+
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
 
@@ -550,7 +553,14 @@ def create_message_structure(
 
     for i, component in enumerate(components.f_components):
         source_node = Field(component.f_identifier.text) if component.f_identifier else INITIAL
-        component_identifier = ID(component.f_identifier.text)
+        component_identifier = create_id(component.f_identifier, filename)
+        if component.f_identifier.text.lower() == "message":
+            fail(
+                f'reserved word "Message" used as identifier',
+                Subsystem.PARSER,
+                Severity.ERROR,
+                component_identifier.location,
+            )
 
         if len(component.f_thens) == 0:
             target_name = (
@@ -671,23 +681,23 @@ def create_derived_message(
             f'undefined base message "{base_name}" in derived message',
             Subsystem.PARSER,
             Severity.ERROR,
-            derivation.location,
+            base_name.location,
         )
 
     base_messages = [t for t in base_types if isinstance(t, Message)]
 
     if not base_messages:
         error.append(
-            f'illegal derivation "{derivation.identifier}"',
+            f'illegal derivation "{identifier}"',
             Subsystem.PARSER,
             Severity.ERROR,
-            derivation.location,
+            identifier.location,
         )
         error.append(
             f'invalid base message type "{base_name}"',
             Subsystem.PARSER,
             Severity.INFO,
-            base_types[0].location,
+            base_types[0].identifier.location,
         )
         error.propagate()
 
@@ -793,7 +803,9 @@ def create_refinement(
     )
 
 
-def check_naming(error: RecordFluxError, package: PackageSpec, filename: Path = None) -> None:
+def check_naming(
+    error: RecordFluxError, package: PackageSpec, filename: Path = None, stdin: bool = False
+) -> None:
     identifier = package.f_identifier.text
     if identifier.startswith("RFLX"):
         error.append(
@@ -802,7 +814,7 @@ def check_naming(error: RecordFluxError, package: PackageSpec, filename: Path = 
             Severity.ERROR,
             node_location(package.f_identifier, filename),
         )
-    if identifier != identifier:
+    if identifier != package.f_end_identifier.text:
         error.append(
             f'inconsistent package identifier "{package.f_end_identifier.text}"',
             Subsystem.PARSER,
@@ -815,7 +827,7 @@ def check_naming(error: RecordFluxError, package: PackageSpec, filename: Path = 
             Severity.INFO,
             node_location(package.f_identifier, filename),
         )
-    if filename:
+    if not stdin and filename:
         expected_filename = f"{identifier.lower()}.rflx"
         if filename.name != expected_filename:
             error.append(
