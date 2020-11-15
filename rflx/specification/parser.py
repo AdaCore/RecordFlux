@@ -58,10 +58,6 @@ from .cache import Cache
 log = logging.getLogger(__name__)
 
 
-class ParseFatalException(Exception):
-    pass
-
-
 def node_location(node: RFLXNode, filename: str) -> Location:
     start = node.token_start.sloc_range
     end = node.token_end.sloc_range
@@ -251,12 +247,22 @@ class Parser:
                 elif t.f_definition.kind_name == "EnumerationTypeDef":
                     new_type = create_enumeration(identifier, t.f_definition, filename)
                 else:
-                    raise ParseFatalException(f"Unknown type {t.f_definition.kind_name}")
+                    fail(
+                        f"Unknown type {t.f_definition.kind_name}",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(identifier, filename),
+                    )
             else:
                 if t.kind_name == "RefinementSpec":
                     new_type = create_refinement(t, package_id, self.__types, filename)
                 else:
-                    raise ParseFatalException(f"Unknown type {t}")
+                    fail(
+                        f"Unknown type {t}",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(identifier, filename),
+                    )
             self.__types.append(new_type)
             error.extend(new_type.error)
 
@@ -342,7 +348,12 @@ def create_expression(expression: Expr, filename: Path, package: ID = None) -> r
         elif len(num) == 3:
             base = int(num[0])
             return rexpr.Number(int(num[1], base), base=base)
-        raise ParseFatalException(f"Invalid numeric literal: {expression.text}")
+        fail(
+            f"Invalid numeric literal: {expression.text}",
+            Subsystem.PARSER,
+            Severity.ERROR,
+            node_location(identifier, filename),
+        )
     elif expression.kind_name == "BinOp":
         if expression.f_op.kind_name == "OpAnd":
             return rexpr.And(
@@ -459,8 +470,11 @@ def create_modular(identifier: ID, modular: ModularTypeDef, filename: Path) -> M
 
 def create_range(identifier: ID, rangetype: RangeTypeDef, filename: Path) -> RangeInteger:
     if rangetype.f_size.f_identifier.text != "Size":
-        raise ParseFatalException(
-            f"Invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}"
+        fail(
+            f"invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}",
+            Subsystem.PARSER,
+            Severity.ERROR,
+            base_name.location,
         )
     size = create_expression(rangetype.f_size.f_value, filename, identifier.parent)
     return RangeInteger(
@@ -535,7 +549,12 @@ def create_message_structure(
             elif aspect.f_identifier.text == "First":
                 first = create_expression(aspect.f_value, filename)
             else:
-                raise ParseFatalException(f"Invalid aspect {aspect.f_identifier.text}")
+                fail(
+                    f"Invalid aspect {aspect.f_identifier.text}",
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(aspect.f_identifier, filename),
+                )
         return size, first
 
     def extract_then(then: ThenNode) -> Tuple[Field, expr.Expr, expr.Expr, expr.Expr, Location]:
@@ -628,7 +647,7 @@ def create_message_structure(
                 then.f_target.text == c.f_identifier.text for c in components.f_components
             ):
                 error.append(
-                    f'undefined field "{then.f_target}"',
+                    f'undefined field "{then.f_target.text}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(then.f_target, filename) if then.f_target else None,
@@ -657,7 +676,12 @@ def create_message_aspects(
                         )
                     )
                 else:
-                    raise ParseFatalException(f"Invalid checksum association {value.kind_name}")
+                    fail(
+                        f"Invalid checksum association {value.kind_name}",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        base_name.location,
+                    )
             result[create_id(assoc.f_identifier, filename)] = exprs
     return result
 
@@ -744,12 +768,22 @@ def create_enumeration(
                 elif av_expr == expr.FALSE:
                     always_valid = False
                 else:
-                    raise ParseFatalException(f"Invalid Always_Valid expression: {av_expr}")
+                    fail(
+                        f"Invalid Always_Valid expression: {av_expr}",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        base_name.location,
+                    )
             else:
                 always_valid = True
 
     if not size:
-        raise ParseFatalException(f"Not size set for {identifier}")
+        fail(
+            f"No size set for {identifier}",
+            Subsystem.PARSER,
+            Severity.ERROR,
+            base_name.location,
+        )
     return Enumeration(identifier, literals, size, always_valid)
 
 

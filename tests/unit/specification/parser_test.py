@@ -124,7 +124,7 @@ def test_create_proven_message_error(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("spec", ["empty_file", "comment_only"])
 def test_parse_empty_specfication(spec: str) -> None:
-    assert_ast_files([f"{SPEC_DIR}/{spec}.rflx"], [])
+    assert_ast_files([f"{SPEC_DIR}/{spec}.rflx"], {})
 
 
 def test_parse_duplicate_specifications() -> None:
@@ -553,7 +553,7 @@ def test_parse_error_incorrect_name() -> None:
 def test_parse_error_incorrect_specification() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/incorrect_specification.rflx"],
-        f'{SPEC_DIR}/incorrect_specification.rflx:3:10: parser: error: Expected "is"',
+        f"{SPEC_DIR}/incorrect_specification.rflx:3:10: parser: error: Expected 'is', got ';'",
     )
 
 
@@ -613,8 +613,7 @@ def test_parse_error_invalid_location_expression() -> None:
                   end message;
             end Test;
         """,
-        r'^<stdin>:8:38: parser: error: Expected {{"First" - "=>" - MathematicalExpression}'
-        r' | {"Size" - "=>" - MathematicalExpression}}$',
+        r"^<stdin>:8:34: parser: error: Invalid aspect Foo$",
     )
 
 
