@@ -8,7 +8,6 @@ from rflx.identifier import ID
 from rflx.model import BOOLEAN
 from rflx.model.session import Session
 from rflx.specification import parser
-from rflx.specification.parser import ParseFatalException
 
 
 @pytest.mark.parametrize(
@@ -217,7 +216,7 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
-    with pytest.raises(ParseFatalException, match=rf"^{error}$"):
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         grammar.mathematical_expression().parseString(string, parseAll=True)
 
 
@@ -242,7 +241,7 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
-    with pytest.raises(ParseFatalException, match=rf"^{error}$"):
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         grammar.boolean_expression().parseString(string, parseAll=True)
 
 
@@ -678,7 +677,7 @@ def test_state(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_state_error(string: str, error: str) -> None:
-    with pytest.raises(ParseFatalException, match=rf"^{error}$"):
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         grammar.state().parseString(string, parseAll=True)
 
 
@@ -767,7 +766,7 @@ def test_session_declaration(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_session_declaration_error(string: str, error: str) -> None:
-    with pytest.raises(ParseFatalException, match=rf"^{error}$"):
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         grammar.session_declaration().parseString(string, parseAll=True)
 
 
@@ -806,7 +805,7 @@ def test_session() -> None:
 
 def test_unexpected_exception(monkeypatch: Any) -> None:
     with pytest.raises(
-        ParseFatalException,
+        RecordFluxError,
         match=r"ZeroDivisionError",
     ):
         monkeypatch.setattr(
@@ -818,12 +817,12 @@ def test_unexpected_exception(monkeypatch: Any) -> None:
 
 
 def test_expression_aggregate_no_number() -> None:
-    with pytest.raises(ParseFatalException, match=r"^Expected Number"):
+    with pytest.raises(RecordFluxError, match=r"^Expected Number"):
         grammar.expression().parseString("[1, Foo]")
 
 
 def test_unexpected_suffix() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected suffix .*$"):
+    with pytest.raises(RecordFluxError, match=r"^unexpected suffix .*$"):
         grammar.parse_suffix(
             "",
             0,
@@ -832,7 +831,7 @@ def test_unexpected_suffix() -> None:
 
 
 def test_unexpected_relation_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected operator .*$"):
+    with pytest.raises(RecordFluxError, match=r"^unexpected operator .*$"):
         grammar.parse_relational_operator(
             "",
             0,
@@ -847,7 +846,7 @@ def test_unexpected_relation_operator() -> None:
 
 
 def test_unexpected_boolean_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected operator .*$"):
+    with pytest.raises(RecordFluxError, match=r"^unexpected operator .*$"):
         grammar.parse_boolean_operator(
             "",
             0,
@@ -862,7 +861,7 @@ def test_unexpected_boolean_operator() -> None:
 
 
 def test_unexpected_mathematical_operator() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected operator .*$"):
+    with pytest.raises(RecordFluxError, match=r"^unexpected operator .*$"):
         grammar.parse_mathematical_operator(
             "",
             0,
@@ -878,7 +877,7 @@ def test_unexpected_mathematical_operator() -> None:
 
 def test_unexpected_quantified_expression(monkeypatch: Any) -> None:
     monkeypatch.setattr(grammar, "evaluate_located_expression", lambda s, t: (t, Location((1, 1))))
-    with pytest.raises(ParseFatalException, match=r"^unexpected quantified expression"):
+    with pytest.raises(RecordFluxError, match=r"^unexpected quantified expression"):
         grammar.parse_quantified_expression(
             "",
             0,
@@ -896,11 +895,11 @@ def test_unexpected_quantified_expression(monkeypatch: Any) -> None:
 
 
 def test_unexpected_type() -> None:
-    with pytest.raises(ParseFatalException, match=r"^unexpected type"):
+    with pytest.raises(RecordFluxError, match=r"^unexpected type"):
         grammar.parse_type("type T is X;", 0, [0, "type", "T", "is", "X", 8])
 
 
 def test_unexpected_attribute(monkeypatch: Any) -> None:
     monkeypatch.setattr(grammar, "evaluate_located_expression", lambda s, t: (t, Location((1, 1))))
-    with pytest.raises(ParseFatalException, match=r"^unexpected attribute"):
+    with pytest.raises(RecordFluxError, match=r"^unexpected attribute"):
         grammar.parse_attribute("", 0, ["A", "Invalid", expr.Variable("B")])

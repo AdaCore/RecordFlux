@@ -150,7 +150,11 @@ def test_parse_error_aggregate_non_number() -> None:
     path = IDE_DIR / "parse_error_aggregate_non_number.rflx"
     assert_error(
         path,
-        [f'{path}:10:26: parser: error: unexpected expression type "Variable"'],
+        [
+            f"{path}:10:26: parser: error: Cannot parse <relation>",
+            f"{path}:10:39: parser: error: Expected Numeral, got 'First'",
+            f"{path}:10:39: parser: error: Expected ';', got 'First'",
+        ],
     )
 
 
@@ -159,8 +163,6 @@ def test_parse_error_invalid_location() -> None:
     assert_error(
         path,
         [
-            f"{path}:7:21: parser: error: Expected"
-            ' {{"First" - "=>" - MathematicalExpression}'
-            ' | {"Size" - "=>" - MathematicalExpression}}',
+            f"{path}:7:21: parser: error: Invalid aspect Invalid",
         ],
     )
