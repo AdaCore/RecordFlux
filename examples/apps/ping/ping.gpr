@@ -29,6 +29,8 @@ project Ping is
    end Binder;
 
    package Prove is
+      for Proof_Dir use "proof";
+
       for Proof_Switches ("Ada") use (
          "-j0",
          "--prover=cvc4,z3,altergo",

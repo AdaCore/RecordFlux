@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="6">
+<prover id="0" name="Z3" version="4.5.1-gnatprove" timelimit="1" steplimit="169387600" memlimit="1000"/>
+<file format="gnat-json">
+<path name=".."/><path name=".."/><path name=".."/><path name="obj"/>
+<path name="gnatprove"/><path name="icmpv4__ping__socket__receive__c_recv.gnat-json"/>
+<theory name="Icmpv4__ping__socket__receive__c_recv__subprogram_def">
+ <goal name="def&#39;vc" expl="VC for def">
+ <transf name="split_goal_wp_conj" >
+  <goal name="def&#39;vc.0" expl="postcondition" proved="true">
+  <transf name="trivial_true" proved="true" >
+  </transf>
+  </goal>
+  <goal name="def&#39;vc.1" expl="precondition" proved="true">
+  <proof prover="0" timelimit="90"><result status="valid" steps="14468"/></proof>
+  </goal>
+  <goal name="def&#39;vc.2" expl="postcondition" proved="true">
+  <transf name="trivial_true" proved="true" >
+  </transf>
+  </goal>
+  <goal name="def&#39;vc.3" expl="assertion">
+  <proof prover="0"><result status="unknown" steps="23037"/></proof>
+  </goal>
+  <goal name="def&#39;vc.4" expl="postcondition" proved="true">
+  <transf name="trivial_true" proved="true" >
+  </transf>
+  </goal>
+  <goal name="def&#39;vc.5" expl="assertion">
+  <proof prover="0"><result status="unknown" steps="23030"/></proof>
+  </goal>
+  <goal name="def&#39;vc.6" expl="postcondition" proved="true">
+  <transf name="trivial_true" proved="true" >
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+</file>
+</why3session>
