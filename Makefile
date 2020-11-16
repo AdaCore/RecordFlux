@@ -21,7 +21,7 @@ test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
 .PHONY: check check_black check_isort check_flake8 check_pylint check_mypy format \
-	test test_python test_spark prove_spark test_examples clean
+	test test_python test_spark prove_tests prove_apps test_examples clean
 
 check: check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc
 
@@ -53,7 +53,7 @@ format:
 	black -l 100 $(python-packages) ide/gnatstudio
 	isort $(python-packages) ide/gnatstudio
 
-test: check test_python_coverage test_python_property test_spark prove_spark
+test: check test_python_coverage test_python_property test_spark prove_tests prove_apps
 
 test_python:
 	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis"
