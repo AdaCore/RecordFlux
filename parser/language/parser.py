@@ -70,6 +70,7 @@ rflx_grammar.add_rules(
         ),
         grammar.factor,
     ),
+    unop_term=Or(ast.Negation("-", cut(), grammar.term), grammar.term),
     simple_expr=Or(
         ast.BinOp(
             grammar.simple_expr,
@@ -79,9 +80,9 @@ rflx_grammar.add_rules(
                 ast.Op.alt_sub("-"),
             ),
             cut(),
-            grammar.term,
+            grammar.unop_term,
         ),
-        grammar.term,
+        grammar.unop_term,
     ),
     relation=Or(
         ast.BinOp(
@@ -214,6 +215,10 @@ rflx_grammar.add_rules(
         ),
         grammar.extended_factor,
     ),
+    extended_unop_term=Or(
+        ast.Negation("-", cut(), grammar.extended_term),
+        grammar.extended_term,
+    ),
     extended_simple_expr=Or(
         ast.BinOp(
             grammar.extended_simple_expr,
@@ -223,9 +228,9 @@ rflx_grammar.add_rules(
                 ast.Op.alt_sub("-"),
             ),
             cut(),
-            grammar.extended_term,
+            grammar.extended_unop_term,
         ),
-        grammar.extended_term,
+        grammar.extended_unop_term,
     ),
     extended_relation=Or(
         ast.BinOp(

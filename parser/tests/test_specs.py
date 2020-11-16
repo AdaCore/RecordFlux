@@ -3,15 +3,15 @@ from pathlib import Path
 import librecordfluxdsllang as rflxdsl  # type: ignore
 import pytest
 
-ctx = rflxdsl.AnalysisContext()
-
 
 @pytest.mark.parametrize(
     "spec",
     (Path("tests") / "data").rglob("*.rflx"),
 )
 def test_file(spec: Path) -> None:
+    ctx = rflxdsl.AnalysisContext()
     unit = ctx.get_from_file(str(spec))
+    del ctx
     if spec.name.startswith("incorrect_"):
         assert len(unit.diagnostics) > 0, f"{spec}"
     else:

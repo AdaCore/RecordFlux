@@ -88,6 +88,14 @@ class Op(RFLXNode):
     ]
 
 
+class Negation(Expr):
+    """
+    Negation
+    """
+
+    data = Field(type=Expr)
+
+
 class BinOp(Expr):
     """
     Binary operation
