@@ -14,7 +14,7 @@ with RFLX.Arrays.Inner_Message;
 with RFLX.Arrays.Inner_Messages;
 with RFLX.Arrays.Array_Size_Defined_By_Message_Size;
 
-package body RFLX.Arrays.Tests is
+package body RFLX.Arrays_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -1188,4 +1188,4 @@ package body RFLX.Arrays.Tests is
                         "Generating message with array size defined by message size");
    end Register_Tests;
 
-end RFLX.Arrays.Tests;
+end RFLX.Arrays_Tests;

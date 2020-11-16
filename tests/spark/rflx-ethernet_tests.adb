@@ -7,7 +7,7 @@ with RFLX.RFLX_Types;
 
 with RFLX.Ethernet.Frame;
 
-package body RFLX.Ethernet.Tests is
+package body RFLX.Ethernet_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -493,4 +493,4 @@ package body RFLX.Ethernet.Tests is
                         "Generating Ethernet II + VLAN Tag (dynamic)");
    end Register_Tests;
 
-end RFLX.Ethernet.Tests;
+end RFLX.Ethernet_Tests;

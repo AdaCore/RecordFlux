@@ -10,7 +10,7 @@ with RFLX.RFLX_Types;
 with RFLX.IPv4.Packet;
 with RFLX.IPv4.Option;
 
-package body RFLX.IPv4.Tests is
+package body RFLX.IPv4_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -216,7 +216,7 @@ package body RFLX.IPv4.Tests is
          Assert (Valid, "Invalid Option_Class");
          if Valid then
             Option_Class := IPv4.Option.Get_Option_Class (Context);
-            Assert (Option_Class'Image, Debugging_And_Measurement'Image, "Invalid Option_Class");
+            Assert (Option_Class'Image, IPv4.Debugging_And_Measurement'Image, "Invalid Option_Class");
             Valid := IPv4.Option.Valid (Context, IPv4.Option.F_Option_Number);
             Assert (Valid, "Invalid Option_Number");
             if Valid then
@@ -387,4 +387,4 @@ package body RFLX.IPv4.Tests is
       Register_Routine (T, Test_Generating_IPv4_Option'Access, "Generating IPv4 Option");
    end Register_Tests;
 
-end RFLX.IPv4.Tests;
+end RFLX.IPv4_Tests;

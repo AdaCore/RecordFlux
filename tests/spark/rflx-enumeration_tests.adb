@@ -6,7 +6,7 @@ with RFLX.RFLX_Types;
 
 with RFLX.Enumeration.Message;
 
-package body RFLX.Enumeration.Tests is
+package body RFLX.Enumeration_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -115,4 +115,4 @@ package body RFLX.Enumeration.Tests is
       Register_Routine (T, Test_Generating_Enumeration'Access, "Generating Enumeration");
    end Register_Tests;
 
-end RFLX.Enumeration.Tests;
+end RFLX.Enumeration_Tests;

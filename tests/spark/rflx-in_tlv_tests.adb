@@ -6,7 +6,7 @@ with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
 with RFLX.TLV.Message;
 with RFLX.In_TLV.Contains;
 
-package body RFLX.In_TLV.Tests is
+package body RFLX.In_TLV_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -45,4 +45,4 @@ package body RFLX.In_TLV.Tests is
       Register_Routine (T, Test_Null_In_TLV'Access, "Null message in TLV");
    end Register_Tests;
 
-end RFLX.In_TLV.Tests;
+end RFLX.In_TLV_Tests;

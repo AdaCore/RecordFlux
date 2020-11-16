@@ -5,7 +5,7 @@ with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Bytes, RFLX.RFLX_
 
 with RFLX.Expression.Message;
 
-package body RFLX.Expression.Tests is
+package body RFLX.Expression_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -77,4 +77,4 @@ package body RFLX.Expression.Tests is
       Register_Routine (T, Test_Expression_Invalid'Access, "Invalid");
    end Register_Tests;
 
-end RFLX.Expression.Tests;
+end RFLX.Expression_Tests;

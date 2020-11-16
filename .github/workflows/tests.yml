@@ -279,7 +279,18 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - "tests"
+          - "tests TEST=builtin_types"
+          - "tests TEST=custom_types"
+          - "tests TEST=ethernet"
+          - "tests TEST=ipv4"
+          - "tests TEST=in_ethernet"
+          - "tests TEST=in_ipv4"
+          - "tests TEST=tlv"
+          - "tests TEST=in_tlv"
+          - "tests TEST=enumeration"
+          - "tests TEST=arrays"
+          - "tests TEST=derivation"
+          - "tests TEST=expression"
           - "apps"
         type:
           - "cached"
