@@ -1,7 +1,7 @@
 with AUnit;
 with AUnit.Test_Cases;
 
-package RFLX.In_IPv4.Tests is
+package RFLX.In_Ethernet_Tests is
    pragma Elaborate_Body;
 
    type Test is new AUnit.Test_Cases.Test_Case with null record;
@@ -12,4 +12,4 @@ package RFLX.In_IPv4.Tests is
    overriding
    procedure Register_Tests (T : in out Test);
 
-end RFLX.In_IPv4.Tests;
+end RFLX.In_Ethernet_Tests;

@@ -7,7 +7,11 @@ build-dir := build
 noprefix-dir := build/noprefix
 
 project := test
-test-bin := $(build-dir)/test
+ifdef TEST
+	test-bin := $(build-dir)/test_$(TEST)
+else
+	test-bin := $(build-dir)/test
+endif
 test-files := $(wildcard tests/spark/generated/rflx-*.ad? tests/spark/*.ad? examples/specs/*.rflx test.gpr)
 
 ifneq ($(NOPREFIX),)
@@ -73,7 +77,7 @@ test_python_coverage:
 	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
 
 test_spark: $(test-files)
-	gprbuild -P$(project)
+	gprbuild -P$(project) -Xtest=$(TEST)
 	$(test-bin)
 
 test_spark_optimized: $(test-files)
@@ -88,7 +92,7 @@ prove:
 	prove_apps
 
 prove_tests: $(test-files)
-	gnatprove -P$(project) $(GNATPROVE_ARGS)
+	gnatprove -P$(project) -Xtest=$(TEST) $(GNATPROVE_ARGS)
 
 prove_tests_cvc4: $(test-files)
 	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(GNATPROVE_ARGS)

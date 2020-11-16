@@ -10,7 +10,7 @@ with RFLX.Arrays.Range_Vector;
 with RFLX.Arrays.Enumeration_Vector;
 with RFLX.Arrays.AV_Enumeration_Vector;
 
-package body RFLX.Derivation.Tests is
+package body RFLX.Derivation_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -846,4 +846,4 @@ package body RFLX.Derivation.Tests is
       Register_Routine (T, Test_Generating_Derivation_Message'Access, "Generating Message");
    end Register_Tests;
 
-end RFLX.Derivation.Tests;
+end RFLX.Derivation_Tests;

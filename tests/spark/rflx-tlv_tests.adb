@@ -4,9 +4,9 @@ with SPARK.Assertions; use SPARK.Assertions;
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
 with RFLX.RFLX_Types;
 
-with RFLX.TLV.Message;
+with RFLX.TLV.Message; use type RFLX.TLV.Tag_Base;
 
-package body RFLX.TLV.Tests is
+package body RFLX.TLV_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -53,7 +53,7 @@ package body RFLX.TLV.Tests is
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
          Tag := TLV.Message.Get_Tag (Context);
          Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Data), "Unexpected Tag");
-         Assert (To_Base (Tag) = 1, "Invalid conversion of Tag");
+         Assert (TLV.To_Base (Tag) = 1, "Invalid conversion of Tag");
          Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
          if TLV.Message.Valid (Context, TLV.Message.F_Length) then
             Length := TLV.Message.Get_Length (Context);
@@ -247,4 +247,4 @@ package body RFLX.TLV.Tests is
       Register_Routine (T, Test_Generating_TLV_Error'Access, "Generating TLV Error Message");
    end Register_Tests;
 
-end RFLX.TLV.Tests;
+end RFLX.TLV_Tests;
