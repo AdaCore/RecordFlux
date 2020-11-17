@@ -1,13 +1,12 @@
 import math
 
 from hypothesis import HealthCheck, given, settings, strategies as st
-
 from librecordfluxdsllang import AnalysisContext
 
 import rflx.expression as expr
 from rflx.model import Model
 from rflx.specification import Parser
-from rflx.specification.parser import create_expression, GrammarRule
+from rflx.specification.parser import GrammarRule, create_expression
 from tests.property import strategies
 
 
@@ -28,10 +27,7 @@ def parse_expression(data: str, rule: GrammarRule) -> expr.Expr:
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
-    parsed_expression = parse_expression(
-        str(expression),
-        GrammarRule.mathematical_expression_rule
-    )
+    parsed_expression = parse_expression(str(expression), GrammarRule.mathematical_expression_rule)
     assert parsed_expression == expression
 
 
@@ -53,8 +49,7 @@ def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
     parsed_expression = parse_expression(
-        str(expression),
-        GrammarRule.extended_boolean_expression_rule
+        str(expression), GrammarRule.extended_boolean_expression_rule
     )
     assert parsed_expression == expression
 
@@ -99,10 +94,7 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_expressions(expression: expr.Expr) -> None:
-    parsed_expression = parse_expression(
-        str(expression),
-        GrammarRule.extended_expression_rule
-    )
+    parsed_expression = parse_expression(str(expression), GrammarRule.extended_expression_rule)
     assert parsed_expression == expression
 
 

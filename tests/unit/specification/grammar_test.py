@@ -1,13 +1,34 @@
 from typing import Any
 
 import pytest
+from librecordfluxdsllang import AnalysisContext
 
 from rflx import declaration as decl, expression as expr, model, statement as stmt
-from rflx.error import Location
+from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model import BOOLEAN
 from rflx.model.session import Session
 from rflx.specification import parser
+from rflx.specification.parser import (
+    GrammarRule,
+    create_expression,
+    create_id,
+    diagnostics_to_error,
+)
+
+
+def parse_expression(data: str, rule: GrammarRule) -> expr.Expr:
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_expression(unit.root)
+
+
+def parse_id(data: str, rule: GrammarRule) -> expr.Expr:
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    assert unit.root, "\n".join(str(d) for d in unit.diagnostics)
+    return create_id(unit.root)
 
 
 @pytest.mark.parametrize(
@@ -15,7 +36,7 @@ from rflx.specification import parser
     [("X", ID("X")), ("X2", ID("X2")), ("X_Y", ID("X_Y")), ("X_Y_3", ID("X_Y_3"))],
 )
 def test_unqualified_identifier(string: str, expected: ID) -> None:
-    actual = grammar.unqualified_identifier().parseString(string, parseAll=True)[0]
+    actual = parse_id(string, GrammarRule.unqualified_identifier_rule)
     assert actual == expected
     assert actual.location
 
@@ -35,7 +56,7 @@ def test_unqualified_identifier(string: str, expected: ID) -> None:
     ],
 )
 def test_qualified_identifier(string: str, expected: ID) -> None:
-    actual = grammar.qualified_identifier().parseString(string, parseAll=True)[0]
+    actual = parse_id(string, GrammarRule.qualified_identifier_rule)
     assert actual == expected
     assert actual.location
 
@@ -54,7 +75,7 @@ def test_qualified_identifier(string: str, expected: ID) -> None:
     ],
 )
 def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
-    actual = grammar.numeric_literal().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -63,7 +84,7 @@ def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
     "string,expected", [("X", expr.Variable("X")), ("X::Y", expr.Variable("X::Y"))]
 )
 def test_variable(string: str, expected: decl.Declaration) -> None:
-    actual = grammar.variable().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.variable_rule)
     assert actual == expected
     assert actual.location
 
@@ -84,7 +105,7 @@ def test_variable(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_expression_suffix(string: str, expected: expr.Expr) -> None:
-    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -156,7 +177,7 @@ def test_expression_suffix(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_mathematical(string: str, expected: expr.Expr) -> None:
-    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -176,7 +197,7 @@ def test_expression_mathematical(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_relation(string: str, expected: expr.Expr) -> None:
-    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -190,7 +211,7 @@ def test_expression_relation(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_boolean(string: str, expected: expr.Expr) -> None:
-    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -203,7 +224,7 @@ def test_expression_boolean(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
-    actual = grammar.mathematical_expression().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.mathematical_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -217,7 +238,7 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
 )
 def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        grammar.mathematical_expression().parseString(string, parseAll=True)
+        parse_expression(string, GrammarRule.mathematical_expression_rule)
 
 
 @pytest.mark.parametrize(
@@ -228,7 +249,7 @@ def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
     ],
 )
 def test_boolean_expression(string: str, expected: expr.Expr) -> None:
-    actual = grammar.boolean_expression().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.boolean_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -242,7 +263,7 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
 )
 def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        grammar.boolean_expression().parseString(string, parseAll=True)
+        parse_expression(string, GrammarRule.boolean_expression_rule)
 
 
 @pytest.mark.parametrize(
@@ -310,7 +331,7 @@ def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
     ],
 )
 def test_expression_base(string: str, expected: expr.Expr) -> None:
-    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -481,7 +502,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_complex(string: str, expected: expr.Expr) -> None:
-    actual = grammar.expression().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -489,7 +510,7 @@ def test_expression_complex(string: str, expected: expr.Expr) -> None:
 def test_private_type_declaration() -> None:
     string = "type X is private"
     expected = decl.TypeDeclaration(model.Private("X", location=Location((1, 1), None, (1, 17))))
-    actual = grammar.private_type_declaration().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.private_type_declaration_rule)
     assert actual == expected
     assert actual.location
 
@@ -506,7 +527,7 @@ def test_private_type_declaration() -> None:
     ],
 )
 def test_channel_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = grammar.channel_declaration().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.channel_declaration_rule)
     assert actual == expected
     assert actual.location
 
@@ -522,7 +543,7 @@ def test_channel_declaration(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_formal_function_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = grammar.formal_function_declaration().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.formal_function_declaration_rule)
     assert actual == expected
     assert actual.location
 
@@ -536,7 +557,7 @@ def test_formal_function_declaration(string: str, expected: decl.Declaration) ->
     ],
 )
 def test_variable_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = grammar.variable_declaration().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.variable_declaration_rule)
     assert actual == expected
     assert actual.location
 
@@ -551,7 +572,7 @@ def test_variable_declaration(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_renaming_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = grammar.renaming_declaration().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.renaming_declaration_rule)
     assert actual == expected
     assert actual.location
 
@@ -561,7 +582,7 @@ def test_renaming_declaration(string: str, expected: decl.Declaration) -> None:
     [("A := B", stmt.Assignment("A", expr.Variable("B")))],
 )
 def test_assignment_statement(string: str, expected: stmt.Statement) -> None:
-    actual = grammar.assignment_statement().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.assignment_statement_rule)
     assert actual == expected
     assert actual.location
 
@@ -577,7 +598,7 @@ def test_assignment_statement(string: str, expected: stmt.Statement) -> None:
     ],
 )
 def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
-    actual = grammar.attribute_statement().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.attribute_statement_rule)
     assert actual == expected
     assert actual.location
 
@@ -656,7 +677,7 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
     ],
 )
 def test_state(string: str, expected: decl.Declaration) -> None:
-    actual = grammar.state().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.state_rule)
     assert actual == expected
     assert actual.location
 
@@ -678,7 +699,7 @@ def test_state(string: str, expected: decl.Declaration) -> None:
 )
 def test_state_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        grammar.state().parseString(string, parseAll=True)
+        parse_expression(string, GrammarRule.state_rule)
 
 
 @pytest.mark.parametrize(
@@ -742,7 +763,7 @@ def test_state_error(string: str, error: str) -> None:
     ],
 )
 def test_session_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = grammar.session_declaration().parseString(string, parseAll=True)[0]
+    actual = parse_expression(string, GrammarRule.session_declaration_rule)
     assert actual == expected
     assert actual.location
 
@@ -767,7 +788,7 @@ def test_session_declaration(string: str, expected: decl.Declaration) -> None:
 )
 def test_session_declaration_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        grammar.session_declaration().parseString(string, parseAll=True)
+        parse_expression(string, GrammarRule.session_declaration_rule)
 
 
 def test_session() -> None:
@@ -803,103 +824,6 @@ def test_session() -> None:
     p.create_model()
 
 
-def test_unexpected_exception(monkeypatch: Any) -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=r"ZeroDivisionError",
-    ):
-        monkeypatch.setattr(
-            grammar,
-            "parse_mathematical_operator",
-            grammar.fatalexceptions(lambda x, y, z: [1, 1 / 0, 1]),
-        )
-        grammar.expression().parseString("1 + 1")
-
-
 def test_expression_aggregate_no_number() -> None:
-    with pytest.raises(RecordFluxError, match=r"^Expected Number"):
-        grammar.expression().parseString("[1, Foo]")
-
-
-def test_unexpected_suffix() -> None:
-    with pytest.raises(RecordFluxError, match=r"^unexpected suffix .*$"):
-        grammar.parse_suffix(
-            "",
-            0,
-            [[expr.Variable(ID("X")), ("X", None)]],
-        )
-
-
-def test_unexpected_relation_operator() -> None:
-    with pytest.raises(RecordFluxError, match=r"^unexpected operator .*$"):
-        grammar.parse_relational_operator(
-            "",
-            0,
-            [
-                [
-                    expr.Number(1, location=Location((1, 1))),
-                    "<>",
-                    expr.Number(1, location=Location((1, 1))),
-                ]
-            ],
-        )
-
-
-def test_unexpected_boolean_operator() -> None:
-    with pytest.raises(RecordFluxError, match=r"^unexpected operator .*$"):
-        grammar.parse_boolean_operator(
-            "",
-            0,
-            [
-                [
-                    expr.Number(1, location=Location((1, 8))),
-                    "xor",
-                    expr.Number(1, location=Location((2, 25))),
-                ]
-            ],
-        )
-
-
-def test_unexpected_mathematical_operator() -> None:
-    with pytest.raises(RecordFluxError, match=r"^unexpected operator .*$"):
-        grammar.parse_mathematical_operator(
-            "",
-            0,
-            [
-                [
-                    expr.Number(1, location=Location((1, 1))),
-                    "//",
-                    expr.Number(1, location=Location((1, 8))),
-                ]
-            ],
-        )
-
-
-def test_unexpected_quantified_expression(monkeypatch: Any) -> None:
-    monkeypatch.setattr(grammar, "evaluate_located_expression", lambda s, t: (t, Location((1, 1))))
-    with pytest.raises(RecordFluxError, match=r"^unexpected quantified expression"):
-        grammar.parse_quantified_expression(
-            "",
-            0,
-            [
-                [
-                    0,
-                    "any",
-                    ID("X"),
-                    expr.Variable("Y"),
-                    expr.Equal(expr.Variable("X"), expr.Variable("Z")),
-                    24,
-                ]
-            ],
-        )
-
-
-def test_unexpected_type() -> None:
-    with pytest.raises(RecordFluxError, match=r"^unexpected type"):
-        grammar.parse_type("type T is X;", 0, [0, "type", "T", "is", "X", 8])
-
-
-def test_unexpected_attribute(monkeypatch: Any) -> None:
-    monkeypatch.setattr(grammar, "evaluate_located_expression", lambda s, t: (t, Location((1, 1))))
-    with pytest.raises(RecordFluxError, match=r"^unexpected attribute"):
-        grammar.parse_attribute("", 0, ["A", "Invalid", expr.Variable("B")])
+    with pytest.raises(RecordFluxError, match=r"^<stdin>:1:5: parser: error: Expected Numeral"):
+        parse_expression("[1, Foo]", GrammarRule.expression_rule)
