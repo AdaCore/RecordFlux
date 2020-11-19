@@ -930,7 +930,8 @@ def create_enumeration(
             literals.append((element_identifier, value))
     elif enumeration.f_elements.kind_name == "PositionalEnumerationDef":
         literals = [
-            (create_id(e, filename), i) for i, e in enumerate(enumeration.f_elements.f_elements)
+            (create_id(e, filename), rexpr.Number(i))
+            for i, e in enumerate(enumeration.f_elements.f_elements)
         ]
     else:
         raise NotImplementedError(
