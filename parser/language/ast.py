@@ -84,7 +84,6 @@ class Op(RFLXNode):
         "or",
         "in",
         "notin",
-        "select",
     ]
 
 
@@ -597,7 +596,7 @@ class AttrBase(RFLXNode):
 
 class Attr(AttrBase):
     """
-    Attributes used on variables
+    Attribute
     """
 
     enum_node = True
@@ -606,16 +605,6 @@ class Attr(AttrBase):
         "Size",
         "Last",
         "Valid_Checksum",
-    ]
-
-
-class ExprAttr(AttrBase):
-    """
-    Attributes used on expressions
-    """
-
-    enum_node = True
-    alternatives = [
         "Head",
         "Opaque",
         "Present",
@@ -628,17 +617,8 @@ class Attribute(Expr):
     Attribute
     """
 
-    identifier = Field(type=UnqualifiedID)
-    kind = Field(type=Attr)
-
-
-class ExpressionAttribute(Expr):
-    """
-    Expression attribute
-    """
-
     expression = Field(type=Expr)
-    kind = Field(type=ExprAttr)
+    kind = Field(type=Attr)
 
 
 class ContextItem(Expr):
@@ -820,3 +800,12 @@ class Binding(Expr):
 
     expression = Field(type=Expr)
     bindings = Field(type=TermAssoc.list)
+
+
+class Select(Expr):
+    """
+    Selector
+    """
+
+    expression = Field(type=Expr)
+    selector = Field(type=UnqualifiedID)

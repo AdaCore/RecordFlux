@@ -85,14 +85,28 @@ def test_checksum_attributes() -> None:
         "data": {
             "_kind": "BinOp",
             "left": {
-                "identifier": {"_kind": "UnqualifiedID", "_value": "A"},
                 "_kind": "Attribute",
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                        "package": None,
+                    },
+                },
                 "kind": {"_kind": "AttrValidChecksum", "_value": "Valid_Checksum"},
             },
             "op": {"_kind": "OpAnd", "_value": "and"},
             "right": {
-                "identifier": {"_kind": "UnqualifiedID", "_value": "B"},
                 "_kind": "Attribute",
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "B"},
+                        "package": None,
+                    },
+                },
                 "kind": {"_kind": "AttrValidChecksum", "_value": "Valid_Checksum"},
             },
         },
@@ -159,4 +173,87 @@ def test_negative_number() -> None:
     assert to_dict(unit.root) == {
         "_kind": "Negation",
         "data": {"_kind": "NumericLiteral", "_value": "16#20_000#"},
+    }
+
+
+def test_selector_precedence1() -> None:
+    unit = parse_buffer(
+        "X.B = Z",
+        rule=rflxdsl.GrammarRule.extended_expression_rule,
+    )
+    assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
+    assert to_dict(unit.root) == {
+        "_kind": "BinOp",
+        "left": {
+            "_kind": "SelectNode",
+            "expression": {
+                "_kind": "Variable",
+                "identifier": {
+                    "_kind": "ID",
+                    "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                    "package": None,
+                },
+            },
+            "selector": {
+                "_kind": "UnqualifiedID",
+                "_value": "B",
+            },
+        },
+        "op": {"_kind": "OpEq", "_value": "="},
+        "right": {
+            "_kind": "Variable",
+            "identifier": {
+                "_kind": "ID",
+                "name": {"_kind": "UnqualifiedID", "_value": "Z"},
+                "package": None,
+            },
+        },
+    }
+
+
+def test_selector_precedence2() -> None:
+    unit = parse_buffer(
+        "X.B'Size",
+        rule=rflxdsl.GrammarRule.extended_expression_rule,
+    )
+    assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
+    assert to_dict(unit.root) == {
+        "_kind": "Attribute",
+        "expression": {
+            "_kind": "SelectNode",
+            "expression": {
+                "_kind": "Variable",
+                "identifier": {
+                    "_kind": "ID",
+                    "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                    "package": None,
+                },
+            },
+            "selector": {"_kind": "UnqualifiedID", "_value": "B"},
+        },
+        "kind": {"_kind": "AttrSize", "_value": "Size"},
+    }
+
+
+def test_selector_precedence3() -> None:
+    unit = parse_buffer(
+        "X'Head.B",
+        rule=rflxdsl.GrammarRule.extended_expression_rule,
+    )
+    assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
+    assert to_dict(unit.root) == {
+        "_kind": "SelectNode",
+        "expression": {
+            "_kind": "Attribute",
+            "expression": {
+                "_kind": "Variable",
+                "identifier": {
+                    "_kind": "ID",
+                    "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                    "package": None,
+                },
+            },
+            "kind": {"_kind": "AttrHead", "_value": "Head"},
+        },
+        "selector": {"_kind": "UnqualifiedID", "_value": "B"},
     }
