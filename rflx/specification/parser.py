@@ -589,6 +589,18 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
                 create_expression(expression.f_right, filename, package),
                 location=location,
             )
+        elif expression.f_op.kind_name == "OpMod":
+            return rexpr.Mod(
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package),
+                location=location,
+            )
+        elif expression.f_op.kind_name == "OpSelect":
+            return rexpr.Selected(
+                create_expression(expression.f_left, filename, package),
+                create_expression(expression.f_right, filename, package).name,
+                location=location,
+            )
         else:
             raise NotImplementedError(
                 f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
