@@ -634,6 +634,18 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             )
         else:
             raise NotImplementedError(f"Invalid quantified: {rexpr.f_operation.text}")
+    elif expression.kind_name == "Binding":
+        bindings = {
+            create_id(b.f_identifier, filename): create_expression(
+                b.f_expression, filename, package
+            )
+            for b in expression.f_bindings
+        }
+        return rexpr.Binding(
+            create_expression(expression.f_expression, filename, package),
+            bindings,
+            node_location(expression, filename),
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
