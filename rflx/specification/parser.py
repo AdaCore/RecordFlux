@@ -767,6 +767,12 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             create_expression(expression.f_expression, filename, package),
             location,
         )
+    elif expression.kind_name == "Concatenation":
+        left = create_expression(expression.f_left, filename, package)
+        right = create_expression(expression.f_right, filename, package)
+        assert isinstance(left, rexpr.Aggregate)
+        assert isinstance(right, rexpr.Aggregate)
+        return rexpr.Aggregate(*(left.elements + right.elements), location=location)
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
