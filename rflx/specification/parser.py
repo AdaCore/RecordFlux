@@ -121,7 +121,8 @@ class Parser:
         error = RecordFluxError()
 
         if spec:
-            filename = Path(f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx")
+            parent = specfile.parent if specfile else Path(".")
+            filename = parent / Path(f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx")
             self.__specifications[filename] = (specfile, spec)
             for context in spec.f_context_clause:
                 item = create_id(context.f_item, specfile)
@@ -145,8 +146,7 @@ class Parser:
                     )
                     continue
                 transitions.append(item)
-                parent = specfile.parent if specfile else filename.parent
-                withed_file = parent / f"{str(item).lower()}.rflx"
+                withed_file = filename.parent / f"{str(item).lower()}.rflx"
                 error.extend(self.__parse_specfile(withed_file, transitions))
 
         return error
