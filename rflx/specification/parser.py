@@ -482,15 +482,16 @@ def create_array(
 
 
 def create_expression(expression: Expr, filename: Path = None, package: ID = None) -> rexpr.Expr:
+    location = node_location(expression, filename)
     if expression.kind_name == "MathematicalExpression":
         return create_expression(expression.f_data, filename, package)
     elif expression.kind_name == "NumericLiteral":
         num = expression.text.split("#")
         if len(num) == 1:
-            return rexpr.Number(int(num[0]))
+            return rexpr.Number(int(num[0]), location=location)
         elif len(num) == 3:
             base = int(num[0])
-            return rexpr.Number(int(num[1], base), base=base)
+            return rexpr.Number(int(num[1], base), base=base, location=location)
         fail(
             f"Invalid numeric literal: {expression.text}",
             Subsystem.PARSER,
@@ -502,76 +503,91 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             return rexpr.And(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         if expression.f_op.kind_name == "OpOr":
             return rexpr.Or(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpLt":
             return rexpr.Less(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpGt":
             return rexpr.Greater(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpLe":
             return rexpr.LessEqual(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpGe":
             return rexpr.GreaterEqual(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpPow":
             return rexpr.Pow(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpAdd":
             return rexpr.Add(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpSub":
             return rexpr.Sub(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpMul":
             return rexpr.Mul(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpDiv":
             return rexpr.Div(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpEq":
             return rexpr.Equal(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpNeq":
             return rexpr.NotEqual(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpIn":
             return rexpr.In(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         elif expression.f_op.kind_name == "OpNotin":
             return rexpr.NotIn(
                 create_expression(expression.f_left, filename, package),
                 create_expression(expression.f_right, filename, package),
+                location=location,
             )
         else:
             raise NotImplementedError(
@@ -588,8 +604,8 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             return expr.FALSE
         var_id = create_id(expression.f_identifier, filename)
         if package:
-            return expr.Variable(qualified_type_identifier(var_id, package))
-        return expr.Variable(var_id)
+            return expr.Variable(qualified_type_identifier(var_id, package), location=location)
+        return expr.Variable(var_id, location=location)
     elif expression.kind_name == "Attribute":
         attr_id = create_id(expression.f_identifier, filename)
         if expression.f_kind.kind_name == "AttrLast":
@@ -604,34 +620,44 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             raise NotImplementedError(
                 f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
             )
+    elif expression.kind_name == "ExpressionAttribute":
+        inner = create_expression(expression.f_expression, filename, package)
+        if expression.f_kind.kind_name == "ExprAttrHead":
+            return expr.Head(inner)
+        elif expression.f_kind.kind_name == "ExprAttrOpaque":
+            return expr.Opaque(inner)
+        elif expression.f_kind.kind_name == "ExprAttrPresent":
+            return expr.Present(inner)
+        elif expression.f_kind.kind_name == "ExprAttrValid":
+            return expr.Valid(inner)
+        else:
+            raise NotImplementedError(
+                f"Invalid ExprssionAttribute: {expression.f_kind.kind_name} => {expression.text}"
+            )
     elif expression.kind_name == "ArrayAggregate":
         return rexpr.Aggregate(
             *[create_expression(v, filename, package) for v in expression.f_values],
-            location=node_location(expression, filename),
+            location=location,
         )
     elif expression.kind_name == "StringLiteral":
         return rexpr.String(
             expression.text.split('"')[1],
-            location=node_location(expression, filename),
+            location=location,
         )
     elif expression.kind_name == "Call":
         return rexpr.Call(
             create_id(expression.f_identifier, filename),
             [create_expression(a, filename, package) for a in expression.f_arguments],
-            location=node_location(expression, filename),
+            location=location,
         )
     elif expression.kind_name == "QuantifiedExpression":
         param_id = create_id(expression.f_parameter_identifier, filename)
         iterable = create_expression(expression.f_iterable, filename, package)
         predicate = create_expression(expression.f_predicate, filename, package)
         if expression.f_operation.kind_name == "QuantAll":
-            return rexpr.ForAllIn(
-                param_id, iterable, predicate, node_location(expression, filename)
-            )
+            return rexpr.ForAllIn(param_id, iterable, predicate, location)
         elif expression.f_operation.kind_name == "QuantSome":
-            return rexpr.ForSomeIn(
-                param_id, iterable, predicate, node_location(expression, filename)
-            )
+            return rexpr.ForSomeIn(param_id, iterable, predicate, location)
         else:
             raise NotImplementedError(f"Invalid quantified: {rexpr.f_operation.text}")
     elif expression.kind_name == "Binding":
@@ -642,9 +668,7 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             for b in expression.f_bindings
         }
         return rexpr.Binding(
-            create_expression(expression.f_expression, filename, package),
-            bindings,
-            node_location(expression, filename),
+            create_expression(expression.f_expression, filename, package), bindings, location
         )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
