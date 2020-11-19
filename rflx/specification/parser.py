@@ -768,7 +768,11 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         assert isinstance(right, rexpr.Aggregate)
         return rexpr.Aggregate(*(left.elements + right.elements), location=location)
     elif expression.kind_name == "Comprehension":
-        condition = create_expression(expression.f_condition, filename, package) if expression.f_condition else rexpr.TRUE
+        condition = (
+            create_expression(expression.f_condition, filename, package)
+            if expression.f_condition
+            else rexpr.TRUE
+        )
         return rexpr.Comprehension(
             create_id(expression.f_iterator, filename),
             create_expression(expression.f_array, filename, package),
@@ -786,6 +790,24 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         return rexpr.Conversion(
             create_id(expression.f_target_identifier, filename),
             create_expression(expression.f_argument, filename, package),
+            location=location,
+        )
+    elif expression.kind_name == "MessageAggregate":
+        if expression.f_values.kind_name == "NullComponents":
+            values = {}
+        elif expression.f_values.kind_name == "MessageComponents":
+            values = {
+                create_id(c.f_identifier, filename): create_expression(
+                    c.f_expression, filename, package
+                )
+                for c in expression.f_values.f_components
+            }
+        else:
+            raise NotImplementedError(f"invalid message component: {expression.f_values.kind_name}")
+
+        return rexpr.MessageAggregate(
+            create_id(expression.f_identifier, filename),
+            values,
             location=location,
         )
 
@@ -893,7 +915,9 @@ def create_message_structure(
 
     def extract_then(then: ThenNode) -> Tuple[Field, rexpr.Expr, rexpr.Expr, rexpr.Expr, Location]:
         target = FINAL if then.f_target.text == "null" else Field(then.f_target.text)
-        condition = create_expression(then.f_condition, filename) if then.f_condition else rexpr.TRUE
+        condition = (
+            create_expression(then.f_condition, filename) if then.f_condition else rexpr.TRUE
+        )
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)
 
