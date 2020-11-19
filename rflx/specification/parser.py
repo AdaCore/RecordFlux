@@ -682,6 +682,25 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         return rexpr.Binding(
             create_expression(expression.f_expression, filename, package), bindings, location
         )
+    elif expression.kind_name == "ListAttribute":
+        attrs = {
+            "Append": stmt.Append,
+            "Extend": stmt.Extend,
+            "Read": stmt.Read,
+            "Write": stmt.Write,
+        }
+        try:
+            constructor = attrs[expression.f_attr.text]
+        except KeyError:
+            raise NotImplementedError(f"list attribute: {expression.f_attr.text}")
+
+        return constructor(
+            create_id(expression.f_identifier, filename),
+            create_expression(expression.f_expression, filename, package),
+            location=location,
+        )
+    elif expression.kind_name == "Reset":
+        return stmt.Reset(create_id(expression.f_identifier, filename), location=location)
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
