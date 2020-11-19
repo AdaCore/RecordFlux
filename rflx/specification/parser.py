@@ -733,6 +733,13 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             writable=writable,
             location=location
         )
+    elif expression.kind_name == "RenamingDecl":
+        return decl.RenamingDeclaration(
+            create_id(expression.f_identifier, filename),
+            create_id(expression.f_type_identifier, filename),
+            create_expression(expression.f_expression, filename, package),
+            location,
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
