@@ -782,6 +782,12 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             create_id(expression.f_selector, filename),
             location=location,
         )
+    elif expression.kind_name == "Conversion":
+        return rexpr.Conversion(
+            create_id(expression.f_target_identifier, filename),
+            create_expression(expression.f_argument, filename, package),
+            location=location,
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
