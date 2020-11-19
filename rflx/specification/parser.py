@@ -701,6 +701,18 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         )
     elif expression.kind_name == "Reset":
         return stmt.Reset(create_id(expression.f_identifier, filename), location=location)
+    elif expression.kind_name == "VariableDecl":
+        initializer = (
+            create_expression(expression.f_initializer, filename, package)
+            if expression.f_initializer
+            else None
+        )
+        return decl.VariableDeclaration(
+            create_id(expression.f_identifier, filename),
+            qualified_type_identifier(create_id(expression.f_type_identifier, filename), package),
+            initializer,
+            location=location,
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
