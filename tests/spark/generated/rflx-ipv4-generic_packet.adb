@@ -1800,6 +1800,21 @@ is
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Set_Payload_Empty;
 
+   procedure Set_Options (Ctx : in out Context; Seq_Ctx : Options_Sequence.Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Options);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Options);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Reset_Dependent_Fields (Ctx, F_Options);
+      Ctx.Message_Last := Last;
+      Ctx.Cursors (F_Options) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Options), Predecessor => Ctx.Cursors (F_Options).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
+      Options_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Set_Options;
+
    procedure Set_Payload (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Payload);
@@ -2046,6 +2061,10 @@ is
       Options_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Options;
+
+   function Complete_Options (Ctx : Context; Seq_Ctx : Options_Sequence.Context) return Boolean is
+     (Options_Sequence.Valid (Seq_Ctx)
+      and Options_Sequence.Size (Seq_Ctx) = Field_Size (Ctx, F_Options));
 
    procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out Options_Sequence.Context) is
       Valid_Sequence : constant Boolean := Options_Sequence.Valid (Seq_Ctx);

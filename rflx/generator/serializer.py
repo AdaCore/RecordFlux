@@ -13,6 +13,7 @@ from rflx.ada import (
     CallStatement,
     CaseStatement,
     Constrained,
+    Declaration,
     Div,
     Equal,
     Expr,
@@ -21,6 +22,7 @@ from rflx.ada import (
     FormalSubprogramDeclaration,
     FunctionSpecification,
     GenericProcedureInstantiation,
+    Greater,
     GreaterEqual,
     If,
     In,
@@ -44,10 +46,12 @@ from rflx.ada import (
     Selected,
     Size,
     Slice,
+    Statement,
     Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
     UnitPart,
+    ValueRange,
     Variable,
 )
 from rflx.common import unique
@@ -412,7 +416,11 @@ class SerializerGenerator:
                                     ),
                                 )
                             ),
-                            Postcondition(And(*self.composite_setter_postconditions(message, f))),
+                            Postcondition(
+                                And(
+                                    *self.composite_setter_postconditions(message, f),
+                                )
+                            ),
                         ],
                     )
                     for f, t in message.types.items()
@@ -442,55 +450,106 @@ class SerializerGenerator:
                             True,
                         ),
                     ],
-                    [
-                        CallStatement(
-                            "Reset_Dependent_Fields",
-                            [Variable("Ctx"), Variable(f.affixed_name)],
-                        ),
-                        Assignment(Variable("Ctx.Message_Last"), Variable("Last")),
-                        Assignment(
-                            Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
-                            NamedAggregate(
-                                ("State", Variable("S_Valid")),
-                                ("First", Variable("First")),
-                                ("Last", Variable("Last")),
-                                (
-                                    "Value",
-                                    NamedAggregate(("Fld", Variable(f.affixed_name))),
-                                ),
-                                (
-                                    "Predecessor",
-                                    Selected(
-                                        Indexed(
-                                            Variable("Ctx.Cursors"),
-                                            Variable(f.affixed_name),
-                                        ),
-                                        "Predecessor",
-                                    ),
-                                ),
-                            ),
-                        ),
-                        Assignment(
-                            Indexed(
-                                Variable("Ctx.Cursors"),
-                                Call(
-                                    "Successor",
-                                    [Variable("Ctx"), Variable(f.affixed_name)],
-                                ),
-                            ),
-                            NamedAggregate(
-                                ("State", Variable("S_Invalid")),
-                                ("Predecessor", Variable(f.affixed_name)),
-                            ),
-                        ),
-                    ],
+                    self.__set_array_field(f),
                 )
                 for f, t in message.types.items()
                 if message.is_possibly_empty(f)
             ],
         )
 
-    def create_composite_setter_procedures(self, message: Message) -> UnitPart:
+    def create_array_setter_procedures(
+        self, message: Message, sequence_fields: Mapping[Field, Type]
+    ) -> UnitPart:
+        def specification(field: Field) -> ProcedureSpecification:
+            return ProcedureSpecification(
+                f"Set_{field.name}",
+                [
+                    InOutParameter(["Ctx"], "Context"),
+                    Parameter(["Seq_Ctx"], f"{common.sequence_name(message, field)}.Context"),
+                ],
+            )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification(f),
+                    [
+                        Precondition(
+                            AndThen(
+                                *self.setter_preconditions(f),
+                                *self.composite_setter_preconditions(message, f),
+                                Equal(
+                                    Call(
+                                        "Field_Size",
+                                        [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ),
+                                    Call(
+                                        f"{common.sequence_name(message, f)}.Size",
+                                        [Variable("Seq_Ctx")],
+                                    ),
+                                ),
+                                Call(
+                                    f"{common.sequence_name(message, f)}.Has_Buffer",
+                                    [Variable("Seq_Ctx")],
+                                ),
+                                Call(
+                                    f"{common.sequence_name(message, f)}.Valid",
+                                    [Variable("Seq_Ctx")],
+                                ),
+                            )
+                        ),
+                        Postcondition(
+                            And(
+                                *self.composite_setter_postconditions(message, f),
+                                If(
+                                    [
+                                        (
+                                            Greater(
+                                                Call(
+                                                    "Field_Size",
+                                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                                ),
+                                                Number(0),
+                                            ),
+                                            Call(
+                                                "Present",
+                                                [Variable("Ctx"), Variable(f.affixed_name)],
+                                            ),
+                                        )
+                                    ]
+                                ),
+                            )
+                        ),
+                    ],
+                )
+                for f, t in sequence_fields.items()
+            ],
+            [
+                SubprogramBody(
+                    specification(f),
+                    [
+                        *common.field_bit_location_declarations(Variable(f.affixed_name)),
+                        *self.__field_byte_location_declarations(),
+                    ],
+                    [
+                        *self.__set_array_field(f),
+                        CallStatement(
+                            f"{common.sequence_name(message, f)}.Copy",
+                            [
+                                Variable("Seq_Ctx"),
+                                Indexed(
+                                    Variable("Ctx.Buffer.all"),
+                                    ValueRange(Variable("Buffer_First"), Variable("Buffer_Last")),
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+                for f in sequence_fields
+            ],
+        )
+
+    def create_opaque_setter_procedures(self, message: Message) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(f"Set_{field.name}", [InOutParameter(["Ctx"], "Context")])
 
@@ -558,14 +617,7 @@ class SerializerGenerator:
                     specification(f),
                     [
                         *common.field_bit_location_declarations(Variable(f.affixed_name)),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_First", const.TYPES_INDEX),
-                            Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
-                        ),
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
-                            Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
-                        ),
+                        *self.__field_byte_location_declarations(),
                     ],
                     [
                         CallStatement(f"Initialize_{f.name}", [Variable("Ctx")]),
@@ -717,6 +769,64 @@ class SerializerGenerator:
                     Size(const.TYPES_BYTE),
                 ),
                 Number(0),
+            ),
+        ]
+
+    @staticmethod
+    def __set_array_field(field: Field) -> Sequence[Statement]:
+        return [
+            CallStatement(
+                "Reset_Dependent_Fields",
+                [Variable("Ctx"), Variable(field.affixed_name)],
+            ),
+            Assignment(Variable("Ctx.Message_Last"), Variable("Last")),
+            Assignment(
+                Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
+                NamedAggregate(
+                    ("State", Variable("S_Valid")),
+                    ("First", Variable("First")),
+                    ("Last", Variable("Last")),
+                    (
+                        "Value",
+                        NamedAggregate(("Fld", Variable(field.affixed_name))),
+                    ),
+                    (
+                        "Predecessor",
+                        Selected(
+                            Indexed(
+                                Variable("Ctx.Cursors"),
+                                Variable(field.affixed_name),
+                            ),
+                            "Predecessor",
+                        ),
+                    ),
+                ),
+            ),
+            Assignment(
+                Indexed(
+                    Variable("Ctx.Cursors"),
+                    Call(
+                        "Successor",
+                        [Variable("Ctx"), Variable(field.affixed_name)],
+                    ),
+                ),
+                NamedAggregate(
+                    ("State", Variable("S_Invalid")),
+                    ("Predecessor", Variable(field.affixed_name)),
+                ),
+            ),
+        ]
+
+    @staticmethod
+    def __field_byte_location_declarations() -> Sequence[Declaration]:
+        return [
+            ExpressionFunctionDeclaration(
+                FunctionSpecification("Buffer_First", const.TYPES_INDEX),
+                Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
+            ),
+            ExpressionFunctionDeclaration(
+                FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
+                Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
             ),
         ]
 

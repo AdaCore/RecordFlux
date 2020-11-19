@@ -27,898 +27,414 @@ package body RFLX.Arrays_Tests is
      (others => 0);
 
    function Valid_Data_Length (L : RFLX_Builtin_Types.Length) return Boolean is
-      (L <= Data'Length);
+     (L <= Data'Length);
 
    procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) with
-      SPARK_Mode,
-      Pre => Valid_Data_Length (Buffer'Length)
+     SPARK_Mode,
+     Pre => Valid_Data_Length (Buffer'Length)
    is
    begin
       Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
    end Write_Data;
 
-   procedure Test_Parsing_Arrays_Modular_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.Modular_Vector.Context;
-      Element          : Arrays.Modular_Integer;
-   begin
-      Arrays.Message.Initialize (Context, Buffer);
-
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
-
-         if Arrays.Message.Present (Context, Arrays.Message.F_Modular_Vector) then
-            Arrays.Message.Switch_To_Modular_Vector (Context, Sequence_Context);
-
-            if Arrays.Modular_Vector.Valid_Element (Sequence_Context) then
-               Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
-               Assert (Element'Image, Arrays.Modular_Integer'Image (1), "Invalid value of element 1");
-
-               Arrays.Modular_Vector.Next (Sequence_Context);
-               if Arrays.Modular_Vector.Valid_Element (Sequence_Context) then
-                  Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
-                  Assert (Element'Image, Arrays.Modular_Integer'Image (2), "Invalid value of element 2");
-
-                  Arrays.Modular_Vector.Next (Sequence_Context);
-                  Assert (not Arrays.Modular_Vector.Valid_Element (Sequence_Context),
-                          "Invalid acceptance of further element");
-
-                  Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
-                          "Valid Modular_Vector before context update");
-                  Arrays.Message.Update_Modular_Vector (Context, Sequence_Context);
-                  Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
-                          "Invalid Modular_Vector after context update");
-               else
-                  Assert (False, "Invalid element 2");
-               end if;
-            else
-               Assert (False, "Invalid element 1");
-            end if;
-
-         else
-            Assert (False, "Invalid Modular_Vector");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (Arrays.Message.Has_Buffer (Context) and then not Arrays.Message.Valid_Message (Context),
-              "Valid Message before complete parsing");
-
-      if Arrays.Message.Has_Buffer (Context) then
-         Arrays.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Modular_Vector.Take_Buffer (Sequence_Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
-   end Test_Parsing_Arrays_Modular_Sequential;
-
-   procedure Test_Parsing_Arrays_Modular_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.Modular_Vector.Context;
-      Element          : Arrays.Modular_Integer;
-      I                : Natural := 1;
-   begin
-      Arrays.Message.Initialize (Context, Buffer);
-
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
-
-         if Arrays.Message.Present (Context, Arrays.Message.F_Modular_Vector) then
-            Arrays.Message.Switch_To_Modular_Vector (Context, Sequence_Context);
-
-            while I <= 10 and then Arrays.Modular_Vector.Valid_Element (Sequence_Context) loop
-               pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
-               pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-               pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-               pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
-
-               Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
-               Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
-
-               Arrays.Modular_Vector.Next (Sequence_Context);
-               I := I + 1;
-            end loop;
-
-            Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-
-            Assert (Arrays.Modular_Vector.Valid (Sequence_Context), "Invalid Modular_Vector after parsing");
-
-            Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
-                    "Valid Modular_Vector before context update");
-            Arrays.Message.Update_Modular_Vector (Context, Sequence_Context);
-            Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
-                    "Invalid Modular_Vector after context update");
-         else
-            Assert (False, "Invalid Modular_Vector or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
-
-      if Arrays.Message.Has_Buffer (Context) then
-         Arrays.Message.Take_Buffer (Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
-   end Test_Parsing_Arrays_Modular_Loop;
-
-   procedure Test_Parsing_Arrays_Range_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.Range_Vector.Context;
-      Element          : Arrays.Range_Integer;
-   begin
-      Arrays.Message.Initialize (Context, Buffer);
-
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
-
-         if Arrays.Message.Present (Context, Arrays.Message.F_Range_Vector) then
-            Arrays.Message.Switch_To_Range_Vector (Context, Sequence_Context);
-
-            if Arrays.Range_Vector.Valid_Element (Sequence_Context) then
-               Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
-               Assert (Element'Image, Arrays.Range_Integer'Image (1), "Invalid value of element 1");
-
-               Arrays.Range_Vector.Next (Sequence_Context);
-               if Arrays.Range_Vector.Valid_Element (Sequence_Context) then
-                  Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
-                  Assert (Element'Image, Arrays.Range_Integer'Image (2), "Invalid value of element 2");
-
-                  Arrays.Range_Vector.Next (Sequence_Context);
-
-                  Assert (not Arrays.Range_Vector.Valid_Element (Sequence_Context),
-                          "Invalid acceptance of further element");
-
-                  Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
-                          "Valid Range_Vector before context update");
-                  Arrays.Message.Update_Range_Vector (Context, Sequence_Context);
-                  Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
-                          "Invalid Range_Vector after context update");
-               else
-                  Assert (False, "Invalid element 2");
-               end if;
-            else
-               Assert (False, "Invalid element 1");
-            end if;
-
-         else
-            Assert (False, "Invalid Range_Vector or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (Arrays.Message.Has_Buffer (Context) and then not Arrays.Message.Valid_Message (Context),
-              "Valid Message before complete parsing");
-
-      if Arrays.Message.Has_Buffer (Context) then
-         Arrays.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Range_Vector.Take_Buffer (Sequence_Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image, "Invalid Sequence_Context.Last");
-   end Test_Parsing_Arrays_Range_Sequential;
-
-   procedure Test_Parsing_Arrays_Range_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0);
-      Context          : Arrays.Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.Range_Vector.Context;
-      Element          : Arrays.Range_Integer;
-      I                : Natural := 1;
-   begin
-      Arrays.Message.Initialize (Context, Buffer);
-
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
-
-         if Arrays.Message.Present (Context, Arrays.Message.F_Range_Vector) then
-            Arrays.Message.Switch_To_Range_Vector (Context, Sequence_Context);
-
-            while I <= 10 and then Arrays.Range_Vector.Valid_Element (Sequence_Context) loop
-               pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
-               pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-               pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-               pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
-
-               Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
-               Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
-
-               Arrays.Range_Vector.Next (Sequence_Context);
-               I := I + 1;
-            end loop;
-
-            Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-
-            Assert (Arrays.Range_Vector.Valid (Sequence_Context), "Invalid Range_Vector after parsing");
-
-            Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
-                    "Valid Range_Vector before context update");
-            Arrays.Message.Update_Range_Vector (Context, Sequence_Context);
-            Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
-                    "Invalid Range_Vector after context update");
-         else
-            Assert (False, "Invalid Range_Vector or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
-
-      if Arrays.Message.Has_Buffer (Context) then
-         Arrays.Message.Take_Buffer (Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image, "Invalid Sequence_Context.Last");
-   end Test_Parsing_Arrays_Range_Loop;
-
-   procedure Test_Parsing_Arrays_Enumeration_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
-      Context          : Arrays.Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.Enumeration_Vector.Context;
-      Element          : Arrays.Enumeration;
-   begin
-      Arrays.Message.Initialize (Context, Buffer);
-
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
-
-         if Arrays.Message.Present (Context, Arrays.Message.F_Enumeration_Vector) then
-            Arrays.Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
-
-            if Arrays.Enumeration_Vector.Valid_Element (Sequence_Context) then
-               Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
-               Assert (Element'Image, Arrays.Enumeration'Image (Arrays.ONE), "Invalid value of element 1");
-
-               Arrays.Enumeration_Vector.Next (Sequence_Context);
-               if Arrays.Enumeration_Vector.Valid_Element (Sequence_Context) then
-                  Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
-                  Assert (Element'Image, Arrays.Enumeration'Image (Arrays.TWO), "Invalid value of element 2");
-
-                  Arrays.Enumeration_Vector.Next (Sequence_Context);
-
-                  Assert (not Arrays.Enumeration_Vector.Valid_Element (Sequence_Context),
-                          "Invalid acceptance of further element");
-
-                  Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
-                          "Valid Enumeration_Vector before context update");
-                  Arrays.Message.Update_Enumeration_Vector (Context, Sequence_Context);
-                  Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
-                          "Invalid Enumeration_Vector after context update");
-               else
-                  Assert (False, "Invalid element 2");
-               end if;
-            else
-               Assert (False, "Invalid element 1");
-            end if;
-
-         else
-            Assert (False, "Invalid Enumeration_Vector or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (Arrays.Message.Has_Buffer (Context) and then not Arrays.Message.Valid_Message (Context),
-              "Valid Message before complete parsing");
-
-      if Arrays.Message.Has_Buffer (Context) then
-         Arrays.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image, "Invalid Sequence_Context.Last");
-   end Test_Parsing_Arrays_Enumeration_Sequential;
-
-   procedure Test_Parsing_Arrays_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0);
-      Context          : Arrays.Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.Enumeration_Vector.Context;
-      Element          : Arrays.Enumeration;
-      I                : Natural := 1;
-   begin
-      Arrays.Message.Initialize (Context, Buffer);
-
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
-
-         if Arrays.Message.Present (Context, Arrays.Message.F_Enumeration_Vector) then
-            Arrays.Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
-
-            while I <= 10 and then Arrays.Enumeration_Vector.Valid_Element (Sequence_Context) loop
-               pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
-               pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-               pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-               pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
-
-               Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
-               Assert (Arrays.Enumeration'Pos (Element)'Image, Natural'Image (I),
-                       "Invalid value of element " & I'Image);
-
-               Arrays.Enumeration_Vector.Next (Sequence_Context);
-               I := I + 1;
-            end loop;
-
-            Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-
-            Assert (Arrays.Enumeration_Vector.Valid (Sequence_Context), "Invalid Enumeration_Vector after parsing");
-
-            Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
-                    "Valid Enumeration_Vector before context update");
-            Arrays.Message.Update_Enumeration_Vector (Context, Sequence_Context);
-            Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
-                    "Invalid Enumeration_Vector after context update");
-         else
-            Assert (False, "Invalid Enumeration_Vector or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
-
-      if Arrays.Message.Has_Buffer (Context) then
-         Arrays.Message.Take_Buffer (Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image, "Invalid Sequence_Context.Last");
-   end Test_Parsing_Arrays_Enumeration_Loop;
-
-   procedure Test_Parsing_Arrays_AV_Enumeration_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
-      Context          : Arrays.Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.AV_Enumeration_Vector.Context;
-      Element          : Arrays.AV_Enumeration;
-   begin
-      Arrays.Message.Initialize (Context, Buffer);
-
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
-
-         if Arrays.Message.Present (Context, Arrays.Message.F_AV_Enumeration_Vector) then
-            Arrays.Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
-
-            if Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context) then
-               Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
-               if Element.Known then
-                  Assert (Element.Enum'Image, Arrays.AV_ONE'Image, "Invalid value of element 1");
-               else
-                  Assert (False, "Unknown value of element 1");
-               end if;
-
-               Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
-               if Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context) then
-                  Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
-                  if Element.Known then
-                     Assert (Element.Enum'Image, Arrays.AV_TWO'Image, "Invalid value of element 2");
-                  else
-                     Assert (False, "Unknown value of element 2");
-                  end if;
-
-                  Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
-
-                  Assert (not Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context),
-                          "Invalid acceptance of further element");
-
-                  Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
-                          "Valid AV_Enumeration_Vector before context update");
-                  Arrays.Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
-                  Assert (Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
-                          "Invalid AV_Enumeration_Vector after context update");
-               else
-                  Assert (False, "Invalid element 2");
-               end if;
-            else
-               Assert (False, "Invalid element 1");
-            end if;
-
-         else
-            Assert (False, "Invalid AV_Enumeration_Vector or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (Arrays.Message.Has_Buffer (Context) and then not Arrays.Message.Valid_Message (Context),
-              "Valid Message before complete parsing");
-
-      if Arrays.Message.Has_Buffer (Context) then
-         Arrays.Message.Take_Buffer (Context, Buffer);
-      else
-         Arrays.AV_Enumeration_Vector.Take_Buffer (Sequence_Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Sequence_Context.Last");
-   end Test_Parsing_Arrays_AV_Enumeration_Sequential;
-
-   procedure Test_Parsing_Arrays_AV_Enumeration_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2);
-      Context          : Arrays.Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.AV_Enumeration_Vector.Context;
-      Element          : Arrays.AV_Enumeration;
-      I                : Natural := 1;
-   begin
-      Arrays.Message.Initialize (Context, Buffer);
-
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
-
-         if Arrays.Message.Present (Context, Arrays.Message.F_AV_Enumeration_Vector) then
-            Arrays.Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
-
-            while I <= 10 and then Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context) loop
-               pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
-               pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-               pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-               pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
-
-               Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
-               if Element.Known then
-                  Assert (Arrays.AV_Enumeration_Enum'Pos (Element.Enum)'Image, Natural'Image (I),
-                          "Invalid value of element " & I'Image);
-               else
-                  Assert (False, "Unknown value of element " & I'Image);
-               end if;
-
-               Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
-               I := I + 1;
-            end loop;
-
-            Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-
-            Assert (Arrays.AV_Enumeration_Vector.Valid (Sequence_Context),
-                    "Invalid AV_Enumeration_Vector after parsing");
-
-            Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
-                    "Valid AV_Enumeration_Vector before context update");
-            Arrays.Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
-            Assert (Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
-                    "Invalid AV_Enumeration_Vector after context update");
-         else
-            Assert (False, "Invalid AV_Enumeration_Vector or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
-
-      if Arrays.Message.Has_Buffer (Context) then
-         Arrays.Message.Take_Buffer (Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Sequence_Context.Last");
-   end Test_Parsing_Arrays_AV_Enumeration_Loop;
-
-   procedure Test_Parsing_Arrays_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Scalar_Array_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
       Context : Arrays.Message.Context;
       Length  : Arrays.Length;
+      package Message renames Arrays.Message;
    begin
-      Arrays.Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer);
+      Message.Verify_Message (Context);
 
-      Arrays.Message.Verify_Message (Context);
-      if Arrays.Message.Valid (Context, Arrays.Message.F_Length) then
-         Length := Arrays.Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
+      Assert (Message.Valid (Context, Message.F_Length), "Invalid Length");
 
-         Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Length := Message.Get_Length (Context);
 
-         declare
-            Sequence_Context : Arrays.Modular_Vector.Context;
-            Element          : Arrays.Modular_Integer;
-            I                : Natural := 1;
-         begin
-            if Arrays.Message.Present (Context, Arrays.Message.F_Modular_Vector) then
-               Arrays.Message.Switch_To_Modular_Vector (Context, Sequence_Context);
+      Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
+      Assert (Message.Present (Context, Message.F_Modular_Vector), "Invalid Modular_Vector or Buffer");
 
-               while I <= 10 and then Arrays.Modular_Vector.Valid_Element (Sequence_Context) loop
-                  pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
-                  pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-                  pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-                  pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-                  pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+      declare
+         Sequence_Context : Arrays.Modular_Vector.Context;
+         Element          : Arrays.Modular_Integer;
+      begin
+         Message.Switch_To_Modular_Vector (Context, Sequence_Context);
 
-                  Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
-                  Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
+         Assert (Arrays.Modular_Vector.Has_Element (Sequence_Context), "Missing element 1");
 
-                  Arrays.Modular_Vector.Next (Sequence_Context);
-                  I := I + 1;
-               end loop;
+         Arrays.Modular_Vector.Next (Sequence_Context);
 
-               Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+         Assert (Arrays.Modular_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
 
-               Assert (Arrays.Modular_Vector.Valid (Sequence_Context), "Invalid Modular_Vector after parsing");
+         Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
 
-               Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
-                       "Valid Modular_Vector before context update");
-               Arrays.Message.Update_Modular_Vector (Context, Sequence_Context);
-               Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
-                       "Invalid Modular_Vector after context update");
+         Assert (Element'Image, Arrays.Modular_Integer'Image (1), "Invalid value of element 1");
+         Assert (Arrays.Modular_Vector.Has_Element (Sequence_Context), "Missing element 2");
 
-               Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image,
-                       "Invalid Sequence_Context.Last");
-            else
-               Assert (False, "Invalid Modular_Vector or Buffer");
-            end if;
-         end;
+         Arrays.Modular_Vector.Next (Sequence_Context);
 
-         Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
+         Assert (Arrays.Modular_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
 
-         declare
-            Sequence_Context : Arrays.Range_Vector.Context;
-            Element          : Arrays.Range_Integer;
-            I                : Natural := 1;
-         begin
-            if Arrays.Message.Present (Context, Arrays.Message.F_Range_Vector) then
-               Arrays.Message.Switch_To_Range_Vector (Context, Sequence_Context);
+         Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
 
-               while I <= 10 and then Arrays.Range_Vector.Valid_Element (Sequence_Context) loop
-                  pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
-                  pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-                  pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-                  pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-                  pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+         Assert (Element'Image, Arrays.Modular_Integer'Image (2), "Invalid value of element 2");
+         Assert (not Arrays.Modular_Vector.Has_Element (Sequence_Context),
+                 "Invalid acceptance of further element");
+         Assert (not Message.Valid (Context, Message.F_Modular_Vector),
+                 "Valid Modular_Vector before context update");
+         Assert (Message.Complete_Modular_Vector (Context, Sequence_Context), "Incomplete Modular_Vector");
 
-                  Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
-                  Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
+         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         Message.Update_Modular_Vector (Context, Sequence_Context);
+         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
-                  Arrays.Range_Vector.Next (Sequence_Context);
-                  I := I + 1;
-               end loop;
+         Assert (Message.Valid (Context, Message.F_Modular_Vector),
+                 "Invalid Modular_Vector after context update");
+      end;
 
-               Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+      Assert (Message.Has_Buffer (Context) and then not Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
+      Assert (Message.Present (Context, Message.F_Range_Vector), "Invalid Range_Vector or Buffer");
 
-               Assert (Arrays.Range_Vector.Valid (Sequence_Context), "Invalid Range_Vector after parsing");
+      declare
+         Sequence_Context : Arrays.Range_Vector.Context;
+         Element          : Arrays.Range_Integer;
+      begin
+         Message.Switch_To_Range_Vector (Context, Sequence_Context);
 
-               Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
-                       "Valid Range_Vector before context update");
-               Arrays.Message.Update_Range_Vector (Context, Sequence_Context);
-               Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
-                       "Invalid Range_Vector after context update");
+         Assert (Arrays.Range_Vector.Has_Element (Sequence_Context), "Missing element 1");
 
-               Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image,
-                       "Invalid Sequence_Context.Last");
-            else
-               Assert (False, "Invalid Range_Vector or Buffer");
-            end if;
-         end;
+         Arrays.Range_Vector.Next (Sequence_Context);
 
-         Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
+         Assert (Arrays.Range_Vector.Valid_Element (Sequence_Context), "Invalid element 1");
 
-         declare
-            Sequence_Context : Arrays.Enumeration_Vector.Context;
-            Element          : Arrays.Enumeration;
-            I                : Natural := 1;
-         begin
-            if Arrays.Message.Present (Context, Arrays.Message.F_Enumeration_Vector) then
-               Arrays.Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
+         Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
 
-               while I <= 10 and then Arrays.Enumeration_Vector.Valid_Element (Sequence_Context) loop
-                  pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
-                  pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-                  pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-                  pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-                  pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+         Assert (Element'Image, Arrays.Range_Integer'Image (1), "Invalid value of element 1");
+         Assert (Arrays.Range_Vector.Has_Element (Sequence_Context), "Missing element 2");
 
-                  Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
-                  Assert (Arrays.Enumeration'Pos (Element)'Image, Natural'Image (I),
-                          "Invalid value of element " & I'Image);
+         Arrays.Range_Vector.Next (Sequence_Context);
 
-                  Arrays.Enumeration_Vector.Next (Sequence_Context);
-                  I := I + 1;
-               end loop;
+         Assert (Arrays.Range_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
 
-               Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+         Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
 
-               Assert (Arrays.Enumeration_Vector.Valid (Sequence_Context), "Invalid Enumeration_Vector after parsing");
+         Assert (Element'Image, Arrays.Range_Integer'Image (2), "Invalid value of element 2");
+         Assert (not Arrays.Range_Vector.Has_Element (Sequence_Context),
+                 "Invalid acceptance of further element");
+         Assert (not Message.Valid (Context, Message.F_Range_Vector),
+                 "Valid Range_Vector before context update");
 
-               Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
-                       "Valid Enumeration_Vector before context update");
-               Arrays.Message.Update_Enumeration_Vector (Context, Sequence_Context);
-               Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
-                       "Invalid Enumeration_Vector after context update");
+         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         Message.Update_Range_Vector (Context, Sequence_Context);
+         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
-               Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image,
-                       "Invalid Sequence_Context.Last");
-            else
-               Assert (False, "Invalid Enumeration_Vector or Buffer");
-            end if;
-         end;
+         Assert (Message.Valid (Context, Message.F_Range_Vector),
+                 "Invalid Range_Vector after context update");
+      end;
 
-         Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete parsing");
+      Assert (Message.Has_Buffer (Context) and then not Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
+      Assert (Message.Present (Context, Message.F_Enumeration_Vector), "Invalid Enumeration_Vector or Buffer");
 
-         declare
-            Sequence_Context : Arrays.AV_Enumeration_Vector.Context;
-            Element          : Arrays.AV_Enumeration;
-            I                : Natural := 1;
-         begin
-            if Arrays.Message.Present (Context, Arrays.Message.F_AV_Enumeration_Vector) then
-               Arrays.Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
+      declare
+         Sequence_Context : Arrays.Enumeration_Vector.Context;
+         Element          : Arrays.Enumeration;
+      begin
+         Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
 
-               while I <= 10 and then Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context) loop
-                  pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
-                  pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-                  pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-                  pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-                  pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+         Assert (Arrays.Enumeration_Vector.Has_Element (Sequence_Context), "Missing element 1");
 
-                  Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
-                  if Element.Known then
-                     Assert (Arrays.AV_Enumeration_Enum'Pos (Element.Enum)'Image, Natural'Image (I),
-                             "Invalid value of element " & I'Image);
-                  else
-                     Assert (False, "Unknown value of element " & I'Image);
-                  end if;
+         Arrays.Enumeration_Vector.Next (Sequence_Context);
 
-                  Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
-                  I := I + 1;
-               end loop;
+         Assert (Arrays.Enumeration_Vector.Valid_Element (Sequence_Context), "Invalid element 1");
 
-               Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+         Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
 
-               Assert (Arrays.AV_Enumeration_Vector.Valid (Sequence_Context),
-                       "Invalid AV_Enumeration_Vector after parsing");
+         Assert (Element'Image, Arrays.ONE'Image, "Invalid value of element 1");
+         Assert (Arrays.Enumeration_Vector.Has_Element (Sequence_Context), "Missing element 2");
 
-               Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
-                       "Valid AV_Enumeration_Vector before context update");
-               Arrays.Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
-               Assert (Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
-                       "Invalid AV_Enumeration_Vector after context update");
+         Arrays.Enumeration_Vector.Next (Sequence_Context);
 
-               Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image,
-                       "Invalid Sequence_Context.Last");
-            else
-               Assert (False, "Invalid AV_Enumeration_Vector or Buffer");
-            end if;
-         end;
-      else
-         Assert (False, "Invalid Length");
-      end if;
+         Assert (Arrays.Enumeration_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
 
-      Assert (Arrays.Message.Valid_Message (Context), "Invalid Message after complete parsing");
+         Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
 
-      Arrays.Message.Take_Buffer (Context, Buffer);
+         Assert (Element'Image, Arrays.TWO'Image, "Invalid value of element 2");
+         Assert (not Arrays.Enumeration_Vector.Has_Element (Sequence_Context),
+                 "Invalid acceptance of further element");
+         Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
+                 "Valid Enumeration_Vector before context update");
+
+         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         Message.Update_Enumeration_Vector (Context, Sequence_Context);
+         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+         Assert (Message.Valid (Context, Message.F_Enumeration_Vector),
+                 "Invalid Enumeration_Vector after context update");
+      end;
+
+      Assert (Message.Has_Buffer (Context) and then not Message.Valid_Message (Context),
+              "Valid Message before complete parsing");
+      Assert (Message.Present (Context, Message.F_AV_Enumeration_Vector), "Invalid AV_Enumeration_Vector or Buffer");
+
+      declare
+         Sequence_Context : Arrays.AV_Enumeration_Vector.Context;
+         Element          : Arrays.AV_Enumeration;
+      begin
+         Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
+
+         Assert (Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context), "Missing element 1");
+
+         Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
+
+         Assert (Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context), "Invalid element 1");
+
+         Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
+
+         Assert (Element.Known, "Unknown value of element 1");
+         Assert (Element.Enum'Image, Arrays.AV_ONE'Image, "Invalid value of element 1");
+         Assert (Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context), "Missing element 2");
+
+         Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
+
+         Assert (Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
+
+         Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
+
+         Assert (Element.Known, "Unknown value of element 2");
+         Assert (Element.Enum'Image, Arrays.AV_TWO'Image, "Invalid value of element 2");
+         Assert (not Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context),
+                 "Invalid acceptance of further element");
+         Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+                 "Valid AV_Enumeration_Vector before context update");
+
+         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
+         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+         Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+                 "Invalid AV_Enumeration_Vector after context update");
+      end;
+
+      Assert (Message.Valid_Message (Context), "Invalid Message after complete parsing");
+
+      Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
-   end Test_Parsing_Arrays_Message;
+   end Test_Parsing_Scalar_Array_Sequential;
 
-   procedure Test_Parsing_Arrays_Messages_Message_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
+   procedure Test_Parsing_Scalar_Array_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 0, 2, 0, 0);
-      Context          : Arrays.Messages_Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.Inner_Messages.Context;
-      Element_Context  : Arrays.Inner_Message.Context;
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+      Context : Arrays.Message.Context;
+      Length  : Arrays.Length;
+      package Message renames Arrays.Message;
    begin
-      Arrays.Messages_Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer);
+      Message.Verify_Message (Context);
 
-      Arrays.Messages_Message.Verify_Message (Context);
-      pragma Assert (Arrays.Messages_Message.Has_Buffer (Context));
-      if Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Length) then
-         Length := Arrays.Messages_Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (5), "Unexpected Length");
+      Assert (Message.Valid (Context, Message.F_Length), "Invalid Length");
 
-         if Arrays.Messages_Message.Present (Context, Arrays.Messages_Message.F_Messages) then
-            Arrays.Messages_Message.Switch_To_Messages (Context, Sequence_Context);
+      Length := Message.Get_Length (Context);
 
-            if Arrays.Inner_Messages.Valid_Element (Sequence_Context) then
-               Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+      Assert (Length'Image, Arrays.Length'Image (4), "Unexpected Length");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete parsing");
 
-               Arrays.Inner_Message.Verify_Message (Element_Context);
-               if Arrays.Inner_Message.Valid (Element_Context, Arrays.Inner_Message.F_Length) then
-                  Length := Arrays.Inner_Message.Get_Length (Element_Context);
-                  Assert (Length'Image, Arrays.Length'Image (1), "Unexpected Length of element 1");
-               end if;
-               Assert (Arrays.Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
+      declare
+         Sequence_Context : Arrays.Modular_Vector.Context;
+         Element          : Arrays.Modular_Integer;
+         I                : Natural := 1;
+      begin
+         Assert (Message.Present (Context, Message.F_Modular_Vector),
+                 "Invalid Modular_Vector or Buffer");
 
-               Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+         Message.Switch_To_Modular_Vector (Context, Sequence_Context);
 
-               if Arrays.Inner_Messages.Valid_Element (Sequence_Context) then
-                  Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+         while I <= 10 and then Arrays.Modular_Vector.Has_Element (Sequence_Context) loop
+            pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
+            pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
+            pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
+            pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
+            pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
 
-                  Arrays.Inner_Message.Verify_Message (Element_Context);
-                  if Arrays.Inner_Message.Valid (Element_Context, Arrays.Inner_Message.F_Length) then
-                     Length := Arrays.Inner_Message.Get_Length (Element_Context);
-                     Assert (Length'Image, Arrays.Length'Image (2), "Unexpected Length of element 2");
-                  end if;
-                  Assert (Arrays.Inner_Message.Structural_Valid_Message (Element_Context),
-                          "Structural invalid element 2");
+            Arrays.Modular_Vector.Next (Sequence_Context);
 
-                  Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+            Assert (Arrays.Modular_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
 
-                  Assert (not Arrays.Inner_Messages.Valid_Element (Sequence_Context),
-                          "Invalid acceptance of further element");
+            Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
 
-                  Assert (not Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Messages),
-                          "Valid Messages before context update");
-                  Arrays.Messages_Message.Update_Messages (Context, Sequence_Context);
-                  Assert (Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Messages),
-                          "Invalid Messages after context update");
+            Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
 
-                  pragma Assert (Arrays.Messages_Message.Has_Buffer (Context));
-               else
-                  Assert (False, "Invalid element 2");
-               end if;
-            else
-               Assert (False, "Invalid element 1");
-            end if;
-         else
-            Assert (False, "Invalid Messages or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
+            I := I + 1;
+         end loop;
 
-      Assert (Arrays.Messages_Message.Has_Buffer (Context) and then Arrays.Messages_Message.Valid_Message (Context),
-              "Invalid Message after complete parsing");
+         Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+         Assert (Arrays.Modular_Vector.Valid (Sequence_Context), "Invalid Modular_Vector after parsing");
+         Assert (not Message.Valid (Context, Message.F_Modular_Vector),
+                 "Valid Modular_Vector before context update");
+         Assert (Message.Complete_Modular_Vector (Context, Sequence_Context), "Incomplete Modular_Vector");
 
-      if Arrays.Messages_Message.Has_Buffer (Context) then
-         Arrays.Messages_Message.Take_Buffer (Context, Buffer);
-      elsif Arrays.Inner_Messages.Has_Buffer (Sequence_Context) then
-         Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Buffer);
-      end if;
+         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         Message.Update_Modular_Vector (Context, Sequence_Context);
+         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+         Assert (Message.Valid (Context, Message.F_Modular_Vector),
+                 "Invalid Modular_Vector after context update");
+      end;
+
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete parsing");
+
+      declare
+         Sequence_Context : Arrays.Range_Vector.Context;
+         Element          : Arrays.Range_Integer;
+         I                : Natural := 1;
+      begin
+         Assert (Message.Present (Context, Message.F_Range_Vector),
+                 "Invalid Range_Vector or Buffer");
+
+         Message.Switch_To_Range_Vector (Context, Sequence_Context);
+
+         while I <= 10 and then Arrays.Range_Vector.Has_Element (Sequence_Context) loop
+            pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
+            pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
+            pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
+            pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
+            pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+            Arrays.Range_Vector.Next (Sequence_Context);
+
+            Assert (Arrays.Range_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
+
+            Element := Arrays.Range_Vector.Get_Element (Sequence_Context);
+
+            Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
+
+            I := I + 1;
+         end loop;
+
+         Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+         Assert (Arrays.Range_Vector.Valid (Sequence_Context), "Invalid Range_Vector after parsing");
+         Assert (not Message.Valid (Context, Message.F_Range_Vector),
+                 "Valid Range_Vector before context update");
+         Assert (Message.Complete_Range_Vector (Context, Sequence_Context), "Incomplete Range_Vector");
+
+         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         Message.Update_Range_Vector (Context, Sequence_Context);
+         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+         Assert (Message.Valid (Context, Message.F_Range_Vector),
+                 "Invalid Range_Vector after context update");
+      end;
+
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete parsing");
+
+      declare
+         Sequence_Context : Arrays.Enumeration_Vector.Context;
+         Element          : Arrays.Enumeration;
+         I                : Natural := 1;
+      begin
+         Assert (Message.Present (Context, Message.F_Enumeration_Vector),
+                 "Invalid Enumeration_Vector or Buffer");
+
+         Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
+
+         while I <= 10 and then Arrays.Enumeration_Vector.Has_Element (Sequence_Context) loop
+            pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
+            pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
+            pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
+            pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
+            pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+            Arrays.Enumeration_Vector.Next (Sequence_Context);
+
+            Assert (Arrays.Enumeration_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
+
+            Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
+
+            Assert (Arrays.Enumeration'Pos (Element)'Image, Natural'Image (I),
+                    "Invalid value of element " & I'Image);
+
+            I := I + 1;
+         end loop;
+
+         Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+         Assert (Arrays.Enumeration_Vector.Valid (Sequence_Context), "Invalid Enumeration_Vector after parsing");
+         Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
+                 "Valid Enumeration_Vector before context update");
+         Assert (Message.Complete_Enumeration_Vector (Context, Sequence_Context),
+                 "Incomplete Enumeration_Vector");
+
+         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         Message.Update_Enumeration_Vector (Context, Sequence_Context);
+         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+         Assert (Message.Valid (Context, Message.F_Enumeration_Vector),
+                 "Invalid Enumeration_Vector after context update");
+      end;
+
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete parsing");
+
+      declare
+         Sequence_Context : Arrays.AV_Enumeration_Vector.Context;
+         Element          : Arrays.AV_Enumeration;
+         I                : Natural := 1;
+      begin
+         Assert (Message.Present (Context, Message.F_AV_Enumeration_Vector),
+                 "Invalid AV_Enumeration_Vector or Buffer");
+
+         Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
+
+         while I <= 10 and then Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context) loop
+            pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
+            pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
+            pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
+            pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
+            pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+            Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
+
+            Assert (Arrays.AV_Enumeration_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
+
+            Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
+
+            Assert (Element.Known, "Unkown element " & I'Image);
+            Assert (Arrays.AV_Enumeration_Enum'Pos (Element.Enum)'Image, Natural'Image (I),
+                    "Invalid value of element " & I'Image);
+
+            I := I + 1;
+         end loop;
+
+         Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+         Assert (Arrays.AV_Enumeration_Vector.Valid (Sequence_Context),
+                 "Invalid AV_Enumeration_Vector after parsing");
+         Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+                 "Valid AV_Enumeration_Vector before context update");
+         Assert (Message.Complete_AV_Enumeration_Vector (Context, Sequence_Context),
+                 "Incomplete AV_Enumeration_Vector");
+
+         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
+         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+         Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+                 "Invalid AV_Enumeration_Vector after context update");
+      end;
+
+      Assert (Message.Valid_Message (Context), "Invalid Message after complete parsing");
+
+      pragma Warnings (Off, "unused assignment to ""Context""");
+      Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, "unused assignment to ""Context""");
       Free_Bytes_Ptr (Buffer);
+   end Test_Parsing_Scalar_Array_Loop;
 
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Sequence_Context.Last");
-      Assert (Element_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Element_Context.Last");
-   end Test_Parsing_Arrays_Messages_Message_Sequential;
-
-   procedure Test_Parsing_Arrays_Messages_Message_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
-     SPARK_Mode, Pre => True
-   is
-      pragma Unreferenced (T);
-      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 0, 2, 0, 0);
-      Context          : Arrays.Messages_Message.Context;
-      Length           : Arrays.Length;
-      Sequence_Context : Arrays.Inner_Messages.Context;
-      Element_Context  : Arrays.Inner_Message.Context;
-      I                : Natural := 1;
-   begin
-      Arrays.Messages_Message.Initialize (Context, Buffer);
-
-      Arrays.Messages_Message.Verify_Message (Context);
-      if Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Length) then
-         Length := Arrays.Messages_Message.Get_Length (Context);
-         Assert (Length'Image, Arrays.Length'Image (5), "Unexpected Length");
-
-         if Arrays.Messages_Message.Present (Context, Arrays.Messages_Message.F_Messages) then
-            Arrays.Messages_Message.Switch_To_Messages (Context, Sequence_Context);
-
-            while I <= 10 and then Arrays.Inner_Messages.Valid_Element (Sequence_Context) loop
-               pragma Loop_Invariant (Arrays.Inner_Messages.Has_Buffer (Sequence_Context));
-               pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-               pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-               pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
-               pragma Loop_Invariant (not Arrays.Inner_Message.Has_Buffer (Element_Context));
-
-               Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
-
-               Arrays.Inner_Message.Verify_Message (Element_Context);
-               if Arrays.Inner_Message.Valid (Element_Context, Arrays.Inner_Message.F_Length) then
-                  Length := Arrays.Inner_Message.Get_Length (Element_Context);
-                  Assert (Length'Image, I'Image, "Unexpected Length of element " & I'Image);
-               end if;
-               Assert (Arrays.Inner_Message.Structural_Valid_Message (Element_Context),
-                       "Structural invalid element " & I'Image);
-
-               Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
-
-               I := I + 1;
-            end loop;
-
-            Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-
-            Assert (not Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Messages),
-                    "Valid Messages before context update");
-            Arrays.Messages_Message.Update_Messages (Context, Sequence_Context);
-            Assert (Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Messages),
-                    "Invalid Messages after context update");
-         else
-            Assert (False, "Invalid Messages or Buffer");
-         end if;
-      else
-         Assert (False, "Invalid Length");
-      end if;
-
-      Assert (Arrays.Messages_Message.Valid_Message (Context), "Invalid Message after complete parsing");
-
-      if Arrays.Messages_Message.Has_Buffer (Context) then
-         Arrays.Messages_Message.Take_Buffer (Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Sequence_Context.Last");
-      Assert (Element_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Element_Context.Last");
-   end Test_Parsing_Arrays_Messages_Message_Loop;
-
-   procedure Test_Generating_Arrays_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
+   procedure Test_Generating_Scalar_Array (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -931,58 +447,81 @@ package body RFLX.Arrays_Tests is
       Range_Vector_Context          : Arrays.Range_Vector.Context;
       Enumeration_Vector_Context    : Arrays.Enumeration_Vector.Context;
       AV_Enumeration_Vector_Context : Arrays.AV_Enumeration_Vector.Context;
+      package Message renames Arrays.Message;
    begin
-      Arrays.Message.Initialize (Context, Buffer);
-      Arrays.Message.Set_Length (Context, 4);
-
-      Arrays.Message.Switch_To_Modular_Vector (Context, Modular_Vector_Context);
+      Message.Initialize (Context, Buffer);
+      Message.Set_Length (Context, 4);
+      Message.Switch_To_Modular_Vector (Context, Modular_Vector_Context);
       Arrays.Modular_Vector.Append_Element (Modular_Vector_Context, 1);
       Arrays.Modular_Vector.Append_Element (Modular_Vector_Context, 2);
-      Assert (not Arrays.Modular_Vector.Valid_Element (Modular_Vector_Context),
-              "Invalid acceptance of further element");
-      Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
-              "Valid Modular_Vector before context update");
-      Arrays.Message.Update_Modular_Vector (Context, Modular_Vector_Context);
-      Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Modular_Vector),
-              "Invalid Modular_Vector after context update");
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete generating");
 
-      Arrays.Message.Switch_To_Range_Vector (Context, Range_Vector_Context);
+      Assert (not Arrays.Modular_Vector.Has_Element (Modular_Vector_Context),
+              "Invalid acceptance of further element");
+      Assert (not Message.Valid (Context, Message.F_Modular_Vector),
+              "Valid Modular_Vector before context update");
+
+      pragma Warnings (Off, "unused assignment to ""Modular_Vector_Context""");
+      Message.Update_Modular_Vector (Context, Modular_Vector_Context);
+      pragma Warnings (On, "unused assignment to ""Modular_Vector_Context""");
+
+      Assert (Message.Valid (Context, Message.F_Modular_Vector),
+              "Invalid Modular_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Switch_To_Range_Vector (Context, Range_Vector_Context);
       Arrays.Range_Vector.Append_Element (Range_Vector_Context, 1);
       Arrays.Range_Vector.Append_Element (Range_Vector_Context, 2);
-      Assert (not Arrays.Range_Vector.Valid_Element (Range_Vector_Context), "Invalid acceptance of further element");
-      Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
-              "Valid Range_Vector before context update");
-      Arrays.Message.Update_Range_Vector (Context, Range_Vector_Context);
-      Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Range_Vector),
-              "Invalid Range_Vector after context update");
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete generating");
 
-      Arrays.Message.Switch_To_Enumeration_Vector (Context, Enumeration_Vector_Context);
+      Assert (not Arrays.Range_Vector.Has_Element (Range_Vector_Context), "Invalid acceptance of further element");
+      Assert (not Message.Valid (Context, Message.F_Range_Vector),
+              "Valid Range_Vector before context update");
+
+      pragma Warnings (Off, "unused assignment to ""Range_Vector_Context""");
+      Message.Update_Range_Vector (Context, Range_Vector_Context);
+      pragma Warnings (On, "unused assignment to ""Range_Vector_Context""");
+
+      Assert (Message.Valid (Context, Message.F_Range_Vector),
+              "Invalid Range_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Switch_To_Enumeration_Vector (Context, Enumeration_Vector_Context);
       Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.ONE);
       Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.TWO);
-      Assert (not Arrays.Enumeration_Vector.Valid_Element (Enumeration_Vector_Context),
-              "Invalid acceptance of further element");
-      Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
-              "Valid Enumeration_Vector before context update");
-      Arrays.Message.Update_Enumeration_Vector (Context, Enumeration_Vector_Context);
-      Assert (Arrays.Message.Valid (Context, Arrays.Message.F_Enumeration_Vector),
-              "Invalid Enumeration_Vector after context update");
-      Assert (not Arrays.Message.Valid_Message (Context), "Valid Message before complete generating");
 
-      Arrays.Message.Switch_To_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
+      Assert (not Arrays.Enumeration_Vector.Has_Element (Enumeration_Vector_Context),
+              "Invalid acceptance of further element");
+      Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
+              "Valid Enumeration_Vector before context update");
+
+      pragma Warnings (Off, "unused assignment to ""Enumeration_Vector_Context""");
+      Message.Update_Enumeration_Vector (Context, Enumeration_Vector_Context);
+      pragma Warnings (On, "unused assignment to ""Enumeration_Vector_Context""");
+
+      Assert (Message.Valid (Context, Message.F_Enumeration_Vector),
+              "Invalid Enumeration_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Switch_To_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
       Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_ONE));
       Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_TWO));
-      Assert (not Arrays.AV_Enumeration_Vector.Valid_Element (AV_Enumeration_Vector_Context),
-              "Invalid acceptance of further element");
-      Assert (not Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
-              "Valid AV_Enumeration_Vector before context update");
-      Arrays.Message.Update_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
-      Assert (Arrays.Message.Valid (Context, Arrays.Message.F_AV_Enumeration_Vector),
-              "Invalid AV_Enumeration_Vector after context update");
-      Assert (Arrays.Message.Valid_Message (Context), "Invalid Message after complete generating");
 
-      Arrays.Message.Take_Buffer (Context, Buffer);
+      Assert (not Arrays.AV_Enumeration_Vector.Has_Element (AV_Enumeration_Vector_Context),
+              "Invalid acceptance of further element");
+      Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+              "Valid AV_Enumeration_Vector before context update");
+
+      pragma Warnings (Off, "unused assignment to ""AV_Enumeration_Vector_Context""");
+      Message.Update_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
+      pragma Warnings (Off, "unused assignment to ""AV_Enumeration_Vector_Context""");
+
+      Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+              "Invalid AV_Enumeration_Vector after context update");
+      Assert (Message.Valid_Message (Context), "Invalid Message after complete generating");
+
+      pragma Warnings (Off, "unused assignment to ""Context""");
+      Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, "unused assignment to ""Context""");
+
       Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
               - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
@@ -991,18 +530,371 @@ package body RFLX.Arrays_Tests is
 
       Free_Bytes_Ptr (Expected);
       Free_Bytes_Ptr (Buffer);
+   end Test_Generating_Scalar_Array;
 
-      Assert (Modular_Vector_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image,
-              "Invalid Modular_Vector_Context.Last");
-      Assert (Range_Vector_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image,
-              "Invalid Range_Vector_Context.Last");
-      Assert (Enumeration_Vector_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image,
-              "Invalid Enumeration_Vector_Context.Last");
-      Assert (AV_Enumeration_Vector_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image,
-              "Invalid AV_Enumeration_Vector_Context.Last");
-   end Test_Generating_Arrays_Message;
+   procedure Test_Generating_Scalar_Array_Independent (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Expected                      : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+      Buffer                        : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Modular_Vector_Buffer         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0);
+      Range_Vector_Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      Enumeration_Vector_Buffer     : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      AV_Enumeration_Vector_Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      Context                       : Arrays.Message.Context;
+      Modular_Vector_Context        : Arrays.Modular_Vector.Context;
+      Range_Vector_Context          : Arrays.Range_Vector.Context;
+      Enumeration_Vector_Context    : Arrays.Enumeration_Vector.Context;
+      AV_Enumeration_Vector_Context : Arrays.AV_Enumeration_Vector.Context;
+      package Message renames Arrays.Message;
+   begin
+      Arrays.Modular_Vector.Initialize (Modular_Vector_Context, Modular_Vector_Buffer);
+      Arrays.Modular_Vector.Append_Element (Modular_Vector_Context, 1);
+      Arrays.Modular_Vector.Append_Element (Modular_Vector_Context, 2);
 
-   procedure Test_Generating_Arrays_Messages_Message (T : in out AUnit.Test_Cases.Test_Case'Class) with
+      Assert (not Arrays.Modular_Vector.Has_Element (Modular_Vector_Context),
+              "Invalid acceptance of further element in Modular_Vector");
+      Assert (not Message.Valid (Context, Message.F_Modular_Vector),
+              "Valid Modular_Vector before context update");
+
+      Arrays.Range_Vector.Initialize (Range_Vector_Context, Range_Vector_Buffer);
+      Arrays.Range_Vector.Append_Element (Range_Vector_Context, 1);
+      Arrays.Range_Vector.Append_Element (Range_Vector_Context, 2);
+
+      Assert (not Arrays.Range_Vector.Has_Element (Range_Vector_Context),
+              "Invalid acceptance of further element in Range_Vector");
+      Assert (not Message.Valid (Context, Message.F_Range_Vector),
+              "Valid Range_Vector before context update");
+
+      Arrays.Enumeration_Vector.Initialize (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.ONE);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.TWO);
+
+      Assert (not Arrays.Enumeration_Vector.Has_Element (Enumeration_Vector_Context),
+              "Invalid acceptance of further element in Enumeration_Vector");
+      Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
+              "Valid Enumeration_Vector before context update");
+
+      Arrays.AV_Enumeration_Vector.Initialize (AV_Enumeration_Vector_Context, AV_Enumeration_Vector_Buffer);
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_ONE));
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_TWO));
+
+      Assert (not Arrays.AV_Enumeration_Vector.Has_Element (AV_Enumeration_Vector_Context),
+              "Invalid acceptance of further element in AV_Enumeration_Vector");
+      Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+              "Valid AV_Enumeration_Vector before context update");
+
+      Message.Initialize (Context, Buffer);
+      Message.Set_Length (Context, 4);
+      Message.Set_Modular_Vector (Context, Modular_Vector_Context);
+
+      Assert (Message.Valid (Context, Message.F_Modular_Vector),
+              "Invalid Modular_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Set_Range_Vector (Context, Range_Vector_Context);
+
+      Assert (Message.Valid (Context, Message.F_Range_Vector),
+              "Invalid Range_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Set_Enumeration_Vector (Context, Enumeration_Vector_Context);
+
+      Assert (Message.Valid (Context, Message.F_Enumeration_Vector),
+              "Invalid Enumeration_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Set_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
+
+      Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+              "Invalid AV_Enumeration_Vector after context update");
+      Assert (Message.Valid_Message (Context), "Invalid Message after complete generating");
+
+      Message.Take_Buffer (Context, Buffer);
+
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+              "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+              "Invalid binary representation");
+
+      pragma Warnings (Off, "unused assignment to ""*_Context""");
+      Arrays.Modular_Vector.Take_Buffer (Modular_Vector_Context, Modular_Vector_Buffer);
+      Arrays.Range_Vector.Take_Buffer (Range_Vector_Context, Range_Vector_Buffer);
+      Arrays.Enumeration_Vector.Take_Buffer (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
+      Arrays.AV_Enumeration_Vector.Take_Buffer (AV_Enumeration_Vector_Context, AV_Enumeration_Vector_Buffer);
+      pragma Warnings (On, "unused assignment to ""*_Context""");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
+      Free_Bytes_Ptr (Modular_Vector_Buffer);
+      Free_Bytes_Ptr (Range_Vector_Buffer);
+      Free_Bytes_Ptr (Enumeration_Vector_Buffer);
+      Free_Bytes_Ptr (AV_Enumeration_Vector_Buffer);
+   end Test_Generating_Scalar_Array_Independent;
+
+   procedure Test_Generating_Scalar_Array_Independent_Empty (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Expected                      : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(0, 1, 2, 1, 2, 1, 2);
+      Buffer                        : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0);
+      Modular_Vector_Buffer         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      Range_Vector_Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      Enumeration_Vector_Buffer     : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      AV_Enumeration_Vector_Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      Context                       : Arrays.Message.Context;
+      Modular_Vector_Context        : Arrays.Modular_Vector.Context;
+      Range_Vector_Context          : Arrays.Range_Vector.Context;
+      Enumeration_Vector_Context    : Arrays.Enumeration_Vector.Context;
+      AV_Enumeration_Vector_Context : Arrays.AV_Enumeration_Vector.Context;
+      package Message renames Arrays.Message;
+   begin
+      Arrays.Modular_Vector.Initialize (Modular_Vector_Context, Modular_Vector_Buffer);
+      Assert (Arrays.Modular_Vector.Has_Element (Modular_Vector_Context),
+              "No acceptance of further element in Modular_Vector");
+
+      Assert (not Message.Valid (Context, Message.F_Modular_Vector),
+              "Valid Modular_Vector before context update");
+
+      Arrays.Range_Vector.Initialize (Range_Vector_Context, Range_Vector_Buffer);
+      Arrays.Range_Vector.Append_Element (Range_Vector_Context, 1);
+      Arrays.Range_Vector.Append_Element (Range_Vector_Context, 2);
+
+      Assert (not Arrays.Range_Vector.Has_Element (Range_Vector_Context),
+              "Invalid acceptance of further element in Range_Vector");
+      Assert (not Message.Valid (Context, Message.F_Range_Vector),
+              "Valid Range_Vector before context update");
+
+      Arrays.Enumeration_Vector.Initialize (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.ONE);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.TWO);
+
+      Assert (not Arrays.Enumeration_Vector.Has_Element (Enumeration_Vector_Context),
+              "Invalid acceptance of further element in Enumeration_Vector");
+      Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
+              "Valid Enumeration_Vector before context update");
+
+      Arrays.AV_Enumeration_Vector.Initialize (AV_Enumeration_Vector_Context, AV_Enumeration_Vector_Buffer);
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_ONE));
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_TWO));
+
+      Assert (not Arrays.AV_Enumeration_Vector.Has_Element (AV_Enumeration_Vector_Context),
+              "Invalid acceptance of further element in AV_Enumeration_Vector");
+      Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+              "Valid AV_Enumeration_Vector before context update");
+
+      Message.Initialize (Context, Buffer);
+      Message.Set_Length (Context, 0);
+      Message.Set_Modular_Vector (Context, Modular_Vector_Context);
+
+      Assert (Message.Structural_Valid (Context, Message.F_Modular_Vector),
+              "Invalid Modular_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Set_Range_Vector (Context, Range_Vector_Context);
+
+      Assert (Message.Valid (Context, Message.F_Range_Vector),
+              "Invalid Range_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Set_Enumeration_Vector (Context, Enumeration_Vector_Context);
+
+      Assert (Message.Valid (Context, Message.F_Enumeration_Vector),
+              "Invalid Enumeration_Vector after context update");
+      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
+
+      Message.Set_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
+
+      Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
+              "Invalid AV_Enumeration_Vector after context update");
+      Assert (Message.Structural_Valid_Message (Context), "Invalid Message after complete generating");
+
+      Message.Take_Buffer (Context, Buffer);
+
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+              "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+              "Invalid binary representation");
+
+      pragma Warnings (Off, "unused assignment to ""*_Context""");
+      Arrays.Modular_Vector.Take_Buffer (Modular_Vector_Context, Modular_Vector_Buffer);
+      Arrays.Range_Vector.Take_Buffer (Range_Vector_Context, Range_Vector_Buffer);
+      Arrays.Enumeration_Vector.Take_Buffer (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
+      Arrays.AV_Enumeration_Vector.Take_Buffer (AV_Enumeration_Vector_Context, AV_Enumeration_Vector_Buffer);
+      pragma Warnings (On, "unused assignment to ""*_Context""");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
+      Free_Bytes_Ptr (Modular_Vector_Buffer);
+      Free_Bytes_Ptr (Range_Vector_Buffer);
+      Free_Bytes_Ptr (Enumeration_Vector_Buffer);
+      Free_Bytes_Ptr (AV_Enumeration_Vector_Buffer);
+   end Test_Generating_Scalar_Array_Independent_Empty;
+
+   procedure Test_Parsing_Message_Array_Sequential (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 0, 2, 0, 0);
+      Context          : Arrays.Messages_Message.Context;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Inner_Messages.Context;
+      Element_Context  : Arrays.Inner_Message.Context;
+      package Message renames Arrays.Messages_Message;
+      package Inner_Message renames Arrays.Inner_Message;
+   begin
+      Message.Initialize (Context, Buffer);
+      Message.Verify_Message (Context);
+
+      Assert (Message.Valid (Context, Message.F_Length), "Invalid Length");
+
+      Length := Message.Get_Length (Context);
+
+      Assert (Length'Image, Arrays.Length'Image (5), "Unexpected Length");
+      Assert (Message.Present (Context, Message.F_Messages),
+              "Invalid Messages or Buffer");
+
+      Message.Switch_To_Messages (Context, Sequence_Context);
+
+      Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Invalid element 1");
+
+      Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+      Inner_Message.Verify_Message (Element_Context);
+
+      Assert (Inner_Message.Valid (Element_Context, Inner_Message.F_Length),
+              "Invalid Length of Inner_Message 1");
+
+      Length := Inner_Message.Get_Length (Element_Context);
+
+      Assert (Length'Image, Arrays.Length'Image (1), "Unexpected Length of element 1");
+      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
+
+      pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, "unused assignment to ""Element_Context""");
+
+      Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Invalid element 2");
+
+      Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+
+      Inner_Message.Verify_Message (Element_Context);
+
+      Assert (Inner_Message.Valid (Element_Context, Inner_Message.F_Length),
+              "Invalid Length of Inner_Message 2");
+
+      Length := Inner_Message.Get_Length (Element_Context);
+
+      Assert (Length'Image, Arrays.Length'Image (2), "Unexpected Length of element 2");
+      Assert (Inner_Message.Structural_Valid_Message (Element_Context),
+              "Structural invalid element 2");
+
+      pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, "unused assignment to ""Element_Context""");
+
+      Assert (not Arrays.Inner_Messages.Has_Element (Sequence_Context),
+              "Invalid acceptance of further element");
+      Assert (not Message.Valid (Context, Message.F_Messages),
+              "Valid Messages before context update");
+      Assert (Message.Complete_Messages (Context, Sequence_Context),
+              "Invalid Messages_Message");
+
+      pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      Message.Update_Messages (Context, Sequence_Context);
+      pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+      Assert (Message.Valid (Context, Message.F_Messages),
+              "Invalid Messages after context update");
+      Assert (Message.Has_Buffer (Context) and then Message.Valid_Message (Context),
+              "Invalid Message after complete parsing");
+
+      pragma Warnings (Off, "unused assignment to ""Context""");
+      Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, "unused assignment to ""Context""");
+
+      Free_Bytes_Ptr (Buffer);
+   end Test_Parsing_Message_Array_Sequential;
+
+   procedure Test_Parsing_Message_Array_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 0, 2, 0, 0);
+      Context          : Arrays.Messages_Message.Context;
+      Length           : Arrays.Length;
+      Sequence_Context : Arrays.Inner_Messages.Context;
+      Element_Context  : Arrays.Inner_Message.Context;
+      I                : Natural := 1;
+      package Message renames Arrays.Messages_Message;
+      package Inner_Message renames Arrays.Inner_Message;
+   begin
+      Message.Initialize (Context, Buffer);
+      Message.Verify_Message (Context);
+
+      Assert (Message.Valid (Context, Message.F_Length),  "Invalid Length");
+
+      Length := Message.Get_Length (Context);
+
+      Assert (Length'Image, Arrays.Length'Image (5), "Unexpected Length");
+      Assert (Message.Present (Context, Message.F_Messages), "Invalid Messages or Buffer");
+
+      Message.Switch_To_Messages (Context, Sequence_Context);
+
+      while I <= 10 and then Arrays.Inner_Messages.Has_Element (Sequence_Context) loop
+         pragma Loop_Invariant (Arrays.Inner_Messages.Has_Buffer (Sequence_Context));
+         pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
+         pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
+         pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
+         pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+         pragma Loop_Invariant (not Inner_Message.Has_Buffer (Element_Context));
+
+         Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+
+         Inner_Message.Verify_Message (Element_Context);
+
+         Assert (Inner_Message.Valid (Element_Context, Inner_Message.F_Length),
+                 "Invalid Length of Inner_Message " & I'Image);
+
+         Length := Inner_Message.Get_Length (Element_Context);
+
+         Assert (Length'Image, I'Image, "Unexpected Length of element " & I'Image);
+         Assert (Inner_Message.Structural_Valid_Message (Element_Context),
+                 "Structural invalid element " & I'Image);
+
+         Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+
+         I := I + 1;
+      end loop;
+
+      Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+      Assert (not Message.Valid (Context, Message.F_Messages),
+              "Valid Messages before context update");
+      Assert (Message.Complete_Messages (Context, Sequence_Context), "Invalid Messages_Message");
+
+      pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      Message.Update_Messages (Context, Sequence_Context);
+      pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+      Assert (Message.Valid (Context, Message.F_Messages),
+              "Invalid Messages after context update");
+
+      Assert (Message.Valid_Message (Context), "Invalid Message after complete parsing");
+
+      pragma Warnings (Off, "unused assignment to ""Context""");
+      Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, "unused assignment to ""Context""");
+
+      Free_Bytes_Ptr (Buffer);
+   end Test_Parsing_Message_Array_Loop;
+
+   procedure Test_Generating_Message_Array (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
@@ -1012,55 +904,177 @@ package body RFLX.Arrays_Tests is
       Context          : Arrays.Messages_Message.Context;
       Sequence_Context : Arrays.Inner_Messages.Context;
       Element_Context  : Arrays.Inner_Message.Context;
+      package Message renames Arrays.Messages_Message;
+      package Inner_Message renames Arrays.Inner_Message;
    begin
-      Arrays.Messages_Message.Initialize (Context, Buffer);
-      Arrays.Messages_Message.Set_Length (Context, 5);
+      Message.Initialize (Context, Buffer);
+      Message.Set_Length (Context, 5);
+      Message.Switch_To_Messages (Context, Sequence_Context);
 
-      Arrays.Messages_Message.Switch_To_Messages (Context, Sequence_Context);
+      Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Missing element 1");
 
-      if Arrays.Inner_Messages.Valid_Element (Sequence_Context) then
-         Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
-         Arrays.Inner_Message.Set_Length (Element_Context, 1);
-         Data := (3, 0);
-         Set_Payload (Element_Context);
-         Assert (Arrays.Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
-         Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+      Inner_Message.Set_Length (Element_Context, 1);
+      Data := (3, 0);
+      Set_Payload (Element_Context);
 
-         if Arrays.Inner_Messages.Valid_Element (Sequence_Context) then
-            Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
-            Arrays.Inner_Message.Set_Length (Element_Context, 2);
-            Data := (4, 6);
-            Set_Payload (Element_Context);
-            Assert (Arrays.Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
-            Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
 
-            Assert (not Arrays.Inner_Messages.Valid_Element (Sequence_Context),
-                    "Invalid acceptance of further element");
-            Assert (not Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Messages),
-                    "Valid Messages before context update");
-            Arrays.Messages_Message.Update_Messages (Context, Sequence_Context);
-            Assert (Arrays.Messages_Message.Valid (Context, Arrays.Messages_Message.F_Messages),
-                    "Invalid Messages after context update");
+      pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, "unused assignment to ""Element_Context""");
 
-            Arrays.Messages_Message.Take_Buffer (Context, Buffer);
-            Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
-                    - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-            Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
-                    Expected.all,
-                    "Invalid binary representation");
-         end if;
-      end if;
+      Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Missing element 2");
+
+      Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+      Inner_Message.Set_Length (Element_Context, 2);
+      Data := (4, 6);
+      Set_Payload (Element_Context);
+
+      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
+
+      pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, "unused assignment to ""Element_Context""");
+
+      Assert (not Arrays.Inner_Messages.Has_Element (Sequence_Context),
+              "Invalid acceptance of further element");
+      Assert (not Message.Valid (Context, Message.F_Messages),
+              "Valid Messages before context update");
+      Assert (Message.Complete_Messages (Context, Sequence_Context),
+              "Incomplete Messages");
+
+      pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      Message.Update_Messages (Context, Sequence_Context);
+      pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+      Assert (Message.Valid (Context, Message.F_Messages),
+              "Invalid Messages after context update");
+
+      Message.Take_Buffer (Context, Buffer);
+
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+              Expected.all,
+              "Invalid binary representation");
 
       Free_Bytes_Ptr (Expected);
-      if Arrays.Inner_Messages.Has_Buffer (Sequence_Context) then
-         Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Buffer);
-      end if;
       Free_Bytes_Ptr (Buffer);
+   end Test_Generating_Message_Array;
 
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Context.Last");
-      Assert (Element_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Element_Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (48)'Image, "Invalid Sequence_Context.Last");
-   end Test_Generating_Arrays_Messages_Message;
+   procedure Test_Generating_Message_Array_Independent (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      procedure Set_Payload is new Arrays.Inner_Message.Set_Payload (Write_Data, Valid_Data_Length);
+      Expected         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 3, 2, 4, 6);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
+      Sequence_Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0);
+      Context          : Arrays.Messages_Message.Context;
+      Sequence_Context : Arrays.Inner_Messages.Context;
+      Element_Context  : Arrays.Inner_Message.Context;
+      package Message renames Arrays.Messages_Message;
+      package Inner_Message renames Arrays.Inner_Message;
+   begin
+      Arrays.Inner_Messages.Initialize (Sequence_Context, Sequence_Buffer);
+
+      Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Invalid element 1");
+
+      Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+      Inner_Message.Set_Length (Element_Context, 1);
+      Data := (3, 0);
+      Set_Payload (Element_Context);
+
+      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
+
+      pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, "unused assignment to ""Element_Context""");
+
+      Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Invalid element 1");
+
+      Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
+      Inner_Message.Set_Length (Element_Context, 2);
+      Data := (4, 6);
+      Set_Payload (Element_Context);
+
+      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
+
+      pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, "unused assignment to ""Element_Context""");
+
+      Assert (not Arrays.Inner_Messages.Has_Element (Sequence_Context),
+              "Invalid acceptance of further element");
+
+      Message.Initialize (Context, Buffer);
+      Message.Set_Length (Context, 5);
+
+      Assert (not Message.Valid (Context, Message.F_Messages),
+              "Valid Messages before setting field");
+
+      Message.Set_Messages (Context, Sequence_Context);
+
+      Assert (Message.Valid (Context, Message.F_Messages),
+              "Invalid Messages after setting field");
+
+      Message.Take_Buffer (Context, Buffer);
+
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+              Expected.all,
+              "Invalid binary representation");
+
+      pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Sequence_Buffer);
+      pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
+      Free_Bytes_Ptr (Sequence_Buffer);
+   end Test_Generating_Message_Array_Independent;
+
+   procedure Test_Generating_Message_Array_Independent_Empty (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Expected         : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 0);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 1);
+      Sequence_Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      Context          : Arrays.Messages_Message.Context;
+      Sequence_Context : Arrays.Inner_Messages.Context;
+      package Message renames Arrays.Messages_Message;
+   begin
+      Arrays.Inner_Messages.Initialize (Sequence_Context, Sequence_Buffer);
+
+      Message.Initialize (Context, Buffer);
+      Message.Set_Length (Context, 0);
+
+      Assert (not Message.Valid (Context, Message.F_Messages),
+              "Valid Messages before setting field");
+      Message.Set_Messages (Context, Sequence_Context);
+      Assert (Message.Structural_Valid (Context, Message.F_Messages),
+              "Invalid Messages after setting field");
+
+      Message.Take_Buffer (Context, Buffer);
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+              Expected.all,
+              "Invalid binary representation");
+
+      pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Sequence_Buffer);
+      pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
+      Free_Bytes_Ptr (Sequence_Buffer);
+   end Test_Generating_Message_Array_Independent_Empty;
 
    procedure Test_Parsing_Array_Size_Defined_By_Message_Size (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
@@ -1075,55 +1089,54 @@ package body RFLX.Arrays_Tests is
       package Message renames Arrays.Array_Size_Defined_By_Message_Size;
    begin
       Message.Initialize (Context, Buffer);
-
       Message.Verify_Message (Context);
 
-      if Message.Valid (Context, Message.F_Header) then
-         Header := Message.Get_Header (Context);
+      Assert (Message.Valid (Context, Message.F_Header), "Invalid Header");
 
-         Assert (Header'Image, Arrays.ONE'Image, "Invalid value of Header");
+      Header := Message.Get_Header (Context);
 
-         if Message.Present (Context, Message.F_Vector) then
-            Message.Switch_To_Vector (Context, Sequence_Context);
+      Assert (Header'Image, Arrays.ONE'Image, "Invalid value of Header");
+      Assert (Message.Present (Context, Message.F_Vector), "Invalid Vector or Buffer");
 
-            while I <= 10 and then Arrays.Modular_Vector.Valid_Element (Sequence_Context) loop
-               pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
-               pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-               pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-               pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-               pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+      Message.Switch_To_Vector (Context, Sequence_Context);
 
-               Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
+      while I <= 10 and then Arrays.Modular_Vector.Has_Element (Sequence_Context) loop
+         pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
+         pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
+         pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
+         pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
+         pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
 
-               Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
+         Arrays.Modular_Vector.Next (Sequence_Context);
 
-               Arrays.Modular_Vector.Next (Sequence_Context);
-               I := I + 1;
-            end loop;
+         Assert (Arrays.Modular_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
 
-            Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-            Assert (Arrays.Modular_Vector.Valid (Sequence_Context), "Invalid Vector after parsing");
-            Assert (not Message.Valid (Context, Message.F_Vector),
-                    "Valid Vector before context update");
+         Element := Arrays.Modular_Vector.Get_Element (Sequence_Context);
 
-            Message.Update_Vector (Context, Sequence_Context);
+         Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
 
-            Assert (Message.Valid (Context, Message.F_Vector),
-                    "Invalid Vector after context update");
-         else
-            Assert (False, "Invalid Vector or Buffer");
-         end if;
-      end if;
+         I := I + 1;
+      end loop;
 
+      Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+      Assert (Arrays.Modular_Vector.Valid (Sequence_Context), "Invalid Vector after parsing");
+      Assert (not Message.Valid (Context, Message.F_Vector),
+              "Valid Vector before context update");
+      Assert (Message.Complete_Vector (Context, Sequence_Context), "Incomplete Vector");
+
+      pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      Message.Update_Vector (Context, Sequence_Context);
+      pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+      Assert (Message.Valid (Context, Message.F_Vector),
+              "Invalid Vector after context update");
       Assert (Message.Valid_Message (Context), "Invalid Message");
 
-      if Message.Has_Buffer (Context) then
-         Message.Take_Buffer (Context, Buffer);
-      end if;
-      Free_Bytes_Ptr (Buffer);
+      pragma Warnings (Off, "unused assignment to ""Context""");
+      Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, "unused assignment to ""Context""");
 
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Array_Size_Defined_By_Message_Size;
 
    procedure Test_Parsing_Array_Size_Defined_By_Message_Size_Empty (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -1137,22 +1150,21 @@ package body RFLX.Arrays_Tests is
       package Message renames Arrays.Array_Size_Defined_By_Message_Size;
    begin
       Message.Initialize (Context, Buffer);
-
       Message.Verify_Message (Context);
 
-      if Message.Valid (Context, Message.F_Header) then
-         Header := Message.Get_Header (Context);
+      Assert (Message.Valid (Context, Message.F_Header), "Invalid Header");
 
-         Assert (Header'Image, Arrays.ONE'Image, "Invalid value of Header");
-         Assert (not Message.Present (Context, Message.F_Vector), "Present Vector");
-      end if;
+      Header := Message.Get_Header (Context);
 
+      Assert (Header'Image, Arrays.ONE'Image, "Invalid value of Header");
+      Assert (not Message.Present (Context, Message.F_Vector), "Present Vector");
       Assert (Message.Structural_Valid_Message (Context), "Invalid Message");
 
+      pragma Warnings (Off, "unused assignment to ""Context""");
       Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      pragma Warnings (On, "unused assignment to ""Context""");
 
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (8)'Image, "Invalid Context.Last");
+      Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Array_Size_Defined_By_Message_Size_Empty;
 
    procedure Test_Generating_Array_Size_Defined_By_Message_Size (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -1172,20 +1184,23 @@ package body RFLX.Arrays_Tests is
       Arrays.Modular_Vector.Append_Element (Sequence_Context, 1);
       Arrays.Modular_Vector.Append_Element (Sequence_Context, 2);
 
-      Assert (not Arrays.Modular_Vector.Valid_Element (Sequence_Context),
+      Assert (not Arrays.Modular_Vector.Has_Element (Sequence_Context),
               "Invalid acceptance of further element");
       Assert (not Message.Valid (Context, Message.F_Vector),
               "Valid Modular_Vector before context update");
       Assert (not Message.Valid (Context, Message.F_Vector),
               "Valid Modular_Vector before context update");
 
+      pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
       Message.Update_Vector (Context, Sequence_Context);
+      pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Assert (Message.Valid (Context, Message.F_Vector),
               "Invalid Modular_Vector after context update");
       Assert (Message.Valid_Message (Context), "Invalid Message");
 
       Message.Take_Buffer (Context, Buffer);
+
       Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
               - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
@@ -1194,9 +1209,6 @@ package body RFLX.Arrays_Tests is
 
       Free_Bytes_Ptr (Buffer);
       Free_Bytes_Ptr (Expected);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Context.Last");
-      Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
    end Test_Generating_Array_Size_Defined_By_Message_Size;
 
    procedure Test_Generating_Array_Size_Defined_By_Message_Size_Empty (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -1211,7 +1223,6 @@ package body RFLX.Arrays_Tests is
       package Message renames Arrays.Array_Size_Defined_By_Message_Size;
    begin
       Message.Initialize (Context, Buffer);
-
       Message.Set_Header (Context, Arrays.ONE);
       Message.Set_Vector_Empty (Context);
 
@@ -1219,6 +1230,7 @@ package body RFLX.Arrays_Tests is
       Assert (Message.Structural_Valid_Message (Context), "Invalid Message");
 
       Message.Take_Buffer (Context, Buffer);
+
       Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
               - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
@@ -1227,36 +1239,40 @@ package body RFLX.Arrays_Tests is
 
       Free_Bytes_Ptr (Buffer);
       Free_Bytes_Ptr (Expected);
-
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (8)'Image, "Invalid Context.Last");
    end Test_Generating_Array_Size_Defined_By_Message_Size_Empty;
 
    overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
    begin
-      Register_Routine (T, Test_Parsing_Arrays_Modular_Sequential'Access, "Parsing Modular Sequential");
-      Register_Routine (T, Test_Parsing_Arrays_Modular_Loop'Access, "Parsing Modular Loop");
-      Register_Routine (T, Test_Parsing_Arrays_Range_Sequential'Access, "Parsing Range Sequential");
-      Register_Routine (T, Test_Parsing_Arrays_Range_Loop'Access, "Parsing Range Loop");
-      Register_Routine (T, Test_Parsing_Arrays_Enumeration_Sequential'Access, "Parsing Enumeration Sequential");
-      Register_Routine (T, Test_Parsing_Arrays_Enumeration_Loop'Access, "Parsing Enumeration Loop");
-      Register_Routine (T, Test_Parsing_Arrays_AV_Enumeration_Sequential'Access, "Parsing AV_Enumeration Sequential");
-      Register_Routine (T, Test_Parsing_Arrays_AV_Enumeration_Loop'Access, "Parsing AV_Enumeration Loop");
-      Register_Routine (T, Test_Parsing_Arrays_Message'Access, "Parsing Message");
-      Register_Routine (T, Test_Parsing_Arrays_Messages_Message_Sequential'Access,
-                        "Parsing Messages Message Sequential");
-      Register_Routine (T, Test_Parsing_Arrays_Messages_Message_Loop'Access, "Parsing Messages Message Loop");
-      Register_Routine (T, Test_Generating_Arrays_Message'Access, "Generating Message");
-      Register_Routine (T, Test_Generating_Arrays_Messages_Message'Access, "Generating Messages Message");
+      Register_Routine (T, Test_Parsing_Scalar_Array_Sequential'Access,
+                        "Parsing scalar arrays (sequential)");
+      Register_Routine (T, Test_Parsing_Scalar_Array_Loop'Access,
+                        "Parsing scalar arrays (loop)");
+      Register_Routine (T, Test_Generating_Scalar_Array'Access,
+                        "Generating scalar arrays");
+      Register_Routine (T, Test_Generating_Scalar_Array_Independent'Access,
+                        "Generating scalar arrays (independent)");
+      Register_Routine (T, Test_Generating_Scalar_Array_Independent_Empty'Access,
+                        "Generating scalar arrays (independent, empty)");
+      Register_Routine (T, Test_Parsing_Message_Array_Sequential'Access,
+                        "Parsing message array (sequential)");
+      Register_Routine (T, Test_Parsing_Message_Array_Loop'Access,
+                        "Parsing message array (loop)");
+      Register_Routine (T, Test_Generating_Message_Array'Access,
+                        "Generating message array");
+      Register_Routine (T, Test_Generating_Message_Array_Independent'Access,
+                        "Generating message array (independent)");
+      Register_Routine (T, Test_Generating_Message_Array_Independent_Empty'Access,
+                        "Generating message array (independent, empty)");
       Register_Routine (T, Test_Parsing_Array_Size_Defined_By_Message_Size'Access,
-                        "Parsing message with array size defined by message size");
+                        "Parsing array with size defined by message size");
       Register_Routine (T, Test_Parsing_Array_Size_Defined_By_Message_Size_Empty'Access,
-                        "Parsing message with array size defined by message size (empty)");
+                        "Parsing array with size defined by message size (empty)");
       Register_Routine (T, Test_Generating_Array_Size_Defined_By_Message_Size'Access,
-                        "Generating message with array size defined by message size");
+                        "Generating array with size defined by message size");
       Register_Routine (T, Test_Generating_Array_Size_Defined_By_Message_Size_Empty'Access,
-                        "Generating message with array size defined by message size (empty)");
+                        "Generating array with size defined by message size (empty)");
    end Register_Tests;
 
 end RFLX.Arrays_Tests;

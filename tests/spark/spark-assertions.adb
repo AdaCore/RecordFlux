@@ -1,8 +1,8 @@
 with AUnit.Assertions;
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
 
-package body SPARK.Assertions
-  with SPARK_Mode => Off
+package body SPARK.Assertions with
+  SPARK_Mode => Off
 is
 
    procedure Assert (Condition : Boolean;

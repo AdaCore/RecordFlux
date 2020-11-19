@@ -245,6 +245,35 @@ is
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Structural_Valid (Ctx, F_Messages);
 
+   procedure Set_Messages (Ctx : in out Context; Seq_Ctx : Inner_Messages_Sequence.Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Messages)
+       and then Field_Last (Ctx, F_Messages) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Messages))
+       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
+       and then Field_First (Ctx, F_Messages) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_Messages) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Messages) = Inner_Messages_Sequence.Size (Seq_Ctx)
+       and then Inner_Messages_Sequence.Has_Buffer (Seq_Ctx)
+       and then Inner_Messages_Sequence.Valid (Seq_Ctx),
+     Post =>
+       Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Messages)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Messages) = Predecessor (Ctx, F_Messages)'Old
+       and Valid_Next (Ctx, F_Messages) = Valid_Next (Ctx, F_Messages)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Messages)
+       and (if
+               Field_Size (Ctx, F_Messages) > 0
+            then
+               Present (Ctx, F_Messages));
+
    procedure Switch_To_Messages (Ctx : in out Context; Seq_Ctx : out Inner_Messages_Sequence.Context) with
      Pre =>
        not Ctx'Constrained
@@ -252,6 +281,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Messages)
        and then Field_Size (Ctx, F_Messages) > 0
+       and then Field_First (Ctx, F_Messages) mod Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Messages) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Messages))
        and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages),
@@ -262,7 +292,8 @@ is
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_Messages)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Messages)
-       and Inner_Messages_Sequence.Index (Seq_Ctx) = Seq_Ctx.First
+       and Inner_Messages_Sequence.Valid (Seq_Ctx)
+       and Inner_Messages_Sequence.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_Messages)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -277,9 +308,14 @@ is
         others =>
            True);
 
+   function Complete_Messages (Ctx : Context; Seq_Ctx : Inner_Messages_Sequence.Context) return Boolean with
+     Pre =>
+       Valid_Next (Ctx, F_Messages);
+
    procedure Update_Messages (Ctx : in out Context; Seq_Ctx : in out Inner_Messages_Sequence.Context) with
      Pre =>
        Present (Ctx, F_Messages)
+       and then Complete_Messages (Ctx, Seq_Ctx)
        and then not Has_Buffer (Ctx)
        and then Inner_Messages_Sequence.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -290,8 +326,6 @@ is
        Present (Ctx, F_Messages)
        and Has_Buffer (Ctx)
        and not Inner_Messages_Sequence.Has_Buffer (Seq_Ctx)
-       and Seq_Ctx.First = Field_First (Ctx, F_Messages)
-       and Seq_Ctx.Last = Field_Last (Ctx, F_Messages)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old

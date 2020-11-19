@@ -56,6 +56,7 @@ from rflx.ada import (
     Last,
     Length,
     LessEqual,
+    Mod,
     ModularType,
     NamedAggregate,
     Not,
@@ -87,6 +88,7 @@ from rflx.ada import (
     SparkMode,
     Statement,
     String,
+    Sub,
     Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
@@ -374,10 +376,12 @@ class Generator:
         unit += self.__serializer.create_internal_functions(message, scalar_fields)
         unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)
         unit += self.__serializer.create_composite_setter_empty_procedures(message)
-        unit += self.__serializer.create_composite_setter_procedures(message)
+        unit += self.__serializer.create_array_setter_procedures(message, sequence_fields)
+        unit += self.__serializer.create_opaque_setter_procedures(message)
         unit += self.__serializer.create_composite_initialize_procedures(message)
 
         unit += self.__create_switch_procedures(message, sequence_fields)
+        unit += self.__create_complete_functions(message, sequence_fields)
         unit += self.__create_update_procedures(message, sequence_fields)
         unit += self.__create_cursor_function()
         unit += self.__create_cursors_function()
@@ -1782,6 +1786,16 @@ class Generator:
                                     ),
                                     Number(0),
                                 ),
+                                Equal(
+                                    Mod(
+                                        Call(
+                                            "Field_First",
+                                            [Variable("Ctx"), Variable(f.affixed_name)],
+                                        ),
+                                        Size(const.TYPES_BYTE),
+                                    ),
+                                    Number(1),
+                                ),
                                 LessEqual(
                                     Call(
                                         "Field_Last",
@@ -1817,12 +1831,16 @@ class Generator:
                         Postcondition(
                             And(
                                 *switch_update_conditions(message, f),
+                                Call(
+                                    f"{common.sequence_name(message, f)}.Valid",
+                                    [Variable("Seq_Ctx")],
+                                ),
                                 Equal(
                                     Call(
-                                        f"{common.sequence_name(message, f)}.Index",
+                                        f"{common.sequence_name(message, f)}.Sequence_Last",
                                         [Variable("Seq_Ctx")],
                                     ),
-                                    Variable("Seq_Ctx.First"),
+                                    Sub(Variable("Seq_Ctx.First"), Number(1)),
                                 ),
                                 Call(
                                     "Present",
@@ -1957,6 +1975,56 @@ class Generator:
         )
 
     @staticmethod
+    def __create_complete_functions(
+        message: Message, sequence_fields: Mapping[Field, Type]
+    ) -> UnitPart:
+        def specification(field: Field) -> FunctionSpecification:
+            return FunctionSpecification(
+                f"Complete_{field.name}",
+                "Boolean",
+                [
+                    Parameter(["Ctx"], "Context"),
+                    Parameter(["Seq_Ctx"], f"{common.sequence_name(message, field)}.Context"),
+                ],
+            )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification(f),
+                    [
+                        Precondition(
+                            Call("Valid_Next", [Variable("Ctx"), Variable(f.affixed_name)]),
+                        )
+                    ],
+                )
+                for f in sequence_fields
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification(f),
+                    And(
+                        Call(
+                            f"{common.sequence_name(message, f)}.Valid",
+                            [Variable("Seq_Ctx")],
+                        ),
+                        Equal(
+                            Call(
+                                f"{common.sequence_name(message, f)}.Size",
+                                [Variable("Seq_Ctx")],
+                            ),
+                            Call(
+                                "Field_Size",
+                                [Variable("Ctx"), Variable(f.affixed_name)],
+                            ),
+                        ),
+                    ),
+                )
+                for f in sequence_fields
+            ],
+        )
+
+    @staticmethod
     def __create_update_procedures(
         message: Message, sequence_fields: Mapping[Field, Type]
     ) -> UnitPart:
@@ -1991,6 +2059,7 @@ class Generator:
                                     "Present",
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
+                                Call(f"Complete_{f.name}", [Variable("Ctx"), Variable("Seq_Ctx")]),
                                 *switch_update_conditions(message, f),
                             )
                         ),
@@ -2006,20 +2075,6 @@ class Generator:
                                         f"{common.sequence_name(message, f)}.Has_Buffer",
                                         [Variable("Seq_Ctx")],
                                     )
-                                ),
-                                Equal(
-                                    Variable("Seq_Ctx.First"),
-                                    Call(
-                                        "Field_First",
-                                        [Variable("Ctx"), Variable(f.affixed_name)],
-                                    ),
-                                ),
-                                Equal(
-                                    Variable("Seq_Ctx.Last"),
-                                    Call(
-                                        "Field_Last",
-                                        [Variable("Ctx"), Variable(f.affixed_name)],
-                                    ),
                                 ),
                                 *const.CONTEXT_INVARIANT,
                                 *[
