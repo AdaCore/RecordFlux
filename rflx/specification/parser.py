@@ -612,32 +612,26 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             return rexpr.Variable(qualified_type_identifier(var_id, package), location=location)
         return rexpr.Variable(var_id, location=location)
     elif expression.kind_name == "Attribute":
-        attr_id = create_id(expression.f_identifier, filename)
-        if expression.f_kind.kind_name == "AttrLast":
-            return rexpr.Last(attr_id)
-        elif expression.f_kind.kind_name == "AttrFirst":
-            return rexpr.First(attr_id)
-        elif expression.f_kind.kind_name == "AttrSize":
-            return rexpr.Size(attr_id)
-        elif expression.f_kind.kind_name == "AttrValidChecksum":
-            return rexpr.ValidChecksum(attr_id)
-        else:
-            raise NotImplementedError(
-                f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
-            )
-    elif expression.kind_name == "ExpressionAttribute":
         inner = create_expression(expression.f_expression, filename, package)
-        if expression.f_kind.kind_name == "ExprAttrHead":
+        if expression.f_kind.kind_name == "AttrLast":
+            return rexpr.Last(inner)
+        elif expression.f_kind.kind_name == "AttrFirst":
+            return rexpr.First(inner)
+        elif expression.f_kind.kind_name == "AttrSize":
+            return rexpr.Size(inner)
+        elif expression.f_kind.kind_name == "AttrValidChecksum":
+            return rexpr.ValidChecksum(inner)
+        elif expression.f_kind.kind_name == "AttrHead":
             return rexpr.Head(inner)
-        elif expression.f_kind.kind_name == "ExprAttrOpaque":
+        elif expression.f_kind.kind_name == "AttrOpaque":
             return rexpr.Opaque(inner)
-        elif expression.f_kind.kind_name == "ExprAttrPresent":
+        elif expression.f_kind.kind_name == "AttrPresent":
             return rexpr.Present(inner)
-        elif expression.f_kind.kind_name == "ExprAttrValid":
+        elif expression.f_kind.kind_name == "AttrValid":
             return rexpr.Valid(inner)
         else:
             raise NotImplementedError(
-                f"Invalid ExprssionAttribute: {expression.f_kind.kind_name} => {expression.text}"
+                f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
             )
     elif expression.kind_name == "ArrayAggregate":
         return rexpr.Aggregate(
