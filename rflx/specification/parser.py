@@ -758,6 +758,10 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             create_id(expression.f_return_type_identifier, filename),
             location,
         )
+    elif expression.kind_name == "Negation":
+        expr = create_expression(expression.f_data, filename, package)
+        assert isinstance(expr, rexpr.Number)
+        return rexpr.Number(-expr.value, expr.base, location)
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
