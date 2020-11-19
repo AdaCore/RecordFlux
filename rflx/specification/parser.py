@@ -717,6 +717,22 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         return decl.TypeDeclaration(
             Private(create_id(expression.f_identifier, filename), location=location)
         )
+    elif expression.kind_name == "ChannelDecl":
+        readable = False
+        writable = False
+        for p in expression.f_parameters:
+            if p.kind_name == "Readable":
+                readable = True
+            elif p.kind_name == "Writable":
+                writable = True
+            else:
+                raise NotImplementedError(f"channel parameter: {p.kind_name}")
+        return decl.ChannelDeclaration(
+            create_id(expression.f_identifier, filename),
+            readable=readable,
+            writable=writable,
+            location=location
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
