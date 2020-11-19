@@ -713,6 +713,10 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             initializer,
             location=location,
         )
+    elif expression.kind_name == "PrivateTypeDecl":
+        return decl.TypeDeclaration(
+            Private(create_id(expression.f_identifier, filename), location=location)
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
