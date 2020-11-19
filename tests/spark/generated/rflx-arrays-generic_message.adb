@@ -590,6 +590,66 @@ is
       Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
    end Set_Modular_Vector_Empty;
 
+   procedure Set_Modular_Vector (Ctx : in out Context; Seq_Ctx : Modular_Vector_Sequence.Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Reset_Dependent_Fields (Ctx, F_Modular_Vector);
+      Ctx.Message_Last := Last;
+      Ctx.Cursors (F_Modular_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Modular_Vector), Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
+      Modular_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Set_Modular_Vector;
+
+   procedure Set_Range_Vector (Ctx : in out Context; Seq_Ctx : Range_Vector_Sequence.Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Range_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Range_Vector);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Reset_Dependent_Fields (Ctx, F_Range_Vector);
+      Ctx.Message_Last := Last;
+      Ctx.Cursors (F_Range_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Range_Vector), Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Range_Vector)) := (State => S_Invalid, Predecessor => F_Range_Vector);
+      Range_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Set_Range_Vector;
+
+   procedure Set_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : Enumeration_Vector_Sequence.Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Enumeration_Vector);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Reset_Dependent_Fields (Ctx, F_Enumeration_Vector);
+      Ctx.Message_Last := Last;
+      Ctx.Cursors (F_Enumeration_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Enumeration_Vector), Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Enumeration_Vector)) := (State => S_Invalid, Predecessor => F_Enumeration_Vector);
+      Enumeration_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Set_Enumeration_Vector;
+
+   procedure Set_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : AV_Enumeration_Vector_Sequence.Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_AV_Enumeration_Vector);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_AV_Enumeration_Vector);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Reset_Dependent_Fields (Ctx, F_AV_Enumeration_Vector);
+      Ctx.Message_Last := Last;
+      Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_AV_Enumeration_Vector), Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_AV_Enumeration_Vector)) := (State => S_Invalid, Predecessor => F_AV_Enumeration_Vector);
+      AV_Enumeration_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Set_AV_Enumeration_Vector;
+
    procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);
@@ -777,6 +837,22 @@ is
       AV_Enumeration_Vector_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_AV_Enumeration_Vector;
+
+   function Complete_Modular_Vector (Ctx : Context; Seq_Ctx : Modular_Vector_Sequence.Context) return Boolean is
+     (Modular_Vector_Sequence.Valid (Seq_Ctx)
+      and Modular_Vector_Sequence.Size (Seq_Ctx) = Field_Size (Ctx, F_Modular_Vector));
+
+   function Complete_Range_Vector (Ctx : Context; Seq_Ctx : Range_Vector_Sequence.Context) return Boolean is
+     (Range_Vector_Sequence.Valid (Seq_Ctx)
+      and Range_Vector_Sequence.Size (Seq_Ctx) = Field_Size (Ctx, F_Range_Vector));
+
+   function Complete_Enumeration_Vector (Ctx : Context; Seq_Ctx : Enumeration_Vector_Sequence.Context) return Boolean is
+     (Enumeration_Vector_Sequence.Valid (Seq_Ctx)
+      and Enumeration_Vector_Sequence.Size (Seq_Ctx) = Field_Size (Ctx, F_Enumeration_Vector));
+
+   function Complete_AV_Enumeration_Vector (Ctx : Context; Seq_Ctx : AV_Enumeration_Vector_Sequence.Context) return Boolean is
+     (AV_Enumeration_Vector_Sequence.Valid (Seq_Ctx)
+      and AV_Enumeration_Vector_Sequence.Size (Seq_Ctx) = Field_Size (Ctx, F_AV_Enumeration_Vector));
 
    procedure Update_Modular_Vector (Ctx : in out Context; Seq_Ctx : in out Modular_Vector_Sequence.Context) is
       Valid_Sequence : constant Boolean := Modular_Vector_Sequence.Valid (Seq_Ctx);

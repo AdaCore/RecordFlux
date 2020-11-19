@@ -1065,6 +1065,52 @@ is
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Structural_Valid (Ctx, F_Payload);
 
+   procedure Set_Options (Ctx : in out Context; Seq_Ctx : Options_Sequence.Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Options)
+       and then Field_Last (Ctx, F_Options) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Options))
+       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
+       and then Field_First (Ctx, F_Options) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_Options) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Options) = Options_Sequence.Size (Seq_Ctx)
+       and then Options_Sequence.Has_Buffer (Seq_Ctx)
+       and then Options_Sequence.Valid (Seq_Ctx),
+     Post =>
+       Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Options)
+       and Invalid (Ctx, F_Payload)
+       and (Predecessor (Ctx, F_Payload) = F_Options
+            and Valid_Next (Ctx, F_Payload))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
+       and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
+       and Get_Version (Ctx) = Get_Version (Ctx)'Old
+       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and Structural_Valid (Ctx, F_Options)
+       and (if
+               Field_Size (Ctx, F_Options) > 0
+            then
+               Present (Ctx, F_Options));
+
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
       with function Valid_Length (Length : Types.Length) return Boolean;
@@ -1148,6 +1194,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Options)
        and then Field_Size (Ctx, F_Options) > 0
+       and then Field_First (Ctx, F_Options) mod Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Options) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Options))
        and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options),
@@ -1158,7 +1205,8 @@ is
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_Options)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Options)
-       and Options_Sequence.Index (Seq_Ctx) = Seq_Ctx.First
+       and Options_Sequence.Valid (Seq_Ctx)
+       and Options_Sequence.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_Options)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -1189,9 +1237,14 @@ is
             and Valid_Next (Ctx, F_Payload))
            and Invalid (Ctx, F_Payload));
 
+   function Complete_Options (Ctx : Context; Seq_Ctx : Options_Sequence.Context) return Boolean with
+     Pre =>
+       Valid_Next (Ctx, F_Options);
+
    procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out Options_Sequence.Context) with
      Pre =>
        Present (Ctx, F_Options)
+       and then Complete_Options (Ctx, Seq_Ctx)
        and then not Has_Buffer (Ctx)
        and then Options_Sequence.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -1202,8 +1255,6 @@ is
        Present (Ctx, F_Options)
        and Has_Buffer (Ctx)
        and not Options_Sequence.Has_Buffer (Seq_Ctx)
-       and Seq_Ctx.First = Field_First (Ctx, F_Options)
-       and Seq_Ctx.Last = Field_Last (Ctx, F_Options)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old

@@ -277,6 +277,134 @@ is
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Structural_Valid (Ctx, F_Modular_Vector);
 
+   procedure Set_Modular_Vector (Ctx : in out Context; Seq_Ctx : Modular_Vector_Sequence.Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Modular_Vector)
+       and then Field_Last (Ctx, F_Modular_Vector) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Modular_Vector))
+       and then Available_Space (Ctx, F_Modular_Vector) >= Field_Size (Ctx, F_Modular_Vector)
+       and then Field_First (Ctx, F_Modular_Vector) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_Modular_Vector) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Modular_Vector) = Modular_Vector_Sequence.Size (Seq_Ctx)
+       and then Modular_Vector_Sequence.Has_Buffer (Seq_Ctx)
+       and then Modular_Vector_Sequence.Valid (Seq_Ctx),
+     Post =>
+       Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Modular_Vector)
+       and Invalid (Ctx, F_Range_Vector)
+       and Invalid (Ctx, F_Enumeration_Vector)
+       and Invalid (Ctx, F_AV_Enumeration_Vector)
+       and (Predecessor (Ctx, F_Range_Vector) = F_Modular_Vector
+            and Valid_Next (Ctx, F_Range_Vector))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
+       and Valid_Next (Ctx, F_Modular_Vector) = Valid_Next (Ctx, F_Modular_Vector)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Modular_Vector)
+       and (if
+               Field_Size (Ctx, F_Modular_Vector) > 0
+            then
+               Present (Ctx, F_Modular_Vector));
+
+   procedure Set_Range_Vector (Ctx : in out Context; Seq_Ctx : Range_Vector_Sequence.Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Range_Vector)
+       and then Field_Last (Ctx, F_Range_Vector) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Range_Vector))
+       and then Available_Space (Ctx, F_Range_Vector) >= Field_Size (Ctx, F_Range_Vector)
+       and then Field_First (Ctx, F_Range_Vector) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_Range_Vector) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Range_Vector) = Range_Vector_Sequence.Size (Seq_Ctx)
+       and then Range_Vector_Sequence.Has_Buffer (Seq_Ctx)
+       and then Range_Vector_Sequence.Valid (Seq_Ctx),
+     Post =>
+       Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Range_Vector)
+       and Invalid (Ctx, F_Enumeration_Vector)
+       and Invalid (Ctx, F_AV_Enumeration_Vector)
+       and (Predecessor (Ctx, F_Enumeration_Vector) = F_Range_Vector
+            and Valid_Next (Ctx, F_Enumeration_Vector))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Range_Vector) = Predecessor (Ctx, F_Range_Vector)'Old
+       and Valid_Next (Ctx, F_Range_Vector) = Valid_Next (Ctx, F_Range_Vector)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Range_Vector)
+       and (if
+               Field_Size (Ctx, F_Range_Vector) > 0
+            then
+               Present (Ctx, F_Range_Vector));
+
+   procedure Set_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : Enumeration_Vector_Sequence.Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Enumeration_Vector)
+       and then Field_Last (Ctx, F_Enumeration_Vector) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_Enumeration_Vector))
+       and then Available_Space (Ctx, F_Enumeration_Vector) >= Field_Size (Ctx, F_Enumeration_Vector)
+       and then Field_First (Ctx, F_Enumeration_Vector) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_Enumeration_Vector) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Enumeration_Vector) = Enumeration_Vector_Sequence.Size (Seq_Ctx)
+       and then Enumeration_Vector_Sequence.Has_Buffer (Seq_Ctx)
+       and then Enumeration_Vector_Sequence.Valid (Seq_Ctx),
+     Post =>
+       Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Enumeration_Vector)
+       and Invalid (Ctx, F_AV_Enumeration_Vector)
+       and (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
+            and Valid_Next (Ctx, F_AV_Enumeration_Vector))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
+       and Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Enumeration_Vector)
+       and (if
+               Field_Size (Ctx, F_Enumeration_Vector) > 0
+            then
+               Present (Ctx, F_Enumeration_Vector));
+
+   procedure Set_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : AV_Enumeration_Vector_Sequence.Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_AV_Enumeration_Vector)
+       and then Field_Last (Ctx, F_AV_Enumeration_Vector) <= Types.Bit_Index'Last / 2
+       and then Field_Condition (Ctx, (Fld => F_AV_Enumeration_Vector))
+       and then Available_Space (Ctx, F_AV_Enumeration_Vector) >= Field_Size (Ctx, F_AV_Enumeration_Vector)
+       and then Field_First (Ctx, F_AV_Enumeration_Vector) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_AV_Enumeration_Vector) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_AV_Enumeration_Vector) = AV_Enumeration_Vector_Sequence.Size (Seq_Ctx)
+       and then AV_Enumeration_Vector_Sequence.Has_Buffer (Seq_Ctx)
+       and then AV_Enumeration_Vector_Sequence.Valid (Seq_Ctx),
+     Post =>
+       Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_AV_Enumeration_Vector)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
+       and Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_AV_Enumeration_Vector)
+       and (if
+               Field_Size (Ctx, F_AV_Enumeration_Vector) > 0
+            then
+               Present (Ctx, F_AV_Enumeration_Vector));
+
    procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) with
      Pre =>
        not Ctx'Constrained
@@ -284,6 +412,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Modular_Vector)
        and then Field_Size (Ctx, F_Modular_Vector) > 0
+       and then Field_First (Ctx, F_Modular_Vector) mod Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Modular_Vector) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Modular_Vector))
        and then Available_Space (Ctx, F_Modular_Vector) >= Field_Size (Ctx, F_Modular_Vector),
@@ -294,7 +423,8 @@ is
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_Modular_Vector)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Modular_Vector)
-       and Modular_Vector_Sequence.Index (Seq_Ctx) = Seq_Ctx.First
+       and Modular_Vector_Sequence.Valid (Seq_Ctx)
+       and Modular_Vector_Sequence.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_Modular_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -322,6 +452,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Range_Vector)
        and then Field_Size (Ctx, F_Range_Vector) > 0
+       and then Field_First (Ctx, F_Range_Vector) mod Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Range_Vector) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Range_Vector))
        and then Available_Space (Ctx, F_Range_Vector) >= Field_Size (Ctx, F_Range_Vector),
@@ -332,7 +463,8 @@ is
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_Range_Vector)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Range_Vector)
-       and Range_Vector_Sequence.Index (Seq_Ctx) = Seq_Ctx.First
+       and Range_Vector_Sequence.Valid (Seq_Ctx)
+       and Range_Vector_Sequence.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_Range_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -359,6 +491,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Enumeration_Vector)
        and then Field_Size (Ctx, F_Enumeration_Vector) > 0
+       and then Field_First (Ctx, F_Enumeration_Vector) mod Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Enumeration_Vector) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Enumeration_Vector))
        and then Available_Space (Ctx, F_Enumeration_Vector) >= Field_Size (Ctx, F_Enumeration_Vector),
@@ -369,7 +502,8 @@ is
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_Enumeration_Vector)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Enumeration_Vector)
-       and Enumeration_Vector_Sequence.Index (Seq_Ctx) = Seq_Ctx.First
+       and Enumeration_Vector_Sequence.Valid (Seq_Ctx)
+       and Enumeration_Vector_Sequence.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_Enumeration_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -395,6 +529,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_AV_Enumeration_Vector)
        and then Field_Size (Ctx, F_AV_Enumeration_Vector) > 0
+       and then Field_First (Ctx, F_AV_Enumeration_Vector) mod Types.Byte'Size = 1
        and then Field_Last (Ctx, F_AV_Enumeration_Vector) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_AV_Enumeration_Vector))
        and then Available_Space (Ctx, F_AV_Enumeration_Vector) >= Field_Size (Ctx, F_AV_Enumeration_Vector),
@@ -405,7 +540,8 @@ is
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_AV_Enumeration_Vector)
        and Seq_Ctx.Last = Field_Last (Ctx, F_AV_Enumeration_Vector)
-       and AV_Enumeration_Vector_Sequence.Index (Seq_Ctx) = Seq_Ctx.First
+       and AV_Enumeration_Vector_Sequence.Valid (Seq_Ctx)
+       and AV_Enumeration_Vector_Sequence.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_AV_Enumeration_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -423,9 +559,26 @@ is
         others =>
            True);
 
+   function Complete_Modular_Vector (Ctx : Context; Seq_Ctx : Modular_Vector_Sequence.Context) return Boolean with
+     Pre =>
+       Valid_Next (Ctx, F_Modular_Vector);
+
+   function Complete_Range_Vector (Ctx : Context; Seq_Ctx : Range_Vector_Sequence.Context) return Boolean with
+     Pre =>
+       Valid_Next (Ctx, F_Range_Vector);
+
+   function Complete_Enumeration_Vector (Ctx : Context; Seq_Ctx : Enumeration_Vector_Sequence.Context) return Boolean with
+     Pre =>
+       Valid_Next (Ctx, F_Enumeration_Vector);
+
+   function Complete_AV_Enumeration_Vector (Ctx : Context; Seq_Ctx : AV_Enumeration_Vector_Sequence.Context) return Boolean with
+     Pre =>
+       Valid_Next (Ctx, F_AV_Enumeration_Vector);
+
    procedure Update_Modular_Vector (Ctx : in out Context; Seq_Ctx : in out Modular_Vector_Sequence.Context) with
      Pre =>
        Present (Ctx, F_Modular_Vector)
+       and then Complete_Modular_Vector (Ctx, Seq_Ctx)
        and then not Has_Buffer (Ctx)
        and then Modular_Vector_Sequence.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -436,8 +589,6 @@ is
        Present (Ctx, F_Modular_Vector)
        and Has_Buffer (Ctx)
        and not Modular_Vector_Sequence.Has_Buffer (Seq_Ctx)
-       and Seq_Ctx.First = Field_First (Ctx, F_Modular_Vector)
-       and Seq_Ctx.Last = Field_Last (Ctx, F_Modular_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -456,6 +607,7 @@ is
    procedure Update_Range_Vector (Ctx : in out Context; Seq_Ctx : in out Range_Vector_Sequence.Context) with
      Pre =>
        Present (Ctx, F_Range_Vector)
+       and then Complete_Range_Vector (Ctx, Seq_Ctx)
        and then not Has_Buffer (Ctx)
        and then Range_Vector_Sequence.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -466,8 +618,6 @@ is
        Present (Ctx, F_Range_Vector)
        and Has_Buffer (Ctx)
        and not Range_Vector_Sequence.Has_Buffer (Seq_Ctx)
-       and Seq_Ctx.First = Field_First (Ctx, F_Range_Vector)
-       and Seq_Ctx.Last = Field_Last (Ctx, F_Range_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -486,6 +636,7 @@ is
    procedure Update_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out Enumeration_Vector_Sequence.Context) with
      Pre =>
        Present (Ctx, F_Enumeration_Vector)
+       and then Complete_Enumeration_Vector (Ctx, Seq_Ctx)
        and then not Has_Buffer (Ctx)
        and then Enumeration_Vector_Sequence.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -496,8 +647,6 @@ is
        Present (Ctx, F_Enumeration_Vector)
        and Has_Buffer (Ctx)
        and not Enumeration_Vector_Sequence.Has_Buffer (Seq_Ctx)
-       and Seq_Ctx.First = Field_First (Ctx, F_Enumeration_Vector)
-       and Seq_Ctx.Last = Field_Last (Ctx, F_Enumeration_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -516,6 +665,7 @@ is
    procedure Update_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out AV_Enumeration_Vector_Sequence.Context) with
      Pre =>
        Present (Ctx, F_AV_Enumeration_Vector)
+       and then Complete_AV_Enumeration_Vector (Ctx, Seq_Ctx)
        and then not Has_Buffer (Ctx)
        and then AV_Enumeration_Vector_Sequence.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -526,8 +676,6 @@ is
        Present (Ctx, F_AV_Enumeration_Vector)
        and Has_Buffer (Ctx)
        and not AV_Enumeration_Vector_Sequence.Has_Buffer (Seq_Ctx)
-       and Seq_Ctx.First = Field_First (Ctx, F_AV_Enumeration_Vector)
-       and Seq_Ctx.Last = Field_Last (Ctx, F_AV_Enumeration_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old

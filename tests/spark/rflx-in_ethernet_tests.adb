@@ -57,11 +57,7 @@ package body RFLX.In_Ethernet_Tests is
          end if;
       end if;
 
-      if Ethernet.Frame.Has_Buffer (Ethernet_Frame_Context) then
-         Ethernet.Frame.Take_Buffer (Ethernet_Frame_Context, Buffer);
-      else
-         IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
-      end if;
+      IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
       Free_Bytes_Ptr (Buffer);
 
       Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
@@ -111,6 +107,7 @@ package body RFLX.In_Ethernet_Tests is
          IPv4.Packet.Set_Header_Checksum (IPv4_Packet_Context, 16#7CBC#);
          IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
          IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
+         pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Options) = 273);
          IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
          Data := (0, 53, 0, 53, 0, 26, 1, 78, others => 0);
          pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);

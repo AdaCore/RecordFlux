@@ -401,6 +401,21 @@ is
       Ctx.Cursors (Successor (Ctx, F_Messages)) := (State => S_Invalid, Predecessor => F_Messages);
    end Set_Messages_Empty;
 
+   procedure Set_Messages (Ctx : in out Context; Seq_Ctx : Inner_Messages_Sequence.Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Messages);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Messages);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Reset_Dependent_Fields (Ctx, F_Messages);
+      Ctx.Message_Last := Last;
+      Ctx.Cursors (F_Messages) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Messages), Predecessor => Ctx.Cursors (F_Messages).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Messages)) := (State => S_Invalid, Predecessor => F_Messages);
+      Inner_Messages_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Set_Messages;
+
    procedure Switch_To_Messages (Ctx : in out Context; Seq_Ctx : out Inner_Messages_Sequence.Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Messages);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Messages);
@@ -429,6 +444,10 @@ is
       Inner_Messages_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Messages;
+
+   function Complete_Messages (Ctx : Context; Seq_Ctx : Inner_Messages_Sequence.Context) return Boolean is
+     (Inner_Messages_Sequence.Valid (Seq_Ctx)
+      and Inner_Messages_Sequence.Size (Seq_Ctx) = Field_Size (Ctx, F_Messages));
 
    procedure Update_Messages (Ctx : in out Context; Seq_Ctx : in out Inner_Messages_Sequence.Context) is
       Valid_Sequence : constant Boolean := Inner_Messages_Sequence.Valid (Seq_Ctx);

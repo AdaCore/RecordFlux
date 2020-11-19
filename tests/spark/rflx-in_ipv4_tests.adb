@@ -58,11 +58,7 @@ package body RFLX.In_IPv4_Tests is
          end if;
       end if;
 
-      if IPv4.Packet.Has_Buffer (IPv4_Packet_Context) then
-         IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
-      else
-         UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
-      end if;
+      UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
       Free_Bytes_Ptr (Buffer);
 
       Assert (IPv4_Packet_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (352)'Image,
@@ -107,13 +103,7 @@ package body RFLX.In_IPv4_Tests is
          end if;
       end if;
 
-      if Ethernet.Frame.Has_Buffer (Ethernet_Frame_Context) then
-         Ethernet.Frame.Take_Buffer (Ethernet_Frame_Context, Buffer);
-      elsif IPv4.Packet.Has_Buffer (IPv4_Packet_Context) then
-         IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
-      else
-         UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
-      end if;
+      UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
       Free_Bytes_Ptr (Buffer);
 
       Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
@@ -167,7 +157,9 @@ package body RFLX.In_IPv4_Tests is
          IPv4.Packet.Set_Header_Checksum (IPv4_Packet_Context, 16#7CBC#);
          IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
          IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
+         pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Options) = 273);
          IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
+         pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);
          IPv4.Packet.Initialize_Payload (IPv4_Packet_Context);
 
          Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
@@ -181,6 +173,7 @@ package body RFLX.In_IPv4_Tests is
             UDP.Datagram.Set_Length (UDP_Datagram_Context, 26);
             UDP.Datagram.Set_Checksum (UDP_Datagram_Context, 16#014E#);
             Data := (others => 0);
+            pragma Assert (UDP.Datagram.Field_First (UDP_Datagram_Context, UDP.Datagram.F_Payload) = 337);
             Set_Payload (UDP_Datagram_Context);
 
             UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
