@@ -618,7 +618,7 @@ def qualified_type_identifier(identifier: ID, package: ID) -> ID:
     if is_internal_type(identifier):
         return ID(const.INTERNAL_PACKAGE * identifier, location=identifier.location)
 
-    if len(identifier.parts) == 1:
+    if len(identifier.parts) == 1 and package:
         return ID(package * identifier, location=identifier.location)
 
     return identifier
