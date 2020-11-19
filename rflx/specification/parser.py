@@ -731,13 +731,31 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
             create_id(expression.f_identifier, filename),
             readable=readable,
             writable=writable,
-            location=location
+            location=location,
         )
     elif expression.kind_name == "RenamingDecl":
         return decl.RenamingDeclaration(
             create_id(expression.f_identifier, filename),
-            create_id(expression.f_type_identifier, filename),
+            qualified_type_identifier(create_id(expression.f_type_identifier, filename), package),
             create_expression(expression.f_expression, filename, package),
+            location,
+        )
+    elif expression.kind_name == "FunctionDecl":
+        arguments = []
+        if expression.f_parameters:
+            for p in expression.f_parameters.f_parameters:
+                arguments.append(
+                    decl.Argument(
+                        create_id(p.f_identifier, filename),
+                        qualified_type_identifier(
+                            create_id(p.f_type_identifier, filename), package
+                        ),
+                    )
+                )
+        return decl.FunctionDeclaration(
+            create_id(expression.f_identifier, filename),
+            arguments,
+            create_id(expression.f_return_type_identifier, filename),
             location,
         )
 
