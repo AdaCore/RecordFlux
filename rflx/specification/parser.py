@@ -761,6 +761,12 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         expr = create_expression(expression.f_data, filename, package)
         assert isinstance(expr, rexpr.Number)
         return rexpr.Number(-expr.value, expr.base, location)
+    elif expression.kind_name == "Assignment":
+        return stmt.Assignment(
+            create_id(expression.f_identifier, filename),
+            create_expression(expression.f_expression, filename, package),
+            location,
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
