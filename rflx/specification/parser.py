@@ -594,12 +594,6 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
                 create_expression(expression.f_right, filename, package),
                 location=location,
             )
-        elif expression.f_op.kind_name == "OpSelect":
-            return rexpr.Selected(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package).name,
-                location=location,
-            )
         else:
             raise NotImplementedError(
                 f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
@@ -773,6 +767,21 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         assert isinstance(left, rexpr.Aggregate)
         assert isinstance(right, rexpr.Aggregate)
         return rexpr.Aggregate(*(left.elements + right.elements), location=location)
+    elif expression.kind_name == "Comprehension":
+        condition = create_expression(expression.f_condition, filename, package) if expression.f_condition else rexpr.TRUE
+        return rexpr.Comprehension(
+            create_id(expression.f_iterator, filename),
+            create_expression(expression.f_array, filename, package),
+            create_expression(expression.f_selector, filename, package),
+            condition,
+            location,
+        )
+    elif expression.kind_name == "SelectNode":
+        return rexpr.Selected(
+            create_expression(expression.f_expression, filename, package),
+            create_id(expression.f_selector, filename),
+            location=location,
+        )
 
     raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
