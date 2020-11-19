@@ -38,7 +38,6 @@ import rflx.declaration as decl
 import rflx.expression as rexpr
 import rflx.model.session as rsess
 import rflx.statement as stmt
-from rflx import common, expression as expr
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
 from rflx.model import (
@@ -303,7 +302,7 @@ def create_session(
         if transition.kind_name not in ("Transition", "ConditionalTransition"):
             raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
         target = qualified_type_identifier(create_id(transition.f_target, filename), package)
-        condition = expr.TRUE
+        condition = rexpr.TRUE
         description = __create_description(transition.f_description)
         if transition.kind_name == "Conditional_Transition":
             condition = create_expression(declaration.f_condition, filename, package)
@@ -611,23 +610,23 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         return create_expression(expression.f_data, filename, package)
     elif expression.kind_name == "Variable":
         if expression.f_identifier.text.lower() == "true":
-            return expr.TRUE
+            return rexpr.TRUE
         elif expression.f_identifier.text.lower() == "false":
-            return expr.FALSE
+            return rexpr.FALSE
         var_id = create_id(expression.f_identifier, filename)
         if package:
-            return expr.Variable(qualified_type_identifier(var_id, package), location=location)
-        return expr.Variable(var_id, location=location)
+            return rexpr.Variable(qualified_type_identifier(var_id, package), location=location)
+        return rexpr.Variable(var_id, location=location)
     elif expression.kind_name == "Attribute":
         attr_id = create_id(expression.f_identifier, filename)
         if expression.f_kind.kind_name == "AttrLast":
-            return expr.Last(attr_id)
+            return rexpr.Last(attr_id)
         elif expression.f_kind.kind_name == "AttrFirst":
-            return expr.First(attr_id)
+            return rexpr.First(attr_id)
         elif expression.f_kind.kind_name == "AttrSize":
-            return expr.Size(attr_id)
+            return rexpr.Size(attr_id)
         elif expression.f_kind.kind_name == "AttrValidChecksum":
-            return expr.ValidChecksum(attr_id)
+            return rexpr.ValidChecksum(attr_id)
         else:
             raise NotImplementedError(
                 f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
@@ -635,13 +634,13 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
     elif expression.kind_name == "ExpressionAttribute":
         inner = create_expression(expression.f_expression, filename, package)
         if expression.f_kind.kind_name == "ExprAttrHead":
-            return expr.Head(inner)
+            return rexpr.Head(inner)
         elif expression.f_kind.kind_name == "ExprAttrOpaque":
-            return expr.Opaque(inner)
+            return rexpr.Opaque(inner)
         elif expression.f_kind.kind_name == "ExprAttrPresent":
-            return expr.Present(inner)
+            return rexpr.Present(inner)
         elif expression.f_kind.kind_name == "ExprAttrValid":
-            return expr.Valid(inner)
+            return rexpr.Valid(inner)
         else:
             raise NotImplementedError(
                 f"Invalid ExprssionAttribute: {expression.f_kind.kind_name} => {expression.text}"
@@ -849,8 +848,8 @@ def create_message_structure(
     # pylint: disable=too-many-branches
 
     def extract_aspect(aspects: List[MathematicalAspect]) -> Tuple[rexpr.Expr, rexpr.Expr]:
-        size = expr.UNDEFINED
-        first = expr.UNDEFINED
+        size = rexpr.UNDEFINED
+        first = rexpr.UNDEFINED
         for aspect in aspects:
             if aspect.f_identifier.text == "Size":
                 size = create_expression(aspect.f_value, filename)
@@ -865,9 +864,9 @@ def create_message_structure(
                 )
         return size, first
 
-    def extract_then(then: ThenNode) -> Tuple[Field, expr.Expr, expr.Expr, expr.Expr, Location]:
+    def extract_then(then: ThenNode) -> Tuple[Field, rexpr.Expr, rexpr.Expr, rexpr.Expr, Location]:
         target = FINAL if then.f_target.text == "null" else Field(then.f_target.text)
-        condition = create_expression(then.f_condition, filename) if then.f_condition else expr.TRUE
+        condition = create_expression(then.f_condition, filename) if then.f_condition else rexpr.TRUE
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)
 
@@ -901,13 +900,13 @@ def create_message_structure(
         condition = (
             create_expression(component.f_condition, filename)
             if component.f_condition
-            else expr.TRUE
+            else rexpr.TRUE
         )
         size, first = extract_aspect(component.f_aspects)
-        if first != expr.UNDEFINED or size != expr.UNDEFINED or condition != expr.TRUE:
+        if first != rexpr.UNDEFINED or size != rexpr.UNDEFINED or condition != rexpr.TRUE:
             for l in (l for l in structure if l.target.identifier == component_identifier):
-                if first != expr.UNDEFINED:
-                    if l.first == expr.UNDEFINED:
+                if first != rexpr.UNDEFINED:
+                    if l.first == rexpr.UNDEFINED:
                         l.first = first
                     else:
                         error.append(
@@ -925,8 +924,8 @@ def create_message_structure(
                             l.first.location,
                         )
 
-                if size != expr.UNDEFINED:
-                    if l.size == expr.UNDEFINED:
+                if size != rexpr.UNDEFINED:
+                    if l.size == rexpr.UNDEFINED:
                         l.size = size
                     else:
                         error.append(
@@ -943,10 +942,10 @@ def create_message_structure(
                             l.size.location,
                         )
 
-                if condition != expr.TRUE:
+                if condition != rexpr.TRUE:
                     l.condition = (
-                        expr.And(condition, l.condition, location=l.condition.location)
-                        if l.condition != expr.TRUE
+                        rexpr.And(condition, l.condition, location=l.condition.location)
+                        if l.condition != rexpr.TRUE
                         else condition
                     )
 
@@ -1072,9 +1071,9 @@ def create_enumeration(
         if a.f_identifier.text == "Always_Valid":
             if a.f_value:
                 av_expr = create_expression(a.f_value, filename)
-                if av_expr == expr.TRUE:
+                if av_expr == rexpr.TRUE:
                     always_valid = True
-                elif av_expr == expr.FALSE:
+                elif av_expr == rexpr.FALSE:
                     always_valid = False
                 else:
                     fail(
@@ -1134,7 +1133,7 @@ def create_refinement(
     if refinement.f_condition:
         condition = create_expression(refinement.f_condition.f_data, filename)
     else:
-        condition = expr.TRUE
+        condition = rexpr.TRUE
 
     return Refinement(
         package,
