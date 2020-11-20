@@ -224,7 +224,7 @@ def test_expression_boolean(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.mathematical_expression_rule)
+    actual = parse_expression(string, GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -238,7 +238,7 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
 )
 def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_expression(string, GrammarRule.mathematical_expression_rule)
+        parse_expression(string, GrammarRule.expression_rule)
 
 
 @pytest.mark.parametrize(
@@ -249,7 +249,7 @@ def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
     ],
 )
 def test_boolean_expression(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.boolean_expression_rule)
+    actual = parse_expression(string, GrammarRule.expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -263,7 +263,7 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
 )
 def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_expression(string, GrammarRule.boolean_expression_rule)
+        parse_expression(string, GrammarRule.expression_rule)
 
 
 @pytest.mark.parametrize(

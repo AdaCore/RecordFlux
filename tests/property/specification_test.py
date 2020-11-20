@@ -27,7 +27,9 @@ def parse_expression(data: str, rule: GrammarRule) -> expr.Expr:
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
-    parsed_expression = parse_expression(str(expression), GrammarRule.mathematical_expression_rule)
+    parsed_expression = parse_expression(
+        str(expression), GrammarRule.extended_mathematical_expression_rule
+    )
     assert parsed_expression == expression
 
 
