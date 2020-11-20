@@ -28,15 +28,16 @@ from tests.data import models
 T = ModularInteger("Test::T", expr.Number(256))
 
 
-def to_dict(node: Any) -> Dict[str, Any]:
-    if not node:
+def to_dict(node: Any) -> Any:
+    if node is None:
         return None
     if node.is_list_type:
         return [to_dict(e) for e in node.children]
     result = {name[2:]: to_dict(getattr(node, name)) for name in dir(node) if name.startswith("f_")}
     if result:
+        result["_kind"] = node.kind_name
         return result
-    return node.text
+    return {"_kind": node.kind_name, "_value": node.text}
 
 
 def assert_ast_files(filenames: Sequence[str], expected: Dict[str, Any]) -> None:
@@ -145,11 +146,13 @@ def test_parse_duplicate_specifications() -> None:
         files,
         {
             "Empty_Package": {
+                "_kind": "Specification",
                 "context_clause": [],
                 "package_declaration": {
+                    "_kind": "PackageSpec",
                     "declarations": [],
-                    "end_identifier": "Empty_Package",
-                    "identifier": "Empty_Package",
+                    "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
+                    "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                 },
             }
         },
@@ -161,11 +164,13 @@ def test_parse_empty_package_spec() -> None:
         [f"{SPEC_DIR}/empty_package.rflx"],
         {
             "Empty_Package": {
+                "_kind": "Specification",
                 "context_clause": [],
                 "package_declaration": {
+                    "_kind": "PackageSpec",
                     "declarations": [],
-                    "end_identifier": "Empty_Package",
-                    "identifier": "Empty_Package",
+                    "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
+                    "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                 },
             }
         },
@@ -177,19 +182,32 @@ def test_parse_context_spec() -> None:
         [f"{SPEC_DIR}/context.rflx"],
         {
             "Context": {
-                "context_clause": [{"item": "Empty_File"}, {"item": "Empty_Package"}],
+                "_kind": "Specification",
+                "context_clause": [
+                    {
+                        "_kind": "ContextItem",
+                        "item": {"_kind": "UnqualifiedID", "_value": "Empty_File"},
+                    },
+                    {
+                        "_kind": "ContextItem",
+                        "item": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
+                    },
+                ],
                 "package_declaration": {
+                    "_kind": "PackageSpec",
                     "declarations": [],
-                    "end_identifier": "Context",
-                    "identifier": "Context",
+                    "end_identifier": {"_kind": "UnqualifiedID", "_value": "Context"},
+                    "identifier": {"_kind": "UnqualifiedID", "_value": "Context"},
                 },
             },
             "Empty_Package": {
+                "_kind": "Specification",
                 "context_clause": [],
                 "package_declaration": {
+                    "_kind": "PackageSpec",
                     "declarations": [],
-                    "end_identifier": "Empty_Package",
-                    "identifier": "Empty_Package",
+                    "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
+                    "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                 },
             },
         },
@@ -199,95 +217,213 @@ def test_parse_context_spec() -> None:
 def test_parse_integer_type_spec() -> None:
     spec = {
         "Integer_Type": {
+            "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
+                "_kind": "PackageSpec",
                 "declarations": [
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
-                            "lower": {"data": "1"},
-                            "size": {"identifier": "Size", "value": {"data": "16"}},
-                            "upper": {"data": "2_000"},
+                            "_kind": "RangeTypeDef",
+                            "lower": {"_kind": "NumericLiteral", "_value": "1"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "16"},
+                            },
+                            "upper": {"_kind": "NumericLiteral", "_value": "2_000"},
                         },
-                        "identifier": "Page_Num",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Page_Num"},
                     },
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
-                            "lower": {"data": "0"},
-                            "size": {"identifier": "Size", "value": {"data": "8"}},
-                            "upper": {"data": "255"},
+                            "_kind": "RangeTypeDef",
+                            "lower": {"_kind": "NumericLiteral", "_value": "0"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "8"},
+                            },
+                            "upper": {"_kind": "NumericLiteral", "_value": "255"},
                         },
-                        "identifier": "Line_Size",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Line_Size"},
                     },
-                    {"definition": {"mod": {"data": "256"}}, "identifier": "Byte"},
-                    {"definition": {"mod": {"data": "64"}}, "identifier": "Hash_Index"},
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "ModularTypeDef",
+                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Byte"},
+                    },
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "ModularTypeDef",
+                            "mod": {"_kind": "NumericLiteral", "_value": "64"},
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Hash_Index"},
+                    },
                 ],
-                "end_identifier": "Integer_Type",
-                "identifier": "Integer_Type",
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Integer_Type"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Integer_Type"},
             },
-        },
+        }
     }
+
     assert_ast_files([f"{SPEC_DIR}/integer_type.rflx"], spec)
 
 
 def test_parse_enumeration_type_spec() -> None:
     spec = {
         "Enumeration_Type": {
+            "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
+                "_kind": "PackageSpec",
                 "declarations": [
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
-                            "aspects": [{"identifier": "Size", "value": {"data": "3"}}],
+                            "_kind": "EnumerationTypeDef",
+                            "aspects": [
+                                {
+                                    "_kind": "Aspect",
+                                    "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                    "value": {"_kind": "NumericLiteral", "_value": "3"},
+                                }
+                            ],
                             "elements": {
+                                "_kind": "NamedEnumerationDef",
                                 "elements": [
-                                    {"identifier": "Mon", "literal": "1"},
-                                    {"identifier": "Tue", "literal": "2"},
-                                    {"identifier": "Wed", "literal": "3"},
-                                    {"identifier": "Thu", "literal": "4"},
-                                    {"identifier": "Fri", "literal": "5"},
-                                    {"identifier": "Sat", "literal": "6"},
-                                    {"identifier": "Sun", "literal": "7"},
-                                ]
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Mon"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "1"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Tue"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "2"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Wed"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "3"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Thu"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "4"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Fri"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "5"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Sat"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "6"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Sun"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "7"},
+                                    },
+                                ],
                             },
                         },
-                        "identifier": "Day",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Day"},
                     },
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
+                            "_kind": "EnumerationTypeDef",
                             "aspects": [
-                                {"identifier": "Size", "value": {"data": "1"}},
                                 {
-                                    "identifier": "Always_Valid",
+                                    "_kind": "Aspect",
+                                    "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                    "value": {"_kind": "NumericLiteral", "_value": "1"},
+                                },
+                                {
+                                    "_kind": "Aspect",
+                                    "identifier": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "Always_Valid",
+                                    },
                                     "value": {
-                                        "data": {"identifier": {"name": "False", "package": None}}
+                                        "_kind": "Variable",
+                                        "identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "False"},
+                                            "package": None,
+                                        },
                                     },
                                 },
                             ],
-                            "elements": {"elements": ["M", "F"]},
-                        },
-                        "identifier": "Gender",
-                    },
-                    {
-                        "definition": {
-                            "aspects": [
-                                {"identifier": "Always_Valid", "value": None},
-                                {"identifier": "Size", "value": {"data": "8"}},
-                            ],
                             "elements": {
+                                "_kind": "PositionalEnumerationDef",
                                 "elements": [
-                                    {"identifier": "Low", "literal": "1"},
-                                    {"identifier": "Medium", "literal": "4"},
-                                    {"identifier": "High", "literal": "7"},
-                                ]
+                                    {"_kind": "UnqualifiedID", "_value": "M"},
+                                    {"_kind": "UnqualifiedID", "_value": "F"},
+                                ],
                             },
                         },
-                        "identifier": "Priority",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Gender"},
+                    },
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "EnumerationTypeDef",
+                            "aspects": [
+                                {
+                                    "_kind": "Aspect",
+                                    "identifier": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "Always_Valid",
+                                    },
+                                    "value": None,
+                                },
+                                {
+                                    "_kind": "Aspect",
+                                    "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                    "value": {"_kind": "NumericLiteral", "_value": "8"},
+                                },
+                            ],
+                            "elements": {
+                                "_kind": "NamedEnumerationDef",
+                                "elements": [
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Low"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "1"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Medium",
+                                        },
+                                        "literal": {"_kind": "NumericLiteral", "_value": "4"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "High"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "7"},
+                                    },
+                                ],
+                            },
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Priority"},
                     },
                 ],
-                "end_identifier": "Enumeration_Type",
-                "identifier": "Enumeration_Type",
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Enumeration_Type"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Enumeration_Type"},
             },
-        },
+        }
     }
     assert_ast_files([f"{SPEC_DIR}/enumeration_type.rflx"], spec)
 
@@ -295,70 +431,126 @@ def test_parse_enumeration_type_spec() -> None:
 def test_parse_array_type_spec() -> None:
     spec = {
         "Array_Type": {
+            "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
+                "_kind": "PackageSpec",
                 "declarations": [
-                    {"definition": {"mod": {"data": "256"}}, "identifier": "Byte"},
                     {
-                        "definition": {"element_type": {"name": "Byte", "package": None}},
-                        "identifier": "Bytes",
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "ModularTypeDef",
+                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Byte"},
                     },
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
+                            "_kind": "ArrayTypeDef",
+                            "element_type": {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "Byte"},
+                                "package": None,
+                            },
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bytes"},
+                    },
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "MessageTypeDef",
                             "checksums": None,
                             "components": {
+                                "_kind": "Components",
                                 "components": [
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Length",
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Length",
+                                        },
                                         "thens": [
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [
                                                     {
-                                                        "identifier": "Size",
+                                                        "_kind": "Aspect",
+                                                        "identifier": {
+                                                            "_kind": "UnqualifiedID",
+                                                            "_value": "Size",
+                                                        },
                                                         "value": {
-                                                            "data": {
-                                                                "left": {
-                                                                    "identifier": {
-                                                                        "name": "Length",
-                                                                        "package": None,
-                                                                    }
+                                                            "_kind": "BinOp",
+                                                            "left": {
+                                                                "_kind": "Variable",
+                                                                "identifier": {
+                                                                    "_kind": "ID",
+                                                                    "name": {
+                                                                        "_kind": "UnqualifiedID",
+                                                                        "_value": "Length",
+                                                                    },
+                                                                    "package": None,
                                                                 },
-                                                                "op": "*",
-                                                                "right": "8",
-                                                            }
+                                                            },
+                                                            "op": {"_kind": "OpMul", "_value": "*"},
+                                                            "right": {
+                                                                "_kind": "NumericLiteral",
+                                                                "_value": "8",
+                                                            },
                                                         },
                                                     }
                                                 ],
                                                 "condition": None,
-                                                "target": "Bytes",
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Bytes",
+                                                },
                                             }
                                         ],
-                                        "type_identifier": {"name": "Byte", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Byte"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Bytes",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bytes"},
                                         "thens": [],
-                                        "type_identifier": {"name": "Bytes", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Bytes"},
+                                            "package": None,
+                                        },
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
-                        "identifier": "Foo",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
                     },
                     {
-                        "definition": {"element_type": {"name": "Foo", "package": None}},
-                        "identifier": "Bar",
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "ArrayTypeDef",
+                            "element_type": {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "Foo"},
+                                "package": None,
+                            },
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                     },
                 ],
-                "end_identifier": "Array_Type",
-                "identifier": "Array_Type",
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Array_Type"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Array_Type"},
             },
-        },
+        }
     }
     assert_ast_files([f"{SPEC_DIR}/array_type.rflx"], spec)
 
@@ -366,106 +558,172 @@ def test_parse_array_type_spec() -> None:
 def test_parse_message_type_spec() -> None:
     spec = {
         "Message_Type": {
+            "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
+                "_kind": "PackageSpec",
                 "declarations": [
-                    {"definition": {"mod": {"data": "256"}}, "identifier": "T"},
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
+                            "_kind": "ModularTypeDef",
+                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                    },
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "MessageTypeDef",
                             "checksums": None,
                             "components": {
+                                "_kind": "Components",
                                 "components": [
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Foo",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
                                         "thens": [
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [],
                                                 "condition": {
-                                                    "data": {
-                                                        "left": {
-                                                            "identifier": {
-                                                                "name": "Foo",
-                                                                "package": None,
-                                                            }
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "Variable",
+                                                        "identifier": {
+                                                            "_kind": "ID",
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Foo",
+                                                            },
+                                                            "package": None,
                                                         },
-                                                        "op": "<=",
-                                                        "right": "16#1E#",
-                                                    }
+                                                    },
+                                                    "op": {"_kind": "OpLe", "_value": "<="},
+                                                    "right": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "16#1E#",
+                                                    },
                                                 },
-                                                "target": "Bar",
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Bar",
+                                                },
                                             },
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [],
                                                 "condition": {
-                                                    "data": {
-                                                        "left": {
-                                                            "identifier": {
-                                                                "name": "Foo",
-                                                                "package": None,
-                                                            }
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "Variable",
+                                                        "identifier": {
+                                                            "_kind": "ID",
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Foo",
+                                                            },
+                                                            "package": None,
                                                         },
-                                                        "op": ">",
-                                                        "right": "16#1E#",
-                                                    }
+                                                    },
+                                                    "op": {"_kind": "OpGt", "_value": ">"},
+                                                    "right": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "16#1E#",
+                                                    },
                                                 },
-                                                "target": "Baz",
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Baz",
+                                                },
                                             },
                                         ],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Bar",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                         "thens": [],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Baz",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
                                         "thens": [],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
-                        "identifier": "PDU",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "PDU"},
                     },
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
+                            "_kind": "MessageTypeDef",
                             "checksums": None,
                             "components": {
+                                "_kind": "Components",
                                 "components": [
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Bar",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                         "thens": [],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Baz",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
                                         "thens": [],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
-                        "identifier": "Simple_PDU",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
                     },
-                    {"definition": "null " "message", "identifier": "Empty_PDU"},
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {"_kind": "NullMessageTypeDef", "_value": "null " "message"},
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
+                    },
                 ],
-                "end_identifier": "Message_Type",
-                "identifier": "Message_Type",
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
             },
-        },
+        }
     }
     assert_ast_files([f"{SPEC_DIR}/message_type.rflx"], spec)
 
@@ -473,131 +731,228 @@ def test_parse_message_type_spec() -> None:
 def test_parse_type_refinement_spec() -> None:
     spec = {
         "Message_Type": {
+            "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
+                "_kind": "PackageSpec",
                 "declarations": [
-                    {"definition": {"mod": {"data": "256"}}, "identifier": "T"},
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
+                            "_kind": "ModularTypeDef",
+                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                    },
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "MessageTypeDef",
                             "checksums": None,
                             "components": {
+                                "_kind": "Components",
                                 "components": [
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Foo",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
                                         "thens": [
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [],
                                                 "condition": {
-                                                    "data": {
-                                                        "left": {
-                                                            "identifier": {
-                                                                "name": "Foo",
-                                                                "package": None,
-                                                            }
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "Variable",
+                                                        "identifier": {
+                                                            "_kind": "ID",
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Foo",
+                                                            },
+                                                            "package": None,
                                                         },
-                                                        "op": "<=",
-                                                        "right": "16#1E#",
-                                                    }
+                                                    },
+                                                    "op": {"_kind": "OpLe", "_value": "<="},
+                                                    "right": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "16#1E#",
+                                                    },
                                                 },
-                                                "target": "Bar",
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Bar",
+                                                },
                                             },
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [],
                                                 "condition": {
-                                                    "data": {
-                                                        "left": {
-                                                            "identifier": {
-                                                                "name": "Foo",
-                                                                "package": None,
-                                                            }
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "Variable",
+                                                        "identifier": {
+                                                            "_kind": "ID",
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Foo",
+                                                            },
+                                                            "package": None,
                                                         },
-                                                        "op": ">",
-                                                        "right": "16#1E#",
-                                                    }
+                                                    },
+                                                    "op": {"_kind": "OpGt", "_value": ">"},
+                                                    "right": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "16#1E#",
+                                                    },
                                                 },
-                                                "target": "Baz",
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Baz",
+                                                },
                                             },
                                         ],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Bar",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                         "thens": [],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Baz",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
                                         "thens": [],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
-                        "identifier": "PDU",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "PDU"},
                     },
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
+                            "_kind": "MessageTypeDef",
                             "checksums": None,
                             "components": {
+                                "_kind": "Components",
                                 "components": [
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Bar",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                         "thens": [],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Baz",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
                                         "thens": [],
-                                        "type_identifier": {"name": "T", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
-                        "identifier": "Simple_PDU",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
                     },
-                    {"definition": "null " "message", "identifier": "Empty_PDU"},
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {"_kind": "NullMessageTypeDef", "_value": "null message"},
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
+                    },
                 ],
-                "end_identifier": "Message_Type",
-                "identifier": "Message_Type",
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
             },
         },
         "Type_Refinement": {
-            "context_clause": [{"item": "Message_Type"}],
+            "_kind": "Specification",
+            "context_clause": [
+                {
+                    "_kind": "ContextItem",
+                    "item": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
+                }
+            ],
             "package_declaration": {
+                "_kind": "PackageSpec",
                 "declarations": [
                     {
+                        "_kind": "RefinementSpec",
                         "condition": {
-                            "data": {
-                                "left": {"identifier": {"name": "Baz", "package": None}},
-                                "op": "=",
-                                "right": "42",
-                            }
+                            "_kind": "BinOp",
+                            "left": {
+                                "_kind": "Variable",
+                                "identifier": {
+                                    "_kind": "ID",
+                                    "name": {"_kind": "UnqualifiedID", "_value": "Baz"},
+                                    "package": None,
+                                },
+                            },
+                            "op": {"_kind": "OpEq", "_value": "="},
+                            "right": {"_kind": "NumericLiteral", "_value": "42"},
                         },
-                        "field": "Bar",
-                        "pdu": {"name": "Simple_PDU", "package": "Message_Type"},
-                        "sdu": {"name": "PDU", "package": "Message_Type"},
+                        "field": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                        "pdu": {
+                            "_kind": "ID",
+                            "name": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
+                            "package": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
+                        },
+                        "sdu": {
+                            "_kind": "ID",
+                            "name": {"_kind": "UnqualifiedID", "_value": "PDU"},
+                            "package": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
+                        },
                     },
                     {
+                        "_kind": "RefinementSpec",
                         "condition": None,
-                        "field": "Bar",
-                        "pdu": {"name": "PDU", "package": "Message_Type"},
-                        "sdu": {"name": "Simple_PDU", "package": "Message_Type"},
+                        "field": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                        "pdu": {
+                            "_kind": "ID",
+                            "name": {"_kind": "UnqualifiedID", "_value": "PDU"},
+                            "package": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
+                        },
+                        "sdu": {
+                            "_kind": "ID",
+                            "name": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
+                            "package": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
+                        },
                     },
                 ],
-                "end_identifier": "Type_Refinement",
-                "identifier": "Type_Refinement",
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Type_Refinement"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Type_Refinement"},
             },
         },
     }
@@ -655,257 +1010,514 @@ def test_parse_type_derivation_spec() -> None:
 def test_parse_ethernet_spec() -> None:
     spec = {
         "Ethernet": {
+            "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
+                "_kind": "PackageSpec",
                 "declarations": [
                     {
-                        "definition": {"mod": {"data": {"left": "2", "op": "**", "right": "48"}}},
-                        "identifier": "Address",
-                    },
-                    {
+                        "_kind": "TypeSpec",
                         "definition": {
-                            "lower": {"data": "46"},
-                            "size": {"identifier": "Size", "value": {"data": "16"}},
-                            "upper": {
-                                "data": {
-                                    "left": {"left": "2", "op": "**", "right": "16"},
-                                    "op": "-",
-                                    "right": "1",
-                                }
+                            "_kind": "ModularTypeDef",
+                            "mod": {
+                                "_kind": "BinOp",
+                                "left": {"_kind": "NumericLiteral", "_value": "2"},
+                                "op": {"_kind": "OpPow", "_value": "**"},
+                                "right": {"_kind": "NumericLiteral", "_value": "48"},
                             },
                         },
-                        "identifier": "Type_Length",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Address"},
                     },
                     {
+                        "_kind": "TypeSpec",
                         "definition": {
-                            "lower": {"data": "16#8100#"},
-                            "size": {"identifier": "Size", "value": {"data": "16"}},
-                            "upper": {"data": "16#8100#"},
+                            "_kind": "RangeTypeDef",
+                            "lower": {"_kind": "NumericLiteral", "_value": "46"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "16"},
+                            },
+                            "upper": {
+                                "_kind": "BinOp",
+                                "left": {
+                                    "_kind": "BinOp",
+                                    "left": {"_kind": "NumericLiteral", "_value": "2"},
+                                    "op": {"_kind": "OpPow", "_value": "**"},
+                                    "right": {"_kind": "NumericLiteral", "_value": "16"},
+                                },
+                                "op": {"_kind": "OpSub", "_value": "-"},
+                                "right": {"_kind": "NumericLiteral", "_value": "1"},
+                            },
                         },
-                        "identifier": "TPID",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Type_Length"},
                     },
                     {
-                        "definition": {"mod": {"data": {"left": "2", "op": "**", "right": "16"}}},
-                        "identifier": "TCI",
-                    },
-                    {
+                        "_kind": "TypeSpec",
                         "definition": {
+                            "_kind": "RangeTypeDef",
+                            "lower": {"_kind": "NumericLiteral", "_value": "16#8100#"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "16"},
+                            },
+                            "upper": {"_kind": "NumericLiteral", "_value": "16#8100#"},
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "TPID"},
+                    },
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "ModularTypeDef",
+                            "mod": {
+                                "_kind": "BinOp",
+                                "left": {"_kind": "NumericLiteral", "_value": "2"},
+                                "op": {"_kind": "OpPow", "_value": "**"},
+                                "right": {"_kind": "NumericLiteral", "_value": "16"},
+                            },
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "TCI"},
+                    },
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "MessageTypeDef",
                             "checksums": None,
                             "components": {
+                                "_kind": "Components",
                                 "components": [
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Destination",
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Destination",
+                                        },
                                         "thens": [],
-                                        "type_identifier": {"name": "Address", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Address"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Source",
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Source",
+                                        },
                                         "thens": [],
-                                        "type_identifier": {"name": "Address", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Address"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Type_Length_TPID",
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Type_Length_TPID",
+                                        },
                                         "thens": [
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [
                                                     {
-                                                        "identifier": "First",
+                                                        "_kind": "Aspect",
+                                                        "identifier": {
+                                                            "_kind": "UnqualifiedID",
+                                                            "_value": "First",
+                                                        },
                                                         "value": {
-                                                            "data": {
-                                                                "identifier": "Type_Length_TPID",
-                                                                "kind": "First",
-                                                            }
+                                                            "_kind": "Attribute",
+                                                            "expression": {
+                                                                "_kind": "Variable",
+                                                                "identifier": {
+                                                                    "_kind": "ID",
+                                                                    "name": {
+                                                                        "_kind": "UnqualifiedID",
+                                                                        "_value": "Type_Length_TPID",
+                                                                    },
+                                                                    "package": None,
+                                                                },
+                                                            },
+                                                            "kind": {
+                                                                "_kind": "AttrFirst",
+                                                                "_value": "First",
+                                                            },
                                                         },
                                                     }
                                                 ],
                                                 "condition": {
-                                                    "data": {
-                                                        "left": {
-                                                            "identifier": {
-                                                                "name": "Type_Length_TPID",
-                                                                "package": None,
-                                                            }
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "Variable",
+                                                        "identifier": {
+                                                            "_kind": "ID",
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Type_Length_TPID",
+                                                            },
+                                                            "package": None,
                                                         },
-                                                        "op": "=",
-                                                        "right": "16#8100#",
-                                                    }
+                                                    },
+                                                    "op": {"_kind": "OpEq", "_value": "="},
+                                                    "right": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "16#8100#",
+                                                    },
                                                 },
-                                                "target": "TPID",
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "TPID",
+                                                },
                                             },
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [
                                                     {
-                                                        "identifier": "First",
+                                                        "_kind": "Aspect",
+                                                        "identifier": {
+                                                            "_kind": "UnqualifiedID",
+                                                            "_value": "First",
+                                                        },
                                                         "value": {
-                                                            "data": {
-                                                                "identifier": "Type_Length_TPID",
-                                                                "kind": "First",
-                                                            }
+                                                            "_kind": "Attribute",
+                                                            "expression": {
+                                                                "_kind": "Variable",
+                                                                "identifier": {
+                                                                    "_kind": "ID",
+                                                                    "name": {
+                                                                        "_kind": "UnqualifiedID",
+                                                                        "_value": "Type_Length_TPID",
+                                                                    },
+                                                                    "package": None,
+                                                                },
+                                                            },
+                                                            "kind": {
+                                                                "_kind": "AttrFirst",
+                                                                "_value": "First",
+                                                            },
                                                         },
                                                     }
                                                 ],
                                                 "condition": {
-                                                    "data": {
-                                                        "left": {
-                                                            "identifier": {
-                                                                "name": "Type_Length_TPID",
-                                                                "package": None,
-                                                            }
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "Variable",
+                                                        "identifier": {
+                                                            "_kind": "ID",
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Type_Length_TPID",
+                                                            },
+                                                            "package": None,
                                                         },
-                                                        "op": "/=",
-                                                        "right": "16#8100#",
-                                                    }
+                                                    },
+                                                    "op": {"_kind": "OpNeq", "_value": "/="},
+                                                    "right": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "16#8100#",
+                                                    },
                                                 },
-                                                "target": "Type_Length",
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Type_Length",
+                                                },
                                             },
                                         ],
-                                        "type_identifier": {"name": "Type_Length", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "Type_Length",
+                                            },
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "TPID",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "TPID"},
                                         "thens": [],
-                                        "type_identifier": {"name": "TPID", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "TPID"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "TCI",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "TCI"},
                                         "thens": [],
-                                        "type_identifier": {"name": "TCI", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "TCI"},
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Type_Length",
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Type_Length",
+                                        },
                                         "thens": [
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [
                                                     {
-                                                        "identifier": "Size",
+                                                        "_kind": "Aspect",
+                                                        "identifier": {
+                                                            "_kind": "UnqualifiedID",
+                                                            "_value": "Size",
+                                                        },
                                                         "value": {
-                                                            "data": {
-                                                                "left": {
+                                                            "_kind": "BinOp",
+                                                            "left": {
+                                                                "_kind": "Variable",
+                                                                "identifier": {
+                                                                    "_kind": "ID",
+                                                                    "name": {
+                                                                        "_kind": "UnqualifiedID",
+                                                                        "_value": "Type_Length",
+                                                                    },
+                                                                    "package": None,
+                                                                },
+                                                            },
+                                                            "op": {"_kind": "OpMul", "_value": "*"},
+                                                            "right": {
+                                                                "_kind": "NumericLiteral",
+                                                                "_value": "8",
+                                                            },
+                                                        },
+                                                    }
+                                                ],
+                                                "condition": {
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "Variable",
+                                                        "identifier": {
+                                                            "_kind": "ID",
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Type_Length",
+                                                            },
+                                                            "package": None,
+                                                        },
+                                                    },
+                                                    "op": {"_kind": "OpLe", "_value": "<="},
+                                                    "right": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "1500",
+                                                    },
+                                                },
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Payload",
+                                                },
+                                            },
+                                            {
+                                                "_kind": "ThenNode",
+                                                "aspects": [
+                                                    {
+                                                        "_kind": "Aspect",
+                                                        "identifier": {
+                                                            "_kind": "UnqualifiedID",
+                                                            "_value": "Size",
+                                                        },
+                                                        "value": {
+                                                            "_kind": "BinOp",
+                                                            "left": {
+                                                                "_kind": "Attribute",
+                                                                "expression": {
+                                                                    "_kind": "Variable",
                                                                     "identifier": {
-                                                                        "name": "Type_Length",
+                                                                        "_kind": "ID",
+                                                                        "name": {
+                                                                            "_kind": "UnqualifiedID",
+                                                                            "_value": "Message",
+                                                                        },
                                                                         "package": None,
-                                                                    }
+                                                                    },
                                                                 },
-                                                                "op": "*",
-                                                                "right": "8",
-                                                            }
+                                                                "kind": {
+                                                                    "_kind": "AttrLast",
+                                                                    "_value": "Last",
+                                                                },
+                                                            },
+                                                            "op": {"_kind": "OpSub", "_value": "-"},
+                                                            "right": {
+                                                                "_kind": "Attribute",
+                                                                "expression": {
+                                                                    "_kind": "Variable",
+                                                                    "identifier": {
+                                                                        "_kind": "ID",
+                                                                        "name": {
+                                                                            "_kind": "UnqualifiedID",
+                                                                            "_value": "Type_Length",
+                                                                        },
+                                                                        "package": None,
+                                                                    },
+                                                                },
+                                                                "kind": {
+                                                                    "_kind": "AttrLast",
+                                                                    "_value": "Last",
+                                                                },
+                                                            },
                                                         },
                                                     }
                                                 ],
                                                 "condition": {
-                                                    "data": {
-                                                        "left": {
-                                                            "identifier": {
-                                                                "name": "Type_Length",
-                                                                "package": None,
-                                                            }
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "Variable",
+                                                        "identifier": {
+                                                            "_kind": "ID",
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Type_Length",
+                                                            },
+                                                            "package": None,
                                                         },
-                                                        "op": "<=",
-                                                        "right": "1500",
-                                                    }
+                                                    },
+                                                    "op": {"_kind": "OpGe", "_value": ">="},
+                                                    "right": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "1536",
+                                                    },
                                                 },
-                                                "target": "Payload",
-                                            },
-                                            {
-                                                "aspects": [
-                                                    {
-                                                        "identifier": "Size",
-                                                        "value": {
-                                                            "data": {
-                                                                "left": {
-                                                                    "identifier": "Message",
-                                                                    "kind": "Last",
-                                                                },
-                                                                "op": "-",
-                                                                "right": {
-                                                                    "identifier": "Type_Length",
-                                                                    "kind": "Last",
-                                                                },
-                                                            }
-                                                        },
-                                                    }
-                                                ],
-                                                "condition": {
-                                                    "data": {
-                                                        "left": {
-                                                            "identifier": {
-                                                                "name": "Type_Length",
-                                                                "package": None,
-                                                            }
-                                                        },
-                                                        "op": ">=",
-                                                        "right": "1536",
-                                                    }
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Payload",
                                                 },
-                                                "target": "Payload",
                                             },
                                         ],
-                                        "type_identifier": {"name": "Type_Length", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "Type_Length",
+                                            },
+                                            "package": None,
+                                        },
                                     },
                                     {
+                                        "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": "Payload",
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Payload",
+                                        },
                                         "thens": [
                                             {
+                                                "_kind": "ThenNode",
                                                 "aspects": [],
                                                 "condition": {
-                                                    "data": {
+                                                    "_kind": "BinOp",
+                                                    "left": {
+                                                        "_kind": "BinOp",
                                                         "left": {
+                                                            "_kind": "BinOp",
                                                             "left": {
-                                                                "left": {
-                                                                    "identifier": "Payload",
-                                                                    "kind": "Size",
+                                                                "_kind": "Attribute",
+                                                                "expression": {
+                                                                    "_kind": "Variable",
+                                                                    "identifier": {
+                                                                        "_kind": "ID",
+                                                                        "name": {
+                                                                            "_kind": "UnqualifiedID",
+                                                                            "_value": "Payload",
+                                                                        },
+                                                                        "package": None,
+                                                                    },
                                                                 },
-                                                                "op": "/",
-                                                                "right": "8",
+                                                                "kind": {
+                                                                    "_kind": "AttrSize",
+                                                                    "_value": "Size",
+                                                                },
                                                             },
-                                                            "op": ">=",
-                                                            "right": "46",
+                                                            "op": {"_kind": "OpDiv", "_value": "/"},
+                                                            "right": {
+                                                                "_kind": "NumericLiteral",
+                                                                "_value": "8",
+                                                            },
                                                         },
-                                                        "op": "and",
+                                                        "op": {"_kind": "OpGe", "_value": ">="},
                                                         "right": {
-                                                            "left": {
-                                                                "left": {
-                                                                    "identifier": "Payload",
-                                                                    "kind": "Size",
-                                                                },
-                                                                "op": "/",
-                                                                "right": "8",
-                                                            },
-                                                            "op": "<=",
-                                                            "right": "1500",
+                                                            "_kind": "NumericLiteral",
+                                                            "_value": "46",
                                                         },
-                                                    }
+                                                    },
+                                                    "op": {"_kind": "OpAnd", "_value": "and"},
+                                                    "right": {
+                                                        "_kind": "BinOp",
+                                                        "left": {
+                                                            "_kind": "BinOp",
+                                                            "left": {
+                                                                "_kind": "Attribute",
+                                                                "expression": {
+                                                                    "_kind": "Variable",
+                                                                    "identifier": {
+                                                                        "_kind": "ID",
+                                                                        "name": {
+                                                                            "_kind": "UnqualifiedID",
+                                                                            "_value": "Payload",
+                                                                        },
+                                                                        "package": None,
+                                                                    },
+                                                                },
+                                                                "kind": {
+                                                                    "_kind": "AttrSize",
+                                                                    "_value": "Size",
+                                                                },
+                                                            },
+                                                            "op": {"_kind": "OpDiv", "_value": "/"},
+                                                            "right": {
+                                                                "_kind": "NumericLiteral",
+                                                                "_value": "8",
+                                                            },
+                                                        },
+                                                        "op": {"_kind": "OpLe", "_value": "<="},
+                                                        "right": {
+                                                            "_kind": "NumericLiteral",
+                                                            "_value": "1500",
+                                                        },
+                                                    },
                                                 },
-                                                "target": "null",
+                                                "target": {"_kind": "NullID", "_value": "null"},
                                             }
                                         ],
-                                        "type_identifier": {"name": "Opaque", "package": None},
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Opaque"},
+                                            "package": None,
+                                        },
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
-                        "identifier": "Frame",
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Frame"},
                     },
                 ],
-                "end_identifier": "Ethernet",
-                "identifier": "Ethernet",
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Ethernet"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Ethernet"},
             },
-        },
+        }
     }
 
     assert_ast_files([f"{EX_SPEC_DIR}/ethernet.rflx"], spec)

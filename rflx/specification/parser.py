@@ -6,6 +6,7 @@ from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 from librecordfluxdsllang import (
     AnalysisContext,
     ArrayTypeDef,
+    Aspect,
     ChecksumAspect,
     Component,
     Components,
@@ -14,7 +15,6 @@ from librecordfluxdsllang import (
     EnumerationTypeDef,
     Expr,
     GrammarRule,
-    MathematicalAspect,
     MessageTypeDef,
     ModularTypeDef,
     NullID,
@@ -482,9 +482,7 @@ def create_array(
 
 def create_expression(expression: Expr, filename: Path = None, package: ID = None) -> rexpr.Expr:
     location = node_location(expression, filename)
-    if expression.kind_name == "MathematicalExpression":
-        return create_expression(expression.f_data, filename, package)
-    elif expression.kind_name == "NumericLiteral":
+    if expression.kind_name == "NumericLiteral":
         num = expression.text.split("#")
         if len(num) == 1:
             return rexpr.Number(int(num[0]), location=location)
@@ -599,8 +597,6 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
                 f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
             )
     elif expression.kind_name == "ParenExpression":
-        return create_expression(expression.f_data, filename, package)
-    elif expression.kind_name == "BooleanExpression":
         return create_expression(expression.f_data, filename, package)
     elif expression.kind_name == "Variable":
         if expression.f_identifier.text.lower() == "true":
@@ -890,7 +886,7 @@ def create_message_structure(
 ) -> List[Link]:
     # pylint: disable=too-many-branches
 
-    def extract_aspect(aspects: List[MathematicalAspect]) -> Tuple[rexpr.Expr, rexpr.Expr]:
+    def extract_aspect(aspects: List[Aspect]) -> Tuple[rexpr.Expr, rexpr.Expr]:
         size = rexpr.UNDEFINED
         first = rexpr.UNDEFINED
         for aspect in aspects:
@@ -1176,7 +1172,7 @@ def create_refinement(
         )
 
     if refinement.f_condition:
-        condition = create_expression(refinement.f_condition.f_data, filename)
+        condition = create_expression(refinement.f_condition, filename)
     else:
         condition = rexpr.TRUE
 
